@@ -124,7 +124,7 @@ public partial class Main : Node3D
         AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-35, 30, 0), LightEnergy = 1.3f, LightColor = new Color("#fff0d6"), ShadowEnabled = true });
         AddChild(new MeshInstance3D { Mesh = new PlaneMesh { Size = new Vector2(40, 40) }, MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#6b6248") } });
         string[] looks = _args.ContainsKey("creatures")
-            ? ["Knight", "wolf", "ice_wolf", "fox", "deer", "bear", "boar", "skeever", "mudcrab"]
+            ? ["Knight", "skeever", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
             : ["Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded", "guard", "townsfolk", "draugr"];
         var figures = new List<Body>();
         for (var i = 0; i < looks.Length; i++)

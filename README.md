@@ -164,9 +164,10 @@ keeps making new cities as far as you care to walk, each with its own name, epit
   (wolves, bears, trolls, spriggans).
 - **Wildlife.** The land between them is lived in. Deer herds graze and foxes prowl almost everywhere,
   and they bolt when you get close; hawks wheel overhead. Away from home, wolf packs and wild boars roam the
-  woods, bears and trolls the crags,
+  woods, goblin bands the woods and crags, bears and trolls the crags,
   ice wolves the snow, skeevers the marshes and mudcrabs the shores. Packs grow larger the further north
-  you go. Within about 450 m of Tristinwold nothing hunts people. Wipe out a herd or a pack and that stretch
+  you go; far in the north a frost dragon is sometimes seen. Within about 450 m of Tristinwold nothing hunts
+  people. Wipe out a herd or a pack and that stretch
   stays quiet for ten minutes. Every company meets the same animals in the same places.
 - **People.** Everyone in a city or village is generated: a name, an age, a job, a temper, a backstory
   (where they came from, what happened to them, what they want now) and two or three interests. Ask them
@@ -425,8 +426,10 @@ Dungeon Remastered and Halloween Bits. They are CC0 (free for any use) and live 
 Creatures (`game/assets/creatures`, see its CREDITS.md): wolves, ice wolves, foxes, brown and black bears, wild
 boars and hawks come from 0 A.D. by Wildfire Games (art CC-BY-SA 3.0, so the converted models carry the same
 licence), each with its own idle, walk, run, attack and death; `tools/creatures/zero_ad.py` converts them from a
-checkout of github.com/0ad/0ad. The deer is Polygonal Mind's (CC0), its legs walked in code. Skeevers and mudcrabs
-are still built from shapes. The KayKit characters are re-proportioned as
+checkout of github.com/0ad/0ad. Giant rats (skeevers), goblins, forest monsters (spriggans), trolls and the frost dragon
+come from OpenGameArt: CDmir's rat, goblin and forest monster and Drummyfish/Cethiel's dragon are CC0, and
+piacenti's Troll Mauler is CC-BY 3.0 (`tools/creatures/oga.py` converts them). The deer is Polygonal Mind's (CC0),
+its legs walked in code. Mudcrabs are still built from shapes. The KayKit characters are re-proportioned as
 they move (`Proportions` in `Models.cs`): a smaller head, a slimmer, taller trunk and longer arms and legs, so they
 stand like people (and their stiff capes are left off). `godot --path game -- --lineup ./shots` photographs them
 (add `--plain` for the originals).

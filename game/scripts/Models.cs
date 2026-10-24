@@ -138,7 +138,11 @@ public abstract partial class Body : Node3D
 
     public static Body For(string look) => look switch
     {
-        "skeever" => Beast.Rat(),
+        "skeever" => (Body?)Creature.Create("giant_rat.glb", 0.6f) ?? Beast.Rat(),
+        "spriggan" => (Body?)Creature.Create("forest_monster.glb", 2.3f) ?? Figure.Create(look),
+        "frost_troll" => (Body?)Creature.Create("troll.glb", 2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
+        "goblin" => (Body?)Creature.Create("goblin.glb", 1.3f) ?? Figure.Create(look),
+        "dragon" => (Body?)Creature.Create("dragon.glb", 4.5f) ?? Beast.Bear(),
         "wolf" => (Body?)Creature.Create("wolf.glb", 0.95f) ?? Beast.Wolf(new Color("#5a5650")),
         "ice_wolf" => (Body?)Creature.Create("ice_wolf.glb", 1.0f) ?? Beast.Wolf(new Color("#d8e2ea")),
         "fox" => (Body?)Creature.Create("fox.glb", 0.5f) ?? Beast.Wolf(new Color("#c06a30")),
@@ -594,8 +598,9 @@ public partial class Deer : Animal
 }
 
 /// <summary>
-/// An animal from 0 A.D. (Wildfire Games, CC-BY-SA 3.0): wolves, ice wolves, foxes, bears and
-/// boars, each with its own idle, walk, run, attack and death, converted by tools/creatures/zero_ad.py.
+/// A creature from a converted model, each with its own idle, walk, run, attack and death: wolves,
+/// ice wolves, foxes, bears, boars and hawks from 0 A.D. (tools/creatures/zero_ad.py), and giant
+/// rats, goblins, forest monsters, trolls and a dragon from OpenGameArt (tools/creatures/oga.py).
 /// </summary>
 public partial class Creature : Animal
 {
@@ -603,10 +608,11 @@ public partial class Creature : Animal
     string _playing = "";
     double _busy;
 
-    public static Creature? Create(string file, float height)
+    public static Creature? Create(string file, float height, Color? tint = null)
     {
         var c = new Creature();
         if (!c.Load(file, height)) return null;
+        if (tint is { } t) Models.Tint(c.Model, t);
         c._anim = c.Model.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().FirstOrDefault();
         if (c._anim is not null)
             foreach (var name in c._anim.GetAnimationList())

@@ -15,7 +15,8 @@ public sealed record Herd(string Id, string KindId, double X, double Z, int Coun
 /// Life between the settlements, worked out from the seed like everything else, so every company
 /// in the shared world meets the same wolves in the same woods. The land is cut into cells; most
 /// hold something. Deer and foxes graze everywhere and run from you; the further from Tristinwold
-/// (the higher the danger), the more of the land belongs to wolves, boars, bears and trolls. Near home
+/// (the higher the danger), the more of the land belongs to wolves, boars, goblins, bears and trolls,
+/// and in the far north, very rarely, a frost dragon. Near home
 /// only the harmless and the merely annoying (skeevers, mudcrabs) are about.
 /// </summary>
 public static class Wildlife
@@ -27,6 +28,9 @@ public static class Wildlife
 
     /// <summary>Animals that run rather than fight.</summary>
     public static readonly IReadOnlySet<string> Timid = new HashSet<string> { "deer", "fox" };
+
+    /// <summary>Dragons only live in the far north, and rarely even there.</summary>
+    static double Wyrm(double danger) => danger < 2.2 ? 0 : 0.06 * danger;
 
     public static IEnumerable<Herd> Near(WorldGen world, double x, double z, double radius)
     {
@@ -57,12 +61,12 @@ public static class Wildlife
         var d = safe ? 0 : danger;
         (string, double)[] choices = biome switch
         {
-            Biome.AutumnForest => [("deer", 4), ("fox", 2), ("wolf", 0.8 * d), ("bear", 0.3 * d), ("spriggan", 0.25 * d), ("boar", 0.7 * d)],
-            Biome.PineForest => [("deer", 3.5), ("fox", 1.5), ("wolf", 1.1 * d), ("bear", 0.6 * d), ("boar", 0.5 * d)],
-            Biome.Marsh => [("skeever", 3), ("mudcrab", near ? 3 : 0.5), ("deer", 1), ("wolf", 0.5 * d)],
+            Biome.AutumnForest => [("deer", 4), ("fox", 2), ("wolf", 0.8 * d), ("bear", 0.3 * d), ("spriggan", 0.25 * d), ("boar", 0.7 * d), ("goblin", 0.4 * d)],
+            Biome.PineForest => [("deer", 3.5), ("fox", 1.5), ("wolf", 1.1 * d), ("bear", 0.6 * d), ("boar", 0.5 * d), ("goblin", 0.4 * d)],
+            Biome.Marsh => [("goblin", 0.3 * d), ("skeever", 3), ("mudcrab", near ? 3 : 0.5), ("deer", 1), ("wolf", 0.5 * d)],
             Biome.Tundra => [("deer", 2), ("fox", 1), ("wolf", 2 * d), ("ice_wolf", 1 * d), ("bear", 0.5 * d)],
-            Biome.Snowfield => [("ice_wolf", 1.4 * Math.Max(d, 0.1)), ("frost_troll", 0.5 * d), ("deer", 0.8), ("fox", 0.8)],
-            _ => [("bear", 1.5 * Math.Max(d, 0.1)), ("frost_troll", 1 * d), ("wolf", 1.5 * d), ("deer", 0.6)],
+            Biome.Snowfield => [("ice_wolf", 1.4 * Math.Max(d, 0.1)), ("frost_troll", 0.5 * d), ("deer", 0.8), ("fox", 0.8), ("dragon", Wyrm(danger))],
+            _ => [("bear", 1.5 * Math.Max(d, 0.1)), ("frost_troll", 1 * d), ("wolf", 1.5 * d), ("deer", 0.6), ("goblin", 0.6 * d), ("dragon", Wyrm(danger))],
         };
         if (near && biome != Biome.Snowfield) choices = [.. choices, ("mudcrab", 1.5)];
         choices = [.. choices.Where(c => c.Item2 > 0)];
@@ -79,9 +83,10 @@ public static class Wildlife
             "mudcrab" => 2 + rng.Next(3),
             "spriggan" => 1 + rng.Next(2),
             "boar" => 1 + rng.Next(3),
+            "goblin" => 2 + rng.Next(3) + extra,
             _ => 1, // bears and trolls keep to themselves
         };
-        var roam = kind switch { "deer" => 22, "fox" => 18, "wolf" or "ice_wolf" => 16, "mudcrab" => 6, _ => 10 };
+        var roam = kind switch { "dragon" => 30, "deer" => 22, "fox" => 18, "wolf" or "ice_wolf" => 16, "mudcrab" => 6, _ => 10 };
         return new Herd($"wild_{cx}_{cz}", kind, x, z, count, roam);
     }
 }

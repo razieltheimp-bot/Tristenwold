@@ -4,3 +4,5 @@
   0 A.D. by Wildfire Games, CC-BY-SA 3.0. See CREDITS-0AD.md. These files are under the same licence.
 - `deer_pm.glb`: DeerArmature by Polygonal Mind, CC0, from https://github.com/ToxSam/cc0-models-Polygonal-Mind
   (catalogued in https://github.com/ToxSam/open-source-3D-assets).
+- `giant_rat.glb`, `goblin.glb`, `forest_monster.glb`, `troll.glb`, `dragon.glb`: from OpenGameArt.org, see
+  CREDITS-OGA.md. The troll (Troll Mauler by piacenti) is CC-BY 3.0; the others are CC0.

@@ -88,7 +88,7 @@ public partial class Enemy : Fighter
     public static Enemy Create(EnemyKind kind, Vector3 at, double danger = 1, string? siteId = null)
     {
         var e = new Enemy { Kind = kind, Home = at, Position = at, Stats = kind.NewCombatant(danger), SiteId = siteId };
-        e.Dress(kind.Id, (float)Math.Max(kind.Height, 0.6) * (kind.Id == "frost_troll" ? 1.2f : 1), kind.Height < 1 ? 0.3f : kind.Id is "bear" or "frost_troll" ? 0.6f : 0.4f);
+        e.Dress(kind.Id, (float)Math.Max(kind.Height, 0.6) * (kind.Id == "frost_troll" ? 1.2f : 1), kind.Height < 1 ? 0.3f : kind.Id is "bear" or "frost_troll" ? 0.6f : kind.Id == "dragon" ? 1.5f : 0.4f);
         e.RefreshPlate();
         return e;
     }
