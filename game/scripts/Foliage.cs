@@ -40,6 +40,40 @@ public static class Foliage
         return Cache[(kind, variant, fancy)] = b.Finish(Bark(fancy), kind == Kind.Bare ? null : Cards(cards, fancy));
     }
 
+    public static bool HasGrass => ResourceLoader.Exists(Root + "grass.png");
+
+    /// <summary>A grass tuft: three photographed cards crossed like a star, about a metre across.</summary>
+    public static Mesh GrassTuft()
+    {
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        for (var k = 0; k < 3; k++)
+        {
+            var a = k * Mathf.Pi / 3;
+            var s = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 0.55f;
+            var up = new Vector3(0, 0.55f, 0);
+            Vector3[] p = [-s, s, s + up, -s + up];
+            Vector2[] uv = [new(0, 1), new(1, 1), new(1, 0), new(0, 0)];
+            float[] shade = [0.6f, 0.6f, 1, 1];
+            foreach (var i in new[] { 0, 1, 2, 0, 2, 3 })
+            {
+                st.SetColor(new Color(shade[i], shade[i], shade[i]));
+                st.SetNormal(Vector3.Up);
+                st.SetUV(uv[i]);
+                st.AddVertex(p[i]);
+            }
+        }
+        return st.Commit();
+    }
+
+    public static Material GrassMaterial(bool sways) => sways
+        ? Graphics.Swaying(1.6f, GD.Load<Texture2D>(Root + "grass.png"), 1.6f, cutout: true)
+        : new StandardMaterial3D
+        {
+            AlbedoTexture = GD.Load<Texture2D>(Root + "grass.png"), VertexColorUseAsAlbedo = true, Roughness = 0.9f, CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+            Transparency = BaseMaterial3D.TransparencyEnum.AlphaScissor, AlphaScissorThreshold = 0.45f,
+        };
+
     // ---- materials -------------------------------------------------------------------------------
 
     static readonly Dictionary<(string, bool), Material> Materials = [];

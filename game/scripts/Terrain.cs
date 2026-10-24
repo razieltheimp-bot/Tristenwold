@@ -59,6 +59,7 @@ public partial class Terrain(WorldGen world) : Node3D
     readonly Dictionary<(int, int), Node3D> _grass = [];
     Mesh? _tuft;
     Material? _grassSway;
+    bool _cardGrass; // photographed grass on cards, rather than plain blades
 
     readonly Dictionary<(int, int), Node3D> _chunks = [];
     readonly MeshInstance3D _water = new();
@@ -74,12 +75,19 @@ public partial class Terrain(WorldGen world) : Node3D
             : new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.25f, 0.33f, 0.85f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.1f, Metallic = 0.3f };
         AddChild(_water);
         if (Photographic) _ground = Graphics.Ground();
-        if (Fancy)
+        // The simple renderer (old devices) draws the wind shader's grass black, so it gets plain grass.
+        var sways = Fancy && RenderingServer.GetCurrentRenderingMethod() != "gl_compatibility";
+        if (Foliage.HasGrass)
         {
-            // The simple renderer (old devices) draws the wind shader's grass black, so it gets plain grass.
-            if (RenderingServer.GetCurrentRenderingMethod() != "gl_compatibility") _grassSway = Graphics.Swaying(2.2f, heightScale: 1.6f);
+            _cardGrass = true;
+            _tuft = Foliage.GrassTuft();
+            _grassSway = Foliage.GrassMaterial(sways);
         }
-        _tuft = Tuft();
+        else
+        {
+            if (sways) _grassSway = Graphics.Swaying(2.2f, heightScale: 1.6f);
+            _tuft = Tuft();
+        }
         if (Fancy) Clouds();
     }
 
@@ -199,6 +207,7 @@ public partial class Terrain(WorldGen world) : Node3D
         var (x0, z0) = (cx * ChunkSize, cz * ChunkSize);
         var biome = world.BiomeAt(x0 + ChunkSize / 2, z0 + ChunkSize / 2);
         var count = biome switch { Biome.Marsh => 1100, Biome.AutumnForest => 900, Biome.PineForest => 700, Biome.Tundra => 380, Biome.Crags => 160, _ => 0 };
+        if (_cardGrass) count = count * 2 / 5; // each card tuft is a whole clump
         var clear = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
         var tufts = new List<(Transform3D, Color)>();
         for (var i = 0; i < count; i++)
@@ -208,7 +217,12 @@ public partial class Terrain(WorldGen world) : Node3D
             if (wx * wx + wz * wz < 112 * 112 || clear.Any(s => s.DistanceTo(wx, wz) < s.Radius * 0.8)) continue;
             var y = world.Height(wx, wz);
             if (y < WorldGen.WaterLevel + 0.4) continue;
-            var tint = world.BiomeAt(wx, wz, y) switch
+            var tint = _cardGrass ? world.BiomeAt(wx, wz, y) switch
+            {
+                // The photo already has grass colours; these only warm or green it a little.
+                Biome.AutumnForest => new Color("#f0dca0"), Biome.Marsh => new Color("#c8dca8"), Biome.Tundra => new Color("#e0dcb8"),
+                Biome.Crags => new Color("#d0d8b8"), _ => new Color("#c8e0b0"),
+            } : world.BiomeAt(wx, wz, y) switch
             {
                 Biome.AutumnForest => new Color("#9a8a3e"), Biome.Marsh => new Color("#5e7434"), Biome.Tundra => new Color("#8e8c62"),
                 Biome.Crags => new Color("#6e7848"), _ => new Color("#55783a"),

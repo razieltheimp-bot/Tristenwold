@@ -277,7 +277,7 @@ def foliage(cache):
         img = Image.open(model_map("pine_tree_01", key, cache)).convert("RGB")
         save_jpg(img, os.path.join(folder, name + ".jpg"))
         texture_import(os.path.join(folder, name + ".jpg"), normal=name == "bark_nor")
-    for name in ("fir_branch", "leaves_green", "leaves_autumn"):
+    for name in ("fir_branch", "leaves_green", "leaves_autumn", "grass"):
         texture_import(os.path.join(folder, name + ".png"))
 
 
