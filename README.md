@@ -1,17 +1,56 @@
 # Tristinwold
 
-A multiplayer game for *The Rings of Tristinwold*, being rebuilt on **Skyrim Special Edition**
-(Final Fantasy X has been dropped). Final Fantasy-style mechanics come along: Haste, Protect, Shell,
-Regen and Reflect today; limit breaks and summons are planned. Leveling stays pure Skyrim: skills and perk trees.
+A multiplayer game for *The Rings of Tristinwold*. It runs on its own, as a **standalone Godot 4 game**
+that needs no copy of Skyrim. A Skyrim add-on is the second way to play. Final Fantasy-style mechanics
+come along: Haste, Protect, Shell, Regen, Reflect and limit breaks today, with summons planned. Leveling
+works like Skyrim's: skills and perk trees, no sphere grid.
 
 | Part | Status |
 |---|---|
+| **The game** (`game/`, Godot 4 .NET) | Playable slice: the three-ring city of Tristinwold built from simple shapes, sword, spells, limit break, Tong lairs, nemeses that come back, the shared-world board. A scripted headless test plays it against the real server. Open/CC0 art to come. |
+| **Combat rules** (`src/Tristinwold.Gameplay`) | Built and tested: health/magicka/stamina, Skyrim-style armor, resistances, auto-statuses, the limit gauge, the bestiary, fight tracking. |
 | **Nemesis rules** (`src/Tristinwold.Nemesis`) | Built and tested. Uses Skyrim actor kinds, actor values and damage types. |
 | **Shared world server + Vann** (`src/Tristinwold.Shared`, `tools/Tristinwold.Server`) | Built and tested end to end. Game-agnostic. |
 | **The world** (`world/world.json`) | Nine reworked cities with their own names, places, stories and contracts; characters moved between them. |
 | **Tristinwold.esp builder** (`skyrim/esp-builder`) | Built and tested against a stand-in Skyrim.esm. Renames every city's places in game and moves characters. |
 | **Skyrim add-on** (`skyrim/plugin`, a SkyrimPlatform plugin) | Built: fights, nemeses, Vann's hunts, contract board, dead drops, F10 window. Tested against the real server in a simulated game; not yet run in Skyrim. |
-| **Story, character creator, Final Fantasy mechanics** | Planned, on Skyrim. |
+| **Story, character creator, summons, co-op inside a company** | Planned. |
+
+## Play without Skyrim (the Godot game)
+
+You need [Godot 4.7 .NET](https://godotengine.org/download) and the .NET 10 SDK. Start the server
+(see *Shared world* below), then each company runs:
+
+```
+godot --path game -- --server 192.168.1.20:7777 --company Joe --password secret
+```
+
+Leave out `--server` to use `127.0.0.1:7777`. Pass `--server off` to play alone. You can also open
+`game/project.godot` in the Godot editor and press Play.
+
+| Key | Does |
+|---|---|
+| WASD, Space, Shift | move, jump, sprint (sprinting uses stamina) |
+| Mouse | look |
+| Left / right mouse | sword / spell |
+| Q | switch spell between fire, frost and shock |
+| R | limit break, once the gold bar is full |
+| T | rest (the world moves on) |
+| F10 | the shared world: contract board, companies, nemeses, chronicle and chat |
+
+You start outside the Gallows Perch, in the outer ring. Thugs work the docks, skeevers infest the Warrens,
+the Lantern Boys keep their den, a draugr and a sea-wraith haunt the Drowned Chapel, and the Drowned Hand
+hold the Tong sea-caves. A thug who kills you remembers it. Next time it comes back
+named, stronger and taunting, and Vann may send it hunting for you. Fall, and you wake at the Gallows Perch.
+
+Self-test (headless, exits 0 on success):
+
+```
+godot --headless --path game -- --selftest --server off                       # combat only
+godot --headless --path game -- --selftest --server 127.0.0.1:7777 --company Joe   # plus a nemesis returning
+```
+
+## Play in Skyrim (optional)
 
 You need your own copy of Skyrim Special Edition on PC. Co-op runs on
 [Skyrim Together Reborn](https://www.nexusmods.com/skyrimspecialedition/mods/69993); a solo player
@@ -217,7 +256,8 @@ See "Install in Skyrim" above. The add-on talks to the server's HTTP port (7778 
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download). Works on Windows or Linux:
 
 ```
-dotnet test                              # rules, server, HTTP gateway
+dotnet test                              # combat, nemesis rules, server, HTTP gateway
+cd game && dotnet build && godot --headless --path . -- --selftest --server off   # the Godot game
 cd skyrim/plugin && npm install && npm test && npx tsc --noEmit   # add-on logic and types
 ```
 

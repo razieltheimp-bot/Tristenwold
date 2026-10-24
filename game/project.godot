@@ -1,0 +1,17 @@
+; Tristinwold: the standalone game (Godot 4.7, C#).
+config_version=5
+
+[application]
+config/name="Tristinwold"
+config/description="The Rings of Tristinwold: a nemesis-haunted city shared by every company."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7", "C#", "Forward Plus")
+
+[dotnet]
+project/assembly_name="Tristinwold.Game"
+
+[physics]
+common/physics_ticks_per_second=60
+
+[rendering]
+anti_aliasing/quality/msaa_3d=2
