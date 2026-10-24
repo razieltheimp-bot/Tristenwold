@@ -150,6 +150,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     Built Build(Settlement s)
     {
+        _lots.Clear(); // plots are counted per settlement
         var root = new Node3D { Name = s.Name.Replace(" ", "_") + "_" + Math.Abs(WorldGen.StableHash(s.Id) % 10000) };
         AddChild(root);
         var b = new Built { Site = s, Root = root };
@@ -217,10 +218,23 @@ public partial class Places(Main main, WorldGen world) : Node3D
     Node3D Prop(Node3D parent, Settlement s, string path, double dx, double dz, float scale, float yaw = 0, bool solid = true) =>
         Models.Place(parent, path, Ground(s.X + dx, s.Z + dz), scale, yaw, solid);
 
-    Node3D Building(Node3D parent, Settlement s, string kind, string colour, double dx, double dz, float yaw, float scale = 7.5f, string? name = null)
+    readonly List<(Vector2 At, float Room)> _lots = [];
+
+    /// <summary>
+    /// A generated building at an offset from the settlement's centre, front door towards the centre.
+    /// Returns null (and builds nothing) if another building already stands there.
+    /// </summary>
+    Node3D? Building(Node3D parent, Settlement s, string kind, string colour, double dx, double dz, float yaw, float scale = 7.5f, string? name = null)
     {
-        var b = Prop(parent, s, Models.Building(kind, colour), dx, dz, scale, yaw);
-        if (name is not null) Label(parent, b.Position + new Vector3(0, Models.Bounds((Node3D)b.GetChild(0)).End.Y + 2.5f, 0), name, 0.02f);
+        kind = Buildings.KindFor(kind);
+        var at = new Vector2((float)(s.X + dx), (float)(s.Z + dz));
+        var room = kind switch { "keep" => 16f, "church" => 12f, "longhall" or "tavern" or "barn" => 8f, "well" => 2.5f, _ => 6f };
+        if (_lots.Any(l => l.At.DistanceTo(at) < l.Room + room)) return null;
+        _lots.Add((at, room));
+        var facing = dx * dx + dz * dz > 1 ? Mathf.Atan2(-(float)dx, -(float)dz) : yaw;
+        var size = kind == "keep" ? (s.Kind == SettlementKind.City ? 1f : 0.82f) : 1f;
+        var b = Buildings.Place(parent, kind, Ground(s.X + dx, s.Z + dz), facing, (int)(WorldGen.StableHash(s.Id) % 1000) + _lots.Count, Buildings.RoofFor(colour), size);
+        if (name is not null) Label(parent, b.Position + new Vector3(0, Buildings.HeightOf(b) + 2.5f, 0), name, 0.02f);
         return b;
     }
 
@@ -253,24 +267,28 @@ public partial class Places(Main main, WorldGen world) : Node3D
         for (var i = 0; i < count; i++)
         {
             var a = (i + 0.5) / count * Mathf.Tau;
-            Prop(parent, s, "halloween/post_lantern.gltf", Math.Cos(a) * s.Radius * 0.35, Math.Sin(a) * s.Radius * 0.35, 2.2f, solid: false);
+            Buildings.Place(parent, "lantern", Ground(s.X + Math.Cos(a) * s.Radius * 0.35, s.Z + Math.Sin(a) * s.Radius * 0.35), (float)a, i);
         }
     }
 
     void Town(Node3D parent, Settlement s, Rng rng, string colour)
     {
-        // A ring of castle wall with a gate on each side.
+        // A ring of stone wall with a gatehouse on each side.
         var r = (float)s.Radius;
-        var scale = s.Kind == SettlementKind.City ? 5f : 4f;
-        var count = (int)Math.Ceiling(Mathf.Tau * r / (2 * scale));
+        var wall = s.Kind == SettlementKind.City ? "wall" : "wall_low";
+        var length = (wall == "wall" ? 10 : 8) * 0.96f;
+        var count = (int)Math.Ceiling(Mathf.Tau * r / length);
+        var gap = 7.5f / r; // half the gatehouse's width, as an angle
         for (var i = 0; i < count; i++)
         {
             var a = i * Mathf.Tau / count;
-            var gate = Enumerable.Range(0, 4).Any(g => Math.Abs(Mathf.Wrap(a - g * Mathf.Pi / 2, -Mathf.Pi, Mathf.Pi)) < Mathf.Pi / count);
-            if (gate && i % 1 == 0 && Enumerable.Range(0, 4).Any(g => Math.Abs(Mathf.Wrap(a - g * Mathf.Pi / 2, -Mathf.Pi, Mathf.Pi)) < 0.5f * Mathf.Tau / count))
-                Prop(parent, s, "medieval/neutral/wall_straight_gate.gltf", Math.Cos(a) * r, Math.Sin(a) * r, scale * 1.02f, -a - Mathf.Pi / 2, solid: false);
-            else if (!gate)
-                Prop(parent, s, "medieval/neutral/wall_straight.gltf", Math.Cos(a) * r, Math.Sin(a) * r, scale * 1.02f, -a - Mathf.Pi / 2);
+            if (Enumerable.Range(0, 4).Any(g => Math.Abs(Mathf.Wrap(a - g * Mathf.Pi / 2, -Mathf.Pi, Mathf.Pi)) < gap)) continue;
+            Buildings.Place(parent, wall, Ground(s.X + Math.Cos(a) * r, s.Z + Math.Sin(a) * r), -a - Mathf.Pi / 2, 0);
+        }
+        for (var g = 0; g < 4; g++)
+        {
+            var a = g * Mathf.Pi / 2;
+            Buildings.Place(parent, "gate", Ground(s.X + Math.Cos(a) * r, s.Z + Math.Sin(a) * r), Mathf.Atan2(Mathf.Cos(a), Mathf.Sin(a)), 0);
         }
         // The seat of power in the middle, the named places around the square, and streets of houses.
         if (s.Places.Count > 0) Building(parent, s, "castle", colour, 0, 0, (float)rng.NextDouble() * Mathf.Tau, s.Kind == SettlementKind.City ? 6.5f : 5f, s.Places[0]);
@@ -286,7 +304,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
             var a = rng.NextDouble() * Mathf.Tau;
             if (Enumerable.Range(0, 4).Any(g => Math.Abs(Mathf.Wrap((float)a - g * Mathf.Pi / 2, -Mathf.Pi, Mathf.Pi)) < 0.22f)) continue; // keep the gate roads clear
             var d = r * (0.56 + rng.NextDouble() * 0.3);
-            Building(parent, s, rng.Pick(["home_A", "home_A", "home_B", "blacksmith", "lumbermill", "well"]), colour, Math.Cos(a) * d, Math.Sin(a) * d, -(float)a + Mathf.Pi / 2, 6.5f);
+            Building(parent, s, rng.Pick(["house", "house", "house", "cottage", "smithy", "barn", "tavern"]), colour, Math.Cos(a) * d, Math.Sin(a) * d, -(float)a + Mathf.Pi / 2, 6.5f);
             placed++;
         }
         for (var g = 0; g < 4; g++)
@@ -297,7 +315,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     void Hamlet(Node3D parent, Settlement s, Rng rng, string colour)
     {
-        Ring(parent, s, rng, colour, 4 + rng.Next(4), 0.6, 0.9, ["home_A", "home_A", "home_B", "lumbermill"]);
+        Ring(parent, s, rng, colour, 4 + rng.Next(4), 0.6, 0.9, ["cottage", "cottage", "house", "barn"]);
         Building(parent, s, "well", colour, 0, 0, 0, 5);
         Clutter(parent, s, rng, 5, 0.3);
         Lanterns(parent, s, rng, 3);
@@ -305,8 +323,9 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     void Farm(Node3D parent, Settlement s, Rng rng, string colour)
     {
-        Building(parent, s, "home_A", colour, 0, 0, 0.2f, 7);
-        Building(parent, s, "windmill", colour, -10, 4, 0.9f, 7);
+        Building(parent, s, "cottage", colour, 0, 0, 0.2f, 7);
+        Building(parent, s, "windmill", colour, -12, 4, 0.9f, 7);
+        Building(parent, s, "barn", colour, 6, -11, 0.4f, 7);
         Prop(parent, s, "medieval/neutral/building_grain.gltf", 11, -7, 7, 0.3f, solid: false);
         for (var i = 0; i < 6; i++)
             Prop(parent, s, "medieval/neutral/fence_wood_straight.gltf", 4 + i * 3.6, 2, 1.8f, 0);
@@ -316,7 +335,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
     void Inn(Node3D parent, Settlement s, Rng rng, string colour)
     {
         Building(parent, s, "tavern", colour, 0, 0, 0.3f, 9, s.Name);
-        Building(parent, s, "home_B", colour, 11, 5, 1.2f, 5.5f);
+        Building(parent, s, "barn", colour, 14, 3, 1.2f, 5.5f); // the stable
         Prop(parent, s, "dungeon/table_long_decorated_A.glb", -4, 8, 0.6f, 0.3f);
         Prop(parent, s, "dungeon/keg.glb", -8, 6, 0.6f);
         Clutter(parent, s, rng, 4, 0.5);
@@ -337,8 +356,8 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     void Mine(Node3D parent, Settlement s, Rng rng, string colour)
     {
-        Building(parent, s, "mine", colour, -s.Radius * 0.4, 0, 1.57f, 9);
-        Building(parent, s, "home_A", colour, s.Radius * 0.5, s.Radius * 0.3, -0.6f, 6.5f);
+        Building(parent, s, "mine", colour, 0, -s.Radius * 0.1, 0, 9);
+        Building(parent, s, "cottage", colour, s.Radius * 0.6, s.Radius * 0.4, -0.6f, 6.5f);
         Prop(parent, s, "medieval/props/resource_stone.gltf", 4, -6, 6);
         Prop(parent, s, "medieval/props/wheelbarrow.gltf", 2, 5, 5, 0.8f);
         Clutter(parent, s, rng, 3, 0.4);

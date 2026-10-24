@@ -61,6 +61,10 @@ public partial class Shots(Main main, string dir, bool quick = false) : Node
     async Task Quick()
     {
         var (p, w) = (main.PlayerNode, main.World);
+        p.Face(new Vector3(0, 0, 0));
+        await Shot("q0-start");
+        p.Face(City.GallowsPerch);
+        await Shot("q0-gallows-perch");
         await Go(new Vector3(132, 0, 0), 90);
         p.GlobalPosition = new Vector3(132, 1, 0); // out on the middle pier
         await Frames(30);

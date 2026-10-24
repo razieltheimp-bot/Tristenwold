@@ -39,6 +39,7 @@ public partial class Main : Node3D
         ParseArgs();
         if (Mobile) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.SensorLandscape); // landscape from the first frame
         if (_args.TryGetValue("portraits", out var folder)) { _ = Portraits(folder); return; }
+        if (_args.TryGetValue("showroom", out var room)) { _ = Showroom(room); return; }
         if (_args.ContainsKey("account") && _args.ContainsKey("server")) { _ = LogInFromCommandLine(); return; }
         var scripted = _args.ContainsKey("selftest") || _args.ContainsKey("shots");
         if (scripted || _args.ContainsKey("server")) { Begin(ChoiceFromArgs()); return; }
@@ -102,6 +103,38 @@ public partial class Main : Node3D
             figure.QueueFree();
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         }
+        GetTree().Quit();
+    }
+
+    /// <summary>Every kind of generated building in a row, photographed: --showroom /some/folder</summary>
+    async Task Showroom(string folder)
+    {
+        City.Build(this);
+        Graphics.Apply(Graphics.Quality.High, GetViewport(), City.Sky, City.Sun, new Terrain(_world));
+        AddChild(new MeshInstance3D { Mesh = new PlaneMesh { Size = new Vector2(400, 400) }, Position = new Vector3(0, -0.02f, 600), MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#6b6a4a") } });
+        string[] kinds = ["house", "house", "cottage", "tavern", "longhall", "barn", "smithy", "market", "tower", "church", "keep", "windmill", "well", "gate", "lighthouse", "ruin"];
+        var x = -100f;
+        var spots = new List<(string, float)>();
+        for (var i = 0; i < kinds.Length; i++)
+        {
+            var roof = i % 3 == 0 ? Surface.ClayTile : i % 3 == 1 ? Surface.Slate : Surface.Shingle;
+            Buildings.Place(this, kinds[i], new Vector3(x, 0, 600), 0, i, roof);
+            spots.Add((kinds[i] + i, x));
+            x += kinds[i] is "keep" or "church" ? 30 : 18;
+        }
+        var cam = new Camera3D { Fov = 55, Far = 2000 };
+        AddChild(cam);
+        cam.MakeCurrent();
+        async Task Shoot(string name, Vector3 from, Vector3 at)
+        {
+            cam.Position = from;
+            cam.LookAt(at, Vector3.Up);
+            for (var i = 0; i < 30; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            GetViewport().GetTexture().GetImage().SavePng($"{folder}/{name}.png");
+        }
+        foreach (var (name, bx) in spots)
+            await Shoot(name, new Vector3(bx + 9, 5, 616), new Vector3(bx, 4, 600));
+        await Shoot("street", new Vector3(-118, 3, 610), new Vector3(-40, 5, 600));
         GetTree().Quit();
     }
 
@@ -481,7 +514,7 @@ public partial class Main : Node3D
         Townsfolk(new Npc("tristinwold/corva", "Mother Corva", Sex.Female, 0, "keeper of the Gallows Perch", "city:tristinwold", "Tristinwold",
             "Nobody remembers the Gallows Perch without Mother Corva behind the bar. Every contract on the board passes under her eye, and most of the ones that never reach it.",
             ["the Tongs", "gossip"], "dry", "Sit. Drink. The board's on the wall, and the Tongs are under the floor.",
-            City.GallowsPerch.X - 7, City.GallowsPerch.Z + 6));
+            City.GallowsPerch.X - 2.5, City.GallowsPerch.Z + 11)); // by the door
         Townsfolk(new Npc("tristinwold/ilse", "Sister Ilse Varrow", Sex.Female, 0, "archivist of the Magi", "city:tristinwold", "Tristinwold",
             "Sister Ilse keeps the Magi Archive and its locked shelves. She answers questions with questions, and remembers every answer you give.",
             ["the Magi", "maps"], "wary", "The Archive is not a library. What are you looking for?", -34, 6));
