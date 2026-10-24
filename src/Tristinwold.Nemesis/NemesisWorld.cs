@@ -131,7 +131,8 @@ public sealed class NemesisWorld
             if (t.AutoStatuses is not null)
                 autos.AddRange(t.AutoStatuses.Where(s => !autos.Contains(s)));
         }
-        return new BattleModifiers(DisplayName(n), stats, affinities, autos);
+        var victories = n.Players.Values.Select(r => r.TimesKilledThem).DefaultIfEmpty(0).Max();
+        return new BattleModifiers(DisplayName(n), stats, affinities, autos, n.Rank, victories);
     }
 
     static Affinity Stronger(Affinity a, Affinity b) => (Affinity)Math.Max((int)a, (int)b);

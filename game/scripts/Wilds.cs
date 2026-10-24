@@ -9,50 +9,83 @@ namespace Tristinwold.Game;
 /// Brings the wilds to life around the player: the herds, packs and lone beasts that
 /// <see cref="Wildlife"/> places in the land appear as you come near and are put away behind you.
 /// A herd you wipe out stays gone for a while (ten minutes) before others move into its range.
+/// It also brings out the dragons: each ancient in its lair with its giants, and the warbands of the
+/// dragon wars being fought this season (see <see cref="Dragons"/>).
 /// </summary>
 public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
 {
     const double Near = 230, Far = 330, Regrow = 600;
 
+    /// <summary>Dragons are seen from much further off, and their lairs and wars stay put longer.</summary>
+    const double DragonNear = 600, DragonFar = 900, AncientRegrow = 3600;
+
     readonly Dictionary<string, List<Enemy>> _herds = [];
     readonly Dictionary<string, Hawk> _hawks = [];
     readonly Dictionary<string, double> _gone = [];
+    string? _territory;
+    readonly HashSet<string> _warsSeen = [];
+
+    /// <summary>The real time, which decides which dragon wars are being fought (tests set it).</summary>
+    public Func<DateTime> Now { get; set; } = () => DateTime.UtcNow;
 
     /// <summary>How many wild creatures are about right now (for tests and the curious).</summary>
     public int Count => _herds.Values.Sum(l => l.Count(e => IsInstanceValid(e) && e.State != EnemyState.Dead));
 
     public IEnumerable<string> Kinds => _herds.Values.SelectMany(l => l).Where(IsInstanceValid).Select(e => e.Kind.Id).Distinct();
 
+    public IEnumerable<Enemy> Creatures => _herds.Values.SelectMany(l => l).Where(e => IsInstanceValid(e));
+
     public void Update(Vector3 player, double clock)
     {
         foreach (var (id, members) in _herds.ToList())
         {
             if (members.All(e => !IsInstanceValid(e) || e.State == EnemyState.Dead) && !_gone.ContainsKey(id)) _gone[id] = clock;
-            var anyNear = members.Any(e => IsInstanceValid(e) && e.GlobalPosition.DistanceTo(player) < Far);
+            var far = members.Any(e => IsInstanceValid(e) && e.IsDragon) ? DragonFar : Far;
+            var anyNear = members.Any(e => IsInstanceValid(e) && e.GlobalPosition.DistanceTo(player) < far);
             if (anyNear) continue;
             foreach (var e in members.Where(IsInstanceValid)) e.QueueFree();
             _herds.Remove(id);
             if (_hawks.Remove(id, out var hawk) && IsInstanceValid(hawk)) hawk.QueueFree();
         }
 
-        foreach (var herd in Wildlife.Near(world, player.X, player.Z, Near))
+        foreach (var herd in Wildlife.Near(world, player.X, player.Z, Near)) Bring(herd, clock, hawks: true);
+
+        // Ancient dragons in their lairs, and the dragon wars of this season.
+        foreach (var ancient in Dragons.Near(world, player.X, player.Z, DragonNear))
+            foreach (var herd in Dragons.Lair(ancient)) Bring(herd, clock, regrow: AncientRegrow);
+        foreach (var war in Dragons.WarsNear(world, Now(), player.X, player.Z, DragonNear + 300))
         {
-            if (_herds.ContainsKey(herd.Id)) continue;
-            if (_gone.TryGetValue(herd.Id, out var when))
-            {
-                if (clock - when < Regrow) continue;
-                _gone.Remove(herd.Id);
-            }
-            var centre = new Vector3((float)herd.X, 0, (float)herd.Z);
-            if (!terrain.HasGround(centre)) continue; // the land isn't built there yet
-            _herds[herd.Id] = Spawn(herd);
-            // A hawk wheels over about one stretch of land in three.
-            if (WorldGen.StableHash(herd.Id) % 3 == 0)
-            {
-                var hawk = Hawk.Create(centre with { Y = City.FloorAt(centre) }, WorldGen.StableHash(herd.Id));
-                AddChild(hawk);
-                _hawks[herd.Id] = hawk;
-            }
+            if (_warsSeen.Add(war.Id)) main.HudNode.Toast($"Dragons fill the sky: {war.Story}", 10);
+            foreach (var herd in Dragons.Warbands(war))
+                if (herd.DistanceTo(player.X, player.Z) < DragonNear) Bring(herd, clock, regrow: AncientRegrow);
+        }
+
+        // Crossing into an ancient's land.
+        var lord = Dragons.TerritoryAt(world, player.X, player.Z);
+        if (lord?.Id != _territory)
+        {
+            _territory = lord?.Id;
+            if (lord is not null) main.HudNode.Toast($"You enter the lands of {lord.FullName}, {lord.What}.", 8);
+        }
+    }
+
+    void Bring(Herd herd, double clock, bool hawks = false, double regrow = Regrow)
+    {
+        if (_herds.ContainsKey(herd.Id)) return;
+        if (_gone.TryGetValue(herd.Id, out var when))
+        {
+            if (clock - when < regrow) return;
+            _gone.Remove(herd.Id);
+        }
+        var centre = new Vector3((float)herd.X, 0, (float)herd.Z);
+        if (!terrain.HasGround(centre)) return; // the land isn't built there yet
+        _herds[herd.Id] = Spawn(herd);
+        // A hawk wheels over about one stretch of land in three.
+        if (hawks && WorldGen.StableHash(herd.Id) % 3 == 0)
+        {
+            var hawk = Hawk.Create(centre with { Y = City.FloorAt(centre) }, WorldGen.StableHash(herd.Id));
+            AddChild(hawk);
+            _hawks[herd.Id] = hawk;
         }
     }
 
@@ -68,8 +101,10 @@ public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
             var r = rng.NextDouble() * herd.Roam * 0.5;
             var at = new Vector3((float)(herd.X + Math.Cos(a) * r), 0, (float)(herd.Z + Math.Sin(a) * r));
             if (world.Height(at.X, at.Z) < WorldGen.WaterLevel + 0.2) at = new Vector3((float)herd.X, 0, (float)herd.Z);
-            var e = Enemy.Create(kind, at with { Y = City.FloorAt(at) + 0.5f }, danger);
+            var e = Enemy.Create(kind, at with { Y = City.FloorAt(at) + 0.5f }, danger, size: herd.Size);
             e.Roam = (float)herd.Roam;
+            (e.Faction, e.Foe) = (herd.Faction, herd.Foe);
+            if (herd.Name is { } name) { e.Stats.Name = name; e.RefreshPlate(); }
             e.RotationDegrees = new Vector3(0, (float)(rng.NextDouble() * 360), 0);
             main.AddEnemy(e);
             list.Add(e);

@@ -33,11 +33,15 @@ public sealed record BattleReport(
 public sealed record FormationSlot(int Slot, string Kind, string Species, string? BaseForm = null);
 
 /// <summary>Everything the game layer needs to turn an ordinary enemy into a nemesis.</summary>
+/// <param name="Rank">The nemesis's place in the hierarchy, so the game can show it (a dragon grows a size with each rank).</param>
+/// <param name="Victories">How many times it has beaten a party (a dragon grows a size each time, too).</param>
 public sealed record BattleModifiers(
     string DisplayName,
     IReadOnlyDictionary<Stat, double> StatMultipliers,
     IReadOnlyDictionary<DamageKind, Affinity> Affinities,
-    IReadOnlyList<AutoStatus> AutoStatuses)
+    IReadOnlyList<AutoStatus> AutoStatuses,
+    Rank Rank = Rank.Grunt,
+    int Victories = 0)
 {
     /// <summary>Applies a multiplier to an actor value, kept inside what Skyrim plays well with.</summary>
     public double Apply(Stat stat, double baseValue)

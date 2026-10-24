@@ -506,11 +506,22 @@ public partial class Main : Node3D
         var place = _world.SettlementsNear(npc.X, npc.Z, 3000)
             .Where(s => !_explored.Discovered.Contains(s.Id) && !_explored.Rumored.Contains(s.Id))
             .OrderBy(s => s.DistanceTo(npc.X, npc.Z) * (s.IsCity ? 0.5 : 1)).FirstOrDefault();
-        if (place is null) return "Nothing you won't have heard already.";
+        if (place is null) return "Nothing you won't have heard already." + DragonTalk(npc);
         _explored.Rumored.Add(place.Id);
         _hud.Toast($"{place.Name} is marked on your map.");
         var story = place.Story.Split(". ")[0].TrimEnd('.');
-        return $"There's {place.What} called {place.Name}, {Direction(new Vector3((float)npc.X, 0, (float)npc.Z), (place.X, place.Z))} of here. {story}.";
+        return $"There's {place.What} called {place.Name}, {Direction(new Vector3((float)npc.X, 0, (float)npc.Z), (place.X, place.Z))} of here. {story}." + DragonTalk(npc);
+    }
+
+    /// <summary>What people say about the dragons: a war in the sky if there is one, or the ancient whose land is nearest.</summary>
+    string DragonTalk(Npc npc)
+    {
+        var here = new Vector3((float)npc.X, 0, (float)npc.Z);
+        if (Dragons.WarsNear(_world, _wilds.Now(), npc.X, npc.Z, 8000).FirstOrDefault() is { } war)
+            return $" And keep your head down: {war.Story} The fighting is {Direction(here, (war.FrontX, war.FrontZ))} of here.";
+        if (Dragons.Near(_world, npc.X, npc.Z, 9000).MinBy(a => a.DistanceTo(npc.X, npc.Z)) is { } a)
+            return $" They say {a.FullName}, {a.What}, rules the land {Direction(here, (a.X, a.Z))} of here, {a.DistanceTo(npc.X, npc.Z) / 1000:0} km off.";
+        return "";
     }
 
     public void Accept(Quest quest)

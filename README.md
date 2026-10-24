@@ -162,6 +162,14 @@ keeps making new cities as far as you care to walk, each with its own name, epit
 - **Wilderness settlements** sit between the cities: hamlets, farmsteads, hunting camps, roadside inns,
   shrines, mines and Ashborn refuges. There are also bandit camps, barrows full of draugr, and beasts' dens
   (wolves, bears, trolls, spriggans).
+- **Dragons.** Ten colours: red, blue, green, black and white (chromatic: they hunt people) and gold, silver,
+  bronze, copper and brass (metallic: they leave you be unless you strike first). Out in the wilds, ancient dragons
+  hold great territories, each with a name and title ("Korvegarde the Quiet Guardian, an ancient silver dragon"),
+  a lair guarded by giants, and smaller dragons of their colour roaming their land. You're told when you cross
+  into one's land, and villagers gossip about the nearest. Every three hours (real time, the same for every
+  company) neighbouring ancients may go to war, chromatic against metallic most often, and their dragons fight at
+  the border like warring tribes, sometimes led by the ancients themselves. Dragons come in four sizes (normal,
+  large, giant, ancient), and a dragon nemesis grows a size each time it beats a party or rises a rank.
 - **Wildlife.** The land between them is lived in. Deer herds graze and foxes prowl almost everywhere,
   and they bolt when you get close; hawks wheel overhead. Away from home, wolf packs and wild boars roam the
   woods, goblin bands the woods and crags, bears and trolls the crags,

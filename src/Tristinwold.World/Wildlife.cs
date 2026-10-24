@@ -6,7 +6,12 @@ namespace Tristinwold.World;
 /// A herd, pack or lone beast living out in the wilds: what it is, where it ranges, and how many.
 /// Ids are stable, so a pack you thinned is the same pack when you come back.
 /// </summary>
-public sealed record Herd(string Id, string KindId, double X, double Z, int Count, double Roam)
+/// <remarks>
+/// Dragons also carry their size, the ancient they follow (<paramref name="Faction"/>), the ancient they're at
+/// war with (<paramref name="Foe"/>), and for an ancient, its name.
+/// </remarks>
+public sealed record Herd(string Id, string KindId, double X, double Z, int Count, double Roam,
+    DragonSize Size = DragonSize.Normal, string? Faction = null, string? Foe = null, string? Name = null)
 {
     public double DistanceTo(double x, double z) => Math.Sqrt((X - x) * (X - x) + (Z - z) * (Z - z));
 }
@@ -15,8 +20,8 @@ public sealed record Herd(string Id, string KindId, double X, double Z, int Coun
 /// Life between the settlements, worked out from the seed like everything else, so every company
 /// in the shared world meets the same wolves in the same woods. The land is cut into cells; most
 /// hold something. Deer and foxes graze everywhere and run from you; the further from Tristinwold
-/// (the higher the danger), the more of the land belongs to wolves, boars, goblins, bears and trolls,
-/// and in the far north, very rarely, a frost dragon. Near home
+/// (the higher the danger), the more of the land belongs to wolves, boars, goblins, bears and trolls;
+/// and in an ancient dragon's territory, to its dragons (see <see cref="Dragons"/>). Near home
 /// only the harmless and the merely annoying (skeevers, mudcrabs) are about.
 /// </summary>
 public static class Wildlife
@@ -28,9 +33,6 @@ public static class Wildlife
 
     /// <summary>Animals that run rather than fight.</summary>
     public static readonly IReadOnlySet<string> Timid = new HashSet<string> { "deer", "fox" };
-
-    /// <summary>Dragons only live in the far north, and rarely even there.</summary>
-    static double Wyrm(double danger) => danger < 2.2 ? 0 : 0.06 * danger;
 
     public static IEnumerable<Herd> Near(WorldGen world, double x, double z, double radius)
     {
@@ -53,6 +55,9 @@ public static class Wildlife
         // Settlements keep their own: no wild animals wander through a town or a bandit camp.
         if (world.SettlementsNear(x, z, 60).Any(s => s.DistanceTo(x, z) < s.Radius + (s.IsCity ? 90 : 40))) return null;
 
+        // In an ancient dragon's land, some stretches belong to its kin rather than to beasts.
+        if (Dragons.Flight(world, cx, cz, x, z) is { } flight) return flight;
+
         var biome = world.BiomeAt(x, z, h);
         var danger = WorldGen.Danger(x, z);
         var safe = Math.Sqrt(x * x + z * z) < SafeRadius;
@@ -65,8 +70,8 @@ public static class Wildlife
             Biome.PineForest => [("deer", 3.5), ("fox", 1.5), ("wolf", 1.1 * d), ("bear", 0.6 * d), ("boar", 0.5 * d), ("goblin", 0.4 * d)],
             Biome.Marsh => [("goblin", 0.3 * d), ("skeever", 3), ("mudcrab", near ? 3 : 0.5), ("deer", 1), ("wolf", 0.5 * d)],
             Biome.Tundra => [("deer", 2), ("fox", 1), ("wolf", 2 * d), ("ice_wolf", 1 * d), ("bear", 0.5 * d)],
-            Biome.Snowfield => [("ice_wolf", 1.4 * Math.Max(d, 0.1)), ("frost_troll", 0.5 * d), ("deer", 0.8), ("fox", 0.8), ("dragon", Wyrm(danger))],
-            _ => [("bear", 1.5 * Math.Max(d, 0.1)), ("frost_troll", 1 * d), ("wolf", 1.5 * d), ("deer", 0.6), ("goblin", 0.6 * d), ("dragon", Wyrm(danger))],
+            Biome.Snowfield => [("ice_wolf", 1.4 * Math.Max(d, 0.1)), ("frost_troll", 0.5 * d), ("deer", 0.8), ("fox", 0.8)],
+            _ => [("bear", 1.5 * Math.Max(d, 0.1)), ("frost_troll", 1 * d), ("wolf", 1.5 * d), ("deer", 0.6), ("goblin", 0.6 * d)],
         };
         if (near && biome != Biome.Snowfield) choices = [.. choices, ("mudcrab", 1.5)];
         choices = [.. choices.Where(c => c.Item2 > 0)];
@@ -86,7 +91,7 @@ public static class Wildlife
             "goblin" => 2 + rng.Next(3) + extra,
             _ => 1, // bears and trolls keep to themselves
         };
-        var roam = kind switch { "dragon" => 30, "deer" => 22, "fox" => 18, "wolf" or "ice_wolf" => 16, "mudcrab" => 6, _ => 10 };
+        var roam = kind switch { "deer" => 22, "fox" => 18, "wolf" or "ice_wolf" => 16, "mudcrab" => 6, _ => 10 };
         return new Herd($"wild_{cx}_{cz}", kind, x, z, count, roam);
     }
 }

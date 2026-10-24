@@ -211,7 +211,7 @@ public static class Quests
     static string Plural(string kindId) => kindId switch
     {
         "bandit" => "bandits", "draugr" => "draugr", "wolf" => "wolves", "ice_wolf" => "ice wolves", "bear" => "bears",
-        "frost_troll" => "trolls", "boar" => "boars", "goblin" => "goblins", "dragon" => "dragons", "skeever" => "skeevers", "mudcrab" => "mudcrabs", "spriggan" => "spriggans",
+        "frost_troll" => "trolls", "boar" => "boars", "goblin" => "goblins", "skeever" => "skeevers", "mudcrab" => "mudcrabs", "spriggan" => "spriggans",
         _ => Bestiary.Get(kindId).Name.ToLowerInvariant() + "s",
     };
 

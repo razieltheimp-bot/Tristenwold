@@ -4,7 +4,7 @@ namespace Tristinwold.Gameplay;
 
 /// <summary>
 /// A kind of enemy (or quarry): its base numbers, how it fights and what it looks like. A timid
-/// kind runs from people rather than fighting them.
+/// kind runs from people rather than fighting them; a wary one leaves them be unless attacked.
 /// </summary>
 public sealed record EnemyKind(
     string Id,
@@ -18,13 +18,16 @@ public sealed record EnemyKind(
     DamageKind DamageKind,
     string Colour,
     double Height,
-    bool Timid = false)
+    bool Timid = false,
+    bool Wary = false)
 {
     /// <summary>A fresh fighter. <paramref name="danger"/> grows with distance from Tristinwold: 1 at home.</summary>
-    public Combatant NewCombatant(double danger = 1)
+    /// <param name="toughness">Extra health (a dragon's size).</param>
+    /// <param name="might">Extra damage.</param>
+    public Combatant NewCombatant(double danger = 1, double toughness = 1, double might = 1)
     {
         var scale = Math.Pow(Math.Max(1, danger), 0.8);
-        return new(Name, Math.Round(Health * scale), magicka: 40, stamina: 100, armor: Armor * Math.Sqrt(scale)) { DamageMult = scale };
+        return new(Name, Math.Round(Health * scale * toughness), magicka: 40, stamina: 100, armor: Armor * Math.Sqrt(scale)) { DamageMult = scale * might };
     }
 }
 
@@ -52,12 +55,23 @@ public static class Bestiary
         new("mudcrab", "Mudcrab", 45, 7, 3.2, 120, 1.4, 1.2, DamageKind.Physical, "#7a6a4a", 0.6),
         new("spriggan", "Spriggan", 140, 14, 4.5, 30, 2.0, 1.4, DamageKind.Poison, "#8a7a3a", 2.0),
         new("goblin", "Goblin", 75, 9, 5.2, 30, 1.6, 1.0, DamageKind.Physical, "#6a8a4a", 1.3),
-        new("dragon", "Frost Dragon", 900, 40, 5.5, 200, 3.5, 2.2, DamageKind.Frost, "#8aa0c0", 4.5),
         new("boar", "Wild Boar", 90, 10, 6.0, 30, 1.5, 1.1, DamageKind.Physical, "#4a3a2e", 0.9),
         // Quarry: they bolt when they see you.
         new("deer", "Deer", 50, 4, 8.5, 0, 1.4, 1.2, DamageKind.Physical, "#8a6a48", 1.3, Timid: true),
         new("fox", "Red Fox", 25, 3, 7.5, 0, 1.0, 1.0, DamageKind.Physical, "#c06a30", 0.5, Timid: true),
+        .. DragonKinds(),
     ];
+
+    /// <summary>Dragons of every colour: chromatic ones hunt people; metallic ones are wary and leave them be unless attacked.</summary>
+    static IEnumerable<EnemyKind> DragonKinds() =>
+        new (string Colour, DamageKind Breath, string Hex, bool Metallic)[]
+        {
+            ("Red", DamageKind.Fire, "#a8281c", false), ("Blue", DamageKind.Shock, "#2a4ab0", false),
+            ("Green", DamageKind.Poison, "#2f7a2a", false), ("Black", DamageKind.Poison, "#18181c", false),
+            ("White", DamageKind.Frost, "#dfe6ee", false), ("Gold", DamageKind.Fire, "#d8a030", true),
+            ("Silver", DamageKind.Frost, "#b8bcc4", true), ("Bronze", DamageKind.Shock, "#8c5a2a", true),
+            ("Copper", DamageKind.Poison, "#b86434", true), ("Brass", DamageKind.Fire, "#c09a44", true),
+        }.Select(d => new EnemyKind("dragon_" + d.Colour.ToLowerInvariant(), d.Colour + " Dragon", 600, 30, 5.5, 160, 3.5, 2.0, d.Breath, d.Hex, 4.5, Wary: d.Metallic));
 
     public static EnemyKind Get(string id) => All.FirstOrDefault(k => k.Id == id) ?? All[1];
 }

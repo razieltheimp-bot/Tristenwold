@@ -136,13 +136,19 @@ public abstract partial class Body : Node3D
     /// <summary>A red glow for a nemesis.</summary>
     public abstract void Mark(Color colour);
 
+    /// <summary>A dragon in one of the ten colours, normal-sized (4.5 m); the metallic ones shine.</summary>
+    static Body Dragon(string colour) =>
+        (Body?)Creature.Create("dragon.glb", 4.5f, coat: $"dragons/{colour}.png",
+            metallic: colour is "gold" or "silver" or "bronze" or "copper" or "brass") ?? Beast.Bear();
+
     public static Body For(string look) => look switch
     {
         "skeever" => (Body?)Creature.Create("giant_rat.glb", 0.6f) ?? Beast.Rat(),
         "spriggan" => (Body?)Creature.Create("forest_monster.glb", 2.3f) ?? Figure.Create(look),
         "frost_troll" => (Body?)Creature.Create("troll.glb", 2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
         "goblin" => (Body?)Creature.Create("goblin.glb", 1.3f) ?? Figure.Create(look),
-        "dragon" => (Body?)Creature.Create("dragon.glb", 4.5f) ?? Beast.Bear(),
+        "dragon" => Dragon("white"),
+        _ when look.StartsWith("dragon_") => Dragon(look[7..]),
         "wolf" => (Body?)Creature.Create("wolf.glb", 0.95f) ?? Beast.Wolf(new Color("#5a5650")),
         "ice_wolf" => (Body?)Creature.Create("ice_wolf.glb", 1.0f) ?? Beast.Wolf(new Color("#d8e2ea")),
         "fox" => (Body?)Creature.Create("fox.glb", 0.5f) ?? Beast.Wolf(new Color("#c06a30")),
@@ -508,6 +514,18 @@ public abstract partial class Animal : Body
         return true;
     }
 
+    /// <summary>Paints the model with another texture (a dragon's colour), shiny if metallic.</summary>
+    protected void Coat(string file, bool metallic)
+    {
+        var texture = GD.Load<Texture2D>($"res://assets/creatures/{file}");
+        var material = new StandardMaterial3D
+        {
+            AlbedoTexture = texture, Roughness = metallic ? 0.38f : 0.8f, Metallic = metallic ? 0.75f : 0,
+            MetallicSpecular = metallic ? 0.7f : 0.4f,
+        };
+        foreach (var m in _meshes) m.MaterialOverride = material;
+    }
+
     public override void _Process(double delta)
     {
         Lunge = Mathf.MoveToward(Lunge, 0, (float)delta * 3);
@@ -608,11 +626,14 @@ public partial class Creature : Animal
     string _playing = "";
     double _busy;
 
-    public static Creature? Create(string file, float height, Color? tint = null)
+    /// <param name="coat">A texture (under assets/creatures) to paint it with instead of its own.</param>
+    /// <param name="metallic">Make the coat shine like metal.</param>
+    public static Creature? Create(string file, float height, Color? tint = null, string? coat = null, bool metallic = false)
     {
         var c = new Creature();
         if (!c.Load(file, height)) return null;
         if (tint is { } t) Models.Tint(c.Model, t);
+        if (coat is not null) c.Coat(coat, metallic);
         c._anim = c.Model.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().FirstOrDefault();
         if (c._anim is not null)
             foreach (var name in c._anim.GetAnimationList())

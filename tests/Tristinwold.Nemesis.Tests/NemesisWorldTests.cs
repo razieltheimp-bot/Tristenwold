@@ -226,4 +226,15 @@ public class NemesisWorldTests
             Assert.True(world.DisplayName(n).Length <= 12);
         }
     }
+
+    [Fact]
+    public void Modifiers_tell_the_game_a_nemesis_rank_and_how_often_it_has_won()
+    {
+        var world = new NemesisWorld(9);
+        world.RecordBattle(Report(BattleResult.Defeat, Enemy(0, "dragon_red", "Red Dragon", maxHp: 600)));
+        var dragon = world.Living.Single(n => n.Kind == "dragon_red");
+        var mods = world.ModifiersFor(dragon);
+        Assert.Equal(dragon.Rank, mods.Rank);
+        Assert.Equal(1, mods.Victories);
+    }
 }

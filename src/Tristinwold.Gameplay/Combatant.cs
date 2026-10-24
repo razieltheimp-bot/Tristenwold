@@ -123,6 +123,13 @@ public sealed class Combatant
 
     public void Heal(double amount) => Health = Math.Min(MaxHealth, Health + amount);
 
+    /// <summary>Grows tougher by a factor, keeping the same share of its health (a dragon growing a size).</summary>
+    public void Grow(double factor)
+    {
+        MaxHealth = Math.Round(MaxHealth * factor);
+        Health = Math.Min(MaxHealth, Math.Round(Health * factor));
+    }
+
     /// <summary>Per-frame regeneration: stamina fast, magicka slower, health only with Regen.</summary>
     public void Tick(double seconds, bool inCombat)
     {

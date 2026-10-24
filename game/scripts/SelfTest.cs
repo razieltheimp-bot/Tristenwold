@@ -288,6 +288,42 @@ public partial class SelfTest(Main main) : Node
         Check(main.Area == far.Name || main.Area.Contains(far.Name), $"area: {main.Area}");
         _log.Add($"Explored {main.Explored.Count} cells; {main.TerrainNode.Count} land chunks loaded.");
         p.Stats.Heal(10_000);
+        await DragonsTest();
+    }
+
+    /// <summary>An ancient in its lair, a dragon nemesis growing with its wins, and two flights at war.</summary>
+    async Task DragonsTest()
+    {
+        var (p, w) = (main.PlayerNode, main.World);
+        var lord = Dragons.Near(w, p.GlobalPosition.X, p.GlobalPosition.Z, 20000).MinBy(a => a.DistanceTo(p.GlobalPosition.X, p.GlobalPosition.Z))!;
+        await Teleport(new Vector3((float)lord.X + 220, 0, (float)lord.Z));
+        await Until(() => main.WildsNode.Creatures.Any(e => e.Size == DragonSize.Ancient), 8);
+        var ancient = main.WildsNode.Creatures.FirstOrDefault(e => e.Size == DragonSize.Ancient);
+        Check(ancient is not null && ancient.Stats.Name == lord.FullName && ancient.Figure.Scale.X > 3,
+            $"{lord.FullName}, {lord.What}, waits in its lair ({ancient?.Stats.MaxHealth:0} hp, {ancient?.Figure.Scale.X:0.0}x size)");
+
+        // A dragon nemesis that has beaten the company twice is a giant now.
+        var red = Spawn("dragon_red", p.GlobalPosition + new Vector3(0, 0, 60));
+        var before = red.Stats.MaxHealth;
+        red.MakeNemesis(Guid.NewGuid(), new BattleModifiers("Ashjaw", new Dictionary<Stat, double>(), new Dictionary<DamageKind, Affinity>(), [], Rank.Grunt, Victories: 2), null);
+        Check(red.Size == DragonSize.Giant && red.Stats.MaxHealth > before * 4 && red.Figure.Scale.X > 2,
+            $"a red dragon that beat the company twice grew to a giant ({before:0} to {red.Stats.MaxHealth:0} hp)");
+        red.QueueFree();
+
+        // Find a season when this ancient is at war, and watch the border.
+        DragonWar? war = null;
+        var now = DateTime.UtcNow;
+        for (var i = 0; i < 400 && war is null; i++)
+            war = Dragons.WarsNear(w, now.AddHours(i * Dragons.SeasonHours), lord.X, lord.Z, 15000).FirstOrDefault();
+        if (war is null) { Check(false, "some ancient goes to war within 400 seasons"); return; }
+        main.WildsNode.Now = () => now.AddHours((war.Season - Dragons.SeasonOf(now)) * Dragons.SeasonHours);
+        await Teleport(new Vector3((float)war.FrontX + 160, 0, (float)war.FrontZ + 160));
+        await Until(() => main.WildsNode.Creatures.Any(e => e.Faction == war.A.Id) && main.WildsNode.Creatures.Any(e => e.Faction == war.B.Id), 8);
+        var sides = main.WildsNode.Creatures.Where(e => e.Foe is not null).ToList();
+        await Until(() => sides.Any(e => IsInstanceValid(e) && e.Stats.Health < e.Stats.MaxHealth), 25);
+        var hurt = sides.Count(e => IsInstanceValid(e) && (e.Stats.Health < e.Stats.MaxHealth || e.State == EnemyState.Dead));
+        Check(hurt > 0, $"{war.A.FullName} ({war.A.Colour}) and {war.B.FullName} ({war.B.Colour}) are at war: {sides.Count} dragons at the border, {hurt} wounded");
+        main.WildsNode.Now = () => DateTime.UtcNow;
     }
 
     /// <summary>A logged-in character's progress reaches the server, ready for the next device.</summary>
