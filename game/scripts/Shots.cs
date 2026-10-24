@@ -74,6 +74,21 @@ public partial class Shots(Main main, string dir, bool quick = false) : Node
         await Go(new Vector3((float)village.X, 0, (float)(village.Z + village.Radius + 12)), 120);
         p.Face(new Vector3((float)village.X, 0, (float)village.Z));
         await Shot("q2-village");
+        // The wilds: a deer herd grazing, then a wolf pack, seen from where they haven't noticed you yet.
+        foreach (var (kind, name) in new[] { ("deer", "q2-deer"), ("wolf", "q2-wolves") })
+        {
+            var herd = Wildlife.Near(w, village.X, village.Z, 3000).Where(h => h.KindId == kind).MinBy(h => h.DistanceTo(village.X, village.Z));
+            if (herd is null) continue;
+            await Go(new Vector3((float)herd.X, 0, (float)herd.Z + 30), 150);
+            var them = main.Enemies().Where(e => e.Kind.Id == kind).ToList();
+            var middle = them.Count > 0 ? them.Aggregate(Vector3.Zero, (a, e) => a + e.GlobalPosition) / them.Count : new Vector3((float)herd.X, 0, (float)herd.Z);
+            p.GlobalPosition = (middle + new Vector3(0, 0, 19)) with { Y = City.FloorAt(middle + new Vector3(0, 0, 19)) + 1 };
+            p.Frozen = true;
+            await Frames(20);
+            p.Face(middle);
+            await Shot(name);
+            p.Frozen = false;
+        }
         // Find a lakeshore near the village: a point on land with water close by.
         for (var r = 60.0; r < 900; r += 30)
             for (var a = 0.0; a < Math.Tau; a += 0.3)

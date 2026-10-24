@@ -162,6 +162,11 @@ keeps making new cities as far as you care to walk, each with its own name, epit
 - **Wilderness settlements** sit between the cities: hamlets, farmsteads, hunting camps, roadside inns,
   shrines, mines and Ashborn refuges. There are also bandit camps, barrows full of draugr, and beasts' dens
   (wolves, bears, trolls, spriggans).
+- **Wildlife.** The land between them is lived in. Deer herds graze and foxes prowl almost everywhere,
+  and they bolt when you get close. Away from home, wolf packs roam the woods, bears and trolls the crags,
+  ice wolves the snow, skeevers the marshes and mudcrabs the shores. Packs grow larger the further north
+  you go. Within about 450 m of Tristinwold nothing hunts people. Wipe out a herd or a pack and that stretch
+  stays quiet for ten minutes. Every company meets the same animals in the same places.
 - **People.** Everyone in a city or village is generated: a name, an age, a job, a temper, a backstory
   (where they came from, what happened to them, what they want now) and two or three interests. Ask them
   who they are, what they care about, whether they have heard any news (which marks a new place on your
@@ -416,7 +421,10 @@ lighthouse and ruins come in seeded variants. `godot --path game -- --showroom .
 
 Other 3D models: the KayKit packs by Kay Lousberg (www.kaylousberg.com): Adventurers, Skeletons, Medieval Hexagon,
 Dungeon Remastered and Halloween Bits. They are CC0 (free for any use) and live in `game/assets/kaykit`.
-Wolves, bears, skeevers and mudcrabs are built from shapes in code until animal models arrive. The KayKit characters are re-proportioned as
+Creatures (`game/assets/creatures`, see its CREDITS.md): foxes, wolves and ice wolves are the Khronos sample
+fox (CC0 model by PixelMannen; rigging and animation by tomkranis, CC-BY 4.0), repainted grey or frost-white;
+the deer is Polygonal Mind's (CC0), its legs walked in code. Bears, skeevers and mudcrabs are still built from
+shapes until their models arrive. The KayKit characters are re-proportioned as
 they move (`Proportions` in `Models.cs`): a smaller head, a slimmer, taller trunk and longer arms and legs, so they
 stand like people (and their stiff capes are left off). `godot --path game -- --lineup ./shots` photographs them
 (add `--plain` for the originals).

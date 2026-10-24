@@ -30,6 +30,7 @@ public partial class Main : Node3D
     Hud _hud = null!;
     Terrain _terrain = null!;
     Places _places = null!;
+    Wilds _wilds = null!;
     EncounterTracker _tracker = null!;
     IGameLink? _client;
     string _area = "", _sentArea = "", _savePath = "";
@@ -116,17 +117,19 @@ public partial class Main : Node3D
         GetTree().Quit();
     }
 
-    /// <summary>The characters standing in a row, idle and walking, photographed: --lineup /some/folder</summary>
+    /// <summary>The characters standing in a row, idle and walking, photographed: --lineup /some/folder (--creatures for the animals)</summary>
     async Task Lineup(string folder)
     {
         AddChild(new WorldEnvironment { Environment = new Godot.Environment { BackgroundMode = Godot.Environment.BGMode.Color, BackgroundColor = new Color("#8fa6bd"), AmbientLightSource = Godot.Environment.AmbientSource.Color, AmbientLightColor = new Color("#b0a898"), AmbientLightEnergy = 0.7f, TonemapMode = Godot.Environment.ToneMapper.Filmic } });
         AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-35, 30, 0), LightEnergy = 1.3f, LightColor = new Color("#fff0d6"), ShadowEnabled = true });
         AddChild(new MeshInstance3D { Mesh = new PlaneMesh { Size = new Vector2(40, 40) }, MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#6b6248") } });
-        string[] looks = ["Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded", "guard", "townsfolk", "draugr"];
-        var figures = new List<Figure>();
+        string[] looks = _args.ContainsKey("creatures")
+            ? ["Knight", "wolf", "ice_wolf", "fox", "deer", "bear", "skeever", "mudcrab"]
+            : ["Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded", "guard", "townsfolk", "draugr"];
+        var figures = new List<Body>();
         for (var i = 0; i < looks.Length; i++)
         {
-            var figure = Figure.Create(looks[i]);
+            var figure = Body.For(looks[i]);
             figure.Position = new Vector3((i - (looks.Length - 1) / 2f) * 1.3f, 0, 0);
             figure.RotationDegrees = new Vector3(0, 160, 0);
             AddChild(figure);
@@ -245,6 +248,8 @@ public partial class Main : Node3D
         foreach (var lair in City.Lairs) _lairs[lair] = SpawnLair(lair);
         _places = new Places(this, _world);
         AddChild(_places);
+        _wilds = new Wilds(this, _world, _terrain);
+        AddChild(_wilds);
         _hud.AttachMap(_world, _explored, () => _player.GlobalPosition, () => -_player.GlobalTransform.Basis.Z, QuestGoals);
 
         _tracker = new EncounterTracker(
@@ -324,6 +329,7 @@ public partial class Main : Node3D
     public ExploredMap Explored => _explored;
     public QuestLog Journal => _journal;
     public Places PlacesNode => _places;
+    public Wilds WildsNode => _wilds;
     public Terrain TerrainNode => _terrain;
 
     void Handle(Message m)
@@ -375,7 +381,7 @@ public partial class Main : Node3D
         var pos = _player.GlobalPosition;
 
         _terrain.Update(pos, 2);
-        if (_clock - _lastPlaces > 0.5) { _lastPlaces = _clock; _places.Update(pos); }
+        if (_clock - _lastPlaces > 0.5) { _lastPlaces = _clock; _places.Update(pos); _wilds.Update(pos, _clock); }
         if (_clock - _lastReveal > 0.2) { _lastReveal = _clock; Explore(pos); }
 
         _area = City.AreaAt(pos);

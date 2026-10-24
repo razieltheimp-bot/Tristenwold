@@ -2,7 +2,10 @@ using Tristinwold.Nemesis;
 
 namespace Tristinwold.Gameplay;
 
-/// <summary>A kind of enemy: its base numbers, how it fights and what it looks like (until real art).</summary>
+/// <summary>
+/// A kind of enemy (or quarry): its base numbers, how it fights and what it looks like. A timid
+/// kind runs from people rather than fighting them.
+/// </summary>
 public sealed record EnemyKind(
     string Id,
     string Name,
@@ -14,7 +17,8 @@ public sealed record EnemyKind(
     double AttackSeconds,
     DamageKind DamageKind,
     string Colour,
-    double Height)
+    double Height,
+    bool Timid = false)
 {
     /// <summary>A fresh fighter. <paramref name="danger"/> grows with distance from Tristinwold: 1 at home.</summary>
     public Combatant NewCombatant(double danger = 1)
@@ -47,6 +51,9 @@ public static class Bestiary
         new("frost_troll", "Frost Troll", 340, 22, 4.8, 40, 2.4, 1.6, DamageKind.Physical, "#c8c8d0", 2.4),
         new("mudcrab", "Mudcrab", 45, 7, 3.2, 120, 1.4, 1.2, DamageKind.Physical, "#7a6a4a", 0.6),
         new("spriggan", "Spriggan", 140, 14, 4.5, 30, 2.0, 1.4, DamageKind.Poison, "#8a7a3a", 2.0),
+        // Quarry: they bolt when they see you.
+        new("deer", "Deer", 50, 4, 8.5, 0, 1.4, 1.2, DamageKind.Physical, "#8a6a48", 1.3, Timid: true),
+        new("fox", "Red Fox", 25, 3, 7.5, 0, 1.0, 1.0, DamageKind.Physical, "#c06a30", 0.5, Timid: true),
     ];
 
     public static EnemyKind Get(string id) => All.FirstOrDefault(k => k.Id == id) ?? All[1];

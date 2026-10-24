@@ -76,6 +76,9 @@ public partial class Enemy : Fighter
     /// <summary>The camp, barrow or den this one guards, if it came from one.</summary>
     public string? SiteId { get; private set; }
 
+    /// <summary>How far from home it wanders when nothing's happening (wild herds range wider).</summary>
+    public float Roam { get; set; } = 4;
+
     Player? _target;
     double _attackCooldown;
     double _wanderTimer;
@@ -110,6 +113,7 @@ public partial class Enemy : Fighter
     public void Provoke(Player by)
     {
         if (State is EnemyState.Dead or EnemyState.Fleeing) return;
+        if (Kind.Timid) { _target = by; State = EnemyState.Fleeing; return; } // quarry runs
         _target = by;
         State = EnemyState.Fighting;
     }
@@ -125,7 +129,7 @@ public partial class Enemy : Fighter
         var move = Vector3.Zero;
 
         var player = _target ?? Player.Local;
-        if (State == EnemyState.Idle && player is not null && !player.Downed && player.GlobalPosition.DistanceTo(GlobalPosition) < 14)
+        if (State == EnemyState.Idle && player is not null && !player.Downed && player.GlobalPosition.DistanceTo(GlobalPosition) < (Kind.Timid ? 16 : 14))
             Provoke(player);
 
         switch (State)
@@ -135,7 +139,7 @@ public partial class Enemy : Fighter
                 if (_wanderTimer <= 0)
                 {
                     _wanderTimer = 3 + _rng.NextDouble() * 4;
-                    _wanderTo = Home + new Vector3((float)(_rng.NextDouble() * 8 - 4), 0, (float)(_rng.NextDouble() * 8 - 4));
+                    _wanderTo = Home + new Vector3((float)(_rng.NextDouble() * 2 - 1) * Roam, 0, (float)(_rng.NextDouble() * 2 - 1) * Roam);
                 }
                 var toWander = _wanderTo - GlobalPosition;
                 toWander.Y = 0;
@@ -174,7 +178,10 @@ public partial class Enemy : Fighter
                 move = away.Normalized() * speed * 1.2f;
                 if (player is null || player.GlobalPosition.DistanceTo(GlobalPosition) > 45)
                 {
-                    _target = null; // got away
+                    // Got away: settle down here.
+                    _target = null;
+                    State = EnemyState.Idle;
+                    Home = GlobalPosition;
                 }
                 break;
         }

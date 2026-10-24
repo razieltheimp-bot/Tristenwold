@@ -196,6 +196,23 @@ public partial class SelfTest(Main main) : Node
         Check(p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - w.Height(0, -1500)) < 1.5f, $"standing on the land at {main.Area} ({p.GlobalPosition.Y:0.0} m)");
         Check(main.Explored.IsRevealed(0, -1500) && main.Explored.IsRevealed(0, -750) && !main.Explored.IsRevealed(600, -1500), "the map fills in where you go and nowhere else");
 
+        // The wilds are lived in: herds and packs come out around you, and a deer bolts when you get close.
+        await Frames(60);
+        Check(main.WildsNode.Count > 0, $"the wilds are lived in: {main.WildsNode.Count} creatures about ({string.Join(", ", main.WildsNode.Kinds)})");
+        var herd = Wildlife.Near(w, 0, -1500, 2500).First(h => h.KindId == "deer");
+        await Teleport(new Vector3((float)herd.X + 45, 0, (float)herd.Z));
+        await Until(() => main.Enemies().Any(e => e.Kind.Id == "deer" && e.GlobalPosition.DistanceTo(p.GlobalPosition) < 80), 5);
+        var deer = main.Enemies().Where(e => e.Kind.Id == "deer").MinBy(e => e.GlobalPosition.DistanceTo(p.GlobalPosition));
+        if (deer is null) Check(false, "a deer herd grazes where the wilds say it should");
+        else
+        {
+            var near = deer.GlobalPosition + new Vector3(8, 0, 0);
+            p.GlobalPosition = near with { Y = City.FloorAt(near) + 1 };
+            await Frames(150);
+            var away = deer.GlobalPosition.DistanceTo(p.GlobalPosition);
+            Check(deer.State == EnemyState.Fleeing || away > 20, $"a deer bolts when you come close (8 m, then {away:0} m)");
+        }
+
         // A deep lake: you swim at the surface instead of walking on the bottom.
         var lake = FindDeepWater(0, -1500);
         await Teleport(new Vector3((float)lake.X, 0, (float)lake.Z));

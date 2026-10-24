@@ -20,7 +20,7 @@ public static class Models
     public static PackedScene? Scene(string path)
     {
         if (Scenes.TryGetValue(path, out var scene)) return scene;
-        var full = path.StartsWith("ph:") ? PolyHaven + path[3..] : Root + path;
+        var full = path.StartsWith("ph:") ? PolyHaven + path[3..] : path.StartsWith("creature:") ? "res://assets/creatures/" + path[9..] : Root + path;
         return Scenes[path] = ResourceLoader.Exists(full) ? GD.Load<PackedScene>(full) : null;
     }
 
@@ -139,8 +139,10 @@ public abstract partial class Body : Node3D
     public static Body For(string look) => look switch
     {
         "skeever" => Beast.Rat(),
-        "wolf" => Beast.Wolf(new Color("#5a5650")),
-        "ice_wolf" => Beast.Wolf(new Color("#d8e2ea")),
+        "wolf" => (Body?)Canine.Create("wolf_coat.png", 0.85f) ?? Beast.Wolf(new Color("#5a5650")),
+        "ice_wolf" => (Body?)Canine.Create("ice_wolf_coat.png", 0.95f) ?? Beast.Wolf(new Color("#d8e2ea")),
+        "fox" => (Body?)Canine.Create(null, 0.5f) ?? Beast.Wolf(new Color("#c06a30")),
+        "deer" => (Body?)Deer.Create() ?? Beast.Wolf(new Color("#8a6a48")),
         "bear" => Beast.Bear(),
         "mudcrab" => Beast.Crab(),
         _ => Figure.Create(look),
@@ -475,4 +477,164 @@ public partial class Beast : Body
     {
         foreach (var m in _materials) m.AlbedoColor = m.AlbedoColor.Lerp(colour, 0.35f);
     }
+}
+
+/// <summary>An animal from a model: shared flashing when hurt, keeling over when killed, and a lunge to bite.</summary>
+public abstract partial class Animal : Body
+{
+    protected Node3D Model = null!;
+    protected bool Dead;
+    protected float Lunge;
+    readonly List<MeshInstance3D> _meshes = [];
+
+    /// <summary>Loads a creature's model, scaled so it stands <paramref name="height"/> metres tall and faces forward.</summary>
+    /// <param name="modelHeight">The model's own height, for models whose skinning makes it unmeasurable.</param>
+    /// <param name="yaw">Degrees to turn the model so its head points along Godot's forward (-Z).</param>
+    protected bool Load(string file, float height, float? modelHeight = null, float yaw = 180)
+    {
+        if (Models.Scene($"creature:{file}")?.Instantiate() is not Node3D model) return false;
+        Model = model;
+        AddChild(model);
+        var tall = modelHeight ?? Models.Bounds(model).Size.Y;
+        if (tall > 0) model.Scale = Vector3.One * (height / tall);
+        model.RotationDegrees = new Vector3(0, yaw, 0);
+        _meshes.AddRange(model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>());
+        return true;
+    }
+
+    protected void Coat(string file)
+    {
+        var texture = GD.Load<Texture2D>($"res://assets/creatures/{file}");
+        foreach (var m in _meshes) m.MaterialOverride = new StandardMaterial3D { AlbedoTexture = texture, Roughness = 0.9f };
+    }
+
+    public override void _Process(double delta)
+    {
+        Lunge = Mathf.MoveToward(Lunge, 0, (float)delta * 3);
+        if (!Dead) Model.Position = Model.Position with { Z = -Lunge * 0.4f };
+    }
+
+    public override void Attack(bool heavy = false) => Lunge = 1;
+    public override void Cast() => Lunge = 1;
+
+    public override void Hurt()
+    {
+        foreach (var m in _meshes)
+            if (m.MaterialOverride is StandardMaterial3D mat) { mat.EmissionEnabled = true; mat.Emission = new Color("#ff4020"); mat.EmissionEnergyMultiplier = 0.5f; }
+        GetTree().CreateTimer(0.15).Timeout += () =>
+        {
+            foreach (var m in _meshes) if (IsInstanceValid(m) && m.MaterialOverride is StandardMaterial3D mat) mat.EmissionEnabled = false;
+        };
+    }
+
+    public override void Die()
+    {
+        Dead = true;
+        CreateTween().TweenProperty(this, "rotation:z", Mathf.Pi / 2, 0.4);
+    }
+
+    public override void Rise()
+    {
+        Dead = false;
+        Rotation = Vector3.Zero;
+    }
+
+    public override void Mark(Color colour)
+    {
+        foreach (var m in _meshes)
+            if (m.MaterialOverride is StandardMaterial3D mat) mat.AlbedoColor = mat.AlbedoColor.Lerp(colour, 0.35f);
+            else Models.Tint(m, colour.Lerp(Colors.White, 0.35f), 0.2f);
+    }
+}
+
+/// <summary>
+/// Foxes and wolves: the Khronos sample fox (CC0 model by PixelMannen, rigged and animated by
+/// tomkranis, CC-BY 4.0), with its own looking-about, walking and running, repainted grey for
+/// wolves and frost-white for ice wolves.
+/// </summary>
+public partial class Canine : Animal
+{
+    AnimationPlayer? _anim;
+    string _playing = "";
+
+    public static Canine? Create(string? coat, float height)
+    {
+        var c = new Canine();
+        if (!c.Load("fox.glb", height, yaw: 90)) return null; // the fox's skeleton faces sideways
+        if (coat is not null) c.Coat(coat);
+        c._anim = c.Model.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().FirstOrDefault();
+        if (c._anim is not null)
+            foreach (var name in c._anim.GetAnimationList()) c._anim.GetAnimation(name).LoopMode = Animation.LoopModeEnum.Linear;
+        return c;
+    }
+
+    public override void Move(float speed, bool grounded, bool swimming)
+    {
+        if (Dead || _anim is null) return;
+        var (name, rate) = speed > 4.5f ? ("Run", speed / 7f) : speed > 0.3f ? ("Walk", Mathf.Max(0.6f, speed / 2.2f)) : ("Survey", 1f);
+        if (name != _playing) { _anim.Play(name, 0.2); _playing = name; }
+        _anim.SpeedScale = rate;
+    }
+
+    public override void Die()
+    {
+        _anim?.Pause();
+        base.Die();
+    }
+
+    public override void Rise()
+    {
+        base.Rise();
+        _playing = "";
+    }
+}
+
+/// <summary>
+/// A deer (CC0, Polygonal Mind). The model comes rigged but without animations, so its legs are
+/// swung here, in diagonal pairs like a trot; standing still, it lowers its head to graze now and then.
+/// </summary>
+public partial class Deer : Animal
+{
+    Skeleton3D? _skeleton;
+    readonly List<(int Bone, Quaternion Pose, float Phase)> _legs = [];
+    int _neck = -1;
+    Quaternion _neckRest;
+    float _phase, _speed, _graze;
+    double _grazeClock;
+
+    public static Deer? Create()
+    {
+        var d = new Deer();
+        if (!d.Load("deer.glb", 1.55f, modelHeight: 2.73f)) return null; // its armature is scaled by 0.01, which skinning undoes
+        d._skeleton = d.Model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault();
+        if (d._skeleton is { } s)
+        {
+            // Front left with back right, front right with back left.
+            foreach (var (name, phase) in new[] { ("bn_l_arm_01", 0f), ("bn_r_leg_01", 0f), ("bn_r_arm_01", Mathf.Pi), ("bn_l_leg_01", Mathf.Pi) })
+                if (s.FindBone(name) is var b and >= 0) d._legs.Add((b, s.GetBoneRest(b).Basis.GetRotationQuaternion(), phase));
+            d._neck = s.FindBone("bn_neck");
+            if (d._neck >= 0) d._neckRest = s.GetBoneRest(d._neck).Basis.GetRotationQuaternion();
+        }
+        return d;
+    }
+
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+        if (_skeleton is null || Dead) return;
+        var d = (float)delta;
+        _phase += d * (1.5f + _speed * 1.6f);
+        var swing = Mathf.Clamp(_speed / 7f, 0, 1) * 0.6f;
+        foreach (var (bone, rest, phase) in _legs)
+            _skeleton.SetBonePoseRotation(bone, rest * new Quaternion(Vector3.Right, Mathf.Sin(_phase + phase) * swing));
+        // Grazing: when standing, now and then the head goes down for a few seconds.
+        _grazeClock -= delta;
+        if (_grazeClock <= 0) _grazeClock = 4 + GD.Randf() * 6;
+        var wantGraze = _speed < 0.3f && _grazeClock < 3 ? 1f : 0f;
+        _graze = Mathf.MoveToward(_graze, wantGraze, d * 1.5f);
+        if (_neck >= 0) _skeleton.SetBonePoseRotation(_neck, _neckRest * new Quaternion(Vector3.Right, _graze * 0.9f));
+        Model.Position = Model.Position with { Y = Mathf.Abs(Mathf.Sin(_phase)) * swing * 0.12f };
+    }
+
+    public override void Move(float speed, bool grounded, bool swimming) => _speed = speed;
 }
