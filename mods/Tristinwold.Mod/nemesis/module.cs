@@ -81,6 +81,20 @@ public unsafe sealed partial class NemesisModule : FhModule {
 
     public event Action<IReadOnlyList<WorldEvent>>? world_events;
 
+    /// <summary>
+    ///     Set by the multiplayer module: battle results go to the shared server instead of
+    ///     the local world, and resting tells the server to advance the day.
+    /// </summary>
+    public Action<BattleReport>? remote_report { get; set; }
+    public Action?               remote_rested { get; set; }
+
+    public string player_name => _settings.player_name.get();
+
+    /// <summary>Shows events that happened elsewhere (another table's game) as toasts.</summary>
+    public void show_remote_events(IReadOnlyList<WorldEvent> events) => publish(events);
+
+    public void toast(string text) => _toasts.add(text);
+
     private void reset_world() {
         lock (_lock) {
             _world  = new_world();
@@ -93,11 +107,14 @@ public unsafe sealed partial class NemesisModule : FhModule {
     public override void save_local_state(FileStream local_state_file) {
         string json;
         IReadOnlyList<WorldEvent> events;
+        Action? rested = remote_rested;
         lock (_lock) {
-            // Saving is resting: the nemeses scheme while the party sleeps.
-            events = _world.AdvanceDay();
+            // Saving is resting: the nemeses scheme while the party sleeps. In a shared world
+            // the server owns the calendar, so ask it instead.
+            events = rested is null ? _world.AdvanceDay() : [];
             json   = _world.ToJson();
         }
+        rested?.Invoke();
         publish(events);
         local_state_file.Write(Encoding.UTF8.GetBytes(json));
     }
@@ -262,6 +279,8 @@ public unsafe sealed partial class NemesisModule : FhModule {
 
     private void finish_battle(BattleResult result) {
         IReadOnlyList<WorldEvent> events;
+        BattleReport report;
+        Action<BattleReport>? remote = remote_report;
         lock (_lock) {
             if (_battle is null || _battle.reported) return;
             _battle.reported = true;
@@ -282,9 +301,11 @@ public unsafe sealed partial class NemesisModule : FhModule {
                     KillingBlow: null,   // TODO: read the element of the killing command
                     KilledBy:    killer));
             }
-            BattleReport report = new(_battle.area, result, enemies, current_players(), party_level());
-            events = _world.RecordBattle(report);
+            report = new(_battle.area, result, enemies, current_players(), party_level());
+            events = remote is null ? _world.RecordBattle(report) : [];
         }
+        // The server's answer comes back as a fresh world snapshot plus events.
+        remote?.Invoke(report);
         publish(events);
     }
 

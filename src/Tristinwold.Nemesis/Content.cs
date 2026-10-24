@@ -65,6 +65,7 @@ public sealed class NamePack
             ["fled"] = ["Running didn't save you last time, {player}.", "Look who stopped running."],
             ["escaped"] = ["You let me go once. Mistake.", "Missed me, {player}?"],
             ["cheated"] = ["You thought I was dead? Look what you did to me!", "These scars are yours, {player}. I'm returning them."],
+            ["friend"] = ["I killed {player}. You're next.", "{player} begged at the end. Will you?"],
             ["avenger"] = ["You killed my blood-brother, {player}. Now you die.", "For my brother!"],
             ["generic"] = ["{name} will be remembered!", "Another hero for my collection."],
         },

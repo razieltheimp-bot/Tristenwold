@@ -159,6 +159,12 @@ public sealed class NemesisWorld
             (key, target) = (k, p);
             if (k == "avenger") break;
         }
+        // In a shared world it may have killed one of your friends in their own game.
+        if (target is null)
+        {
+            var victim = n.Players.FirstOrDefault(kv => !players.Contains(kv.Key) && kv.Value.Memory.HasFlag(Memory.KilledPlayer)).Key;
+            if (victim is not null) (key, target) = ("friend", victim);
+        }
         if (!Names.Taunts.TryGetValue(key, out var lines) || lines.Count == 0) return null;
         return _rng.Pick(lines).Replace("{name}", n.FullName).Replace("{player}", target ?? "hero");
     }

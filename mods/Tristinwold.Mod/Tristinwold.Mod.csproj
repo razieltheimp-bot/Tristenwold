@@ -1,0 +1,23 @@
+<Project Sdk="Fahrenheit.Sdk/1.0.0-alpha12">
+
+  <!--
+    One mod DLL with several modules (nemesis, multiplayer, ...). Fahrenheit gives each mod
+    its own load context, so splitting these into separate mods would load two copies of
+    the shared libraries and they couldn't pass objects to each other.
+  -->
+  <PropertyGroup>
+    <AssemblyName>tristinwold</AssemblyName>
+    <AssemblyTitle>Tristinwold</AssemblyTitle>
+    <Product>Tristinwold</Product>
+    <Description>FFX rebuilt for your own story: a nemesis system, and a shared world where each friend runs their own party of three.</Description>
+    <Version>0.2.0-alpha</Version>
+    <Authors>Joeseph</Authors>
+    <FhManifestFlags>NONE</FhManifestFlags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Tristinwold.Nemesis/Tristinwold.Nemesis.csproj" />
+    <ProjectReference Include="../../src/Tristinwold.Shared/Tristinwold.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
