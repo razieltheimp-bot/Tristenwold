@@ -51,6 +51,7 @@ public static class Bestiary
         new("frost_troll", "Frost Troll", 340, 22, 4.8, 40, 2.4, 1.6, DamageKind.Physical, "#c8c8d0", 2.4),
         new("mudcrab", "Mudcrab", 45, 7, 3.2, 120, 1.4, 1.2, DamageKind.Physical, "#7a6a4a", 0.6),
         new("spriggan", "Spriggan", 140, 14, 4.5, 30, 2.0, 1.4, DamageKind.Poison, "#8a7a3a", 2.0),
+        new("boar", "Wild Boar", 90, 10, 6.0, 30, 1.5, 1.1, DamageKind.Physical, "#4a3a2e", 0.9),
         // Quarry: they bolt when they see you.
         new("deer", "Deer", 50, 4, 8.5, 0, 1.4, 1.2, DamageKind.Physical, "#8a6a48", 1.3, Timid: true),
         new("fox", "Red Fox", 25, 3, 7.5, 0, 1.0, 1.0, DamageKind.Physical, "#c06a30", 0.5, Timid: true),

@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://btpe0xogcjcxf"
-path="res://.godot/imported/deer.glb-382b932434530fb13106d8e67fb98d7f.scn"
+uid="uid://byn82ja3gebcg"
+path="res://.godot/imported/wolf.glb-3fdc0f8f4d5615312cba8bbabe2a55aa.scn"
 
 [deps]
 
-source_file="res://assets/creatures/deer.glb"
-dest_files=["res://.godot/imported/deer.glb-382b932434530fb13106d8e67fb98d7f.scn"]
+source_file="res://assets/creatures/wolf.glb"
+dest_files=["res://.godot/imported/wolf.glb-3fdc0f8f4d5615312cba8bbabe2a55aa.scn"]
 
 [params]
 

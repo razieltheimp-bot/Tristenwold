@@ -15,7 +15,7 @@ public sealed record Herd(string Id, string KindId, double X, double Z, int Coun
 /// Life between the settlements, worked out from the seed like everything else, so every company
 /// in the shared world meets the same wolves in the same woods. The land is cut into cells; most
 /// hold something. Deer and foxes graze everywhere and run from you; the further from Tristinwold
-/// (the higher the danger), the more of the land belongs to wolves, bears and trolls. Near home
+/// (the higher the danger), the more of the land belongs to wolves, boars, bears and trolls. Near home
 /// only the harmless and the merely annoying (skeevers, mudcrabs) are about.
 /// </summary>
 public static class Wildlife
@@ -57,8 +57,8 @@ public static class Wildlife
         var d = safe ? 0 : danger;
         (string, double)[] choices = biome switch
         {
-            Biome.AutumnForest => [("deer", 4), ("fox", 2), ("wolf", 0.8 * d), ("bear", 0.3 * d), ("spriggan", 0.25 * d)],
-            Biome.PineForest => [("deer", 3.5), ("fox", 1.5), ("wolf", 1.1 * d), ("bear", 0.6 * d)],
+            Biome.AutumnForest => [("deer", 4), ("fox", 2), ("wolf", 0.8 * d), ("bear", 0.3 * d), ("spriggan", 0.25 * d), ("boar", 0.7 * d)],
+            Biome.PineForest => [("deer", 3.5), ("fox", 1.5), ("wolf", 1.1 * d), ("bear", 0.6 * d), ("boar", 0.5 * d)],
             Biome.Marsh => [("skeever", 3), ("mudcrab", near ? 3 : 0.5), ("deer", 1), ("wolf", 0.5 * d)],
             Biome.Tundra => [("deer", 2), ("fox", 1), ("wolf", 2 * d), ("ice_wolf", 1 * d), ("bear", 0.5 * d)],
             Biome.Snowfield => [("ice_wolf", 1.4 * Math.Max(d, 0.1)), ("frost_troll", 0.5 * d), ("deer", 0.8), ("fox", 0.8)],
@@ -78,6 +78,7 @@ public static class Wildlife
             "skeever" => 3 + rng.Next(3),
             "mudcrab" => 2 + rng.Next(3),
             "spriggan" => 1 + rng.Next(2),
+            "boar" => 1 + rng.Next(3),
             _ => 1, // bears and trolls keep to themselves
         };
         var roam = kind switch { "deer" => 22, "fox" => 18, "wolf" or "ice_wolf" => 16, "mudcrab" => 6, _ => 10 };

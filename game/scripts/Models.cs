@@ -139,11 +139,13 @@ public abstract partial class Body : Node3D
     public static Body For(string look) => look switch
     {
         "skeever" => Beast.Rat(),
-        "wolf" => (Body?)Canine.Create("wolf_coat.png", 0.85f) ?? Beast.Wolf(new Color("#5a5650")),
-        "ice_wolf" => (Body?)Canine.Create("ice_wolf_coat.png", 0.95f) ?? Beast.Wolf(new Color("#d8e2ea")),
-        "fox" => (Body?)Canine.Create(null, 0.5f) ?? Beast.Wolf(new Color("#c06a30")),
+        "wolf" => (Body?)Creature.Create("wolf.glb", 0.95f) ?? Beast.Wolf(new Color("#5a5650")),
+        "ice_wolf" => (Body?)Creature.Create("ice_wolf.glb", 1.0f) ?? Beast.Wolf(new Color("#d8e2ea")),
+        "fox" => (Body?)Creature.Create("fox.glb", 0.5f) ?? Beast.Wolf(new Color("#c06a30")),
         "deer" => (Body?)Deer.Create() ?? Beast.Wolf(new Color("#8a6a48")),
-        "bear" => Beast.Bear(),
+        "boar" => (Body?)Creature.Create("boar.glb", 0.95f) ?? Beast.Wolf(new Color("#4a3a2e")),
+        "hawk" => (Body?)Creature.Create("hawk.glb", 0.35f) ?? Beast.Rat(),
+        "bear" => (Body?)Creature.Create(GD.Randf() < 0.3f ? "bear_black.glb" : "bear.glb", 1.5f) ?? Beast.Bear(),
         "mudcrab" => Beast.Crab(),
         _ => Figure.Create(look),
     };
@@ -502,12 +504,6 @@ public abstract partial class Animal : Body
         return true;
     }
 
-    protected void Coat(string file)
-    {
-        var texture = GD.Load<Texture2D>($"res://assets/creatures/{file}");
-        foreach (var m in _meshes) m.MaterialOverride = new StandardMaterial3D { AlbedoTexture = texture, Roughness = 0.9f };
-    }
-
     public override void _Process(double delta)
     {
         Lunge = Mathf.MoveToward(Lunge, 0, (float)delta * 3);
@@ -548,48 +544,6 @@ public abstract partial class Animal : Body
 }
 
 /// <summary>
-/// Foxes and wolves: the Khronos sample fox (CC0 model by PixelMannen, rigged and animated by
-/// tomkranis, CC-BY 4.0), with its own looking-about, walking and running, repainted grey for
-/// wolves and frost-white for ice wolves.
-/// </summary>
-public partial class Canine : Animal
-{
-    AnimationPlayer? _anim;
-    string _playing = "";
-
-    public static Canine? Create(string? coat, float height)
-    {
-        var c = new Canine();
-        if (!c.Load("fox.glb", height, yaw: 90)) return null; // the fox's skeleton faces sideways
-        if (coat is not null) c.Coat(coat);
-        c._anim = c.Model.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().FirstOrDefault();
-        if (c._anim is not null)
-            foreach (var name in c._anim.GetAnimationList()) c._anim.GetAnimation(name).LoopMode = Animation.LoopModeEnum.Linear;
-        return c;
-    }
-
-    public override void Move(float speed, bool grounded, bool swimming)
-    {
-        if (Dead || _anim is null) return;
-        var (name, rate) = speed > 4.5f ? ("Run", speed / 7f) : speed > 0.3f ? ("Walk", Mathf.Max(0.6f, speed / 2.2f)) : ("Survey", 1f);
-        if (name != _playing) { _anim.Play(name, 0.2); _playing = name; }
-        _anim.SpeedScale = rate;
-    }
-
-    public override void Die()
-    {
-        _anim?.Pause();
-        base.Die();
-    }
-
-    public override void Rise()
-    {
-        base.Rise();
-        _playing = "";
-    }
-}
-
-/// <summary>
 /// A deer (CC0, Polygonal Mind). The model comes rigged but without animations, so its legs are
 /// swung here, in diagonal pairs like a trot; standing still, it lowers its head to graze now and then.
 /// </summary>
@@ -605,7 +559,7 @@ public partial class Deer : Animal
     public static Deer? Create()
     {
         var d = new Deer();
-        if (!d.Load("deer.glb", 1.55f, modelHeight: 2.73f)) return null; // its armature is scaled by 0.01, which skinning undoes
+        if (!d.Load("deer_pm.glb", 1.55f, modelHeight: 2.73f)) return null; // its armature is scaled by 0.01, which skinning undoes
         d._skeleton = d.Model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault();
         if (d._skeleton is { } s)
         {
@@ -637,4 +591,74 @@ public partial class Deer : Animal
     }
 
     public override void Move(float speed, bool grounded, bool swimming) => _speed = speed;
+}
+
+/// <summary>
+/// An animal from 0 A.D. (Wildfire Games, CC-BY-SA 3.0): wolves, ice wolves, foxes, bears and
+/// boars, each with its own idle, walk, run, attack and death, converted by tools/creatures/zero_ad.py.
+/// </summary>
+public partial class Creature : Animal
+{
+    AnimationPlayer? _anim;
+    string _playing = "";
+    double _busy;
+
+    public static Creature? Create(string file, float height)
+    {
+        var c = new Creature();
+        if (!c.Load(file, height)) return null;
+        c._anim = c.Model.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().FirstOrDefault();
+        if (c._anim is not null)
+            foreach (var name in c._anim.GetAnimationList())
+                c._anim.GetAnimation(name).LoopMode = name.EndsWith("Death") || name.EndsWith("Attack") ? Animation.LoopModeEnum.None : Animation.LoopModeEnum.Linear;
+        return c;
+    }
+
+    bool Has(string clip) => _anim?.HasAnimation(clip) == true;
+
+    void Play(string clip, float rate = 1)
+    {
+        if (_anim is null || !Has(clip)) return;
+        if (clip != _playing) { _anim.Play(clip, 0.2); _playing = clip; }
+        _anim.SpeedScale = rate;
+    }
+
+    public override void _Process(double delta)
+    {
+        base._Process(delta);
+        _busy -= delta;
+    }
+
+    public override void Move(float speed, bool grounded, bool swimming)
+    {
+        if (Dead || _busy > 0) return;
+        if (speed > 4.5f && Has("Run")) Play("Run", Mathf.Clamp(speed / 7f, 0.6f, 1.6f));
+        else if (speed > 0.3f) Play("Walk", Mathf.Clamp(speed / 2f, 0.6f, 2f));
+        else Play("Idle");
+    }
+
+    public override void Attack(bool heavy = false)
+    {
+        if (Dead) return;
+        if (!Has("Attack")) { base.Attack(heavy); return; }
+        _playing = "";
+        Play("Attack", 1.3f);
+        _anim!.Seek(0, true);
+        _busy = _anim.GetAnimation("Attack").Length / 1.3;
+    }
+
+    public override void Die()
+    {
+        if (!Has("Death")) { base.Die(); return; }
+        Dead = true;
+        _playing = "";
+        Play("Death");
+    }
+
+    public override void Rise()
+    {
+        Dead = false;
+        _playing = "";
+        Rotation = Vector3.Zero;
+    }
 }

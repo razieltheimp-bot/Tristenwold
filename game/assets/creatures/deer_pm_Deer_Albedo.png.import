@@ -2,16 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://mpc6o47y3m4q"
-path="res://.godot/imported/wolf_coat.png-2eb490b3aaafda3dbde060acce927b35.ctex"
+uid="uid://b27n453h5w2vv"
+path="res://.godot/imported/deer_pm_Deer_Albedo.png-f9a1a4ec35a3f4265acba35735ac3a2e.ctex"
 metadata={
 "vram_texture": false
+}
+generator_parameters={
+"md5": "9c0900d0eec48221e1c73be87556168b"
 }
 
 [deps]
 
-source_file="res://assets/creatures/wolf_coat.png"
-dest_files=["res://.godot/imported/wolf_coat.png-2eb490b3aaafda3dbde060acce927b35.ctex"]
+source_file="res://assets/creatures/deer_pm_Deer_Albedo.png"
+dest_files=["res://.godot/imported/deer_pm_Deer_Albedo.png-f9a1a4ec35a3f4265acba35735ac3a2e.ctex"]
 
 [params]
 
@@ -23,7 +26,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

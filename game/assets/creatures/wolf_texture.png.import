@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://gv5m0er6yoy7"
-path="res://.godot/imported/fox_0.png-878b361fce23a43465681f61c519b438.ctex"
+uid="uid://c3yxjh1qtuu2s"
+path="res://.godot/imported/wolf_texture.png-def83100559826241b4f8240e64ecdd7.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "132bf1e341c44f47a0b4e87b884c734e"
+"md5": "da5c735f80f715c5c8e4e0d62cfafa7c"
 }
 
 [deps]
 
-source_file="res://assets/creatures/fox_0.png"
-dest_files=["res://.godot/imported/fox_0.png-878b361fce23a43465681f61c519b438.ctex"]
+source_file="res://assets/creatures/wolf_texture.png"
+dest_files=["res://.godot/imported/wolf_texture.png-def83100559826241b4f8240e64ecdd7.ctex"]
 
 [params]
 

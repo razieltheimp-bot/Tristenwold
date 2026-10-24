@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://g7oaa2x7451h"
-path="res://.godot/imported/deer_Deer_Albedo.png-b0bdca3a4a095f14256dfdff3cbab7b4.ctex"
+uid="uid://du3f8b34nmd5p"
+path="res://.godot/imported/bear_texture.png-2b56e8747b720c024ff0f55daec4bb7b.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "9c0900d0eec48221e1c73be87556168b"
+"md5": "2bfe0723385baa7c3316c4e1c8647cbe"
 }
 
 [deps]
 
-source_file="res://assets/creatures/deer_Deer_Albedo.png"
-dest_files=["res://.godot/imported/deer_Deer_Albedo.png-b0bdca3a4a095f14256dfdff3cbab7b4.ctex"]
+source_file="res://assets/creatures/bear_texture.png"
+dest_files=["res://.godot/imported/bear_texture.png-2b56e8747b720c024ff0f55daec4bb7b.ctex"]
 
 [params]
 
