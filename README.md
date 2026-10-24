@@ -67,6 +67,37 @@ Names, epithets and taunts are data (`NamePack` in `src/Tristinwold.Nemesis/Cont
 dotnet run --project tools/Tristinwold.NemesisSim -- 80 7
 ```
 
+## Where the story happens
+
+**Campaigns 1 and 2 are staged in Riften.** The server renames Skyrim places to Tristinwold ones,
+so dead drops, near misses, nemesis territories and Vann all speak Tristinwold while you play in
+Riften:
+
+| Tristinwold | Riften |
+|---|---|
+| Tristinwold (the city streets) | Riften |
+| the Gallows Perch (Ravenscrew Tong's tavern) | The Ragged Flagon |
+| the Warrens | The Ratway |
+| the Tong sea-caves | Ratway Vaults |
+| the Salt Barrel | The Bee and Barb |
+| the Docks | Riften Fishery |
+| the harbor | Lake Honrich |
+| the Needle | Goldenglow Estate |
+| the drowned chapel | Temple of Mara |
+| the Lantern Boys' den | Honorhall Orphanage |
+| the Exchange | Black-Briar Meadery |
+| the Magi archive | Riften Hall of the Dead |
+| the Crown | Mistveil Keep |
+| the Watch house | Riften Jail |
+
+Places outside the table keep their Skyrim names (Whiterun is still Whiterun). The table lives in
+the campaign file (`places`), so you can change it. If a place doesn't rename in game, its
+in-game location name differs from the table; the server window prints areas as they arrive.
+
+**Campaign 3, The Last Ring, gets its own city.** Once the planes have collided and only one
+mortal stronghold is left, Tristinwold becomes a new walled city built in the Creation Kit.
+That's planned, not built.
+
 ## Shared world: everyone runs their own party of three
 
 This is "The Scattered Key" from *The Rings of Tristinwold*. Each friend plays their own game, with their

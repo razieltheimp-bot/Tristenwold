@@ -181,3 +181,29 @@ public class EncounterTests
         Assert.Equal(server.World.Living.Single().Id, hunt.NemesisId);
     }
 }
+
+public class RiftenTests
+{
+    [Fact]
+    public void Riften_is_tristinwold_for_campaigns_one_and_two()
+    {
+        var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannEnabled = false, RewindChance = 0, KeystoneMeetChance = 0 }, seed: 10);
+        server.Connect(new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]));
+        server.Connect(new Hello("Mira", "", Wire.ProtocolVersion, ["Mira"]));
+
+        server.Handle("Joe", new Presence("The Ragged Flagon", []));
+        var outs = server.Handle("Mira", new Presence("the ragged flagon", []));
+        Assert.Equal("the Gallows Perch", server.State.Groups["Joe"].Area);
+        Assert.Contains(outs.Select(o => o.Message).OfType<Notice>(), n => n.Text.Contains("the Gallows Perch"));
+
+        // Places outside the map keep their Skyrim names.
+        server.Handle("Joe", new Presence("Whiterun", []));
+        Assert.Equal("Whiterun", server.State.Groups["Joe"].Area);
+
+        // Nemeses get Tristinwold homes.
+        server.Handle("Joe", new ReportBattle(new BattleReport("Goldenglow Estate", Nemesis.BattleResult.Defeat,
+            [new Nemesis.EnemyReport(0, "Bandit", "Bandit", 100, false, false)], ["Joe"])));
+        Assert.Equal("the Needle", server.World.Living.Single().HomeArea);
+        Assert.Contains("Goldenglow", server.State.Contracts.Single(c => c.Id == "brother").Where);
+    }
+}

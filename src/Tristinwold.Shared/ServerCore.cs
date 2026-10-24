@@ -126,7 +126,7 @@ public sealed partial class ServerCore
 
     IReadOnlyList<Outgoing> OnPresence(Group group, Presence p)
     {
-        var area = Clip(p.Area, 80);
+        var area = State.Place(Clip(p.Area, 80));
         if (p.Party.Count > 0) group.Party = [.. p.Party.Take(3)];
         if (area == group.Area) return [new(null, RosterMessage())];
 
@@ -179,13 +179,13 @@ public sealed partial class ServerCore
     IReadOnlyList<Outgoing> OnBattle(string player, BattleReport report)
     {
         // Each table only speaks for itself.
-        var events = World.RecordBattle(report with { Players = [player] });
+        var events = World.RecordBattle(report with { Players = [player], AreaId = State.Place(Clip(report.AreaId, 80)) });
         return WorldChanged(events);
     }
 
     IReadOnlyList<Outgoing> OnEncounter(string player, EncounterStarted e)
     {
-        var spawns = World.PlanEncounter(Clip(e.Area, 80), e.Enemies.Take(32).ToList(), [player]);
+        var spawns = World.PlanEncounter(State.Place(Clip(e.Area, 80)), e.Enemies.Take(32).ToList(), [player]);
         if (spawns.Count == 0) return [];
         Dirty = true; // the plan used the world's dice
         return [new(player, new NemesisAppears(spawns))];
@@ -281,7 +281,7 @@ public sealed partial class ServerCore
     {
         var text = Clip(d.Text, 600);
         if (text.Length == 0) return [];
-        var area = Clip(d.Area, 80);
+        var area = State.Place(Clip(d.Area, 80));
         var forged = ForgeNote(group);
         var drop = new DeadDrop
         {

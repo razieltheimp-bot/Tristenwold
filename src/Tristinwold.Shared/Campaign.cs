@@ -65,6 +65,44 @@ public sealed class CampaignState
     /// <summary>Consequences that carry over between tables ("warehouse_burned", "silt_spared").</summary>
     public HashSet<string> Flags { get; set; } = [];
     public string? NemesisWorldJson { get; set; }
+
+    /// <summary>
+    /// Where the story is staged: Skyrim location name -> Tristinwold place. Areas reported by the
+    /// game are renamed through this, so dead drops, near misses and Vann all speak Tristinwold.
+    /// Names not listed pass through unchanged. Edit freely in the campaign file.
+    /// </summary>
+    public Dictionary<string, string> Places { get; set; } = [];
+
+    /// <summary>The Tristinwold name for a place the game reported.</summary>
+    public string Place(string skyrimArea)
+    {
+        foreach (var (skyrim, tristinwold) in Places)
+            if (skyrim.Equals(skyrimArea, StringComparison.OrdinalIgnoreCase)) return tristinwold;
+        return skyrimArea;
+    }
+
+    /// <summary>
+    /// Campaigns 1 and 2 are staged in Riften: a lakeside city of docks, a warren under the
+    /// streets (the Ratway) and a thieves' guild. Campaign 3's Last Ring is its own walled city.
+    /// </summary>
+    public static Dictionary<string, string> RiftenAsTristinwold() => new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Riften"] = "Tristinwold",
+        ["The Ragged Flagon"] = "the Gallows Perch",
+        ["The Ratway"] = "the Warrens",
+        ["The Ratway Warrens"] = "the Warrens",
+        ["Ratway Vaults"] = "the Tong sea-caves",
+        ["The Bee and Barb"] = "the Salt Barrel",
+        ["Riften Fishery"] = "the Docks",
+        ["Lake Honrich"] = "the harbor",
+        ["Goldenglow Estate"] = "the Needle",
+        ["Temple of Mara"] = "the drowned chapel",
+        ["Honorhall Orphanage"] = "the Lantern Boys' den",
+        ["Black-Briar Meadery"] = "the Exchange",
+        ["Riften Hall of the Dead"] = "the Magi archive",
+        ["Mistveil Keep"] = "the Crown",
+        ["Riften Jail"] = "the Watch house",
+    };
     /// <summary>Things Vann has said lately, so he doesn't repeat himself (and so a voice model has memory).</summary>
     public List<string> VannMemory { get; set; } = [];
 
@@ -83,25 +121,26 @@ public sealed class CampaignState
     public static CampaignState SavedMan() => new()
     {
         Campaign = "The Saved Man",
+        Places = RiftenAsTristinwold(),
         Contracts =
         [
             new() { Id = "rats", Title = "Rats in the cellar of the Salt Barrel tavern", PostedBy = "Tavern owner", Pay = 10,
-                Where = "Outer Ring - Salt Barrel", InDanger = "the Salt Barrel's cellar boy",
+                Where = "the Salt Barrel (the Bee and Barb, Riften)", InDanger = "the Salt Barrel's cellar boy",
                 Secret = "Giant rats fleeing something deeper in the sewers." },
             new() { Id = "spice", Title = "Escort a spice wagon to the Inner Ring gate", PostedBy = "Merchant Guild", Pay = 25,
-                Where = "Outer Ring -> Inner Ring gate", InDanger = "the wagon driver",
+                Where = "the Docks to the Exchange (Riften Fishery to Black-Briar Meadery)", InDanger = "the wagon driver",
                 Secret = "The wagon is smuggling a Magi relic." },
             new() { Id = "brother", Title = "Find my missing brother, last seen at the Needle", PostedBy = "A fisherman's wife", Pay = 15,
-                Where = "The Needle (lighthouse)", InDanger = "the fisherman's brother",
+                Where = "the Needle (Goldenglow Estate, on Lake Honrich)", InDanger = "the fisherman's brother",
                 Secret = "He's chained in the lighthouse cellar. Likely first rescue." },
             new() { Id = "debt", Title = "Collect an overdue debt from a dock gambler", PostedBy = "Ravenscrew Tong", Pay = 20,
-                Where = "The Docks", InDanger = "the dock gambler",
+                Where = "the Docks (Riften Fishery)", InDanger = "the dock gambler",
                 Secret = "The gambler is being hunted by the rival Tong." },
             new() { Id = "chapel", Title = "Clear the drowned chapel of \"singing\"", PostedBy = "Temple of the Tide", Pay = 40,
-                Where = "The drowned chapel", InDanger = "a trapped acolyte",
+                Where = "the drowned chapel (Temple of Mara, Riften)", InDanger = "a trapped acolyte",
                 Secret = "Time is skipping inside: candles burn backward. Vann's fingerprints." },
             new() { Id = "gutter_prince", Title = "Bounty: the Gutter Prince, alive", PostedBy = "City Watch", Pay = 100,
-                Where = "Outer Ring - Lantern Boys turf", InDanger = "the Gutter Prince",
+                Where = "the Lantern Boys' den (Honorhall Orphanage, Riften)", InDanger = "the Gutter Prince",
                 Secret = "A rival Tong boss with a sympathetic story." },
         ],
     };

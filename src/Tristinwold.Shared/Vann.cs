@@ -24,8 +24,13 @@ public sealed partial class ServerCore
 {
     DateTime _nextScheme = DateTime.MinValue;
 
-    static readonly string[] Places =
-        ["the Gallows Perch", "the Docks", "the Needle", "the drowned chapel", "the Exchange", "the Salt Barrel", "the Inner Ring gate", "the sea-caves"];
+    static readonly string[] FallbackPlaces =
+        ["the Gallows Perch", "the Docks", "the Needle", "the drowned chapel", "the Exchange", "the Salt Barrel", "the Warrens", "the Tong sea-caves"];
+
+    /// <summary>Somewhere in the city Vann can send people: the campaign's own places.</summary>
+    IReadOnlyList<string> Places => State.Places.Count > 0
+        ? State.Places.Values.Where(p => p != "Tristinwold").Distinct().ToList()
+        : FallbackPlaces;
 
     static readonly string[] Misdeeds =
     [
