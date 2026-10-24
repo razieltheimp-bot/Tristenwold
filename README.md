@@ -7,7 +7,8 @@ works like Skyrim's: skills and perk trees, no sphere grid.
 
 | Part | Status |
 |---|---|
-| **The game** (`game/`, Godot 4 .NET) | Playable slice: the three-ring city of Tristinwold built from simple shapes, sword, spells, limit break, Tong lairs, nemeses that come back, the shared-world board. A scripted headless test plays it against the real server. Open/CC0 art to come. |
+| **The game** (`game/`, Godot 4 .NET) | Playable: the three-ring city of Tristinwold and an endless world around it, built from simple shapes. Sword, spells, limit break, Tong lairs, nemeses that come back, a fog-of-war map, villages and camps, people to talk to and quests to do, the shared-world board. A scripted headless test plays it against the real server. Open/CC0 art to come. |
+| **The open world** (`src/Tristinwold.World`) | Built and tested. Grows the land, the cities, the villages, the people and their quests from one seed, with no edge. |
 | **Combat rules** (`src/Tristinwold.Gameplay`) | Built and tested: health/magicka/stamina, Skyrim-style armor, resistances, auto-statuses, the limit gauge, the bestiary, fight tracking. |
 | **Nemesis rules** (`src/Tristinwold.Nemesis`) | Built and tested. Uses Skyrim actor kinds, actor values and damage types. |
 | **Shared world server + Vann** (`src/Tristinwold.Shared`, `tools/Tristinwold.Server`) | Built and tested end to end. Game-agnostic. |
@@ -35,6 +36,9 @@ Leave out `--server` to use `127.0.0.1:7777`. Pass `--server off` to play alone.
 | Left / right mouse | sword / spell |
 | Q | switch spell between fire, frost and shock |
 | R | limit break, once the gold bar is full |
+| E | talk to someone, or pick something up |
+| M | the map (scroll to zoom, drag to pan) |
+| J | your journal of quests |
 | T | rest (the world moves on) |
 | F10 | the shared world: contract board, companies, nemeses, chronicle and chat |
 
@@ -43,11 +47,40 @@ the Lantern Boys keep their den, a draugr and a sea-wraith haunt the Drowned Cha
 hold the Tong sea-caves. A thug who kills you remembers it. Next time it comes back
 named, stronger and taunting, and Vann may send it hunting for you. Fall, and you wake at the Gallows Perch.
 
+### The world beyond the walls
+
+The world has no edge. Tristinwold sits at its centre, and you start knowing five cities:
+Tristinwold, Cinderhelm to the north, Galeholt and Mirewatch to the north-west, and Gravenmoor to the west.
+They show on your map with a "?" until you get there. The other four reworked cities (Argentdeep,
+Vespergate, Duskwake, Hollowreach) are further out, waiting to be found. Past all nine, the generator
+keeps making new cities as far as you care to walk, each with its own name, epithet, ruler, trouble and rumour.
+
+- **Fog of war.** The map is black until you go somewhere. Walk north and it draws itself in behind you.
+  Places you reach are named on it; places you have only heard about get a "?".
+- **The land changes as you go.** Autumn woods around Tristinwold, pinewoods, marshes and lakes, then
+  tundra, crags and snowfields to the north. Danger rises with distance, so enemies far from home hit harder.
+- **Wilderness settlements** sit between the cities: hamlets, farmsteads, hunting camps, roadside inns,
+  shrines, mines and Ashborn refuges. There are also bandit camps, barrows full of draugr, and beasts' dens
+  (wolves, bears, trolls, spriggans).
+- **People.** Everyone in a city or village is generated: a name, an age, a job, a temper, a backstory
+  (where they came from, what happened to them, what they want now) and two or three interests. Ask them
+  who they are, what they care about, whether they have heard any news (which marks a new place on your
+  map), and whether they have work.
+- **Quests.** About half of them have a job for you, picked from what they care about and what is nearby.
+  You might clear a lair, fetch something from a barrow or bandit camp, carry a letter to someone in
+  another village, or find a missing relative. Quest targets go on your map; the journal (J) and the
+  tracker on screen tell you how far and which way.
+
+Every company sees the same world, because it all grows from the `seed` in `world/world.json`. Change the
+seed for a different world. Each company's map, quests and septims are saved on its own computer, in
+Godot's user folder under `saves/`.
+
 Self-test (headless, exits 0 on success):
 
 ```
-godot --headless --path game -- --selftest --server off                       # combat only
+godot --headless --path game -- --selftest --server off                       # combat, exploring and one quest of each kind
 godot --headless --path game -- --selftest --server 127.0.0.1:7777 --company Joe   # plus a nemesis returning
+godot --path game -- --shots ./shots --server off    # a screenshot tour of the world (needs a display)
 ```
 
 ## Play in Skyrim (optional)
@@ -112,7 +145,8 @@ dotnet run --project tools/Tristinwold.NemesisSim -- 80 7
 ## The world: every city reworked
 
 Every Skyrim city is reworked into a city of this world, with its own name, its own renamed
-places and its own story. Tristinwold (built from Riften) is where the main saga happens, in
+places and its own story. In the Godot game each one stands at its `at` position in `world/world.json`
+(metres; x east, z south), laid out roughly as Skyrim's holds lie around Riften. Tristinwold (built from Riften) is where the main saga happens, in
 every campaign; the other cities have stories of their own, with threads back to it.
 
 | City | Built from | Its story |
@@ -256,8 +290,8 @@ See "Install in Skyrim" above. The add-on talks to the server's HTTP port (7778 
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download). Works on Windows or Linux:
 
 ```
-dotnet test                              # combat, nemesis rules, server, HTTP gateway
-cd game && dotnet build && godot --headless --path . -- --selftest --server off   # the Godot game
+dotnet test                              # combat, open world, nemesis rules, server, HTTP gateway
+cd game && dotnet build && godot --headless --path . -- --selftest --server off   # the Godot game, played by a script
 cd skyrim/plugin && npm install && npm test && npx tsc --noEmit   # add-on logic and types
 ```
 

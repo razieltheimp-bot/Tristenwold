@@ -12,7 +12,12 @@ public sealed record City(
     string Epithet,
     string Story,
     Dictionary<string, string> Places,
-    List<CityContract> Contracts);
+    List<CityContract> Contracts,
+    double[]? At = null)
+{
+    /// <summary>Where the city stands, in metres: x east, z south. Tristinwold is the origin.</summary>
+    public (double X, double Z) Position => At is [var x, var z] ? (x, z) : (0, 0);
+}
 
 /// <summary>A character taken from one city and set down in another, perhaps under a new name.</summary>
 public sealed record NpcMove(string Npc, string To, string? Rename = null, string? Why = null);
@@ -21,7 +26,7 @@ public sealed record NpcMove(string Npc, string To, string? Rename = null, strin
 /// The world of Tristinwold built from Skyrim: world/world.json. The server reads it for place
 /// names and city contracts; the plugin builder reads it to rename places and move characters.
 /// </summary>
-public sealed record Atlas(List<City> Cities, List<NpcMove> Moves)
+public sealed record Atlas(List<City> Cities, List<NpcMove> Moves, ulong Seed = 0)
 {
     public static Atlas Default { get; } = LoadEmbedded();
 

@@ -51,15 +51,18 @@ public partial class Enemy : Fighter
     public Guid? NemesisId { get; private set; }
     public string? Taunt { get; private set; }
 
+    /// <summary>The camp, barrow or den this one guards, if it came from one.</summary>
+    public string? SiteId { get; private set; }
+
     Player? _target;
     double _attackCooldown;
     double _wanderTimer;
     Vector3 _wanderTo;
     readonly Rng _rng = new((ulong)Random.Shared.NextInt64());
 
-    public static Enemy Create(EnemyKind kind, Vector3 at)
+    public static Enemy Create(EnemyKind kind, Vector3 at, double danger = 1, string? siteId = null)
     {
-        var e = new Enemy { Kind = kind, Home = at, Position = at, Stats = kind.NewCombatant() };
+        var e = new Enemy { Kind = kind, Home = at, Position = at, Stats = kind.NewCombatant(danger), SiteId = siteId };
         e.Shape(kind.Colour, (float)kind.Height, kind.Height < 1 ? 0.3f : 0.4f);
         e.RefreshPlate();
         return e;

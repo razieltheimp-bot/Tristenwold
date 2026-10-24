@@ -1,8 +1,10 @@
 {
-  "about": "The cities of The Rings of Tristinwold, built from Skyrim's holds. Every Skyrim name on the left of a 'places' entry is renamed in game (by Tristinwold.esp) and on the server. Edit freely; rebuild the plugin and restart the server after changes.",
+  "about": "The cities of The Rings of Tristinwold, built from Skyrim's holds. Every Skyrim name on the left of a 'places' entry is renamed in game (by Tristinwold.esp) and on the server. Edit freely; rebuild the plugin and restart the server after changes. 'at' places each city on the map in metres (x east, z south, so north is negative z). 'seed' grows everything between and beyond them: wilderness, villages, people, quests and endless new cities.",
+  "seed": 1777,
   "cities": [
     {
       "id": "tristinwold",
+      "at": [0, 0],
       "name": "Tristinwold",
       "builtFrom": "Riften",
       "epithet": "the City of Rings",
@@ -28,6 +30,7 @@
     },
     {
       "id": "galeholt",
+      "at": [-1900, -1050],
       "name": "Galeholt",
       "builtFrom": "Whiterun",
       "epithet": "the Wind-Fort on the Plain",
@@ -48,6 +51,7 @@
     },
     {
       "id": "vespergate",
+      "at": [-3600, -4300],
       "name": "Vespergate",
       "builtFrom": "Solitude",
       "epithet": "the City on the Arch",
@@ -67,6 +71,7 @@
     },
     {
       "id": "cinderhelm",
+      "at": [250, -1750],
       "name": "Cinderhelm",
       "builtFrom": "Windhelm",
       "epithet": "the Hall of Cold Crowns",
@@ -86,6 +91,7 @@
     },
     {
       "id": "argentdeep",
+      "at": [-5100, -900],
       "name": "Argentdeep",
       "builtFrom": "Markarth",
       "epithet": "the City Carved in Silver",
@@ -104,6 +110,7 @@
     },
     {
       "id": "gravenmoor",
+      "at": [-2050, 550],
       "name": "Gravenmoor",
       "builtFrom": "Falkreath",
       "epithet": "the Town of Graves",
@@ -120,6 +127,7 @@
     },
     {
       "id": "mirewatch",
+      "at": [-1450, -2450],
       "name": "Mirewatch",
       "builtFrom": "Morthal",
       "epithet": "the Town in the Fog",
@@ -136,6 +144,7 @@
     },
     {
       "id": "duskwake",
+      "at": [-1300, -4900],
       "name": "Duskwake",
       "builtFrom": "Dawnstar",
       "epithet": "the Sleepless Port",
@@ -152,6 +161,7 @@
     },
     {
       "id": "hollowreach",
+      "at": [1000, -5400],
       "name": "Hollowreach",
       "builtFrom": "Winterhold",
       "epithet": "the Edge of the North",

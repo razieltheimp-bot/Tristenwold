@@ -1,5 +1,6 @@
 using Godot;
 using Tristinwold.Nemesis;
+using Tristinwold.World;
 
 namespace Tristinwold.Game;
 
@@ -60,14 +61,14 @@ public static class City
             var flat = new Vector2(p.X - z.Center.X, p.Z - z.Center.Z).Length();
             if (flat <= z.Radius && (best is null || z.Priority > best.Priority)) best = z;
         }
-        return best?.Name ?? "The Tristinwold countryside";
+        return best?.Name ?? WorldGen.Default.AreaAt(p.X, p.Z);
     }
 
-    /// <summary>Ground height of the city's ring platforms at a point.</summary>
+    /// <summary>Ground height at a point: the city's ring platforms, or the land outside them.</summary>
     public static float FloorAt(Vector3 p)
     {
         var r = new Vector2(p.X, p.Z).Length();
-        return r < CrownRadius ? CrownHeight : r < InnerRadius ? InnerHeight : 0;
+        return r < CrownRadius ? CrownHeight : r < InnerRadius ? InnerHeight : (float)WorldGen.Default.Height(p.X, p.Z);
     }
 
     public static void Build(Node3D root)
@@ -81,23 +82,14 @@ public static class City
             Sky = new Sky { SkyMaterial = new ProceduralSkyMaterial { SkyTopColor = new Color("#3d5a80"), SkyHorizonColor = new Color("#c9b79c"), GroundBottomColor = new Color("#2b2620") } },
             AmbientLightSource = Godot.Environment.AmbientSource.Sky,
             FogEnabled = true,
-            FogDensity = 0.002f,
+            FogDensity = 0.0035f, // hides where the streamed land ends
             FogLightColor = new Color("#b7a98f"),
             TonemapMode = Godot.Environment.ToneMapper.Filmic,
         };
         root.AddChild(new WorldEnvironment { Environment = env });
-        root.AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-50, -30, 0), ShadowEnabled = true, LightEnergy = 1.2f });
+        root.AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-50, -30, 0), ShadowEnabled = true, LightEnergy = 1.0f });
 
-        // Land, and the harbor to the east.
-        Box(root, new Vector3(0, -0.5f, 0), new Vector3(400, 1, 400), "#5a5f3c", solid: true, offsetX: -50);
-        var water = new MeshInstance3D
-        {
-            Mesh = new PlaneMesh { Size = new Vector2(300, 400) },
-            Position = new Vector3(255, -0.6f, 0),
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.25f, 0.33f, 0.85f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.1f, Metallic = 0.3f },
-        };
-        root.AddChild(water);
-        Box(root, new Vector3(255, -3f, 0), new Vector3(300, 1, 400), "#1d2b30", solid: true); // harbor floor
+        // The land and the harbor come from the world generator (see Terrain).
 
         // The rings: raised platforms, each higher than the last.
         Disc(root, InnerRadius, InnerHeight, "#857a66");

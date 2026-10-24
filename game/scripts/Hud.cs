@@ -1,9 +1,10 @@
 using Godot;
 using Tristinwold.Shared;
+using Tristinwold.World;
 
 namespace Tristinwold.Game;
 
-/// <summary>Bars, where you are, news from the shared world, and the F10 window.</summary>
+/// <summary>Bars, where you are, the map, conversations, quests, news from the shared world, and the F10 window.</summary>
 public partial class Hud : CanvasLayer
 {
     readonly List<(string Text, double Until)> _toasts = [];
@@ -11,7 +12,14 @@ public partial class Hud : CanvasLayer
     ProgressBar _health = new(), _magicka = new(), _stamina = new(), _limit = new();
     Label _area = new(), _toastLabel = new(), _status = new(), _septims = new(), _center = new();
     PanelContainer _window = new();
-    VBoxContainer _board = new(), _companies = new(), _nemeses = new();
+    VBoxContainer _board = new(), _companies = new(), _nemeses = new(), _journal = new();
+    Control _root = new();
+    TabContainer _tabs = new();
+    MapView? _mini, _full;
+    PanelContainer _talk = new();
+    Label _talkWho = new(), _talkText = new(), _tracker = new();
+    VBoxContainer _talkOptions = new();
+    readonly List<(string Label, Action Then)> _options = [];
     Label _log = new();
     LineEdit _say = new();
 
@@ -21,7 +29,7 @@ public partial class Hud : CanvasLayer
 
     public override void _Ready()
     {
-        var root = new Control { AnchorRight = 1, AnchorBottom = 1, MouseFilter = Control.MouseFilterEnum.Ignore };
+        var root = _root = new Control { AnchorRight = 1, AnchorBottom = 1, MouseFilter = Control.MouseFilterEnum.Ignore };
         AddChild(root);
 
         var bars = new VBoxContainer { Position = new Vector2(24, 24), CustomMinimumSize = new Vector2(260, 0) };
@@ -33,12 +41,13 @@ public partial class Hud : CanvasLayer
         bars.AddChild(_septims);
         root.AddChild(_area = new Label { Position = new Vector2(24, 140) });
         root.AddChild(_status = new Label { Position = new Vector2(24, 166), Modulate = new Color(1, 1, 1, 0.6f) });
-        root.AddChild(_toastLabel = new Label { AnchorLeft = 1, AnchorRight = 1, OffsetLeft = -520, OffsetTop = 24, OffsetRight = -24, AutowrapMode = TextServer.AutowrapMode.Word, HorizontalAlignment = HorizontalAlignment.Right });
-        root.AddChild(_center = new Label { AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0.4f, OffsetLeft = -300, OffsetRight = 300, HorizontalAlignment = HorizontalAlignment.Center });
+        root.AddChild(_toastLabel = new Label { AnchorLeft = 1, AnchorRight = 1, OffsetLeft = -520, OffsetTop = 250, OffsetRight = -24, AutowrapMode = TextServer.AutowrapMode.Word, HorizontalAlignment = HorizontalAlignment.Right });
+        root.AddChild(_tracker = new Label { Position = new Vector2(24, 200), Modulate = new Color("#ffd27a"), CustomMinimumSize = new Vector2(480, 0), AutowrapMode = TextServer.AutowrapMode.Word });
+        root.AddChild(_center = new Label { AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0.68f, OffsetLeft = -300, OffsetRight = 300, HorizontalAlignment = HorizontalAlignment.Center });
 
         _window = new PanelContainer { AnchorLeft = 0.1f, AnchorRight = 0.9f, AnchorTop = 0.08f, AnchorBottom = 0.92f, Visible = false };
         root.AddChild(_window);
-        var tabs = new TabContainer();
+        var tabs = _tabs = new TabContainer();
         _window.AddChild(tabs);
         tabs.AddChild(Scroll("Board", _board));
         tabs.AddChild(Scroll("Companies", _companies));
@@ -54,6 +63,114 @@ public partial class Hud : CanvasLayer
             _say.Clear();
         };
         tabs.AddChild(chronicle);
+        tabs.AddChild(Scroll("Journal", _journal));
+
+        // A conversation: who, what they said, and what you can say back.
+        _talk = new PanelContainer { AnchorLeft = 0.2f, AnchorRight = 0.8f, AnchorTop = 0.55f, AnchorBottom = 0.95f, Visible = false };
+        var talkBox = new VBoxContainer();
+        _talk.AddChild(talkBox);
+        talkBox.AddChild(_talkWho = new Label { Modulate = new Color("#a8d8a0") });
+        talkBox.AddChild(_talkText = new Label { AutowrapMode = TextServer.AutowrapMode.Word, SizeFlagsVertical = Control.SizeFlags.ExpandFill });
+        talkBox.AddChild(_talkOptions = new VBoxContainer());
+        root.AddChild(_talk);
+    }
+
+    // ---- the map ---------------------------------------------------------------------------
+
+    public void AttachMap(WorldGen world, ExploredMap explored, Func<Vector3> player, Func<Vector3> facing, Func<IEnumerable<(double X, double Z)>> goals)
+    {
+        _mini = new MapView { World = world, Explored = explored, Player = player, Facing = facing, Goals = goals, Mini = true, MetresPerPixel = 3 };
+        _mini.SetAnchorsPreset(Control.LayoutPreset.TopRight);
+        (_mini.OffsetLeft, _mini.OffsetTop, _mini.OffsetRight, _mini.OffsetBottom) = (-224, 24, -24, 224);
+        _root.AddChild(_mini);
+        _full = new MapView { World = world, Explored = explored, Player = player, Facing = facing, Goals = goals, Visible = false, MetresPerPixel = 6 };
+        _full.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _root.AddChild(_full);
+    }
+
+    public void MapRevealed(List<(int Cx, int Cz)> cells)
+    {
+        if (cells.Count == 0) return;
+        _mini?.Revealed(cells);
+        _full?.Revealed(cells);
+    }
+
+    public bool MapOpen => _full?.Visible == true;
+
+    public void ToggleMap()
+    {
+        if (_full is null) return;
+        _full.Visible = !_full.Visible;
+        _full.Recentre();
+        UpdateMouse();
+    }
+
+    // ---- conversations ---------------------------------------------------------------------
+
+    public bool Talking => _talk.Visible;
+    public string TalkText => _talkText.Text;
+
+    public void Talk(string who, string text, params (string Label, Action Then)[] options)
+    {
+        _talk.Visible = true;
+        _talkWho.Text = who;
+        _talkText.Text = text;
+        Clear(_talkOptions);
+        _options.Clear();
+        foreach (var (label, then) in options)
+        {
+            _options.Add((label, then));
+            var b = new Button { Text = label, Alignment = HorizontalAlignment.Left };
+            b.Pressed += then;
+            _talkOptions.AddChild(b);
+        }
+        UpdateMouse();
+    }
+
+    public void EndTalk()
+    {
+        _talk.Visible = false;
+        UpdateMouse();
+    }
+
+    /// <summary>Picks the first reply that starts with this text, as if clicked (for the self-test).</summary>
+    public bool Choose(string startsWith)
+    {
+        var option = _options.FirstOrDefault(o => o.Label.StartsWith(startsWith, StringComparison.OrdinalIgnoreCase));
+        if (option.Then is null) return false;
+        option.Then();
+        return true;
+    }
+
+    public IEnumerable<string> Options => _options.Select(o => o.Label);
+
+    // ---- quests ----------------------------------------------------------------------------
+
+    public void Track(IEnumerable<string> lines) => _tracker.Text = string.Join("\n", lines);
+
+    public void ShowJournal(QuestLog log)
+    {
+        Clear(_journal);
+        foreach (var e in log.Entries.OrderBy(e => e.Stage == QuestStage.Done))
+            _journal.AddChild(new Label
+            {
+                Text = $"{e.Quest.Title}{(e.Stage == QuestStage.Done ? "  (done)" : "")}\n   From {e.Quest.GiverName} of {e.Quest.GiverHomeName}. {e.Objective}. Reward: {e.Quest.Reward} septims.",
+                AutowrapMode = TextServer.AutowrapMode.Word,
+                Modulate = e.Stage == QuestStage.Done ? new Color(1, 1, 1, 0.45f) : Colors.White,
+            });
+        if (log.Entries.Count == 0) _journal.AddChild(new Label { Text = "No quests yet. Look for people marked with \"!\" and ask them for work." });
+    }
+
+    public void OpenJournal()
+    {
+        if (!_window.Visible) ToggleWindow();
+        _tabs.CurrentTab = _tabs.GetTabIdxFromControl(_journal.GetParent<Control>());
+    }
+
+    void UpdateMouse()
+    {
+        if (DisplayServer.GetName() == "headless") return;
+        Input.MouseMode = _window.Visible || Talking || MapOpen ? Input.MouseModeEnum.Visible : Input.MouseModeEnum.Captured;
     }
 
     static ProgressBar Bar(Container parent, string colour)
@@ -75,8 +192,7 @@ public partial class Hud : CanvasLayer
     public void ToggleWindow()
     {
         _window.Visible = !_window.Visible;
-        if (DisplayServer.GetName() != "headless")
-            Input.MouseMode = _window.Visible ? Input.MouseModeEnum.Visible : Input.MouseModeEnum.Captured;
+        UpdateMouse();
     }
 
     public void Toast(string text, double seconds = 7)

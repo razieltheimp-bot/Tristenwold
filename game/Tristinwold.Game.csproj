@@ -7,7 +7,7 @@
     <RootNamespace>Tristinwold.Game</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../src/Tristinwold.Gameplay/Tristinwold.Gameplay.csproj" />
+    <ProjectReference Include="../src/Tristinwold.World/Tristinwold.World.csproj" />
     <ProjectReference Include="../src/Tristinwold.Shared/Tristinwold.Shared.csproj" />
   </ItemGroup>
 </Project>

@@ -29,6 +29,8 @@ public partial class Player : Fighter
     SpringArm3D _arm = new();
     double _swingCooldown, _spellCooldown, _downTimer;
 
+    public Camera3D Camera { get; private set; } = null!;
+
     public override void _Ready()
     {
         Local = this;
@@ -39,13 +41,13 @@ public partial class Player : Fighter
         AddChild(_pivot);
         _arm = new SpringArm3D { SpringLength = 5, Position = new Vector3(0.6f, 0, 0) };
         _pivot.AddChild(_arm);
-        _arm.AddChild(new Camera3D { Current = true });
+        _arm.AddChild(Camera = new Camera3D { Current = true, Far = 1000 });
         if (DisplayServer.GetName() != "headless") Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
     public override void _UnhandledInput(InputEvent e)
     {
-        if (e is InputEventMouseMotion motion && Input.MouseMode == Input.MouseModeEnum.Captured)
+        if (e is InputEventMouseMotion motion && Input.MouseMode == Input.MouseModeEnum.Captured && !Frozen)
         {
             RotateY(-motion.Relative.X * 0.003f);
             _pivot.Rotation = new Vector3(Mathf.Clamp(_pivot.Rotation.X - motion.Relative.Y * 0.003f, -1.2f, 0.6f), 0, 0);
@@ -64,6 +66,11 @@ public partial class Player : Fighter
             return;
         }
         Stats.Tick(delta, InFight);
+        if (Frozen)
+        {
+            FallAndSlide(delta, Vector3.Zero);
+            return;
+        }
 
         var input = Input.GetVector("move_left", "move_right", "move_forward", "move_back");
         var sprint = Input.IsActionPressed("sprint") && Stats.Stamina > 1;
@@ -85,6 +92,9 @@ public partial class Player : Fighter
 
     /// <summary>Set by the game while a fight is on, for regeneration.</summary>
     public bool InFight { get; set; }
+
+    /// <summary>Set while talking or reading the map: no walking off mid-sentence.</summary>
+    public bool Frozen { get; set; }
 
     /// <summary>A sword swing: hits the closest enemy in front, within reach.</summary>
     public bool Swing()
