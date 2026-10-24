@@ -98,7 +98,11 @@ def tuft(raw, out):
         c = c.resize((max(1, int(c.width * scale)), max(1, int(c.height * scale))), Image.Resampling.LANCZOS)
         x = int(512 + rng.uniform(-300, 300) - c.width / 2)
         card.alpha_composite(c, (max(0, min(1024 - c.width, x)), 512 - c.height))
-    card.save(out, optimize=True)
+    # The scan photographs darker than grass reads in daylight: lift it and warm it a little.
+    from PIL import ImageEnhance
+    rgb = ImageEnhance.Color(ImageEnhance.Brightness(card.convert("RGB")).enhance(1.9)).enhance(1.25)
+    rgb.putalpha(card.getchannel("A"))
+    rgb.save(out, optimize=True)
 
 
 if __name__ == "__main__":

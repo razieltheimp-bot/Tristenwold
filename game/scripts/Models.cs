@@ -217,6 +217,8 @@ public partial class Figure : Body
                 Hold(skeleton, "handslot.r", l.RightHand);
                 Hold(skeleton, "handslot.l", l.LeftHand);
             }
+            if (model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is { } body)
+                body.AddChild(new Proportions());
             f._anim = model.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().FirstOrDefault();
             if (f._anim is not null)
                 foreach (var name in f._anim.GetAnimationList())
@@ -308,6 +310,61 @@ public partial class Figure : Body
     public override void Talk() => Once("Interact", 1.2);
 
     public override void Mark(Color colour) => Models.Tint(this, colour.Lerp(Colors.White, 0.35f), 0.35f);
+}
+
+/// <summary>
+/// Gives the KayKit characters human proportions, keeping their blocky body as the centre of mass:
+/// a smaller head, a taller trunk, and arms and legs half as long again, so a figure reads as a
+/// person rather than a big head on a box. It runs after the animations each frame, stretching
+/// each limb bone along its length; a stretched bone's children are un-stretched so a hand or
+/// foot keeps its shape, and the hips are raised by however much the legs grew.
+/// </summary>
+public partial class Proportions : SkeletonModifier3D
+{
+    const float Leg = 2.3f, Arm = 1.75f;
+
+    /// <summary>Off draws the characters as KayKit made them (for comparing).</summary>
+    public static bool Enabled { get; set; } = true;
+
+    static readonly Dictionary<string, Vector3> Stretch = new()
+    {
+        ["head"] = Vector3.One * 0.5f,
+        ["spine"] = new(0.92f, 1.3f, 0.92f),
+        ["chest"] = new(1f, 1.15f, 0.95f),
+        ["upperarm.l"] = new(1, Arm, 1), ["lowerarm.l"] = new(1, Arm, 1),
+        ["upperarm.r"] = new(1, Arm, 1), ["lowerarm.r"] = new(1, Arm, 1),
+        ["upperleg.l"] = new(1, Leg, 1), ["lowerleg.l"] = new(1, Leg, 1),
+        ["upperleg.r"] = new(1, Leg, 1), ["lowerleg.r"] = new(1, Leg, 1),
+    };
+
+    Vector3[] _scale = [];
+    int _hips = -1;
+    float _lift;
+
+    void Measure(Skeleton3D s)
+    {
+        _scale = new Vector3[s.GetBoneCount()];
+        for (var i = 0; i < _scale.Length; i++) _scale[i] = Stretch.GetValueOrDefault(s.GetBoneName(i), Vector3.One);
+        _hips = s.FindBone("hips");
+        int lower = s.FindBone("lowerleg.l"), foot = s.FindBone("foot.l");
+        if (lower >= 0 && foot >= 0) _lift = (s.GetBoneRest(lower).Origin.Length() + s.GetBoneRest(foot).Origin.Length()) * (Leg - 1);
+    }
+
+    public override void _ProcessModificationWithDelta(double delta)
+    {
+        if (!Enabled || GetSkeleton() is not { } s) return;
+        if (_scale.Length != s.GetBoneCount()) Measure(s);
+        for (var i = 0; i < _scale.Length; i++)
+        {
+            var parent = s.GetBoneParent(i);
+            var undo = parent >= 0 ? _scale[parent] : Vector3.One;
+            if (undo == Vector3.One && _scale[i] == Vector3.One && i != _hips) continue;
+            var pose = s.GetBonePose(i);
+            var basis = Basis.FromScale(Vector3.One / undo) * pose.Basis * Basis.FromScale(_scale[i]);
+            var origin = i == _hips ? pose.Origin + Vector3.Up * _lift : pose.Origin;
+            s.SetBonePose(i, new Transform3D(basis, origin));
+        }
+    }
 }
 
 /// <summary>A four-legged animal built from shapes, with a trotting gait: skeevers, wolves, bears, mudcrabs.</summary>

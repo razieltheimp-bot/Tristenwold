@@ -40,6 +40,7 @@ public partial class Main : Node3D
         if (Mobile) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.SensorLandscape); // landscape from the first frame
         if (_args.TryGetValue("portraits", out var folder)) { _ = Portraits(folder); return; }
         if (_args.TryGetValue("showroom", out var room)) { _ = Showroom(room); return; }
+        if (_args.TryGetValue("lineup", out var line)) { Proportions.Enabled = !_args.ContainsKey("plain"); _ = Lineup(line); return; }
         if (_args.ContainsKey("account") && _args.ContainsKey("server")) { _ = LogInFromCommandLine(); return; }
         var scripted = _args.ContainsKey("selftest") || _args.ContainsKey("shots");
         if (scripted || _args.ContainsKey("server")) { Begin(ChoiceFromArgs()); return; }
@@ -86,9 +87,9 @@ public partial class Main : Node3D
         AddChild(new WorldEnvironment { Environment = new Godot.Environment { BackgroundMode = Godot.Environment.BGMode.Color, BackgroundColor = new Color("#2a2620"), AmbientLightSource = Godot.Environment.AmbientSource.Color, AmbientLightColor = new Color("#b0a898"), AmbientLightEnergy = 0.6f, TonemapMode = Godot.Environment.ToneMapper.Filmic } });
         AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-30, 35, 0), LightEnergy = 1.3f, LightColor = new Color("#fff0d6") });
         AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-10, 200, 0), LightEnergy = 0.5f, LightColor = new Color("#a0b8ff") });
-        var camera = new Camera3D { Position = new Vector3(0.25f, 1.15f, 2.6f), Fov = 30 };
+        var camera = new Camera3D { Position = new Vector3(0.35f, 1.25f, 5.2f), Fov = 30 };
         AddChild(camera);
-        camera.LookAt(new Vector3(0, 0.95f, 0), Vector3.Up);
+        camera.LookAt(new Vector3(0, 1.0f, 0), Vector3.Up);
         foreach (var look in new[] { "Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded" })
         {
             var figure = Figure.Create(look);
@@ -103,6 +104,39 @@ public partial class Main : Node3D
             figure.QueueFree();
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         }
+        GetTree().Quit();
+    }
+
+    /// <summary>The characters standing in a row, idle and walking, photographed: --lineup /some/folder</summary>
+    async Task Lineup(string folder)
+    {
+        AddChild(new WorldEnvironment { Environment = new Godot.Environment { BackgroundMode = Godot.Environment.BGMode.Color, BackgroundColor = new Color("#8fa6bd"), AmbientLightSource = Godot.Environment.AmbientSource.Color, AmbientLightColor = new Color("#b0a898"), AmbientLightEnergy = 0.7f, TonemapMode = Godot.Environment.ToneMapper.Filmic } });
+        AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-35, 30, 0), LightEnergy = 1.3f, LightColor = new Color("#fff0d6"), ShadowEnabled = true });
+        AddChild(new MeshInstance3D { Mesh = new PlaneMesh { Size = new Vector2(40, 40) }, MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#6b6248") } });
+        string[] looks = ["Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded", "guard", "townsfolk", "draugr"];
+        var figures = new List<Figure>();
+        for (var i = 0; i < looks.Length; i++)
+        {
+            var figure = Figure.Create(looks[i]);
+            figure.Position = new Vector3((i - (looks.Length - 1) / 2f) * 1.3f, 0, 0);
+            figure.RotationDegrees = new Vector3(0, 160, 0);
+            AddChild(figure);
+            figures.Add(figure);
+        }
+        var camera = new Camera3D { Position = new Vector3(0, 1.3f, 9f), Fov = 38 };
+        AddChild(camera);
+        camera.LookAt(new Vector3(0, 0.9f, 0), Vector3.Up);
+        async Task Shoot(string name)
+        {
+            for (var i = 0; i < 40; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            GetViewport().GetTexture().GetImage().SavePng($"{folder}/{name}.png");
+        }
+        await Shoot("idle");
+        foreach (var f in figures) f.Move(3.5f, true, false);
+        await Shoot("walking");
+        foreach (var f in figures) f.Attack();
+        for (var i = 0; i < 12; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        GetViewport().GetTexture().GetImage().SavePng($"{folder}/attacking.png");
         GetTree().Quit();
     }
 

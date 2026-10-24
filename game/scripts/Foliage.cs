@@ -54,7 +54,7 @@ public static class Foliage
             var up = new Vector3(0, 0.55f, 0);
             Vector3[] p = [-s, s, s + up, -s + up];
             Vector2[] uv = [new(0, 1), new(1, 1), new(1, 0), new(0, 0)];
-            float[] shade = [0.6f, 0.6f, 1, 1];
+            float[] shade = [0.75f, 0.75f, 1, 1];
             foreach (var i in new[] { 0, 1, 2, 0, 2, 3 })
             {
                 st.SetColor(new Color(shade[i], shade[i], shade[i]));

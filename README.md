@@ -393,7 +393,10 @@ lighthouse and ruins come in seeded variants. `godot --path game -- --showroom .
 
 Other 3D models: the KayKit packs by Kay Lousberg (www.kaylousberg.com): Adventurers, Skeletons, Medieval Hexagon,
 Dungeon Remastered and Halloween Bits. They are CC0 (free for any use) and live in `game/assets/kaykit`.
-Wolves, bears, skeevers and mudcrabs are built from shapes in code until animal models arrive.
+Wolves, bears, skeevers and mudcrabs are built from shapes in code until animal models arrive. The KayKit characters are re-proportioned as
+they move (`Proportions` in `Models.cs`): their blocky body stays the centre, with a smaller head and arms and legs
+half as long again, so they stand like people. `godot --path game -- --lineup ./shots` photographs them
+(add `--plain` for the originals).
 
 Earlier FFX prototypes drew on Fahrenheit, the FFX-AP Archipelago client, FFX_TAS_Python, Farplane,
 UnX, VBFExtract and FFXView. None of that code ships here any more.
