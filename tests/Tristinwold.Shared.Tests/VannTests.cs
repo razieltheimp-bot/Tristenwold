@@ -196,6 +196,10 @@ public class RiftenTests
         Assert.Equal("the Gallows Perch", server.State.Groups["Joe"].Area);
         Assert.Contains(outs.Select(o => o.Message).OfType<Notice>(), n => n.Text.Contains("the Gallows Perch"));
 
+        // With Tristinwold.esp installed the game already reports the Tristinwold name.
+        server.Handle("Joe", new Presence("The Gallows Perch", []));
+        Assert.Equal("the Gallows Perch", server.State.Groups["Joe"].Area);
+
         // Places outside the map keep their Skyrim names.
         server.Handle("Joe", new Presence("Whiterun", []));
         Assert.Equal("Whiterun", server.State.Groups["Joe"].Area);

@@ -8,6 +8,7 @@ Regen and Reflect today; limit breaks and summons are planned. Leveling stays pu
 |---|---|
 | **Nemesis rules** (`src/Tristinwold.Nemesis`) | Built and tested. Uses Skyrim actor kinds, actor values and damage types. |
 | **Shared world server + Vann** (`src/Tristinwold.Shared`, `tools/Tristinwold.Server`) | Built and tested end to end. Game-agnostic. |
+| **Tristinwold.esp builder** (`skyrim/esp-builder`) | Built and tested against a stand-in Skyrim.esm. Renames Riften to Tristinwold in game. |
 | **Skyrim add-on** (`skyrim/plugin`, a SkyrimPlatform plugin) | Built: fights, nemeses, Vann's hunts, contract board, dead drops, F10 window. Tested against the real server in a simulated game; not yet run in Skyrim. |
 | **Story, character creator, Final Fantasy mechanics** | Planned, on Skyrim. |
 
@@ -21,7 +22,8 @@ with followers is a company too.
    [SkyrimPlatform](https://www.nexusmods.com/skyrimspecialedition/mods/54909). For co-op, add
    Skyrim Together Reborn.
 2. Build the add-on (or take a built copy): `cd skyrim/plugin && npm install && npm run build`.
-3. Copy `skyrim/plugin/dist/Platform` into Skyrim's `Data` folder.
+3. Copy `skyrim/plugin/dist/Platform` into Skyrim's `Data` folder, and build and enable
+   `Tristinwold.esp` (see "Where the story happens").
 4. Edit `Data/Platform/Plugins/tristinwold-settings.txt` (plain JSON):
 
    | Setting | Meaning |
@@ -67,15 +69,15 @@ Names, epithets and taunts are data (`NamePack` in `src/Tristinwold.Nemesis/Cont
 dotnet run --project tools/Tristinwold.NemesisSim -- 80 7
 ```
 
-## Where the story happens
+## Where the story happens: always Tristinwold
 
-**Campaigns 1 and 2 are staged in Riften.** The server renames Skyrim places to Tristinwold ones,
-so dead drops, near misses, nemesis territories and Vann all speak Tristinwold while you play in
-Riften:
+There is one city in every campaign, and it's Tristinwold. It's built from Skyrim's Riften (a
+lakeside city with docks, a warren under the streets and a thieves' guild), renamed in game by
+**Tristinwold.esp**: the map, location names and interiors all say Tristinwold.
 
-| Tristinwold | Riften |
+| Tristinwold | Built from |
 |---|---|
-| Tristinwold (the city streets) | Riften |
+| Tristinwold (the city) | Riften |
 | the Gallows Perch (Ravenscrew Tong's tavern) | The Ragged Flagon |
 | the Warrens | The Ratway |
 | the Tong sea-caves | Ratway Vaults |
@@ -90,13 +92,23 @@ Riften:
 | the Crown | Mistveil Keep |
 | the Watch house | Riften Jail |
 
-Places outside the table keep their Skyrim names (Whiterun is still Whiterun). The table lives in
-the campaign file (`places`), so you can change it. If a place doesn't rename in game, its
-in-game location name differs from the table; the server window prints areas as they arrive.
+Campaign 3, The Last Ring, is the same city 300 years on, ruined down to the Crown. That's planned
+as later changes to Tristinwold.esp, not a different city.
 
-**Campaign 3, The Last Ring, gets its own city.** Once the planes have collided and only one
-mortal stronghold is left, Tristinwold becomes a new walled city built in the Creation Kit.
-That's planned, not built.
+### Build Tristinwold.esp (once, on your PC)
+
+```
+dotnet run --project skyrim/esp-builder -- "C:\Program Files (x86)\Steam\steamapps\common\Skyrim Special Edition\Data"
+```
+
+It reads your own `Skyrim.esm`, writes `Tristinwold.esp` (light, ESL-flagged) into that Data
+folder and lists every rename. Enable it in your mod manager. Everyone in the game needs the same
+file. The renames come from one table, `CampaignState.RiftenAsTristinwold` in
+`src/Tristinwold.Shared/Campaign.cs`, which the server also uses, so a company without the
+plugin still sees Tristinwold names in the shared world.
+
+What it doesn't change: NPCs still say "Riften" in recorded dialogue, and a few signs are
+painted textures.
 
 ## Shared world: everyone runs their own party of three
 

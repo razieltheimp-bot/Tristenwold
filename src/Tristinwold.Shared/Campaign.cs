@@ -77,7 +77,11 @@ public sealed class CampaignState
     public string Place(string skyrimArea)
     {
         foreach (var (skyrim, tristinwold) in Places)
-            if (skyrim.Equals(skyrimArea, StringComparison.OrdinalIgnoreCase)) return tristinwold;
+        {
+            // With Tristinwold.esp the game already says "The Gallows Perch"; use our spelling.
+            if (skyrim.Equals(skyrimArea, StringComparison.OrdinalIgnoreCase)
+                || tristinwold.Equals(skyrimArea, StringComparison.OrdinalIgnoreCase)) return tristinwold;
+        }
         return skyrimArea;
     }
 
