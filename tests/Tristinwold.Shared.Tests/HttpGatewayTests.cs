@@ -77,4 +77,78 @@ public class HttpGatewayTests
         Assert.Null(body.Session);
         Assert.Contains("password", Assert.IsType<Rejected>(Assert.Single(body.Messages)).Reason, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task A_phone_over_https_and_a_pc_over_tcp_share_the_world()
+    {
+        var core = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannEnabled = false, RewindChance = 0, KeystoneMeetChance = 0 }, seed: 1);
+        var host = new SharedWorldHost(core, () => { });
+        var httpPort = FreePort();
+        using var gateway = new HttpGateway(host, $"http://127.0.0.1:{httpPort}/");
+        gateway.Start();
+        var tcpPort = FreePort();
+        using var server = new TcpListener(IPAddress.Loopback, tcpPort);
+        server.Start();
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                var tcp = await server.AcceptTcpClientAsync();
+                _ = Task.Run(async () =>
+                {
+                    var conn = new LineConnection(tcp.GetStream());
+                    var hello = (Hello)(await conn.ReadAsync(CancellationToken.None))!;
+                    var player = host.Join(hello, new Sink(conn));
+                    while (player is not null && await conn.ReadAsync(CancellationToken.None) is { } m) host.Receive(player, m);
+                });
+            }
+        });
+
+        Hello Hi(string who, string password = "") => new(who, password, Wire.ProtocolVersion, [who]);
+        using var phone = IGameLink.Open($"http://127.0.0.1:{httpPort}", () => Hi("Mira"));
+        using var pc = IGameLink.Open($"127.0.0.1:{tcpPort}", () => Hi("Joe"));
+        Assert.IsType<HttpGameClient>(phone);
+        Assert.IsType<GameClient>(pc);
+        phone.Start();
+        pc.Start();
+
+        async Task<T> Next<T>(IGameLink link, Func<T, bool>? match = null) where T : Message
+        {
+            for (var i = 0; i < 200; i++)
+            {
+                while (link.TryReceive(out var m)) if (m is T t && (match?.Invoke(t) ?? true)) return t;
+                await Task.Delay(25);
+            }
+            throw new TimeoutException($"no {typeof(T).Name}");
+        }
+
+        await Next<Welcome>(phone);
+        await Next<Welcome>(pc);
+        Assert.Equal(ClientStatus.Connected, phone.Status);
+        phone.Send(new Say("Typed on a phone."));
+        var heard = await Next<Notice>(pc, n => n.Kind == NoticeKind.Chat);
+        Assert.Equal("Mira", heard.From);
+        pc.Send(new Say("Heard you."));
+        Assert.Equal("Joe", (await Next<Notice>(phone, n => n.Kind == NoticeKind.Chat && n.From == "Joe")).From);
+    }
+
+    [Fact]
+    public async Task A_wrong_password_over_https_is_turned_away()
+    {
+        var core = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannEnabled = false, Password = "secret" }, seed: 1);
+        var host = new SharedWorldHost(core, () => { });
+        var port = FreePort();
+        using var gateway = new HttpGateway(host, $"http://127.0.0.1:{port}/");
+        gateway.Start();
+        using var phone = new HttpGameClient($"http://127.0.0.1:{port}/", () => new Hello("Mira", "guess", Wire.ProtocolVersion, ["Mira"]));
+        phone.Start();
+        for (var i = 0; i < 200 && phone.Status != ClientStatus.Rejected; i++) await Task.Delay(25);
+        Assert.Equal(ClientStatus.Rejected, phone.Status);
+        Assert.True(phone.TryReceive(out var m) && m is Rejected);
+    }
+
+    sealed class Sink(LineConnection conn) : IClientSink
+    {
+        public void Send(Message message) => _ = conn.WriteAsync(message, CancellationToken.None);
+    }
 }

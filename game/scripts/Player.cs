@@ -47,11 +47,16 @@ public partial class Player : Fighter
 
     public override void _UnhandledInput(InputEvent e)
     {
-        if (e is InputEventMouseMotion motion && Input.MouseMode == Input.MouseModeEnum.Captured && !Frozen)
-        {
-            RotateY(-motion.Relative.X * 0.003f);
-            _pivot.Rotation = new Vector3(Mathf.Clamp(_pivot.Rotation.X - motion.Relative.Y * 0.003f, -1.2f, 0.6f), 0, 0);
-        }
+        if (e is InputEventMouseMotion motion && Input.MouseMode == Input.MouseModeEnum.Captured)
+            Look(motion.Relative * 0.003f);
+    }
+
+    /// <summary>Turns the view: x is yaw, y is pitch (radians). From the mouse, or a finger on a touch screen.</summary>
+    public void Look(Vector2 by)
+    {
+        if (Frozen) return;
+        RotateY(-by.X);
+        _pivot.Rotation = new Vector3(Mathf.Clamp(_pivot.Rotation.X - by.Y, -1.2f, 0.6f), 0, 0);
     }
 
     public override void _PhysicsProcess(double delta)

@@ -44,12 +44,33 @@ public sealed class LineConnection(Stream stream) : IDisposable
 
 public enum ClientStatus { Disconnected, Connecting, Connected, Rejected }
 
+/// <summary>A game's link to the shared world, over TCP (<see cref="GameClient"/>) or HTTPS (<see cref="HttpGameClient"/>).</summary>
+public interface IGameLink : IDisposable
+{
+    ClientStatus Status { get; }
+    string? LastError { get; }
+    void Start();
+    void Send(Message message);
+    bool TryReceive(out Message message);
+
+    /// <summary>"host:port" for TCP, or an http(s):// address (a Cloudflare tunnel, say) for the HTTP gateway.</summary>
+    static IGameLink Open(string address, Func<Hello> hello)
+    {
+        if (address.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || address.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return new HttpGameClient(address, hello);
+        var colon = address.LastIndexOf(':');
+        return colon > 0 && int.TryParse(address[(colon + 1)..], out var port)
+            ? new GameClient(address[..colon], port, hello)
+            : new GameClient(address, Wire.DefaultPort, hello);
+    }
+}
+
 /// <summary>
 /// The in-game side of the connection. Runs on background threads and reconnects on its
 /// own. The game thread drains <see cref="TryReceive"/> once a frame; nothing here ever
 /// touches game memory.
 /// </summary>
-public sealed class GameClient : IDisposable
+public sealed class GameClient : IGameLink
 {
     readonly ConcurrentQueue<Message> _inbox = new();
     readonly ConcurrentQueue<Message> _outbox = new();

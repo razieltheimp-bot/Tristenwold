@@ -50,6 +50,8 @@ public partial class MapView : Control
 
     public void Recentre() => _pan = Vector2.Zero;
 
+    public void Zoom(float by) => MetresPerPixel = Mathf.Clamp(MetresPerPixel * by, 0.5f, 64);
+
     public override void _Process(double delta)
     {
         _sinceUpload += delta;
@@ -72,6 +74,7 @@ public partial class MapView : Control
             case InputEventMouseButton { ButtonIndex: MouseButton.WheelDown, Pressed: true }: MetresPerPixel = Mathf.Min(64, MetresPerPixel * 1.25f); break;
             case InputEventMouseButton { ButtonIndex: MouseButton.Left } b: _dragging = b.Pressed; break;
             case InputEventMouseMotion m when _dragging: _pan -= m.Relative * MetresPerPixel; break;
+            case InputEventMagnifyGesture g: Zoom(1 / g.Factor); break; // pinch
         }
     }
 
@@ -131,7 +134,7 @@ public partial class MapView : Control
         DrawColoredPolygon([me + dir * 9, me - dir * 6 + side * 6, me - dir * 3, me - dir * 6 - side * 6], Colors.White);
 
         if (Mini) DrawRect(new Rect2(Vector2.Zero, size), new Color(Ink, 0.5f), false, 2);
-        else DrawString(font, new Vector2(16, 28), $"North is up. {MetresPerPixel:0.#} m per pixel. Scroll to zoom, drag to pan, M to close.", HorizontalAlignment.Left, -1, 14, Ink);
+        else DrawString(font, new Vector2(16, 28), $"North is up. {MetresPerPixel:0.#} m per pixel. Scroll or pinch to zoom, drag to pan, M to close.", HorizontalAlignment.Left, -1, 14, Ink);
     }
 
     ImageTexture Texture((int, int) tile)

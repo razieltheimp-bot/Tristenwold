@@ -9,8 +9,10 @@ namespace Tristinwold.Game;
 /// <summary>
 /// Starts Tristinwold: builds the city, streams the endless world around the player, and links
 /// the game to the shared world. Command line (after "--"):
-///   --server host:port   the Tristinwold server's TCP address (default 127.0.0.1:7777; "off" to play alone)
+///   --server address     the server: host:port over TCP (192.168.1.20:7777), or an https:// address such
+///                        as a Cloudflare tunnel's; "off" to play alone. Without it, a start screen asks.
 ///   --company Name       your company's name
+///   --touch              on-screen touch controls (on by itself on touch screens)
 ///   --password secret
 ///   --save path          where the company's map and quests are kept (default user://saves/Name.json)
 ///   --selftest           play scripted fights and quests headless and exit 0 or 1
@@ -26,7 +28,7 @@ public partial class Main : Node3D
     Terrain _terrain = null!;
     Places _places = null!;
     EncounterTracker _tracker = null!;
-    GameClient? _client;
+    IGameLink? _client;
     string _area = "", _sentArea = "", _savePath = "";
     double _clock, _lastRespawnCheck, _lastReveal, _lastPlaces, _lastSave;
     readonly Dictionary<Lair, List<Enemy>> _lairs = [];
@@ -35,9 +37,36 @@ public partial class Main : Node3D
     public override void _Ready()
     {
         ParseArgs();
-        DefineInputs();
-        City.Build(this);
-        _terrain = new Terrain(_world);
+        var scripted = _args.ContainsKey("selftest") || _args.ContainsKey("shots");
+        if (scripted || _args.ContainsKey("server")) { Begin(); return; }
+        var start = new StartScreen();
+        start.Play += (company, server, password) =>
+        {
+            (_args["company"], _args["server"], _args["password"]) = (company, server, password);
+            Begin();
+        };
+        AddChild(start);
+        if (_args.TryGetValue("snap", out var snap)) _ = Snap(start, snap);
+    }
+
+    /// <summary>Saves a picture of the start screen and carries on, for checking its layout.</summary>
+    async Task Snap(StartScreen start, string path)
+    {
+        start.Fill("Joe", "https://seasonal-deck-organisms-sf.trycloudflare.com", "secret");
+        for (var i = 0; i < 30; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        GetViewport().GetTexture().GetImage().SavePng(path);
+        GetTree().Quit();
+    }
+
+    public bool Mobile => OS.HasFeature("mobile");
+    public bool TouchMode { get; private set; }
+
+    void Begin()
+    {
+        TouchMode = _args.ContainsKey("touch") || DisplayServer.IsTouchscreenAvailable();
+        DefineInputs(mouseButtons: !TouchMode);
+        City.Build(this, fog: Mobile ? 0.006f : 0.0035f);
+        _terrain = new Terrain(_world) { ViewChunks = Mobile ? 4 : 7 };
         AddChild(_terrain);
         _terrain.EnsureAround(City.PlayerStart, 2);
 
@@ -79,6 +108,7 @@ public partial class Main : Node3D
             },
             _player.Company);
 
+        if (TouchMode) EnableTouch();
         Connect();
         if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
         else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots));
@@ -91,14 +121,30 @@ public partial class Main : Node3D
     {
         var server = _args.GetValueOrDefault("server", "127.0.0.1:7777");
         if (server == "off") { _hud.Toast("Playing alone: no shared world."); return; }
-        var (host, port) = (server.Split(':')[0], server.Contains(':') ? int.Parse(server.Split(':')[1]) : Wire.DefaultPort);
         var password = _args.GetValueOrDefault("password", "");
-        _client = new GameClient(host, port, () => new Hello(_player.Company, password, Wire.ProtocolVersion, [_player.Company]));
+        _client = IGameLink.Open(server, () => new Hello(_player.Company, password, Wire.ProtocolVersion, [_player.Company]));
         _hud.Send = m => _client?.Send(m);
         _client.Start();
     }
 
-    public GameClient? Client => _client;
+    /// <summary>Turns on the on-screen controls (and stops a tap anywhere from counting as a sword swing).</summary>
+    public void EnableTouch()
+    {
+        TouchMode = true;
+        foreach (var action in new[] { "attack", "spell" })
+            foreach (var e in InputMap.ActionGetEvents(action).OfType<InputEventMouseButton>()) InputMap.ActionEraseEvent(action, e);
+        _hud.TouchEnabled = true;
+        _hud.Touch.Look = by => _player.Look(by);
+        _hud.Touch.LabelFor = action => action == "cycle_element" ? _player.Element.ToString() : null;
+        _hud.Touch.Lit = action => action switch
+        {
+            "limit" => _player.Stats.LimitReady,
+            "interact" => Nearest() is not null,
+            _ => false,
+        };
+    }
+
+    public IGameLink? Client => _client;
     public Player PlayerNode => _player;
     public EncounterTracker Tracker => _tracker;
     public event Action<Message>? Received;
@@ -153,6 +199,7 @@ public partial class Main : Node3D
 
     public override void _Process(double delta)
     {
+        if (_player is null) return; // still on the start screen
         _clock += delta;
         while (_client is { } c && c.TryReceive(out var m)) Handle(m);
         var pos = _player.GlobalPosition;
@@ -195,7 +242,7 @@ public partial class Main : Node3D
             _hud.Toast("You rest. The world moves on without you.");
         }
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _area, status + "    M: map   J: journal   E: talk   F10: shared world   T: rest   Q: element   R: limit");
+        _hud.Update(_player, _area, TouchMode ? status : status + "    M: map   J: journal   E: talk   F10: shared world   T: rest   Q: element   R: limit");
         _hud.Track(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})"));
     }
 
@@ -419,10 +466,11 @@ public partial class Main : Node3D
         }
     }
 
-    static void DefineInputs()
+    static void DefineInputs(bool mouseButtons)
     {
-        void Key(string action, Key key) { if (!InputMap.HasAction(action)) InputMap.AddAction(action); InputMap.ActionAddEvent(action, new InputEventKey { PhysicalKeycode = key }); }
-        void Mouse(string action, MouseButton b) { if (!InputMap.HasAction(action)) InputMap.AddAction(action); InputMap.ActionAddEvent(action, new InputEventMouseButton { ButtonIndex = b }); }
+        // A small deadzone, so a touch joystick only part way out still walks.
+        void Key(string action, Key key) { if (!InputMap.HasAction(action)) InputMap.AddAction(action, 0.2f); InputMap.ActionAddEvent(action, new InputEventKey { PhysicalKeycode = key }); }
+        void Mouse(string action, MouseButton b) { if (!InputMap.HasAction(action)) InputMap.AddAction(action, 0.2f); if (mouseButtons) InputMap.ActionAddEvent(action, new InputEventMouseButton { ButtonIndex = b }); }
         Key("move_forward", Godot.Key.W); Key("move_back", Godot.Key.S); Key("move_left", Godot.Key.A); Key("move_right", Godot.Key.D);
         Key("jump", Godot.Key.Space); Key("sprint", Godot.Key.Shift);
         Mouse("attack", MouseButton.Left); Mouse("spell", MouseButton.Right);
@@ -432,6 +480,7 @@ public partial class Main : Node3D
 
     public override void _ExitTree()
     {
+        if (_player is null) return; // still on the start screen
         Save();
         _client?.Dispose();
     }

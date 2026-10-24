@@ -20,6 +20,10 @@ public partial class Hud : CanvasLayer
     Label _talkWho = new(), _talkText = new(), _tracker = new();
     VBoxContainer _talkOptions = new();
     readonly List<(string Label, Action Then)> _options = [];
+
+    /// <summary>On-screen controls for touch screens; hidden unless the game turns them on.</summary>
+    public TouchControls Touch { get; } = new() { Visible = false };
+    public bool TouchEnabled { get; set; }
     Label _log = new();
     LineEdit _say = new();
 
@@ -47,8 +51,13 @@ public partial class Hud : CanvasLayer
 
         _window = new PanelContainer { AnchorLeft = 0.1f, AnchorRight = 0.9f, AnchorTop = 0.08f, AnchorBottom = 0.92f, Visible = false };
         root.AddChild(_window);
-        var tabs = _tabs = new TabContainer();
-        _window.AddChild(tabs);
+        var windowBox = new VBoxContainer();
+        _window.AddChild(windowBox);
+        var close = new Button { Text = "Close", SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd, CustomMinimumSize = new Vector2(120, 40) };
+        close.Pressed += ToggleWindow;
+        windowBox.AddChild(close);
+        var tabs = _tabs = new TabContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        windowBox.AddChild(tabs);
         tabs.AddChild(Scroll("Board", _board));
         tabs.AddChild(Scroll("Companies", _companies));
         tabs.AddChild(Scroll("Nemeses", _nemeses));
@@ -72,7 +81,16 @@ public partial class Hud : CanvasLayer
         talkBox.AddChild(_talkWho = new Label { Modulate = new Color("#a8d8a0") });
         talkBox.AddChild(_talkText = new Label { AutowrapMode = TextServer.AutowrapMode.Word, SizeFlagsVertical = Control.SizeFlags.ExpandFill });
         talkBox.AddChild(_talkOptions = new VBoxContainer());
+        root.AddChild(Touch);
         root.AddChild(_talk);
+    }
+
+    public override void _Process(double delta)
+    {
+        // The touch controls step aside while a menu, the map or a conversation is open.
+        var show = TouchEnabled && !_window.Visible && !Talking && !MapOpen;
+        if (Touch.Visible && !show) Touch.ReleaseAll();
+        Touch.Visible = show;
     }
 
     // ---- the map ---------------------------------------------------------------------------
@@ -86,6 +104,17 @@ public partial class Hud : CanvasLayer
         _full = new MapView { World = world, Explored = explored, Player = player, Facing = facing, Goals = goals, Visible = false, MetresPerPixel = 6 };
         _full.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         _root.AddChild(_full);
+        // Buttons for zooming and closing with a finger.
+        var bar = new HBoxContainer();
+        bar.SetAnchorsPreset(Control.LayoutPreset.BottomRight);
+        (bar.OffsetLeft, bar.OffsetTop, bar.OffsetRight, bar.OffsetBottom) = (-330, -76, -16, -16);
+        foreach (var (text, act) in new (string, Action)[] { ("-", () => _full.Zoom(1.5f)), ("+", () => _full.Zoom(1 / 1.5f)), ("Close", ToggleMap) })
+        {
+            var b = new Button { Text = text, CustomMinimumSize = new Vector2(text == "Close" ? 130 : 80, 56) };
+            b.Pressed += act;
+            bar.AddChild(b);
+        }
+        _full.AddChild(bar);
     }
 
     public void MapRevealed(List<(int Cx, int Cz)> cells)

@@ -53,6 +53,7 @@ public partial class SelfTest(Main main) : Node
             p.Stats.Heal(1000);
             await Until(() => !main.Tracker.InFight, 15);
 
+            await Touch();
             await Explore();
             await Teleport(new Vector3(-150, 0, -120));
             await Until(() => !main.Tracker.InFight, 15);
@@ -109,6 +110,76 @@ public partial class SelfTest(Main main) : Node
             _log.Add($"FAIL: {ex.Message}");
             Finish(1);
         }
+    }
+
+    // ---- a touch screen ----------------------------------------------------------------------
+
+    async Task Touch()
+    {
+        var (p, hud) = (main.PlayerNode, main.HudNode);
+        var touch = hud.Touch;
+        main.EnableTouch();
+        await Frames(3);
+        Check(touch.Visible, "touch controls on screen");
+        Vector2 Screen(Vector2 local) => touch.GetGlobalTransformWithCanvas() * local;
+
+        // 9. The left thumb walks.
+        var start = p.GlobalPosition;
+        var forward = -p.GlobalTransform.Basis.Z;
+        var stick = Screen(new Vector2(150, touch.Screen.Y - 150));
+        await Finger(0, stick, true);
+        await Slide(0, stick + new Vector2(0, -80), new Vector2(0, -80));
+        await Frames(40);
+        var walked = (p.GlobalPosition - start).Dot(forward);
+        Check(walked > 2, $"the joystick walks you forward ({walked:0.0} m)");
+        await Finger(0, stick + new Vector2(0, -80), false);
+        await Frames(10);
+        var stopped = p.GlobalPosition;
+        await Frames(10);
+        Check(stopped.DistanceTo(p.GlobalPosition) < 0.3f, "letting go stops you");
+
+        // 10. The right thumb looks around.
+        var yaw = p.Rotation.Y;
+        var look = Screen(new Vector2(touch.Screen.X * 0.6f, touch.Screen.Y * 0.3f));
+        await Finger(1, look, true);
+        await Slide(1, look + new Vector2(120, 0), new Vector2(120, 0));
+        await Finger(1, look + new Vector2(120, 0), false);
+        Check(Math.Abs(Mathf.AngleDifference(yaw, p.Rotation.Y)) > 0.3f, "dragging on the right turns the view");
+
+        // 11. The Strike button swings the sword.
+        var skeever = Spawn("skeever", p.GlobalPosition - p.GlobalTransform.Basis.Z * 1.8f);
+        await Frames(5);
+        p.Face(skeever.GlobalPosition);
+        await Tap(Screen(touch.CentreOf("attack")));
+        Check(skeever.Stats.Health < skeever.Stats.MaxHealth, $"the Strike button hits ({skeever.Stats.Health:0}/{skeever.Stats.MaxHealth:0})");
+        skeever.Stats.TakeHit(10_000, DamageKind.Physical, AttackKind.Weapon);
+        main.Tracker.Died(skeever.Id, p.Company, main.Clock);
+
+        // 12. The Map button opens the map, and the controls step aside for it.
+        await Tap(Screen(touch.CentreOf("map")));
+        await Frames(2);
+        Check(hud.MapOpen && !touch.Visible, "the Map button opens the map");
+        hud.ToggleMap();
+        await Until(() => !main.Tracker.InFight, 15);
+    }
+
+    async Task Finger(int index, Vector2 at, bool down)
+    {
+        GetViewport().PushInput(new InputEventScreenTouch { Index = index, Position = at, Pressed = down }, inLocalCoords: true); // already in the game's own coordinates
+        await Frames(2);
+    }
+
+    async Task Slide(int index, Vector2 at, Vector2 by)
+    {
+        GetViewport().PushInput(new InputEventScreenDrag { Index = index, Position = at, Relative = by }, inLocalCoords: true);
+        await Frames(2);
+    }
+
+    async Task Tap(Vector2 at)
+    {
+        await Finger(5, at, true);
+        await Finger(5, at, false);
+        await Frames(3);
     }
 
     // ---- the world ---------------------------------------------------------------------------

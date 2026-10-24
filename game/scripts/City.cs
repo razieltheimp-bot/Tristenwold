@@ -71,7 +71,7 @@ public static class City
         return r < CrownRadius ? CrownHeight : r < InnerRadius ? InnerHeight : (float)WorldGen.Default.Height(p.X, p.Z);
     }
 
-    public static void Build(Node3D root)
+    public static void Build(Node3D root, float fog = 0.0035f)
     {
         var rng = new Rng(1337);
 
@@ -82,7 +82,7 @@ public static class City
             Sky = new Sky { SkyMaterial = new ProceduralSkyMaterial { SkyTopColor = new Color("#3d5a80"), SkyHorizonColor = new Color("#c9b79c"), GroundBottomColor = new Color("#2b2620") } },
             AmbientLightSource = Godot.Environment.AmbientSource.Sky,
             FogEnabled = true,
-            FogDensity = 0.0035f, // hides where the streamed land ends
+            FogDensity = fog, // hides where the streamed land ends
             FogLightColor = new Color("#b7a98f"),
             TonemapMode = Godot.Environment.ToneMapper.Filmic,
         };

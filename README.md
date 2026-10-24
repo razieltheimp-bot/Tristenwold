@@ -26,8 +26,37 @@ You need [Godot 4.7 .NET](https://godotengine.org/download) and the .NET 10 SDK.
 godot --path game -- --server 192.168.1.20:7777 --company Joe --password secret
 ```
 
-Leave out `--server` to use `127.0.0.1:7777`. Pass `--server off` to play alone. You can also open
+Without `--server`, the game opens on a start screen that asks for your company's name, the server's
+address and its password (and remembers them). Leave the address blank to play alone. You can also open
 `game/project.godot` in the Godot editor and press Play.
+
+### Playing from a phone, or from anywhere: a Cloudflare tunnel
+
+Phones (and friends outside your home network) reach the server through a free Cloudflare quick
+tunnel. You don't need port forwarding or a Cloudflare account. On the computer running the server:
+
+1. Install cloudflared: `winget install --id Cloudflare.cloudflared` on Windows, `brew install cloudflared`
+   on a Mac, or from [Cloudflare's downloads page](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/).
+2. Start the server with `--tunnel` and a password:
+   ```
+   dotnet run --project tools/Tristinwold.Server -- --tunnel --password secret
+   ```
+   It prints a line like `Cloudflare tunnel open. On a phone (or anywhere), enter this as the server:
+   https://seasonal-deck-organisms-sf.trycloudflare.com`.
+3. On the phone, type that address and the password on the start screen.
+
+The address changes each time the server starts. (For a fixed address, set up a named tunnel on your own
+domain in Cloudflare and point it at `http://localhost:7778`.) Anyone with the address can try to join,
+so always use `--password` with `--tunnel`. PCs can use the https address too, or the usual `host:7777`.
+
+On a touch screen the game shows on-screen controls: a joystick wherever your left thumb lands, drag on
+the right to look, and buttons for Strike, Spell, Limit, Jump, Use (talk or pick up), Run, the spell's
+element, Map, Quests, World and Rest. Pinch to zoom the map. `--touch` turns them on with a mouse, for trying
+them out on a PC.
+
+The game is built with Godot's C# support, which can't run in a web browser yet (Godot 4.7), so a phone
+plays it as an installed app. That means an Android export (an `.apk`) or an iOS export (which needs a Mac
+and an Apple developer account).
 
 | Key | Does |
 |---|---|
@@ -80,7 +109,8 @@ Self-test (headless, exits 0 on success):
 ```
 godot --headless --path game -- --selftest --server off                       # combat, exploring and one quest of each kind
 godot --headless --path game -- --selftest --server 127.0.0.1:7777 --company Joe   # plus a nemesis returning
-godot --path game -- --shots ./shots --server off    # a screenshot tour of the world (needs a display)
+godot --path game -- --shots ./shots --server off    # a screenshot tour of the world (needs a display; add --touch for the phone layout)
+godot --headless --path game -- --selftest --server https://….trycloudflare.com --company Joe --password secret   # through a tunnel
 ```
 
 ## Play in Skyrim (optional)

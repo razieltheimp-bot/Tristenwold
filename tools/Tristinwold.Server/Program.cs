@@ -3,15 +3,17 @@
 //
 //   dotnet run --project tools/Tristinwold.Server -- [--port 7777] [--http-port 7778]
 //       [--password secret] [--campaign tristinwold.json] [--dm] [--no-vann]
-//       [--vann-minutes 6] [--voice claude|off] [--spoilers]
+//       [--vann-minutes 6] [--voice claude|off] [--spoilers] [--tunnel [--cloudflared path]]
 //
 // --port       TCP (JSON lines) for tools and bots
-// --http-port  HTTP for the Skyrim add-on (SkyrimPlatform can only make HTTP requests)
+// --http-port  HTTP for phones, tunnels and the Skyrim add-on (SkyrimPlatform can only make HTTP requests)
 // --dm         a human DM closes contracts from this window (players can't close their own)
 // --no-vann    Vann doesn't scheme on his own
 // --voice      claude: Claude voices Vann (needs ANTHROPIC_API_KEY); off: written lines only.
 //              Defaults to claude when an API key is set.
 // --spoilers   print private messages and Vann's lines here (for a DM who isn't playing)
+// --tunnel     open a Cloudflare quick tunnel to the HTTP port and print its https:// address,
+//              so phones and friends anywhere can join without port forwarding (needs cloudflared)
 //
 // DM commands still work in this window (help for the list), but nothing needs them.
 using System.Net;
@@ -28,6 +30,8 @@ var vann = true;
 var vannMinutes = 6.0;
 var spoilers = false;
 string? voiceChoice = null;
+var tunnel = false;
+var cloudflared = "cloudflared";
 for (var i = 0; i < args.Length; i++)
 {
     switch (args[i])
@@ -41,6 +45,8 @@ for (var i = 0; i < args.Length; i++)
         case "--vann-minutes": vannMinutes = double.Parse(args[++i], System.Globalization.CultureInfo.InvariantCulture); break;
         case "--voice": voiceChoice = args[++i]; break;
         case "--spoilers": spoilers = true; break;
+        case "--tunnel": tunnel = true; break;
+        case "--cloudflared": cloudflared = args[++i]; tunnel = true; break;
         default: Console.Error.WriteLine($"Unknown option {args[i]}"); return 1;
     }
 }
@@ -111,13 +117,23 @@ catch (HttpListenerException ex)
     return 1;
 }
 
-Log($"Tristinwold server: campaign \"{state.Campaign}\", Skyrim add-on on HTTP {httpPort}, tools on TCP {port}.");
+Log($"Tristinwold server: campaign \"{state.Campaign}\". PC games connect on TCP {port}; phones, tunnels and the Skyrim add-on on HTTP {httpPort}.");
 Log($"Saving to {Path.GetFullPath(campaignPath)}.");
-Log("Friends connect to this computer's address. Over the internet, forward the HTTP port or use a VPN like Tailscale.");
+Log(tunnel
+    ? "Friends at home connect to this computer's address; everyone else uses the tunnel's address below."
+    : "Friends connect to this computer's address. From anywhere else (phones too), restart with --tunnel, or use a VPN like Tailscale.");
 Log(vann
     ? $"Vann is playing{(voice is null ? " (written lines; set ANTHROPIC_API_KEY for Claude's voice)" : ", voiced by Claude")}. {(humanDm ? "The DM closes contracts from this window." : "Players close their own contracts.")}"
     : "Vann is not scheming on his own (--no-vann).");
 Log("DM commands are optional; type 'help' to see them.");
+
+using var cloudflare = tunnel ? new Tunnel(cloudflared, httpPort, Log) : null;
+if (cloudflare is not null && cloudflare.Start(url =>
+    {
+        Log($"Cloudflare tunnel open. On a phone (or anywhere), enter this as the server: {url}");
+        if (password.Length == 0) Log("Anyone with that address can join. Start the server with --password to keep it to friends.");
+    }))
+    Log("Opening a Cloudflare tunnel...");
 
 // Vann's own clock: his schemes come when they come.
 _ = Task.Run(async () =>
