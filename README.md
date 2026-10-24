@@ -2,7 +2,7 @@
 
 A multiplayer game for *The Rings of Tristinwold*, being rebuilt on **Skyrim Special Edition**
 (Final Fantasy X has been dropped). Final Fantasy-style mechanics come along: Haste, Protect, Shell,
-Regen and Reflect today; limit breaks, a Sphere Grid board and summons are planned.
+Regen and Reflect today; limit breaks and summons are planned. Leveling stays pure Skyrim: skills and perk trees.
 
 | Part | Status |
 |---|---|
