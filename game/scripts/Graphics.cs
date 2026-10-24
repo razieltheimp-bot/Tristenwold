@@ -106,7 +106,10 @@ public static class Graphics
             vec4 tex = textured ? texture(albedo_tex, UV * uv_scale) : vec4(1.0);
             vec3 base = tex.rgb * to_linear(COLOR.rgb);
         #ifdef CUTOUT
-            ALPHA = tex.a;
+            // Thin needles fade away in the smaller mipmaps; strengthen them with distance so trees stay full.
+            vec2 texels = UV * vec2(textureSize(albedo_tex, 0));
+            float lod = max(0.0, 0.5 * log2(max(dot(dFdx(texels), dFdx(texels)), dot(dFdy(texels), dFdy(texels)))));
+            ALPHA = tex.a * (1.0 + lod * 0.45);
             ALPHA_SCISSOR_THRESHOLD = 0.45;
         #endif
         #ifdef NORMALS

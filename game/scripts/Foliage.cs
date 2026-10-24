@@ -81,7 +81,7 @@ public static class Foliage
         {
             var f = 0.14f + 0.82f * i / whorls + (float)(rng.NextDouble() - 0.5) * 0.02f;
             var length = 0.7f + MathF.Pow(1 - f, 1.1f) * height * 0.3f;
-            var count = 5 + rng.Next(3);
+            var count = 7 + rng.Next(3);
             var phase = (float)rng.NextDouble() * Mathf.Tau;
             for (var j = 0; j < count; j++)
             {
@@ -90,7 +90,7 @@ public static class Foliage
                 var dir = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
                 var basePoint = new Vector3(0, f * height, 0) + dir * 0.1f;
                 var tip = basePoint + dir * length * Mathf.Cos(droop) + Vector3.Down * length * Mathf.Sin(droop);
-                b.Branch(basePoint, tip, length * 0.5f, dir);
+                b.Branch(basePoint, tip, length * 0.6f, dir);
             }
         }
         // The leader at the top: two crossed upright cards.
@@ -196,7 +196,7 @@ public static class Foliage
             var (n0, n1) = ((outward * 0.5f + Vector3.Up * 0.85f).Normalized(), (outward + Vector3.Up * 0.45f).Normalized());
             foreach (var sign in new[] { -1f, 1f })
             {
-                var wing = (side * sign * 0.94f + Vector3.Up * 0.34f) * width / 2;
+                var wing = (side * sign * 0.8f + Vector3.Up * 0.6f) * width / 2;
                 var v = sign < 0 ? 0f : 1f;
                 Vertex(_cards, from, n0, new Vector2(0, 0.5f), 0.45f);
                 Vertex(_cards, to, n1, new Vector2(1, 0.5f), 1);

@@ -220,11 +220,11 @@ def fir_branch(cache):
     for i in range(40):
         t0, t1 = i / 40, (i + 1) / 40
         draw.line([stem(t0), stem(t1)], fill=(58, 44, 32, 255), width=max(2, int(12 * (1 - t0))))
-    steps = 15
+    steps = 28
     for i in range(steps):
-        t = 0.08 + 0.88 * i / steps
+        t = 0.05 + 0.9 * i / steps
         side = 1 if i % 2 == 0 else -1
-        length = 330 * (1 - t * 0.55) * (0.85 + rng.random() * 0.3)
+        length = 360 * (1 - t * 0.5) * (0.85 + rng.random() * 0.3)
         angle = side * (40 + rng.random() * 20)  # leaning toward the tip
         paste_rotated(card, rng.choice(sprigs[:3]), stem(t), -angle, length)
     paste_rotated(card, sprigs[0], stem(0.97), 4, 200)
