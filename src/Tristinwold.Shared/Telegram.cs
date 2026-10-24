@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 
+namespace Tristinwold.Shared;
+
 /// <summary>
 /// Posts server news to a Telegram chat through a bot: the tunnel's address when it opens (so
 /// phones can find the server), and who comes and goes. Configured from the environment, so the
@@ -8,7 +10,7 @@ using System.Text.Json;
 ///   TELEGRAM_BOT_TOKEN   the token @BotFather gave the bot
 ///   TELEGRAM_CHAT_ID     the chat to post in (message the bot once first, so it may write to you)
 /// </summary>
-sealed class Telegram(string token, string chat, Action<string> log, string api = "https://api.telegram.org")
+public sealed class Telegram(string token, string chat, Action<string> log, string api = "https://api.telegram.org")
 {
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(15) };
 

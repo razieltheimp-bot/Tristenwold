@@ -2,12 +2,14 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
+namespace Tristinwold.Shared;
+
 /// <summary>
-/// A Cloudflare quick tunnel to the HTTP gateway: cloudflared gives this computer a public
-/// https://….trycloudflare.com address, with no port forwarding and no Cloudflare account.
-/// Phones (and anyone else) connect to that address.
+/// A Cloudflare quick tunnel to a local web port (the server's gateway, or the game's remote
+/// play): cloudflared gives this computer a public https://….trycloudflare.com address, with no
+/// port forwarding and no Cloudflare account. Phones (and anyone else) connect to that address.
 /// </summary>
-sealed partial class Tunnel(string cloudflared, int httpPort, Action<string> log) : IDisposable
+public sealed partial class Tunnel(string cloudflared, int httpPort, Action<string> log) : IDisposable
 {
     Process? _process;
 
@@ -62,7 +64,7 @@ sealed partial class Tunnel(string cloudflared, int httpPort, Action<string> log
         _process.Exited += (_, _) =>
         {
             _process.WaitForExit(); // lets the last of its output arrive
-            log("The Cloudflare tunnel closed, so phones can't connect until the server is restarted. cloudflared said:");
+            log("The Cloudflare tunnel closed, so phones can't connect until this is restarted. cloudflared said:");
             lock (_recent) foreach (var line in _recent) log("  " + line);
         };
         return true;

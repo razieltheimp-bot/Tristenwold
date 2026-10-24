@@ -150,38 +150,41 @@ public abstract partial class Body : Node3D
 /// <summary>A KayKit adventurer or skeleton, dressed for the part and animated.</summary>
 public partial class Figure : Body
 {
-    /// <summary>Character presets: model, what they carry and wear, size and tint.</summary>
+    /// <summary>
+    /// Character presets: model, what they carry and wear, size and tint. KayKit's capes are left
+    /// off: they hang as one stiff slab that hides the body from behind.
+    /// </summary>
     public sealed record Look(string Model, string[] Show, float Scale = 0.74f, Color? Tint = null, float Glow = 0, string? RightHand = null, string? LeftHand = null, bool Unarmed = false);
 
     public static readonly Dictionary<string, Look> Looks = new()
     {
         // Playable classes.
-        ["Knight"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet", "Knight_Cape"]),
-        ["Barbarian"] = new("Barbarian", ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Hat", "Barbarian_Cape"]),
-        ["Mage"] = new("Mage", ["2H_Staff", "Mage_Hat", "Mage_Cape"]),
-        ["Rogue"] = new("Rogue", ["Knife", "Knife_Offhand", "Rogue_Cape"]),
-        ["Rogue_Hooded"] = new("Rogue_Hooded", ["Knife", "Knife_Offhand", "Rogue_Cape"]),
+        ["Knight"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"]),
+        ["Barbarian"] = new("Barbarian", ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Hat"]),
+        ["Mage"] = new("Mage", ["2H_Staff", "Mage_Hat"]),
+        ["Rogue"] = new("Rogue", ["Knife", "Knife_Offhand"]),
+        ["Rogue_Hooded"] = new("Rogue_Hooded", ["Knife", "Knife_Offhand"]),
         // Enemies.
-        ["dock_thug"] = new("Barbarian", ["1H_Axe", "Barbarian_Cape"]),
+        ["dock_thug"] = new("Barbarian", ["1H_Axe"]),
         ["lantern_boy"] = new("Rogue", ["Knife"], 0.66f, new Color("#ffcf9a")),
-        ["drowned_hand"] = new("Rogue_Hooded", ["Knife", "Knife_Offhand", "Rogue_Cape"], 0.76f, new Color("#9ac8e8")),
-        ["bandit"] = new("Rogue_Hooded", ["Knife", "1H_Crossbow", "Rogue_Cape"], 0.74f, new Color("#c8b08a")),
-        ["bandit_chief"] = new("Barbarian", ["2H_Axe", "Barbarian_Hat", "Barbarian_Cape"], 0.84f, new Color("#e0a090")),
+        ["drowned_hand"] = new("Rogue_Hooded", ["Knife", "Knife_Offhand"], 0.76f, new Color("#9ac8e8")),
+        ["bandit"] = new("Rogue_Hooded", ["Knife", "1H_Crossbow"], 0.74f, new Color("#c8b08a")),
+        ["bandit_chief"] = new("Barbarian", ["2H_Axe", "Barbarian_Hat"], 0.84f, new Color("#e0a090")),
         ["draugr"] = new("Skeleton_Warrior", [], 0.7f, RightHand: "Skeleton_Axe", LeftHand: "Skeleton_Shield_Small_A"),
         ["draugr_overlord"] = new("Skeleton_Warrior", [], 0.92f, new Color("#bfe4ff"), 0.15f, RightHand: "Skeleton_Blade", LeftHand: "Skeleton_Shield_Large_A"),
         ["sea_wraith"] = new("Skeleton_Mage", [], 0.74f, new Color("#7fe0d8"), 0.6f, RightHand: "Skeleton_Staff"),
         ["spriggan"] = new("Skeleton_Rogue", [], 0.78f, new Color("#a8c070"), 0.3f, RightHand: "Skeleton_Blade"),
         ["frost_troll"] = new("Barbarian", ["2H_Axe"], 1.35f, new Color("#c8d4e4")),
         // People.
-        ["guard"] = new("Knight", ["1H_Sword", "Round_Shield", "Knight_Helmet", "Knight_Cape"]),
-        ["scholar"] = new("Mage", ["Spellbook", "Mage_Cape"], Unarmed: true),
-        ["priest"] = new("Mage", ["Spellbook_open", "Mage_Hat", "Mage_Cape"], Unarmed: true),
-        ["worker"] = new("Barbarian", ["Barbarian_Cape"], Unarmed: true),
+        ["guard"] = new("Knight", ["1H_Sword", "Round_Shield", "Knight_Helmet"]),
+        ["scholar"] = new("Mage", ["Spellbook"], Unarmed: true),
+        ["priest"] = new("Mage", ["Spellbook_open", "Mage_Hat"], Unarmed: true),
+        ["worker"] = new("Barbarian", [], Unarmed: true),
         ["drinker"] = new("Barbarian", ["Mug", "Barbarian_Hat"], Unarmed: true),
-        ["hunter"] = new("Rogue_Hooded", ["1H_Crossbow", "Rogue_Cape"]),
-        ["townsfolk"] = new("Rogue", ["Rogue_Cape"], Unarmed: true),
-        ["traveller"] = new("Rogue_Hooded", ["Rogue_Cape"], Unarmed: true),
-        ["ashborn"] = new("Rogue_Hooded", ["Rogue_Cape"], 0.7f, new Color("#e08070"), Unarmed: true),
+        ["hunter"] = new("Rogue_Hooded", ["1H_Crossbow"]),
+        ["townsfolk"] = new("Rogue", [], Unarmed: true),
+        ["traveller"] = new("Rogue_Hooded", [], Unarmed: true),
+        ["ashborn"] = new("Rogue_Hooded", [], 0.7f, new Color("#e08070"), Unarmed: true),
         ["captive"] = new("Rogue", [], 0.72f, new Color("#d8d0c8"), Unarmed: true),
     };
 
@@ -313,11 +316,11 @@ public partial class Figure : Body
 }
 
 /// <summary>
-/// Gives the KayKit characters human proportions, keeping their blocky body as the centre of mass:
-/// a smaller head, a taller trunk, and arms and legs half as long again, so a figure reads as a
-/// person rather than a big head on a box. It runs after the animations each frame, stretching
-/// each limb bone along its length; a stretched bone's children are un-stretched so a hand or
-/// foot keeps its shape, and the hips are raised by however much the legs grew.
+/// Gives the KayKit characters human proportions: a smaller head, a slimmer and taller trunk, and
+/// longer, leaner arms and legs, so a figure reads as a person rather than a big head on a box.
+/// It runs after the animations each frame, stretching each limb bone along its length; a
+/// stretched bone's children are un-stretched so a hand or foot keeps its shape, and the hips
+/// are raised by however much the legs grew. Hands (and what they hold) shrink to suit.
 /// </summary>
 public partial class Proportions : SkeletonModifier3D
 {
@@ -329,12 +332,14 @@ public partial class Proportions : SkeletonModifier3D
     static readonly Dictionary<string, Vector3> Stretch = new()
     {
         ["head"] = Vector3.One * 0.5f,
-        ["spine"] = new(0.92f, 1.3f, 0.92f),
-        ["chest"] = new(1f, 1.15f, 0.95f),
-        ["upperarm.l"] = new(1, Arm, 1), ["lowerarm.l"] = new(1, Arm, 1),
-        ["upperarm.r"] = new(1, Arm, 1), ["lowerarm.r"] = new(1, Arm, 1),
-        ["upperleg.l"] = new(1, Leg, 1), ["lowerleg.l"] = new(1, Leg, 1),
-        ["upperleg.r"] = new(1, Leg, 1), ["lowerleg.r"] = new(1, Leg, 1),
+        ["hips"] = new(0.8f, 1, 0.8f),
+        ["spine"] = new(0.78f, 1.3f, 0.78f),
+        ["chest"] = new(0.8f, 1.15f, 0.8f),
+        ["upperarm.l"] = new(0.8f, Arm, 0.8f), ["lowerarm.l"] = new(0.8f, Arm, 0.8f),
+        ["upperarm.r"] = new(0.8f, Arm, 0.8f), ["lowerarm.r"] = new(0.8f, Arm, 0.8f),
+        ["upperleg.l"] = new(0.82f, Leg, 0.82f), ["lowerleg.l"] = new(0.82f, Leg, 0.82f),
+        ["upperleg.r"] = new(0.82f, Leg, 0.82f), ["lowerleg.r"] = new(0.82f, Leg, 0.82f),
+        ["hand.l"] = Vector3.One * 0.75f, ["hand.r"] = Vector3.One * 0.75f,
     };
 
     Vector3[] _scale = [];

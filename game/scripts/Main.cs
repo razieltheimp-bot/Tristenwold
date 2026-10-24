@@ -16,6 +16,9 @@ namespace Tristinwold.Game;
 ///   --password secret
 ///   --save path          where the company's map and quests are kept (default user://saves/Name.json)
 ///   --selftest           play scripted fights and quests headless and exit 0 or 1
+///   --remote [port]      remote play: a phone's web browser shows and controls this game (port 8090)
+///   --tunnel             with --remote: a Cloudflare tunnel, so the phone can play from anywhere
+///   --remote-lan         with --remote: also reachable on the home network without a tunnel
 /// </summary>
 public partial class Main : Node3D
 {
@@ -37,6 +40,12 @@ public partial class Main : Node3D
     public override void _Ready()
     {
         ParseArgs();
+        if (_args.TryGetValue("remote", out var remote))
+        {
+            // Remote play: a phone's browser shows and controls this game (with --tunnel, from anywhere).
+            var port = int.TryParse(remote, out var p) ? p : 8090;
+            AddChild(new RemotePlay(this, port, _args.ContainsKey("tunnel"), _args.GetValueOrDefault("cloudflared", "cloudflared"), _args.ContainsKey("remote-lan")));
+        }
         if (Mobile) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.SensorLandscape); // landscape from the first frame
         if (_args.TryGetValue("portraits", out var folder)) { _ = Portraits(folder); return; }
         if (_args.TryGetValue("showroom", out var room)) { _ = Showroom(room); return; }
@@ -137,6 +146,8 @@ public partial class Main : Node3D
         foreach (var f in figures) f.Attack();
         for (var i = 0; i < 12; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         GetViewport().GetTexture().GetImage().SavePng($"{folder}/attacking.png");
+        foreach (var f in figures) { f.RotationDegrees = new Vector3(0, -20, 0); f.Move(0, true, false); }
+        await Shoot("from-behind");
         GetTree().Quit();
     }
 
@@ -196,7 +207,7 @@ public partial class Main : Node3D
     {
         Choice = choice;
         (_args["company"], _args["server"], _args["password"]) = (choice.Character.Name, choice.Server, choice.ServerPassword);
-        TouchMode = _args.ContainsKey("touch") || DisplayServer.IsTouchscreenAvailable();
+        TouchMode = _args.ContainsKey("touch") || _remoteTouch || DisplayServer.IsTouchscreenAvailable();
         DefineInputs(mouseButtons: !TouchMode);
         City.Build(this);
         _terrain = new Terrain(_world);
@@ -263,6 +274,27 @@ public partial class Main : Node3D
         _client = IGameLink.Open(server, () => new Hello(_player.Company, password, Wire.ProtocolVersion, [_player.Company], Choice.Account, Choice.Token));
         _hud.Send = m => _client?.Send(m);
         _client.Start();
+    }
+
+    bool _remoteTouch;
+
+    /// <summary>A phone joined remote play: on-screen controls now, or as soon as the game starts.</summary>
+    public void EnableTouchSoon()
+    {
+        if (_hud is null) { _remoteTouch = true; return; }
+        if (!_hud.TouchEnabled) EnableTouch();
+    }
+
+    /// <summary>The remote-play link, once the tunnel has one: shown on this computer's screen too.</summary>
+    public void ShowRemoteLink(string link)
+    {
+        if (_hud is not null) _hud.Toast($"Play from your phone: {link}", 30);
+        AddChild(new CanvasLayer { Layer = 100, Name = "RemoteLink" });
+        GetNode<CanvasLayer>("RemoteLink").AddChild(new Label
+        {
+            Text = $"Phone link: {link}", Position = new Vector2(12, 4), Modulate = new Color(1, 1, 1, 0.75f),
+            LabelSettings = new LabelSettings { FontSize = 14, OutlineSize = 4, OutlineColor = Colors.Black },
+        });
     }
 
     /// <summary>Turns on the on-screen controls (and stops a tap anywhere from counting as a sword swing).</summary>

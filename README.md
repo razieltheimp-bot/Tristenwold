@@ -54,6 +54,29 @@ overhauls), done with Godot's renderer, since those mods only run inside those g
 Phones start on Medium and render slightly below screen size (FSR 1) to stay smooth; PCs start on High.
 The phone version always starts in landscape.
 
+### Playing on an iPhone: remote play through Cloudflare
+
+An iPhone can't install the game, so it plays it remotely instead: the game runs on your computer at home and
+the iPhone's web browser shows it and controls it, from anywhere, with nothing installed. The picture streams
+to the phone and every touch goes back, so the on-screen joystick and buttons work as they would on a phone.
+On the computer (leave the game's window open, not minimised):
+
+```
+play-from-iphone.bat                 (Windows; or ./play-from-iphone.sh)
+godot --path game -- --remote --tunnel   (the same thing by hand)
+```
+
+It prints a link like `https://….trycloudflare.com/?k=3f9a…` and shows it at the top of the game window; with
+`TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` set it also sends the link to your Telegram. Open it in Safari,
+turn the phone sideways, and play. In Safari, Share → **Add to Home Screen** makes it open full screen like an
+app. The ⌨ button on the left opens the phone's keyboard for typing names and passwords (or start the game
+with `--account`, `--secret` and `--server` so there's nothing to type). A Bluetooth keyboard plays with the
+usual keys. The `k=` part of the link is its key: only people with the whole link can watch or play.
+
+`--remote 9000` picks another port (8090 by default); `--remote-lan` also lets a phone on the same Wi-Fi
+connect directly at `http://<computer's address>:8090/?k=…` without the tunnel. Remote play needs
+`cloudflared` like the server's `--tunnel` (`winget install --id Cloudflare.cloudflared`).
+
 ### An Android app
 
 `game/export_presets.cfg` builds an APK for 64-bit Android phones. Install the Godot 4.7.2 .NET export
@@ -394,8 +417,8 @@ lighthouse and ruins come in seeded variants. `godot --path game -- --showroom .
 Other 3D models: the KayKit packs by Kay Lousberg (www.kaylousberg.com): Adventurers, Skeletons, Medieval Hexagon,
 Dungeon Remastered and Halloween Bits. They are CC0 (free for any use) and live in `game/assets/kaykit`.
 Wolves, bears, skeevers and mudcrabs are built from shapes in code until animal models arrive. The KayKit characters are re-proportioned as
-they move (`Proportions` in `Models.cs`): their blocky body stays the centre, with a smaller head and arms and legs
-half as long again, so they stand like people. `godot --path game -- --lineup ./shots` photographs them
+they move (`Proportions` in `Models.cs`): a smaller head, a slimmer, taller trunk and longer arms and legs, so they
+stand like people (and their stiff capes are left off). `godot --path game -- --lineup ./shots` photographs them
 (add `--plain` for the originals).
 
 Earlier FFX prototypes drew on Fahrenheit, the FFX-AP Archipelago client, FFX_TAS_Python, Farplane,

@@ -140,9 +140,9 @@ public static class Graphics
     public static ShaderMaterial Ground()
     {
         var m = new ShaderMaterial { Shader = GroundShader };
-        m.SetShaderParameter("albedo", GroundAlbedo);
-        m.SetShaderParameter("normals", Load<TextureLayered>("res://assets/polyhaven/ground/normal.jpg"));
-        m.SetShaderParameter("arm", Load<TextureLayered>("res://assets/polyhaven/ground/arm.jpg"));
+        m.SetShaderParameter("albedo", GroundAlbedo!);
+        m.SetShaderParameter("normals", Load<TextureLayered>("res://assets/polyhaven/ground/normal.jpg")!);
+        m.SetShaderParameter("arm", Load<TextureLayered>("res://assets/polyhaven/ground/arm.jpg")!);
         m.SetShaderParameter("tile", GroundTile);
         return m;
     }
