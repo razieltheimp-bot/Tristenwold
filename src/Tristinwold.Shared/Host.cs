@@ -17,19 +17,52 @@ public sealed class SharedWorldHost(
     Action save,
     IVannVoice? voice = null,
     Action<string>? log = null,
-    bool spoilers = false)
+    bool spoilers = false,
+    AccountStore? accounts = null)
 {
+    readonly Dictionary<string, string> _accountOf = new(StringComparer.OrdinalIgnoreCase);
     readonly Lock _gate = new();
     readonly Dictionary<string, IClientSink> _sinks = new(StringComparer.OrdinalIgnoreCase);
     readonly Action<string> _log = log ?? (_ => { });
 
     public ServerCore Core => core;
 
+    /// <summary>Raised (outside the lock) when a company arrives or leaves, for notifications.</summary>
+    public event Action<string>? Joined, Left;
+
+    /// <summary>Logging in and managing characters, before joining.</summary>
+    public AccountReply Account(AccountRequest request)
+    {
+        if (accounts is null) return new AccountReply(false, "This server doesn't keep accounts.", null, []);
+        if (!core.PasswordOk(request.ServerPassword)) return new AccountReply(false, "Wrong server password.", null, []);
+        lock (_gate)
+        {
+            var reply = accounts.Handle(request, name => core.Known(name) && accounts.OwnerOf(name) is null);
+            if (request.Action is "register" or "create" && reply.Ok) _log($"Account {request.Account.Trim()}: {request.Action}{(request.Character is { } c ? $" {c.Name.Trim()}" : "")}.");
+            return reply;
+        }
+    }
+
     /// <returns>The player's name, or null if the server turned them away (already told via the sink).</returns>
     public string? Join(Hello hello, IClientSink sink)
     {
         lock (_gate)
         {
+            // A character that belongs to an account can only be played by that account, logged in.
+            var owner = accounts?.OwnerOf(hello.Player);
+            var refusal = accounts is null ? null : owner switch
+            {
+                null when hello.Account is not null => "That character isn't on your account.",
+                not null when !string.Equals(owner, hello.Account, StringComparison.OrdinalIgnoreCase) || !accounts!.Holds(owner, hello.Token)
+                    => $"{hello.Player.Trim()} belongs to an account. Log in to play as them.",
+                _ => null,
+            };
+            if (refusal is not null && core.PasswordOk(hello.Password))
+            {
+                _log($"Rejected {hello.Player}: {refusal}");
+                sink.Send(new Rejected(refusal));
+                return null;
+            }
             var outgoing = core.Connect(hello);
             if (outgoing.Count > 0 && outgoing[0].Message is Rejected rejected)
             {
@@ -39,15 +72,24 @@ public sealed class SharedWorldHost(
             }
             var player = hello.Player.Trim();
             _sinks[player] = sink;
+            if (owner is not null) _accountOf[player] = owner;
+            else _accountOf.Remove(player);
             _log($"{player} joined.");
             Deliver(outgoing);
             SaveIfDirty();
-            return player;
         }
+        Joined?.Invoke(hello.Player.Trim());
+        return hello.Player.Trim();
     }
 
     public void Receive(string player, Message message)
     {
+        if (message is SaveProgress save)
+        {
+            lock (_gate)
+                if (_accountOf.TryGetValue(player, out var account)) accounts?.Store(account, player, save);
+            return;
+        }
         lock (_gate)
         {
             Deliver(core.Handle(player, message));
@@ -66,6 +108,7 @@ public sealed class SharedWorldHost(
             SaveIfDirty();
             _log($"{player} left.");
         }
+        Left?.Invoke(player);
     }
 
     public void Tick()

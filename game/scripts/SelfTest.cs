@@ -55,6 +55,7 @@ public partial class SelfTest(Main main) : Node
 
             await Touch();
             await Explore();
+            if (main.Choice.Account is { } account) await Account(account);
             await Teleport(new Vector3(-150, 0, -120));
             await Until(() => !main.Tracker.InFight, 15);
 
@@ -195,6 +196,13 @@ public partial class SelfTest(Main main) : Node
         Check(p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - w.Height(0, -1500)) < 1.5f, $"standing on the land at {main.Area} ({p.GlobalPosition.Y:0.0} m)");
         Check(main.Explored.IsRevealed(0, -1500) && main.Explored.IsRevealed(0, -750) && !main.Explored.IsRevealed(600, -1500), "the map fills in where you go and nowhere else");
 
+        // A deep lake: you swim at the surface instead of walking on the bottom.
+        var lake = FindDeepWater(0, -1500);
+        await Teleport(new Vector3((float)lake.X, 0, (float)lake.Z));
+        await Frames(120);
+        var floating = (float)WorldGen.WaterLevel - p.GlobalPosition.Y;
+        Check(p.Swimming && floating < Fighter.SwimDepth + 0.3f && w.Height(lake.X, lake.Z) < WorldGen.WaterLevel - 3, $"swimming in deep water, {floating:0.0} m under the surface");
+
         // 4. Find a village with work going, and talk to the one offering it.
         var (home, giver, slay) = FindQuest(QuestKind.Slay, 0, -1500);
         var person = await Visit(home, giver);
@@ -263,6 +271,35 @@ public partial class SelfTest(Main main) : Node
         Check(main.Area == far.Name || main.Area.Contains(far.Name), $"area: {main.Area}");
         _log.Add($"Explored {main.Explored.Count} cells; {main.TerrainNode.Count} land chunks loaded.");
         p.Stats.Heal(10_000);
+    }
+
+    /// <summary>A logged-in character's progress reaches the server, ready for the next device.</summary>
+    async Task Account(string account)
+    {
+        var c = main.Choice;
+        await Until(() => main.Client?.Status == ClientStatus.Connected, 10);
+        main.Save();
+        AccountReply? loaded = null;
+        for (var i = 0; i < 40 && loaded?.Save is null; i++)
+        {
+            loaded = await AccountClient.AskAsync(c.Server, new AccountRequest("load", account, Token: c.Token, ServerPassword: c.ServerPassword, Character: c.Character));
+            if (loaded.Save is null) await Frames(15);
+        }
+        var save = loaded?.Save is { } json ? CompanySave.FromJson(json) : null;
+        Check(save is { Quests.Count: 4 } && save.Septims == main.PlayerNode.Septims, $"{c.Character.Name}'s progress is on the server under {account}'s account");
+        var sheet = loaded!.Characters.Single(x => x.Name == c.Character.Name);
+        Check(sheet.Septims == main.PlayerNode.Septims, $"the login screen will show {sheet.Septims} septims at {sheet.Where}");
+    }
+
+    (double X, double Z) FindDeepWater(double x, double z)
+    {
+        for (var r = 0.0; r < 4000; r += 40)
+            for (var a = 0.0; a < Math.Tau; a += 0.2)
+            {
+                var (px, pz) = (x + Math.Cos(a) * r, z + Math.Sin(a) * r);
+                if (main.World.Height(px, pz) < WorldGen.WaterLevel - 4) return (px, pz);
+            }
+        return (260, 0); // Tristinwold's harbor
     }
 
     (Settlement Home, Npc Giver, Quest Quest) FindQuest(QuestKind kind, double x, double z)

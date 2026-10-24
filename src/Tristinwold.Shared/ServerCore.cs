@@ -64,6 +64,11 @@ public sealed partial class ServerCore
 
     // ---- Connections --------------------------------------------------------------------------
 
+    public bool PasswordOk(string password) => _options.Password.Length == 0 || password == _options.Password;
+
+    /// <summary>Has anyone played under this name in this campaign?</summary>
+    public bool Known(string name) => State.Groups.ContainsKey(name.Trim());
+
     public IReadOnlyList<Outgoing> Connect(Hello hello)
     {
         var name = hello.Player.Trim();

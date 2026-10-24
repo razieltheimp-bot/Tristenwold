@@ -12,6 +12,8 @@
 // --voice      claude: Claude voices Vann (needs ANTHROPIC_API_KEY); off: written lines only.
 //              Defaults to claude when an API key is set.
 // --spoilers   print private messages and Vann's lines here (for a DM who isn't playing)
+// Telegram     set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID and the server posts the tunnel's
+//              address, and who joins and leaves, to that chat
 // --tunnel     open a Cloudflare quick tunnel to the HTTP port and print its https:// address,
 //              so phones and friends anywhere can join without port forwarding (needs cloudflared)
 //
@@ -71,7 +73,8 @@ IVannVoice? voice = (voiceChoice ?? (hasKey ? "claude" : "off")) switch
     var other => throw new ArgumentException($"--voice must be claude or off, not {other}"),
 };
 
-var host = new SharedWorldHost(core, () => state.Save(campaignPath), voice, Log, spoilers);
+var accountsPath = Path.ChangeExtension(campaignPath, null) + ".accounts.json";
+var host = new SharedWorldHost(core, () => state.Save(campaignPath), voice, Log, spoilers, new AccountStore(accountsPath));
 using var shutdown = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; shutdown.Cancel(); };
 
@@ -85,7 +88,13 @@ async Task ServeTcpAsync(TcpClient tcp)
     string? player = null;
     try
     {
-        if (await conn.ReadAsync(shutdown.Token) is not Hello hello) return;
+        var first = await conn.ReadAsync(shutdown.Token);
+        if (first is AccountRequest request)
+        {
+            await conn.WriteAsync(host.Account(request), shutdown.Token); // one request per connection
+            return;
+        }
+        if (first is not Hello hello) return;
         player = host.Join(hello, sink);
         if (player is null) return;
         while (await conn.ReadAsync(shutdown.Token) is { } message) host.Receive(player, message);
@@ -127,10 +136,20 @@ Log(vann
     : "Vann is not scheming on his own (--no-vann).");
 Log("DM commands are optional; type 'help' to see them.");
 
+var telegram = Telegram.FromEnvironment(Log);
+if (telegram is not null)
+{
+    Log("Posting server news to Telegram.");
+    host.Joined += player => telegram.Post($"{player}'s company has arrived in Tristinwold.");
+    host.Left += player => telegram.Post($"{player}'s company has left.");
+    if (!tunnel) telegram.Post($"The Tristinwold server is up (campaign \"{state.Campaign}\").");
+}
+
 using var cloudflare = tunnel ? new Tunnel(cloudflared, httpPort, Log) : null;
 if (cloudflare is not null && cloudflare.Start(url =>
     {
         Log($"Cloudflare tunnel open. On a phone (or anywhere), enter this as the server: {url}");
+        telegram?.Post($"Tristinwold is open. On your phone, enter this as the server:\n{url}");
         if (password.Length == 0) Log("Anyone with that address can join. Start the server with --password to keep it to friends.");
     }))
     Log("Opening a Cloudflare tunnel...");
@@ -168,6 +187,7 @@ catch (OperationCanceledException) { }
 
 host.SaveNow();
 Log("Server stopped.");
+if (telegram is not null) await telegram.SendAsync("The Tristinwold server has stopped.");
 return 0;
 
 sealed class TcpSink(LineConnection conn, CancellationToken ct) : IClientSink

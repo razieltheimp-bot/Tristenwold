@@ -37,43 +37,86 @@ public partial class Main : Node3D
     public override void _Ready()
     {
         ParseArgs();
+        if (Mobile) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.SensorLandscape); // landscape from the first frame
+        if (_args.ContainsKey("account") && _args.ContainsKey("server")) { _ = LogInFromCommandLine(); return; }
         var scripted = _args.ContainsKey("selftest") || _args.ContainsKey("shots");
-        if (scripted || _args.ContainsKey("server")) { Begin(); return; }
+        if (scripted || _args.ContainsKey("server")) { Begin(ChoiceFromArgs()); return; }
         var start = new StartScreen();
-        start.Play += (company, server, password) =>
-        {
-            (_args["company"], _args["server"], _args["password"]) = (company, server, password);
-            Begin();
-        };
+        start.Play += Begin;
         AddChild(start);
         if (_args.TryGetValue("snap", out var snap)) _ = Snap(start, snap);
     }
 
-    /// <summary>Saves a picture of the start screen and carries on, for checking its layout.</summary>
+    /// <summary>The character and server the command line asks for.</summary>
+    StartChoice ChoiceFromArgs(string? account = null, string? token = null, string? save = null) => new(
+        new CharacterSheet(_args.GetValueOrDefault("company", "Adventurer"), _args.GetValueOrDefault("look", "#c9a46a"), _args.GetValueOrDefault("element", "Fire"), DateTime.UtcNow),
+        _args.GetValueOrDefault("server", "127.0.0.1:7777"), _args.GetValueOrDefault("password", ""), account, token, save,
+        Enum.TryParse<Graphics.Quality>(_args.GetValueOrDefault("graphics", ""), true, out var q) ? q : Graphics.Default);
+
+    /// <summary>
+    /// --account Joe --secret pw --company Bram: logs in (making the account and the character if
+    /// they're new) and plays Bram, with Bram's progress from the server.
+    /// </summary>
+    async Task LogInFromCommandLine()
+    {
+        var (server, password, account, secret) = (_args["server"], _args.GetValueOrDefault("password", ""), _args["account"], _args.GetValueOrDefault("secret", ""));
+        var reply = await AccountClient.AskAsync(server, new AccountRequest("login", account, secret, ServerPassword: password));
+        if (!reply.Ok && reply.Error?.StartsWith("No account") == true)
+            reply = await AccountClient.AskAsync(server, new AccountRequest("register", account, secret, ServerPassword: password));
+        var choice = ChoiceFromArgs(account, reply.Token);
+        if (reply.Ok && !reply.Characters.Any(c => c.Name.Equals(choice.Character.Name, StringComparison.OrdinalIgnoreCase)))
+            reply = await AccountClient.AskAsync(server, new AccountRequest("create", account, Token: choice.Token, ServerPassword: password, Character: choice.Character));
+        var sheet = reply.Characters.FirstOrDefault(c => c.Name.Equals(choice.Character.Name, StringComparison.OrdinalIgnoreCase));
+        if (!reply.Ok || sheet is null)
+        {
+            GD.PrintErr($"Couldn't log in as {account}: {reply.Error}");
+            GetTree().Quit(1);
+            return;
+        }
+        var loaded = await AccountClient.AskAsync(server, new AccountRequest("load", account, Token: choice.Token, ServerPassword: password, Character: sheet));
+        Begin(choice with { Character = sheet, Save = loaded.Save });
+    }
+
+    /// <summary>Saves a picture of the start screen and quits, for checking its layout.</summary>
     async Task Snap(StartScreen start, string path)
     {
-        start.Fill("Joe", "https://seasonal-deck-organisms-sf.trycloudflare.com", "secret");
+        start.Fill("https://seasonal-deck-organisms-sf.trycloudflare.com", "Joe", "secret", "table");
         for (var i = 0; i < 30; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         GetViewport().GetTexture().GetImage().SavePng(path);
+        if (_args.TryGetValue("snap-characters", out var second))
+        {
+            // The characters page, playing alone so no server is needed.
+            await start.PlayAloneForSnapshot();
+            for (var i = 0; i < 20; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            GetViewport().GetTexture().GetImage().SavePng(second);
+        }
         GetTree().Quit();
     }
 
     public bool Mobile => OS.HasFeature("mobile");
     public bool TouchMode { get; private set; }
+    public StartChoice Choice { get; private set; } = null!;
 
-    void Begin()
+    void Begin(StartChoice choice)
     {
+        Choice = choice;
+        (_args["company"], _args["server"], _args["password"]) = (choice.Character.Name, choice.Server, choice.ServerPassword);
         TouchMode = _args.ContainsKey("touch") || DisplayServer.IsTouchscreenAvailable();
         DefineInputs(mouseButtons: !TouchMode);
-        City.Build(this, fog: Mobile ? 0.006f : 0.0035f);
-        _terrain = new Terrain(_world) { ViewChunks = Mobile ? 4 : 7 };
+        City.Build(this);
+        _terrain = new Terrain(_world);
+        Graphics.Apply(choice.Quality, GetViewport(), City.Sky, City.Sun, _terrain);
         AddChild(_terrain);
         _terrain.EnsureAround(City.PlayerStart, 2);
 
         _hud = new Hud();
         AddChild(_hud);
 
-        _player = new Player { Company = _args.GetValueOrDefault("company", "Adventurer"), Position = City.PlayerStart };
+        _player = new Player
+        {
+            Company = choice.Character.Name, Colour = choice.Character.Look, Position = City.PlayerStart,
+            Element = Enum.TryParse<DamageKind>(choice.Character.Element, out var element) ? element : DamageKind.Fire,
+        };
         AddChild(_player);
         _player.Said += text => _hud.Toast(text);
         _player.WentDown += () => { _tracker.Downed(); _hud.Center("You have fallen."); };
@@ -111,7 +154,7 @@ public partial class Main : Node3D
         if (TouchMode) EnableTouch();
         Connect();
         if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
-        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots));
+        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick")));
         else _hud.Toast("Tristinwold. M: map   J: journal   E: talk   F10: the shared world");
     }
 
@@ -122,7 +165,7 @@ public partial class Main : Node3D
         var server = _args.GetValueOrDefault("server", "127.0.0.1:7777");
         if (server == "off") { _hud.Toast("Playing alone: no shared world."); return; }
         var password = _args.GetValueOrDefault("password", "");
-        _client = IGameLink.Open(server, () => new Hello(_player.Company, password, Wire.ProtocolVersion, [_player.Company]));
+        _client = IGameLink.Open(server, () => new Hello(_player.Company, password, Wire.ProtocolVersion, [_player.Company], Choice.Account, Choice.Token));
         _hud.Send = m => _client?.Send(m);
         _client.Start();
     }
@@ -370,9 +413,11 @@ public partial class Main : Node3D
         if (scripted && !_args.ContainsKey("save")) _savePath = "user://saves/selftest.json";
         DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(_savePath).GetBaseDir());
         if (scripted && Godot.FileAccess.FileExists(_savePath)) DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(_savePath));
-        if (Godot.FileAccess.FileExists(_savePath))
+        if (Choice.Account is not null) _savePath = $"user://saves/{string.Concat(Choice.Account.Where(char.IsLetterOrDigit))}-{company}.json";
+        var stored = Choice.Save ?? (Choice.Account is null && Godot.FileAccess.FileExists(_savePath) ? Godot.FileAccess.GetFileAsString(_savePath) : null);
+        if (stored is not null)
         {
-            var save = CompanySave.FromJson(Godot.FileAccess.GetFileAsString(_savePath));
+            var save = CompanySave.FromJson(stored);
             if (save.Seed == _world.Seed)
             {
                 save.Restore(_explored, _journal);
@@ -385,10 +430,18 @@ public partial class Main : Node3D
 
     public string SavePath => _savePath;
 
+    string? _lastSent;
+
+    /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public void Save()
     {
-        using var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write);
-        file?.StoreString(CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal).ToJson());
+        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal).ToJson();
+        using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
+        if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)
+        {
+            _client.Send(new SaveProgress(json, _player.Septims, _area));
+            _lastSent = json;
+        }
     }
 
     // ---- people and enemies ------------------------------------------------------------------

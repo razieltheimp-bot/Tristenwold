@@ -162,6 +162,8 @@ public sealed class GameClient : IGameLink
 
     public void Dispose()
     {
+        // Give the last messages (a final save, say) a moment to go out.
+        for (var i = 0; i < 75 && !_outbox.IsEmpty && Status == ClientStatus.Connected; i++) Thread.Sleep(20);
         _cts.Cancel();
         try { _loop?.Wait(TimeSpan.FromSeconds(2)); } catch (AggregateException) { }
         _cts.Dispose();

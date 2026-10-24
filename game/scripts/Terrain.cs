@@ -47,7 +47,18 @@ public partial class Terrain(WorldGen world) : Node3D
     const float Step = ChunkSize / (float)Steps;
 
     public int ViewChunks { get; set; } = 7;
+
+    /// <summary>How many chunks around the player get grass (0 for none).</summary>
+    public int GrassChunks { get; set; }
+
+    /// <summary>Wind in the trees and the wave shader on the water (set before the first chunk is built).</summary>
+    public bool Fancy { get; set; }
+
     public int Count => _chunks.Count;
+    public int GrassCount => _grass.Count;
+    readonly Dictionary<(int, int), Node3D> _grass = [];
+    Mesh? _tuft;
+    Material? _sway, _grassSway;
 
     readonly Dictionary<(int, int), Node3D> _chunks = [];
     readonly MeshInstance3D _water = new();
@@ -59,12 +70,39 @@ public partial class Terrain(WorldGen world) : Node3D
 
     public override void _Ready()
     {
-        _water.Mesh = new PlaneMesh { Size = new Vector2(ChunkSize * 40, ChunkSize * 40) };
-        _water.MaterialOverride = new StandardMaterial3D
-        {
-            AlbedoColor = new Color(0.12f, 0.25f, 0.33f, 0.85f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.1f, Metallic = 0.3f,
-        };
+        _water.Mesh = new PlaneMesh { Size = new Vector2(ChunkSize * 40, ChunkSize * 40), SubdivideWidth = Fancy ? 240 : 0, SubdivideDepth = Fancy ? 240 : 0 };
+        _water.MaterialOverride = Fancy
+            ? Graphics.Water()
+            : new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.25f, 0.33f, 0.85f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.1f, Metallic = 0.3f };
         AddChild(_water);
+        if (Fancy)
+        {
+            _sway = Graphics.Swaying(1);
+            _grassSway = Graphics.Swaying(2.2f);
+        }
+        _tuft = Tuft();
+    }
+
+    /// <summary>A tuft of grass: seven thin blades, each leaning its own way, darker at the root.</summary>
+    static Mesh Tuft()
+    {
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        var rng = new Tristinwold.Nemesis.Rng(7);
+        for (var i = 0; i < 7; i++)
+        {
+            var a = (float)(rng.NextDouble() * Mathf.Tau);
+            var foot = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * (float)(rng.NextDouble() * 0.18);
+            var side = new Vector3(-Mathf.Sin(a), 0, Mathf.Cos(a)) * 0.035f;
+            var height = 0.35f + (float)rng.NextDouble() * 0.4f;
+            var lean = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * height * 0.35f;
+            var tip = foot + lean + new Vector3(0, height, 0);
+            // Root, root, tip: one tapered blade, shaded dark at the bottom.
+            st.SetColor(new Color(0.55f, 0.55f, 0.55f)); st.SetNormal(Vector3.Up); st.AddVertex(foot - side);
+            st.SetColor(new Color(0.55f, 0.55f, 0.55f)); st.SetNormal(Vector3.Up); st.AddVertex(foot + side);
+            st.SetColor(Colors.White); st.SetNormal(Vector3.Up); st.AddVertex(tip);
+        }
+        return st.Commit();
     }
 
     public static (int, int) ChunkOf(Vector3 p) => ((int)Mathf.Floor(p.X / ChunkSize), (int)Mathf.Floor(p.Z / ChunkSize));
@@ -102,6 +140,53 @@ public partial class Terrain(WorldGen world) : Node3D
             _chunks[key].QueueFree();
             _chunks.Remove(key);
         }
+
+        // Grass only close by, where it can be seen.
+        var grassBudget = 1;
+        for (var i = -GrassChunks; i <= GrassChunks && grassBudget > 0; i++)
+            for (var j = -GrassChunks; j <= GrassChunks && grassBudget > 0; j++)
+            {
+                var key = (pcx + i, pcz + j);
+                if (_grass.ContainsKey(key) || !_chunks.ContainsKey(key)) continue;
+                _grass[key] = Grass(key.Item1, key.Item2);
+                grassBudget--;
+            }
+        foreach (var key in _grass.Keys.Where(k => Math.Max(Math.Abs(k.Item1 - pcx), Math.Abs(k.Item2 - pcz)) > GrassChunks + 1).ToList())
+        {
+            _grass[key].QueueFree();
+            _grass.Remove(key);
+        }
+    }
+
+    Node3D Grass(int cx, int cz)
+    {
+        var node = new Node3D { Position = new Vector3(cx * ChunkSize, 0, cz * ChunkSize) };
+        AddChild(node);
+        var rng = Noise.Dice(world.Seed, 9, cx, cz);
+        var (x0, z0) = (cx * ChunkSize, cz * ChunkSize);
+        var biome = world.BiomeAt(x0 + ChunkSize / 2, z0 + ChunkSize / 2);
+        var count = biome switch { Biome.Marsh => 1100, Biome.AutumnForest => 900, Biome.PineForest => 700, Biome.Tundra => 380, Biome.Crags => 160, _ => 0 };
+        var clear = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
+        var tufts = new List<(Transform3D, Color)>();
+        for (var i = 0; i < count; i++)
+        {
+            var (lx, lz) = (rng.NextDouble() * ChunkSize, rng.NextDouble() * ChunkSize);
+            var (wx, wz) = (x0 + lx, z0 + lz);
+            if (wx * wx + wz * wz < 112 * 112 || clear.Any(s => s.DistanceTo(wx, wz) < s.Radius * 0.8)) continue;
+            var y = world.Height(wx, wz);
+            if (y < WorldGen.WaterLevel + 0.4) continue;
+            var tint = world.BiomeAt(wx, wz, y) switch
+            {
+                Biome.AutumnForest => new Color("#9a8a3e"), Biome.Marsh => new Color("#5e7434"), Biome.Tundra => new Color("#8e8c62"),
+                Biome.Crags => new Color("#6e7848"), _ => new Color("#55783a"),
+            };
+            var shade = (float)rng.NextDouble() * 0.12f - 0.06f;
+            var scale = 0.7f + (float)rng.NextDouble() * 0.8f;
+            var basis = Basis.Identity.Scaled(Vector3.One * scale).Rotated(Vector3.Up, (float)rng.NextDouble() * Mathf.Tau);
+            tufts.Add((new Transform3D(basis, new Vector3((float)lx, (float)y - 0.05f, (float)lz)), new Color(tint.R + shade, tint.G + shade, tint.B + shade)));
+        }
+        Multi(node, _tuft!, tufts, _grassSway ?? _leaves);
+        return node;
     }
 
     Node3D Build(int cx, int cz)
@@ -179,12 +264,12 @@ public partial class Terrain(WorldGen world) : Node3D
                 pines.Add((new Transform3D(basis, new Vector3((float)lx, y + 4.2f * scale, (float)lz)), colour));
             }
         }
-        Multi(chunk, _trunk, trunks.Select(t => (t, new Color("#4a3426"))).ToList());
-        Multi(chunk, _cone, pines);
-        Multi(chunk, _crown, broad);
+        Multi(chunk, _trunk, trunks.Select(t => (t, new Color("#4a3426"))).ToList(), _leaves);
+        Multi(chunk, _cone, pines, _sway ?? _leaves);
+        Multi(chunk, _crown, broad, _sway ?? _leaves);
     }
 
-    void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C)> items)
+    static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C)> items, Material material)
     {
         if (items.Count == 0) return;
         var mm = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, UseColors = true, Mesh = mesh, InstanceCount = items.Count };
@@ -193,6 +278,6 @@ public partial class Terrain(WorldGen world) : Node3D
             mm.SetInstanceTransform(i, items[i].T);
             mm.SetInstanceColor(i, items[i].C);
         }
-        parent.AddChild(new MultiMeshInstance3D { Multimesh = mm, MaterialOverride = _leaves });
+        parent.AddChild(new MultiMeshInstance3D { Multimesh = mm, MaterialOverride = material });
     }
 }

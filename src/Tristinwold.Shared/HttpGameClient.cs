@@ -19,6 +19,7 @@ public sealed class HttpGameClient : IGameLink
     readonly Func<Hello> _hello;
     readonly HttpClient _http;
     Task? _loop;
+    volatile bool _sending;
 
     public ClientStatus Status { get; private set; } = ClientStatus.Disconnected;
     public string? LastError { get; private set; }
@@ -65,10 +66,12 @@ public sealed class HttpGameClient : IGameLink
                 }
 
                 while (_outbox.TryDequeue(out var m)) pending.Add(m);
+                _sending = pending.Count > 0;
                 var (status, synced) = await PostAsync("v1/sync", JsonSerializer.Serialize(new SyncRequest(session, pending), Wire.Options), ct).ConfigureAwait(false);
                 if (status == HttpStatusCode.Unauthorized) { session = null; continue; } // timed out: join again, keep what we had to say
                 if (status != HttpStatusCode.OK) throw new HttpRequestException(synced.Error ?? $"sync failed ({(int)status})");
                 pending.Clear();
+                _sending = false;
                 Take(synced);
                 await Task.Delay(Interval, ct).ConfigureAwait(false);
                 continue;
@@ -111,6 +114,8 @@ public sealed class HttpGameClient : IGameLink
 
     public void Dispose()
     {
+        // Give the last messages (a final save, say) a chance to go out with one more sync.
+        for (var i = 0; i < 75 && (!_outbox.IsEmpty || _sending) && Status == ClientStatus.Connected; i++) Thread.Sleep(20);
         _cts.Cancel();
         try { _loop?.Wait(TimeSpan.FromSeconds(2)); } catch (AggregateException) { }
         _cts.Dispose();

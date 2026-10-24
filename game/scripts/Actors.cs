@@ -26,12 +26,27 @@ public abstract partial class Fighter : CharacterBody3D
         AddChild(Plate);
     }
 
+    /// <summary>How deep the water is where this one stands; above 0 means wading or swimming.</summary>
+    public float Depth => (float)Tristinwold.World.WorldGen.WaterLevel - GlobalPosition.Y;
+
+    /// <summary>Deeper than this, you swim: you float with your head above water.</summary>
+    public const float SwimDepth = 1.3f;
+
+    public bool Swimming => Depth > SwimDepth;
+
     protected void FallAndSlide(double delta, Vector3 horizontal)
     {
         var v = Velocity;
         v.X = horizontal.X;
         v.Z = horizontal.Z;
-        v.Y = IsOnFloor() ? Math.Max(v.Y, -0.1f) : v.Y - Gravity * (float)delta;
+        if (Depth > SwimDepth - 0.1f)
+        {
+            // Bob up to float at the surface, rather than walking along the bottom.
+            v.Y = Mathf.Lerp(v.Y, (Depth - SwimDepth) * 3f, 0.2f);
+            v.X *= 0.55f;
+            v.Z *= 0.55f;
+        }
+        else v.Y = IsOnFloor() ? Math.Max(v.Y, -0.1f) : v.Y - Gravity * (float)delta;
         Velocity = v;
         MoveAndSlide();
     }

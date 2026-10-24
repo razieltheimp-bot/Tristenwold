@@ -17,6 +17,9 @@ public partial class Player : Fighter
     public DamageKind Element { get; set; } = DamageKind.Fire;
     public int Septims { get; set; }
 
+    /// <summary>Their colour, chosen when the character was made.</summary>
+    public string Colour { get; init; } = "#c9a46a";
+
     public event Action<string>? Said;
     public event Action? WentDown;
     public event Action<Enemy, HitResult, DamageKind>? Struck;
@@ -35,7 +38,7 @@ public partial class Player : Fighter
     {
         Local = this;
         Stats = new Combatant(Company, 150, magicka: 100, stamina: 120, armor: 80);
-        Shape("#c9a46a", 1.8f);
+        Shape(Colour, 1.8f);
         Plate.Text = "";
         _pivot = new Node3D { Position = new Vector3(0, 1.6f, 0) };
         AddChild(_pivot);
@@ -82,7 +85,7 @@ public partial class Player : Fighter
         var dir = (Transform.Basis * new Vector3(input.X, 0, input.Y)).Normalized();
         var speed = (sprint ? SprintSpeed : WalkSpeed) * (float)Stats.SpeedMult;
         if (sprint && input != Vector2.Zero) Stats.Spend(AttackKind.Weapon, 15 * delta);
-        if (Input.IsActionJustPressed("jump") && IsOnFloor()) Velocity = Velocity with { Y = JumpSpeed };
+        if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming)) Velocity = Velocity with { Y = JumpSpeed };
         FallAndSlide(delta, dir * speed);
 
         if (Input.IsActionJustPressed("attack")) Swing();

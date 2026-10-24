@@ -26,9 +26,33 @@ You need [Godot 4.7 .NET](https://godotengine.org/download) and the .NET 10 SDK.
 godot --path game -- --server 192.168.1.20:7777 --company Joe --password secret
 ```
 
-Without `--server`, the game opens on a start screen that asks for your company's name, the server's
-address and its password (and remembers them). Leave the address blank to play alone. You can also open
-`game/project.godot` in the Godot editor and press Play.
+Without `--server`, the game opens on a login page: the server's address and password, then your account
+name and password (**Create account** the first time). Then pick one of your characters or make a new one:
+a name, a colour and a starting spell. On a server, your characters and their progress (map, quests,
+septims) belong to your account, so you can play the same character from your phone and your PC. Nobody
+else can join as your character. The game stays logged in on that device (it keeps a login token, not
+your password). **Play alone** keeps characters on the device instead. You can also open `game/project.godot`
+in the Godot editor and press Play.
+
+From the command line, `--account Joe --secret yourpassword --company "Bram Ashmane"` logs in, makes the
+account and character if they're new, and plays. The server keeps accounts in `<campaign>.accounts.json`,
+next to the campaign file, with passwords stored only as salted PBKDF2 hashes.
+
+**Graphics** (on the login page, or `--graphics low|medium|high|ultra`). The ideas come from the Skyrim and
+Oblivion graphics projects (Community Shaders' lighting, OptiScaler's upscaling, the water and vegetation
+overhauls), done with Godot's renderer, since those mods only run inside those games:
+
+| | Low | Medium | High | Ultra |
+|---|---|---|---|---|
+| View distance | 256 m | 384 m | 448 m | 576 m |
+| Water with waves, depth tint and shore foam; trees in the wind | | ✓ | ✓ | ✓ |
+| Grass around you | | | ✓ | ✓ (wider) |
+| Shadows | | ✓ | soft | soft, further |
+| Ambient occlusion, volumetric fog, AgX tone mapping | | | ✓ | ✓ |
+| Indirect light (SSIL), AMD FSR 2 anti-aliasing | | | | ✓ |
+
+Phones start on Medium and render slightly below screen size (FSR 1) to stay smooth; PCs start on High.
+The phone version always starts in landscape.
 
 ### Playing from a phone, or from anywhere: a Cloudflare tunnel
 
@@ -44,6 +68,15 @@ tunnel. You don't need port forwarding or a Cloudflare account. On the computer 
    It prints a line like `Cloudflare tunnel open. On a phone (or anywhere), enter this as the server:
    https://seasonal-deck-organisms-sf.trycloudflare.com`.
 3. On the phone, type that address and the password on the start screen.
+
+**Telegram.** Set `TELEGRAM_BOT_TOKEN` (from @BotFather) and `TELEGRAM_CHAT_ID` before starting the server,
+and it posts the tunnel's address to that chat when it opens, so you can tap it on your phone. It also
+posts who arrives and leaves. Message your bot once first so it's allowed to write to you. On Windows:
+```
+set TELEGRAM_BOT_TOKEN=123456:ABC...
+set TELEGRAM_CHAT_ID=5319394533
+dotnet run --project tools/Tristinwold.Server -- --tunnel --password secret
+```
 
 The address changes each time the server starts. (For a fixed address, set up a named tunnel on your own
 domain in Cloudflare and point it at `http://localhost:7778`.) Anyone with the address can try to join,

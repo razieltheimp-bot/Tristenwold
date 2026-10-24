@@ -11,6 +11,9 @@ namespace Tristinwold.Shared;
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 // client -> server
 [JsonDerivedType(typeof(Hello), "hello")]
+[JsonDerivedType(typeof(AccountRequest), "account_request")]
+[JsonDerivedType(typeof(AccountReply), "account_reply")]
+[JsonDerivedType(typeof(SaveProgress), "save_progress")]
 [JsonDerivedType(typeof(Presence), "presence")]
 [JsonDerivedType(typeof(ReportBattle), "report_battle")]
 [JsonDerivedType(typeof(Rested), "rested")]
@@ -38,7 +41,8 @@ public abstract record Message;
 // ---- client -> server ----------------------------------------------------------------------
 
 /// <param name="Party">The three front-line characters' names, as this player has them.</param>
-public sealed record Hello(string Player, string Password, int ProtocolVersion, IReadOnlyList<string> Party) : Message;
+/// <param name="Account">Set when playing a character that belongs to an account; <paramref name="Token"/> proves the login.</param>
+public sealed record Hello(string Player, string Password, int ProtocolVersion, IReadOnlyList<string> Party, string? Account = null, string? Token = null) : Message;
 
 /// <summary>Sent whenever the group moves to another area or changes its line-up.</summary>
 public sealed record Presence(string Area, IReadOnlyList<string> Party) : Message;

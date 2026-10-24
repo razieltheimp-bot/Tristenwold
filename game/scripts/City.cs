@@ -71,6 +71,10 @@ public static class City
         return r < CrownRadius ? CrownHeight : r < InnerRadius ? InnerHeight : (float)WorldGen.Default.Height(p.X, p.Z);
     }
 
+    /// <summary>The sky, fog and light, and the sun: the graphics settings adjust them.</summary>
+    public static Godot.Environment Sky { get; private set; } = null!;
+    public static DirectionalLight3D Sun { get; private set; } = null!;
+
     public static void Build(Node3D root, float fog = 0.0035f)
     {
         var rng = new Rng(1337);
@@ -87,7 +91,8 @@ public static class City
             TonemapMode = Godot.Environment.ToneMapper.Filmic,
         };
         root.AddChild(new WorldEnvironment { Environment = env });
-        root.AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-50, -30, 0), ShadowEnabled = true, LightEnergy = 1.0f });
+        root.AddChild(Sun = new DirectionalLight3D { RotationDegrees = new Vector3(-50, -30, 0), ShadowEnabled = true, LightEnergy = 1.0f });
+        Sky = env;
 
         // The land and the harbor come from the world generator (see Terrain).
 

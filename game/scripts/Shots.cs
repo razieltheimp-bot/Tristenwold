@@ -7,13 +7,14 @@ namespace Tristinwold.Game;
 /// Takes a tour of the world and saves screenshots, for checking how it looks without playing:
 ///   godot --path game -- --shots /some/folder --server off
 /// </summary>
-public partial class Shots(Main main, string dir) : Node
+public partial class Shots(Main main, string dir, bool quick = false) : Node
 {
     public override async void _Ready()
     {
         DirAccess.MakeDirRecursiveAbsolute(dir);
         var (p, w) = (main.PlayerNode, main.World);
         await Frames(60);
+        if (quick) { await Quick(); return; }
 
         // Tristinwold from the Gallows Perch, looking into the city.
         p.Face(new Vector3(0, 0, 0));
@@ -53,6 +54,34 @@ public partial class Shots(Main main, string dir) : Node
         await Go(new Vector3(-150, 0, -1500), 30);
         main.HudNode.ToggleMap();
         await Shot("8-map");
+        GetTree().Quit();
+    }
+
+    /// <summary>Three views for comparing graphics settings: the harbor, a village, and woods by a lake.</summary>
+    async Task Quick()
+    {
+        var (p, w) = (main.PlayerNode, main.World);
+        await Go(new Vector3(132, 0, 0), 90);
+        p.GlobalPosition = new Vector3(132, 1, 0); // out on the middle pier
+        await Frames(30);
+        p.Face(new Vector3(210, 0, 70)); // the Needle across the water
+        await Shot("q1-harbor");
+        var village = w.SitesNear(-150, -1500, 1500).Where(s => s.Kind == SettlementKind.Hamlet).MinBy(s => s.DistanceTo(-150, -1500))!;
+        await Go(new Vector3((float)village.X, 0, (float)(village.Z + village.Radius + 12)), 120);
+        p.Face(new Vector3((float)village.X, 0, (float)village.Z));
+        await Shot("q2-village");
+        // Find a lakeshore near the village: a point on land with water close by.
+        for (var r = 60.0; r < 900; r += 30)
+            for (var a = 0.0; a < Math.Tau; a += 0.3)
+            {
+                var (x, z) = (village.X + Math.Cos(a) * r, village.Z + Math.Sin(a) * r);
+                if (w.Height(x, z) > 1.5 || w.Height(x + Math.Cos(a) * 25, z + Math.Sin(a) * 25) > WorldGen.WaterLevel - 0.5) continue;
+                await Go(new Vector3((float)x, 0, (float)z), 120);
+                p.Face(new Vector3((float)(x + Math.Cos(a) * 30), 0, (float)(z + Math.Sin(a) * 30)));
+                await Shot("q3-lake");
+                GetTree().Quit();
+                return;
+            }
         GetTree().Quit();
     }
 

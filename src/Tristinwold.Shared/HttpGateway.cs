@@ -17,6 +17,7 @@ public sealed record SyncResponse(string? Session, List<Message> Messages, strin
 ///
 ///   POST /v1/join   body: a Hello message     -> SyncResponse (Session set)
 ///   POST /v1/sync   body: SyncRequest         -> SyncResponse (401 when the session expired)
+///   POST /v1/account body: an AccountRequest  -> an AccountReply (log in, manage characters)
 /// </summary>
 public sealed class HttpGateway : IDisposable
 {
@@ -89,6 +90,17 @@ public sealed class HttpGateway : IDisposable
                     var session = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
                     _sessions[session] = mailbox;
                     await Reply(ctx, 200, new SyncResponse(session, mailbox.Drain()));
+                    return;
+                }
+                case "/v1/account":
+                {
+                    if (Wire.Decode(body) is not AccountRequest request) { await Reply(ctx, 400, new SyncResponse(null, [], "expected account_request")); return; }
+                    var reply = Encoding.UTF8.GetBytes(Wire.Encode(_host.Account(request)));
+                    ctx.Response.StatusCode = 200;
+                    ctx.Response.ContentType = "application/json";
+                    ctx.Response.ContentLength64 = reply.Length;
+                    await ctx.Response.OutputStream.WriteAsync(reply).ConfigureAwait(false);
+                    ctx.Response.Close();
                     return;
                 }
                 case "/v1/sync":
