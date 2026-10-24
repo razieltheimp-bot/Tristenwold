@@ -76,6 +76,8 @@ public sealed class Nemesis
     public required string Kind { get; init; }
     /// <summary>What players see: "Bandit Chief", "Draugr Deathlord".</summary>
     public required string Species { get; init; }
+    /// <summary>An actor base to spawn it from when it comes hunting ("Skyrim.esm|0x0003DF08").</summary>
+    public string? BaseForm { get; set; }
 
     public Rank Rank { get; set; } = Rank.Captain;
     public int Level { get; set; } = 1;

@@ -119,6 +119,7 @@ public sealed partial class ServerCore
             FinishContract => [new(player, new Notice(NoticeKind.Error, "The DM closes contracts in this campaign. Tell them you're done."))],
             LeaveDrop d => OnDrop(group, d),
             Say s when !string.IsNullOrWhiteSpace(s.Text) => [new(null, new Notice(NoticeKind.Chat, Clip(s.Text, 400), player))],
+            EncounterStarted e => OnEncounter(player, e),
             _ => [],
         };
     }
@@ -180,6 +181,14 @@ public sealed partial class ServerCore
         // Each table only speaks for itself.
         var events = World.RecordBattle(report with { Players = [player] });
         return WorldChanged(events);
+    }
+
+    IReadOnlyList<Outgoing> OnEncounter(string player, EncounterStarted e)
+    {
+        var spawns = World.PlanEncounter(Clip(e.Area, 80), e.Enemies.Take(32).ToList(), [player]);
+        if (spawns.Count == 0) return [];
+        Dirty = true; // the plan used the world's dice
+        return [new(player, new NemesisAppears(spawns))];
     }
 
     public IReadOnlyList<Outgoing> AdvanceDay(string announcement)

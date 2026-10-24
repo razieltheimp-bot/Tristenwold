@@ -304,6 +304,7 @@ public sealed class NemesisWorld
             Id = _rng.NextGuid(),
             Name = MakeName(),
             Kind = enemy.Kind,
+            BaseForm = enemy.BaseForm,
             Species = enemy.Species,
             Rank = rank,
             Level = Math.Max(1, report.PartyLevel / 5),

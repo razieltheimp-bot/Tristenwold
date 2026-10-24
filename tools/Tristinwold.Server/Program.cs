@@ -1,15 +1,17 @@
 ﻿// The shared-world server. Anyone can run it, even someone who is also playing: Vann runs
-// the story, and the console doesn't spoil his schemes. Every friend's game connects to it.
+// the story, and the console doesn't spoil his schemes. Every company's game connects to it.
 //
-//   dotnet run --project tools/Tristinwold.Server -- [--port 7777] [--password secret]
-//       [--campaign tristinwold.json] [--dm] [--no-vann] [--vann-minutes 6]
-//       [--voice claude|off] [--spoilers]
+//   dotnet run --project tools/Tristinwold.Server -- [--port 7777] [--http-port 7778]
+//       [--password secret] [--campaign tristinwold.json] [--dm] [--no-vann]
+//       [--vann-minutes 6] [--voice claude|off] [--spoilers]
 //
-// --dm        a human DM closes contracts from this window (players can't close their own)
-// --no-vann   Vann doesn't scheme on his own
-// --voice     claude: Claude voices Vann (needs ANTHROPIC_API_KEY); off: written lines only.
-//             Defaults to claude when an API key is set.
-// --spoilers  print private messages and Vann's lines here (for a DM who isn't playing)
+// --port       TCP (JSON lines) for tools and bots
+// --http-port  HTTP for the Skyrim add-on (SkyrimPlatform can only make HTTP requests)
+// --dm         a human DM closes contracts from this window (players can't close their own)
+// --no-vann    Vann doesn't scheme on his own
+// --voice      claude: Claude voices Vann (needs ANTHROPIC_API_KEY); off: written lines only.
+//              Defaults to claude when an API key is set.
+// --spoilers   print private messages and Vann's lines here (for a DM who isn't playing)
 //
 // DM commands still work in this window (help for the list), but nothing needs them.
 using System.Net;
@@ -18,6 +20,7 @@ using Anthropic;
 using Tristinwold.Shared;
 
 var port = Wire.DefaultPort;
+var httpPort = Wire.DefaultPort + 1;
 var password = "";
 var campaignPath = "tristinwold.json";
 var humanDm = false;
@@ -30,6 +33,7 @@ for (var i = 0; i < args.Length; i++)
     switch (args[i])
     {
         case "--port": port = int.Parse(args[++i]); break;
+        case "--http-port": httpPort = int.Parse(args[++i]); break;
         case "--password": password = args[++i]; break;
         case "--campaign": campaignPath = args[++i]; break;
         case "--dm": humanDm = true; break;
@@ -40,6 +44,8 @@ for (var i = 0; i < args.Length; i++)
         default: Console.Error.WriteLine($"Unknown option {args[i]}"); return 1;
     }
 }
+
+void Log(string text) => Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {text}");
 
 var state = File.Exists(campaignPath) ? CampaignState.Load(campaignPath) : CampaignState.SavedMan();
 var core = new ServerCore(state, new ServerOptions
@@ -54,121 +60,60 @@ var hasKey = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ANTHROPIC
           || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN"));
 IVannVoice? voice = (voiceChoice ?? (hasKey ? "claude" : "off")) switch
 {
-    "claude" => new ClaudeVannVoice(new AnthropicClient(), text => Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {text}")),
+    "claude" => new ClaudeVannVoice(new AnthropicClient(), Log),
     "off" => null,
     var other => throw new ArgumentException($"--voice must be claude or off, not {other}"),
 };
-var gate = new Lock();
-var sessions = new Dictionary<string, LineConnection>(StringComparer.OrdinalIgnoreCase);
+
+var host = new SharedWorldHost(core, () => state.Save(campaignPath), voice, Log, spoilers);
 using var shutdown = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; shutdown.Cancel(); };
 
-void Log(string text) => Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {text}");
+// ---- TCP (tools, bots) ---------------------------------------------------------------------------
 
-void SaveIfDirty()
+async Task ServeTcpAsync(TcpClient tcp)
 {
-    if (!core.Dirty) return;
-    core.Dirty = false;
-    try { state.Save(campaignPath); }
-    catch (Exception ex) { Log($"Could not save {campaignPath}: {ex.Message}"); }
-}
-
-// Call with the gate held.
-void Send(Outgoing o)
-{
-    IEnumerable<KeyValuePair<string, LineConnection>> targets = o.To is null
-        ? sessions.Where(s => !s.Key.Equals(o.Except, StringComparison.OrdinalIgnoreCase)).ToList()
-        : sessions.Where(s => s.Key.Equals(o.To, StringComparison.OrdinalIgnoreCase)).ToList();
-    foreach (var (_, conn) in targets)
-        _ = conn.WriteAsync(o.Message, shutdown.Token).ContinueWith(_ => { }, TaskScheduler.Default);
-    // The host may be playing too: only public news is printed, unless asked for spoilers.
-    if (o.Message is Notice { Kind: not NoticeKind.Error } n && (spoilers || (o.To is null && n.Kind != NoticeKind.Vann)))
-        Log($"{(o.To is null ? "all" : o.To)}: {(n.From is null ? "" : n.From + ": ")}{n.Text}");
-}
-
-// Call with the gate held. Vann's lines go out once his voice has worded them.
-void Deliver(IReadOnlyList<Outgoing> outgoing)
-{
-    foreach (var o in outgoing)
-    {
-        if (voice is not null && o.Scene is not null && o.Message is Notice notice)
-            _ = VoiceAsync(o, notice, [.. state.VannMemory]);
-        else
-            Send(o);
-    }
-}
-
-async Task VoiceAsync(Outgoing o, Notice notice, List<string> recent)
-{
-    string? line = null;
-    try
-    {
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(shutdown.Token);
-        timeout.CancelAfter(TimeSpan.FromSeconds(20));
-        line = await voice!.SpeakAsync(o.Scene!, recent, timeout.Token);
-    }
-    catch (Exception ex) when (ex is not OutOfMemoryException) { }
-    lock (gate) Send(o with { Message = notice with { Text = line ?? notice.Text } });
-}
-
-async Task ServeAsync(TcpClient tcp)
-{
-    var endpoint = tcp.Client.RemoteEndPoint;
     using var tcpScope = tcp;
     using var conn = new LineConnection(tcp.GetStream());
+    var sink = new TcpSink(conn, shutdown.Token);
     string? player = null;
     try
     {
-        if (await conn.ReadAsync(shutdown.Token) is not Hello hello)
-            return;
-        lock (gate)
-        {
-            var outgoing = core.Connect(hello);
-            if (outgoing.Count > 0 && outgoing[0].Message is Rejected rejected)
-            {
-                Log($"Rejected {hello.Player} from {endpoint}: {rejected.Reason}");
-                _ = conn.WriteAsync(rejected, shutdown.Token);
-                return;
-            }
-            player = hello.Player.Trim();
-            sessions[player] = conn;
-            Log($"{player} connected from {endpoint}.");
-            Deliver(outgoing);
-            SaveIfDirty();
-        }
-
-        while (await conn.ReadAsync(shutdown.Token) is { } message)
-        {
-            lock (gate)
-            {
-                Deliver(core.Handle(player, message));
-                SaveIfDirty();
-            }
-        }
+        if (await conn.ReadAsync(shutdown.Token) is not Hello hello) return;
+        player = host.Join(hello, sink);
+        if (player is null) return;
+        while (await conn.ReadAsync(shutdown.Token) is { } message) host.Receive(player, message);
     }
     catch (Exception ex) when (ex is IOException or OperationCanceledException or System.Text.Json.JsonException)
     {
-        if (ex is System.Text.Json.JsonException) Log($"Bad message from {player ?? endpoint?.ToString()}: {ex.Message}");
+        if (ex is System.Text.Json.JsonException) Log($"Bad message from {player ?? tcp.Client.RemoteEndPoint?.ToString()}: {ex.Message}");
     }
     finally
     {
-        if (player is not null)
-        {
-            lock (gate)
-            {
-                if (sessions.TryGetValue(player, out var current) && current == conn) sessions.Remove(player);
-                Deliver(core.Disconnect(player));
-                SaveIfDirty();
-            }
-            Log($"{player} disconnected.");
-        }
+        if (player is not null) host.Leave(player, sink);
     }
 }
 
 var listener = new TcpListener(IPAddress.Any, port);
 listener.Start();
-Log($"Tristinwold server: campaign \"{state.Campaign}\", port {port}, saving to {Path.GetFullPath(campaignPath)}.");
-Log("Friends connect to this computer's address. Over the internet, forward this TCP port or use a VPN like Tailscale.");
+
+// ---- HTTP (the Skyrim add-on) --------------------------------------------------------------------
+
+using var gateway = new HttpGateway(host, $"http://+:{httpPort}/", Log);
+try
+{
+    gateway.Start();
+}
+catch (HttpListenerException ex)
+{
+    Log($"Could not listen for HTTP on port {httpPort} ({ex.Message}). On Windows, run once as administrator or: " +
+        $"netsh http add urlacl url=http://+:{httpPort}/ user=Everyone");
+    return 1;
+}
+
+Log($"Tristinwold server: campaign \"{state.Campaign}\", Skyrim add-on on HTTP {httpPort}, tools on TCP {port}.");
+Log($"Saving to {Path.GetFullPath(campaignPath)}.");
+Log("Friends connect to this computer's address. Over the internet, forward the HTTP port or use a VPN like Tailscale.");
 Log(vann
     ? $"Vann is playing{(voice is null ? " (written lines; set ANTHROPIC_API_KEY for Claude's voice)" : ", voiced by Claude")}. {(humanDm ? "The DM closes contracts from this window." : "Players close their own contracts.")}"
     : "Vann is not scheming on his own (--no-vann).");
@@ -180,29 +125,18 @@ _ = Task.Run(async () =>
     while (!shutdown.IsCancellationRequested)
     {
         try { await Task.Delay(TimeSpan.FromSeconds(15), shutdown.Token); } catch (OperationCanceledException) { break; }
-        lock (gate)
-        {
-            Deliver(core.Tick());
-            SaveIfDirty();
-        }
+        host.Tick();
     }
 });
 
-_ = Task.Run(async () =>
+_ = Task.Run(() =>
 {
     while (!shutdown.IsCancellationRequested && Console.In.ReadLine() is { } line)
     {
         if (line.Trim().Length == 0) continue;
-        lock (gate)
-        {
-            if (line.Trim().Equals("save", StringComparison.OrdinalIgnoreCase)) { core.Dirty = true; SaveIfDirty(); Console.WriteLine("Saved."); continue; }
-            var (reply, outgoing) = core.Dm(line);
-            if (reply.Length > 0) Console.WriteLine(reply);
-            Deliver(outgoing);
-            SaveIfDirty();
-        }
+        var reply = host.Dm(line);
+        if (reply.Length > 0) Console.WriteLine(reply);
     }
-    await Task.CompletedTask;
 });
 
 try
@@ -211,11 +145,16 @@ try
     {
         var tcp = await listener.AcceptTcpClientAsync(shutdown.Token);
         tcp.NoDelay = true;
-        _ = Task.Run(() => ServeAsync(tcp));
+        _ = Task.Run(() => ServeTcpAsync(tcp));
     }
 }
 catch (OperationCanceledException) { }
 
-lock (gate) { core.Dirty = true; SaveIfDirty(); }
+host.SaveNow();
 Log("Server stopped.");
 return 0;
+
+sealed class TcpSink(LineConnection conn, CancellationToken ct) : IClientSink
+{
+    public void Send(Message message) => _ = conn.WriteAsync(message, ct).ContinueWith(_ => { }, TaskScheduler.Default);
+}

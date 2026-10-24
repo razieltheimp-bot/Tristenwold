@@ -17,7 +17,9 @@ public sealed record EnemyReport(
     bool Escaped,
     Guid? NemesisId = null,
     DamageKind? KillingBlow = null,
-    string? KilledBy = null);
+    string? KilledBy = null,
+    /// <summary>The actor base the game can spawn this kind from ("Skyrim.esm|0x0003DF08").</summary>
+    string? BaseForm = null);
 
 /// <summary>What the game layer hands the nemesis world after every battle.</summary>
 public sealed record BattleReport(
@@ -28,7 +30,7 @@ public sealed record BattleReport(
     int PartyLevel = 1);
 
 /// <summary>An enemy about to fight the player, before any nemesis takes its place.</summary>
-public sealed record FormationSlot(int Slot, string Kind, string Species);
+public sealed record FormationSlot(int Slot, string Kind, string Species, string? BaseForm = null);
 
 /// <summary>Everything the game layer needs to turn an ordinary enemy into a nemesis.</summary>
 public sealed record BattleModifiers(

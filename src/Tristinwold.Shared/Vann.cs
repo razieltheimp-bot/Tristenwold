@@ -155,6 +155,9 @@ public sealed partial class ServerCore
                     ? $"{hunter.FullName} knows where you sleep now. I told it."
                     : $"Be careful. I heard {hunter.FullName} has been asking after you. Someone must have told it where we'd be."),
         };
+        // If the game knows how to spawn its kind, it comes looking right now.
+        if (hunter.BaseForm is { } baseForm)
+            outgoing.Add(new(g.Player, new NemesisHunts(hunter.Id, hunter.Kind, hunter.Species, baseForm, World.ModifiersFor(hunter), null)));
         outgoing.AddRange(WorldChanged(events));
         return outgoing;
     }

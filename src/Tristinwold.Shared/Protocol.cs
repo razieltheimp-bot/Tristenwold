@@ -19,6 +19,7 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(FinishContract), "finish_contract")]
 [JsonDerivedType(typeof(LeaveDrop), "leave_drop")]
 [JsonDerivedType(typeof(Say), "say")]
+[JsonDerivedType(typeof(EncounterStarted), "encounter_started")]
 // server -> client
 [JsonDerivedType(typeof(Welcome), "welcome")]
 [JsonDerivedType(typeof(Rejected), "rejected")]
@@ -30,6 +31,8 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(Notice), "notice")]
 [JsonDerivedType(typeof(Reward), "reward")]
 [JsonDerivedType(typeof(KeystoneRevealed), "keystone_revealed")]
+[JsonDerivedType(typeof(NemesisAppears), "nemesis_appears")]
+[JsonDerivedType(typeof(NemesisHunts), "nemesis_hunts")]
 public abstract record Message;
 
 // ---- client -> server ----------------------------------------------------------------------
@@ -54,6 +57,9 @@ public sealed record LeaveDrop(string Area, string Text) : Message;
 
 public sealed record Say(string Text) : Message;
 
+/// <summary>A fight just started in this company's game. The server says which enemies are nemeses.</summary>
+public sealed record EncounterStarted(string Area, IReadOnlyList<FormationSlot> Enemies) : Message;
+
 // ---- server -> client ----------------------------------------------------------------------
 
 public sealed record Welcome(string Player, string Campaign, IReadOnlyList<string> Flags) : Message;
@@ -77,6 +83,12 @@ public sealed record Notice(NoticeKind Kind, string Text, string? From = null) :
 public sealed record Reward(string ContractId, int Gil) : Message;
 
 public sealed record KeystoneRevealed(string Player, string Character) : Message;
+
+/// <summary>Answer to <see cref="EncounterStarted"/>: these enemies are nemeses; rename and strengthen them.</summary>
+public sealed record NemesisAppears(IReadOnlyList<NemesisSpawn> Spawns) : Message;
+
+/// <summary>Vann sent a nemesis after this company: spawn it nearby and let it find them.</summary>
+public sealed record NemesisHunts(Guid NemesisId, string Kind, string Species, string BaseForm, BattleModifiers Modifiers, string? Taunt) : Message;
 
 // ---- views (what players may see) ------------------------------------------------------------
 

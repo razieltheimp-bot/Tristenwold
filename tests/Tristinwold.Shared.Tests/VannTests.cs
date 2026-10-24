@@ -130,3 +130,54 @@ public class VannTests
         Assert.Empty(server.Tick());
     }
 }
+
+public class EncounterTests
+{
+    [Fact]
+    public void A_fight_in_skyrim_can_turn_out_to_be_against_a_nemesis()
+    {
+        var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannEnabled = false }, seed: 8);
+        server.Connect(new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]));
+        // Joe dies to a bandit: it becomes a nemesis, remembering how to spawn it.
+        server.Handle("Joe", new ReportBattle(new BattleReport("Riverwood", BattleResult.Defeat,
+            [new EnemyReport(0, "Bandit Marauder", "Bandit Marauder", 300, false, false, BaseForm: "Skyrim.esm|0x0003DF08")], ["Joe"])));
+        Assert.Equal("Skyrim.esm|0x0003DF08", server.World.Living.Single().BaseForm);
+
+        // The next fights with bandit marauders: sooner or later, that's him.
+        NemesisAppears? appears = null;
+        for (var i = 0; i < 20 && appears is null; i++)
+            appears = server.Handle("Joe", new EncounterStarted("Riverwood",
+                [new FormationSlot(4, "Bandit Marauder", "Bandit Marauder"), new FormationSlot(5, "Wolf", "Wolf")]))
+                .Select(o => o.Message).OfType<NemesisAppears>().SingleOrDefault();
+        var spawn = Assert.Single(appears!.Spawns);
+        Assert.Equal(4, spawn.Slot);
+        Assert.True(spawn.Modifiers.StatMultipliers[Nemesis.Stat.Health] > 1);
+
+        // Messages survive the trip to the game and back.
+        var json = Wire.Encode(appears);
+        Assert.Contains("\"type\":\"nemesis_appears\"", json);
+        Assert.Contains("\"Health\":", json);
+        Assert.IsType<NemesisAppears>(Wire.Decode(json));
+    }
+
+    [Fact]
+    public void Vann_sends_a_nemesis_that_knows_how_to_spawn_after_its_company()
+    {
+        var now = new DateTime(2026, 10, 25, 20, 0, 0, DateTimeKind.Utc);
+        var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannMinutesBetweenSchemes = 1 }, seed: 9, clock: () => now);
+        server.Connect(new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]));
+        server.Handle("Joe", new ReportBattle(new BattleReport("Riverwood", BattleResult.Defeat,
+            [new EnemyReport(0, "Draugr", "Draugr Wight", 300, false, false, BaseForm: "Skyrim.esm|0x0002D1E9")], ["Joe"])));
+
+        var hunts = new List<NemesisHunts>();
+        server.Tick();
+        for (var minute = 0; minute < 120 && hunts.Count == 0; minute++)
+        {
+            now = now.AddMinutes(1);
+            hunts.AddRange(server.Tick().Where(o => o.To == "Joe").Select(o => o.Message).OfType<NemesisHunts>());
+        }
+        var hunt = Assert.Single(hunts);
+        Assert.Equal("Skyrim.esm|0x0002D1E9", hunt.BaseForm);
+        Assert.Equal(server.World.Living.Single().Id, hunt.NemesisId);
+    }
+}
