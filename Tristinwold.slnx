@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/mods/">
+    <Project Path="mods/Tristinwold.NemesisMod/Tristinwold.NemesisMod.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Tristinwold.Nemesis/Tristinwold.Nemesis.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Tristinwold.Nemesis.Tests/Tristinwold.Nemesis.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Tristinwold.NemesisSim/Tristinwold.NemesisSim.csproj" />
+  </Folder>
+</Solution>
