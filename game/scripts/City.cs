@@ -143,8 +143,8 @@ public static class City
         {
             Buildings.Place(root, "pier", new Vector3(122, 0, z), 0, 0);
             for (var k = 0; k < 3; k++)
-                Models.Place(root, rng.Chance(0.5) ? "dungeon/barrel_large.glb" : "dungeon/crates_stacked.glb",
-                    new Vector3(108 + rng.Next(28), 0, z + (float)rng.NextDouble() * 3 - 1.5f), rng.Chance(0.5) ? 0.5f : 0.6f, (float)rng.NextDouble() * Mathf.Tau);
+                Models.Place(root, rng.Chance(0.5) ? "ph:barrel.glb" : "ph:crate.glb",
+                    new Vector3(108 + rng.Next(28), 0, z + (float)rng.NextDouble() * 3 - 1.5f), 1, (float)rng.NextDouble() * Mathf.Tau);
         }
         Label(root, new Vector3(120, 5, 0), "The Docks");
 

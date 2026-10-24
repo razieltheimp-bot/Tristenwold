@@ -251,11 +251,11 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     void Clutter(Node3D parent, Settlement s, Rng rng, int count, double spread)
     {
-        string[] props = ["dungeon/barrel_large.glb", "dungeon/barrel_small_stack.glb", "dungeon/crates_stacked.glb", "dungeon/box_stacked.glb", "medieval/props/sack.gltf", "medieval/props/wheelbarrow.gltf", "dungeon/keg.glb"];
+        string[] props = ["ph:barrel.glb", "ph:barrel.glb", "ph:crate.glb", "ph:crate.glb", "medieval/props/sack.gltf", "medieval/props/wheelbarrow.gltf", "dungeon/keg.glb"];
         for (var i = 0; i < count; i++)
         {
             var path = rng.Pick(props);
-            var scale = path.StartsWith("dungeon") ? 0.5f : 5f;
+            var scale = path.StartsWith("ph:") ? 1f : path.StartsWith("dungeon") ? 0.5f : 5f;
             var a = rng.NextDouble() * Mathf.Tau;
             var r = s.Radius * (0.15 + rng.NextDouble() * spread);
             Prop(parent, s, path, Math.Cos(a) * r, Math.Sin(a) * r, scale, (float)rng.NextDouble() * Mathf.Tau);
@@ -379,7 +379,8 @@ public partial class Places(Main main, WorldGen world) : Node3D
     void Fire(Node3D parent, Settlement s)
     {
         var at = Ground(s.X, s.Z);
-        parent.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.6f, BottomRadius = 0.8f, Height = 0.4f }, Position = at + new Vector3(0, 0.2f, 0), MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#3a2a1a"), EmissionEnabled = true, Emission = new Color("#ff6a1a"), EmissionEnergyMultiplier = 2 } });
+        Models.Place(parent, "ph:fire_pit.glb", at, 1, solid: false);
+        parent.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.4f, BottomRadius = 0.5f, Height = 0.25f }, Position = at + new Vector3(0, 0.12f, 0), MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#3a2a1a"), EmissionEnabled = true, Emission = new Color("#ff6a1a"), EmissionEnergyMultiplier = 2 } });
         parent.AddChild(new OmniLight3D { Position = at + new Vector3(0, 1.5f, 0), LightColor = new Color("#ff9a4a"), LightEnergy = 3f, OmniRange = 16, ShadowEnabled = false });
         foreach (var a in new[] { 0.3f, 2.4f, 4.4f })
             Models.Place(parent, "dungeon/trunk_medium_A.glb", at + new Vector3(Mathf.Cos(a) * 2.2f, 0, Mathf.Sin(a) * 2.2f), 0.6f, a, solid: false);

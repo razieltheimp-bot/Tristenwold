@@ -6,7 +6,9 @@ namespace Tristinwold.Game;
 public enum Surface { Stone, DarkStone, Plaster, Timber, Planks, Glass, Slate, ClayTile, Shingle, Thatch }
 
 /// <summary>
-/// Materials for generated buildings, drawn entirely by a shader so they need no texture files:
+/// Materials for generated buildings. Mostly photographs (Poly Haven's CC0 scans of old stone,
+/// plaster, weathered wood, slate, clay tiles and thatch), with their relief and roughness maps.
+/// Leaded glass, and everything when the photos aren't there, is drawn by a shader instead:
 /// mortared stone courses, weathered plaster, wood grain, overlapping slate or clay tiles, thatch,
 /// leaded glass. Each one also computes its own surface relief, so light catches the edges of
 /// stones and tiles. Coordinates come in metres, so patterns stay the same size on every wall.
@@ -15,7 +17,49 @@ public static class BuildingMaterials
 {
     static readonly Dictionary<Surface, ShaderMaterial> Cache = [];
 
-    public static ShaderMaterial For(Surface s)
+    static readonly Dictionary<Surface, Material> Photos = [];
+
+    /// <summary>Each surface's photograph, its real width in metres, and a tint (shingles are slate stained brown).</summary>
+    static (string File, float Metres, string Tint)? Photo(Surface s) => s switch
+    {
+        Surface.Stone => ("stone", 2.0f, "#ffffff"),
+        Surface.DarkStone => ("dark_stone", 2.5f, "#c8c4be"),
+        Surface.Plaster => ("plaster", 2.2f, "#f4ecdc"),
+        Surface.Timber => ("timber", 0.9f, "#9a8270"),
+        Surface.Planks => ("planks", 2.0f, "#e8dccb"),
+        Surface.Slate => ("slate", 3.0f, "#ffffff"),
+        Surface.ClayTile => ("clay_tile", 4.0f, "#ffffff"),
+        Surface.Shingle => ("slate", 3.0f, "#b89474"),
+        Surface.Thatch => ("thatch", 1.2f, "#ffffff"),
+        _ => null,
+    };
+
+    const string Folder = "res://assets/polyhaven/surfaces/";
+
+    public static Material For(Surface s)
+    {
+        if (Photos.TryGetValue(s, out var photo)) return photo;
+        if (Photo(s) is { } p && ResourceLoader.Exists($"{Folder}{p.File}_diff.jpg"))
+            return Photos[s] = new StandardMaterial3D
+            {
+                AlbedoTexture = GD.Load<Texture2D>($"{Folder}{p.File}_diff.jpg"),
+                AlbedoColor = new Color(p.Tint),
+                NormalEnabled = true,
+                NormalTexture = GD.Load<Texture2D>($"{Folder}{p.File}_nor.jpg"),
+                RoughnessTexture = GD.Load<Texture2D>($"{Folder}{p.File}_arm.jpg"),
+                RoughnessTextureChannel = BaseMaterial3D.TextureChannel.Green,
+                AOEnabled = true,
+                AOTexture = GD.Load<Texture2D>($"{Folder}{p.File}_arm.jpg"),
+                AOTextureChannel = BaseMaterial3D.TextureChannel.Red,
+                // The buildings' UVs are in metres; this makes one copy of the photo its real size.
+                Uv1Scale = new Vector3(1 / p.Metres, -1 / p.Metres, 1),
+                TextureFilter = BaseMaterial3D.TextureFilterEnum.LinearWithMipmapsAnisotropic,
+                CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+            };
+        return Drawn(s);
+    }
+
+    static ShaderMaterial Drawn(Surface s)
     {
         if (Cache.TryGetValue(s, out var m)) return m;
         m = new ShaderMaterial { Shader = Shader };

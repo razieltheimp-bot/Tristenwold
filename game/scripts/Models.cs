@@ -3,12 +3,14 @@ using Godot;
 namespace Tristinwold.Game;
 
 /// <summary>
-/// The 3D models: Kay Lousberg's KayKit packs (CC0), from game/assets/kaykit. Each pack is drawn
+/// The 3D models: Kay Lousberg's KayKit packs (CC0), from game/assets/kaykit, and Poly Haven's
+/// scanned rocks and props (CC0), from game/assets/polyhaven/models. Each pack is drawn
 /// at its own scale, so every model is placed through here at a size that fits a person 1.85 m tall.
 /// </summary>
 public static class Models
 {
     const string Root = "res://assets/kaykit/";
+    const string PolyHaven = "res://assets/polyhaven/models/"; // "ph:boulder.glb": a Poly Haven scan, at its real size
     static readonly Dictionary<string, PackedScene?> Scenes = [];
     static readonly Dictionary<string, Mesh?> Meshes = [];
 
@@ -18,7 +20,7 @@ public static class Models
     public static PackedScene? Scene(string path)
     {
         if (Scenes.TryGetValue(path, out var scene)) return scene;
-        var full = Root + path;
+        var full = path.StartsWith("ph:") ? PolyHaven + path[3..] : Root + path;
         return Scenes[path] = ResourceLoader.Exists(full) ? GD.Load<PackedScene>(full) : null;
     }
 

@@ -73,9 +73,9 @@ public partial class Terrain(WorldGen world) : Node3D
             ? Graphics.Water()
             : new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.25f, 0.33f, 0.85f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.1f, Metallic = 0.3f };
         AddChild(_water);
+        if (Photographic) _ground = Graphics.Ground();
         if (Fancy)
         {
-            _ground = Graphics.Ground();
             // The simple renderer (old devices) draws the wind shader's grass black, so it gets plain grass.
             if (RenderingServer.GetCurrentRenderingMethod() != "gl_compatibility") _grassSway = Graphics.Swaying(2.2f, heightScale: 1.6f);
         }
@@ -228,8 +228,10 @@ public partial class Terrain(WorldGen world) : Node3D
         var (x0, z0) = (cx * ChunkSize, cz * ChunkSize);
         var h = world.HeightField(x0, z0, n, Step);
 
+        var places = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
+        if (Photographic) st.SetCustomFormat(0, SurfaceTool.CustomFormat.RgbaFloat);
         for (var r = 0; r < n; r++)
             for (var c = 0; c < n; c++)
             {
@@ -238,9 +240,19 @@ public partial class Terrain(WorldGen world) : Node3D
                 var dz = h[Math.Min(r + 1, n - 1) * n + c] - h[Math.Max(r - 1, 0) * n + c];
                 var slope = Math.Sqrt(dx * dx + dz * dz) / (2 * Step);
                 var (wx, wz) = (x0 + c * Step, z0 + r * Step);
-                var colour = Palette.Ground(world.BiomeAt(wx, wz, y), y, slope);
-                var jitter = (float)(Noise.Unit(Noise.Hash(world.Seed, (long)wx, (long)wz)) - 0.5) * 0.06f;
-                st.SetColor(new Color(colour.R + jitter, colour.G + jitter, colour.B + jitter));
+                var biome = world.BiomeAt(wx, wz, y);
+                if (Photographic)
+                {
+                    var (lo, hi) = Layers(biome, wx, wz, y, slope, places);
+                    st.SetColor(lo);
+                    st.SetCustom(0, hi);
+                }
+                else
+                {
+                    var colour = Palette.Ground(biome, y, slope);
+                    var jitter = (float)(Noise.Unit(Noise.Hash(world.Seed, (long)wx, (long)wz)) - 0.5) * 0.06f;
+                    st.SetColor(new Color(colour.R + jitter, colour.G + jitter, colour.B + jitter));
+                }
                 st.AddVertex(new Vector3(c * Step, y, r * Step));
             }
         for (var r = 0; r < Steps; r++)
@@ -261,39 +273,124 @@ public partial class Terrain(WorldGen world) : Node3D
         return body;
     }
 
-    /// <summary>A kind of tree or rock: its model, how big to draw it, and how its height is measured.</summary>
-    sealed record Plant(string Path, float MinScale, float MaxScale, float HeightScale, bool Sways = true);
+    /// <summary>The photo-textured ground (Medium quality and up), when its textures are there.</summary>
+    bool Photographic => Fancy && Graphics.GroundAlbedo is not null;
+
+    // The ground shader's layers.
+    const int AutumnFloor = 0, GrassLayer = 1, Mud = 2, TundraGrass = 3, Snow = 4, Rock = 5, Shore = 6, Dirt = 7;
+
+    /// <summary>
+    /// How much of each ground layer a point has, packed into two colours for the shader: the
+    /// biome's own ground with a second one in patches, rock on steep or high ground, trodden dirt
+    /// in settlements, and shingle along the water.
+    /// </summary>
+    (Color Lo, Color Hi) Layers(Biome biome, double x, double z, double y, double slope, List<Settlement> places)
+    {
+        Span<float> w = stackalloc float[8];
+        var (main, second, share) = biome switch
+        {
+            Biome.AutumnForest => (AutumnFloor, GrassLayer, 0.4),
+            Biome.PineForest => (GrassLayer, AutumnFloor, 0.3),
+            Biome.Marsh => (Mud, GrassLayer, 0.35),
+            Biome.Tundra => (TundraGrass, GrassLayer, 0.25),
+            Biome.Snowfield => (Snow, TundraGrass, 0.15),
+            _ => (TundraGrass, Rock, 0.5),
+        };
+        var patch = Noise.SmoothStep(0.45, 0.7, Noise.Value(world.Seed + 31, x / 28, z / 28)) * share * 1.6;
+        w[main] = (float)(1 - patch);
+        w[second] += (float)patch;
+
+        var rock = Math.Clamp((slope - 0.5) * 2.2, 0, 1);
+        if (y > 70 && biome != Biome.Snowfield) rock = Math.Max(rock, Math.Clamp((y - 70) / 30, 0, 0.8));
+        if (biome == Biome.Snowfield) rock *= 0.7;
+        Blend(w, Rock, rock);
+
+        var dirt = 0.0;
+        foreach (var s in places)
+            dirt = Math.Max(dirt, 1 - Noise.SmoothStep(s.Radius * 0.55, s.Radius * 0.95, s.DistanceTo(x, z)));
+        Blend(w, Dirt, dirt * 0.85);
+        Blend(w, Shore, 1 - Noise.SmoothStep(WorldGen.WaterLevel + 0.1, WorldGen.WaterLevel + 1.1, y));
+        return (new Color(w[0], w[1], w[2], w[3]), new Color(w[4], w[5], w[6], w[7]));
+    }
+
+    static void Blend(Span<float> w, int layer, double amount)
+    {
+        if (amount <= 0) return;
+        for (var i = 0; i < w.Length; i++) w[i] *= (float)(1 - amount);
+        w[layer] += (float)amount;
+    }
+
+    /// <summary>
+    /// A kind of tree or rock: its model (or a tree built in code), how big to draw it, and how its
+    /// height is measured for the wind. Poly Haven models ("ph:") keep their own photo materials.
+    /// </summary>
+    sealed record Plant(string Path, float MinScale, float MaxScale, float HeightScale, bool Sways = true, Foliage.Kind? Tree = null, int Variant = 0);
 
     static readonly Plant PineA = new("medieval/nature/tree_single_A.gltf", 5.5f, 8.5f, 6.5f);
     static readonly Plant PineB = new("medieval/nature/tree_single_B.gltf", 5.5f, 8.5f, 6.5f);
     static readonly Plant OrangeL = new("halloween/tree_pine_orange_large.gltf", 0.8f, 1.25f, 1);
-    static readonly Plant OrangeM = new("halloween/tree_pine_orange_medium.gltf", 0.9f, 1.3f, 1);
     static readonly Plant YellowL = new("halloween/tree_pine_yellow_large.gltf", 0.8f, 1.25f, 1);
-    static readonly Plant YellowM = new("halloween/tree_pine_yellow_medium.gltf", 0.9f, 1.3f, 1);
     static readonly Plant DeadL = new("halloween/tree_dead_large.gltf", 0.9f, 1.4f, 1);
     static readonly Plant DeadM = new("halloween/tree_dead_medium.gltf", 1f, 1.5f, 1);
-    static readonly Plant[] Rocks = [.. "ABCDE".Select(c => new Plant($"medieval/nature/rock_single_{c}.gltf", 6, 16, 1, Sways: false))];
+    static readonly Plant[] KayKitRocks = [.. "ABCDE".Select(c => new Plant($"medieval/nature/rock_single_{c}.gltf", 6, 16, 1, Sways: false))];
+
+    static Plant[] Grown(Foliage.Kind kind, float min, float max) =>
+        [.. Enumerable.Range(0, Foliage.Variants).Select(v => new Plant($"tree:{kind}:{v}", min, max, Foliage.HeightScale, Tree: kind, Variant: v))];
+
+    static readonly Plant[] Firs = Grown(Foliage.Kind.Fir, 0.75f, 1.25f);
+    static readonly Plant[] Autumns = Grown(Foliage.Kind.Autumn, 0.8f, 1.2f);
+    static readonly Plant[] Greens = Grown(Foliage.Kind.Green, 0.8f, 1.2f);
+    static readonly Plant[] Bares = Grown(Foliage.Kind.Bare, 0.8f, 1.3f);
+
+    static readonly Plant Boulder = new("ph:boulder.glb", 1, 3.5f, 1, Sways: false);
+    static readonly Plant FlatBoulder = new("ph:boulder_flat.glb", 1, 2.6f, 1, Sways: false);
+    static readonly Plant SmallBoulder = new("ph:boulder_small.glb", 1.2f, 3.5f, 1, Sways: false);
+    static readonly Plant Stone = new("ph:rock.glb", 4, 9, 1, Sways: false);
+    static readonly Plant Log = new("ph:dead_trunk.glb", 0.9f, 1.5f, 1, Sways: false);
+    static readonly Plant Stump = new("ph:stump.glb", 0.9f, 1.4f, 1, Sways: false);
+
+    /// <summary>Photo-real trees and rocks, when their textures are there; otherwise the KayKit ones.</summary>
+    static bool Real => Foliage.Available;
 
     readonly Dictionary<Plant, (Mesh Mesh, Material? Material)> _plants = [];
 
     (Mesh Mesh, Material? Material)? Look(Plant p)
     {
         if (_plants.TryGetValue(p, out var known)) return known;
+        if (p.Tree is { } kind) return _plants[p] = (Foliage.Tree(kind, p.Variant, Fancy), null);
         if (Models.MeshOf(p.Path) is not { } mesh) return null;
+        if (p.Path.StartsWith("ph:")) return _plants[p] = (mesh, null);
         var texture = (mesh.SurfaceGetMaterial(0) as BaseMaterial3D)?.AlbedoTexture;
         Material? material = Fancy && p.Sways ? Graphics.Swaying(1, texture, p.HeightScale) : Fancy ? Graphics.Swaying(0, texture, p.HeightScale) : null;
         return _plants[p] = (mesh, material);
     }
 
-    static (Plant Plant, double Weight)[] Woods(Biome b) => b switch
-    {
-        Biome.AutumnForest => [(OrangeL, 3), (OrangeM, 2), (YellowL, 2), (YellowM, 2), (PineB, 2)],
-        Biome.PineForest => [(PineA, 5), (PineB, 4), (DeadM, 0.4)],
-        Biome.Marsh => [(DeadM, 3), (DeadL, 1), (PineB, 2)],
-        Biome.Tundra => [(PineA, 5), (DeadM, 2)],
-        Biome.Snowfield => [(PineA, 4), (DeadL, 1)],
-        _ => [(PineA, 3), (DeadM, 1)],
-    };
+    static (Plant Plant, double Weight)[] Each(Plant[] plants, double weight) => [.. plants.Select(p => (p, weight / plants.Length))];
+
+    static (Plant Plant, double Weight)[] Woods(Biome b) => !Real
+        ? b switch
+        {
+            Biome.AutumnForest => [(OrangeL, 3), (YellowL, 2), (PineB, 2)],
+            Biome.PineForest => [(PineA, 5), (PineB, 4), (DeadM, 0.4)],
+            Biome.Marsh => [(DeadM, 3), (DeadL, 1), (PineB, 2)],
+            _ => [(PineA, 4), (DeadM, 1)],
+        }
+        : b switch
+        {
+            Biome.AutumnForest => [.. Each(Autumns, 6), .. Each(Greens, 1.5), .. Each(Firs, 1.5), .. Each(Bares, 0.3)],
+            Biome.PineForest => [.. Each(Firs, 9), .. Each(Greens, 0.6), .. Each(Bares, 0.4)],
+            Biome.Marsh => [.. Each(Bares, 3), .. Each(Greens, 2), .. Each(Firs, 1)],
+            Biome.Tundra => [.. Each(Firs, 5), .. Each(Bares, 2)],
+            Biome.Snowfield => [.. Each(Firs, 4), .. Each(Bares, 1)],
+            _ => [.. Each(Firs, 3), .. Each(Bares, 1)],
+        };
+
+    /// <summary>What lies on the ground between the trees: boulders, and fallen logs and stumps in woods.</summary>
+    static (Plant Plant, double Weight)[] Stones(Biome b) => !Real
+        ? [.. KayKitRocks.Select(r => (r, 1.0))]
+        : b is Biome.AutumnForest or Biome.PineForest or Biome.Marsh
+            ? [(Boulder, 2), (SmallBoulder, 2), (Stone, 1), (Log, 2), (Stump, 2)]
+            : [(Boulder, 3), (FlatBoulder, 2), (SmallBoulder, 3), (Stone, 2)];
 
     void Trees(Node3D chunk, int cx, int cz, float[] h)
     {
@@ -316,7 +413,7 @@ public partial class Terrain(WorldGen world) : Node3D
             var y = h[(int)Math.Round(lz / Step) * (Steps + 1) + (int)Math.Round(lx / Step)];
             if (y < WorldGen.WaterLevel + 0.5) continue;
             var biome = world.BiomeAt(wx, wz, y);
-            var plant = i >= count ? rng.Pick(Rocks) : rng.PickWeighted(Woods(biome));
+            var plant = rng.PickWeighted(i >= count ? Stones(biome) : Woods(biome));
             var scale = plant.MinScale + (float)rng.NextDouble() * (plant.MaxScale - plant.MinScale);
             var basis = Basis.Identity.Scaled(Vector3.One * scale).Rotated(Vector3.Up, (float)rng.NextDouble() * Mathf.Tau);
             var snow = biome switch { Biome.Snowfield => 0.95f, Biome.Tundra => 0.5f, Biome.Crags when y > 70 => 0.8f, _ => 0f };

@@ -63,76 +63,159 @@ public static class Graphics
     /// <summary>
     /// Trees and grass that move in the wind: taller parts sway more, neighbours sway together.
     /// Given a model's texture it draws the model; each copy's custom data can dust it with snow.
+    /// A cut-out texture (branch and leaf cards) is see-through where its alpha is low.
     /// </summary>
-    public static ShaderMaterial Swaying(float strength, Texture2D? texture = null, float heightScale = 1)
+    public static ShaderMaterial Swaying(float strength, Texture2D? texture = null, float heightScale = 1, bool cutout = false, Texture2D? normal = null, float uvScale = 1)
     {
-        var m = new ShaderMaterial { Shader = SwayShader };
+        var m = new ShaderMaterial { Shader = cutout ? CutoutSwayShader : normal is not null ? NormalSwayShader : SwayShader };
         m.SetShaderParameter("strength", strength);
         m.SetShaderParameter("height_scale", heightScale);
         m.SetShaderParameter("textured", texture is not null);
+        m.SetShaderParameter("uv_scale", uvScale);
         if (texture is not null) m.SetShaderParameter("albedo_tex", texture);
+        if (normal is not null) m.SetShaderParameter("normal_tex", normal);
         return m;
     }
 
-    static readonly Shader SwayShader = new()
+    static readonly Shader SwayShader = new() { Code = SwayCode("") };
+    static readonly Shader NormalSwayShader = new() { Code = SwayCode("#define NORMALS\n") };
+    static readonly Shader CutoutSwayShader = new() { Code = SwayCode("#define CUTOUT\n") };
+
+    static string SwayCode(string defines) => "shader_type spatial;\n" + defines + """
+        render_mode cull_disabled;
+        uniform sampler2D albedo_tex : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+        uniform sampler2D normal_tex : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+        uniform bool textured = false;
+        uniform float strength = 1.0;
+        uniform float height_scale = 1.0;
+        uniform float uv_scale = 1.0;
+        varying float snow;
+        varying vec3 world_normal;
+        vec3 to_linear(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
+        void vertex() {
+            vec3 world = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+            float h = max(VERTEX.y, 0.0) * height_scale;
+            float t = TIME * 1.4 + world.x * 0.06 + world.z * 0.045;
+            float gust = 0.6 + 0.4 * sin(TIME * 0.35 + world.x * 0.01);
+            VERTEX.x += sin(t) * 0.012 * h * h * strength * gust / height_scale;
+            VERTEX.z += cos(t * 0.83) * 0.009 * h * h * strength * gust / height_scale;
+            snow = INSTANCE_CUSTOM.r;
+            world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+        }
+        void fragment() {
+            vec4 tex = textured ? texture(albedo_tex, UV * uv_scale) : vec4(1.0);
+            vec3 base = tex.rgb * to_linear(COLOR.rgb);
+        #ifdef CUTOUT
+            ALPHA = tex.a;
+            ALPHA_SCISSOR_THRESHOLD = 0.45;
+        #endif
+        #ifdef NORMALS
+            NORMAL_MAP = texture(normal_tex, UV * uv_scale).rgb;
+        #endif
+            float cover = snow * smoothstep(0.15, 0.6, world_normal.y);
+            ALBEDO = mix(base, vec3(0.9, 0.93, 0.98), cover);
+            ROUGHNESS = 0.85;
+            BACKLIGHT = base * 0.35;
+        }
+        """;
+
+    /// <summary>The terrain's photo textures: eight layers of ground, each in one slice of these arrays.</summary>
+    public static TextureLayered? GroundAlbedo => _groundAlbedo ??= Load<TextureLayered>("res://assets/polyhaven/ground/albedo.jpg");
+    static TextureLayered? _groundAlbedo;
+
+    static T? Load<T>(string path) where T : class => ResourceLoader.Exists(path) ? GD.Load<T>(path) : null;
+
+    /// <summary>The ground layers' real sizes in metres (Poly Haven's measurements), a little enlarged to hide repeats.</summary>
+    static readonly float[] GroundTile = [3.0f, 2.0f, 1.3f, 1.0f, 2.0f, 3.0f, 2.9f, 2.0f];
+
+    /// <summary>
+    /// The ground, from photographs: each vertex carries how much of each of eight layers it has
+    /// (forest floor, grass, marsh, tundra, snow, rock, shore, trodden dirt) and the shader blends
+    /// them, with real surface relief from the normal maps. Rock wraps around cliffs instead of
+    /// stretching down them. Far away it samples a larger copy, so the repeats don't show.
+    /// </summary>
+    public static ShaderMaterial Ground()
+    {
+        var m = new ShaderMaterial { Shader = GroundShader };
+        m.SetShaderParameter("albedo", GroundAlbedo);
+        m.SetShaderParameter("normals", Load<TextureLayered>("res://assets/polyhaven/ground/normal.jpg"));
+        m.SetShaderParameter("arm", Load<TextureLayered>("res://assets/polyhaven/ground/arm.jpg"));
+        m.SetShaderParameter("tile", GroundTile);
+        return m;
+    }
+
+    static readonly Shader GroundShader = new()
     {
         Code = """
             shader_type spatial;
             render_mode cull_disabled;
-            uniform sampler2D albedo_tex : source_color, filter_linear_mipmap, repeat_enable;
-            uniform bool textured = false;
-            uniform float strength = 1.0;
-            uniform float height_scale = 1.0;
-            varying float snow;
-            varying vec3 world_normal;
-            vec3 to_linear(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
+            uniform sampler2DArray albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+            uniform sampler2DArray normals : filter_linear_mipmap_anisotropic, repeat_enable;
+            uniform sampler2DArray arm : filter_linear_mipmap, repeat_enable;
+            uniform float tile[8];
+            varying vec3 world;
+            varying vec3 wnormal;
+            varying vec4 w_lo;
+            varying vec4 w_hi;
+            float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+            float noise(vec2 p) {
+                vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+                return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+            }
             void vertex() {
-                vec3 world = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-                float h = max(VERTEX.y, 0.0) * height_scale;
-                float t = TIME * 1.4 + world.x * 0.06 + world.z * 0.045;
-                float gust = 0.6 + 0.4 * sin(TIME * 0.35 + world.x * 0.01);
-                VERTEX.x += sin(t) * 0.012 * h * h * strength * gust / height_scale;
-                VERTEX.z += cos(t * 0.83) * 0.009 * h * h * strength * gust / height_scale;
-                snow = INSTANCE_CUSTOM.r;
-                world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+                world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+                wnormal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+                w_lo = COLOR;
+                w_hi = CUSTOM0;
             }
             void fragment() {
-                vec3 base = textured ? texture(albedo_tex, UV).rgb * to_linear(COLOR.rgb) : to_linear(COLOR.rgb);
-                float cover = snow * smoothstep(0.15, 0.6, world_normal.y);
-                ALBEDO = mix(base, vec3(0.9, 0.93, 0.98), cover);
-                ROUGHNESS = 0.85;
-                BACKLIGHT = base * 0.25;
+                float dist = length(VERTEX);
+                float far = smoothstep(18.0, 70.0, dist);
+                float near = 1.0 - smoothstep(60.0, 110.0, dist);
+                // Blend edges follow the texture's own light and dark, not straight lines.
+                float wobble = noise(world.xz * 0.6) * 0.5 + noise(world.xz * 2.3) * 0.25;
+                float w[8] = float[8](w_lo.r, w_lo.g, w_lo.b, w_lo.a, w_hi.r, w_hi.g, w_hi.b, w_hi.a);
+                float total = 0.0;
+                for (int i = 0; i < 8; i++) { w[i] *= 0.75 + wobble; w[i] *= w[i]; total += w[i]; }
+                vec3 col = vec3(0.0); vec3 bend = vec3(0.0); float rough = 0.0; float ao = 0.0;
+                vec3 an = abs(wnormal); an = pow(an, vec3(4.0)); an /= an.x + an.y + an.z;
+                for (int i = 0; i < 8; i++) {
+                    float k = w[i] / max(total, 1e-4);
+                    if (k < 0.01) continue;
+                    float s = 1.0 / tile[i];
+                    if (i == 5) {
+                        // Rock: three projections, so cliffs are textured along their faces.
+                        vec3 uvx = vec3(world.z * s, -world.y * s, 5.0), uvy = vec3(world.x * s, world.z * s, 5.0), uvz = vec3(world.x * s, -world.y * s, 5.0);
+                        col += k * (texture(albedo, uvx).rgb * an.x + texture(albedo, uvy).rgb * an.y + texture(albedo, uvz).rgb * an.z);
+                        if (near > 0.0) {
+                            vec2 nx = texture(normals, uvx).xy * 2.0 - 1.0, ny = texture(normals, uvy).xy * 2.0 - 1.0, nz = texture(normals, uvz).xy * 2.0 - 1.0;
+                            bend += k * near * (vec3(0.0, nx.y, nx.x) * an.x + vec3(ny.x, 0.0, -ny.y) * an.y + vec3(nz.x, nz.y, 0.0) * an.z);
+                            vec3 a = texture(arm, uvy).rgb;
+                            rough += k * a.g; ao += k * a.r;
+                        } else { rough += k * 0.9; ao += k; }
+                        continue;
+                    }
+                    vec3 uv = vec3(world.xz * s, float(i));
+                    vec3 c = texture(albedo, uv).rgb;
+                    if (far > 0.0) c = mix(c, texture(albedo, vec3(world.xz * s * 0.23 + 0.37, float(i))).rgb, far * 0.6);
+                    col += k * c;
+                    if (near > 0.0) {
+                        vec2 n = texture(normals, uv).xy * 2.0 - 1.0;
+                        bend += k * near * vec3(n.x, 0.0, -n.y);
+                        vec3 a = texture(arm, uv).rgb;
+                        rough += k * a.g; ao += k * a.r;
+                    } else { rough += k * 0.9; ao += k; }
+                }
+                // Large, soft patches of light and shade, so whole hillsides aren't one even tone.
+                col *= 0.82 + 0.36 * noise(world.xz * 0.025 + 3.0);
+                vec3 n = normalize(wnormal + bend * 0.9);
+                NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);
+                ALBEDO = col;
+                ROUGHNESS = clamp(rough, 0.4, 1.0);
+                AO = ao;
+                AO_LIGHT_AFFECT = 0.4;
             }
             """,
-    };
-
-    /// <summary>The ground: its biome colour, broken up with patches and grain so it doesn't look painted on.</summary>
-    public static ShaderMaterial Ground() => new()
-    {
-        Shader = new Shader
-        {
-            Code = """
-                shader_type spatial;
-                render_mode cull_disabled;
-                varying vec3 world;
-                vec3 to_linear(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
-                float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-                float noise(vec2 p) {
-                    vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
-                    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-                }
-                void vertex() { world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
-                void fragment() {
-                    vec3 base = to_linear(COLOR.rgb);
-                    float n = noise(world.xz * 0.07) * 0.55 + noise(world.xz * 0.35) * 0.3 + noise(world.xz * 1.9) * 0.15;
-                    float patches = smoothstep(0.5, 0.78, noise(world.xz * 0.045 + 17.0)) * (1.0 - smoothstep(0.35, 0.6, dot(base, vec3(0.3, 0.59, 0.11)))); // not on snow
-                    vec3 colour = base * (0.78 + 0.44 * n);
-                    colour = mix(colour, colour * vec3(0.82, 1.12, 0.78), patches * 0.7); // greener patches
-                    ALBEDO = colour;
-                    ROUGHNESS = 0.95;
-                }
-                """,
-        },
     };
 
     /// <summary>Water: rolling waves, darker where it's deep, foam where it meets the shore, and a fresnel sheen.</summary>
