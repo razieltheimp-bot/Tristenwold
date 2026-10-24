@@ -29,7 +29,7 @@ public sealed partial class ServerCore
 
     /// <summary>Somewhere in the city Vann can send people: the campaign's own places.</summary>
     IReadOnlyList<string> Places => State.Places.Count > 0
-        ? State.Places.Values.Where(p => p != "Tristinwold").Distinct().ToList()
+        ? State.Places.Values.Where(p => Atlas.Default.Cities.All(c => c.Name != p)).Distinct().ToList()
         : FallbackPlaces;
 
     static readonly string[] Misdeeds =

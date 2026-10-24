@@ -85,28 +85,7 @@ public sealed class CampaignState
         return skyrimArea;
     }
 
-    /// <summary>
-    /// Campaigns 1 and 2 are staged in Riften: a lakeside city of docks, a warren under the
-    /// streets (the Ratway) and a thieves' guild. Campaign 3's Last Ring is its own walled city.
-    /// </summary>
-    public static Dictionary<string, string> RiftenAsTristinwold() => new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Riften"] = "Tristinwold",
-        ["The Ragged Flagon"] = "the Gallows Perch",
-        ["The Ratway"] = "the Warrens",
-        ["The Ratway Warrens"] = "the Warrens",
-        ["Ratway Vaults"] = "the Tong sea-caves",
-        ["The Bee and Barb"] = "the Salt Barrel",
-        ["Riften Fishery"] = "the Docks",
-        ["Lake Honrich"] = "the harbor",
-        ["Goldenglow Estate"] = "the Needle",
-        ["Temple of Mara"] = "the drowned chapel",
-        ["Honorhall Orphanage"] = "the Lantern Boys' den",
-        ["Black-Briar Meadery"] = "the Exchange",
-        ["Riften Hall of the Dead"] = "the Magi archive",
-        ["Mistveil Keep"] = "the Crown",
-        ["Riften Jail"] = "the Watch house",
-    };
+
     /// <summary>Things Vann has said lately, so he doesn't repeat himself (and so a voice model has memory).</summary>
     public List<string> VannMemory { get; set; } = [];
 
@@ -121,31 +100,39 @@ public sealed class CampaignState
         File.Move(tmp, path, overwrite: true);
     }
 
+    /// <summary>Adds every other city's own contracts to the board.</summary>
+    public CampaignState WithCityContracts()
+    {
+        foreach (var c in Atlas.Default.CityContracts())
+            if (Contracts.All(existing => existing.Id != c.Id)) Contracts.Add(c);
+        return this;
+    }
+
     /// <summary>The day-one contract board from "The Rings of Tristinwold", Campaign 1.</summary>
-    public static CampaignState SavedMan() => new()
+    public static CampaignState SavedMan() => new CampaignState()
     {
         Campaign = "The Saved Man",
-        Places = RiftenAsTristinwold(),
+        Places = Atlas.Default.AllPlaces(),
         Contracts =
         [
             new() { Id = "rats", Title = "Rats in the cellar of the Salt Barrel tavern", PostedBy = "Tavern owner", Pay = 10,
-                Where = "the Salt Barrel (the Bee and Barb, Riften)", InDanger = "the Salt Barrel's cellar boy",
+                Where = "The Salt Barrel, Tristinwold", InDanger = "the Salt Barrel's cellar boy",
                 Secret = "Giant rats fleeing something deeper in the sewers." },
             new() { Id = "spice", Title = "Escort a spice wagon to the Inner Ring gate", PostedBy = "Merchant Guild", Pay = 25,
-                Where = "the Docks to the Exchange (Riften Fishery to Black-Briar Meadery)", InDanger = "the wagon driver",
+                Where = "The Docks to the Exchange, Tristinwold", InDanger = "the wagon driver",
                 Secret = "The wagon is smuggling a Magi relic." },
             new() { Id = "brother", Title = "Find my missing brother, last seen at the Needle", PostedBy = "A fisherman's wife", Pay = 15,
-                Where = "the Needle (Goldenglow Estate, on Lake Honrich)", InDanger = "the fisherman's brother",
+                Where = "The Needle, Tristinwold harbor", InDanger = "the fisherman's brother",
                 Secret = "He's chained in the lighthouse cellar. Likely first rescue." },
             new() { Id = "debt", Title = "Collect an overdue debt from a dock gambler", PostedBy = "Ravenscrew Tong", Pay = 20,
-                Where = "the Docks (Riften Fishery)", InDanger = "the dock gambler",
+                Where = "The Docks, Tristinwold", InDanger = "the dock gambler",
                 Secret = "The gambler is being hunted by the rival Tong." },
             new() { Id = "chapel", Title = "Clear the drowned chapel of \"singing\"", PostedBy = "Temple of the Tide", Pay = 40,
-                Where = "the drowned chapel (Temple of Mara, Riften)", InDanger = "a trapped acolyte",
+                Where = "The Drowned Chapel, Tristinwold", InDanger = "a trapped acolyte",
                 Secret = "Time is skipping inside: candles burn backward. Vann's fingerprints." },
             new() { Id = "gutter_prince", Title = "Bounty: the Gutter Prince, alive", PostedBy = "City Watch", Pay = 100,
-                Where = "the Lantern Boys' den (Honorhall Orphanage, Riften)", InDanger = "the Gutter Prince",
+                Where = "The Lantern Boys' Den, Tristinwold", InDanger = "the Gutter Prince",
                 Secret = "A rival Tong boss with a sympathetic story." },
         ],
-    };
+    }.WithCityContracts();
 }

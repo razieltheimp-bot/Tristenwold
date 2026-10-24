@@ -8,7 +8,8 @@ Regen and Reflect today; limit breaks and summons are planned. Leveling stays pu
 |---|---|
 | **Nemesis rules** (`src/Tristinwold.Nemesis`) | Built and tested. Uses Skyrim actor kinds, actor values and damage types. |
 | **Shared world server + Vann** (`src/Tristinwold.Shared`, `tools/Tristinwold.Server`) | Built and tested end to end. Game-agnostic. |
-| **Tristinwold.esp builder** (`skyrim/esp-builder`) | Built and tested against a stand-in Skyrim.esm. Renames Riften to Tristinwold in game. |
+| **The world** (`world/world.json`) | Nine reworked cities with their own names, places, stories and contracts; characters moved between them. |
+| **Tristinwold.esp builder** (`skyrim/esp-builder`) | Built and tested against a stand-in Skyrim.esm. Renames every city's places in game and moves characters. |
 | **Skyrim add-on** (`skyrim/plugin`, a SkyrimPlatform plugin) | Built: fights, nemeses, Vann's hunts, contract board, dead drops, F10 window. Tested against the real server in a simulated game; not yet run in Skyrim. |
 | **Story, character creator, Final Fantasy mechanics** | Planned, on Skyrim. |
 
@@ -23,7 +24,7 @@ with followers is a company too.
    Skyrim Together Reborn.
 2. Build the add-on (or take a built copy): `cd skyrim/plugin && npm install && npm run build`.
 3. Copy `skyrim/plugin/dist/Platform` into Skyrim's `Data` folder, and build and enable
-   `Tristinwold.esp` (see "Where the story happens").
+   `Tristinwold.esp` (see "Build Tristinwold.esp").
 4. Edit `Data/Platform/Plugins/tristinwold-settings.txt` (plain JSON):
 
    | Setting | Meaning |
@@ -69,31 +70,48 @@ Names, epithets and taunts are data (`NamePack` in `src/Tristinwold.Nemesis/Cont
 dotnet run --project tools/Tristinwold.NemesisSim -- 80 7
 ```
 
-## Where the story happens: always Tristinwold
+## The world: every city reworked
 
-There is one city in every campaign, and it's Tristinwold. It's built from Skyrim's Riften (a
-lakeside city with docks, a warren under the streets and a thieves' guild), renamed in game by
-**Tristinwold.esp**: the map, location names and interiors all say Tristinwold.
+Every Skyrim city is reworked into a city of this world, with its own name, its own renamed
+places and its own story. Tristinwold (built from Riften) is where the main saga happens, in
+every campaign; the other cities have stories of their own, with threads back to it.
 
-| Tristinwold | Built from |
-|---|---|
-| Tristinwold (the city) | Riften |
-| the Gallows Perch (Ravenscrew Tong's tavern) | The Ragged Flagon |
-| the Warrens | The Ratway |
-| the Tong sea-caves | Ratway Vaults |
-| the Salt Barrel | The Bee and Barb |
-| the Docks | Riften Fishery |
-| the harbor | Lake Honrich |
-| the Needle | Goldenglow Estate |
-| the drowned chapel | Temple of Mara |
-| the Lantern Boys' den | Honorhall Orphanage |
-| the Exchange | Black-Briar Meadery |
-| the Magi archive | Riften Hall of the Dead |
-| the Crown | Mistveil Keep |
-| the Watch house | Riften Jail |
+| City | Built from | Its story |
+|---|---|---|
+| **Tristinwold**, the City of Rings | Riften | A walled port of three rings, run from below by the Tongs. The first person each company saves here is Vann. (The main saga: see The Rings of Tristinwold.) |
+| **Galeholt**, the Wind-Fort on the Plain | Whiterun | Horse-lords on an open plain, ruled from the Eyrie. Two clans, the Ashmanes and the Ironsworn, feud over whether to ride to Tristinwold's aid or bar the gates. The Warden-Thane's new court adviser knows too much about the coming war. |
+| **Vespergate**, the City on the Arch | Solitude | A widowed queen rules from the Sapphire Court above a sea-arch. Once a year, on Bell Night, the headsman frees one condemned prisoner and nobody knows how he chooses. This year he chose someone who should not exist yet. |
+| **Cinderhelm**, the Hall of Cold Crowns | Windhelm | An old, proud city that walls its refugees into the Cinder Quarter. Since the Rift opened the refugees are Ashborn, half-demon children, and someone is killing them one by one while zealots call it holy work. |
+| **Argentdeep**, the City Carved in Silver | Markarth | A stone city cut into a cliff, owned by the Argent family's silver. The silver has started to rot into rust in the miners' hands, and the Argents are blaming the miners. |
+| **Gravenmoor**, the Town of Graves | Falkreath | A logging town with more dead than living. Lately the dead aren't staying buried, and the gravekeeper has started bargaining with a voice in the pines. |
+| **Mirewatch**, the Town in the Fog | Morthal | Stilt houses in a marsh where time runs thin. Children walk into the fog and come back years older, or not at all. The Jarl's seer says it is a crack between eras. |
+| **Duskwake**, the Sleepless Port | Dawnstar | A cold harbor where the whole town dreams the same dream every night: a door, and faces they have never met. Nobody sleeps well, and the sleepless are starting to do terrible things. |
+| **Hollowreach**, the Edge of the North | Winterhold | Half the town fell into the sea long ago. What stands is the Temple of the Loom, where the grey-robed Magi guard the device that can send people back in time. They say the town fell when someone used it carelessly. |
 
-Campaign 3, The Last Ring, is the same city 300 years on, ruined down to the Crown. That's planned
-as later changes to Tristinwold.esp, not a different city.
+Each city's own contracts go on the shared board next to Tristinwold's. Campaign 3, The Last
+Ring, is Tristinwold 300 years on, ruined down to the Crown; that's planned as later changes to
+Tristinwold.esp.
+
+**Characters move between cities.** Any named Skyrim character can be taken from their city
+and set down in another, under a new name if you like:
+
+- **Ghorza gra-Bagol** goes to The Ragged Flagon as **Mother Corva**. The Ravenscrew Tong's barkeep at the Gallows Perch, brought from Argentdeep's forges.
+- **Colette Marence** goes to Riften Hall of the Dead as **Sister Ilse Varrow**. Head archivist of the Magi's quiet embassy in Tristinwold, brought from the Temple of the Loom.
+- **Nazeem** goes to Dead Man's Drink. Galeholt threw him out. Gravenmoor took him in, against its better judgement.
+
+A moved character's original placement is disabled, a new one is made in the destination
+interior beside something already standing there, and their daily routine becomes "wander
+around where you stand", so they don't walk home. The builder warns when a character is
+essential to a quest, since moving them may break it.
+
+**Everything is in [`world/world.json`](world/world.json)**: cities, places (Skyrim name -> new
+name), stories, contracts and moves. Edit it, then rebuild Tristinwold.esp and restart the
+server. Both read the same file, so a company without the plugin still sees the new names in
+the shared world.
+
+What it doesn't change: NPCs still say Skyrim names in recorded dialogue, and a few signs are
+painted textures. If a place doesn't rename in game, its in-game name differs from the file;
+the builder lists everything it renamed and the server window shows the names the game reports.
 
 ### Build Tristinwold.esp (once, on your PC)
 
@@ -102,13 +120,8 @@ dotnet run --project skyrim/esp-builder -- "C:\Program Files (x86)\Steam\steamap
 ```
 
 It reads your own `Skyrim.esm`, writes `Tristinwold.esp` (light, ESL-flagged) into that Data
-folder and lists every rename. Enable it in your mod manager. Everyone in the game needs the same
-file. The renames come from one table, `CampaignState.RiftenAsTristinwold` in
-`src/Tristinwold.Shared/Campaign.cs`, which the server also uses, so a company without the
-plugin still sees Tristinwold names in the shared world.
-
-What it doesn't change: NPCs still say "Riften" in recorded dialogue, and a few signs are
-painted textures.
+folder and lists every rename and move, with any it had to skip. Enable it in your mod manager.
+Everyone in the game needs the same file.
 
 ## Shared world: everyone runs their own party of three
 

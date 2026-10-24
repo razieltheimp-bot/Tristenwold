@@ -27,7 +27,7 @@ public class SharedWorldTests
         Assert.Single(To<Welcome>(outs, "Joe"));
         Assert.Single(To<NemesisSnapshot>(outs, "Joe"));
         var board = Assert.Single(To<Board>(outs, "Joe"));
-        Assert.Equal(6, board.Contracts.Count);
+        Assert.Equal(6 + Atlas.Default.Cities.Sum(c => c.Contracts.Count), board.Contracts.Count);
 
         var keystone = server.State.Groups["Joe"].Keystone;
         Assert.Contains(keystone, server.State.Groups["Joe"].Party);

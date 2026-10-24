@@ -10,4 +10,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- The world: cities, their places, stories and character moves. Edit world/world.json. -->
+    <EmbeddedResource Include="../../world/world.json" LogicalName="world.json" />
+  </ItemGroup>
+
 </Project>

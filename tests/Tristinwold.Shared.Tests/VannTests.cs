@@ -182,10 +182,29 @@ public class EncounterTests
     }
 }
 
-public class RiftenTests
+public class WorldTests
 {
     [Fact]
-    public void Riften_is_tristinwold_for_campaigns_one_and_two()
+    public void Every_city_has_its_own_name_story_and_places()
+    {
+        var atlas = Atlas.Default;
+        Assert.Equal(9, atlas.Cities.Count);
+        Assert.Equal(atlas.Cities.Count, atlas.Cities.Select(c => c.Name).Distinct().Count());
+        foreach (var city in atlas.Cities)
+        {
+            Assert.NotEqual(city.BuiltFrom, city.Name);
+            Assert.False(string.IsNullOrWhiteSpace(city.Story));
+            Assert.Equal(city.Name, city.Places[city.BuiltFrom]); // the city itself is renamed
+        }
+        // A Skyrim place belongs to one city only.
+        var all = atlas.Cities.SelectMany(c => c.Places.Keys).ToList();
+        Assert.Equal(all.Count, all.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        // Every character move goes somewhere the world knows.
+        Assert.All(atlas.Moves, m => Assert.Contains(m.To, atlas.AllPlaces().Keys, StringComparer.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Skyrim_places_become_their_cities_places()
     {
         var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannEnabled = false, RewindChance = 0, KeystoneMeetChance = 0 }, seed: 10);
         server.Connect(new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]));
@@ -193,21 +212,22 @@ public class RiftenTests
 
         server.Handle("Joe", new Presence("The Ragged Flagon", []));
         var outs = server.Handle("Mira", new Presence("the ragged flagon", []));
-        Assert.Equal("the Gallows Perch", server.State.Groups["Joe"].Area);
-        Assert.Contains(outs.Select(o => o.Message).OfType<Notice>(), n => n.Text.Contains("the Gallows Perch"));
+        Assert.Equal("The Gallows Perch", server.State.Groups["Joe"].Area);
+        Assert.Contains(outs.Select(o => o.Message).OfType<Notice>(), n => n.Text.Contains("The Gallows Perch"));
 
-        // With Tristinwold.esp installed the game already reports the Tristinwold name.
-        server.Handle("Joe", new Presence("The Gallows Perch", []));
-        Assert.Equal("the Gallows Perch", server.State.Groups["Joe"].Area);
-
-        // Places outside the map keep their Skyrim names.
+        // With Tristinwold.esp installed the game already reports the new name.
+        server.Handle("Joe", new Presence("The Spur and Saddle", []));
+        Assert.Equal("The Spur and Saddle", server.State.Groups["Joe"].Area);
         server.Handle("Joe", new Presence("Whiterun", []));
-        Assert.Equal("Whiterun", server.State.Groups["Joe"].Area);
+        Assert.Equal("Galeholt", server.State.Groups["Joe"].Area);
+        // Places in no city keep their Skyrim names.
+        server.Handle("Joe", new Presence("Bleak Falls Barrow", []));
+        Assert.Equal("Bleak Falls Barrow", server.State.Groups["Joe"].Area);
 
-        // Nemeses get Tristinwold homes.
+        // Nemeses get homes in this world, and each city posts its own contracts.
         server.Handle("Joe", new ReportBattle(new BattleReport("Goldenglow Estate", Nemesis.BattleResult.Defeat,
             [new Nemesis.EnemyReport(0, "Bandit", "Bandit", 100, false, false)], ["Joe"])));
-        Assert.Equal("the Needle", server.World.Living.Single().HomeArea);
-        Assert.Contains("Goldenglow", server.State.Contracts.Single(c => c.Id == "brother").Where);
+        Assert.Equal("The Needle", server.World.Living.Single().HomeArea);
+        Assert.Contains(server.State.Contracts, c => c.Id == "cinderhelm-killer" && c.Where!.StartsWith("Cinderhelm"));
     }
 }
