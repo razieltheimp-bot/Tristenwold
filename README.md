@@ -7,7 +7,7 @@ works like Skyrim's: skills and perk trees, no sphere grid.
 
 | Part | Status |
 |---|---|
-| **The game** (`game/`, Godot 4 .NET) | Playable: the three-ring city of Tristinwold and an endless world around it, built from simple shapes. Sword, spells, limit break, Tong lairs, nemeses that come back, a fog-of-war map, villages and camps, people to talk to and quests to do, the shared-world board. A scripted headless test plays it against the real server. Open/CC0 art to come. |
+| **The game** (`game/`, Godot 4 .NET) | Playable: the three-ring city of Tristinwold and an endless world around it, with animated characters, buildings, trees and props from the KayKit packs. Sword, spells, limit break, Tong lairs, nemeses that come back, a fog-of-war map, villages and camps, people to talk to and quests to do, the shared-world board. A scripted headless test plays it against the real server. Open/CC0 art to come. |
 | **The open world** (`src/Tristinwold.World`) | Built and tested. Grows the land, the cities, the villages, the people and their quests from one seed, with no edge. |
 | **Combat rules** (`src/Tristinwold.Gameplay`) | Built and tested: health/magicka/stamina, Skyrim-style armor, resistances, auto-statuses, the limit gauge, the bestiary, fight tracking. |
 | **Nemesis rules** (`src/Tristinwold.Nemesis`) | Built and tested. Uses Skyrim actor kinds, actor values and damage types. |
@@ -359,6 +359,10 @@ cd skyrim/plugin && npm install && npm test && npx tsc --noEmit   # add-on logic
 ```
 
 ## Credits
+
+3D models: the KayKit packs by Kay Lousberg (www.kaylousberg.com): Adventurers, Skeletons, Medieval Hexagon,
+Dungeon Remastered and Halloween Bits. They are CC0 (free for any use) and live in `game/assets/kaykit`.
+Wolves, bears, skeevers and mudcrabs are built from shapes in code until animal models arrive.
 
 Earlier FFX prototypes drew on Fahrenheit, the FFX-AP Archipelago client, FFX_TAS_Python, Farplane,
 UnX, VBFExtract and FFXView. None of that code ships here any more.

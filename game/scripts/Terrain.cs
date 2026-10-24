@@ -14,9 +14,9 @@ public static class Palette
         if (height < WorldGen.WaterLevel + 0.3) return new Color("#5a5040"); // shore mud
         var c = biome switch
         {
-            Biome.AutumnForest => new Color("#6e5a2c"),
-            Biome.PineForest => new Color("#3f5233"),
-            Biome.Marsh => new Color("#4a5038"),
+            Biome.AutumnForest => new Color("#7d6e38"),
+            Biome.PineForest => new Color("#4f6b3a"),
+            Biome.Marsh => new Color("#56603a"),
             Biome.Tundra => new Color("#7d7a5f"),
             Biome.Snowfield => new Color("#c4ccd4"),
             _ => new Color("#6e6a64"),
@@ -58,29 +58,61 @@ public partial class Terrain(WorldGen world) : Node3D
     public int GrassCount => _grass.Count;
     readonly Dictionary<(int, int), Node3D> _grass = [];
     Mesh? _tuft;
-    Material? _sway, _grassSway;
+    Material? _grassSway;
 
     readonly Dictionary<(int, int), Node3D> _chunks = [];
     readonly MeshInstance3D _water = new();
-    readonly StandardMaterial3D _ground = new() { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 1, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
+    Material _ground = new StandardMaterial3D { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 1, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
     readonly StandardMaterial3D _leaves = new() { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 0.9f };
-    readonly Mesh _cone = new CylinderMesh { TopRadius = 0, BottomRadius = 1.7f, Height = 6, RadialSegments = 7 };
-    readonly Mesh _crown = new SphereMesh { Radius = 2.2f, Height = 3.6f, RadialSegments = 8, Rings = 4 };
-    readonly Mesh _trunk = new CylinderMesh { TopRadius = 0.22f, BottomRadius = 0.3f, Height = 2.4f, RadialSegments = 5 };
 
     public override void _Ready()
     {
-        _water.Mesh = new PlaneMesh { Size = new Vector2(ChunkSize * 40, ChunkSize * 40), SubdivideWidth = Fancy ? 240 : 0, SubdivideDepth = Fancy ? 240 : 0 };
+        var reach = ChunkSize * (2 * ViewChunks + 1); // no further than the land, or it reads as an endless sea
+        _water.Mesh = new PlaneMesh { Size = new Vector2(reach, reach), SubdivideWidth = Fancy ? reach / 8 : 0, SubdivideDepth = Fancy ? reach / 8 : 0 };
         _water.MaterialOverride = Fancy
             ? Graphics.Water()
             : new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.25f, 0.33f, 0.85f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.1f, Metallic = 0.3f };
         AddChild(_water);
         if (Fancy)
         {
-            _sway = Graphics.Swaying(1);
-            _grassSway = Graphics.Swaying(2.2f);
+            _ground = Graphics.Ground();
+            // The simple renderer (old devices) draws the wind shader's grass black, so it gets plain grass.
+            if (RenderingServer.GetCurrentRenderingMethod() != "gl_compatibility") _grassSway = Graphics.Swaying(2.2f, heightScale: 1.6f);
         }
         _tuft = Tuft();
+        if (Fancy) Clouds();
+    }
+
+    readonly List<Node3D> _clouds = [];
+    Vector3 _wind = new(2.5f, 0, 1.2f);
+
+    /// <summary>Clouds drifting overhead, kept in a wide ring around the player.</summary>
+    void Clouds()
+    {
+        var rng = new Tristinwold.Nemesis.Rng(world.Seed);
+        var white = new StandardMaterial3D { AlbedoColor = new Color(1, 1, 1), DisableFog = true, Roughness = 1, EmissionEnabled = true, Emission = new Color("#c8d8e8"), EmissionEnergyMultiplier = 0.35f };
+        for (var i = 0; i < 16; i++)
+        {
+            if (Models.Scene(i % 3 == 0 ? "medieval/nature/cloud_small.gltf" : "medieval/nature/cloud_big.gltf")?.Instantiate() is not Node3D cloud) continue;
+            foreach (var m in cloud.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>()) { m.MaterialOverride = white; m.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off; }
+            cloud.Scale = Vector3.One * (18 + (float)rng.NextDouble() * 22);
+            cloud.Position = new Vector3((float)(rng.NextDouble() - 0.5) * 1400, 140 + (float)rng.NextDouble() * 80, (float)(rng.NextDouble() - 0.5) * 1400);
+            cloud.RotationDegrees = new Vector3(0, (float)rng.NextDouble() * 360, 0);
+            AddChild(cloud);
+            _clouds.Add(cloud);
+        }
+    }
+
+    void DriftClouds(Vector3 player, double delta)
+    {
+        foreach (var c in _clouds)
+        {
+            var p = c.Position + _wind * (float)delta;
+            // Wrap around the player so the sky is never empty.
+            if (p.X - player.X > 700) p.X -= 1400; else if (player.X - p.X > 700) p.X += 1400;
+            if (p.Z - player.Z > 700) p.Z -= 1400; else if (player.Z - p.Z > 700) p.Z += 1400;
+            c.Position = p;
+        }
     }
 
     /// <summary>A tuft of grass: seven thin blades, each leaning its own way, darker at the root.</summary>
@@ -121,6 +153,7 @@ public partial class Terrain(WorldGen world) : Node3D
     /// <summary>Each frame: build up to <paramref name="budget"/> missing chunks, nearest first, and drop far ones.</summary>
     public void Update(Vector3 player, int budget)
     {
+        DriftClouds(player, GetProcessDeltaTime());
         var (pcx, pcz) = ChunkOf(player);
         _water.Position = new Vector3(Mathf.Round(player.X / ChunkSize) * ChunkSize, (float)WorldGen.WaterLevel, Mathf.Round(player.Z / ChunkSize) * ChunkSize);
 
@@ -228,6 +261,40 @@ public partial class Terrain(WorldGen world) : Node3D
         return body;
     }
 
+    /// <summary>A kind of tree or rock: its model, how big to draw it, and how its height is measured.</summary>
+    sealed record Plant(string Path, float MinScale, float MaxScale, float HeightScale, bool Sways = true);
+
+    static readonly Plant PineA = new("medieval/nature/tree_single_A.gltf", 5.5f, 8.5f, 6.5f);
+    static readonly Plant PineB = new("medieval/nature/tree_single_B.gltf", 5.5f, 8.5f, 6.5f);
+    static readonly Plant OrangeL = new("halloween/tree_pine_orange_large.gltf", 0.8f, 1.25f, 1);
+    static readonly Plant OrangeM = new("halloween/tree_pine_orange_medium.gltf", 0.9f, 1.3f, 1);
+    static readonly Plant YellowL = new("halloween/tree_pine_yellow_large.gltf", 0.8f, 1.25f, 1);
+    static readonly Plant YellowM = new("halloween/tree_pine_yellow_medium.gltf", 0.9f, 1.3f, 1);
+    static readonly Plant DeadL = new("halloween/tree_dead_large.gltf", 0.9f, 1.4f, 1);
+    static readonly Plant DeadM = new("halloween/tree_dead_medium.gltf", 1f, 1.5f, 1);
+    static readonly Plant[] Rocks = [.. "ABCDE".Select(c => new Plant($"medieval/nature/rock_single_{c}.gltf", 6, 16, 1, Sways: false))];
+
+    readonly Dictionary<Plant, (Mesh Mesh, Material? Material)> _plants = [];
+
+    (Mesh Mesh, Material? Material)? Look(Plant p)
+    {
+        if (_plants.TryGetValue(p, out var known)) return known;
+        if (Models.MeshOf(p.Path) is not { } mesh) return null;
+        var texture = (mesh.SurfaceGetMaterial(0) as BaseMaterial3D)?.AlbedoTexture;
+        Material? material = Fancy && p.Sways ? Graphics.Swaying(1, texture, p.HeightScale) : Fancy ? Graphics.Swaying(0, texture, p.HeightScale) : null;
+        return _plants[p] = (mesh, material);
+    }
+
+    static (Plant Plant, double Weight)[] Woods(Biome b) => b switch
+    {
+        Biome.AutumnForest => [(OrangeL, 3), (OrangeM, 2), (YellowL, 2), (YellowM, 2), (PineB, 2)],
+        Biome.PineForest => [(PineA, 5), (PineB, 4), (DeadM, 0.4)],
+        Biome.Marsh => [(DeadM, 3), (DeadL, 1), (PineB, 2)],
+        Biome.Tundra => [(PineA, 5), (DeadM, 2)],
+        Biome.Snowfield => [(PineA, 4), (DeadL, 1)],
+        _ => [(PineA, 3), (DeadM, 1)],
+    };
+
     void Trees(Node3D chunk, int cx, int cz, float[] h)
     {
         var rng = Noise.Dice(world.Seed, 7, cx, cz);
@@ -235,13 +302,12 @@ public partial class Terrain(WorldGen world) : Node3D
         var mid = world.BiomeAt(x0 + ChunkSize / 2, z0 + ChunkSize / 2);
         var count = mid switch
         {
-            Biome.AutumnForest => 22, Biome.PineForest => 30, Biome.Marsh => 7, Biome.Tundra => 4, Biome.Snowfield => 5, _ => 3,
+            Biome.AutumnForest => 18, Biome.PineForest => 24, Biome.Marsh => 7, Biome.Tundra => 5, Biome.Snowfield => 5, _ => 3,
         };
+        var rocks = mid == Biome.Crags ? 6 : 2;
         var clear = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
-        var pines = new List<(Transform3D, Color)>();
-        var broad = new List<(Transform3D, Color)>();
-        var trunks = new List<Transform3D>();
-        for (var i = 0; i < count; i++)
+        var groups = new Dictionary<Plant, List<(Transform3D, Color, float)>>();
+        for (var i = 0; i < count + rocks; i++)
         {
             var (lx, lz) = (rng.NextDouble() * (ChunkSize - 1), rng.NextDouble() * (ChunkSize - 1));
             var (wx, wz) = (x0 + lx, z0 + lz);
@@ -250,33 +316,29 @@ public partial class Terrain(WorldGen world) : Node3D
             var y = h[(int)Math.Round(lz / Step) * (Steps + 1) + (int)Math.Round(lx / Step)];
             if (y < WorldGen.WaterLevel + 0.5) continue;
             var biome = world.BiomeAt(wx, wz, y);
-            var scale = 0.75f + (float)rng.NextDouble() * 0.7f;
+            var plant = i >= count ? rng.Pick(Rocks) : rng.PickWeighted(Woods(biome));
+            var scale = plant.MinScale + (float)rng.NextDouble() * (plant.MaxScale - plant.MinScale);
             var basis = Basis.Identity.Scaled(Vector3.One * scale).Rotated(Vector3.Up, (float)rng.NextDouble() * Mathf.Tau);
-            trunks.Add(new Transform3D(basis, new Vector3((float)lx, y + 1.1f * scale, (float)lz)));
-            if (biome == Biome.AutumnForest && rng.Chance(0.75))
-            {
-                Color[] leaves = [new("#b5541f"), new("#d08a2a"), new("#8a3b1c"), new("#c9a227"), new("#7a6a2a")];
-                broad.Add((new Transform3D(basis, new Vector3((float)lx, y + 3.4f * scale, (float)lz)), rng.Pick(leaves)));
-            }
-            else
-            {
-                var colour = biome switch { Biome.Snowfield => new Color("#dfe8e4"), Biome.Tundra => new Color("#3a4a34"), Biome.Marsh => new Color("#4b5a2a"), _ => new Color("#24402a") };
-                pines.Add((new Transform3D(basis, new Vector3((float)lx, y + 4.2f * scale, (float)lz)), colour));
-            }
+            var snow = biome switch { Biome.Snowfield => 0.95f, Biome.Tundra => 0.5f, Biome.Crags when y > 70 => 0.8f, _ => 0f };
+            var shade = 0.9f + (float)rng.NextDouble() * 0.2f;
+            (groups.TryGetValue(plant, out var list) ? list : groups[plant] = []).Add((new Transform3D(basis, new Vector3((float)lx, y - 0.1f, (float)lz)), new Color(shade, shade, shade), snow));
         }
-        Multi(chunk, _trunk, trunks.Select(t => (t, new Color("#4a3426"))).ToList(), _leaves);
-        Multi(chunk, _cone, pines, _sway ?? _leaves);
-        Multi(chunk, _crown, broad, _sway ?? _leaves);
+        foreach (var (plant, items) in groups)
+            if (Look(plant) is { } look) Multi(chunk, look.Mesh, items, look.Material);
     }
 
-    static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C)> items, Material material)
+    static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C)> items, Material material) =>
+        Multi(parent, mesh, items.Select(i => (i.T, i.C, 0f)).ToList(), material);
+
+    static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C, float Snow)> items, Material? material)
     {
         if (items.Count == 0) return;
-        var mm = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, UseColors = true, Mesh = mesh, InstanceCount = items.Count };
+        var mm = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, UseColors = true, UseCustomData = true, Mesh = mesh, InstanceCount = items.Count };
         for (var i = 0; i < items.Count; i++)
         {
             mm.SetInstanceTransform(i, items[i].T);
             mm.SetInstanceColor(i, items[i].C);
+            mm.SetInstanceCustomData(i, new Color(items[i].Snow, 0, 0, 0));
         }
         parent.AddChild(new MultiMeshInstance3D { Multimesh = mm, MaterialOverride = material });
     }

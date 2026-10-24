@@ -27,7 +27,7 @@ public static class Graphics
         terrain.Fancy = q >= Quality.Medium;
 
         env.TonemapMode = q >= Quality.High ? Godot.Environment.ToneMapper.Agx : Godot.Environment.ToneMapper.Filmic;
-        env.FogDensity = q switch { Quality.Low => 0.007f, Quality.Medium => 0.0045f, Quality.High => 0.0035f, _ => 0.0026f };
+        env.FogDensity = q switch { Quality.Low => 0.005f, Quality.Medium => 0.003f, Quality.High => 0.0022f, _ => 0.0017f };
         env.GlowEnabled = q >= Quality.Medium;
         env.GlowIntensity = 0.6f;
         env.GlowBloom = 0.05f;
@@ -60,34 +60,80 @@ public static class Graphics
 
     // ---- shaders --------------------------------------------------------------------------------
 
-    /// <summary>Leaves and grass that move in the wind. Taller parts sway more; neighbours sway together.</summary>
-    public static ShaderMaterial Swaying(float strength) => new ShaderMaterial
+    /// <summary>
+    /// Trees and grass that move in the wind: taller parts sway more, neighbours sway together.
+    /// Given a model's texture it draws the model; each copy's custom data can dust it with snow.
+    /// </summary>
+    public static ShaderMaterial Swaying(float strength, Texture2D? texture = null, float heightScale = 1)
+    {
+        var m = new ShaderMaterial { Shader = SwayShader };
+        m.SetShaderParameter("strength", strength);
+        m.SetShaderParameter("height_scale", heightScale);
+        m.SetShaderParameter("textured", texture is not null);
+        if (texture is not null) m.SetShaderParameter("albedo_tex", texture);
+        return m;
+    }
+
+    static readonly Shader SwayShader = new()
+    {
+        Code = """
+            shader_type spatial;
+            render_mode cull_disabled;
+            uniform sampler2D albedo_tex : source_color, filter_linear_mipmap, repeat_enable;
+            uniform bool textured = false;
+            uniform float strength = 1.0;
+            uniform float height_scale = 1.0;
+            varying float snow;
+            varying vec3 world_normal;
+            vec3 to_linear(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
+            void vertex() {
+                vec3 world = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+                float h = max(VERTEX.y, 0.0) * height_scale;
+                float t = TIME * 1.4 + world.x * 0.06 + world.z * 0.045;
+                float gust = 0.6 + 0.4 * sin(TIME * 0.35 + world.x * 0.01);
+                VERTEX.x += sin(t) * 0.012 * h * h * strength * gust / height_scale;
+                VERTEX.z += cos(t * 0.83) * 0.009 * h * h * strength * gust / height_scale;
+                snow = INSTANCE_CUSTOM.r;
+                world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+            }
+            void fragment() {
+                vec3 base = textured ? texture(albedo_tex, UV).rgb * to_linear(COLOR.rgb) : to_linear(COLOR.rgb);
+                float cover = snow * smoothstep(0.15, 0.6, world_normal.y);
+                ALBEDO = mix(base, vec3(0.9, 0.93, 0.98), cover);
+                ROUGHNESS = 0.85;
+                BACKLIGHT = base * 0.25;
+            }
+            """,
+    };
+
+    /// <summary>The ground: its biome colour, broken up with patches and grain so it doesn't look painted on.</summary>
+    public static ShaderMaterial Ground() => new()
     {
         Shader = new Shader
         {
             Code = """
                 shader_type spatial;
                 render_mode cull_disabled;
-                uniform float strength = 1.0;
-                uniform float base_height = 0.0;
+                varying vec3 world;
                 vec3 to_linear(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
-                void vertex() {
-                    vec3 world = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-                    float h = max(VERTEX.y - base_height, 0.0);
-                    float t = TIME * 1.4 + world.x * 0.06 + world.z * 0.045;
-                    float gust = 0.6 + 0.4 * sin(TIME * 0.35 + world.x * 0.01);
-                    VERTEX.x += sin(t) * 0.07 * h * strength * gust;
-                    VERTEX.z += cos(t * 0.83) * 0.05 * h * strength * gust;
+                float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+                float noise(vec2 p) {
+                    vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+                    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
                 }
+                void vertex() { world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
                 void fragment() {
-                    ALBEDO = to_linear(COLOR.rgb);
-                    ROUGHNESS = 0.85;
-                    BACKLIGHT = ALBEDO * 0.35; // sunlight through the leaves
+                    vec3 base = to_linear(COLOR.rgb);
+                    float n = noise(world.xz * 0.07) * 0.55 + noise(world.xz * 0.35) * 0.3 + noise(world.xz * 1.9) * 0.15;
+                    float patches = smoothstep(0.5, 0.78, noise(world.xz * 0.045 + 17.0)) * (1.0 - smoothstep(0.35, 0.6, dot(base, vec3(0.3, 0.59, 0.11)))); // not on snow
+                    vec3 colour = base * (0.78 + 0.44 * n);
+                    colour = mix(colour, colour * vec3(0.82, 1.12, 0.78), patches * 0.7); // greener patches
+                    ALBEDO = colour;
+                    ROUGHNESS = 0.95;
                 }
                 """,
         },
-        RenderPriority = 0,
-    }.Also(m => m.SetShaderParameter("strength", strength));
+    };
 
     /// <summary>Water: rolling waves, darker where it's deep, foam where it meets the shore, and a fresnel sheen.</summary>
     public static ShaderMaterial Water() => new()
@@ -135,9 +181,4 @@ public static class Graphics
         },
     };
 
-    static T Also<T>(this T value, Action<T> act)
-    {
-        act(value);
-        return value;
-    }
 }

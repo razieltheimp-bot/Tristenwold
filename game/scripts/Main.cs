@@ -38,6 +38,7 @@ public partial class Main : Node3D
     {
         ParseArgs();
         if (Mobile) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.SensorLandscape); // landscape from the first frame
+        if (_args.TryGetValue("portraits", out var folder)) { _ = Portraits(folder); return; }
         if (_args.ContainsKey("account") && _args.ContainsKey("server")) { _ = LogInFromCommandLine(); return; }
         var scripted = _args.ContainsKey("selftest") || _args.ContainsKey("shots");
         if (scripted || _args.ContainsKey("server")) { Begin(ChoiceFromArgs()); return; }
@@ -49,7 +50,7 @@ public partial class Main : Node3D
 
     /// <summary>The character and server the command line asks for.</summary>
     StartChoice ChoiceFromArgs(string? account = null, string? token = null, string? save = null) => new(
-        new CharacterSheet(_args.GetValueOrDefault("company", "Adventurer"), _args.GetValueOrDefault("look", "#c9a46a"), _args.GetValueOrDefault("element", "Fire"), DateTime.UtcNow),
+        new CharacterSheet(_args.GetValueOrDefault("company", "Adventurer"), _args.GetValueOrDefault("look", "Knight"), _args.GetValueOrDefault("element", "Fire"), DateTime.UtcNow),
         _args.GetValueOrDefault("server", "127.0.0.1:7777"), _args.GetValueOrDefault("password", ""), account, token, save,
         Enum.TryParse<Graphics.Quality>(_args.GetValueOrDefault("graphics", ""), true, out var q) ? q : Graphics.Default);
 
@@ -75,6 +76,33 @@ public partial class Main : Node3D
         }
         var loaded = await AccountClient.AskAsync(server, new AccountRequest("load", account, Token: choice.Token, ServerPassword: password, Character: sheet));
         Begin(choice with { Character = sheet, Save = loaded.Save });
+    }
+
+    /// <summary>Renders a portrait of each class for the character page: --portraits game/assets/kaykit/portraits</summary>
+    async Task Portraits(string folder)
+    {
+        GetViewport().TransparentBg = true;
+        AddChild(new WorldEnvironment { Environment = new Godot.Environment { BackgroundMode = Godot.Environment.BGMode.Color, BackgroundColor = new Color("#2a2620"), AmbientLightSource = Godot.Environment.AmbientSource.Color, AmbientLightColor = new Color("#b0a898"), AmbientLightEnergy = 0.6f, TonemapMode = Godot.Environment.ToneMapper.Filmic } });
+        AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-30, 35, 0), LightEnergy = 1.3f, LightColor = new Color("#fff0d6") });
+        AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-10, 200, 0), LightEnergy = 0.5f, LightColor = new Color("#a0b8ff") });
+        var camera = new Camera3D { Position = new Vector3(0.25f, 1.15f, 2.6f), Fov = 30 };
+        AddChild(camera);
+        camera.LookAt(new Vector3(0, 0.95f, 0), Vector3.Up);
+        foreach (var look in new[] { "Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded" })
+        {
+            var figure = Figure.Create(look);
+            figure.RotationDegrees = new Vector3(0, 155, 0); // three-quarter view
+            AddChild(figure);
+            for (var i = 0; i < 40; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            var image = GetViewport().GetTexture().GetImage();
+            var side = Math.Min(image.GetWidth(), image.GetHeight());
+            image = image.GetRegion(new Rect2I((image.GetWidth() - side) / 2, 0, side, side));
+            image.Resize(256, 256, Image.Interpolation.Lanczos);
+            image.SavePng($"{folder}/{look.ToLowerInvariant()}.png");
+            figure.QueueFree();
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
+        GetTree().Quit();
     }
 
     /// <summary>Saves a picture of the start screen and quits, for checking its layout.</summary>
@@ -114,7 +142,7 @@ public partial class Main : Node3D
 
         _player = new Player
         {
-            Company = choice.Character.Name, Colour = choice.Character.Look, Position = City.PlayerStart,
+            Company = choice.Character.Name, Outfit = Figure.Looks.ContainsKey(choice.Character.Look) ? choice.Character.Look : "Knight", Position = City.PlayerStart,
             Element = Enum.TryParse<DamageKind>(choice.Character.Element, out var element) ? element : DamageKind.Fire,
         };
         AddChild(_player);
@@ -331,6 +359,7 @@ public partial class Main : Node3D
     public void Talk(Person person)
     {
         _player.Face(person.GlobalPosition);
+        person.TalkTo(_player.GlobalPosition);
         var news = _journal.TalkedTo(person.Npc.Id).ToList();
         foreach (var u in news) Apply(u);
         if (person.Captive)

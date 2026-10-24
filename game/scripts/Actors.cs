@@ -4,27 +4,34 @@ using Tristinwold.Nemesis;
 
 namespace Tristinwold.Game;
 
-/// <summary>Anything that fights: a capsule body, a Combatant and a nameplate.</summary>
+/// <summary>Anything that fights: an animated body, a Combatant and a nameplate.</summary>
 public abstract partial class Fighter : CharacterBody3D
 {
     public Combatant Stats { get; protected set; } = new("?", 1);
     protected Label3D Plate = new();
-    protected MeshInstance3D Body = new();
+    public Body Figure { get; private set; } = null!;
     protected float Gravity = (float)ProjectSettings.GetSetting("physics/3d/default_gravity", 9.8);
 
-    protected void Shape(string colour, float height, float radius = 0.4f)
+    /// <summary>Gives this fighter its look (a character preset or an animal) and something to collide with.</summary>
+    protected void Dress(string look, float height, float radius = 0.4f)
     {
-        Body = new MeshInstance3D
-        {
-            Mesh = new CapsuleMesh { Radius = radius, Height = height },
-            Position = new Vector3(0, height / 2, 0),
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(colour) },
-        };
-        AddChild(Body);
-        AddChild(new CollisionShape3D { Shape = new CapsuleShape3D { Radius = radius, Height = height }, Position = new Vector3(0, height / 2, 0) });
-        Plate = new Label3D { Position = new Vector3(0, height + 0.5f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 40, OutlineSize = 10, PixelSize = 0.01f };
+        Figure = Body.For(look);
+        AddChild(Figure);
+        AddChild(new CollisionShape3D { Shape = new CapsuleShape3D { Radius = radius, Height = Math.Max(height, radius * 2) }, Position = new Vector3(0, Math.Max(height, radius * 2) / 2, 0) });
+        Plate = new Label3D { Position = new Vector3(0, height + 0.45f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 30, OutlineSize = 8, PixelSize = 0.008f };
         AddChild(Plate);
     }
+
+    /// <summary>Turns the body to face where it's going.</summary>
+    protected void FaceAlong(Vector3 move, double delta)
+    {
+        move.Y = 0;
+        if (move.LengthSquared() < 0.01f) return;
+        var target = Mathf.Atan2(-move.X, -move.Z);
+        Rotation = Rotation with { Y = Mathf.LerpAngle(Rotation.Y, target, (float)Math.Min(1, delta * 10)) };
+    }
+
+    protected float GroundSpeed => new Vector2(Velocity.X, Velocity.Z).Length();
 
     /// <summary>How deep the water is where this one stands; above 0 means wading or swimming.</summary>
     public float Depth => (float)Tristinwold.World.WorldGen.WaterLevel - GlobalPosition.Y;
@@ -78,7 +85,7 @@ public partial class Enemy : Fighter
     public static Enemy Create(EnemyKind kind, Vector3 at, double danger = 1, string? siteId = null)
     {
         var e = new Enemy { Kind = kind, Home = at, Position = at, Stats = kind.NewCombatant(danger), SiteId = siteId };
-        e.Shape(kind.Colour, (float)kind.Height, kind.Height < 1 ? 0.3f : 0.4f);
+        e.Dress(kind.Id, (float)Math.Max(kind.Height, 0.6) * (kind.Id == "frost_troll" ? 1.2f : 1), kind.Height < 1 ? 0.3f : kind.Id is "bear" or "frost_troll" ? 0.6f : 0.4f);
         e.RefreshPlate();
         return e;
     }
@@ -90,8 +97,7 @@ public partial class Enemy : Fighter
         Taunt = taunt;
         Stats.Apply(mods);
         Scale = new Vector3(1.15f, 1.15f, 1.15f);
-        ((StandardMaterial3D)Body.MaterialOverride).Emission = new Color("#5a1010");
-        ((StandardMaterial3D)Body.MaterialOverride).EmissionEnabled = true;
+        Figure.Mark(new Color("#ff5030"));
         RefreshPlate();
     }
 
@@ -151,11 +157,12 @@ public partial class Enemy : Fighter
                 }
                 var toTarget = _target.GlobalPosition - GlobalPosition;
                 toTarget.Y = 0;
-                LookAt(GlobalPosition + toTarget.Normalized(), Vector3.Up);
+                if (toTarget.LengthSquared() > 0.01f) LookAt(GlobalPosition + toTarget.Normalized(), Vector3.Up);
                 if (toTarget.Length() > Kind.Reach) move = toTarget.Normalized() * speed;
                 else if (_attackCooldown <= 0)
                 {
                     _attackCooldown = Kind.AttackSeconds / (Stats.Statuses.Contains(AutoStatus.Haste) ? 1.3 : 1);
+                    Figure.Attack();
                     var damage = Stats.Outgoing(AttackKind.Weapon, Kind.Damage, _rng, out var crit);
                     _target.TakeHit(damage, Kind.DamageKind, AttackKind.Weapon, crit, this);
                 }
@@ -171,7 +178,9 @@ public partial class Enemy : Fighter
                 }
                 break;
         }
+        if (State != EnemyState.Fighting) FaceAlong(move, delta);
         FallAndSlide(delta, move);
+        Figure.Move(GroundSpeed, IsOnFloor(), Swimming);
     }
 
     public HitResult TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Player by)
@@ -180,14 +189,14 @@ public partial class Enemy : Fighter
         Provoke(by);
         RefreshPlate();
         if (result.Killed) Die();
+        else Figure.Hurt();
         return result;
     }
 
     void Die()
     {
         State = EnemyState.Dead;
-        Body.RotationDegrees = new Vector3(90, 0, 0);
-        Body.Position = new Vector3(0, 0.3f, 0);
+        Figure.Die();
         Plate.Text = "";
         CollisionLayer = 0;
         var timer = GetTree().CreateTimer(20);

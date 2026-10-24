@@ -20,7 +20,16 @@ public partial class StartScreen : CanvasLayer
 
     public event Action<StartChoice>? Play;
 
-    static readonly string[] Looks = ["#c9a46a", "#8a3b2c", "#3e6a8a", "#5a7a3a", "#d8d0c0", "#2a2420"];
+    /// <summary>The classes a character can be, each with its portrait.</summary>
+    static readonly (string Look, string Label, string Portrait)[] Classes =
+    [
+        ("Knight", "Knight", "knight"), ("Barbarian", "Barbarian", "barbarian"), ("Mage", "Mage", "mage"),
+        ("Rogue", "Rogue", "rogue"), ("Rogue_Hooded", "Hooded Rogue", "rogue_hooded"),
+    ];
+
+    static Texture2D? Portrait(string look) =>
+        Classes.FirstOrDefault(c => c.Look == look) is { Portrait: { } p } && ResourceLoader.Exists($"res://assets/kaykit/portraits/{p}.png")
+            ? GD.Load<Texture2D>($"res://assets/kaykit/portraits/{p}.png") : null;
     static readonly string[] Elements = ["Fire", "Frost", "Shock"];
 
     readonly LineEdit _server = Field("Server: e.g. https://word-word-word.trycloudflare.com or 192.168.1.20:7777");
@@ -35,7 +44,7 @@ public partial class StartScreen : CanvasLayer
     readonly VBoxContainer _login = new(), _characters = new(), _list = new();
     readonly HBoxContainer _swatches = new();
     Dictionary<string, string> _settings = [];
-    string _look = Looks[0];
+    string _look = "Knight";
     string? _token;
     bool _offline;
     List<CharacterSheet> _sheets = [];
@@ -89,16 +98,21 @@ public partial class StartScreen : CanvasLayer
         _characters.AddChild(_list);
         _characters.AddChild(new Label { Text = "A new character", Modulate = new Color("#ffd27a") });
         _characters.AddChild(_newName);
-        foreach (var look in Looks)
+        // Pick a class: a portrait for each.
+        foreach (var (look, label, _) in Classes)
         {
-            var swatch = new Button { CustomMinimumSize = new Vector2(52, 52), ToggleMode = true, ButtonPressed = look == _look, TooltipText = "Their colour" };
-            swatch.AddThemeStyleboxOverride("normal", new StyleBoxFlat { BgColor = new Color(look) });
-            swatch.AddThemeStyleboxOverride("pressed", new StyleBoxFlat { BgColor = new Color(look), BorderColor = Colors.White, BorderWidthBottom = 4, BorderWidthTop = 4, BorderWidthLeft = 4, BorderWidthRight = 4 });
-            swatch.Pressed += () => { _look = look; foreach (var b in _swatches.GetChildren().OfType<Button>()) b.ButtonPressed = b == swatch; };
-            _swatches.AddChild(swatch);
+            var pick = new Button
+            {
+                CustomMinimumSize = new Vector2(124, 150), ToggleMode = true, ButtonPressed = look == _look, Text = label,
+                Icon = Portrait(look), IconAlignment = HorizontalAlignment.Center, VerticalIconAlignment = VerticalAlignment.Top, ExpandIcon = true,
+            };
+            pick.AddThemeStyleboxOverride("pressed", new StyleBoxFlat { BgColor = new Color("#3a3226"), BorderColor = new Color("#ffd27a"), BorderWidthBottom = 3, BorderWidthTop = 3, BorderWidthLeft = 3, BorderWidthRight = 3 });
+            pick.Pressed += () => { _look = look; foreach (var b in _swatches.GetChildren().OfType<Button>()) b.ButtonPressed = b == pick; };
+            _swatches.AddChild(pick);
         }
+        _characters.AddChild(_swatches);
         var make = new HBoxContainer();
-        make.AddChild(_swatches);
+        make.AddChild(new Label { Text = "Starting spell", CustomMinimumSize = new Vector2(150, 0) });
         foreach (var e in Elements) _element.AddItem(e);
         make.AddChild(_element);
         _characters.AddChild(make);
@@ -195,10 +209,10 @@ public partial class StartScreen : CanvasLayer
         foreach (var sheet in _sheets)
         {
             var row = new HBoxContainer();
-            row.AddChild(new ColorRect { Color = new Color(sheet.Look), CustomMinimumSize = new Vector2(16, 48) });
+            row.AddChild(new TextureRect { Texture = Portrait(sheet.Look) ?? Portrait("Knight"), CustomMinimumSize = new Vector2(56, 56), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered });
             row.AddChild(new Label
             {
-                Text = $"{sheet.Name}\n   {sheet.Element}, {sheet.Septims} septims{(sheet.Where.Length > 0 ? $", last seen at {sheet.Where}" : "")}",
+                Text = $"{sheet.Name}\n   {ClassName(sheet.Look)}, {sheet.Element}, {sheet.Septims} septims{(sheet.Where.Length > 0 ? $", last seen at {sheet.Where}" : "")}",
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             });
             row.AddChild(MakeButton("Play", () => _ = Choose(sheet)));
@@ -217,10 +231,12 @@ public partial class StartScreen : CanvasLayer
 
     public IReadOnlyList<CharacterSheet> Characters => _sheets;
 
+    static string ClassName(string look) => Classes.FirstOrDefault(c => c.Look == look).Label ?? "Knight";
+
     /// <summary>Shows the characters page with an example character (for a screenshot of the layout).</summary>
     public Task PlayAloneForSnapshot()
     {
-        _sheets = [new("Bram Ashmane", Looks[1], "Frost", DateTime.UtcNow, 212, "Hawkwake Mine"), new("Ilka", Looks[2], "Shock", DateTime.UtcNow)];
+        _sheets = [new("Bram Ashmane", "Barbarian", "Frost", DateTime.UtcNow, 212, "Hawkwake Mine"), new("Ilka", "Mage", "Shock", DateTime.UtcNow)];
         _offline = false;
         ShowCharacters(offline: false);
         _who.Text = "Joe, on https://seasonal-deck-organisms-sf.trycloudflare.com";

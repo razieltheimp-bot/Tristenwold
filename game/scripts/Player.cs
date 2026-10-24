@@ -17,8 +17,8 @@ public partial class Player : Fighter
     public DamageKind Element { get; set; } = DamageKind.Fire;
     public int Septims { get; set; }
 
-    /// <summary>Their colour, chosen when the character was made.</summary>
-    public string Colour { get; init; } = "#c9a46a";
+    /// <summary>Their class, chosen when the character was made: Knight, Barbarian, Mage, Rogue or Rogue_Hooded.</summary>
+    public string Outfit { get; init; } = "Knight";
 
     public event Action<string>? Said;
     public event Action? WentDown;
@@ -38,7 +38,7 @@ public partial class Player : Fighter
     {
         Local = this;
         Stats = new Combatant(Company, 150, magicka: 100, stamina: 120, armor: 80);
-        Shape(Colour, 1.8f);
+        Dress(Outfit, 1.8f);
         Plate.Text = "";
         _pivot = new Node3D { Position = new Vector3(0, 1.6f, 0) };
         AddChild(_pivot);
@@ -77,6 +77,7 @@ public partial class Player : Fighter
         if (Frozen)
         {
             FallAndSlide(delta, Vector3.Zero);
+            Figure.Move(0, IsOnFloor(), Swimming);
             return;
         }
 
@@ -87,6 +88,12 @@ public partial class Player : Fighter
         if (sprint && input != Vector2.Zero) Stats.Spend(AttackKind.Weapon, 15 * delta);
         if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming)) Velocity = Velocity with { Y = JumpSpeed };
         FallAndSlide(delta, dir * speed);
+
+        // The body turns to run the way you're going; it faces forward to strike or cast.
+        var acting = _swingCooldown > 0.25 || _spellCooldown > 0.55;
+        var target = acting ? 0 : input == Vector2.Zero ? Figure.Rotation.Y : Mathf.Atan2(-input.X, -input.Y); // -Z is forward
+        Figure.Rotation = Figure.Rotation with { Y = Mathf.LerpAngle(Figure.Rotation.Y, target, (float)Math.Min(1, delta * 12)) };
+        Figure.Move(GroundSpeed, IsOnFloor(), Swimming);
 
         if (Input.IsActionJustPressed("attack")) Swing();
         if (Input.IsActionJustPressed("spell")) Cast();
@@ -109,6 +116,8 @@ public partial class Player : Fighter
     {
         if (Downed || _swingCooldown > 0 || !Stats.Spend(AttackKind.Weapon, SwingCost)) return false;
         _swingCooldown = 0.6;
+        Figure.Rotation = Figure.Rotation with { Y = 0 };
+        Figure.Attack();
         var target = EnemiesInFront(2.4f, 70).FirstOrDefault();
         if (target is null) return true;
         Hit(target, Stats.Outgoing(AttackKind.Weapon, SwordDamage, _rng, out var crit), DamageKind.Physical, AttackKind.Weapon, crit);
@@ -120,6 +129,8 @@ public partial class Player : Fighter
     {
         if (Downed || _spellCooldown > 0 || !Stats.Spend(AttackKind.Spell, SpellCost)) return false;
         _spellCooldown = 1.0;
+        Figure.Rotation = Figure.Rotation with { Y = 0 };
+        Figure.Cast();
         var target = EnemiesInFront(25, 25).FirstOrDefault();
         if (target is not null) Hit(target, Stats.Outgoing(AttackKind.Spell, SpellDamage, _rng, out _), Element, AttackKind.Spell, false);
         return true;
@@ -129,6 +140,7 @@ public partial class Player : Fighter
     public bool LimitBreak()
     {
         if (Downed || !Stats.UseLimit()) return false;
+        Figure.Attack(heavy: true);
         Said?.Invoke("LIMIT BREAK: Ring-Breaker!");
         foreach (var e in Enemies().Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < 7).ToList())
             Hit(e, Stats.Outgoing(AttackKind.Weapon, SwordDamage * 4, _rng, out var crit), DamageKind.Physical, AttackKind.Weapon, crit);
@@ -147,6 +159,7 @@ public partial class Player : Fighter
     {
         if (Downed) return;
         Stats.TakeHit(damage, kind, attack, crit, from.Stats);
+        if (!Stats.Dead) Figure.Hurt();
         if (Stats.Dead) GoDown();
     }
 
@@ -154,7 +167,7 @@ public partial class Player : Fighter
     {
         Downed = true;
         _downTimer = 4;
-        Body.RotationDegrees = new Vector3(90, 0, 0);
+        Figure.Die();
         WentDown?.Invoke();
     }
 
@@ -162,7 +175,7 @@ public partial class Player : Fighter
     void Rise()
     {
         Downed = false;
-        Body.RotationDegrees = Vector3.Zero;
+        Figure.Rise();
         Stats.Heal(Stats.MaxHealth);
         GlobalPosition = City.PlayerStart;
         Said?.Invoke("You wake at the Gallows Perch. Someone dragged you here.");

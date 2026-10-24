@@ -79,67 +79,94 @@ public static class City
     {
         var rng = new Rng(1337);
 
-        // Sky and sun.
+        // A clear sky, warm sun, and haze that hides where the streamed land ends.
         var env = new Godot.Environment
         {
             BackgroundMode = Godot.Environment.BGMode.Sky,
-            Sky = new Sky { SkyMaterial = new ProceduralSkyMaterial { SkyTopColor = new Color("#3d5a80"), SkyHorizonColor = new Color("#c9b79c"), GroundBottomColor = new Color("#2b2620") } },
-            AmbientLightSource = Godot.Environment.AmbientSource.Sky,
+            Sky = new Sky
+            {
+                SkyMaterial = new ProceduralSkyMaterial
+                {
+                    SkyTopColor = new Color("#2f63a8"), SkyHorizonColor = new Color("#b4cde2"), SkyCurve = 0.12f,
+                    GroundBottomColor = new Color("#4a5a3e"), GroundHorizonColor = new Color("#b4cde2"), SunAngleMax = 25,
+                },
+            },
+            AmbientLightSource = Godot.Environment.AmbientSource.Color,
+            AmbientLightColor = new Color("#9aa4b4"),
+            AmbientLightEnergy = 0.55f,
             FogEnabled = true,
-            FogDensity = fog, // hides where the streamed land ends
-            FogLightColor = new Color("#b7a98f"),
+            FogDensity = fog,
+            FogLightColor = new Color("#a9c2da"),
+            FogSkyAffect = 0.1f,
+            FogAerialPerspective = 0.6f,
             TonemapMode = Godot.Environment.ToneMapper.Filmic,
         };
         root.AddChild(new WorldEnvironment { Environment = env });
-        root.AddChild(Sun = new DirectionalLight3D { RotationDegrees = new Vector3(-50, -30, 0), ShadowEnabled = true, LightEnergy = 1.0f });
+        root.AddChild(Sun = new DirectionalLight3D { RotationDegrees = new Vector3(-48, -35, 0), ShadowEnabled = true, LightEnergy = 1.25f, LightColor = new Color("#fff0d6") });
         Sky = env;
 
         // The land and the harbor come from the world generator (see Terrain).
 
-        // The rings: raised platforms, each higher than the last.
-        Disc(root, InnerRadius, InnerHeight, "#857a66");
-        Disc(root, CrownRadius, CrownHeight, "#a39c8b");
+        // The rings: raised stone platforms, each higher than the last.
+        Disc(root, InnerRadius, InnerHeight, "#9a9284");
+        Disc(root, CrownRadius, CrownHeight, "#b0a898");
 
-        // Walls with gates. Gates face east (to the docks) and west (to the land).
-        Wall(root, OuterRadius, 0, 7, "#6d6558", gates: [0, 180]);
-        Wall(root, InnerRadius, InnerHeight, 6, "#7d7466", gates: [0, 200]);
-        Wall(root, CrownRadius, CrownHeight, 5, "#b0a890", gates: [0]);
+        // Castle walls with gates. Gates face east (to the docks) and west (to the land).
+        Walls(root, OuterRadius, 0, 6, gates: [0, 180]);
+        Walls(root, InnerRadius, InnerHeight, 5, gates: [0, 200]);
+        Walls(root, CrownRadius, CrownHeight, 3.5f, gates: [0]);
         Ramp(root, InnerRadius, 0, InnerHeight, 0);
         Ramp(root, InnerRadius, 0, InnerHeight, 200);
         Ramp(root, CrownRadius, InnerHeight, CrownHeight, 0);
 
-        // Streets of houses in each ring, crowded at the bottom, grand at the top.
-        Houses(root, rng, 66, 95, 0, 70, "#5b4a3a", 4, 7);
-        Houses(root, rng, 36, 56, InnerHeight, 28, "#7a6650", 6, 9);
+        // Streets of houses in each ring, crowded at the bottom, grander at the top.
+        Houses(root, rng, 68, 93, 0, 46, ["home_A", "home_A", "home_B", "blacksmith", "lumbermill"]);
+        Houses(root, rng, 38, 54, InnerHeight, 16, ["home_B", "home_B", "market", "tower_A"]);
 
         // Landmarks.
-        Building(root, GallowsPerch, new Vector3(12, 11, 9), "#2a2420", "The Gallows Perch", roof: "#121010");
-        Building(root, new Vector3(40, 0, 78), new Vector3(9, 6, 8), "#6e5235", "The Salt Barrel");
-        Building(root, new Vector3(-50, 0, 72), new Vector3(10, 5, 9), "#8a3a2a", "The Lantern Boys' Den");
-        Building(root, new Vector3(70, 0, 55), new Vector3(8, 7, 8), "#4a4a52", "The Watch House");
-        var chapel = Building(root, new Vector3(-80, -1.5f, -40), new Vector3(14, 9, 18), "#3f5450", "The Drowned Chapel");
-        chapel.RotationDegrees = new Vector3(4, 20, -3); // half sunk, leaning
-        Building(root, new Vector3(-40, InnerHeight, 0), new Vector3(12, 8, 10), "#5f6a7a", "The Magi Archive");
-        Building(root, new Vector3(30, InnerHeight, -30), new Vector3(16, 10, 12), "#8c6d3e", "The Exchange");
-        Building(root, new Vector3(0, CrownHeight, 0), new Vector3(14, 26, 14), "#cfc6ad", "The Crown", roof: "#4a5a7a");
-        for (var i = 0; i < 6; i++) // the Warrens: a crush of low shacks
-            Box(root, new Vector3(-28 + rng.Next(18), 1.2f, -88 + rng.Next(14)), new Vector3(4, 2.4f, 3), "#3b3128", solid: true);
-        Label(root, new Vector3(-20, 5, -82), "The Warrens");
+        Landmark(root, "tavern", "red", GallowsPerch, 9.5f, 0.5f, "The Gallows Perch");
+        Landmark(root, "tavern", "blue", new Vector3(40, 0, 78), 7.5f, 2.6f, "The Salt Barrel");
+        Landmark(root, "barracks", "red", new Vector3(-50, 0, 72), 6.5f, 2.2f, "The Lantern Boys' Den");
+        Landmark(root, "barracks", "blue", new Vector3(70, 0, 55), 7, 2.4f, "The Watch House");
+        var chapel = Landmark(root, "church", "green", new Vector3(-80, -1.6f, -40), 9, 0.4f, "The Drowned Chapel");
+        chapel.RotationDegrees = new Vector3(5, 20, -4); // half sunk, leaning
+        Landmark(root, "tower_B", "blue", new Vector3(-40, InnerHeight, 0), 7, 1.6f, "The Magi Archive");
+        Landmark(root, "market", "red", new Vector3(30, InnerHeight, -30), 9, 2.2f, "The Exchange");
+        Landmark(root, "castle", "red", new Vector3(0, CrownHeight, 0), 8, 1.57f, "The Crown");
+        for (var i = 0; i < 7; i++) // the Warrens: a crush of ruins and lean-tos
+            Models.Place(root, i % 2 == 0 ? "medieval/neutral/building_destroyed.gltf" : Models.Building("home_A", "green"),
+                new Vector3(-30 + rng.Next(22), 0, -92 + rng.Next(16)), i % 2 == 0 ? 6 : 4.5f, (float)rng.NextDouble() * Mathf.Tau);
+        Label(root, new Vector3(-20, 8, -82), "The Warrens");
 
-        // The Docks: piers out into the harbor.
+        // The Docks: piers out into the harbor, stacked with cargo.
         for (var z = -30; z <= 30; z += 15)
-            Box(root, new Vector3(122, -0.25f, z), new Vector3(40, 0.5f, 5), "#6a5034", solid: true);
-        Label(root, new Vector3(120, 4, 0), "The Docks");
+        {
+            Box(root, new Vector3(122, -0.25f, z), new Vector3(40, 0.5f, 5), "#7a5a38", solid: true);
+            for (var k = 0; k < 3; k++)
+                Models.Place(root, rng.Chance(0.5) ? "dungeon/barrel_large.glb" : "dungeon/crates_stacked.glb",
+                    new Vector3(108 + rng.Next(28), 0, z + (float)rng.NextDouble() * 3 - 1.5f), rng.Chance(0.5) ? 0.5f : 0.6f, (float)rng.NextDouble() * Mathf.Tau);
+        }
+        Label(root, new Vector3(120, 5, 0), "The Docks");
 
-        // The Needle: a lighthouse on an island.
-        Cylinder(root, Needle + new Vector3(0, -1, 0), 14, 2, "#6b6a55");
-        Cylinder(root, Needle + new Vector3(0, 12, 0), 2.5f, 24, "#e8e0cf");
-        root.AddChild(new OmniLight3D { Position = Needle + new Vector3(0, 25, 0), LightColor = new Color("#ffd27a"), LightEnergy = 4, OmniRange = 60 });
-        Label(root, Needle + new Vector3(0, 28, 0), "The Needle");
+        // The Needle: a lighthouse on a rocky island.
+        Cylinder(root, Needle + new Vector3(0, -1, 0), 14, 2.4f, "#7a7868");
+        Landmark(root, "tower_A", "blue", Needle + new Vector3(0, 0.2f, 0), 9, 0, "The Needle", labelHeight: 30);
+        root.AddChild(new OmniLight3D { Position = Needle + new Vector3(0, 22, 0), LightColor = new Color("#ffd27a"), LightEnergy = 4, OmniRange = 60 });
 
-        // The Tong sea-caves on the north shore.
-        Box(root, new Vector3(150, 3, -118), new Vector3(30, 10, 10), "#3a3a3a", solid: true);
-        Label(root, new Vector3(150, 9, -110), "The Tong Sea-Caves");
+        // The Tong sea-caves: crags on the north shore.
+        Models.Place(root, "medieval/nature/mountain_B.gltf", new Vector3(150, -3, -120), 14, 0.7f);
+        Models.Place(root, "medieval/nature/mountain_C.gltf", new Vector3(170, -3, -108), 9, 2.1f);
+        Label(root, new Vector3(150, 16, -108), "The Tong Sea-Caves");
+
+        // Lanterns along the gate roads.
+        foreach (var angle in new[] { 0f, 180f })
+            for (var r = 64; r <= 96; r += 16)
+            {
+                var a = Mathf.DegToRad(angle);
+                foreach (var side in new[] { -6f, 6f })
+                    Models.Place(root, "halloween/lantern_standing.gltf",
+                        new Vector3(Mathf.Cos(a) * r - Mathf.Sin(a) * side, 0, Mathf.Sin(a) * r + Mathf.Cos(a) * side), 2.2f, 0, solid: false);
+            }
     }
 
     // ---- shapes ------------------------------------------------------------------------------
@@ -167,20 +194,6 @@ public static class City
     static void Disc(Node3D parent, float radius, float top, string colour) =>
         Cylinder(parent, new Vector3(0, top / 2, 0), radius, top, colour);
 
-    static void Wall(Node3D parent, float radius, float baseY, float height, string colour, float[] gates)
-    {
-        const int segments = 64;
-        for (var i = 0; i < segments; i++)
-        {
-            var angle = i * 360f / segments;
-            if (gates.Any(g => Math.Abs(Mathf.Wrap(angle - g, -180, 180)) < 6)) continue; // leave a gate
-            var rad = Mathf.DegToRad(angle);
-            var segment = Box(parent, new Vector3(Mathf.Cos(rad) * radius, baseY + height / 2, Mathf.Sin(rad) * radius),
-                new Vector3(1.6f, height, 2 * Mathf.Pi * radius / segments + 0.4f), colour, solid: true);
-            segment.Rotation = new Vector3(0, -rad, 0);
-        }
-    }
-
     /// <summary>A sloped road up through a gate, from one ring's level to the next.</summary>
     static void Ramp(Node3D parent, float radius, float fromY, float toY, float gateAngle)
     {
@@ -193,7 +206,7 @@ public static class City
         ramp.Rotation = new Vector3(0, -rad, Mathf.Atan2(rise, length));
     }
 
-    static void Houses(Node3D parent, Rng rng, float rMin, float rMax, float y, int count, string colour, float sizeMin, float sizeMax)
+    static void Houses(Node3D parent, Rng rng, float rMin, float rMax, float y, int count, string[] kinds)
     {
         for (var placed = 0; placed < count;)
         {
@@ -201,26 +214,35 @@ public static class City
             if (Math.Abs(Mathf.Wrap(Mathf.RadToDeg(angle), -180, 180)) < 14 || Math.Abs(Mathf.Wrap(Mathf.RadToDeg(angle) - 180, -180, 180)) < 14 ||
                 Math.Abs(Mathf.Wrap(Mathf.RadToDeg(angle) - 200, -180, 180)) < 14) continue; // keep gate roads clear
             var r = rMin + (float)rng.NextDouble() * (rMax - rMin);
-            var size = sizeMin + (float)rng.NextDouble() * (sizeMax - sizeMin);
             var pos = new Vector3(Mathf.Cos(angle) * r, y, Mathf.Sin(angle) * r);
-            if (Zones.Any(z => z.Priority >= 9 && new Vector2(pos.X - z.Center.X, pos.Z - z.Center.Z).Length() < z.Radius + 4)) continue;
-            var house = Box(parent, pos + new Vector3(0, size * 0.4f, 0), new Vector3(size, size * 0.8f, size * 0.9f), colour, solid: true);
-            house.Rotation = new Vector3(0, -angle, 0);
+            if (Zones.Any(z => z.Priority >= 9 && new Vector2(pos.X - z.Center.X, pos.Z - z.Center.Z).Length() < z.Radius + 5)) continue;
+            var kind = rng.Pick(kinds);
+            var colour = rng.Chance(0.6) ? "red" : rng.Chance(0.5) ? "blue" : "green";
+            Models.Place(parent, Models.Building(kind, colour), pos, 6.5f + (float)rng.NextDouble() * 1.5f, -angle + Mathf.Pi / 2);
             placed++;
         }
     }
 
-    static Node3D Building(Node3D parent, Vector3 pos, Vector3 size, string colour, string name, string roof = "#3a2a20")
+    static Node3D Landmark(Node3D parent, string kind, string colour, Vector3 at, float scale, float yaw, string name, float labelHeight = 0)
     {
-        var b = Box(parent, pos + new Vector3(0, size.Y / 2, 0), size, colour, solid: true);
-        b.AddChild(new MeshInstance3D
-        {
-            Mesh = new PrismMesh { Size = new Vector3(size.X + 1, size.Y * 0.35f, size.Z + 1) },
-            Position = new Vector3(0, size.Y / 2 + size.Y * 0.175f, 0),
-            MaterialOverride = Mat(roof),
-        });
-        Label(parent, pos + new Vector3(0, size.Y * 1.45f + 1, 0), name);
+        var b = Models.Place(parent, Models.Building(kind, colour), at, scale, yaw);
+        var height = labelHeight > 0 ? labelHeight : Models.Bounds((Node3D)b.GetChild(0)).End.Y + 3;
+        Label(parent, at + new Vector3(0, height, 0), name);
         return b;
+    }
+
+    /// <summary>A ring of castle wall, with a gap at each gate.</summary>
+    static void Walls(Node3D parent, float radius, float baseY, float scale, float[] gates)
+    {
+        var length = 2 * scale; // each wall piece is 2 units long
+        var count = (int)Math.Ceiling(Mathf.Tau * radius / length);
+        for (var i = 0; i < count; i++)
+        {
+            var a = i * Mathf.Tau / count;
+            if (gates.Any(g => Math.Abs(Mathf.Wrap(Mathf.RadToDeg(a) - g, -180, 180)) < 6)) continue;
+            Models.Place(parent, "medieval/neutral/wall_straight.gltf", new Vector3(Mathf.Cos(a) * radius, baseY, Mathf.Sin(a) * radius),
+                scale * 1.02f, -a - Mathf.Pi / 2, shrink: 1);
+        }
     }
 
     static void Label(Node3D parent, Vector3 pos, string text) => parent.AddChild(new Label3D
