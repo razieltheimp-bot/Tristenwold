@@ -70,7 +70,7 @@ public sealed record Drops(string Area, IReadOnlyList<DeadDropView> Notes) : Mes
 
 public sealed record Roster(IReadOnlyList<GroupView> Groups) : Message;
 
-public enum NoticeKind { Chat, Dm, NearMiss, World, Contract, Error }
+public enum NoticeKind { Chat, Dm, NearMiss, World, Contract, Error, Vann }
 public sealed record Notice(NoticeKind Kind, string Text, string? From = null) : Message;
 
 /// <summary>Contract pay, in gil, for the group that finished it.</summary>

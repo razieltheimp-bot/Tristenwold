@@ -6,8 +6,8 @@ namespace Tristinwold.Shared;
 public sealed class ServerOptions
 {
     public string Password { get; init; } = "";
-    /// <summary>When false, only the DM can close a contract (the default: the DM runs the story).</summary>
-    public bool PlayersFinishContracts { get; init; }
+    /// <summary>When false, only the DM console can close contracts. With no DM, players close their own.</summary>
+    public bool PlayersFinishContracts { get; init; } = true;
     /// <summary>Chance that Vann intercepts a dead drop.</summary>
     public double InterceptChance { get; init; } = 0.25;
     /// <summary>How long after a group leaves an area another arriving group still finds its tracks.</summary>
@@ -15,16 +15,30 @@ public sealed class ServerOptions
     /// <summary>Chance that two groups in the same place get pulled apart by a time-skip.</summary>
     public double RewindChance { get; init; } = 0.35;
     public int GilPerGold { get; init; } = 100;
+
+    /// <summary>Vann plays himself: forges notes, posts rival jobs, spreads rumours, steers each company.</summary>
+    public bool VannEnabled { get; init; } = true;
+    /// <summary>Average real minutes between Vann's unprompted schemes.</summary>
+    public double VannMinutesBetweenSchemes { get; init; } = 6;
+    public double ForgeChance { get; init; } = 0.2;
+    public double RivalJobChance { get; init; } = 0.4;
+    /// <summary>Contracts a company finishes before the Saved Man shows them who he is.</summary>
+    public int ContractsBeforeReveal { get; init; } = 3;
+    /// <summary>When two companies with hidden Keystones share a place and no time-skip pulls them apart.</summary>
+    public double KeystoneMeetChance { get; init; } = 0.5;
 }
 
-/// <summary>A message for one player, or for everyone (To = null) except perhaps one.</summary>
-public sealed record Outgoing(string? To, Message Message, string? Except = null);
+/// <summary>
+/// A message for one player, or for everyone (To = null) except perhaps one. When Scene is
+/// set the message is one of Vann's lines and a voice may rewrite its text before it's sent.
+/// </summary>
+public sealed record Outgoing(string? To, Message Message, string? Except = null, VannScene? Scene = null);
 
 /// <summary>
 /// The shared-world rules, with no networking in it: connections hand it messages and send
 /// whatever it returns. Not thread-safe: the server calls it under one lock.
 /// </summary>
-public sealed class ServerCore
+public sealed partial class ServerCore
 {
     readonly ServerOptions _options;
     readonly Func<DateTime> _clock;
@@ -130,6 +144,12 @@ public sealed class ServerCore
         // Near misses: the groups share a city but Vann keeps them from meeting.
         foreach (var other in State.Groups.Values.Where(g => g != group && _online.Contains(g.Player) && g.Area == area))
         {
+            // Vann can't always stop it: if two hidden Keystones slip through, time stops.
+            if (!_rng.Chance(_options.RewindChance) && _rng.Chance(_options.KeystoneMeetChance) && KeystonesMeet(group, other, area) is { Count: > 0 } meeting)
+            {
+                outgoing.AddRange(meeting);
+                continue;
+            }
             if (_rng.Chance(_options.RewindChance))
             {
                 outgoing.Add(new(group.Player, new Notice(NoticeKind.NearMiss,
@@ -192,6 +212,7 @@ public sealed class ServerCore
         [
             new(null, new Board(PublicBoard())),
             new(null, new Notice(NoticeKind.Contract, $"{group.Player}'s company took the contract \"{contract.Title}\".")),
+            .. PostRivalJob(group, contract),
         ];
     }
 
@@ -236,11 +257,13 @@ public sealed class ServerCore
             group.ContractsDone++;
             outgoing.Add(new(player, new Reward(contract.Id, contract.Pay * _options.GilPerGold)));
             // Vann's rule: the first person a table saves is Vann, whoever it was.
-            if (group.SavedMan is null && contract.InDanger is not null)
+            var firstRescue = group.SavedMan is null && contract.InDanger is not null;
+            if (firstRescue)
             {
                 group.SavedMan = contract.InDanger;
                 note += $" {player}'s table saved {contract.InDanger}: that is their Vann.";
             }
+            outgoing.AddRange(AfterContract(group, firstRescue));
         }
         return (outgoing, note);
     }
@@ -250,7 +273,14 @@ public sealed class ServerCore
         var text = Clip(d.Text, 600);
         if (text.Length == 0) return [];
         var area = Clip(d.Area, 80);
-        var drop = new DeadDrop { Area = area, From = group.Player, Text = text, Day = World.Day, Intercepted = _rng.Chance(_options.InterceptChance) };
+        var forged = ForgeNote(group);
+        var drop = new DeadDrop
+        {
+            Area = area, From = group.Player, Day = World.Day,
+            Text = forged ?? text,
+            Original = forged is null ? null : text,
+            Intercepted = forged is null && _rng.Chance(_options.InterceptChance),
+        };
         State.Drops.Add(drop);
         Dirty = true;
 
@@ -275,7 +305,7 @@ public sealed class ServerCore
         tell <player> <text>       whisper to one table
         keystone <player> [name]   reveal that table's Keystone (or set it to <name>)
         flag <name> | unflag <name>   world consequences shared by every table
-        drops                      list dead drops (* = intercepted by Vann)
+        drops                      list dead drops (* = intercepted by Vann, ~ = forged)
         release <n>                let intercepted drop n reach its area
         day                        advance the world one day
         nemeses                    living nemeses
@@ -353,7 +383,7 @@ public sealed class ServerCore
                 return ($"Flag cleared: {rest}", []);
             case "drops":
                 return (string.Join('\n', State.Drops.Select((d, i) =>
-                    $"{i}{(d.Intercepted ? "*" : " ")} day {d.Day} {d.Area} from {d.From}: {d.Text}")), []);
+                    $"{i}{(d.Intercepted ? "*" : d.Original is null ? " " : "~")} day {d.Day} {d.Area} from {d.From}: {d.Text}{(d.Original is null ? "" : $"  [really: {d.Original}]")}")), []);
             case "release":
             {
                 if (!int.TryParse(Arg(0), out var i) || i < 0 || i >= State.Drops.Count) return ("No such drop.", []);

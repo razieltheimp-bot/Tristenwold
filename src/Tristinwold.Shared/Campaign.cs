@@ -14,6 +14,9 @@ public sealed class Contract
     /// <summary>The person in danger on this job. The first one a group saves becomes their Vann.</summary>
     public string? InDanger { get; init; }
 
+    /// <summary>Posted by Vann to set one company against another.</summary>
+    public string? RivalOf { get; set; }
+
     public ContractStatus Status { get; set; } = ContractStatus.Open;
     public string? ClaimedBy { get; set; }
     public string? FinishedBy { get; set; }
@@ -29,6 +32,8 @@ public sealed class DeadDrop
     public int Day { get; init; }
     /// <summary>Vann got to it first. The DM can let it through later.</summary>
     public bool Intercepted { get; set; }
+    /// <summary>When Vann forged the note, what it really said.</summary>
+    public string? Original { get; set; }
 }
 
 /// <summary>One player's table: their own party of three, adventuring in the shared city.</summary>
@@ -43,6 +48,8 @@ public sealed class Group
     /// <summary>Who this group saved first: their Vann, once the reveal comes.</summary>
     public string? SavedMan { get; set; }
     public int ContractsDone { get; set; }
+    /// <summary>The Saved Man has shown them who he is.</summary>
+    public bool VannRevealed { get; set; }
     public DateTime LastSeen { get; set; }
 
     public GroupView ToView(bool online) => new(Player, Area, Party, online);
@@ -58,6 +65,8 @@ public sealed class CampaignState
     /// <summary>Consequences that carry over between tables ("warehouse_burned", "silt_spared").</summary>
     public HashSet<string> Flags { get; set; } = [];
     public string? NemesisWorldJson { get; set; }
+    /// <summary>Things Vann has said lately, so he doesn't repeat himself (and so a voice model has memory).</summary>
+    public List<string> VannMemory { get; set; } = [];
 
     public static CampaignState Load(string path) =>
         JsonSerializer.Deserialize<CampaignState>(File.ReadAllText(path), Wire.Options)

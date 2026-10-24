@@ -7,8 +7,10 @@ namespace Tristinwold.Shared.Tests;
 
 public class SharedWorldTests
 {
-    static ServerCore NewServer(ServerOptions? options = null) =>
-        new(CampaignState.SavedMan(), options ?? new ServerOptions { RewindChance = 0, InterceptChance = 0 }, seed: 1);
+    // Vann off unless a test is about him, so the dice don't interfere.
+    static readonly ServerOptions Quiet = new() { RewindChance = 0, InterceptChance = 0, VannEnabled = false, KeystoneMeetChance = 0 };
+
+    static ServerCore NewServer(ServerOptions? options = null) => new(CampaignState.SavedMan(), options ?? Quiet, seed: 1);
 
     static Hello Hi(string player, string password = "") =>
         new(player, password, Wire.ProtocolVersion, [$"{player}-A", $"{player}-B", $"{player}-C"]);
@@ -47,7 +49,7 @@ public class SharedWorldTests
     [Fact]
     public void A_claimed_contract_is_gone_for_everyone_and_the_first_rescue_becomes_vann()
     {
-        var server = NewServer();
+        var server = NewServer(new ServerOptions { VannEnabled = false, PlayersFinishContracts = false });
         server.Connect(Hi("Joe"));
         server.Connect(Hi("Mira"));
 
@@ -55,7 +57,7 @@ public class SharedWorldTests
         Assert.Contains(To<Board>(claim, "Mira").Single().Contracts, c => c.Id == "brother" && c.Status == ContractStatus.Claimed);
         Assert.Single(To<Notice>(server.Handle("Mira", new ClaimContract("brother")), "Mira"), n => n.Kind == NoticeKind.Error);
 
-        // The DM runs the story, so players can't close contracts themselves by default.
+        // With a DM running the story, players can't close contracts themselves.
         Assert.Single(To<Notice>(server.Handle("Joe", new FinishContract("brother")), "Joe"), n => n.Kind == NoticeKind.Error);
 
         var (outs, note) = server.Dm("done brother") is var r ? (r.Outgoing, r.Reply) : default;
@@ -73,7 +75,7 @@ public class SharedWorldTests
     public void Groups_in_the_same_place_get_near_misses_and_find_each_others_tracks()
     {
         var now = new DateTime(2026, 10, 24, 20, 0, 0, DateTimeKind.Utc);
-        var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { RewindChance = 0, InterceptChance = 0 }, seed: 2, clock: () => now);
+        var server = new ServerCore(CampaignState.SavedMan(), Quiet, seed: 2, clock: () => now);
         server.Connect(Hi("Joe"));
         server.Connect(Hi("Mira"));
         server.Connect(Hi("Dax"));
@@ -100,7 +102,7 @@ public class SharedWorldTests
         var drops = To<Drops>(server.Handle("Mira", new Presence("Gallows Perch", [])), "Mira").Single();
         Assert.Equal("Joe", Assert.Single(drops.Notes).From);
 
-        var vann = new ServerCore(CampaignState.SavedMan(), new ServerOptions { InterceptChance = 1, RewindChance = 0 }, seed: 3);
+        var vann = new ServerCore(CampaignState.SavedMan(), new ServerOptions { InterceptChance = 1, RewindChance = 0, VannEnabled = false }, seed: 3);
         vann.Connect(Hi("Joe"));
         vann.Connect(Hi("Mira"));
         vann.Handle("Joe", new LeaveDrop("Gallows Perch", "secret"));

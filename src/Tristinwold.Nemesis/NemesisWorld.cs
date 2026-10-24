@@ -443,6 +443,20 @@ public sealed class NemesisWorld
         events.Add(new(WorldEventKind.Promoted, n.Id, $"{n.FullName} has been promoted to {rank}!"));
     }
 
+    /// <summary>
+    /// Outside meddling (Vann whispering to a nemesis): grants power and levels and lets the
+    /// hierarchy react. Returns the resulting events.
+    /// </summary>
+    public IReadOnlyList<WorldEvent> Empower(Guid id, int power, string why)
+    {
+        var events = new List<WorldEvent>();
+        if (Find(id) is not { Alive: true } n) return events;
+        GainPower(n, power, levels: 1);
+        Log(n, why);
+        UpdateHierarchy(events);
+        return events;
+    }
+
     // ---- Time passing ------------------------------------------------------------------------
 
     /// <summary>
