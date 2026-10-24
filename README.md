@@ -54,6 +54,21 @@ overhauls), done with Godot's renderer, since those mods only run inside those g
 Phones start on Medium and render slightly below screen size (FSR 1) to stay smooth; PCs start on High.
 The phone version always starts in landscape.
 
+### An Android app
+
+`game/export_presets.cfg` builds an APK for 64-bit Android phones. Install the Godot 4.7.2 .NET export
+templates and the Android SDK (platform-tools, build-tools 35, platform 35), point Godot's editor settings at the
+SDK and a keystore, then:
+
+```
+GODOT_ANDROID_KEYSTORE_RELEASE_PATH=~/release.keystore GODOT_ANDROID_KEYSTORE_RELEASE_USER=me \
+GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=… godot --headless --path game --export-release Android ../build/tristinwold.apk
+```
+
+Godot's Android template runs .NET 9, so the game and its libraries also build for net9.0 (the server and tests
+stay on .NET 10). The APK is about 210 MB: Godot and the .NET runtime are over half of that. Copy it to the phone,
+open it, and allow installing apps from that source when Android asks.
+
 ### Playing from a phone, or from anywhere: a Cloudflare tunnel
 
 Phones (and friends outside your home network) reach the server through a free Cloudflare quick
