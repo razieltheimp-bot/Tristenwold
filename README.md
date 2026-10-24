@@ -8,10 +8,44 @@ Regen and Reflect today; limit breaks and summons are planned. Leveling stays pu
 |---|---|
 | **Nemesis rules** (`src/Tristinwold.Nemesis`) | Built and tested. Uses Skyrim actor kinds, actor values and damage types. |
 | **Shared world server + Vann** (`src/Tristinwold.Shared`, `tools/Tristinwold.Server`) | Built and tested end to end. Game-agnostic. |
-| **Skyrim game layer** (in-game client) | Next: choosing between Skyrim Together Reborn and SkyMP. |
+| **Skyrim add-on** (`skyrim/plugin`, a SkyrimPlatform plugin) | Built: fights, nemeses, Vann's hunts, contract board, dead drops, F10 window. Tested against the real server in a simulated game; not yet run in Skyrim. |
 | **Story, character creator, Final Fantasy mechanics** | Planned, on Skyrim. |
 
-You need your own copy of Skyrim Special Edition on PC.
+You need your own copy of Skyrim Special Edition on PC. Co-op runs on
+[Skyrim Together Reborn](https://www.nexusmods.com/skyrimspecialedition/mods/69993); a solo player
+with followers is a company too.
+
+## Install in Skyrim (each company)
+
+1. Skyrim SE/AE **1.6.1170**, with [SKSE](https://skse.silverlock.org/) and
+   [SkyrimPlatform](https://www.nexusmods.com/skyrimspecialedition/mods/54909). For co-op, add
+   Skyrim Together Reborn.
+2. Build the add-on (or take a built copy): `cd skyrim/plugin && npm install && npm run build`.
+3. Copy `skyrim/plugin/dist/Platform` into Skyrim's `Data` folder.
+4. Edit `Data/Platform/Plugins/tristinwold-settings.txt` (plain JSON):
+
+   | Setting | Meaning |
+   |---|---|
+   | `server` | the Tristinwold server's HTTP address, e.g. `http://192.168.1.20:7778` |
+   | `company` | your company's name, shown to everyone |
+   | `password` | the server password, if it has one |
+   | `connect` | `true` on one game per company. In a Skyrim Together party, only the leader connects; set `false` on the others |
+   | `menuKey` | key that opens the Tristinwold window, as a DirectInput scan code (68 = F10) |
+
+5. In game, **F10** opens the board, companies, nemesis roster, dead drops and chronicle. Sleeping
+   advances the shared calendar.
+
+What happens in a fight: when enemies turn on you, the add-on asks the server whether one of them is
+a nemesis. If so, it's renamed, strengthened (Skyrim actor values: health, armor, damage, speed,
+resistances) and given its Final Fantasy statuses (Haste, Protect, Shell, Regen, Reflect), and it
+taunts you. When the fight ends (you go down, they all die, or someone runs), the result goes back
+to the server. Vann can also send a nemesis to hunt you; it spawns out of sight behind you.
+
+**Not yet tested in Skyrim itself**, only against the real server with a simulated game
+(`npm run e2e` in `skyrim/plugin`, with a server running). Things to check on first launch: the
+F10 window opens, a lost fight creates a nemesis, and the same enemy type later shows up renamed.
+SkyrimPlatform and Skyrim Together haven't been confirmed to run together; if they conflict, the
+add-on still works solo.
 
 ## The Nemesis system
 
@@ -87,8 +121,8 @@ set ANTHROPIC_API_KEY=sk-ant-...        (optional: Claude voices Vann; PowerShel
 dotnet run -c Release --project tools/Tristinwold.Server -- --password <something> --campaign tristinwold.json
 ```
 
-It listens on TCP **7777** and saves everything to `tristinwold.json` after every change, so stopping and
-starting it loses nothing. For friends outside your house, forward TCP 7777 on your router to this PC,
+The Skyrim add-on connects over HTTP **7778** (TCP 7777 is for tools). It saves everything to `tristinwold.json` after every change, so stopping and
+starting it loses nothing. For friends outside your house, forward port 7778 on your router to this PC,
 or put everyone on a free [Tailscale](https://tailscale.com) network and use its address.
 
 | Option | Effect |
@@ -118,16 +152,17 @@ nemeses                    living nemeses
 save                       save now
 ```
 
-### Join (each player)
+### Join (each company)
 
-The in-game client comes with the Skyrim game layer.
+See "Install in Skyrim" above. The add-on talks to the server's HTTP port (7778 by default).
 
 ## Build and test
 
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download). Works on Windows or Linux:
 
 ```
-dotnet test
+dotnet test                              # rules, server, HTTP gateway
+cd skyrim/plugin && npm install && npm test && npx tsc --noEmit   # add-on logic and types
 ```
 
 ## Credits
