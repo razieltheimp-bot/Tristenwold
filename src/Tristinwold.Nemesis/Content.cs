@@ -39,23 +39,19 @@ public sealed class NamePack
         ScarEpithets = new()
         {
             [DamageKind.Fire] = ["the Unburnt", "Ash-Skin", "the Charred"],
-            [DamageKind.Ice] = ["Frost-Scarred", "the Thawed"],
-            [DamageKind.Lightning] = ["Storm-Touched", "the Twitching"],
-            [DamageKind.Water] = ["the Drowned", "Who-Came-Back-Wet"],
-            [DamageKind.Holy] = ["the Unhallowed", "Light-Spurner"],
+            [DamageKind.Frost] = ["Frost-Scarred", "the Thawed"],
+            [DamageKind.Shock] = ["Storm-Touched", "the Twitching"],
+            [DamageKind.Sun] = ["the Unhallowed", "Light-Spurner"],
             [DamageKind.Physical] = ["the Stitched", "Many-Scars", "the Unkillable"],
-            [DamageKind.Gravity] = ["the Crushed"],
             [DamageKind.Poison] = ["the Purged"],
         },
         ScarDescriptions = new()
         {
             [DamageKind.Fire] = ["Burn scars cover half its face."],
-            [DamageKind.Ice] = ["Frostbitten patches never healed."],
-            [DamageKind.Lightning] = ["Branching lightning scars run down its back."],
-            [DamageKind.Water] = ["Its lungs rattle with old seawater."],
-            [DamageKind.Holy] = ["A pale brand smoulders on its chest."],
+            [DamageKind.Frost] = ["Frostbitten patches never healed."],
+            [DamageKind.Shock] = ["Branching lightning scars run down its back."],
+            [DamageKind.Sun] = ["A pale brand smoulders on its chest."],
             [DamageKind.Physical] = ["Crude stitches hold a deep wound closed."],
-            [DamageKind.Gravity] = ["Its bones were set crooked after being crushed."],
             [DamageKind.Poison] = ["Its veins show dark under the skin."],
         },
         Taunts = new()
@@ -72,7 +68,11 @@ public sealed class NamePack
     };
 }
 
-/// <summary>The default strengths and weaknesses. Mapped to FFX stats, elements and auto-statuses.</summary>
+/// <summary>
+/// The default strengths and weaknesses, in Skyrim terms: actor-value multipliers, elemental
+/// resistances (Weak = -50%, Resist = +50%, Immune = 100%, Absorb heals) and Final
+/// Fantasy-style statuses the game layer applies as magic effects.
+/// </summary>
 public static class TraitCatalog
 {
     static Trait StatTrait(string id, TraitKind kind, string label, Stat stat, double mult, string? epithet = null) =>
@@ -86,43 +86,43 @@ public static class TraitCatalog
 
     public static IReadOnlyList<Trait> Strengths { get; } =
     [
-        StatTrait("brutal", TraitKind.Strength, "Brutal: hits much harder", Stat.Strength, 1.3, "the Brutal"),
-        StatTrait("ironhide", TraitKind.Strength, "Ironhide: shrugs off blows", Stat.Defense, 1.4, "Iron-Hide"),
-        StatTrait("arcane", TraitKind.Strength, "Arcane: stronger spells", Stat.Magic, 1.35, "the Witch-Eyed"),
-        StatTrait("warded", TraitKind.Strength, "Warded: resists magic", Stat.MagicDefense, 1.4),
-        StatTrait("swift", TraitKind.Strength, "Swift: acts more often", Stat.Agility, 1.25, "the Swift"),
-        StatTrait("elusive", TraitKind.Strength, "Elusive: hard to hit", Stat.Evasion, 1.5, "the Shadow"),
-        StatTrait("deadeye", TraitKind.Strength, "Deadeye: rarely misses", Stat.Accuracy, 1.5),
-        StatTrait("colossal", TraitKind.Strength, "Colossal: huge HP pool", Stat.Hp, 1.5, "the Mountain"),
-        Element("fire_eater", TraitKind.Strength, "Fire-Eater: absorbs fire", DamageKind.Fire, Affinity.Absorb, "Fire-Eater"),
-        Element("frostblood", TraitKind.Strength, "Frostblood: immune to ice", DamageKind.Ice, Affinity.Immune),
-        Element("stormborn", TraitKind.Strength, "Stormborn: absorbs lightning", DamageKind.Lightning, Affinity.Absorb, "Stormborn"),
-        Element("tidecaller", TraitKind.Strength, "Tidecaller: absorbs water", DamageKind.Water, Affinity.Absorb),
-        Auto("mirrored", "Mirrored: spells bounce off (Auto-Reflect)", AutoStatus.Reflect),
-        Auto("bulwark", "Bulwark: Auto-Protect", AutoStatus.Protect),
-        Auto("spellward", "Spellward: Auto-Shell", AutoStatus.Shell),
-        Auto("regenerating", "Regenerating: Auto-Regen", AutoStatus.Regen, "the Undying"),
-        Auto("quickened", "Quickened: Auto-Haste", AutoStatus.Haste),
+        StatTrait("brutal", TraitKind.Strength, "Brutal: hits much harder", Stat.Damage, 1.35, "the Brutal"),
+        StatTrait("ironhide", TraitKind.Strength, "Ironhide: shrugs off blows", Stat.Armor, 1.5, "Iron-Hide"),
+        StatTrait("arcane", TraitKind.Strength, "Arcane: stronger spells", Stat.SpellPower, 1.4, "the Witch-Eyed"),
+        StatTrait("warded", TraitKind.Strength, "Warded: resists magic", Stat.MagicResist, 1.5),
+        StatTrait("swift", TraitKind.Strength, "Swift: fast on its feet", Stat.Speed, 1.25, "the Swift"),
+        StatTrait("tireless", TraitKind.Strength, "Tireless: endless stamina for power attacks", Stat.Stamina, 1.8),
+        StatTrait("deadeye", TraitKind.Strength, "Deadeye: lands critical hits", Stat.CritChance, 2.0),
+        StatTrait("colossal", TraitKind.Strength, "Colossal: huge health pool", Stat.Health, 1.5, "the Mountain"),
+        Element("fire_eater", TraitKind.Strength, "Fire-Eater: fire heals it", DamageKind.Fire, Affinity.Absorb, "Fire-Eater"),
+        Element("frostblood", TraitKind.Strength, "Frostblood: immune to frost", DamageKind.Frost, Affinity.Immune),
+        Element("stormborn", TraitKind.Strength, "Stormborn: shock heals it", DamageKind.Shock, Affinity.Absorb, "Stormborn"),
+        Element("venomblood", TraitKind.Strength, "Venomblood: immune to poison", DamageKind.Poison, Affinity.Immune),
+        Auto("mirrored", "Mirrored: spells bounce off (Reflect)", AutoStatus.Reflect),
+        Auto("bulwark", "Bulwark: Protect, halves weapon damage", AutoStatus.Protect),
+        Auto("spellward", "Spellward: Shell, halves spell damage", AutoStatus.Shell),
+        Auto("regenerating", "Regenerating: Regen, heals over time", AutoStatus.Regen, "the Undying"),
+        Auto("quickened", "Quickened: Haste, attacks faster", AutoStatus.Haste),
     ];
 
     public static IReadOnlyList<Trait> Weaknesses { get; } =
     [
         Element("flammable", TraitKind.Weakness, "Flammable: weak to fire", DamageKind.Fire, Affinity.Weak),
-        Element("brittle", TraitKind.Weakness, "Brittle: weak to ice", DamageKind.Ice, Affinity.Weak),
-        Element("conductive", TraitKind.Weakness, "Conductive: weak to lightning", DamageKind.Lightning, Affinity.Weak),
-        Element("waterlogged", TraitKind.Weakness, "Waterlogged: weak to water", DamageKind.Water, Affinity.Weak),
-        Element("unholy", TraitKind.Weakness, "Unholy: weak to holy", DamageKind.Holy, Affinity.Weak),
-        StatTrait("glass_jaw", TraitKind.Weakness, "Glass Jaw: low defense", Stat.Defense, 0.7),
-        StatTrait("dull_minded", TraitKind.Weakness, "Dull-Minded: low magic defense", Stat.MagicDefense, 0.7),
-        StatTrait("sluggish", TraitKind.Weakness, "Sluggish: slow to act", Stat.Agility, 0.8),
-        StatTrait("clumsy", TraitKind.Weakness, "Clumsy: misses often", Stat.Accuracy, 0.75),
+        Element("brittle", TraitKind.Weakness, "Brittle: weak to frost", DamageKind.Frost, Affinity.Weak),
+        Element("conductive", TraitKind.Weakness, "Conductive: weak to shock", DamageKind.Shock, Affinity.Weak),
+        Element("sun_cursed", TraitKind.Weakness, "Sun-Cursed: weak to sun magic", DamageKind.Sun, Affinity.Weak),
+        Element("frail_blood", TraitKind.Weakness, "Frail Blood: weak to poison", DamageKind.Poison, Affinity.Weak),
+        StatTrait("glass_jaw", TraitKind.Weakness, "Glass Jaw: poor armor", Stat.Armor, 0.6),
+        StatTrait("spell_bare", TraitKind.Weakness, "Spell-Bare: no magic resistance", Stat.MagicResist, 0.3),
+        StatTrait("sluggish", TraitKind.Weakness, "Sluggish: slow on its feet", Stat.Speed, 0.85),
+        StatTrait("winded", TraitKind.Weakness, "Winded: tires quickly", Stat.Stamina, 0.6),
     ];
 
     /// <summary>The resistance a nemesis learns from surviving a kind of death.</summary>
     public static Trait ScarResistance(DamageKind cause, Affinity affinity) => cause == DamageKind.Physical
         ? new($"scar_{cause}".ToLowerInvariant(), TraitKind.Strength, "Scar Tissue: tougher hide",
-            StatMultipliers: new() { [Stat.Defense] = affinity == Affinity.Immune ? 1.5 : 1.25 })
+            StatMultipliers: new() { [Stat.Armor] = affinity == Affinity.Immune ? 1.6 : 1.3 })
         : new($"scar_{cause}".ToLowerInvariant(), TraitKind.Strength,
-            $"Scarred by {cause}: {(affinity == Affinity.Immune ? "immune" : "resists")} {cause.ToString().ToLowerInvariant()}",
+            $"Scarred by {cause}: {(affinity == Affinity.Immune ? "immune to" : "resists")} {cause.ToString().ToLowerInvariant()}",
             Affinities: new() { [cause] = affinity });
 }

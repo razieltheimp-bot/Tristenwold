@@ -1,14 +1,18 @@
 namespace Tristinwold.Nemesis;
 
-/// <summary>Matches FFX's BtlResultId: LOSE=1, WIN=2, PLY_ESCAPE=3, MON_ESCAPE=4.</summary>
+/// <summary>
+/// How a fight ended. Skyrim has no battle screen, so the game layer decides: the player died
+/// (Defeat), every enemy died or fled (Victory / EnemiesEscaped), or the player got away with
+/// enemies still alive (PartyEscaped).
+/// </summary>
 public enum BattleResult { Defeat = 1, Victory = 2, PartyEscaped = 3, EnemiesEscaped = 4 }
 
-/// <summary>One monster in the battle, read from its Chr before the battle unloads.</summary>
+/// <summary>One enemy from the fight. Slot is the game layer's local index for it.</summary>
 public sealed record EnemyReport(
     int Slot,
-    int MonsterId,
+    string Kind,
     string Species,
-    int MaxHp,
+    int MaxHealth,
     bool Killed,
     bool Escaped,
     Guid? NemesisId = null,
@@ -23,22 +27,29 @@ public sealed record BattleReport(
     IReadOnlyList<string> Players,
     int PartyLevel = 1);
 
-/// <summary>A monster slot as the battle is being set up, before stats are applied.</summary>
-public sealed record FormationSlot(int Slot, int MonsterId, string Species);
+/// <summary>An enemy about to fight the player, before any nemesis takes its place.</summary>
+public sealed record FormationSlot(int Slot, string Kind, string Species);
 
-/// <summary>Everything the game layer needs to turn an ordinary monster into a nemesis.</summary>
+/// <summary>Everything the game layer needs to turn an ordinary enemy into a nemesis.</summary>
 public sealed record BattleModifiers(
     string DisplayName,
     IReadOnlyDictionary<Stat, double> StatMultipliers,
     IReadOnlyDictionary<DamageKind, Affinity> Affinities,
     IReadOnlyList<AutoStatus> AutoStatuses)
 {
-    /// <summary>Applies a multiplier to a stat, clamped to what FFX can store.</summary>
-    public int Apply(Stat stat, int baseValue)
+    /// <summary>Applies a multiplier to an actor value, kept inside what Skyrim plays well with.</summary>
+    public double Apply(Stat stat, double baseValue)
     {
-        var mult = StatMultipliers.TryGetValue(stat, out var m) ? m : 1.0;
-        var max = stat switch { Stat.Hp => 99_999_999, Stat.Mp => 9_999_999, _ => 255 };
-        return (int)Math.Clamp(Math.Round(baseValue * mult), 1, max);
+        var value = baseValue * (StatMultipliers.TryGetValue(stat, out var m) ? m : 1.0);
+        return stat switch
+        {
+            Stat.Health or Stat.Magicka or Stat.Stamina => Math.Clamp(Math.Round(value), 1, 100_000),
+            Stat.Speed => Math.Clamp(value, 50, 250),          // SpeedMult: 100 is normal
+            Stat.Armor => Math.Clamp(value, 0, 1000),          // armor rating; 567 is the vanilla cap
+            Stat.MagicResist => Math.Clamp(value, -100, 85),   // percent; 85 is the vanilla cap
+            Stat.CritChance => Math.Clamp(value, 0, 100),
+            _ => Math.Max(0, value),
+        };
     }
 }
 

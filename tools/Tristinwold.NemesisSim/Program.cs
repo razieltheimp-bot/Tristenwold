@@ -10,9 +10,10 @@ var names = args.Length > 2 ? NamePack.Load(args[2]) : NamePack.Default;
 
 string[] players = ["Joe", "Mira", "Dax"];
 string[] areas = ["Outer Ring", "The Docks", "The Needle", "Drowned Chapel", "The Exchange"];
-(int Id, string Name, int Hp)[] species =
+(string Id, string Name, int Hp)[] species =
 [
-    (1, "Giant Rat", 120), (2, "Dock Thug", 300), (3, "Sahagin", 450), (4, "Wraith", 800), (5, "Drake", 1500),
+    ("Skeever", "Giant Skeever", 60), ("Bandit", "Dock Thug", 150), ("Draugr", "Draugr Wight", 300),
+    ("Spriggan", "Spriggan", 450), ("Troll", "Frost Troll", 800),
 ];
 
 var world = new NemesisWorld(seed, names: names);
@@ -32,7 +33,7 @@ for (var b = 1; b <= battles; b++)
 
     var result = dice.NextDouble() switch { < 0.62 => BattleResult.Victory, < 0.8 => BattleResult.Defeat, < 0.93 => BattleResult.PartyEscaped, _ => BattleResult.EnemiesEscaped };
     var enemies = formation.Select(f => new EnemyReport(
-        f.Slot, f.MonsterId, f.Species, species.First(s => s.Id == f.MonsterId).Hp,
+        f.Slot, f.Kind, f.Species, species.First(s => s.Id == f.Kind).Hp,
         Killed: result == BattleResult.Victory,
         Escaped: result == BattleResult.EnemiesEscaped,
         NemesisId: spawns.TryGetValue(f.Slot, out var sp) ? sp.NemesisId : null,

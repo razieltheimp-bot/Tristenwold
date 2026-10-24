@@ -6,7 +6,7 @@ namespace Tristinwold.Shared;
 
 /// <summary>
 /// Everything that crosses the wire, one JSON object per line. Each friend runs their own
-/// FFX with their own party of three; the server only shares the world between them.
+/// game with their own company; the server only shares the world between them.
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 // client -> server

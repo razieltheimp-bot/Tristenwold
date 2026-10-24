@@ -16,7 +16,7 @@ public sealed class NemesisRules
     public int MaxNemesesPerBattle { get; init; } = 2;
 
     public int MaxLevel { get; init; } = 20;
-    public int MaxDisplayNameLength { get; init; } = 20;
+    public int MaxDisplayNameLength { get; init; } = 40;
 
     public double FeudChancePerDay { get; init; } = 0.2;
     public double FeudFightChancePerDay { get; init; } = 0.5;
@@ -68,15 +68,15 @@ public sealed class NemesisWorld
     // ---- Battle setup ----------------------------------------------------------------------
 
     /// <summary>
-    /// Decides which formation slots become nemeses for this battle. A nemesis can only
-    /// replace a monster of its own species, because FFX has the model loaded already.
+    /// Decides which enemies in this fight become nemeses. A nemesis only takes the place of
+    /// an enemy of its own kind, so it looks and fights the way players remember it.
     /// </summary>
     public IReadOnlyList<NemesisSpawn> PlanEncounter(string areaId, IReadOnlyList<FormationSlot> formation, IReadOnlyList<string> players)
     {
         var spawns = new List<NemesisSpawn>();
         var freeSlots = formation.ToList();
         var candidates = Living
-            .Where(n => freeSlots.Any(s => s.MonsterId == n.MonsterId))
+            .Where(n => freeSlots.Any(s => s.Kind == n.Kind))
             .Select(n => (Nemesis: n, Weight: AppearanceWeight(n, areaId, players)))
             .OrderByDescending(c => c.Weight)
             .ToList();
@@ -86,7 +86,7 @@ public sealed class NemesisWorld
             if (spawns.Count >= Rules.MaxNemesesPerBattle) break;
             var chance = Math.Min(0.95, (nemesis.HomeArea == areaId ? Rules.HomeAreaAppearanceChance : Rules.AppearanceChance) * weight);
             if (!_rng.Chance(chance)) continue;
-            var slot = freeSlots.FirstOrDefault(s => s.MonsterId == nemesis.MonsterId);
+            var slot = freeSlots.FirstOrDefault(s => s.Kind == nemesis.Kind);
             if (slot is null) continue;
             freeSlots.Remove(slot);
             spawns.Add(new NemesisSpawn(slot.Slot, nemesis.Id, ModifiersFor(nemesis), Taunt(nemesis, players)));
@@ -115,8 +115,8 @@ public sealed class NemesisWorld
         var level = Math.Min(n.Level, Rules.MaxLevel);
         var stats = Enum.GetValues<Stat>().ToDictionary(s => s, s => s switch
         {
-            Stat.Hp => (1.0 + 0.6 * rank) * (1.0 + 0.08 * (level - 1)),
-            Stat.Mp => 1.0 + 0.3 * rank,
+            Stat.Health => (1.0 + 0.6 * rank) * (1.0 + 0.08 * (level - 1)),
+            Stat.Magicka or Stat.Stamina => 1.0 + 0.3 * rank,
             _ => (1.0 + 0.1 * rank) * (1.0 + 0.03 * (level - 1)),
         });
         var affinities = new Dictionary<DamageKind, Affinity>();
@@ -200,7 +200,7 @@ public sealed class NemesisWorld
         // away itself, gets a name. This is how the roster fills up.
         if (nemesesInBattle.Count == 0)
         {
-            var survivor = report.Enemies.Where(e => !e.Killed).OrderByDescending(e => e.MaxHp).FirstOrDefault();
+            var survivor = report.Enemies.Where(e => !e.Killed).OrderByDescending(e => e.MaxHealth).FirstOrDefault();
             if (survivor is not null)
             {
                 var (rank, memory) = report.Result switch
@@ -303,7 +303,7 @@ public sealed class NemesisWorld
         {
             Id = _rng.NextGuid(),
             Name = MakeName(),
-            MonsterId = enemy.MonsterId,
+            Kind = enemy.Kind,
             Species = enemy.Species,
             Rank = rank,
             Level = Math.Max(1, report.PartyLevel / 5),

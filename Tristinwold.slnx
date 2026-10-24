@@ -1,7 +1,4 @@
 <Solution>
-  <Folder Name="/mods/">
-    <Project Path="mods/Tristinwold.Mod/Tristinwold.Mod.csproj" />
-  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Tristinwold.Nemesis/Tristinwold.Nemesis.csproj" />
     <Project Path="src/Tristinwold.Shared/Tristinwold.Shared.csproj" />

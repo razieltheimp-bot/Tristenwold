@@ -1,6 +1,0 @@
-<Project>
-  <!-- Every mod publishes to artifacts/deploy/mods/<Id>, ready to copy into <game>/fahrenheit/mods. -->
-  <PropertyGroup>
-    <PublishDir>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'artifacts', 'deploy', 'mods', '$(AssemblyName)'))</PublishDir>
-  </PropertyGroup>
-</Project>

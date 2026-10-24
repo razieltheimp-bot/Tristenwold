@@ -121,7 +121,7 @@ public class SharedWorldTests
 
         // Joe's party is wiped in his own game. He can't claim it happened to Mira.
         var report = new BattleReport("The Docks", BattleResult.Defeat,
-            [new EnemyReport(0, 7, "Sahagin", 900, Killed: false, Escaped: false)], Players: ["Mira"]);
+            [new EnemyReport(0, "Draugr", "Draugr Wight", 900, Killed: false, Escaped: false)], Players: ["Mira"]);
         var outs = server.Handle("Joe", new ReportBattle(report));
 
         Assert.Single(To<NemesisEvents>(outs, "Mira"));
@@ -133,7 +133,7 @@ public class SharedWorldTests
 
         // And in Mira's game, that nemesis can show up and taunt her about Joe.
         var spawns = NemesisWorld.FromJson(snapshot.WorldJson, new NemesisRules { AppearanceChance = 1, HomeAreaAppearanceChance = 1 })
-            .PlanEncounter("The Docks", [new FormationSlot(1, 7, "Sahagin")], ["Mira"]);
+            .PlanEncounter("The Docks", [new FormationSlot(1, "Draugr", "Draugr Wight")], ["Mira"]);
         Assert.Contains("Joe", Assert.Single(spawns).Taunt);
     }
 
@@ -155,7 +155,7 @@ public class SharedWorldTests
         server.Connect(Hi("Joe"));
         server.Handle("Joe", new ClaimContract("rats"));
         server.Handle("Joe", new ReportBattle(new BattleReport("Sewers", BattleResult.PartyEscaped,
-            [new EnemyReport(0, 3, "Giant Rat", 200, false, false)], ["Joe"])));
+            [new EnemyReport(0, "Skeever", "Giant Skeever", 200, false, false)], ["Joe"])));
         var path = Path.GetTempFileName();
         server.State.Save(path);
 

@@ -6,16 +6,16 @@ public class NemesisWorldTests
 {
     static readonly string[] Players = ["Joe", "Mira"];
 
-    static EnemyReport Enemy(int slot, int monsterId = 0x1010, string species = "Dingo", int maxHp = 100,
+    static EnemyReport Enemy(int slot, string kind = "Wolf", string species = "Wolf", int maxHp = 100,
         bool killed = false, bool escaped = false, Guid? nemesis = null, DamageKind? blow = null) =>
-        new(slot, monsterId, species, maxHp, killed, escaped, nemesis, blow, killed ? "Joe" : null);
+        new(slot, kind, species, maxHp, killed, escaped, nemesis, blow, killed ? "Joe" : null);
 
     static BattleReport Report(BattleResult result, params EnemyReport[] enemies) =>
-        new("besaid", result, enemies, Players, PartyLevel: 10);
+        new("Riverwood", result, enemies, Players, PartyLevel: 10);
 
-    static Nemesis BirthCaptain(NemesisWorld world, int monsterId = 0x1010)
+    static Nemesis BirthCaptain(NemesisWorld world, string kind = "Wolf")
     {
-        world.RecordBattle(Report(BattleResult.Defeat, Enemy(0, monsterId, maxHp: 50), Enemy(1, monsterId, maxHp: 300)));
+        world.RecordBattle(Report(BattleResult.Defeat, Enemy(0, kind, kind, maxHp: 50), Enemy(1, kind, kind, maxHp: 300)));
         return world.Living.Last();
     }
 
@@ -63,17 +63,17 @@ public class NemesisWorldTests
     public void Nemeses_only_replace_monsters_of_their_own_species()
     {
         var world = new NemesisWorld(3, new NemesisRules { AppearanceChance = 1, HomeAreaAppearanceChance = 1 });
-        var n = BirthCaptain(world, monsterId: 0x1010);
+        var n = BirthCaptain(world, kind: "Wolf");
 
-        var none = world.PlanEncounter("besaid", [new FormationSlot(0, 0x1020, "Condor")], Players);
+        var none = world.PlanEncounter("Riverwood", [new FormationSlot(0, "Bandit", "Bandit")], Players);
         Assert.Empty(none);
 
-        var plan = world.PlanEncounter("besaid",
-            [new FormationSlot(0, 0x1020, "Condor"), new FormationSlot(2, 0x1010, "Dingo")], Players);
+        var plan = world.PlanEncounter("Riverwood",
+            [new FormationSlot(0, "Bandit", "Bandit"), new FormationSlot(2, "Wolf", "Wolf")], Players);
         var spawn = Assert.Single(plan);
         Assert.Equal(2, spawn.Slot);
         Assert.Equal(n.Id, spawn.NemesisId);
-        Assert.True(spawn.Modifiers.StatMultipliers[Stat.Hp] > 1.0);
+        Assert.True(spawn.Modifiers.StatMultipliers[Stat.Health] > 1.0);
         Assert.NotNull(spawn.Taunt);
         Assert.DoesNotContain("{player}", spawn.Taunt);
     }
@@ -89,7 +89,7 @@ public class NemesisWorldTests
 
         Assert.Equal(Rank.Overlord, n.Rank);
         Assert.Contains(promotions, e => e.Kind == WorldEventKind.Promoted && e.Text.Contains("Warchief"));
-        Assert.True(world.ModifiersFor(n).StatMultipliers[Stat.Hp] > 3.0);
+        Assert.True(world.ModifiersFor(n).StatMultipliers[Stat.Health] > 3.0);
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class NemesisWorldTests
             {
                 sawDeath = true;
                 Assert.Contains(events, e => e.Kind == WorldEventKind.Slain);
-                Assert.Empty(world.PlanEncounter("besaid", [new FormationSlot(0, 0x1010, "Dingo")], Players));
+                Assert.Empty(world.PlanEncounter("Riverwood", [new FormationSlot(0, "Wolf", "Wolf")], Players));
             }
             else
             {
@@ -129,7 +129,7 @@ public class NemesisWorldTests
         {
             var world = new NemesisWorld(seed);
             var a = BirthCaptain(world);
-            var b = BirthCaptain(world, monsterId: 0x1020);
+            var b = BirthCaptain(world, kind: "Bandit");
             a.BloodBrother = b.Id;
             b.BloodBrother = a.Id;
             world.RecordBattle(Report(BattleResult.Victory, Enemy(0, killed: true, nemesis: a.Id)));
@@ -146,16 +146,16 @@ public class NemesisWorldTests
     public void Save_and_load_round_trips_the_whole_world_including_the_dice()
     {
         var world = new NemesisWorld(5, new NemesisRules { AppearanceChance = 0.5 });
-        for (var i = 0; i < 5; i++) BirthCaptain(world, 0x1010 + i);
+        for (var i = 0; i < 5; i++) BirthCaptain(world, $"Kind{i}");
         world.AdvanceDay();
 
         var json = world.ToJson();
         var copy = NemesisWorld.FromJson(json, world.Rules);
         Assert.Equal(json, copy.ToJson());
 
-        FormationSlot[] formation = [new(0, 0x1010, "a"), new(1, 0x1011, "b"), new(2, 0x1012, "c")];
-        var p1 = world.PlanEncounter("besaid", formation, Players).Select(s => (s.Slot, s.NemesisId));
-        var p2 = copy.PlanEncounter("besaid", formation, Players).Select(s => (s.Slot, s.NemesisId));
+        FormationSlot[] formation = [new(0, "Kind0", "a"), new(1, "Kind1", "b"), new(2, "Kind2", "c")];
+        var p1 = world.PlanEncounter("Riverwood", formation, Players).Select(s => (s.Slot, s.NemesisId));
+        var p2 = copy.PlanEncounter("Riverwood", formation, Players).Select(s => (s.Slot, s.NemesisId));
         Assert.Equal(p1, p2);
     }
 
@@ -168,8 +168,8 @@ public class NemesisWorldTests
             var world = new NemesisWorld(11);
             for (var i = 0; i < 20; i++)
             {
-                var n = BirthCaptain(world, 0x1000 + i % 4);
-                world.RecordBattle(Report(BattleResult.Victory, Enemy(0, n.MonsterId, killed: true, nemesis: n.Id)));
+                var n = BirthCaptain(world, $"Kind{i % 4}");
+                world.RecordBattle(Report(BattleResult.Victory, Enemy(0, n.Kind, killed: true, nemesis: n.Id)));
                 world.AdvanceDay();
             }
             return world.ToJson();
@@ -185,13 +185,13 @@ public class NemesisWorldTests
         var rng = new Rng(99);
         for (var day = 0; day < 300; day++)
         {
-            var monster = 0x1000 + rng.Next(12);
-            var living = world.Living.Where(n => n.MonsterId == monster).ToList();
+            var monster = $"Kind{rng.Next(12)}";
+            var living = world.Living.Where(n => n.Kind == monster).ToList();
             var nemesis = living.Count > 0 && rng.Chance(0.5) ? living[0].Id : (Guid?)null;
             var result = (BattleResult)(1 + rng.Next(4));
             world.RecordBattle(Report(result,
                 Enemy(0, monster, killed: result == BattleResult.Victory, escaped: result == BattleResult.EnemiesEscaped,
-                    nemesis: nemesis, blow: (DamageKind)rng.Next(8))));
+                    nemesis: nemesis, blow: (DamageKind)rng.Next(6))));
             world.AdvanceDay();
 
             Assert.True(world.Living.Count(n => n.Rank == Rank.Overlord) <= 1);
@@ -206,22 +206,23 @@ public class NemesisWorldTests
     }
 
     [Fact]
-    public void Modifiers_clamp_to_what_ffx_can_store()
+    public void Modifiers_stay_inside_what_skyrim_plays_well_with()
     {
-        var mods = new BattleModifiers("X", new Dictionary<Stat, double> { [Stat.Strength] = 10, [Stat.Hp] = 0 },
+        var mods = new BattleModifiers("X", new Dictionary<Stat, double> { [Stat.MagicResist] = 10, [Stat.Health] = 0, [Stat.Speed] = 9 },
             new Dictionary<DamageKind, Affinity>(), []);
-        Assert.Equal(255, mods.Apply(Stat.Strength, 200));
-        Assert.Equal(1, mods.Apply(Stat.Hp, 5000));
-        Assert.Equal(40, mods.Apply(Stat.Magic, 40));
+        Assert.Equal(85, mods.Apply(Stat.MagicResist, 30));   // Skyrim's resistance cap
+        Assert.Equal(1, mods.Apply(Stat.Health, 5000));       // never kill it outright
+        Assert.Equal(250, mods.Apply(Stat.Speed, 100));
+        Assert.Equal(40, mods.Apply(Stat.SpellPower, 40));
     }
 
     [Fact]
-    public void Display_names_fit_the_game_name_buffer()
+    public void Display_names_stay_short()
     {
         var world = new NemesisWorld(7, new NemesisRules { MaxDisplayNameLength = 12 });
         for (var i = 0; i < 30; i++)
         {
-            var n = BirthCaptain(world, 0x1000 + i);
+            var n = BirthCaptain(world, $"Kind{i}");
             Assert.True(world.DisplayName(n).Length <= 12);
         }
     }

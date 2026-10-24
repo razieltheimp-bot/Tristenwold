@@ -19,20 +19,25 @@ public enum Memory
     Avenger = 1 << 6,          // swore revenge for a slain blood-brother
 }
 
-/// <summary>Damage families that leave scars and teach resistances.</summary>
-public enum DamageKind { Physical, Fire, Ice, Lightning, Water, Holy, Gravity, Poison, Unknown }
+/// <summary>Skyrim's damage families, which leave scars and teach resistances (Sun is Dawnguard's anti-undead magic).</summary>
+public enum DamageKind { Physical, Fire, Frost, Shock, Poison, Sun, Unknown }
 
-public enum Stat { Hp, Mp, Strength, Defense, Magic, MagicDefense, Agility, Luck, Evasion, Accuracy }
+/// <summary>
+/// Multipliers the game layer applies to Skyrim actor values: Health/Magicka/Stamina pools,
+/// AttackDamageMult (Damage), DamageResist (Armor), MagicResist, SpeedMult (Speed), spell
+/// magnitude (SpellPower) and CritChance.
+/// </summary>
+public enum Stat { Health, Magicka, Stamina, Damage, Armor, MagicResist, Speed, SpellPower, CritChance }
 
 public enum Affinity { Weak, Normal, Resist, Immune, Absorb }
 
-/// <summary>Auto-statuses the game layer can grant at battle start.</summary>
-public enum AutoStatus { Haste, Protect, Shell, Regen, Reflect, NulTide, NulBlaze, NulShock, NulFrost }
+/// <summary>Final Fantasy-style statuses a nemesis starts each fight with, applied as Skyrim magic effects.</summary>
+public enum AutoStatus { Haste, Protect, Shell, Regen, Reflect }
 
 public enum TraitKind { Strength, Weakness }
 
 /// <summary>
-/// A strength or weakness. Effects are deliberately plain data so the FFX layer
+/// A strength or weakness. Effects are deliberately plain data so the game layer
 /// can apply them without knowing which trait they came from.
 /// </summary>
 public sealed record Trait(
@@ -63,8 +68,13 @@ public sealed class Nemesis
     public required string Name { get; set; }
     public string? Epithet { get; set; }
 
-    /// <summary>Game monster id (FFX m### / battle monster index).</summary>
-    public required int MonsterId { get; init; }
+    /// <summary>
+    /// What kind of Skyrim actor this is, as the game layer identifies it (an actor base or
+    /// leveled-list editor ID such as "LvlBanditMelee1H"). A nemesis only takes the place of
+    /// the same kind, or is spawned as one.
+    /// </summary>
+    public required string Kind { get; init; }
+    /// <summary>What players see: "Bandit Chief", "Draugr Deathlord".</summary>
     public required string Species { get; init; }
 
     public Rank Rank { get; set; } = Rank.Captain;

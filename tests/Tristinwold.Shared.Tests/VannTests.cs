@@ -99,7 +99,7 @@ public class VannTests
         server.Handle("Joe", new ClaimContract("brother"));
         server.Handle("Joe", new FinishContract("brother")); // Joe now travels with his saved man
         server.Handle("Joe", new ReportBattle(new BattleReport("The Docks", BattleResult.Defeat,
-            [new EnemyReport(0, 7, "Sahagin", 900, false, false)], ["Joe"])));
+            [new EnemyReport(0, "Draugr", "Draugr Wight", 900, false, false)], ["Joe"])));
 
         Assert.Empty(server.Tick()); // first tick only schedules
         var schemes = new List<Outgoing>();
