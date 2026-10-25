@@ -258,6 +258,35 @@ Out past the safe country (`src/Tristinwold.World/Wildlife.cs`; bodies in `game/
 Kipines and both kinds of ape sometimes have young with them: find one alone and you can raise it. Imps never.
 `--shots ./shots --wild` takes their portraits.
 
+### Loot, gear, trades and the market
+
+(`src/Tristinwold.Gameplay/Items.cs` and `Trade.cs`, `src/Tristinwold.World/Herbs.cs`; in the game `Trading.cs`,
+`Wardrobe.cs`, `Market.cs`.)
+
+- **Loot.** Everything you kill leaves what it would: wolves their pelts and fangs, bears their pelts and claws,
+  deer hides and antlers, goblins scrap iron and trinkets, the dead bone dust and old coins, kipines feathers and
+  the shiny things they hoarded. **Dragons** leave an armful of their scales (in their colour), dragon bone, often
+  their heart, and a pile of gold. A **lair's hoard** adds its boss's trophy and, the first time (and now and then
+  after), a piece of gear you can't get anywhere else: the Goblin King's crown, the Warden's cinder axe, the
+  Hollow Legion's shield, the Duskprowler's mantle, an amethyst staff, a stormcaller's staff. A roaming nemesis
+  carries the best of its lair.
+- **The pack (I).** See what you carry, wear gear and drink potions; **H** drinks your best healing potion.
+- **Gear you can see.** Weapons, shields, helms and hats, body armour and cloaks. Every adventurer shares one
+  skeleton, so any class can wear any of it: a knight's helmet on a wizard, a barbarian's greataxe on a ranger.
+  Steel shines, dragonbone is pale, dragonscale armour takes its dragon's colour, the cinder axe glows with embers.
+  Two-handed weapons take both hands (and swing like it).
+- **Herbalism.** Herbs grow wild by the kind of land (emberleaf and lady's mantle in the autumn woods, bluebells
+  and ghostcap under the pines, reeds and nightshade in the marsh, snowberry and frostbloom in the north, thistle
+  and silverthorn on the crags); pick them (E) and they grow back in twelve minutes of play. Brew healing,
+  magicka, stamina, might and warding potions with an alchemist's kit or at Old Saffron's bench. The better you
+  get, the more you pick and the more you can brew.
+- **Smithing.** At Hulda Ironhand's forge: smelt scrap into iron and iron with coal into steel, tan hides into
+  leather, and forge iron, steel and in the end dragonbone weapons and dragonscale armour, and cloaks and armour
+  from what the wilds leave you.
+- **The market** on the Gallows Perch road, right where you start: Hollis's Provisions (food, meat for your
+  beasts, cloth, leather, coal, a kit), the Anvil Gate (Hulda's smithy: ingots and iron gear), and Saffron's
+  Remedies (potions, herbs, wands and staves). Every shopkeeper buys anything at half what it's worth.
+
 ### Companions
 
 - **Younglings.** About a third of the herds and packs in the wilds have young with them: wolf pups, bear cubs,
