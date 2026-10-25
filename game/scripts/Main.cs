@@ -360,6 +360,46 @@ public partial class Main : Node3D
     {
         if (_hud is not null) _hud.Toast($"Play from your phone: {link}", 30);
         RemoteLabel("RemoteLink", 4).Text = $"Phone link: {link}";
+        ShowRemoteQr(link);
+    }
+
+    /// <summary>
+    /// The phone link as a QR code in the corner of this computer's screen: point the iPhone's camera at it and tap
+    /// the link that pops up, no Telegram needed. It steps aside while a phone is playing.
+    /// </summary>
+    void ShowRemoteQr(string link)
+    {
+        var layer = GetNodeOrNull<CanvasLayer>("RemoteLayer");
+        if (layer is null) return;
+        layer.GetNodeOrNull("RemoteQr")?.Free();
+        using var generator = new QRCoder.QRCodeGenerator();
+        var modules = generator.CreateQrCode(link, QRCoder.QRCodeGenerator.ECCLevel.M).ModuleMatrix;
+        var n = modules.Count;
+        var image = Image.CreateEmpty(n, n, false, Image.Format.Rgb8);
+        for (var y = 0; y < n; y++)
+            for (var x = 0; x < n; x++)
+                image.SetPixel(x, y, modules[y][x] ? Colors.Black : Colors.White);
+        var box = new VBoxContainer { Name = "RemoteQr" };
+        box.SetAnchorsPreset(Control.LayoutPreset.TopRight);
+        (box.OffsetLeft, box.OffsetTop, box.OffsetRight) = (-250, 236, -24);
+        box.AddChild(new TextureRect
+        {
+            Texture = ImageTexture.CreateFromImage(image), CustomMinimumSize = new Vector2(226, 226),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale, TextureFilter = CanvasItem.TextureFilterEnum.Nearest,
+        });
+        box.AddChild(new Label
+        {
+            Text = "Scan with the iPhone's camera", HorizontalAlignment = HorizontalAlignment.Center,
+            LabelSettings = new LabelSettings { FontSize = 14, OutlineSize = 4, OutlineColor = Colors.Black },
+        });
+        layer.AddChild(box);
+        box.Visible = RemotePlay.Current is not { Viewers: > 0 };
+    }
+
+    /// <summary>The QR code steps aside while a phone is playing, and comes back when none is.</summary>
+    public void RemoteQrVisible(bool visible)
+    {
+        if (GetNodeOrNull<CanvasLayer>("RemoteLayer")?.GetNodeOrNull<Control>("RemoteQr") is { } qr) qr.Visible = visible;
     }
 
     readonly List<string> _remoteNotes = [];
@@ -373,17 +413,27 @@ public partial class Main : Node3D
         RemoteLabel("RemoteNotes", 24).Text = string.Join("\n", _remoteNotes);
     }
 
+    /// <summary>A line of remote play's at the bottom of the screen, clear of the bars, the map and the buttons.</summary>
     Label RemoteLabel(string name, float y)
     {
         var layer = GetNodeOrNull<CanvasLayer>("RemoteLayer");
         if (layer is null) AddChild(layer = new CanvasLayer { Layer = 100, Name = "RemoteLayer" });
-        if (layer.GetNodeOrNull<Label>(name) is { } label) return label;
+        var box = layer.GetNodeOrNull<VBoxContainer>("RemoteLines");
+        if (box is null)
+        {
+            box = new VBoxContainer { Name = "RemoteLines", GrowVertical = Control.GrowDirection.Begin, GrowHorizontal = Control.GrowDirection.Both, MouseFilter = Control.MouseFilterEnum.Ignore };
+            box.SetAnchorsPreset(Control.LayoutPreset.CenterBottom);
+            (box.OffsetTop, box.OffsetBottom) = (-8, -8);
+            layer.AddChild(box);
+        }
+        if (box.GetNodeOrNull<Label>(name) is { } label) return label;
         label = new Label
         {
-            Name = name, Position = new Vector2(12, y), Modulate = new Color(1, 1, 1, 0.75f),
-            LabelSettings = new LabelSettings { FontSize = 14, OutlineSize = 4, OutlineColor = Colors.Black },
+            Name = name, Modulate = new Color(1, 1, 1, 0.8f), HorizontalAlignment = HorizontalAlignment.Center,
+            LabelSettings = new LabelSettings { FontSize = 13, OutlineSize = 4, OutlineColor = Colors.Black },
         };
-        layer.AddChild(label);
+        box.AddChild(label);
+        if (name == "RemoteLink") box.MoveChild(label, -1); // the link last, at the very bottom
         return label;
     }
 

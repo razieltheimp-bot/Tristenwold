@@ -17,7 +17,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
     Tunnel? _tunnel;
     Telegram? _telegram;
     double _since;
-    bool _typing;
+    bool _typing, _watched;
 
     /// <summary>The longest side of the pictures sent to the phone, in pixels.</summary>
     public int Width { get; set; } = 1024;
@@ -76,6 +76,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
     {
         if (_screen is null) return;
         while (_screen.Input.TryDequeue(out var json)) Handle(json);
+        if ((_screen.Viewers > 0) != _watched) { _watched = _screen.Viewers > 0; Main.RemoteQrVisible(!_watched); }
 
         var typing = GetViewport().GuiGetFocusOwner() is LineEdit or TextEdit;
         if (typing != _typing && _screen.Viewers > 0) _screen.Tell(typing ? """{"keyboard":true}""" : """{"keyboard":false}""");

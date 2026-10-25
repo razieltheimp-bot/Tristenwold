@@ -73,7 +73,8 @@ app. The ⌨ button on the left opens the phone's keyboard for typing names and 
 with `--account`, `--secret` and `--server` so there's nothing to type). A Bluetooth keyboard plays with the
 usual keys. The `k=` part of the link is its key: only people with the whole link can watch or play.
 
-`--login-server 127.0.0.1:7777` makes the phone land on the login page with that server already filled in
+The game window also shows the link as a QR code (it steps aside while a phone is playing): point the
+iPhone's camera at it and tap the link, no Telegram needed. `--login-server 127.0.0.1:7777` makes the phone land on the login page with that server already filled in
 (the Windows download's `Play from iPhone.bat` does this for the server on the same PC). The link changes
 each time the game starts; the new one is posted to Telegram again, so the chat always has the current one.
 The game has no console window, so what remote play has to say (the tunnel, Telegram) shows in the top
@@ -172,6 +173,24 @@ one when you make a character; learn another later from its teacher at the guild
 
 Kills and jobs bring experience. Each level adds health, magicka and stamina and a skill point; spend points (K)
 to rank a move up to 5, each rank 15% stronger. Joining another class gives the points back.
+
+**Limit breaks.** The gold bar under stamina fills as you fight (hits taken and given); when it's full a toast
+says so, and R (Limit on a phone) lets it go: a pillar of light and a shockwave in the class's colour, the
+world slowing for a heartbeat, the camera shaking, and the move's name across the screen. What each does:
+Hundred Fists, eight blows in a heartbeat on the foe in front; Whirlwind, a spin striking everything around
+you, hard; Divine Judgement, sunfire on every foe around you and every companion healed whole; Rain of Bolts,
+a storm of bolts on your target and everything near it; Grand Heist, a strike on every foe around you and
+their purses emptied; Death Mark, one foe, one blow of terrible force; Meteor, a falling star on your target
+and all around it; Soul Harvest, every foe around you drained at once; Dragonfire, fire poured over
+everything in front of you.
+
+**Your look.** On the character page a hero's look is picked apart from their class. Their head, body, arms
+and legs can each come from any of the nine KayKit figures (knight, barbarian, mage, rogue, hooded rogue and
+four skeletons: they share one skeleton, so any mix stands and moves), with something on the head (a knight's
+helmet, horned hat, wizard's hat, an old war helm, a ragged hood, a lich's hat), clothes and skin colours and
+a height. They turn on a little stage as you step through the choices; "Surprise me" throws a look together,
+"Class look" puts the class's own back. The class decides only what they carry. Characters already made have
+a Look button. Gear worn over it (a helm, armour) still shows.
 
 ### The guilds
 
@@ -308,6 +327,16 @@ Kipines and both kinds of ape sometimes have young with them: find one alone and
   name (level 3), ask one to follow you, with 25 septims to their family: a warrior's squire, a mage's
   apprentice, a rogue's protege. They grow up at your side and learn Shield Bash and Battle Cry, or Firebolt,
   Mend and Ward.
+- **Wren's Menagerie.** At the end of the market row by the Gallows Perch, Wren Halloway sells young beasts
+  she raised by hand, tame already: a fox kit or fawn (25 septims) up to a troll whelp (1155), with skeever
+  kits, hawk chicks, mudcrab hatchlings, wolf and ice wolf pups, boarlets, goblin and deathcrest whelps,
+  winged ape infants, spriggan saplings, bear cubs and kipine chicks between. The price goes by how
+  dangerous it grows up (danger, 1 to 5) and how hard it is to train (training, 1 to 5). Never a dragon: a
+  dragon has to be found as an egg and hatched. She sells meat too, and tells you how taming works.
+- **Beast taming** is a trade, like herbalism and smithing: taming a youngling in the wild, buying one from
+  Wren, feeding your beasts and their levelling up all teach it. Each level past the first makes a wild
+  youngling 3% likelier to take to you, your beasts learn 5% faster, and Wren charges 3% less. It shows in
+  your pack (I).
 - Up to four follow you at once; the rest wait at the Gallows Perch. A companion knocked down gets up when the
   fight is over, and resting heals them all.
 

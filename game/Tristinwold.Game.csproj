@@ -13,4 +13,7 @@
     <ProjectReference Include="../src/Tristinwold.World/Tristinwold.World.csproj" />
     <ProjectReference Include="../src/Tristinwold.Shared/Tristinwold.Shared.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
 </Project>
