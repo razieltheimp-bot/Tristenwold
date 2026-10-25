@@ -32,13 +32,14 @@ public static class IceRidge
     ];
 
     /// <param name="corrupt">Rift-blighted ice: violet-black, glowing within.</param>
-    public static void Grow(Node3D model, bool corrupt = false)
+    /// <param name="amethyst">Not ice at all but amethyst, grown through a basilisk from the cave it sleeps in.</param>
+    public static void Grow(Node3D model, bool corrupt = false, bool amethyst = false)
     {
         if (model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is not { } skeleton) return;
         var hide = Hide(model, skeleton);
         if (hide.Length == 0) return;
         var rng = new RandomNumberGenerator();
-        var ice = Material(corrupt);
+        var ice = amethyst ? Amethyst() : Material(corrupt);
 
         var tail = skeleton.FindBone("tail1") is var t1 and >= 0 && skeleton.FindBone("neck2") is var n2 and >= 0
             ? (skeleton.GetBoneGlobalRest(t1).Origin - skeleton.GetBoneGlobalRest(n2).Origin) with { Y = 0 }
@@ -128,6 +129,15 @@ public static class IceRidge
         if (Next.TryGetValue(name, out var next) && skeleton.FindBone(next) is var b and >= 0) return skeleton.GetBoneGlobalRest(b).Origin;
         return rest.Origin + rest.Basis.Y.Normalized() * 0.1f;
     }
+
+    /// <summary>Violet crystal, lit from within.</summary>
+    static StandardMaterial3D Amethyst() => new()
+    {
+        VertexColorUseAsAlbedo = true, AlbedoColor = new Color(0.66f, 0.42f, 0.95f, 0.9f),
+        Transparency = BaseMaterial3D.TransparencyEnum.Alpha, DepthDrawMode = BaseMaterial3D.DepthDrawModeEnum.Always,
+        Roughness = 0.05f, MetallicSpecular = 1f, RimEnabled = true, Rim = 0.8f, RimTint = 0.5f,
+        EmissionEnabled = true, Emission = new Color("#9a50ff"), EmissionEnergyMultiplier = 0.8f,
+    };
 
     /// <summary>Pale, glassy, see-through ice that glints at its edges.</summary>
     static StandardMaterial3D Material(bool corrupt) => new()

@@ -34,6 +34,7 @@ public partial class Main : Node3D
     EncounterTracker _tracker = null!;
     IGameLink? _client;
     string _area = "", _sentArea = "", _savePath = "";
+    string? _nemesisJson;
     double _clock, _lastRespawnCheck, _lastReveal, _lastPlaces, _lastSave;
     readonly Dictionary<Lair, List<Enemy>> _lairs = [];
     readonly List<Person> _townsfolk = [];
@@ -275,8 +276,14 @@ public partial class Main : Node3D
         _places.Gone = id => _bonds.Any(b => b.Id == id);
         AddGuildMasters();
         AddGuilds();
-        _crypt = new Crypt(this, Raids.AshenCrypt);
-        AddChild(_crypt);
+        foreach (var raid in Raids.All)
+        {
+            var lair = new RaidLair(this, raid);
+            _raidLairs.Add(lair);
+            AddChild(lair);
+        }
+        _roamers = new Roamers(this);
+        AddChild(_roamers);
         SetUpCompany();
         _hud.AttachMap(_world, _explored, () => _player.GlobalPosition, () => -_player.GlobalTransform.Basis.Z, QuestGoals);
 
@@ -293,7 +300,7 @@ public partial class Main : Node3D
         if (TouchMode) EnableTouch();
         Connect();
         if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
-        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid")));
+        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid"), lairs: _args.TryGetValue("lairs", out var lairs) ? lairs : null));
         else _hud.Toast($"Tristinwold. You are a {_player.Class.Name}. M: map   J: journal   E: talk   K: skills   P: party   F10: the shared world");
     }
 
@@ -378,6 +385,7 @@ public partial class Main : Node3D
                 foreach (var spawn in a.Spawns)
                 {
                     if (_tracker.ActorForSlot(spawn.Slot) is not { } id || FindEnemy(id) is not { } e) continue;
+                    if (Raids.All.Any(r => r.BossKind == e.Kind.Id) && !e.Named) continue; // a lair's boss is a nobody until it beats someone
                     e.MakeNemesis(spawn.NemesisId, spawn.Modifiers, spawn.Taunt);
                     _tracker.MarkNemesis(spawn.Slot, spawn.NemesisId);
                     _hud.Toast(spawn.Taunt is null ? $"{e.Stats.Name} is here." : $"{e.Stats.Name}: \"{spawn.Taunt}\"");
@@ -398,8 +406,15 @@ public partial class Main : Node3D
             case Reward r: _player.Septims += r.Gil / 100; _hud.Toast($"Contract paid: {r.Gil / 100} septims."); break;
             case Board b: _hud.ShowBoard(b.Contracts); break;
             case Roster r: _hud.ShowCompanies(r.Groups); break;
-            case NemesisSnapshot s: _hud.ShowNemeses(s.WorldJson); break;
-            case NemesisEvents e: foreach (var ev in e.Events) _hud.Log(ev.Text); break;
+            case NemesisSnapshot s: _hud.ShowNemeses(s.WorldJson); _nemesisJson = s.WorldJson; break;
+            case NemesisEvents e:
+                foreach (var ev in e.Events)
+                {
+                    _hud.Log(ev.Text);
+                    if (ev.Kind == WorldEventKind.Born && _nemesisJson is { } json && NemesisWorld.FromJson(json).Find(ev.NemesisId) is { } born) _roamers.Named(born);
+                    if (ev.Kind == WorldEventKind.CheatedDeath) _roamers.CheatedDeath(ev.NemesisId);
+                }
+                break;
             case Drops d: foreach (var note in d.Notes) _hud.Toast($"A hidden note from {note.From}: \"{note.Text}\""); break;
             case KeystoneRevealed k: _hud.Toast($"{k.Character} of {k.Player}'s company is a Keystone."); break;
         }
@@ -456,7 +471,9 @@ public partial class Main : Node3D
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
         _hud.Update(_player, _area, TouchMode ? status : status + $"    M: map   J: journal   E: talk   K: skills   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(Dragon is { Rideable: true } ? "   V: ride" : "")}");
         var saga = _saga.Objective(Dragon) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
-        if (_crypt.Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
+        // The nearest lair that suits the hero, and the nearest nemesis out roaming.
+        if (Raids.For(_player.Hero.Level, pos.X, pos.Z).FirstOrDefault() is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
+        if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
     }
@@ -476,7 +493,8 @@ public partial class Main : Node3D
     }
 
     IEnumerable<(double X, double Z)> QuestGoals() => _journal.Open.Select(e => e.Goal).Concat(_saga.Goal(Dragon) is { } g ? [g] : [])
-        .Concat(!Raids.Outgrown(Raids.AshenCrypt, _player.Hero.Level) && _raids.Ready(Raids.AshenCrypt, _guilds.PlaySeconds) ? [(Raids.AshenCrypt.X, Raids.AshenCrypt.Z)] : []);
+        .Concat(Raids.For(_player.Hero.Level, 0, 0).Where(r => _raids.Ready(r, _guilds.PlaySeconds)).Select(r => (r.X, r.Z)))
+        .Concat(_roamers.Spots);
 
     /// <summary>Resting: the world moves on, the wounded mend, and an egg kept warm by the fire hatches.</summary>
     void Rest()
@@ -505,7 +523,7 @@ public partial class Main : Node3D
         var pos = _player.GlobalPosition;
         var person = _places.People.Concat(_townsfolk).Where(p => p.GlobalPosition.DistanceTo(pos) < 3.5f).MinBy(p => p.GlobalPosition.DistanceTo(pos));
         if (person is not null) return ($"talk to {person.Npc.Name}", () => Talk(person));
-        var item = _places.Pickups.Append(_nest).Append(_crypt.Hoard).OfType<Pickup>().Where(p => IsInstanceValid(p) && p.GlobalPosition.DistanceTo(pos) < 3).FirstOrDefault();
+        var item = _places.Pickups.Append(_nest).Concat(_raidLairs.Select(l => l.Hoard)).OfType<Pickup>().Where(p => IsInstanceValid(p) && p.GlobalPosition.DistanceTo(pos) < 3).FirstOrDefault();
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(_player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
         return null;
@@ -598,14 +616,14 @@ public partial class Main : Node3D
 
     public void PickUp(Pickup item)
     {
-        if (item == _crypt.Hoard)
+        if (_raidLairs.FirstOrDefault(l => l.Hoard == item) is { } lair)
         {
-            var first = _raids.Clears.Count == 0;
-            var (xp, septims) = _crypt.Loot();
+            var raid = lair.Raid;
+            var (xp, septims, first) = lair.Loot();
             _player.Septims += septims;
-            _hud.Toast($"The Warden's hoard: {septims} septims, old crowns of the Old Kings, and the ash of a man who kept his oath too long. (+{xp} experience) {Raids.AshenCrypt.Name} will rekindle in {Raids.AshenCrypt.CooldownSeconds / 60:0} minutes.", 12);
+            _hud.Toast($"{char.ToUpperInvariant(raid.Hoard[0])}{raid.Hoard[1..]}: {septims} septims, {raid.HoardHolds}. (+{xp} experience{(first ? ", double for the first time" : "")}) {char.ToUpperInvariant(raid.Name[0])}{raid.Name[1..]} will wake again in {raid.CooldownSeconds / 60:0} minutes.", 12);
             GainXp(xp);
-            if (first && !_guilds.Titles.Contains("Warden-Breaker")) { _guilds.Titles.Add("Warden-Breaker"); _hud.Toast("You are Warden-Breaker.", 8); }
+            if (first && !_guilds.Titles.Contains(raid.Title)) { _guilds.Titles.Add(raid.Title); _hud.Toast($"You are {raid.Title}.", 8); }
             Save();
             return;
         }

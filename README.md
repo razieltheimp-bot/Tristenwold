@@ -195,25 +195,48 @@ leader, a teacher for each of its three classes, members with their own stories,
   for a council seat, and what Sister Ilse keeps on a shelf that isn't on any list. Each choice changes how the
   guild sees you, how your rival burns, and what people say about you after; some are settled with a duel.
 
-### The Ashen Crypt (a raid for low-level heroes)
+### Lairs and raids: mini bosses in the wilds
 
-West of Tristinwold, past the Iron Circle's yard, a scorched ring of broken pillars stands around a sarcophagus,
-torches burning that never go out and mist on the ground (`src/Tristinwold.World/Raids.cs`, `game/scripts/Crypt.cs`).
-A warden of the Old Kings was burned alive there defending the royal dead, and he never stopped defending them.
+Nine lairs stand out in the wilds, each with a mini boss and its own that come at you first
+(`src/Tristinwold.World/Raids.cs`; the places in `game/scripts/LairSites.cs`, the fight in `game/scripts/RaidLair.cs`,
+the bosses' moves in `game/scripts/BossBrain.cs`, their bodies in `game/scripts/Lairfolk.cs` and `Cinder.cs`). The
+creatures come from the *Aerois: Year One* bestiary sheet, built on the game's own models.
 
-- Come close while the crypt is kindled and four **cinder thralls** claw up out of the ash: charred skeletons with
-  embers for eyes. Put them down and **Varrow, the Cinder Warden** rises: charred black, grown with spikes and a
-  great horn, his hands long claws, cracks of molten light down his chest, and where his head should be a skull
-  burning in a mane of fire (`game/scripts/Cinder.cs`).
-- He fights with his claws; he rears up burning brighter and **bursts into flame** around himself (a moment's
-  warning: step away); he **hurls fire** at anyone who keeps their distance; and at two thirds and one third of his
-  health he **calls more thralls**. He's undead: a paladin's light burns him.
-- It's made for heroes of level 1 to 6: he grows to match you that far and no further. Beat him and his hoard pays
-  experience and septims (double the first time, when you're also named Warden-Breaker). Then the crypt falls quiet,
-  and **rekindles 20 minutes** (of play) later, to be fought again. Heroes far past level 8 find it hardly worth the
-  walk. Fall, or walk away, and the dead lie down again to wait.
-- The quest tracker and map show it while it's kindled and you're of a level for it.
-  `--shots ./shots --raid` photographs the crypt and the Warden.
+| Lair | Where | Levels | Its own | Boss | Moves |
+| --- | --- | --- | --- | --- | --- |
+| The Ashen Crypt (burned crypt) | west, past the Iron Circle's yard | 1-6 | cinder thralls | the Cinder Warden: a skull burning in a mane of fire | flame burst, hurled fire, calls the dead |
+| The Goblin Warren (cave) | south-east | 3-8 | goblins | the Goblin King: huge, crowned, spiked club, firepots | firepots on marked ground, calls goblins, tantrum |
+| The Rock Bear's Den (cave) | north-west | 4-9 | wolves | the Rock Bear: stone grown over its back | ground slam, hurled boulder, rage |
+| The Briar Ruin (ruin) | south | 5-10 | spriggans | the Briar Mother: walking briar in red bloom | spore burst, thorn volleys, spawns spriggans |
+| The Hollow Bastion (fort) | east road | 7-12 | ghost soldiers | the Hollow Captain: a knight of moonlight | shield charge, spear volleys, calls the legion |
+| The Amethyst Hollow (cave) | far north-east | 8-13 | crystal skeevers | the Crystal Basilisk: amethyst grown through it | crystal spikes from marked ground, shard bolts, more skeevers |
+| The Sunken Forge (dungeon) | far west | 9-14 | goblin tinkers | the Forge Golem: furnace chest, chimney head, hammer | hammer quake, slag, molten drops, overheats |
+| The Gloaming Ruin (ruin) | far south-east | 10-15 | shadow wolves | the Duskprowler: a shadow-cat veined with violet | vanishes and pounces from behind, more shadows, rage |
+| The Storm Eyrie (crag) | far north-west, high | 12-17 | stormwings | the Thunderhawk: storm-blue, lightning in its feathers | lightning on marked ground, thunderclap, dive, calls stormwings |
+
+- Come close while a lair is awake and its own come out; put them down and the boss comes. Every big blow is shown
+  before it lands: the boss gathers itself, or the ground it's about to strike glows. Watch, and move.
+- The boss grows with you within its levels. Below them, it meets you at its own level anyway. Its hoard pays
+  experience and septims, double the first time, along with a title (Warden-Breaker, Kingtoppler, Stonebreaker,
+  Thornbane, Gatebreaker, Shardbreaker, Furnace-Quencher, Dawnbringer, Stormcaller). Then the lair falls quiet and
+  wakes again 20-40 minutes (of play) later. Walk away mid-fight and everything goes back to waiting.
+- The tracker shows the nearest lair that suits your level; the map marks every one that's awake.
+  `--shots ./shots --raid` photographs the crypt; `--shots ./shots --lairs` (or `--lairs goblin_warren,storm_eyrie`)
+  tours the others.
+
+#### When a boss beats you: a nemesis is born
+
+Every lair boss starts out a nameless one of its kind. **If it beats you, it takes a name** (in the nemesis roster's
+style: "Mokak the Grinning, the Goblin King"), grows stronger, and **leaves its lair to roam the world**
+(`game/scripts/Roamers.cs`). It wanders the wilds on its own path, resting and moving on, never into a town. Come
+within sight of it and it's there, and it knows you, and it comes for you. Every time it beats you again it grows
+stronger still. Kill it and it's gone for good, and the price on its head is yours: more than its hoard, and more
+for every time it beat you.
+
+The lair doesn't stay empty: when its timer runs out, **a new nameless boss has moved in**. Roamers are saved with
+your company. In the shared world the server names it (the boss that beat you is the one the nemesis system
+promotes), so it's on everyone's roster under the same name, its fights count there, and if it cheats death there
+it comes back roaming, scarred and angrier.
 
 ### Companions
 

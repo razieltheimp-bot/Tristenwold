@@ -154,7 +154,7 @@ public partial class Enemy : Fighter
         : Side.Wild;
 
     public bool IsDragon => Dragons.ColourOf(Kind.Id) is not null;
-    public bool Undead => Kind.Id is "draugr" or "draugr_overlord" or "sea_wraith" or "familiar" or "cinder_warden" or "cinder_thrall";
+    public bool Undead => Kind.Id is "draugr" or "draugr_overlord" or "sea_wraith" or "familiar" or "cinder_warden" or "cinder_thrall" or "ghost_captain" or "hollow_soldier";
 
     /// <summary>Called every moment it's fighting: a boss's own moves (the raid sets it).</summary>
     public Action<Enemy, double>? Think { get; set; }
@@ -272,7 +272,8 @@ public partial class Enemy : Fighter
             e.Stats.Name = bond.Name;
             e.Stats.Lose(e.Stats.MaxHealth * (1 - Math.Clamp(bond.Health, 0.05, 1)));
         }
-        e.Dress(look ?? kind.Id, (float)Math.Max(kind.Height, 0.6) * (kind.Id == "frost_troll" ? 1.2f : 1), kind.Height < 1 ? 0.3f : kind.Id is "bear" or "frost_troll" ? 0.6f : 0.4f);
+        e.Dress(look ?? kind.Id, (float)Math.Max(kind.Height, 0.6) * (kind.Id == "frost_troll" ? 1.2f : 1),
+            kind.Height < 1 ? 0.3f : kind.Id is "bear" or "frost_troll" ? 0.6f : kind.Height > 2.3 ? (float)kind.Height * 0.22f : 0.4f);
         e.Shape();
         if (size > DragonSize.Normal && bond is null) e.Stats.Name = $"{size} {kind.Name}";
         e.RefreshPlate();
@@ -331,6 +332,25 @@ public partial class Enemy : Fighter
         RefreshPlate();
     }
 
+    /// <summary>A lair boss that beat a company and took a name: it shows the name, stands taller and burns red.</summary>
+    public bool Named { get; private set; }
+
+    public void Crown(string title, Guid? nemesisId = null)
+    {
+        Stats.Name = title;
+        if (nemesisId is not null) NemesisId = nemesisId;
+        if (!Named)
+        {
+            Named = true;
+            Figure.Scale *= 1.15f;
+            Figure.Mark(new Color("#ff5030"));
+        }
+        RefreshPlate();
+    }
+
+    /// <summary>Moves where it calls home (a roamer walking the wilds); it drifts there when it isn't fighting.</summary>
+    public void Wander(Vector3 home) => Home = home;
+
     public void RefreshPlate()
     {
         var bar = new string('|', (int)Math.Ceiling(Stats.Health / Stats.MaxHealth * 20));
@@ -340,7 +360,7 @@ public partial class Enemy : Fighter
             : $"{Stats.Name}\n{bar}";
         if (State != EnemyState.Dead && Frenzy > 0) Plate.Text = $"FRENZIED\n{Plate.Text}";
         else if (State != EnemyState.Dead && Infection > 0.05 && !Corrupted) Plate.Text += $"\nRift {Infection:P0}";
-        Plate.Modulate = Frenzy > 0 ? new Color("#d890ff") : Leader is not null ? new Color("#a8e0a0") : Friendly ? new Color("#a8c8f0") : NemesisId is null ? new Color("#e8dcc4") : new Color("#ff7a5a");
+        Plate.Modulate = Frenzy > 0 ? new Color("#d890ff") : Leader is not null ? new Color("#a8e0a0") : Friendly ? new Color("#a8c8f0") : NemesisId is null && !Named ? new Color("#e8dcc4") : new Color("#ff7a5a");
     }
 
     public void Provoke(Player by)

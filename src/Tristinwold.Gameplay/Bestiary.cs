@@ -69,6 +69,20 @@ public static class Bestiary
         // The Ashen Crypt: the burned warden and the thralls he raises (their numbers are set by the raid).
         new("cinder_warden", "Cinder Warden", 600, 18, 4.2, 120, 2.6, 1.6, DamageKind.Fire, "#2e241c", 2.6),
         new("cinder_thrall", "Cinder Thrall", 45, 6, 4.0, 40, 1.7, 1.3, DamageKind.Fire, "#3a2e26", 1.5),
+        // The lairs of the wilds: each boss, and its own that come first (their numbers too are set by the raid).
+        new("goblin_king", "Goblin King", 700, 20, 4.4, 80, 2.4, 1.5, DamageKind.Fire, "#5a7a3a", 2.4),
+        new("rock_bear", "Rock Bear", 800, 24, 5.2, 220, 2.8, 1.8, DamageKind.Physical, "#5a4a3a", 2.6),
+        new("briar_mother", "Briar Mother", 700, 20, 2.8, 60, 3.2, 1.8, DamageKind.Poison, "#3a5a2a", 3.6),
+        new("ghost_captain", "Hollow Captain", 700, 22, 4.6, 160, 2.4, 1.4, DamageKind.Frost, "#a8e0f0", 2.3),
+        new("hollow_soldier", "Hollow Soldier", 60, 8, 4.2, 80, 1.9, 1.3, DamageKind.Frost, "#9ad0e0", 1.8),
+        new("crystal_basilisk", "Crystal Basilisk", 800, 24, 4.2, 200, 3.2, 1.7, DamageKind.Shock, "#5a3a7a", 2.4),
+        new("crystal_skeever", "Crystal Skeever", 40, 6, 5.5, 60, 1.4, 1.0, DamageKind.Shock, "#7a5aa8", 0.7),
+        new("forge_golem", "Forge Golem", 900, 26, 3.6, 260, 3.0, 2.0, DamageKind.Fire, "#3a3a40", 3.4),
+        new("goblin_tinker", "Goblin Tinker", 70, 9, 5.2, 40, 1.6, 1.0, DamageKind.Physical, "#4a5a3a", 1.25),
+        new("duskprowler", "Duskprowler", 700, 26, 7.0, 80, 2.6, 1.1, DamageKind.Poison, "#1a1424", 2.0),
+        new("shadow_wolf", "Shadow Wolf", 60, 9, 6.8, 20, 1.6, 0.9, DamageKind.Poison, "#201a2a", 1.0),
+        new("thunderhawk", "Thunderhawk", 800, 26, 5.5, 100, 3.0, 1.5, DamageKind.Shock, "#4a7ad0", 3.2),
+        new("stormwing", "Stormwing", 55, 8, 6.0, 10, 1.5, 1.0, DamageKind.Shock, "#7aa8e8", 1.1),
     ];
 
     /// <summary>

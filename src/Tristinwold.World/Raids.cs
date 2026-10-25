@@ -1,15 +1,64 @@
+using System.Text.Json.Serialization;
+using Tristinwold.Nemesis;
+
 namespace Tristinwold.World;
 
+/// <summary>What kind of place a lair is, which decides how it's built: a burned crypt, a cave in a heap of rock, a
+/// ruin gone to the wild, a dungeon sunk into the ground, a broken fort, or an eyrie up on the heights.</summary>
+public enum LairSite { Crypt, Cave, Ruin, Dungeon, Fort, Eyrie }
+
 /// <summary>
-/// A raid: a fixed place where something terrible waits, which a company can fight through again and again. The
-/// dead rise first; then the boss. Beat it and the place falls quiet for a while, then rekindles.
+/// The moves a lair's boss can have, besides its ordinary blows.
+/// <list type="bullet">
+/// <item><see cref="Burst"/>: it gathers itself for a moment, then strikes all around it (step away in time).</item>
+/// <item><see cref="Bolt"/>: one hurled at anyone who keeps their distance.</item>
+/// <item><see cref="Volley"/>: three at once, at a distance.</item>
+/// <item><see cref="Marks"/>: the ground is marked where the hero stands, then struck there (keep moving).</item>
+/// <item><see cref="Pounce"/>: it vanishes and comes down behind the hero.</item>
+/// <item><see cref="Charge"/>: it rushes at a hero who keeps away, bowling over whatever is in its path.</item>
+/// <item><see cref="Summon"/>: as it weakens, it calls more of its own.</item>
+/// <item><see cref="Enrage"/>: near the end, it goes wild: faster and harder-hitting.</item>
+/// </list>
+/// </summary>
+public enum BossMove { Burst, Bolt, Volley, Marks, Pounce, Charge, Summon, Enrage }
+
+/// <summary>
+/// A raid: a lair out in the wilds where something terrible waits, which a company can fight through again and again.
+/// Its own come first (the dead, a goblin warband, a wolf pack); then the boss. Beat it and the place falls quiet for a
+/// while, then wakes again.
 /// </summary>
 /// <param name="MaxLevel">Made for heroes up to this level: the boss grows to match them that far and no further, and
 /// those far past it find little worth taking.</param>
-public sealed record Raid(string Id, string Name, string BossName, string BossTitle, string Story, string Taunt, double X, double Z,
+/// <param name="Thralls">How many of the boss's own come first.</param>
+/// <param name="Boss">What waits there, by kind: "the Goblin King". Every one is the same nobody until it beats a
+/// company; then it earns a name and walks out into the world (see <see cref="Roamer"/>).</param>
+public sealed record Raid(string Id, string Name, string Boss, string Story, string Taunt, double X, double Z,
     int MaxLevel, double CooldownSeconds, int Thralls)
 {
-    public string Boss => $"{BossName}, {BossTitle}";
+    /// <summary>Never weaker than this: a hero below it who walks in finds the boss at this level anyway.</summary>
+    public int MinLevel { get; init; } = 1;
+    public LairSite Site { get; init; } = LairSite.Crypt;
+    public string BossKind { get; init; } = "cinder_warden";
+    public string ThrallKind { get; init; } = "cinder_thrall";
+    /// <summary>How much tougher (and better-paid) than the ordinary run of raids at its level.</summary>
+    public double Might { get; init; } = 1;
+    /// <summary>What its moves do harm with.</summary>
+    public DamageKind Element { get; init; } = DamageKind.Fire;
+    public IReadOnlyList<BossMove> Moves { get; init; } = [BossMove.Burst, BossMove.Bolt, BossMove.Summon];
+    /// <summary>What wakes it, as the hero comes close.</summary>
+    public string Waking { get; init; } = "";
+    /// <summary>What it shouts when it calls its own.</summary>
+    public string Calling { get; init; } = "";
+    /// <summary>How it dies.</summary>
+    public string Falling { get; init; } = "";
+    /// <summary>Its hoard, and what's in it.</summary>
+    public string Hoard { get; init; } = "a hoard";
+    public string HoardHolds { get; init; } = "";
+    /// <summary>The title the first to beat it earns.</summary>
+    public string Title { get; init; } = "";
+
+    /// <summary>The boss's kind at the start of a sentence: "The Goblin King".</summary>
+    public string BossCap => char.ToUpperInvariant(Boss[0]) + Boss[1..];
     public double DistanceTo(double x, double z) => Math.Sqrt((X - x) * (X - x) + (Z - z) * (Z - z));
 }
 
@@ -20,30 +69,164 @@ public static class Raids
     /// there defending the royal dead; he never stopped defending them. His body is charred black and grown with
     /// spikes, his hands are claws, and where his head should be a skull burns.
     /// </summary>
-    public static readonly Raid AshenCrypt = new("raid:ashen_crypt", "the Ashen Crypt", "Varrow", "the Cinder Warden",
+    public static readonly Raid AshenCrypt = new("raid:ashen_crypt", "the Ashen Crypt", "the Cinder Warden",
         "Before Tristinwold had walls, a warden of the Old Kings was burned alive defending their crypt from looters. He never stopped defending it. Every so often the ash stirs, his thralls crawl out of the ground, and the Cinder Warden walks again.",
         "None... shall... take... from the KINGS.",
-        -300, -80, MaxLevel: 6, CooldownSeconds: 20 * 60, Thralls: 4);
+        -300, -80, MaxLevel: 6, CooldownSeconds: 20 * 60, Thralls: 4)
+    {
+        Waking = "The ash of the Ashen Crypt stirs. Something claws up out of the ground...",
+        Calling = "The Cinder Warden calls the dead!",
+        Falling = "The Cinder Warden crumbles into ash and embers. His hoard lies open on the dais.",
+        Hoard = "the Warden's hoard", HoardHolds = "old crowns of the Old Kings, and the ash of a man who kept his oath too long",
+        Title = "Warden-Breaker",
+    };
 
-    public static IReadOnlyList<Raid> All { get; } = [AshenCrypt];
+    /// <summary>A goblin warren in a heap of boulders south-east of the city, and its king: a goblin grown huge on
+    /// stolen meat, crowned with a cooking pot, who throws firepots at anyone who comes to take his things back.</summary>
+    public static readonly Raid GoblinWarren = new("raid:goblin_warren", "the Goblin Warren", "the Goblin King",
+        "Goblins have always lived in the rocks south-east of Tristinwold. Then one of them got big: very big, from eating everything he stole, and the rest started calling him king. Now the warren raids the farms every week and the firepots come flying at anyone who goes in after their chickens.",
+        "MINE! All of it MINE! Get 'em, lads!",
+        257, 306, MaxLevel: 8, CooldownSeconds: 20 * 60, Thralls: 5)
+    {
+        MinLevel = 3, Site = LairSite.Cave, BossKind = "goblin_king", ThrallKind = "goblin", Might = 1.05, Element = DamageKind.Fire,
+        Moves = [BossMove.Marks, BossMove.Summon, BossMove.Enrage],
+        Waking = "Goblin whistles from the rocks. The warren's awake, and it's seen you...",
+        Calling = "The Goblin King bellows for more goblins!",
+        Falling = "The Goblin King topples like a felled tree. His crown rolls off. His throne-pile of loot is yours.",
+        Hoard = "the king's throne-pile", HoardHolds = "stolen farm silver, a dozen odd boots and the cooking-pot crown",
+        Title = "Kingtoppler",
+    };
+
+    /// <summary>A cave bear's den in a hill of stone, north-west of the city, and the bear itself: so old that rock
+    /// has grown over its shoulders and back like armour.</summary>
+    public static readonly Raid RockBearDen = new("raid:rock_bear_den", "the Rock Bear's Den", "the Rock Bear",
+        "Hunters in the north woods tell of a cave bear so old that the stone of its den has grown into its hide. Arrows break on its back. It sleeps through most winters and most summers, and the wolves that den at its door keep everyone away. Wake it and it will tear the hill apart to get at you.",
+        "(a roar that shakes stones loose from the cave roof)",
+        -200, -346, MaxLevel: 9, CooldownSeconds: 25 * 60, Thralls: 3)
+    {
+        MinLevel = 4, Site = LairSite.Cave, BossKind = "rock_bear", ThrallKind = "wolf", Might = 1.15, Element = DamageKind.Physical,
+        Moves = [BossMove.Burst, BossMove.Bolt, BossMove.Enrage],
+        Waking = "Wolves rise from the mouth of the den, hackles up. Deep inside, something huge stirs...",
+        Falling = "The Rock Bear sinks down with a sound like a landslide, and is still. Bones and old gear lie heaped at the back of the den.",
+        Hoard = "the den's bone-heap", HoardHolds = "the gear of every hunter who came here before you",
+        Title = "Stonebreaker",
+    };
+
+    /// <summary>A manor gone to briars far south, and what grew from its garden: a mound of thorn and red blossom
+    /// that walks, the Briar Mother, and her spriggan brood.</summary>
+    public static readonly Raid BriarRuin = new("raid:briar_ruin", "the Briar Ruin", "the Briar Mother",
+        "Rosmere Hall was a fine house once, with the finest rose garden in the south. When the last of the Rosmeres died the garden kept growing. Now the hall is a ruin swallowed in thorn, and the heart of the briar has learned to walk, and to sing to the spriggans, and to feed.",
+        "Grow... grow into me, little one...",
+        -192, 526, MaxLevel: 10, CooldownSeconds: 25 * 60, Thralls: 3)
+    {
+        MinLevel = 5, Site = LairSite.Ruin, BossKind = "briar_mother", ThrallKind = "spriggan", Might = 1.15, Element = DamageKind.Poison,
+        Moves = [BossMove.Burst, BossMove.Volley, BossMove.Summon],
+        Waking = "The briars rustle with no wind. Spriggans unfold themselves from the thorn...",
+        Calling = "The Briar Mother sings, and the thorn gives birth!",
+        Falling = "The Briar Mother withers, red petals falling like rain. At her root, the Rosmere strongbox.",
+        Hoard = "the Rosmere strongbox", HoardHolds = "the family silver and a dried rose that still smells of summer",
+        Title = "Thornbane",
+    };
+
+    /// <summary>A fort on the eastern road that fell to a siege nobody remembers, and its captain, who still holds
+    /// it with the ghosts of his men: a spectral knight behind a wall of spectral shields.</summary>
+    public static readonly Raid HollowBastion = new("raid:hollow_bastion", "the Hollow Bastion", "the Hollow Captain",
+        "Two hundred years ago the Bastion on the eastern road held for forty days against an army, and then it fell, and every man in it died at his post. They are still at their posts. Their captain walks the walls at night in armour made of moonlight, and his legion forms its shield wall at the gate for anyone who comes too close.",
+        "Hold the gate! HOLD THE GATE!",
+        489, -178, MaxLevel: 12, CooldownSeconds: 30 * 60, Thralls: 4)
+    {
+        MinLevel = 7, Site = LairSite.Fort, BossKind = "ghost_captain", ThrallKind = "hollow_soldier", Might = 1.2, Element = DamageKind.Frost,
+        Moves = [BossMove.Charge, BossMove.Volley, BossMove.Summon],
+        Waking = "A cold mist pours over the walls. Pale soldiers form ranks at the gate...",
+        Calling = "The Hollow Captain calls the legion to the wall!",
+        Falling = "The Hollow Captain lowers his sword. \"Relieved... at last.\" He fades into the mist. The Bastion's paychest stands open.",
+        Hoard = "the Bastion's paychest", HoardHolds = "two hundred years of unpaid wages, in coin nobody's minted since",
+        Title = "Gatebreaker",
+    };
+
+    /// <summary>A cave far to the north-east whose walls are amethyst, and the basilisk that grew crystal along its
+    /// spine from lying in it.</summary>
+    public static readonly Raid AmethystHollow = new("raid:amethyst_hollow", "the Amethyst Hollow", "the Crystal Basilisk",
+        "Miners found the Amethyst Hollow and its walls of violet crystal and thought themselves rich. Then they found what sleeps in it: a basilisk that has lain on the crystal so long it has grown through her, from her skull to the tip of her tail. The crystal sings when she's angry. The ground cracks, and spikes come up out of it.",
+        "(the crystals ring, a sound like a thousand glasses)",
+        340, -589, MaxLevel: 13, CooldownSeconds: 30 * 60, Thralls: 5)
+    {
+        MinLevel = 8, Site = LairSite.Cave, BossKind = "crystal_basilisk", ThrallKind = "crystal_skeever", Might = 1.25, Element = DamageKind.Shock,
+        Moves = [BossMove.Marks, BossMove.Bolt, BossMove.Summon],
+        Waking = "The crystal walls begin to hum. Skeevers grown with violet shards pour out of the cracks...",
+        Calling = "The basilisk's crystals ring, and more skeevers come scrabbling!",
+        Falling = "The Crystal Basilisk shudders and is still. The singing stops. Among the shards, the miners' last haul.",
+        Hoard = "the miners' last haul", HoardHolds = "raw amethyst, and the picks of men who never came out",
+        Title = "Shardbreaker",
+    };
+
+    /// <summary>A dwarven forge sunk into the ground far to the west, where the goblins found the old
+    /// smith-engine and lit its furnace: a great iron golem with a chimney for a head.</summary>
+    public static readonly Raid SunkenForge = new("raid:sunken_forge", "the Sunken Forge", "the Forge Golem",
+        "The dwarves who built the Sunken Forge are long gone, but they left their smith-engine behind: an iron giant with a furnace in its chest and a chimney for a head, made to swing a hammer forever. The goblins who moved in found out how to light the furnace. They haven't found out how to put it out.",
+        "(the furnace roars; a voice like grinding gears) WORK. CONTINUES.",
+        -520, -300, MaxLevel: 14, CooldownSeconds: 30 * 60, Thralls: 4)
+    {
+        MinLevel = 9, Site = LairSite.Dungeon, BossKind = "forge_golem", ThrallKind = "goblin_tinker", Might = 1.3, Element = DamageKind.Fire,
+        Moves = [BossMove.Burst, BossMove.Bolt, BossMove.Marks, BossMove.Enrage],
+        Waking = "Hammers ring in the pit below. Goblin tinkers drop their tools and pick up knives...",
+        Falling = "The Forge Golem grinds to a halt, its furnace dying to a glow. The dwarves' strongroom door hangs open.",
+        Hoard = "the dwarves' strongroom", HoardHolds = "dwarven ingots, a smith's hammer and a ledger no one can read",
+        Title = "Furnace-Quencher",
+    };
+
+    /// <summary>A ruined shrine far to the south-east in the dusk-woods, and the great shadow-cat that hunts from it: black, veined
+    /// with violet light, and never where you're looking.</summary>
+    public static readonly Raid GloamingRuin = new("raid:gloaming_ruin", "the Gloaming Ruin", "the Duskprowler",
+        "Nobody knows which god the Gloaming shrine was built for. Whoever it was left something behind: a hunting cat the size of a horse, black as the inside of a closed eye, with light running in its veins like violet blood. It hunts with shadow-wolves. It goes where the shadows go. You see it only when it wants you to.",
+        "(a purr, from right behind you)",
+        380, 658, MaxLevel: 15, CooldownSeconds: 35 * 60, Thralls: 3)
+    {
+        MinLevel = 10, Site = LairSite.Ruin, BossKind = "duskprowler", ThrallKind = "shadow_wolf", Might = 1.35, Element = DamageKind.Poison,
+        Moves = [BossMove.Pounce, BossMove.Summon, BossMove.Enrage],
+        Waking = "The light goes grey. Shadow-wolves slide out of the dark under the broken arches...",
+        Calling = "The Duskprowler's shadow splits, and more wolves step out of it!",
+        Falling = "The Duskprowler dissolves into dark smoke, and the dusk lifts. On the shrine's altar, the offerings of a forgotten faith.",
+        Hoard = "the shrine's offerings", HoardHolds = "black pearls and the silver of a faith no one remembers",
+        Title = "Dawnbringer",
+    };
+
+    /// <summary>A crag high in the north-west where a thunderhawk nests, a bird as big as a dragon that brings the
+    /// storm with it.</summary>
+    public static readonly Raid StormEyrie = new("raid:storm_eyrie", "the Storm Eyrie", "the Thunderhawk",
+        "On the crags of the north-west there's a nest the size of a cottage, built of whole trees and the bones of cattle. The thunderhawk that keeps it is bigger than some dragons. Lightning follows it. When it screams, the sky answers, and the bolts come down on whatever it's looking at.",
+        "(a scream, and the thunder answers it)",
+        -705, -591, MaxLevel: 17, CooldownSeconds: 40 * 60, Thralls: 3)
+    {
+        MinLevel = 12, Site = LairSite.Eyrie, BossKind = "thunderhawk", ThrallKind = "stormwing", Might = 1.45, Element = DamageKind.Shock,
+        Moves = [BossMove.Marks, BossMove.Burst, BossMove.Pounce, BossMove.Summon],
+        Waking = "The sky darkens over the crag. Young stormwings scream from the nest...",
+        Calling = "The Thunderhawk screams, and stormwings dive from the clouds!",
+        Falling = "The Thunderhawk crashes down, and the storm breaks apart above the crag. In the nest, the glitter of everything it ever stole.",
+        Hoard = "the thunderhawk's nest", HoardHolds = "a magpie's hoard of a hundred years: rings, buckles, a bishop's chain",
+        Title = "Stormcaller",
+    };
+
+    public static IReadOnlyList<Raid> All { get; } = [AshenCrypt, GoblinWarren, RockBearDen, BriarRuin, HollowBastion, AmethystHollow, SunkenForge, GloamingRuin, StormEyrie];
 
     public static Raid? Get(string id) => All.FirstOrDefault(r => r.Id == id);
 
-    /// <summary>How strong the boss stands against a hero: their level, but never past what the raid was made for.</summary>
-    public static int Strength(Raid r, int heroLevel) => Math.Clamp(heroLevel, 1, r.MaxLevel);
+    /// <summary>How strong the boss stands against a hero: their level, within what the raid was made for.</summary>
+    public static int Strength(Raid r, int heroLevel) => Math.Clamp(heroLevel, r.MinLevel, r.MaxLevel);
 
-    /// <summary>The boss's health and the harm it does, for a hero of a level.</summary>
+    /// <summary>The boss's health and the harm it does, for a hero of a level. Health keeps pace with heroes; harm
+    /// grows quickly at first and slower after level 6, as heroes' own health does.</summary>
     public static (double Health, double Damage) Boss(Raid r, int heroLevel)
     {
         var s = Strength(r, heroLevel);
-        return (320 + 70 * s, 12 + 2.5 * s);
+        return ((320 + 70 * s) * r.Might, (12 + 2.5 * Math.Min(s, 6) + 1.2 * Math.Max(0, s - 6)) * Math.Sqrt(r.Might));
     }
 
-    /// <summary>A thrall's health and harm.</summary>
+    /// <summary>One of the boss's own: its health and harm.</summary>
     public static (double Health, double Damage) Thrall(Raid r, int heroLevel)
     {
         var s = Strength(r, heroLevel);
-        return (35 + 8 * s, 5 + s);
+        return ((35 + 8 * s) * r.Might, (5 + Math.Min(s, 6) + 0.5 * Math.Max(0, s - 6)) * Math.Sqrt(r.Might));
     }
 
     /// <summary>
@@ -53,20 +236,29 @@ public static class Raids
     public static (int Xp, int Septims) Reward(Raid r, int heroLevel, bool firstTime)
     {
         var s = Strength(r, heroLevel);
-        var (xp, septims) = (150 + 45 * s, 40 + 12 * s);
-        if (heroLevel > r.MaxLevel + 2) (xp, septims) = (xp / 4, septims / 2);
+        var (xp, septims) = ((int)Math.Round((150 + 45 * s) * r.Might), (int)Math.Round((40 + 12 * s) * r.Might));
+        if (Outgrown(r, heroLevel)) (xp, septims) = (xp / 4, septims / 2);
         return firstTime ? (xp * 2, septims * 2) : (xp, septims);
     }
 
-    /// <summary>Too strong for it: the raid is for low-level heroes.</summary>
+    /// <summary>Too strong for it: there's little here for this hero now.</summary>
     public static bool Outgrown(Raid r, int heroLevel) => heroLevel > r.MaxLevel + 2;
+
+    /// <summary>Not strong enough yet: it will meet them at its own level, which is well past theirs.</summary>
+    public static bool Daunting(Raid r, int heroLevel) => heroLevel < r.MinLevel - 1;
+
+    /// <summary>The raids that suit a hero of this level, nearest first.</summary>
+    public static IEnumerable<Raid> For(int heroLevel, double x, double z) =>
+        All.Where(r => !Outgrown(r, heroLevel) && !Daunting(r, heroLevel)).OrderBy(r => r.DistanceTo(x, z));
 }
 
-/// <summary>When each raid can be fought again, and how often each has been beaten. Saved with the company.</summary>
+/// <summary>When each raid can be fought again, how often each has been beaten, and the bosses that beat a company
+/// and walked out into the world. Saved with the company.</summary>
 public sealed class RaidBook
 {
     public Dictionary<string, double> ReadyAt { get; set; } = [];
     public Dictionary<string, int> Clears { get; set; } = [];
+    public List<Roamer> Roamers { get; set; } = [];
 
     public bool Ready(Raid r, double playSeconds) => playSeconds >= ReadyAt.GetValueOrDefault(r.Id);
 
@@ -74,10 +266,127 @@ public sealed class RaidBook
 
     public int ClearsOf(Raid r) => Clears.GetValueOrDefault(r.Id);
 
-    /// <summary>Beaten: the place falls quiet, and rekindles after a while.</summary>
+    /// <summary>Beaten: the place falls quiet, and wakes again after a while.</summary>
     public void Cleared(Raid r, double playSeconds)
     {
         Clears[r.Id] = ClearsOf(r) + 1;
         ReadyAt[r.Id] = playSeconds + r.CooldownSeconds;
+    }
+
+    /// <summary>
+    /// The boss beat the company: it takes a name, grows stronger and leaves its lair to roam the world. The lair
+    /// stands empty until its timer runs out and a new one (nameless, like they all start) moves in.
+    /// </summary>
+    public Roamer Escaped(Raid r, double playSeconds, ulong seed)
+    {
+        ReadyAt[r.Id] = playSeconds + r.CooldownSeconds;
+        var roamer = new Roamer { Id = $"roamer:{seed:x}", RaidId = r.Id, Name = Roaming.NameFor(seed), Seed = seed, Since = playSeconds, Wins = 1 };
+        Roamers.Add(roamer);
+        return roamer;
+    }
+
+    /// <summary>A roamer killed for good.</summary>
+    public void Slain(Roamer roamer) => Roamers.RemoveAll(x => x.Id == roamer.Id);
+}
+
+/// <summary>
+/// A lair boss that beat a company and walked out into the world: named, stronger, wandering the wilds, and
+/// stronger again every time it beats someone. In the shared world it is also a nemesis on the roster.
+/// </summary>
+public sealed class Roamer
+{
+    public string Id { get; set; } = "";
+    public string RaidId { get; set; } = "";
+    /// <summary>"Mokak the Grinning".</summary>
+    public string Name { get; set; } = "";
+    /// <summary>How many times it has beaten the company.</summary>
+    public int Wins { get; set; } = 1;
+    /// <summary>Play time when it left its lair; where it wanders from then on follows from this and the seed.</summary>
+    public double Since { get; set; }
+    public ulong Seed { get; set; }
+    /// <summary>Its id on the shared world's roster, when there is a shared world.</summary>
+    public Guid? NemesisId { get; set; }
+
+    [JsonIgnore]
+    public Raid Raid => Raids.Get(RaidId) ?? Raids.AshenCrypt;
+
+    /// <summary>"Mokak the Grinning, the Goblin King".</summary>
+    [JsonIgnore]
+    public string Title => $"{Name}, {Raid.Boss}";
+
+    readonly List<(double X, double Z, double Start)> _legs = [];
+
+    /// <summary>
+    /// Where it is now: it wanders the wilds from its lair, a few hundred metres at a walk, rests, and sets off
+    /// again, never into a town and never into the water. Every company sees it in the same place at the same time.
+    /// </summary>
+    public (double X, double Z) Where(WorldGen world, double playSeconds)
+    {
+        if (_legs.Count == 0) _legs.Add((Raid.X, Raid.Z, Since));
+        var t = Math.Max(Since, playSeconds);
+        // Each stop is where a leg starts; the leg in progress is the one after the last stop already reached.
+        while (true)
+        {
+            var (x, z, start) = _legs[^1];
+            if (t < start) break;
+            var (nx, nz) = NextStop(world, x, z, _legs.Count);
+            var length = Math.Sqrt((nx - x) * (nx - x) + (nz - z) * (nz - z));
+            _legs.Add((nx, nz, start + Roaming.RestSeconds + length / Roaming.Pace));
+        }
+        var i = _legs.FindIndex(l => l.Start > t);
+        var (fx, fz, from) = _legs[i - 1];
+        var (tx, tz, arrive) = _legs[i];
+        var f = Math.Clamp((t - from - Roaming.RestSeconds) / (arrive - from - Roaming.RestSeconds), 0, 1);
+        return (fx + (tx - fx) * f, fz + (tz - fz) * f);
+    }
+
+    (double X, double Z) NextStop(WorldGen world, double x, double z, int leg)
+    {
+        var rng = Noise.Dice(Seed, leg);
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            var a = rng.NextDouble() * Math.Tau;
+            var d = 150 + rng.NextDouble() * 200;
+            var (nx, nz) = (x + Math.Cos(a) * d, z + Math.Sin(a) * d);
+            var fromHome = Math.Sqrt(nx * nx + nz * nz);
+            if (fromHome < Roaming.NearestToCity || fromHome > Roaming.FarthestOut) continue;
+            if (world.Height(nx, nz) < WorldGen.WaterLevel + 1.5) continue;
+            if (world.SettlementsNear(nx, nz, 400).Any(s => s.DistanceTo(nx, nz) < s.Radius + 60)) continue;
+            return (nx, nz);
+        }
+        return (Raid.X, Raid.Z); // nowhere good: back to the lair it came from
+    }
+}
+
+/// <summary>How the bosses that escape their lairs are named, how strong they get and what they're worth.</summary>
+public static class Roaming
+{
+    /// <summary>How fast a roamer walks between stops (m/s), and how long it rests at each.</summary>
+    public const double Pace = 1.1, RestSeconds = 90;
+    public const double NearestToCity = 240, FarthestOut = 1400;
+
+    /// <summary>A name in the nemesis roster's own style: "Mokak the Grinning".</summary>
+    public static string NameFor(ulong seed)
+    {
+        var rng = new Rng(seed);
+        var names = NamePack.Default;
+        return $"{rng.Pick(names.FirstNames)}{rng.Pick(names.NameSuffixes)} {rng.Pick(names.Epithets)}";
+    }
+
+    /// <summary>Its health and harm: its lair's boss, a cut above where the lair stops growing, and more for every
+    /// company it has beaten.</summary>
+    public static (double Health, double Damage) Numbers(Roamer r, int heroLevel)
+    {
+        var raid = r.Raid;
+        var (health, damage) = Raids.Boss(raid with { MaxLevel = raid.MaxLevel + 3 }, heroLevel);
+        return (health * (1.15 + 0.2 * r.Wins), damage * (1.1 + 0.08 * r.Wins));
+    }
+
+    /// <summary>The price on its head, paid to whoever kills it: its lair's hoard, and more for every company it beat.</summary>
+    public static (int Xp, int Septims) Bounty(Roamer r, int heroLevel)
+    {
+        var (xp, septims) = Raids.Reward(r.Raid, heroLevel, firstTime: true);
+        var more = 1 + 0.25 * r.Wins;
+        return ((int)Math.Round(xp * more), (int)Math.Round(septims * more));
     }
 }

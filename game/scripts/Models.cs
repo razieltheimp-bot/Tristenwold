@@ -208,6 +208,7 @@ public abstract partial class Body : Node3D
         "hawk" => (Body?)Creature.Create("hawk.glb", 0.35f) ?? Beast.Rat(),
         "bear" => (Body?)Creature.Create(GD.Randf() < 0.3f ? "bear_black.glb" : "bear.glb", 1.5f) ?? Beast.Bear(),
         "mudcrab" => Beast.Crab(),
+        _ when Lairfolk.For(look) is { } lairfolk => lairfolk,
         _ => Figure.Create(look),
     };
 }
@@ -251,6 +252,10 @@ public partial class Figure : Body
         // The Ashen Crypt.
         ["cinder_warden"] = new("Skeleton_Warrior", [], 1.3f, new Color("#4a3a30")),
         ["cinder_thrall"] = new("Skeleton_Minion", [], 0.7f, new Color("#5a4636")),
+        // The wild lairs' bosses and their own that are figures (the rest are creatures: see Lairfolk).
+        ["ghost_captain"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"], 0.95f),
+        ["hollow_soldier"] = new("Knight", ["1H_Sword", "Round_Shield", "Knight_Helmet"], 0.74f),
+        ["forge_golem"] = new("Barbarian", ["2H_Axe"], 1.45f),
         // Enemies.
         ["dock_thug"] = new("Barbarian", ["1H_Axe"]),
         ["lantern_boy"] = new("Rogue", ["Knife"], 0.66f, new Color("#ffcf9a")),
@@ -817,6 +822,9 @@ public partial class Creature : Animal
 
     /// <summary>Grows ice spikes on a frost dragon's back (violet-black ice on a corrupted one).</summary>
     public void Freeze(bool corrupt = false) => IceRidge.Grow(Model, corrupt);
+
+    /// <summary>Grows amethyst down its back instead of ice (the Crystal Basilisk).</summary>
+    public void Crystallise() => IceRidge.Grow(Model, amethyst: true);
 
     /// <summary>The Rift's mark: a dark haze rising off it and a violet light about it.</summary>
     public void Corrupt()

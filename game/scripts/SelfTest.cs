@@ -27,7 +27,7 @@ public partial class SelfTest(Main main) : Node
         try
         {
             await Frames(10);
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -59,6 +59,8 @@ public partial class SelfTest(Main main) : Node
             await CompanyTest();
             await GuildTest();
             await RaidTest();
+            await LairTest();
+            await NemesisLairTest();
             if (main.Choice.Account is { } account) await Account(account);
             await Teleport(new Vector3(-150, 0, -120));
             await Until(() => !main.Tracker.InFight, 15);
@@ -630,9 +632,9 @@ public partial class SelfTest(Main main) : Node
         await Until(() => crypt.Fighting, 10);
         Check(crypt.Thralls.Count == raid.Thralls, $"{raid.Thralls} cinder thralls claw up out of the ash");
         foreach (var t in crypt.Thralls.ToList()) t.TakeHit(1e6, DamageKind.Sun, AttackKind.Spell, false, p);
-        await Until(() => crypt.Warden is not null, 5);
-        var warden = crypt.Warden!;
-        Check(warden.Stats.Name == raid.Boss && warden.Undead, $"{warden.Stats.Name} rises ({warden.Stats.MaxHealth:0} hp against a level {p.Hero.Level} hero)");
+        await Until(() => crypt.Boss is not null, 5);
+        var warden = crypt.Boss!;
+        Check(warden.Kind.Id == raid.BossKind && warden.Undead && !warden.Named, $"the {warden.Stats.Name} rises, nameless ({warden.Stats.MaxHealth:0} hp against a level {p.Hero.Level} hero)");
         p.GlobalPosition = warden.GlobalPosition + new Vector3(0, 0.5f, 3);
         p.Stats.Heal(1e6);
         var health = p.Stats.Health;
@@ -658,6 +660,108 @@ public partial class SelfTest(Main main) : Node
         await Teleport(new Vector3(-150, 0, -120)); // walking away lets them lie down
         await Frames(30);
         Check(!crypt.Fighting, "leave, and they lie down to wait");
+    }
+
+    /// <summary>Walks up to a lair from the city's side.</summary>
+    async Task Approach(Raid raid, float distance = 30)
+    {
+        var centre = new Vector3((float)raid.X, 0, (float)raid.Z);
+        await Teleport(centre - centre.Normalized() * distance);
+    }
+
+    /// <summary>
+    /// Every lair in the wilds: built where it stands; its own come first; then its boss, nameless, in its own body,
+    /// with its own moves; it falls; the hoard pays and gives the title.
+    /// </summary>
+    async Task LairTest()
+    {
+        var p = main.PlayerNode;
+        foreach (var raid in Raids.All.Where(r => r != Raids.AshenCrypt))
+        {
+            var lair = main.LairOf(raid);
+            p.Hero.Level = raid.MinLevel;
+            p.Fit();
+            await Approach(raid);
+            await Until(() => lair.Fighting, 10);
+            Check(lair.Built && lair.Thralls.Count == raid.Thralls && lair.Thralls.All(t => t.Kind.Id == raid.ThrallKind),
+                $"{raid.Name}: {raid.Thralls} {Bestiary.Get(raid.ThrallKind).Name}s come out");
+            foreach (var t in lair.Thralls.ToList()) t.TakeHit(1e6, DamageKind.Sun, AttackKind.Spell, false, p);
+            await Until(() => lair.Boss is not null, 5);
+            var boss = lair.Boss!;
+            Check(boss.Kind.Id == raid.BossKind && !boss.Named && boss.Think is not null && boss.Figure is not Beast,
+                $"then the {boss.Stats.Name} ({boss.Figure.GetType().Name}, {boss.Stats.MaxHealth:0} hp, {string.Join("/", raid.Moves)})");
+            p.Stats.Heal(1e6);
+            p.GlobalPosition = boss.GlobalPosition + new Vector3(0, 0.5f, 3);
+            var health = p.Stats.Health;
+            await Until(() => p.Stats.Health < health, 15);
+            Check(p.Stats.Health < health, $"it hurts ({health - p.Stats.Health:0})");
+            p.Stats.Heal(1e6);
+            boss.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+            await Until(() => lair.Hoard is not null, 5);
+            var septims = p.Septims;
+            if (lair.Hoard is { } hoard) main.PickUp(hoard);
+            Check(p.Septims > septims && main.GuildBook.Titles.Contains(raid.Title) && !main.RaidLog.Ready(raid, main.GuildBook.PlaySeconds),
+                $"{raid.Hoard} pays {p.Septims - septims} septims; you are {raid.Title}");
+            await Until(() => !main.Tracker.InFight, 10);
+        }
+    }
+
+    /// <summary>
+    /// A lair boss that beats the company takes a name, powers up and walks out to roam the world; the lair stands
+    /// empty until its timer runs out, and then a new nameless one is there. The roamer wanders, comes for the hero
+    /// when it finds them, and when it's killed it's gone for good, and its bounty paid.
+    /// </summary>
+    async Task NemesisLairTest()
+    {
+        var (p, raid) = (main.PlayerNode, Raids.GoblinWarren);
+        var lair = main.LairOf(raid);
+        main.GuildBook.PlaySeconds += raid.CooldownSeconds; // it's awake again after the last test
+        p.Hero.Level = 5;
+        p.Fit();
+        await Approach(raid);
+        await Until(() => lair.Fighting, 10);
+        foreach (var t in lair.Thralls.ToList()) t.TakeHit(1e6, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => lair.Boss is not null, 5);
+        var boss = lair.Boss!;
+        var plain = boss.Stats.MaxHealth;
+        p.GlobalPosition = boss.GlobalPosition + new Vector3(0, 0.5f, 3);
+        await Frames(30);
+        p.TakeHit(1e6, DamageKind.Fire, AttackKind.Weapon, false, boss); // it beats us
+        await Until(() => main.RaidLog.Roamers.Count == 1, 5);
+        var roamer = main.RaidLog.Roamers.SingleOrDefault();
+        Check(roamer is not null && boss.Named && boss.Stats.Name == roamer.Title && boss.Stats.MaxHealth > plain,
+            $"beaten: the goblin king takes a name, {roamer?.Title}, and grows ({plain:0} -> {boss.Stats.MaxHealth:0} hp)");
+        Check(!lair.Fighting && lair.Boss is null && !main.RaidLog.Ready(raid, main.GuildBook.PlaySeconds), "it leaves its lair, which stands empty for now");
+        await Until(() => !p.Downed, 8);
+        await Frames(90);
+        Check(!main.RoamersNode.Near.Any(), "while you're back in town, it's out of sight, roaming");
+
+        // It roams: a while later it's somewhere else in the wilds. Find it, and it comes for you.
+        main.GuildBook.PlaySeconds += 1800;
+        var (x, z) = roamer!.Where(main.World, main.GuildBook.PlaySeconds);
+        Check(new Vector2((float)(x - raid.X), (float)(z - raid.Z)).Length() > 100, $"half an hour on it's {new Vector2((float)(x - raid.X), (float)(z - raid.Z)).Length():0} m from its lair");
+        await Teleport(new Vector3((float)x + 25, 0, (float)z));
+        await Until(() => main.RoamersNode.Near.Any(n => n.Body.FightingCompany), 10);
+        var found = main.RoamersNode.Near.FirstOrDefault();
+        Check(found.Body is { Named: true } && found.Body.FightingCompany, $"found, {found.Roamer?.Title} comes for you");
+
+        // A new nameless boss has moved into the lair once its timer ran out.
+        main.GuildBook.PlaySeconds += raid.CooldownSeconds;
+        var (septims, xp) = (p.Septims, p.Hero.Xp);
+        found.Body!.TakeHit(1e8, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => main.RaidLog.Roamers.Count == 0, 5);
+        Check(main.RaidLog.Roamers.Count == 0 && p.Septims > septims, $"killed, it's gone for good: a bounty of {p.Septims - septims} septims");
+        await Until(() => !main.Tracker.InFight, 10);
+        await Approach(raid);
+        await Until(() => lair.Fighting, 10);
+        foreach (var t in lair.Thralls.ToList()) t.TakeHit(1e6, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => lair.Boss is not null, 5);
+        Check(lair.Boss is { Named: false } fresh && fresh.Kind.Id == raid.BossKind, "back at the warren, a new goblin king, nameless, has moved in");
+        lair.Boss?.TakeHit(1e8, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => lair.Hoard is not null, 5);
+        if (lair.Hoard is { } hoard) main.PickUp(hoard);
+        await Teleport(new Vector3(-150, 0, -120));
+        await Until(() => !main.Tracker.InFight, 15);
     }
 
     /// <summary>A logged-in character's progress reaches the server, ready for the next device.</summary>
@@ -761,6 +865,7 @@ public partial class SelfTest(Main main) : Node
     void Check(bool ok, string what)
     {
         _log.Add($"{(ok ? "ok  " : "FAIL")} {what}");
+        GD.Print(_log[^1]); // as it goes, so a long run shows how far it got
         if (!ok) throw new Exception(what);
     }
 

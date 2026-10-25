@@ -14,10 +14,15 @@ public partial class Main
 {
     GuildBook _guilds = new();
     RaidBook _raids = new();
-    Crypt _crypt = null!;
+    readonly List<RaidLair> _raidLairs = [];
+    Roamers _roamers = null!;
 
     public RaidBook RaidLog => _raids;
-    public Crypt CryptNode => _crypt;
+    /// <summary>Every raid's lair, the Ashen Crypt first.</summary>
+    public IReadOnlyList<RaidLair> RaidLairs => _raidLairs;
+    public RaidLair LairOf(Raid r) => _raidLairs.First(l => l.Raid == r);
+    public RaidLair CryptNode => LairOf(Raids.AshenCrypt);
+    public Roamers RoamersNode => _roamers;
     readonly HashSet<string> _dramaTold = [];
     (Enemy Foe, Person Rival, Action<bool>? Then)? _duel;
     double _guildClock;
