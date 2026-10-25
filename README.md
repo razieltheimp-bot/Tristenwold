@@ -238,6 +238,26 @@ your company. In the shared world the server names it (the boss that beat you is
 promotes), so it's on everyone's roster under the same name, its fights count there, and if it cheats death there
 it comes back roaming, scarred and angrier.
 
+### Stranger things in the wilds
+
+Out past the safe country (`src/Tristinwold.World/Wildlife.cs`; bodies in `game/scripts/Wildfolk.cs`, tricks in
+`game/scripts/WildBrain.cs`):
+
+- **The kipine**, alone in the autumn and pine woods: an owlbear gone to the sky, an owl's pale mask for a face,
+  a stag's antlers, great leathery wings. It beats up into the air and comes down on you hard, and it snatches your
+  coin to hoard; kill it and you get the coin back.
+- **Deathcrest apes**, in packs in the marsh, the pine woods and the crags: pale, banded dark, ridged horns
+  sweeping back, a blue snout. They blink through shadow to your flank and bite with poison, and they eat the dead
+  that walk: they go after any draugr or skeleton they see.
+- **Dire imps**, in the marsh and the crags, each with a band of lesser **imps** at its heels: red-brown devils
+  with swept horns, bat wings, a barbed tail and burning blue eyes. A dire imp vanishes and strikes from beside you
+  with burning claws; an imp, badly hurt, turns into a raven and flies off. Imps also flit about the autumn woods.
+- **Winged apes**, up among the rocks and in the pine woods and tundra: black-furred, black-winged, a greatsword in
+  the fist. They hurl rocks at anyone who keeps away, then drop on them from above.
+
+Kipines and both kinds of ape sometimes have young with them: find one alone and you can raise it. Imps never.
+`--shots ./shots --wild` takes their portraits.
+
 ### Companions
 
 - **Younglings.** About a third of the herds and packs in the wilds have young with them: wolf pups, bear cubs,

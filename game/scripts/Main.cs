@@ -300,7 +300,7 @@ public partial class Main : Node3D
         if (TouchMode) EnableTouch();
         Connect();
         if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
-        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid"), lairs: _args.TryGetValue("lairs", out var lairs) ? lairs : null));
+        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid"), lairs: _args.TryGetValue("lairs", out var lairs) ? lairs : null, wild: _args.ContainsKey("wild")));
         else _hud.Toast($"Tristinwold. You are a {_player.Class.Name}. M: map   J: journal   E: talk   K: skills   P: party   F10: the shared world");
     }
 

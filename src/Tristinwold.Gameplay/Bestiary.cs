@@ -83,6 +83,12 @@ public static class Bestiary
         new("shadow_wolf", "Shadow Wolf", 60, 9, 6.8, 20, 1.6, 0.9, DamageKind.Poison, "#201a2a", 1.0),
         new("thunderhawk", "Thunderhawk", 800, 26, 5.5, 100, 3.0, 1.5, DamageKind.Shock, "#4a7ad0", 3.2),
         new("stormwing", "Stormwing", 55, 8, 6.0, 10, 1.5, 1.0, DamageKind.Shock, "#7aa8e8", 1.1),
+        // Stranger things of the wilds: the kipine, deathcrest apes, imps and dire imps, winged apes.
+        new("kipine", "Kipine", 260, 20, 6.0, 80, 2.4, 1.4, DamageKind.Physical, "#4a3a34", 2.4),
+        new("deathcrest_ape", "Deathcrest Ape", 120, 12, 6.8, 70, 1.8, 0.9, DamageKind.Poison, "#b8b0a8", 1.9),
+        new("dire_imp", "Dire Imp", 170, 14, 5.8, 90, 1.8, 1.0, DamageKind.Fire, "#8a3a22", 1.8),
+        new("imp", "Imp", 45, 6, 6.5, 20, 1.4, 0.9, DamageKind.Fire, "#a02a3a", 0.7),
+        new("winged_ape", "Winged Ape", 150, 15, 5.0, 60, 2.0, 1.3, DamageKind.Physical, "#2a2826", 2.0),
     ];
 
     /// <summary>

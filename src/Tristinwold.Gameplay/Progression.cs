@@ -221,7 +221,8 @@ public static class Taming
 {
     /// <summary>The young of these can be raised: beasts and monsters (not people, and not the dead).</summary>
     public static bool Tameable(string kindId) => kindId is "skeever" or "wolf" or "ice_wolf" or "bear" or "frost_troll" or "mudcrab"
-        or "spriggan" or "goblin" or "boar" or "deer" or "fox" || (kindId.StartsWith("dragon_") && !kindId.EndsWith("_corrupt"));
+        or "spriggan" or "goblin" or "boar" or "deer" or "fox" or "kipine" or "deathcrest_ape" or "winged_ape"
+        || (kindId.StartsWith("dragon_") && !kindId.EndsWith("_corrupt"));
 
     /// <summary>What its young is called.</summary>
     public static string YoungName(string kindId, string kindName) => kindId switch
@@ -230,6 +231,9 @@ public static class Taming
         "ice_wolf" => "Ice Wolf Pup",
         "bear" => "Bear Cub",
         "fox" => "Fox Kit",
+        "kipine" => "Kipine Chick",
+        "deathcrest_ape" => "Deathcrest Whelp",
+        "winged_ape" => "Winged Ape Infant",
         "deer" => "Fawn",
         "boar" => "Boarlet",
         "skeever" => "Skeever Kit",

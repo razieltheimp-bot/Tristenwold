@@ -9,7 +9,8 @@ namespace Tristinwold.Game;
 ///   godot --path game -- --shots /some/folder --server off
 /// </summary>
 /// <param name="lairs">Tour the wild lairs (--lairs, or --lairs goblin_warren,storm_eyrie for some of them).</param>
-public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null) : Node
+/// <param name="wild">Portraits of the stranger things of the wilds (--wild).</param>
+public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null, bool wild = false) : Node
 {
     public override async void _Ready()
     {
@@ -20,6 +21,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         if (skirmish) { await Skirmish(); return; }
         if (raid) { await Raid(); return; }
         if (lairs is not null) { await Lairs(lairs); return; }
+        if (wild) { await Wild(); return; }
         if (quick) { await Quick(); return; }
 
         // Tristinwold from the Gallows Perch, looking into the city.
@@ -270,6 +272,66 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             main.PlayerNode.Camera.MakeCurrent();
             await Frames(10);
         }
+        GetTree().Quit();
+    }
+
+    /// <summary>Each of the stranger creatures standing for its portrait, then a kipine diving and a dire imp's band.</summary>
+    async Task Wild()
+    {
+        var p = main.PlayerNode;
+        var here = new Vector3(0, 0, 400);
+        await Go(here + new Vector3(0, 0, 30), 100);
+        p.Frozen = true;
+        var cam = new Camera3D { Far = 2000, Fov = 50 };
+        main.AddChild(cam);
+        cam.MakeCurrent();
+        void Look(Vector3 eye, Vector3 at) { cam.GlobalPosition = eye with { Y = City.FloorAt(eye) + eye.Y }; cam.LookAt(at with { Y = City.FloorAt(at) + at.Y }, Vector3.Up); }
+        Enemy Put(string kind, Vector3 at, bool young = false)
+        {
+            var e = Enemy.Create(Bestiary.Get(kind), at with { Y = City.FloorAt(at) + 0.5f }, young: young);
+            main.AddEnemy(e);
+            WildBrain.Give(main, e);
+            e.Roam = 0.1f;
+            return e;
+        }
+        foreach (var kind in new[] { "kipine", "deathcrest_ape", "dire_imp", "imp", "winged_ape" })
+        {
+            var e = Put(kind, here);
+            await Frames(40);
+            e.LookAt(e.GlobalPosition + new Vector3(0.6f, 0, 1), Vector3.Up); // three-quarters toward the camera
+            var size = (float)e.Kind.Height;
+            for (var i = 0; i < 2; i++)
+            {
+                var from = (i == 0 ? new Vector3(1.3f, 0, 2.4f) : new Vector3(-2.2f, 0, -1.6f)) * size;
+                Look(here + from + Vector3.Up * size * 0.75f, here + Vector3.Up * size * 0.5f);
+                await Frames(20);
+                await Shot($"wild-{kind}-{i}");
+            }
+            e.QueueFree();
+            await Frames(5);
+        }
+        // A dire imp and its band, and a pack of deathcrest apes.
+        var band = new List<Enemy> { Put("dire_imp", here) };
+        for (var i = 0; i < 3; i++) band.Add(Put("imp", here + new Vector3(-1.6f + i * 1.6f, 0, 1.6f)));
+        await Frames(40);
+        Look(here + new Vector3(2.5f, 2.2f, 6), here + Vector3.Up * 1);
+        await Shot("wild-band");
+        foreach (var b in band) b.QueueFree();
+        var pack = Enumerable.Range(0, 3).Select(i => Put("deathcrest_ape", here + new Vector3(-2 + i * 2, 0, i % 2))).ToList();
+        await Frames(40);
+        Look(here + new Vector3(3, 2.4f, 7), here + Vector3.Up * 1);
+        await Shot("wild-pack");
+        foreach (var a in pack) a.QueueFree();
+        // A kipine diving.
+        p.Frozen = false;
+        var kipine = Put("kipine", here + new Vector3(0, 0, 10));
+        kipine.Roam = 4;
+        p.GlobalPosition = (here + new Vector3(0, 0, 24)) with { Y = City.FloorAt(here + new Vector3(0, 0, 24)) + 1 };
+        kipine.Provoke(p);
+        for (var i = 0; i < 400 && kipine.GlobalPosition.Y < City.FloorAt(kipine.GlobalPosition) + 6; i++) { p.Stats.Heal(1e6); await Frames(1); }
+        var air = kipine.GlobalPosition;
+        Look(p.GlobalPosition with { Y = 1.6f } + new Vector3(3, 0, 2), air with { Y = air.Y - City.FloorAt(air) });
+        await Shot("wild-kipine-dive");
         GetTree().Quit();
     }
 

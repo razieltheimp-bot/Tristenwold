@@ -96,10 +96,10 @@ public static class Lairfolk
 
     // ---- materials ------------------------------------------------------------------------------
 
-    static StandardMaterial3D Plain(string hex, float rough = 0.8f, float metal = 0) =>
+    internal static StandardMaterial3D Plain(string hex, float rough = 0.8f, float metal = 0) =>
         new() { AlbedoColor = new Color(hex), Roughness = rough, Metallic = metal };
 
-    static StandardMaterial3D Glowing(string hex, float energy) => new()
+    internal static StandardMaterial3D Glowing(string hex, float energy) => new()
     {
         AlbedoColor = new Color(hex), EmissionEnabled = true, Emission = new Color(hex), EmissionEnergyMultiplier = energy, Roughness = 0.5f,
     };
@@ -119,7 +119,7 @@ public static class Lairfolk
     };
 
     /// <summary>Copies every material on a model and changes it (iron for the golem, soot for the tinkers).</summary>
-    static void Recoat(Node model, Action<BaseMaterial3D> change)
+    internal static void Recoat(Node model, Action<BaseMaterial3D> change)
     {
         foreach (var m in model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>())
             for (var s = 0; s < m.GetSurfaceOverrideMaterialCount(); s++)
@@ -131,11 +131,11 @@ public static class Lairfolk
     }
 
     /// <summary>A light, flickering if asked (fire, lightning).</summary>
-    static OmniLight3D Light(string hex, float energy, float range, float flicker = 0) =>
+    internal static OmniLight3D Light(string hex, float energy, float range, float flicker = 0) =>
         flicker > 0 ? new Flicker { LightColor = new Color(hex), LightEnergy = energy, OmniRange = range, Base = energy, Amount = flicker }
             : new OmniLight3D { LightColor = new Color(hex), LightEnergy = energy, OmniRange = range };
 
-    static CpuParticles3D Motes(Color colour, float size, int amount, Vector3 extents, float rise, float life = 1.6f, bool add = true) => new()
+    internal static CpuParticles3D Motes(Color colour, float size, int amount, Vector3 extents, float rise, float life = 1.6f, bool add = true) => new()
     {
         Mesh = new QuadMesh
         {
@@ -180,7 +180,7 @@ public static class Lairfolk
     }
 
     /// <summary>A club (or a hammer) in a fist, along the forearm.</summary>
-    static void Club(Graft g, string hand, string forearm, float length, float thick, bool hammer = false)
+    internal static void Club(Graft g, string hand, string forearm, float length, float thick, bool hammer = false)
     {
         var at = g.Bone(hand);
         var along = (at - g.Bone(forearm)).Normalized();
@@ -294,7 +294,7 @@ public static class Lairfolk
         return c;
     }
 
-    static T Placed<T>(T node, Vector3 at) where T : Node3D
+    internal static T Placed<T>(T node, Vector3 at) where T : Node3D
     {
         node.Position = at;
         return node;

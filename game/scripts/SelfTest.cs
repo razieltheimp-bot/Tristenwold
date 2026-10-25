@@ -27,7 +27,8 @@ public partial class SelfTest(Main main) : Node
         try
         {
             await Frames(10);
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -61,6 +62,7 @@ public partial class SelfTest(Main main) : Node
             await RaidTest();
             await LairTest();
             await NemesisLairTest();
+            await StrangeWildsTest();
             if (main.Choice.Account is { } account) await Account(account);
             await Teleport(new Vector3(-150, 0, -120));
             await Until(() => !main.Tracker.InFight, 15);
@@ -829,6 +831,99 @@ public partial class SelfTest(Main main) : Node
         p.GlobalPosition = at with { Y = City.FloorAt(at) + 1 };
         p.Velocity = Vector3.Zero;
         await Frames(20);
+    }
+
+    /// <summary>
+    /// The stranger things of the wilds, each in its own body with its own trick: the kipine dives on you and steals
+    /// your coin (you get it back when it dies); deathcrest apes go after the walking dead, and blink to your flank;
+    /// a dire imp vanishes and strikes from beside you; a hurt imp turns into a raven and flies; a winged ape throws
+    /// rocks; and the wilds have them all, out past the safe country.
+    /// </summary>
+    async Task StrangeWildsTest()
+    {
+        var p = main.PlayerNode;
+        var here = new Vector3(0, 0, 400); // open, safe country: nothing else around to interfere
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        await Teleport(here);
+        p.Hero.Level = 8;
+        p.Fit();
+        Enemy Wild(string kind, Vector3 offset)
+        {
+            var e = Spawn(kind, here + offset with { Y = City.FloorAt(here + offset) - here.Y + 0.5f });
+            WildBrain.Give(main, e);
+            return e;
+        }
+        async Task<double> Hurt(Func<bool> also, double seconds)
+        {
+            p.Stats.Heal(1e6);
+            var start = p.Stats.Health;
+            await Until(() => p.Stats.Health < start && also(), seconds);
+            var lost = start - p.Stats.Health;
+            p.Stats.Heal(1e6);
+            return lost;
+        }
+        void Clear(params Enemy[] es) { foreach (var e in es) if (IsInstanceValid(e)) e.QueueFree(); }
+
+        // The kipine: up into the air and down on you; it takes your coin, and gives it back when it dies.
+        var kipine = Wild("kipine", new Vector3(0, 0, -16));
+        Check(kipine.Figure is Creature && kipine.Figure.FindChildren("*", "Node3D", true, false).OfType<FlapWings>().Any() && kipine.Think is not null, "a kipine: an owlbear with wings and antlers");
+        kipine.Provoke(p);
+        var flew = false;
+        var lost = await Hurt(() => flew |= kipine.GlobalPosition.Y > City.FloorAt(kipine.GlobalPosition) + 4, 20);
+        Check(flew && lost > 0, $"it beats up into the air and comes down on you ({lost:0} harm)");
+        p.Septims = 100;
+        p.GlobalPosition = kipine.GlobalPosition + new Vector3(0, 0.5f, 2);
+        await Until(() => p.Septims < 100, 25);
+        var taken = 100 - p.Septims;
+        Check(taken > 0, $"it snatches {taken} septims");
+        kipine.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Frames(5);
+        Check(p.Septims == 100, "killed, it gives them back");
+        await Until(() => !main.Tracker.InFight, 10);
+
+        // Deathcrest apes: they hunt the walking dead, and blink through shadow to your flank.
+        p.GlobalPosition = (here + new Vector3(0, 0, 45)) with { Y = City.FloorAt(here + new Vector3(0, 0, 45)) + 1 }; // well out of their sight
+        var apes = new[] { Wild("deathcrest_ape", new Vector3(-12, 0, 0)), Wild("deathcrest_ape", new Vector3(-13, 0, 2)) };
+        var draugr = Spawn("draugr", here + new Vector3(-4, 0, 0));
+        await Until(() => apes.Any(a => a.Rival == draugr), 6);
+        Check(apes[0].Figure is Creature && apes.Any(a => a.Rival == draugr), "deathcrest apes go after a draugr on sight");
+        Clear(draugr);
+        p.GlobalPosition = here with { Y = City.FloorAt(here) + 1 };
+        apes[0].Provoke(p);
+        apes[1].Provoke(p);
+        var blinked = false;
+        var at = apes[0].GlobalPosition;
+        lost = await Hurt(() => blinked |= apes.Any(a => a.GlobalPosition.DistanceTo(at) > 3.5f && a.GlobalPosition.DistanceTo(p.GlobalPosition) < 3.2f), 20);
+        Check(lost > 0, $"the pack's poisoned claws ({lost:0} harm)");
+        Clear(apes);
+        await Until(() => !main.Tracker.InFight, 10);
+
+        // A dire imp vanishes, and strikes from beside you.
+        var dire = Wild("dire_imp", new Vector3(8, 0, -6));
+        dire.Provoke(p);
+        var vanished = false;
+        lost = await Hurt(() => (vanished |= !dire.Figure.Visible) && dire.Figure.Visible, 25);
+        Check(vanished && lost > 0, $"a dire imp vanishes, and strikes from beside you ({lost:0} harm)");
+        Clear(dire);
+
+        // An imp, badly hurt, turns into a raven and flies off.
+        var imp = Wild("imp", new Vector3(3, 0, -3));
+        imp.Provoke(p);
+        await Frames(10);
+        var devil = imp.Figure;
+        imp.TakeHit(imp.Stats.MaxHealth * 0.7, DamageKind.Physical, AttackKind.Weapon, false, p);
+        await Until(() => imp.State == EnemyState.Fleeing, 3);
+        Check(imp.State == EnemyState.Fleeing && imp.Figure != devil, "a hurt imp turns into a raven and flies");
+        Clear(imp);
+
+        // A winged ape throws rocks at anyone who keeps away.
+        var ape = Wild("winged_ape", new Vector3(0, 0, -18));
+        Check(ape.Figure.FindChildren("*", "Node3D", true, false).OfType<FlapWings>().Any(), "a winged ape, wings and sword");
+        ape.Provoke(p);
+        lost = await Hurt(() => true, 12);
+        Check(lost > 0, $"it hurls rocks and comes down on you ({lost:0} harm)");
+        Clear(ape);
+        await Until(() => !main.Tracker.InFight, 10);
     }
 
     Enemy Spawn(string kind, Vector3 at)

@@ -115,15 +115,17 @@ public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
         var kind = Bestiary.Get(herd.KindId);
         var danger = WorldGen.Danger(herd.X, herd.Z);
         var list = new List<Enemy>();
-        for (var i = 0; i < herd.Count + herd.Young; i++)
+        for (var i = 0; i < herd.Count + herd.Young + herd.BandCount; i++)
         {
-            var young = i >= herd.Count;
+            var young = i >= herd.Count && i < herd.Count + herd.Young;
+            var banded = i >= herd.Count + herd.Young; // a dire imp's band of lesser imps
             var a = rng.NextDouble() * Mathf.Tau;
             var r = rng.NextDouble() * herd.Roam * 0.5;
             var at = new Vector3((float)(herd.X + Math.Cos(a) * r), 0, (float)(herd.Z + Math.Sin(a) * r));
             if (world.Height(at.X, at.Z) < WorldGen.WaterLevel + 0.2) at = new Vector3((float)herd.X, 0, (float)herd.Z);
-            var e = Enemy.Create(kind, at with { Y = City.FloorAt(at) + 0.5f }, danger, size: young ? DragonSize.Normal : herd.Size, young: young,
+            var e = Enemy.Create(banded ? Bestiary.Get(herd.Band!) : kind, at with { Y = City.FloorAt(at) + 0.5f }, danger, size: young || banded ? DragonSize.Normal : herd.Size, young: young,
                 look: herd.Riders && !young ? $"rider:{kind.Id}" : null);
+            WildBrain.Give(main, e);
             e.Roam = (float)herd.Roam;
             (e.Faction, e.Foe, e.Allied) = (herd.Faction, herd.Foe, herd.Allied);
             if (herd.Name is { } name) { e.Stats.Name = name; e.RefreshPlate(); }

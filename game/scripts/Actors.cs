@@ -432,12 +432,24 @@ public partial class Enemy : Fighter
         // Mad with the Rift: anything at all, the nearest first.
         if (Frenzy > 0) return all.Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < 90).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
         return all.Where(e => !e.Young && e.GlobalPosition.DistanceTo(GlobalPosition) < sight
-                && ((Foe is not null && e.Faction == Foe) || Allegiance.Hostile(Side, e.Side)))
+                && ((Foe is not null && e.Faction == Foe) || Allegiance.Hostile(Side, e.Side) || (Hunter && e.Undead && !e.Named && e.Leader is null)))
             .MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
     }
 
-    /// <summary>Picks fights with other creatures by itself: warring and hostile dragons, knights, companions.</summary>
-    bool SeeksFoes => !Young && (Foe is not null || Leader is not null || Side is Side.Alliance or Side.Chromatic or Side.Corrupted or Side.Metallic);
+    /// <summary>A deathcrest ape: it hunts the walking dead (and eats them).</summary>
+    bool Hunter => Wildlife.HuntsUndead(Kind.Id);
+
+    /// <summary>Picks fights with other creatures by itself: warring and hostile dragons, knights, companions, the apes that hunt the dead.</summary>
+    bool SeeksFoes => !Young && (Foe is not null || Leader is not null || Hunter || Side is Side.Alliance or Side.Chromatic or Side.Corrupted or Side.Metallic);
+
+    /// <summary>Takes another shape (an imp turning into a raven to get away).</summary>
+    public void Reshape(string look) => Restyle(look);
+
+    /// <summary>Runs from the hero, and settles wherever it gets clear.</summary>
+    public void Flee(Player from) => (_target, _rival, State) = (from, null, EnemyState.Fleeing);
+
+    /// <summary>Gone from sight (a dire imp turned invisible), or seen again.</summary>
+    public void Unseen(bool unseen) => (Figure.Visible, Plate.Visible) = (!unseen, !unseen);
 
     public bool FightingCompany => State == EnemyState.Fighting && _target is not null;
 

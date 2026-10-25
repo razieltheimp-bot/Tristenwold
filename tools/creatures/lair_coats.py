@@ -8,6 +8,14 @@ Coats for the bosses of the wild lairs, recoloured from the creatures' own textu
   wolf_shadow.png          its shadow-wolves, the same.
   hawk_storm.png           the Thunderhawk: storm-blue feathers, white at the tips, forked with faint lightning (glow).
 
+And for the stranger things of the wilds:
+
+  troll_deathcrest.png     deathcrest apes: pale grey hide banded with dark stripes, mottled.
+  troll_wingedape.png      winged apes: black fur.
+  goblin_direimp.png       dire imps: red-brown leathery hide; their eyes burn blue (glow: _glow).
+  goblin_imp.png           imps: crimson; eyes the same.
+  bear_kipine.png          the kipine: its owlbear fur darkened to a smoky brown-grey.
+
   python3 tools/creatures/lair_coats.py
 """
 import os
@@ -83,8 +91,46 @@ def storm():
     save("hawk_storm_glow.png", bolts[..., None] * cyan * 0.7)
 
 
+def striped():
+    img, rgb, alpha = load("troll_troll_baseTexBaked.png")
+    lum = lum_of(rgb)
+    solid = alpha[..., 0] > 0.5
+    lo, hi = np.percentile(lum[solid], 5), np.percentile(lum[solid], 95)
+    lum = np.clip((lum - lo) / (hi - lo), 0, 1)
+    hide = ramp(lum, [(0, (0.42, 0.4, 0.38)), (0.6, (0.7, 0.68, 0.64)), (1, (0.86, 0.84, 0.8))])
+    bands = ridged(img.width, img.height, 53, sharp=0.55)
+    spots = ridged(img.width, img.height, 59, sharp=0.8)
+    dark = np.array([0.14, 0.11, 0.1])
+    hide = hide * (1 - bands[..., None] * 0.85) + bands[..., None] * dark * 0.85
+    save("troll_deathcrest.png", hide * (1 - spots[..., None] * 0.3), alpha)
+    fur = ramp(lum, [(0, (0.03, 0.03, 0.03)), (0.6, (0.09, 0.085, 0.08)), (1, (0.2, 0.18, 0.16))])
+    save("troll_wingedape.png", fur * (1 - bands[..., None] * 0.3), alpha)
+
+
+def devils():
+    img, rgb, alpha = load("goblin_goblin-tex.png")
+    lum = lum_of(rgb)
+    r, g = rgb[..., 0], rgb[..., 1]
+    eyes = np.clip((r - g - 0.25) * 4, 0, 1) * np.clip((r - 0.5) * 3, 0, 1)  # the pink-red of the goblin's eyes
+    blue = np.array([0.45, 0.85, 1.0])
+    for name, stops in (("direimp", [(0, (0.12, 0.04, 0.03)), (0.5, (0.42, 0.15, 0.08)), (1, (0.78, 0.42, 0.26))]),
+                        ("imp", [(0, (0.16, 0.02, 0.05)), (0.5, (0.52, 0.08, 0.16)), (1, (0.9, 0.35, 0.42))])):
+        hide = ramp(lum, stops)
+        save(f"goblin_{name}.png", hide * (1 - eyes[..., None]) + eyes[..., None] * blue, alpha)
+        save(f"goblin_{name}_glow.png", eyes[..., None] * blue * 1.2)
+
+
+def kipine():
+    img, rgb, alpha = load("bear_texture.png")
+    lum = lum_of(rgb)
+    save("bear_kipine.png", ramp(lum, [(0, (0.04, 0.035, 0.035)), (0.4, (0.2, 0.16, 0.15)), (1, (0.62, 0.55, 0.52))]), alpha)
+
+
 if __name__ == "__main__":
     amethyst()
     shadow("ice_wolf", 31)
     shadow("wolf", 37)
     storm()
+    striped()
+    devils()
+    kipine()

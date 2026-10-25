@@ -209,6 +209,7 @@ public abstract partial class Body : Node3D
         "bear" => (Body?)Creature.Create(GD.Randf() < 0.3f ? "bear_black.glb" : "bear.glb", 1.5f) ?? Beast.Bear(),
         "mudcrab" => Beast.Crab(),
         _ when Lairfolk.For(look) is { } lairfolk => lairfolk,
+        _ when Wildfolk.For(look) is { } wildfolk => wildfolk,
         _ => Figure.Create(look),
     };
 }
