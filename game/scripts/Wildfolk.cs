@@ -278,6 +278,6 @@ public partial class FlapWings : Node3D
         _open = Mathf.MoveToward(_open, Flying ? 1 : 0, (float)delta * 2.5f);
         var flap = Mathf.Sin(_phase) * Mathf.Lerp(0.08f, 0.75f, _open);
         foreach (var (pivot, side) in _wings)
-            pivot.Rotation = new Vector3(0, side * (1 - _open) * 1.35f, side * (flap + Mathf.Lerp(0.45f, 0.15f, _open)));
+            pivot.Rotation = new Vector3(0, -side * (1 - _open) * 1.35f, side * (flap + Mathf.Lerp(0.45f, 0.15f, _open))); // the arm swung back along the body
     }
 }
