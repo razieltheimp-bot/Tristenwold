@@ -8,7 +8,7 @@ namespace Tristinwold.Game;
 /// Takes a tour of the world and saves screenshots, for checking how it looks without playing:
 ///   godot --path game -- --shots /some/folder --server off
 /// </summary>
-public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null) : Node
+public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false) : Node
 {
     public override async void _Ready()
     {
@@ -16,6 +16,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         var (p, w) = (main.PlayerNode, main.World);
         await Frames(60);
         if (dragon is not null) { await Dragon(dragon); return; }
+        if (skirmish) { await Skirmish(); return; }
         if (quick) { await Quick(); return; }
 
         // Tristinwold from the Gallows Perch, looking into the city.
@@ -129,6 +130,39 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.GlobalPosition = from;
             cam.LookAt(at, Vector3.Up);
             await Shot($"dragon-{colour}-{i}");
+        }
+        GetTree().Quit();
+    }
+
+    /// <summary>A dragon knight of the alliance meets a corrupted dragon over the meadows by a village (--skirmish).</summary>
+    async Task Skirmish()
+    {
+        var (p, w) = (main.PlayerNode, main.World);
+        var village = w.SitesNear(-150, -1500, 1500).Where(s => s.Kind == SettlementKind.Hamlet).MinBy(s => s.DistanceTo(-150, -1500))!;
+        var spot = new Vector3((float)village.X, 0, (float)(village.Z + village.Radius + 40));
+        await Go(spot, 120);
+        main.TerrainNode.EnsureAround(spot, 2);
+        Vector3 Ground(Vector3 at) => at with { Y = City.FloorAt(at) + 0.5f };
+        var knight = Enemy.Create(Bestiary.Get("dragon_gold"), Ground(spot + new Vector3(-25, 0, -10)), look: "rider:dragon_gold");
+        knight.Allied = true;
+        knight.Stats.Name = Dragons.KnightName(3);
+        knight.RefreshPlate();
+        main.AddEnemy(knight);
+        var fallen = Enemy.Create(Bestiary.Get("dragon_red_corrupt"), Ground(spot + new Vector3(30, 0, -20)));
+        main.AddEnemy(fallen);
+        p.Frozen = true;
+        p.Visible = false;
+        var cam = new Camera3D { Far = 2000, Fov = 55 };
+        main.AddChild(cam);
+        cam.MakeCurrent();
+        for (var i = 0; i < 4; i++)
+        {
+            await Frames(80 + i * 45);
+            var mid = (knight.GlobalPosition + fallen.GlobalPosition) / 2 + new Vector3(0, 3, 0);
+            var eye = mid + new Vector3(10, 0, 34);
+            cam.GlobalPosition = eye with { Y = City.FloorAt(eye) + 2.5f };
+            cam.LookAt(mid, Vector3.Up);
+            await Shot($"skirmish-{i}");
         }
         GetTree().Quit();
     }

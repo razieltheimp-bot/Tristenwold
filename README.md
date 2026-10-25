@@ -259,13 +259,15 @@ seed for a different world. Each company's map, quests and septims are saved on 
 Godot's user folder under `saves/`.
 
 `--lineup ./shots` photographs the nine classes; add `--creatures`, `--young` (younglings and companions),
-`--dragons` (all ten colours), `--dragons --corrupt`, `--dragons --riders` or `--dragons --frost`.
+`--dragons` (all ten colours), `--dragons --corrupt`, `--dragons --riders` or `--dragons --frost`. `--shots ./shots --skirmish`
+photographs a dragon knight and a corrupted dragon fighting over the meadows by a village.
 
 The sky is a photograph (Poly Haven's "Kloofendal 48d Partly Cloudy (Pure Sky)", CC0), and the world is lit by
 it: ambient light and reflections come from the sky, and the sun shines from where it stands in the picture.
 On High and Ultra there is also light bouncing off the ground (SSIL), shafts of sunlight through the fog, eyes
 that adjust to bright and dark, and softer, sharper shadows; Ultra adds reflections on the water and a little
-haze-blur in the far distance. `tools/polyhaven/sky.py` finds the sun in a sky photograph.
+haze-blur in the far distance, and the meadows grow two and a half (High) or three and a half (Ultra) times
+as much grass, in drifts and patches. `tools/polyhaven/sky.py` finds the sun in a sky photograph.
 
 Self-test (headless, exits 0 on success; `--company-only` runs just the classes, companions and Dragon Knight):
 
