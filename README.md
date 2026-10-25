@@ -195,6 +195,26 @@ leader, a teacher for each of its three classes, members with their own stories,
   for a council seat, and what Sister Ilse keeps on a shelf that isn't on any list. Each choice changes how the
   guild sees you, how your rival burns, and what people say about you after; some are settled with a duel.
 
+### The Ashen Crypt (a raid for low-level heroes)
+
+West of Tristinwold, past the Iron Circle's yard, a scorched ring of broken pillars stands around a sarcophagus,
+torches burning that never go out and mist on the ground (`src/Tristinwold.World/Raids.cs`, `game/scripts/Crypt.cs`).
+A warden of the Old Kings was burned alive there defending the royal dead, and he never stopped defending them.
+
+- Come close while the crypt is kindled and four **cinder thralls** claw up out of the ash: charred skeletons with
+  embers for eyes. Put them down and **Varrow, the Cinder Warden** rises: charred black, grown with spikes and a
+  great horn, his hands long claws, cracks of molten light down his chest, and where his head should be a skull
+  burning in a mane of fire (`game/scripts/Cinder.cs`).
+- He fights with his claws; he rears up burning brighter and **bursts into flame** around himself (a moment's
+  warning: step away); he **hurls fire** at anyone who keeps their distance; and at two thirds and one third of his
+  health he **calls more thralls**. He's undead: a paladin's light burns him.
+- It's made for heroes of level 1 to 6: he grows to match you that far and no further. Beat him and his hoard pays
+  experience and septims (double the first time, when you're also named Warden-Breaker). Then the crypt falls quiet,
+  and **rekindles 20 minutes** (of play) later, to be fought again. Heroes far past level 8 find it hardly worth the
+  walk. Fall, or walk away, and the dead lie down again to wait.
+- The quest tracker and map show it while it's kindled and you're of a level for it.
+  `--shots ./shots --raid` photographs the crypt and the Warden.
+
 ### Companions
 
 - **Younglings.** About a third of the herds and packs in the wilds have young with them: wolf pups, bear cubs,

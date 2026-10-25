@@ -109,3 +109,36 @@ public class GuildTests
         Assert.Equal(4, back.LessonLevel);
     }
 }
+
+/// <summary>The Ashen Crypt: a repeatable raid made for low-level heroes.</summary>
+public class RaidTests
+{
+    [Fact]
+    public void The_crypt_is_on_dry_open_ground_west_of_the_city()
+    {
+        var w = WorldGen.Default;
+        var r = Raids.AshenCrypt;
+        Assert.InRange(r.DistanceTo(0, 0), 200, 600);
+        Assert.True(w.Height(r.X, r.Z) > WorldGen.WaterLevel + 0.5);
+        Assert.DoesNotContain(w.SettlementsNear(r.X, r.Z, 150), s => s.DistanceTo(r.X, r.Z) < s.Radius + 40);
+        Assert.Equal("cinder_warden", Tristinwold.Gameplay.Bestiary.Get("cinder_warden").Id);
+    }
+
+    [Fact]
+    public void It_grows_with_low_level_heroes_rewards_them_well_and_rekindles()
+    {
+        var r = Raids.AshenCrypt;
+        Assert.True(Raids.Boss(r, 4).Health > Raids.Boss(r, 1).Health);
+        Assert.Equal(Raids.Boss(r, r.MaxLevel), Raids.Boss(r, 30)); // never past what it was made for
+        Assert.True(Raids.Reward(r, 2, firstTime: true).Xp > Raids.Reward(r, 2, firstTime: false).Xp);
+        Assert.True(Raids.Reward(r, 20, false).Xp < Raids.Reward(r, r.MaxLevel, false).Xp);
+        Assert.True(Raids.Outgrown(r, 20) && !Raids.Outgrown(r, 3));
+
+        var book = new RaidBook();
+        Assert.True(book.Ready(r, 0));
+        book.Cleared(r, 100);
+        Assert.False(book.Ready(r, 100 + r.CooldownSeconds - 1));
+        Assert.True(book.Ready(r, 100 + r.CooldownSeconds));
+        Assert.Equal(1, book.ClearsOf(r));
+    }
+}

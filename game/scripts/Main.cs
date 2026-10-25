@@ -131,6 +131,7 @@ public partial class Main : Node3D
         string[] looks = _args.ContainsKey("dragons") ? dragons : _args.ContainsKey("creatures")
             ? ["Paladin", "skeever", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
             : _args.ContainsKey("young") ? ["Paladin", "wolf", "bear", "deer", "fox", "boar", "dragon_gold", "squire", "apprentice", "youth"]
+            : _args.ContainsKey("crypt") ? ["cinder_thrall", "cinder_warden", "Paladin"]
             : [.. Classes.All.Select(d => d.Look)];
         var figures = new List<Body>();
         for (var i = 0; i < looks.Length; i++)
@@ -138,7 +139,7 @@ public partial class Main : Node3D
             var figure = Body.For(looks[i]);
             // Younglings and the young who follow a hero, beside a grown hero for scale.
             if (_args.ContainsKey("young") && i > 0 && i < 7) figure.Scale = Vector3.One * (looks[i].StartsWith("dragon") ? 0.22f : 0.45f);
-            var spacing = _args.ContainsKey("hero") ? 11f : _args.ContainsKey("dragons") ? 9f : _args.ContainsKey("young") ? 1.15f : 1.3f;
+            var spacing = _args.ContainsKey("hero") ? 11f : _args.ContainsKey("dragons") ? 9f : _args.ContainsKey("young") ? 1.15f : _args.ContainsKey("crypt") ? 1.9f : 1.3f;
             figure.Position = new Vector3((i - (looks.Length - 1) / 2f) * spacing, 0, _args.ContainsKey("dragons") ? -(i % 2) * 7 : 0);
             figure.RotationDegrees = new Vector3(0, 160, 0);
             if (_args.ContainsKey("frost"))
@@ -274,6 +275,8 @@ public partial class Main : Node3D
         _places.Gone = id => _bonds.Any(b => b.Id == id);
         AddGuildMasters();
         AddGuilds();
+        _crypt = new Crypt(this, Raids.AshenCrypt);
+        AddChild(_crypt);
         SetUpCompany();
         _hud.AttachMap(_world, _explored, () => _player.GlobalPosition, () => -_player.GlobalTransform.Basis.Z, QuestGoals);
 
@@ -290,7 +293,7 @@ public partial class Main : Node3D
         if (TouchMode) EnableTouch();
         Connect();
         if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
-        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish")));
+        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid")));
         else _hud.Toast($"Tristinwold. You are a {_player.Class.Name}. M: map   J: journal   E: talk   K: skills   P: party   F10: the shared world");
     }
 
@@ -453,6 +456,7 @@ public partial class Main : Node3D
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
         _hud.Update(_player, _area, TouchMode ? status : status + $"    M: map   J: journal   E: talk   K: skills   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(Dragon is { Rideable: true } ? "   V: ride" : "")}");
         var saga = _saga.Objective(Dragon) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
+        if (_crypt.Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
     }
@@ -471,7 +475,8 @@ public partial class Main : Node3D
         }
     }
 
-    IEnumerable<(double X, double Z)> QuestGoals() => _journal.Open.Select(e => e.Goal).Concat(_saga.Goal(Dragon) is { } g ? [g] : []);
+    IEnumerable<(double X, double Z)> QuestGoals() => _journal.Open.Select(e => e.Goal).Concat(_saga.Goal(Dragon) is { } g ? [g] : [])
+        .Concat(!Raids.Outgrown(Raids.AshenCrypt, _player.Hero.Level) && _raids.Ready(Raids.AshenCrypt, _guilds.PlaySeconds) ? [(Raids.AshenCrypt.X, Raids.AshenCrypt.Z)] : []);
 
     /// <summary>Resting: the world moves on, the wounded mend, and an egg kept warm by the fire hatches.</summary>
     void Rest()
@@ -500,7 +505,7 @@ public partial class Main : Node3D
         var pos = _player.GlobalPosition;
         var person = _places.People.Concat(_townsfolk).Where(p => p.GlobalPosition.DistanceTo(pos) < 3.5f).MinBy(p => p.GlobalPosition.DistanceTo(pos));
         if (person is not null) return ($"talk to {person.Npc.Name}", () => Talk(person));
-        var item = _places.Pickups.Append(_nest).OfType<Pickup>().Where(p => IsInstanceValid(p) && p.GlobalPosition.DistanceTo(pos) < 3).FirstOrDefault();
+        var item = _places.Pickups.Append(_nest).Append(_crypt.Hoard).OfType<Pickup>().Where(p => IsInstanceValid(p) && p.GlobalPosition.DistanceTo(pos) < 3).FirstOrDefault();
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(_player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
         return null;
@@ -593,6 +598,17 @@ public partial class Main : Node3D
 
     public void PickUp(Pickup item)
     {
+        if (item == _crypt.Hoard)
+        {
+            var first = _raids.Clears.Count == 0;
+            var (xp, septims) = _crypt.Loot();
+            _player.Septims += septims;
+            _hud.Toast($"The Warden's hoard: {septims} septims, old crowns of the Old Kings, and the ash of a man who kept his oath too long. (+{xp} experience) {Raids.AshenCrypt.Name} will rekindle in {Raids.AshenCrypt.CooldownSeconds / 60:0} minutes.", 12);
+            GainXp(xp);
+            if (first && !_guilds.Titles.Contains("Warden-Breaker")) { _guilds.Titles.Add("Warden-Breaker"); _hud.Toast("You are Warden-Breaker.", 8); }
+            Save();
+            return;
+        }
         if (item.QuestId == "saga:egg")
         {
             if (Enemies().Any(e => Dragons.IsCorrupted(e.Kind.Id) && e.State != EnemyState.Dead && e.GlobalPosition.DistanceTo(item.GlobalPosition) < 40))
@@ -633,6 +649,7 @@ public partial class Main : Node3D
                 _bonds.AddRange(save.Companions);
                 _saga = save.Saga ?? new DragonSaga();
                 _guilds = save.Guilds ?? new GuildBook();
+                _raids = save.Raids ?? new RaidBook();
                 return;
             }
         }
@@ -646,7 +663,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public void Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)
         {

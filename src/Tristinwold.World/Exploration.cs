@@ -112,6 +112,7 @@ public sealed class CompanySave
     public DragonSaga? Saga { get; set; }
     public int Meat { get; set; }
     public GuildBook? Guilds { get; set; }
+    public RaidBook? Raids { get; set; }
 
     static readonly JsonSerializerOptions Options = new()
     {
@@ -121,8 +122,9 @@ public sealed class CompanySave
     };
 
     public static CompanySave Capture(ulong seed, int septims, ExploredMap map, QuestLog log,
-        Hero? hero = null, IEnumerable<Bond>? companions = null, DragonSaga? saga = null, int meat = 0, GuildBook? guilds = null) => new()
+        Hero? hero = null, IEnumerable<Bond>? companions = null, DragonSaga? saga = null, int meat = 0, GuildBook? guilds = null, RaidBook? raids = null) => new()
     {
+        Raids = raids,
         Guilds = guilds,
         Hero = hero,
         Companions = companions?.ToList() ?? [],

@@ -13,6 +13,11 @@ namespace Tristinwold.Game;
 public partial class Main
 {
     GuildBook _guilds = new();
+    RaidBook _raids = new();
+    Crypt _crypt = null!;
+
+    public RaidBook RaidLog => _raids;
+    public Crypt CryptNode => _crypt;
     readonly HashSet<string> _dramaTold = [];
     (Enemy Foe, Person Rival, Action<bool>? Then)? _duel;
     double _guildClock;

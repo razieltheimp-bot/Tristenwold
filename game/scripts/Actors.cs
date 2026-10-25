@@ -80,9 +80,10 @@ public abstract partial class Fighter : CharacterBody3D
         else v.Y = IsOnFloor() ? Math.Max(v.Y, -0.1f) : v.Y - Gravity * (float)delta;
         Velocity = v;
         MoveAndSlide();
-        // Fell through land that wasn't built yet (after a long flight or a jump across the map): back on top of it.
+        // Fell through land that wasn't built yet (after a long flight or a jump across the map), or was flung into
+        // the sky by the physics for standing inside something: back on top of the land.
         var floor = City.FloorAt(GlobalPosition);
-        if (GlobalPosition.Y < floor - 4)
+        if (GlobalPosition.Y < floor - 4 || (GlobalPosition.Y > floor + 30 && Velocity.Y > 0))
         {
             GlobalPosition = GlobalPosition with { Y = floor + 0.5f };
             Velocity = Vector3.Zero;
@@ -153,7 +154,22 @@ public partial class Enemy : Fighter
         : Side.Wild;
 
     public bool IsDragon => Dragons.ColourOf(Kind.Id) is not null;
-    public bool Undead => Kind.Id is "draugr" or "draugr_overlord" or "sea_wraith" or "familiar";
+    public bool Undead => Kind.Id is "draugr" or "draugr_overlord" or "sea_wraith" or "familiar" or "cinder_warden" or "cinder_thrall";
+
+    /// <summary>Called every moment it's fighting: a boss's own moves (the raid sets it).</summary>
+    public Action<Enemy, double>? Think { get; set; }
+
+    /// <summary>Who it's fighting now, hero or creature.</summary>
+    public Node3D? Foe3D => _target is not null ? _target : _rival is not null && IsInstanceValid(_rival) ? _rival : null;
+
+    /// <summary>Sets a raid creature's numbers: how much it takes, how hard it hits.</summary>
+    public void Tune(double health, double damage)
+    {
+        Stats.SetPools(health, Stats.MaxMagicka, Stats.MaxStamina);
+        Stats.Heal(health);
+        Stats.DamageMult = damage / Kind.Damage;
+        RefreshPlate();
+    }
 
     /// <summary>The Rift building up in a dragon wounded by corrupted ones (0 to 1; at 1 it turns).</summary>
     public double Infection { get; private set; }
@@ -430,6 +446,7 @@ public partial class Enemy : Fighter
         if (Infection > 0 && !Corrupted && State != EnemyState.Fighting) Infection = Corruption.Ebb(Infection, delta); // once clear of the fight
         if (Frenzy > 0 && (Frenzy -= delta) <= 0) Calm();
         if (Carrying is not null) { Carry(delta); return; }
+        if (State == EnemyState.Fighting) Think?.Invoke(this, delta);
 
         var bulk = Bulk;
         var speed = (float)(Kind.Speed * Stats.SpeedMult) * MathF.Pow(bulk, 0.35f);
@@ -552,7 +569,7 @@ public partial class Enemy : Fighter
         var d = to.Length();
         if (d > 70)
         {
-            var behind = leader.GlobalPosition + leader.GlobalTransform.Basis.Z * 4;
+            var behind = leader.GlobalPosition + leader.GlobalTransform.Basis.Z * (4 + 3 * Bulk); // clear of the hero, however big
             GlobalPosition = behind with { Y = City.FloorAt(behind) + 0.5f };
             return Vector3.Zero;
         }

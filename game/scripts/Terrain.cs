@@ -220,7 +220,7 @@ public partial class Terrain(WorldGen world) : Node3D
             var (wx, wz) = (x0 + lx, z0 + lz);
             // Grass grows in drifts and patches, not evenly: skip most of it where the patch noise is low.
             if (Noise.Value(world.Seed + 77, wx / 9, wz / 9) < -0.15 && rng.NextDouble() < 0.8) continue;
-            if (wx * wx + wz * wz < 112 * 112 || clear.Any(s => s.DistanceTo(wx, wz) < s.Radius * 0.8)) continue;
+            if (wx * wx + wz * wz < 112 * 112 || clear.Any(s => s.DistanceTo(wx, wz) < s.Radius * 0.8) || Raids.All.Any(r => r.DistanceTo(wx, wz) < 22)) continue;
             var y = world.Height(wx, wz);
             if (y < WorldGen.WaterLevel + 0.4) continue;
             var tint = _cardGrass ? world.BiomeAt(wx, wz, y) switch
@@ -430,6 +430,7 @@ public partial class Terrain(WorldGen world) : Node3D
             var (wx, wz) = (x0 + lx, z0 + lz);
             if (wx * wx + wz * wz < 140 * 140) continue; // not inside Tristinwold
             if (clear.Any(s => s.DistanceTo(wx, wz) < s.Radius + (s.IsCity ? 30 : 8))) continue;
+            if (Raids.All.Any(r => r.DistanceTo(wx, wz) < 26)) continue; // the crypt's ring stands in a clearing
             var y = h[(int)Math.Round(lz / Step) * (Steps + 1) + (int)Math.Round(lx / Step)];
             if (y < WorldGen.WaterLevel + 0.5) continue;
             var biome = world.BiomeAt(wx, wz, y);

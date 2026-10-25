@@ -8,7 +8,7 @@ namespace Tristinwold.Game;
 /// Takes a tour of the world and saves screenshots, for checking how it looks without playing:
 ///   godot --path game -- --shots /some/folder --server off
 /// </summary>
-public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false) : Node
+public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false) : Node
 {
     public override async void _Ready()
     {
@@ -17,6 +17,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         await Frames(60);
         if (dragon is not null) { await Dragon(dragon); return; }
         if (skirmish) { await Skirmish(); return; }
+        if (raid) { await Raid(); return; }
         if (quick) { await Quick(); return; }
 
         // Tristinwold from the Gallows Perch, looking into the city.
@@ -163,6 +164,41 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.GlobalPosition = eye with { Y = City.FloorAt(eye) + 2.5f };
             cam.LookAt(mid, Vector3.Up);
             await Shot($"skirmish-{i}");
+        }
+        GetTree().Quit();
+    }
+
+    /// <summary>The Ashen Crypt: the thralls rising, then the Cinder Warden (--raid).</summary>
+    async Task Raid()
+    {
+        var (p, r) = (main.PlayerNode, Raids.AshenCrypt);
+        var centre = new Vector3((float)r.X, 0, (float)r.Z);
+        await Go(centre + new Vector3(0, 0, 60), 120);
+        var cam = new Camera3D { Far = 2000, Fov = 50 };
+        main.AddChild(cam);
+        cam.MakeCurrent();
+        // Heights are above the ground.
+        void Look(Vector3 eye, Vector3 at) { cam.GlobalPosition = eye with { Y = City.FloorAt(eye) + eye.Y }; cam.LookAt(at with { Y = City.FloorAt(at) + at.Y }, Vector3.Up); }
+        Look(centre + new Vector3(10, 4, 30), centre + new Vector3(0, 1.5f, 0));
+        await Frames(60);
+        await Shot("raid-0-crypt");
+        p.GlobalPosition = (centre + new Vector3(0, 0, 25)) with { Y = City.FloorAt(centre + new Vector3(0, 0, 25)) + 1 };
+        await Frames(50);
+        Look(centre + new Vector3(3, 3, 12.5f), centre + new Vector3(0, 0.8f, 0));
+        await Shot("raid-1-thralls");
+        foreach (var t in main.CryptNode.Thralls.ToList()) t.TakeHit(1e6, Tristinwold.Nemesis.DamageKind.Fire, AttackKind.Spell, false, p);
+        p.Frozen = true;
+        for (var i = 0; i < 200; i++) { p.Stats.Heal(1e6); await Frames(1); }
+        if (main.CryptNode.Warden is { } w)
+        {
+            for (var i = 0; i < 3; i++)
+            {
+                var at = w.GlobalPosition;
+                Look((at + new Vector3(4.5f, 0, -4)) with { Y = 1.8f }, at with { Y = 2.6f });
+                await Frames(40 + i * 30);
+                p.Stats.Heal(1e6); // the photographer is in no danger
+                await Shot($"raid-{2 + i}-warden");
+            }
         }
         GetTree().Quit();
     }

@@ -27,7 +27,7 @@ public partial class SelfTest(Main main) : Node
         try
         {
             await Frames(10);
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -58,6 +58,7 @@ public partial class SelfTest(Main main) : Node
             await Explore();
             await CompanyTest();
             await GuildTest();
+            await RaidTest();
             if (main.Choice.Account is { } account) await Account(account);
             await Teleport(new Vector3(-150, 0, -120));
             await Until(() => !main.Tracker.InFight, 15);
@@ -477,7 +478,7 @@ public partial class SelfTest(Main main) : Node
         Check(main.HudNode.Choose("(Kneel"), "and kneel");
         Check(main.Saga.Stage == SagaStage.Knighted, "you rise a Dragon Knight");
         main.HudNode.EndTalk();
-        var beside = p.GlobalPosition + new Vector3(4, 0, 0);
+        var beside = p.GlobalPosition + new Vector3(3 + 3 * hatchling.Figure.Scale.X, 0, 0);
         hatchling.GlobalPosition = beside with { Y = City.FloorAt(beside) + 0.5f }; // on the ground, not in it
         hatchling.Velocity = Vector3.Zero;
         await Frames(10);
@@ -615,6 +616,48 @@ public partial class SelfTest(Main main) : Node
         await Until(() => main.GuildBook.For(Calling.Warrior).DuelsLost > lost, 20);
         Check(main.GuildBook.For(Calling.Warrior).DuelsLost > lost && !p.Downed, "you lose a duel and yield, on your feet");
         await Frames(200);
+    }
+
+    /// <summary>
+    /// The Ashen Crypt: thralls rise from the ash, then the Cinder Warden; his fire hurts; he falls, his hoard pays,
+    /// the crypt falls quiet, and after a while it rekindles.
+    /// </summary>
+    async Task RaidTest()
+    {
+        var (p, crypt, raid) = (main.PlayerNode, main.CryptNode, Raids.AshenCrypt);
+        foreach (var c in p.Companions().ToList()) c.QueueFree(); // a low-level hero alone
+        await Teleport(new Vector3((float)raid.X, 0, (float)raid.Z + 30));
+        await Until(() => crypt.Fighting, 10);
+        Check(crypt.Thralls.Count == raid.Thralls, $"{raid.Thralls} cinder thralls claw up out of the ash");
+        foreach (var t in crypt.Thralls.ToList()) t.TakeHit(1e6, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => crypt.Warden is not null, 5);
+        var warden = crypt.Warden!;
+        Check(warden.Stats.Name == raid.Boss && warden.Undead, $"{warden.Stats.Name} rises ({warden.Stats.MaxHealth:0} hp against a level {p.Hero.Level} hero)");
+        p.GlobalPosition = warden.GlobalPosition + new Vector3(0, 0.5f, 3);
+        p.Stats.Heal(1e6);
+        var health = p.Stats.Health;
+        await Until(() => p.Stats.Health < health, 15);
+        Check(p.Stats.Health < health, $"his claws and fire hurt ({health - p.Stats.Health:0} harm)");
+        p.Stats.Heal(1e6);
+        warden.TakeHit(warden.Stats.MaxHealth * 0.5, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Frames(30);
+        Check(crypt.Thralls.Count > raid.Thralls, "wounded, he calls more of the dead");
+        warden.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => crypt.Hoard is not null, 5);
+        Check(crypt.Hoard is not null, "he crumbles; his hoard lies open");
+        var (septims, xp, level) = (p.Septims, p.Hero.Xp, p.Hero.Level);
+        main.PickUp(crypt.Hoard!);
+        Check(p.Septims > septims && (p.Hero.Level > level || p.Hero.Xp != xp), $"the hoard pays: {p.Septims - septims} septims");
+        Check(main.RaidLog.ClearsOf(raid) == 1 && !main.RaidLog.Ready(raid, main.GuildBook.PlaySeconds) && main.GuildBook.Titles.Contains("Warden-Breaker"),
+            $"the crypt falls quiet for {raid.CooldownSeconds / 60:0} minutes; you are Warden-Breaker");
+        await Frames(30);
+        Check(!crypt.Fighting, "it doesn't wake again yet");
+        main.GuildBook.PlaySeconds += raid.CooldownSeconds;
+        await Until(() => crypt.Fighting, 5);
+        Check(crypt.Fighting, "and when it rekindles, the dead rise again");
+        await Teleport(new Vector3(-150, 0, -120)); // walking away lets them lie down
+        await Frames(30);
+        Check(!crypt.Fighting, "leave, and they lie down to wait");
     }
 
     /// <summary>A logged-in character's progress reaches the server, ready for the next device.</summary>

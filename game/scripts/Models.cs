@@ -173,6 +173,13 @@ public abstract partial class Body : Node3D
         return dragon;
     }
 
+    static Body Burned(string look, Action<Figure> burn)
+    {
+        var f = Figure.Create(look);
+        burn(f);
+        return f;
+    }
+
     /// <summary>A dragon knight on a dragon.</summary>
     static Body Ridden(string dragonLook)
     {
@@ -188,6 +195,8 @@ public abstract partial class Body : Node3D
         "frost_troll" => (Body?)Creature.Create("troll.glb", 2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
         "goblin" => (Body?)Creature.Create("goblin.glb", 1.3f) ?? Figure.Create(look),
         "dragon" => Dragon("white"),
+        "cinder_warden" => Burned(look, Cinder.Warden),
+        "cinder_thrall" => Burned(look, Cinder.Thrall),
         _ when look.StartsWith("rider:") => Ridden(look[6..]),
         _ when look.StartsWith("dragon_") && look.EndsWith("_corrupt") => Dragon(look[7..^8], corrupt: true),
         _ when look.StartsWith("dragon_") => Dragon(look[7..]),
@@ -239,6 +248,9 @@ public partial class Figure : Body
         ["apprentice"] = new("Mage", ["1H_Wand"], 0.6f),
         ["protege"] = new("Rogue", ["Knife"], 0.6f),
         ["familiar"] = new("Skeleton_Minion", [], 0.62f, new Color("#b080ff"), 0.7f),
+        // The Ashen Crypt.
+        ["cinder_warden"] = new("Skeleton_Warrior", [], 1.3f, new Color("#4a3a30")),
+        ["cinder_thrall"] = new("Skeleton_Minion", [], 0.7f, new Color("#5a4636")),
         // Enemies.
         ["dock_thug"] = new("Barbarian", ["1H_Axe"]),
         ["lantern_boy"] = new("Rogue", ["Knife"], 0.66f, new Color("#ffcf9a")),
