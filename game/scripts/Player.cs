@@ -95,15 +95,47 @@ public partial class Player : Fighter
         Stats.CritChance = c.Id == "Assassin" ? 25 + 5 * (Hero.Rank("backstab") - 1) : c.Calling == Calling.Rogue ? 10 : 5;
         Stats.SpeedMult = c.Id == "MartialArtist" ? 1.15 : 1;
         Stats.Name = Company;
+        // What they wear, and what they've drunk.
+        Stats.Armor += Pack.Armor + (_wardLeft > 0 ? _ward : 0);
+        var might = (1 + Pack.Damage) * (_mightLeft > 0 ? 1 + _might : 1);
+        Stats.DamageMult *= might;
+        Stats.SpellPower *= might;
     }
+
+    /// <summary>What the hero carries and wears (the game hands it over on loading).</summary>
+    public Pack Pack { get; set; } = new();
+
+    double _might, _mightLeft, _ward, _wardLeft;
+
+    /// <summary>Puts on what's worn: the class's own look, then the gear over it, and the numbers to match.</summary>
+    public void Dress()
+    {
+        Restyle(Class.Look);
+        if (Figure is Figure f) Wardrobe.Wear(f, Pack);
+        Fit();
+    }
+
+    /// <summary>Eats or drinks something: health and the rest back, and a while of might or a ward.</summary>
+    public void Consume(Effect e)
+    {
+        Stats.Heal(Stats.MaxHealth * e.Health);
+        Stats.Restore(Stats.MaxMagicka * e.Magicka, Stats.MaxStamina * e.Stamina);
+        if (e.Might > 0) (_might, _mightLeft) = (e.Might, e.Seconds);
+        if (e.Ward > 0) (_ward, _wardLeft) = (e.Ward, e.Seconds);
+        if (e.Might > 0 || e.Ward > 0) Fit();
+    }
+
+    /// <summary>A potion's might or ward still working, and for how long.</summary>
+    public string? Buffs => _mightLeft > 0 || _wardLeft > 0
+        ? string.Join(", ", new[] { _mightLeft > 0 ? $"might {_mightLeft:0}s" : null, _wardLeft > 0 ? $"ward {_wardLeft:0}s" : null }.Where(x => x is not null))
+        : null;
 
     /// <summary>Takes up a saved hero: their class (and its look), level and ranks.</summary>
     public void Become(Hero hero)
     {
         var look = Class.Look;
         Hero = hero;
-        if (Class.Look != look) Restyle(Class.Look);
-        Fit();
+        Dress();
         Stats.Heal(1e9);
         Stats.Restore(1e9, 1e9);
     }
@@ -112,8 +144,7 @@ public partial class Player : Fighter
     public void Join(string discipline)
     {
         Hero.Join(discipline);
-        Restyle(Class.Look);
-        Fit();
+        Dress();
         Stats.Heal(1e9);
     }
 
@@ -142,6 +173,8 @@ public partial class Player : Fighter
         }
         Stats.Tick(delta, InFight);
         _rage -= delta;
+        if (_mightLeft > 0 && (_mightLeft -= delta) <= 0) Fit();
+        if (_wardLeft > 0 && (_wardLeft -= delta) <= 0) Fit();
         _poison -= delta;
         // Passives that work over time: a barbarian's hide closes wounds; a sorcerer's well refills fast.
         if (Class.Id == "Barbarian" && InFight) Stats.Heal(Stats.MaxHealth * Class.Passive.Power * Hero.Power("thick_hide") * delta);

@@ -76,12 +76,15 @@ public partial class Hud : CanvasLayer
         tabs.AddChild(Scroll("Journal", _journal));
 
         // A conversation: who, what they said, and what you can say back.
-        _talk = new PanelContainer { AnchorLeft = 0.2f, AnchorRight = 0.8f, AnchorTop = 0.55f, AnchorBottom = 0.95f, Visible = false };
+        // Long lists (a shop's stock, a full pack) scroll.
+        _talk = new PanelContainer { AnchorLeft = 0.2f, AnchorRight = 0.8f, AnchorTop = 0.4f, AnchorBottom = 0.97f, Visible = false };
         var talkBox = new VBoxContainer();
         _talk.AddChild(talkBox);
         talkBox.AddChild(_talkWho = new Label { Modulate = new Color("#a8d8a0") });
-        talkBox.AddChild(_talkText = new Label { AutowrapMode = TextServer.AutowrapMode.Word, SizeFlagsVertical = Control.SizeFlags.ExpandFill });
-        talkBox.AddChild(_talkOptions = new VBoxContainer());
+        talkBox.AddChild(_talkText = new Label { AutowrapMode = TextServer.AutowrapMode.Word });
+        var optionScroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        optionScroll.AddChild(_talkOptions = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        talkBox.AddChild(optionScroll);
         root.AddChild(Touch);
         root.AddChild(_talk);
     }

@@ -166,6 +166,9 @@ public partial class Roamers(Main main) : Node
         }
         var (xp, septims) = Roaming.Bounty(r, main.PlayerNode.Hero.Level);
         main.PlayerNode.Septims += septims;
+        var spoils = Loot.Hoard(r.RaidId, new Tristinwold.Nemesis.Rng((ulong)GD.Randi()), first: true); // it carried the best of its lair
+        main.Take(spoils);
+        main.HudNode.Log($"From {r.Title}: {Loot.Describe(spoils)}");
         main.GainXp(xp);
         _fallen.Add(r);
         main.HudNode.Toast($"{r.Title} is dead, for good. The price on its head: {septims} septims. (+{xp} experience)", 12);

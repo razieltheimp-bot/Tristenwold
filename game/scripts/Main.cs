@@ -276,6 +276,9 @@ public partial class Main : Node3D
         _places.Gone = id => _bonds.Any(b => b.Id == id);
         AddGuildMasters();
         AddGuilds();
+        AddMarket();
+        _herbPatch = new HerbPatch(this);
+        AddChild(_herbPatch);
         foreach (var raid in Raids.All)
         {
             var lair = new RaidLair(this, raid);
@@ -466,10 +469,12 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("journal")) { _hud.ShowJournal(_journal); _hud.OpenJournal(); }
         if (Input.IsActionJustPressed("party") && !_hud.Talking) ShowParty();
         if (Input.IsActionJustPressed("skills") && !_hud.Talking) ShowSkills();
+        if (Input.IsActionJustPressed("pack") && !_hud.Talking) ShowPack();
+        if (Input.IsActionJustPressed("drink")) QuickDrink();
         if (Input.IsActionJustPressed("ride")) ToggleRide();
         if (Input.IsActionJustPressed("rest") && !_tracker.InFight) Rest();
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _area, TouchMode ? status : status + $"    M: map   J: journal   E: talk   K: skills   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(Dragon is { Rideable: true } ? "   V: ride" : "")}");
+        _hud.Update(_player, _area, TouchMode ? status : status + $"    M: map   J: journal   E: talk   K: skills   I: pack   H: heal   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(Dragon is { Rideable: true } ? "   V: ride" : "")}");
         var saga = _saga.Objective(Dragon) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
         // The nearest lair that suits the hero, and the nearest nemesis out roaming.
         if (Raids.For(_player.Hero.Level, pos.X, pos.Z).FirstOrDefault() is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
@@ -525,6 +530,7 @@ public partial class Main : Node3D
         if (person is not null) return ($"talk to {person.Npc.Name}", () => Talk(person));
         var item = _places.Pickups.Append(_nest).Concat(_raidLairs.Select(l => l.Hoard)).OfType<Pickup>().Where(p => IsInstanceValid(p) && p.GlobalPosition.DistanceTo(pos) < 3).FirstOrDefault();
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
+        if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(_player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
         return null;
     }
@@ -621,7 +627,10 @@ public partial class Main : Node3D
             var raid = lair.Raid;
             var (xp, septims, first) = lair.Loot();
             _player.Septims += septims;
-            _hud.Toast($"{char.ToUpperInvariant(raid.Hoard[0])}{raid.Hoard[1..]}: {septims} septims, {raid.HoardHolds}. (+{xp} experience{(first ? ", double for the first time" : "")}) {char.ToUpperInvariant(raid.Name[0])}{raid.Name[1..]} will wake again in {raid.CooldownSeconds / 60:0} minutes.", 12);
+            var spoils = Loot.Hoard(raid.Id, _lootRng, first);
+            Take(spoils);
+            _hud.Log($"From {raid.Hoard}: {Loot.Describe(spoils)}");
+            _hud.Toast($"{char.ToUpperInvariant(raid.Hoard[0])}{raid.Hoard[1..]}: {septims} septims, {raid.HoardHolds}. (+{xp} experience{(first ? ", double for the first time" : "")}) In your pack: {Loot.Describe(spoils)}. {char.ToUpperInvariant(raid.Name[0])}{raid.Name[1..]} will wake again in {raid.CooldownSeconds / 60:0} minutes.", 12);
             GainXp(xp);
             if (first && !_guilds.Titles.Contains(raid.Title)) { _guilds.Titles.Add(raid.Title); _hud.Toast($"You are {raid.Title}.", 8); }
             Save();
@@ -663,6 +672,8 @@ public partial class Main : Node3D
                 save.Restore(_explored, _journal);
                 _player.Septims = save.Septims;
                 _player.Meat = save.Meat;
+                _player.Pack = save.Pack ?? new Pack();
+                _herbs = save.Herbs ?? new HerbBook();
                 if (save.Hero is { } hero) _player.Become(hero);
                 _bonds.AddRange(save.Companions);
                 _saga = save.Saga ?? new DragonSaga();
@@ -681,7 +692,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public void Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)
         {
@@ -776,6 +787,7 @@ public partial class Main : Node3D
         Key("limit", Godot.Key.R); Key("cycle_element", Godot.Key.Q); Key("menu", Godot.Key.F10); Key("rest", Godot.Key.T);
         Key("interact", Godot.Key.E); Key("map", Godot.Key.M); Key("journal", Godot.Key.J);
         Key("party", Godot.Key.P); Key("skills", Godot.Key.K); Key("ride", Godot.Key.V); Key("descend", Godot.Key.C);
+        Key("pack", Godot.Key.I); Key("drink", Godot.Key.H);
     }
 
     public override void _ExitTree()

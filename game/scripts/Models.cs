@@ -386,12 +386,17 @@ public partial class Figure : Body
         if (_anim is not null) _anim.SpeedScale = rate;
     }
 
+    /// <summary>How the weapon it's been given is held (see <see cref="Wardrobe"/>); null for its own.</summary>
+    public Tristinwold.Gameplay.Grip? Held { get; set; }
+
     public override void Attack(bool heavy = false)
     {
         if (_anim is not null) _anim.SpeedScale = 1;
-        string[] swings = _look.Model.StartsWith("Skeleton") || _look.Show.Contains("2H_Axe") || _look.Show.Contains("2H_Sword")
+        var twoHanded = Held is { } held ? held == Tristinwold.Gameplay.Grip.TwoHand
+            : _look.Model.StartsWith("Skeleton") || _look.Show.Contains("2H_Axe") || _look.Show.Contains("2H_Sword");
+        string[] swings = twoHanded
             ? ["2H_Melee_Attack_Chop", "2H_Melee_Attack_Slice"]
-            : _look.Unarmed ? ["Unarmed_Melee_Attack_Punch_A", "Unarmed_Melee_Attack_Punch_B"]
+            : _look.Unarmed && Held is null ? ["Unarmed_Melee_Attack_Punch_A", "Unarmed_Melee_Attack_Punch_B"]
             : ["1H_Melee_Attack_Slice_Diagonal", "1H_Melee_Attack_Chop", "1H_Melee_Attack_Slice_Horizontal"];
         Once(heavy ? "2H_Melee_Attack_Spin" : swings[_swing++ % swings.Length], heavy ? 1.1 : 0.7, heavy ? 1 : 1.4f);
     }

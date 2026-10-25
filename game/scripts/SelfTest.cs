@@ -28,7 +28,8 @@ public partial class SelfTest(Main main) : Node
         {
             await Frames(10);
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -63,6 +64,7 @@ public partial class SelfTest(Main main) : Node
             await LairTest();
             await NemesisLairTest();
             await StrangeWildsTest();
+            await TradeTest();
             if (main.Choice.Account is { } account) await Account(account);
             await Teleport(new Vector3(-150, 0, -120));
             await Until(() => !main.Tracker.InFight, 15);
@@ -924,6 +926,90 @@ public partial class SelfTest(Main main) : Node
         Check(lost > 0, $"it hurls rocks and comes down on you ({lost:0} harm)");
         Clear(ape);
         await Until(() => !main.Tracker.InFight, 10);
+    }
+
+    /// <summary>
+    /// Loot, the pack, the market and the trades: a wolf leaves its pelt; the smith sells a sword, which you wear, and
+    /// it shows in your hand and makes you hit harder; the forge smelts scrap into iron; a herb picked in the wild goes
+    /// in the pack; a potion heals; the shops buy back what you don't want.
+    /// </summary>
+    async Task TradeTest()
+    {
+        var p = main.PlayerNode;
+        var pack = p.Pack;
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        // Loot: wolves leave pelts.
+        await Teleport(new Vector3(0, 0, 400));
+        var pelts = pack.Count("wolf_pelt");
+        for (var i = 0; i < 6 && pack.Count("wolf_pelt") == pelts; i++)
+        {
+            var wolf = Spawn("wolf", p.GlobalPosition + new Vector3(0, 0, -4));
+            await Frames(5);
+            wolf.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, p);
+            await Frames(5);
+        }
+        Check(pack.Count("wolf_pelt") > pelts, $"a wolf leaves its pelt ({Items.Count("wolf_pelt", pack.Count("wolf_pelt"))} in the pack)");
+        await Until(() => !main.Tracker.InFight, 10);
+
+        // The market by the Gallows Perch: the smith sells a sword.
+        await Teleport(new Vector3(80, 0, 8));
+        var smith = main.GetChildren().OfType<Person>().FirstOrDefault(x => x.Npc.Id == Shops.Smithy.Id);
+        Check(smith is not null && main.GetChildren().OfType<Person>().Count(x => Shops.All.Any(s => s.Id == x.Npc.Id)) == 3, "three shopkeepers keep stalls on the Gallows road");
+        p.Septims = 200;
+        main.Talk(smith!);
+        Check(main.HudNode.Choose("Let me see"), "the smith shows her wares");
+        Check(main.HudNode.Choose("Iron Sword"), "and sells you an iron sword");
+        Check(pack.Count("iron_sword") == 1 && p.Septims == 200 - Items.Get("iron_sword")!.Value, $"for {Items.Get("iron_sword")!.Value} septims");
+        main.HudNode.EndTalk();
+
+        // Worn, it shows in your hand and makes you hit harder.
+        var damage = p.Stats.DamageMult;
+        main.ShowPack();
+        Check(main.HudNode.Choose("Wear Iron Sword"), "you put it on from your pack");
+        main.HudNode.EndTalk();
+        await Frames(5);
+        Check(p.Stats.DamageMult > damage && p.Figure.FindChildren("Worn_iron_sword", "MeshInstance3D", true, false).Count == 1,
+            $"it's in your hand, and you hit harder ({damage:0.00} -> {p.Stats.DamageMult:0.00})");
+        pack.Add("iron_helm");
+        pack.Equip("iron_helm");
+        var armor = p.Stats.Armor;
+        p.Dress();
+        Check(p.Stats.Armor > armor && p.Figure.FindChildren("Worn_iron_helm", "MeshInstance3D", true, false).Count == 1, "a helm too, on your head");
+
+        // The forge: scrap into iron.
+        pack.Add("scrap_iron", 3);
+        main.Talk(smith!);
+        Check(main.HudNode.Choose("Can I use your forge"), "she lets you use her forge");
+        Check(main.HudNode.Choose("Make Iron Ingot"), "you smelt scrap into an iron ingot");
+        Check(pack.Count("iron_ingot") >= 1 && pack.JobXp.GetValueOrDefault(Job.Smithing) > 0, "and learn a little smithing");
+        main.HudNode.EndTalk();
+
+        // Sell what you don't need.
+        var before = p.Septims;
+        main.Talk(smith!);
+        main.HudNode.Choose("I've things to sell");
+        Check(main.HudNode.Choose("Sell every"), "she buys your pelts");
+        Check(p.Septims > before && pack.Count("wolf_pelt") == 0, $"for {p.Septims - before} septims");
+        main.HudNode.EndTalk();
+
+        // A herb in the wild.
+        var plant = Herbs.Near(main.World, 0, 400, 400).First(x => main.HerbLog.Ready(x, main.GuildBook.PlaySeconds));
+        await Teleport(new Vector3((float)plant.X + 1, 0, (float)plant.Z));
+        await Until(() => main.HerbPatchNode.Within(new Vector3((float)plant.X, City.FloorAt(new Vector3((float)plant.X, 0, (float)plant.Z)), (float)plant.Z)) is not null, 5);
+        p.GlobalPosition = new Vector3((float)plant.X + 0.5f, City.FloorAt(new Vector3((float)plant.X, 0, (float)plant.Z)) + 0.5f, (float)plant.Z);
+        await Frames(5);
+        var herbs = pack.Count(plant.HerbId);
+        Check(main.PickHere() && pack.Count(plant.HerbId) > herbs && !main.HerbLog.Ready(plant, main.GuildBook.PlaySeconds),
+            $"you pick {Items.Get(plant.HerbId)!.Name.ToLowerInvariant()} in the wild, and it's gone until it grows back");
+
+        // A potion heals.
+        pack.Add("healing_draught");
+        p.Stats.Lose(p.Stats.MaxHealth * 0.7);
+        var hurt = p.Stats.Health;
+        main.ShowPack();
+        Check(main.HudNode.Choose("Drink Healing Draught") && p.Stats.Health > hurt, "a healing draught heals");
+        main.HudNode.EndTalk();
+        p.Stats.Heal(1e9);
     }
 
     Enemy Spawn(string kind, Vector3 at)
