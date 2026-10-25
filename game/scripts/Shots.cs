@@ -209,7 +209,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
     async Task Lairs(string which)
     {
         var p = main.PlayerNode;
-        var pick = which.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var pick = which == "true" ? [] : which.Split(',', StringSplitOptions.RemoveEmptyEntries); // plain --lairs: all of them
         var cam = new Camera3D { Far = 2000, Fov = 55 };
         main.AddChild(cam);
         void Look(Vector3 eye, Vector3 at) { cam.GlobalPosition = eye with { Y = City.FloorAt(eye) + eye.Y }; cam.LookAt(at with { Y = City.FloorAt(at) + at.Y }, Vector3.Up); }
@@ -233,31 +233,38 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             Look(centre + toward * 16 + side * 5 + Vector3.Up * 3.5f, centre + Vector3.Up * 1);
             await Shot($"lair-{id}-1-thralls");
             foreach (var t in lair.Thralls.ToList()) t.TakeHit(1e7, Tristinwold.Nemesis.DamageKind.Sun, AttackKind.Spell, false, p);
+            // Stand our ground in the lair; the boss comes to us.
+            var stand = centre + toward * 7;
+            p.GlobalPosition = stand with { Y = City.FloorAt(stand) + 1 };
             for (var i = 0; i < 120; i++) { p.Stats.Heal(1e6); await Frames(1); }
+            // Frames the boss from beside the fight, heights above the ground (Look adds the floor).
+            void Portrait(Enemy boss, float swing)
+            {
+                var at = boss.GlobalPosition with { Y = 0 };
+                var size = (float)boss.Kind.Height * (boss.Named ? 1.15f : 1);
+                var toHero = (p.GlobalPosition - boss.GlobalPosition) with { Y = 0 };
+                var dir = (toHero.LengthSquared() > 0.01f ? toHero.Normalized() : toward).Rotated(Vector3.Up, swing);
+                Look(at + dir * size * 1.9f + Vector3.Up * size * 0.75f, at + Vector3.Up * size * 0.5f);
+            }
             if (lair.Boss is { } boss)
             {
                 for (var i = 0; i < 2; i++)
                 {
-                    var at = boss.GlobalPosition;
-                    var size = (float)boss.Kind.Height;
-                    Look(at + (toward * 1.6f + side * (i == 0 ? 1.2f : -1.4f)) * size + Vector3.Up * size * 0.7f, at + Vector3.Up * size * 0.55f);
-                    await Frames(30 + i * 40);
+                    await Frames(20 + i * 40);
                     p.Stats.Heal(1e6);
+                    Portrait(boss, i == 0 ? 0.9f : -1.1f);
                     await Shot($"lair-{id}-{2 + i}-boss");
                 }
                 if (r == Raids.GoblinWarren || pick.Length > 0)
                 {
                     // Let it beat us: it takes a name and goes roaming.
-                    p.Frozen = false;
                     p.TakeHit(1e7, Tristinwold.Nemesis.DamageKind.Fire, AttackKind.Weapon, false, boss);
-                    await Frames(20);
-                    var at = boss.GlobalPosition;
-                    Look(at + (toward * 1.8f + side) * (float)boss.Kind.Height + Vector3.Up * (float)boss.Kind.Height, at + Vector3.Up * (float)boss.Kind.Height * 0.6f);
-                    await Frames(20);
+                    await Frames(3);
+                    Portrait(boss, 0.6f);
                     await Shot($"lair-{id}-4-named");
                     await Frames(300);
                 }
-                boss.TakeHit(1e8, Tristinwold.Nemesis.DamageKind.Sun, AttackKind.Spell, false, p);
+                if (IsInstanceValid(boss)) boss.TakeHit(1e8, Tristinwold.Nemesis.DamageKind.Sun, AttackKind.Spell, false, p);
             }
             p.Frozen = false;
             main.PlayerNode.Camera.MakeCurrent();

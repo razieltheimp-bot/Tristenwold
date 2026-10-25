@@ -118,7 +118,7 @@ public static class LairSites
             },
             Amount = (int)(20 + size * 40), Lifetime = 0.8, Direction = Vector3.Up, Spread = 15, Gravity = new Vector3(0, 1.2f, 0), InitialVelocityMin = 0.2f, InitialVelocityMax = 0.6f,
             EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere, EmissionSphereRadius = size * 0.6f,
-            ColorRamp = new Gradient { Offsets = [0, 0.5f, 1], Colors = [new Color(1, 0.9f, 0.5f), new Color(1, 0.45f, 0.1f, 0.8f), new Color(0.4f, 0.05f, 0, 0)] },
+            ColorRamp = new Gradient { Offsets = [0, 0.5f, 1], Colors = [new Color(1, 0.8f, 0.4f, 0.55f), new Color(1, 0.4f, 0.08f, 0.5f), new Color(0.4f, 0.05f, 0, 0)] },
         };
         root.AddChild(flame);
         flame.Position = at;
@@ -232,9 +232,9 @@ public static class LairSites
         var side = Side(back);
         var floor = raid.BossKind switch
         {
-            "crystal_basilisk" => new Color(0.16f, 0.12f, 0.2f, 0.9f),
-            "rock_bear" => new Color(0.22f, 0.2f, 0.17f, 0.85f),
-            _ => new Color(0.26f, 0.2f, 0.13f, 0.85f),
+            "crystal_basilisk" => new Color(0.12f, 0.09f, 0.15f, 0.85f),
+            "rock_bear" => new Color(0.13f, 0.12f, 0.1f, 0.75f),
+            _ => new Color(0.15f, 0.11f, 0.07f, 0.75f),
         };
         root.AddChild(Ground(c, 24, floor));
         var mouth = c + back * 11;
@@ -267,7 +267,7 @@ public static class LairSites
         switch (raid.BossKind)
         {
             case "goblin_king":
-                Fire(root, Floor(c + side * 3 - back * 2) + Vector3.Up * 0.3f, 0.45f);
+                Fire(root, Floor(c + side * 3 - back * 2) + Vector3.Up * 0.3f, 0.3f);
                 Prop(root, "ph:fire_pit.glb", c + side * 3 - back * 2, 1.4f);
                 foreach (var (x, z, model, s) in new[] { (-7f, 4f, "dungeon/barrel_large.glb", 0.5f), (-8f, 2f, "dungeon/crates_stacked.glb", 0.5f), (7f, 5f, "dungeon/box_stacked.glb", 0.5f), (6f, 7f, "dungeon/barrel_small_stack.glb", 0.5f), (-5f, -6f, "dungeon/keg.glb", 0.5f), (2f, 8f, "dungeon/trunk_medium_A.glb", 0.5f) })
                     Prop(root, model, c + side * x + back * z, s, rng.RandfRange(0, 6), solid: true);
