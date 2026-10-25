@@ -88,7 +88,7 @@ public partial class Terrain(WorldGen world) : Node3D
             if (sways) _grassSway = Graphics.Swaying(2.2f, heightScale: 1.6f);
             _tuft = Tuft();
         }
-        if (Fancy) Clouds();
+        if (Fancy && !City.PhotoSky) Clouds(); // a photographed sky has its own clouds
     }
 
     readonly List<Node3D> _clouds = [];

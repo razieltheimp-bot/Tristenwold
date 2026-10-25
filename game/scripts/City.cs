@@ -77,6 +77,9 @@ public static class City
 
     const string SkyPhoto = "res://assets/polyhaven/sky/sky.hdr";
 
+    /// <summary>The sky is the photograph (real clouds), rather than painted.</summary>
+    public static bool PhotoSky { get; private set; }
+
     public static void Build(Node3D root, float fog = 0.0035f)
     {
         var rng = new Rng(1337);
@@ -86,6 +89,7 @@ public static class City
         // shot at 48 degrees up, as high as our sun; the panorama is turned to put it in the same place).
         // Haze hides where the streamed land ends.
         var photo = ResourceLoader.Exists(SkyPhoto) ? GD.Load<Texture2D>(SkyPhoto) : null;
+        PhotoSky = photo is not null;
         var env = new Godot.Environment
         {
             BackgroundMode = Godot.Environment.BGMode.Sky,

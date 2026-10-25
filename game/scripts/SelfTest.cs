@@ -476,8 +476,10 @@ public partial class SelfTest(Main main) : Node
         Check(main.HudNode.Choose("(Kneel"), "and kneel");
         Check(main.Saga.Stage == SagaStage.Knighted, "you rise a Dragon Knight");
         main.HudNode.EndTalk();
-        hatchling.GlobalPosition = p.GlobalPosition + new Vector3(3, 0, 0);
-        await Frames(5);
+        var beside = p.GlobalPosition + new Vector3(4, 0, 0);
+        hatchling.GlobalPosition = beside with { Y = City.FloorAt(beside) + 0.5f }; // on the ground, not in it
+        hatchling.Velocity = Vector3.Zero;
+        await Frames(10);
         main.RideNow();
         Check(p.Mount == hatchling, $"you climb onto {hatchling.Bond.Name} ({main.HudNode.LastLine}; {hatchling.State}, {hatchling.GlobalPosition.DistanceTo(p.GlobalPosition):0.0} m)");
         Input.ActionPress("jump");
