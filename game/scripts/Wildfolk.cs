@@ -33,6 +33,18 @@ public static class Wildfolk
     static readonly StandardMaterial3D Steel = Lairfolk.Plain("#b8c0c8", 0.25f, 0.9f);
     static readonly StandardMaterial3D Leather = Lairfolk.Plain("#5a3420", 0.8f);
 
+    /// <summary>
+    /// The troll model, stood on its feet. Its skinned mesh measures taller than it stands, so going by its box
+    /// leaves it waist-deep in the ground; its foot bones say where the ground really is.
+    /// </summary>
+    public static Creature? Troll(float height, Color? tint = null)
+    {
+        if (Creature.Create("troll.glb", height, tint) is not { } c || Graft.On(c) is not { } g) return null;
+        var feet = new[] { "foot_tip.L", "foot_tip.R", "foot.L", "foot.R" }.Where(g.Has).Select(b => g.Bone(b).Y).DefaultIfEmpty(0).Min();
+        if (feet < -0.05f && c.GetChildren().OfType<Node3D>().FirstOrDefault() is { } model) model.Position += Vector3.Up * -feet;
+        return c;
+    }
+
     /// <summary>A bone that's highest in the body of the ones named (the troll's spine bones have no telling names).</summary>
     static string Highest(Graft g, params string[] bones) => bones.Where(g.Has).MaxBy(b => g.Bone(b).Y) ?? bones[0];
 
@@ -69,28 +81,32 @@ public static class Wildfolk
         var t = g.Tall;
         var head = g.Has("Ursidae_Head") ? "Ursidae_Head" : "Ursidae_Neck";
         var h = g.Bone(head);
-        var face = h + Vector3.Forward * t * 0.13f + Vector3.Up * t * 0.02f;
-        // The owl's mask: a pale flat face, two great moonlike eyes, a hooked beak.
-        g.Add(head, face, new SphereMesh { Radius = t * 0.1f, Height = t * 0.2f, RadialSegments = 16, Rings = 8 }, Mask, Basis.Identity.Scaled(new Vector3(1, 1.15f, 0.4f)));
+        // The owl's mask over the bear's face: a pale flat disc just behind the tip of the snout, two great
+        // moonlike eyes, a hooked beak.
+        var face = new Vector3(0, h.Y + t * 0.02f, g.Box.Position.Z + t * 0.07f);
+        g.Add(head, face, new SphereMesh { Radius = t * 0.12f, Height = t * 0.24f, RadialSegments = 16, Rings = 8 }, Mask, Basis.Identity.Scaled(new Vector3(1, 1.1f, 0.45f)));
         foreach (var side in new[] { -1f, 1f })
         {
-            var eye = face + new Vector3(side * t * 0.042f, t * 0.018f, -t * 0.03f);
-            g.Add(head, eye, new SphereMesh { Radius = t * 0.026f, Height = t * 0.052f }, Eye);
-            g.Add(head, eye + Vector3.Forward * t * 0.016f, new SphereMesh { Radius = t * 0.014f, Height = t * 0.028f }, Pupil);
-            // Antlers: a beam sweeping up and back, tines off its front.
-            var root = h + new Vector3(side * t * 0.06f, t * 0.09f, t * 0.02f);
-            var dir = new Vector3(side * 0.5f, 1, 0.35f);
-            var tip = Curve(g, head, root, dir, new Vector3(side * 0.6f, -0.2f, 0.9f), t * 0.42f, t * 0.022f, 5, _ => Antler);
+            var eye = face + new Vector3(side * t * 0.05f, t * 0.025f, -t * 0.045f);
+            g.Add(head, eye, new SphereMesh { Radius = t * 0.03f, Height = t * 0.06f }, Eye);
+            g.Add(head, eye + Vector3.Forward * t * 0.02f, new SphereMesh { Radius = t * 0.016f, Height = t * 0.032f }, Pupil);
+            // Antlers: a beam from the crown sweeping up, out and back, tines off its front.
+            var root = new Vector3(side * t * 0.07f, h.Y + t * 0.13f, face.Z + t * 0.12f);
+            var tip = Curve(g, head, root, new Vector3(side * 0.45f, 1, 0.2f), new Vector3(side * 0.7f, -0.3f, 0.8f), t * 0.55f, t * 0.026f, 6, _ => Antler);
             for (var k = 1; k <= 3; k++)
-            {
-                var along = root.Lerp(tip, k / 4f);
-                Curve(g, head, along, new Vector3(side * 0.2f, 1, -0.5f), new Vector3(0, 0.2f, 0.3f), t * (0.16f - k * 0.025f), t * 0.011f, 3, _ => Antler);
-            }
+                Curve(g, head, root.Lerp(tip, k / 4f), new Vector3(side * 0.15f, 1, -0.4f), new Vector3(0, 0.2f, 0.4f), t * (0.2f - k * 0.03f), t * 0.013f, 3, _ => Antler);
         }
-        g.Spike(head, face + new Vector3(0, -t * 0.03f, -t * 0.035f), new Vector3(0, -0.6f, -1), t * 0.05f, t * 0.016f, Claw, 5);
-        // Great leathery wings, grey-white, from its shoulders.
+        g.Spike(head, face + new Vector3(0, -t * 0.035f, -t * 0.05f), new Vector3(0, -0.7f, -1), t * 0.06f, t * 0.018f, Claw, 5);
+        // A ruff of feathers round the mask.
+        for (var k = 0; k < 10; k++)
+        {
+            var a = k * Mathf.Tau / 10;
+            g.Add(head, face + new Vector3(Mathf.Cos(a) * t * 0.13f, Mathf.Sin(a) * t * 0.14f, t * 0.04f), new SphereMesh { Radius = t * 0.05f, Height = t * 0.05f },
+                Lairfolk.Plain("#4a3c34", 0.9f), new Basis(Vector3.Forward, a).Scaled(new Vector3(1.4f, 0.6f, 0.7f)));
+        }
+        // Great leathery wings, smoke-grey, from its shoulders.
         var shoulders = Highest(g, "Ursidae_Spine_3", "Ursidae_Spine_2");
-        FlapWings.Grow(g, shoulders, g.Bone(shoulders) + Vector3.Up * t * 0.16f, t * 0.12f, t * 1.05f, feathered: false, new Color("#c4beb8"), new Color("#3a3430"));
+        FlapWings.Grow(g, shoulders, g.Bone(shoulders) + Vector3.Up * t * 0.14f, t * 0.12f, t * 0.85f, feathered: false, new Color("#7a726c"), new Color("#2a2420"));
         return c;
     }
 
@@ -98,9 +114,9 @@ public static class Wildfolk
 
     static Body? DeathcrestApe()
     {
-        if (Creature.Create("troll.glb", 1.9f) is not { } c || Graft.On(c) is not { } g) return null;
+        if (Troll(1.9f) is not { } c || Graft.On(c) is not { } g) return null;
         Retexture(c, "troll_baseTex", "troll_deathcrest.png");
-        var t = g.Tall;
+        var t = 1.9f; // its own height (the box measures wrong: see Troll)
         var head = Highest(g, "Bone.003", "Bone.002", "Bone.001", "Bone");
         var h = g.Bone(head);
         // Ridged horns sweeping back, banded light and dark.
@@ -150,9 +166,9 @@ public static class Wildfolk
 
     static Body? WingedApe()
     {
-        if (Creature.Create("troll.glb", 2.0f) is not { } c || Graft.On(c) is not { } g) return null;
+        if (Troll(2.0f) is not { } c || Graft.On(c) is not { } g) return null;
         Retexture(c, "troll_baseTex", "troll_wingedape.png");
-        var t = g.Tall;
+        var t = 2.0f;
         var chest = Highest(g, "Bone.002", "Bone.001", "Bone");
         FlapWings.Grow(g, chest, g.Bone(chest) + new Vector3(0, t * 0.05f, t * 0.08f), t * 0.1f, t * 1.0f, feathered: true, new Color("#141414"), new Color("#0a0a0a"));
         // A greatsword in its fist, and a harness strap across its chest.
@@ -180,7 +196,7 @@ public static class Wildfolk
 public partial class FlapWings : Node3D
 {
     readonly List<(Node3D Pivot, float Side)> _wings = [];
-    float _phase, _beat = 1.2f, _rate = 1.2f;
+    float _phase, _beat = 1.2f, _rate = 1.2f, _open;
 
     /// <summary>Beating hard to fly (a kipine's dive, a winged ape's leap).</summary>
     public bool Flying { get; set; }
@@ -193,7 +209,7 @@ public partial class FlapWings : Node3D
         var membrane = new StandardMaterial3D
         {
             AlbedoColor = skin, Roughness = 0.75f, CullMode = BaseMaterial3D.CullModeEnum.Disabled, BacklightEnabled = !feathered,
-            Backlight = skin.Lightened(0.2f) * 0.6f,
+            Backlight = skin * 0.35f,
         };
         var bone3 = new StandardMaterial3D { AlbedoColor = bones, Roughness = 0.6f };
         foreach (var side in new[] { -1f, 1f })
@@ -232,19 +248,19 @@ public partial class FlapWings : Node3D
     /// <summary>A bird's wing: the arm, and long feathers fanned back from it, longest at the tip.</summary>
     static void Feathers(Node3D wing, float s, Material feather, Material bone)
     {
-        Rod(wing, Vector3.Zero, new Vector3(0.55f, 0.15f, 0) * s, s * 0.035f, bone);
-        for (var i = 0; i < 12; i++)
-        {
-            var f = i / 11f;
-            var root = new Vector3(0.05f + f * 0.55f, 0.15f * f, 0) * s;
-            var length = s * (0.35f + f * 0.45f);
-            var dir = new Vector3(f * 0.6f, -0.35f + f * 0.2f, 1 - f * 0.4f).Normalized();
-            wing.AddChild(new MeshInstance3D
+        Rod(wing, Vector3.Zero, new Vector3(0.55f, 0.15f, 0) * s, s * 0.04f, bone);
+        // Flight feathers, each a long flat taper, overlapping; then a row of short coverts over their roots.
+        var quill = new SphereMesh { Radius = 0.5f, Height = 1, RadialSegments = 10, Rings = 5 };
+        foreach (var (count, reach, scale) in new[] { (18, 1f, 1f), (12, 0.45f, 0.55f) })
+            for (var i = 0; i < count; i++)
             {
-                Mesh = new BoxMesh { Size = new Vector3(s * 0.07f, s * 0.008f, length) }, MaterialOverride = feather,
-                Transform = new Transform3D(Basis.LookingAt(dir, Vector3.Up), root + dir * length / 2),
-            });
-        }
+                var f = i / (count - 1f);
+                var root = new Vector3(0.04f + f * 0.56f, 0.15f * f + (scale < 1 ? 0.01f : 0), 0) * s;
+                var length = s * (0.3f + f * 0.5f) * reach;
+                var dir = new Vector3(f * 0.75f, -0.3f + f * 0.15f, 1 - f * 0.5f).Normalized();
+                var basis = Basis.LookingAt(dir, Vector3.Up).Scaled(new Vector3(s * 0.085f * scale, s * 0.012f, length));
+                wing.AddChild(new MeshInstance3D { Mesh = quill, MaterialOverride = feather, Transform = new Transform3D(basis, root + dir * length * 0.45f) });
+            }
     }
 
     static void Rod(Node3D into, Vector3 a, Vector3 b, float radius, Material m) => into.AddChild(new MeshInstance3D
@@ -258,10 +274,10 @@ public partial class FlapWings : Node3D
         var rate = Flying ? _rate * 2.6f : _rate;
         _beat = Mathf.MoveToward(_beat, rate, (float)delta * 3);
         _phase += (float)delta * _beat * Mathf.Tau;
-        // Folded half back at rest, sweeping up and down; flung wide and beating hard in the air.
-        var open = Flying ? 1 : 0.35f;
-        var flap = Mathf.Sin(_phase) * (Flying ? 0.75f : 0.18f);
+        // Folded back along the body at rest, stirring now and then; flung wide and beating hard in the air.
+        _open = Mathf.MoveToward(_open, Flying ? 1 : 0, (float)delta * 2.5f);
+        var flap = Mathf.Sin(_phase) * Mathf.Lerp(0.08f, 0.75f, _open);
         foreach (var (pivot, side) in _wings)
-            pivot.Rotation = new Vector3(0, side * (1 - open) * 1.1f, side * (flap + 0.15f));
+            pivot.Rotation = new Vector3(0, side * (1 - _open) * 1.35f, side * (flap + Mathf.Lerp(0.45f, 0.15f, _open)));
     }
 }

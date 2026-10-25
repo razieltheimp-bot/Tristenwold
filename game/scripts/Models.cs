@@ -192,7 +192,7 @@ public abstract partial class Body : Node3D
     {
         "skeever" => (Body?)Creature.Create("giant_rat.glb", 0.6f) ?? Beast.Rat(),
         "spriggan" => (Body?)Creature.Create("forest_monster.glb", 2.3f) ?? Figure.Create(look),
-        "frost_troll" => (Body?)Creature.Create("troll.glb", 2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
+        "frost_troll" => (Body?)Wildfolk.Troll(2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
         "goblin" => (Body?)Creature.Create("goblin.glb", 1.3f) ?? Figure.Create(look),
         "dragon" => Dragon("white"),
         "cinder_warden" => Burned(look, Cinder.Warden),

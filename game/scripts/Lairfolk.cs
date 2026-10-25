@@ -14,6 +14,9 @@ public sealed class Graft
     /// <summary>How tall the body stands, and where the top of it is.</summary>
     public float Tall { get; }
 
+    /// <summary>The whole body's box: its front (the tip of the snout) is at <c>Box.Position.Z</c>.</summary>
+    public Aabb Box { get; }
+
     Graft(Node3D body, Skeleton3D s)
     {
         _s = s;
@@ -21,7 +24,8 @@ public sealed class Graft
         for (Node? n = s; n is not null && n != body; n = n.GetParent())
             if (n is Node3D n3) t = n3.Transform * t;
         _toBody = t;
-        Tall = Models.Bounds(body).End.Y;
+        Box = Models.Bounds(body);
+        Tall = Box.End.Y;
     }
 
     public static Graft? On(Node3D body) =>
