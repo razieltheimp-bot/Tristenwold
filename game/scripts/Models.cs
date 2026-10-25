@@ -28,12 +28,22 @@ public static class Models
     public static Node3D Place(Node3D parent, string path, Vector3 at, float scale, float yaw = 0, bool solid = true, float shrink = 0.8f)
     {
         var holder = solid ? (Node3D)new StaticBody3D() : new Node3D();
+        holder.SetMeta("prop", path); // for the prop audit (--audit)
         holder.Position = at;
         holder.Rotation = new Vector3(0, yaw, 0);
         parent.AddChild(holder);
         if (Scene(path)?.Instantiate() is not Node3D model) return holder;
         model.Scale = Vector3.One * scale;
         holder.AddChild(model);
+        // Some models are built around their middle, not their foot: stand those on the ground, not half in it.
+        // Rocks and crags are meant to be sunk in, and banners, wall torches, arches and pillars are meant to
+        // meet a wall or a roof, so those stay exactly where they're put.
+        var placedByHand = FixedInPlace.Any(path.Contains);
+        if (!placedByHand && Bounds(model) is { Size.Y: > 0.05f } own && own.Position.Y < -own.Size.Y * 0.05f)
+            model.Position += Vector3.Up * -own.Position.Y;
+        if (placedByHand) { }
+        else if (holder.IsInsideTree()) Settle(holder); // placed into a live world: it was ready before it had a model
+        else holder.Ready += () => Settle(holder);
         if (solid)
         {
             var box = Bounds(model);
@@ -45,6 +55,63 @@ public static class Models
                 });
         }
         return holder;
+    }
+
+    static readonly string[] FixedInPlace = ["nature/", "rock", "mountain", "banner", "mounted", "arch", "pillar"];
+
+    /// <summary>
+    /// Once a prop is in the world (and the world's walls are solid), makes sure it isn't standing in one: if it's
+    /// inside a building or wall, it steps out the way the wall faces, a little at a time; then it drops onto whatever is
+    /// under it, so nothing hangs in the air.
+    /// </summary>
+    static async void Settle(Node3D prop)
+    {
+        var tree = prop.GetTree();
+        await prop.ToSignal(tree, SceneTree.SignalName.PhysicsFrame);
+        await prop.ToSignal(tree, SceneTree.SignalName.PhysicsFrame);
+        if (!GodotObject.IsInstanceValid(prop) || !prop.IsInsideTree()) return;
+        var space = prop.GetWorld3D().DirectSpaceState;
+        var mine = prop is CollisionObject3D body ? new Godot.Collections.Array<Rid> { body.GetRid() } : [];
+        for (var step = 0; step < 16; step++)
+        {
+            if (WorldBox(prop) is not { } box) return;
+            var probe = new PhysicsShapeQueryParameters3D
+            {
+                Shape = new BoxShape3D { Size = box.Size * 0.5f + Vector3.One * 0.01f },
+                Transform = new Transform3D(Basis.Identity, box.GetCenter() + Vector3.Up * box.Size.Y * 0.1f), Exclude = mine,
+            };
+            var wall = space.IntersectShape(probe, 8).Select(h => h["collider"].AsGodotObject()).OfType<Node3D>()
+                .FirstOrDefault(o => o is StaticBody3D && !o.HasMeta("prop") && !o.HasMeta("ground"));
+            if (wall is null) break;
+            var rest = space.GetRestInfo(probe);
+            var away = rest.Count > 0 ? (Vector3)rest["normal"] : prop.GlobalPosition - wall.GlobalPosition;
+            away.Y = 0;
+            if (away.LengthSquared() < 0.01f) away = prop.GlobalPosition - wall.GlobalPosition with { Y = prop.GlobalPosition.Y };
+            away.Y = 0;
+            if (away.LengthSquared() < 0.01f) away = Vector3.Right;
+            prop.GlobalPosition += away.Normalized() * 0.75f;
+        }
+        // Onto whatever is really under its middle: down if it's hanging, up if the ground there is higher than the
+        // map said (a slope, a pier deck). Never more than a few metres: it's a nudge, not a fall.
+        if (WorldBox(prop) is not { } placed) return;
+        var c = placed.GetCenter();
+        var hit = space.IntersectRay(new PhysicsRayQueryParameters3D
+        {
+            From = new Vector3(c.X, placed.Position.Y + Mathf.Min(placed.Size.Y * 0.6f, 2.5f), c.Z), To = new Vector3(c.X, placed.Position.Y - 3, c.Z), Exclude = mine,
+        });
+        if (hit.Count > 0 && ((Vector3)hit["position"]).Y - placed.Position.Y is var shift and (> 0.08f or < -0.08f))
+            prop.GlobalPosition += Vector3.Up * shift;
+    }
+
+    static Aabb? WorldBox(Node3D prop)
+    {
+        Aabb? box = null;
+        foreach (var m in prop.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().Where(m => m.IsVisibleInTree()))
+        {
+            var b = m.GlobalTransform * m.GetAabb();
+            box = box is { } x ? x.Merge(b) : b;
+        }
+        return box is { Size.Y: > 0.05f } ? box : null;
     }
 
     /// <summary>The first mesh in a model, for drawing many copies at once (trees, rocks, grass).</summary>

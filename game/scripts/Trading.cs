@@ -225,10 +225,10 @@ public partial class Main
     {
         var stalls = new (Shop Shop, Vector3 At, string Look, Sex Sex, int Age, string Who, string Story, string Temper)[]
         {
-            (Shops.Provisions, new(68, 0, 13), "worker", Sex.Male, 52, "provisioner", "Hollis Brandt has sold bread and rope on the Gallows road for thirty years. He knows every company that's walked out the east gate, and which ones came back.", "warm"),
-            (Shops.Smithy, new(81, 0, 14), "warmaster", Sex.Female, 44, "smith of the Anvil Gate", "Hulda Ironhand learned her trade in the Sunken Forge's shadow, from a dwarf who never said where he came from. Her forge is open to anyone who'll pay for the coal.", "blunt"),
-            (Shops.Apothecary, new(94, 0, 13), "priest", Sex.Female, 71, "apothecary", "Old Saffron has gathered herbs in the wilds since before the war. She pays fair for what you pick, and teaches anyone patient enough to grind it.", "kindly"),
-            (Shops.Menagerie, new(57, 0, 13), "hunter", Sex.Female, 38, "beastkeeper", "Wren Halloway was raised by a ranger who brought home every orphaned thing he found. She still does. She'll sell you anything she's raised, except the ones that won't leave her.", "dry"),
+            (Shops.Provisions, new(64, 0, 13), "worker", Sex.Male, 52, "provisioner", "Hollis Brandt has sold bread and rope on the Gallows road for thirty years. He knows every company that's walked out the east gate, and which ones came back.", "warm"),
+            (Shops.Smithy, new(75, 0, 14), "warmaster", Sex.Female, 44, "smith of the Anvil Gate", "Hulda Ironhand learned her trade in the Sunken Forge's shadow, from a dwarf who never said where he came from. Her forge is open to anyone who'll pay for the coal.", "blunt"),
+            (Shops.Apothecary, new(86, 0, 13), "priest", Sex.Female, 71, "apothecary", "Old Saffron has gathered herbs in the wilds since before the war. She pays fair for what you pick, and teaches anyone patient enough to grind it.", "kindly"),
+            (Shops.Menagerie, new(93, 0, 13), "hunter", Sex.Female, 38, "beastkeeper", "Wren Halloway was raised by a ranger who brought home every orphaned thing he found. She still does. She'll sell you anything she's raised, except the ones that won't leave her.", "dry"),
         };
         foreach (var (shop, at, look, sex, age, who, story, temper) in stalls)
         {

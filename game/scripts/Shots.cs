@@ -10,7 +10,7 @@ namespace Tristinwold.Game;
 /// </summary>
 /// <param name="lairs">Tour the wild lairs (--lairs, or --lairs goblin_warren,storm_eyrie for some of them).</param>
 /// <param name="wild">Portraits of the stranger things of the wilds (--wild).</param>
-public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null, bool wild = false, bool limit = false, bool market = false) : Node
+public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null, bool wild = false, bool limit = false, bool market = false, bool audit = false) : Node
 {
     public override async void _Ready()
     {
@@ -24,6 +24,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         if (wild) { await Wild(); return; }
         if (limit) { await Limit(); return; }
         if (market) { await Market(); return; }
+        if (audit) { await Audit(); return; }
         if (quick) { await Quick(); return; }
 
         // Tristinwold from the Gallows Perch, looking into the city.
@@ -358,17 +359,95 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         await Frames(2);
     }
 
+    // ---- the prop audit -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Tours the city, its docks and market, a settlement of every kind and every lair, and lists each placed prop
+    /// that floats above whatever is under it, is sunk into it, or stands inside a wall or building (--audit).
+    /// </summary>
+    async Task Audit()
+    {
+        var w = main.World;
+        var stops = new List<(string Name, Vector3 At)>
+        {
+            ("Tristinwold", City.PlayerStart), ("the docks", new Vector3(122, 0, 0)), ("the Warrens", new Vector3(-20, 0, -86)),
+        };
+        foreach (var kind in Enum.GetValues<SettlementKind>().Where(k => k is not SettlementKind.City))
+            if (w.SitesNear(0, 0, 3000).Where(x => x.Kind == kind).MinBy(x => x.DistanceTo(0, 0)) is { } site)
+                stops.Add(($"{site.Name} ({kind})", new Vector3((float)site.X, 0, (float)site.Z)));
+        foreach (var r in Raids.All) stops.Add((r.Name, new Vector3((float)r.X, 0, (float)r.Z)));
+        var seen = new HashSet<ulong>();
+        var problems = 0;
+        foreach (var (name, at) in stops)
+        {
+            await Go(at + new Vector3(0, 0, 3), 40);
+            var props = main.FindChildren("*", "Node3D", true, false).OfType<Node3D>()
+                .Where(n => n.HasMeta("prop") && IsInstanceValid(n) && n.IsInsideTree() && n.GlobalPosition.DistanceTo(at) < 140)
+                .Where(n => !new[] { "nature/", "rock", "mountain", "banner", "mounted", "arch", "pillar" }.Any(((string)n.GetMeta("prop")).Contains)).ToList();
+            var found = new List<string>();
+            foreach (var prop in props)
+            {
+                if (!seen.Add(prop.GetInstanceId())) continue;
+                if (Check(prop) is { } problem) found.Add($"  {prop.GetMeta("prop")} at ({prop.GlobalPosition.X:0.0}, {prop.GlobalPosition.Y:0.00}, {prop.GlobalPosition.Z:0.0}): {problem}");
+            }
+            problems += found.Count;
+            GD.Print($"AUDIT {name}: {props.Count} props, {found.Count} wrong");
+            foreach (var f in found) GD.Print("AUDIT" + f);
+        }
+        GD.Print($"AUDIT done: {problems} props wrong");
+        GetTree().Quit();
+    }
+
+    /// <summary>What's wrong with a prop, if anything: floating, sunk, or inside a wall.</summary>
+    string? Check(Node3D prop)
+    {
+        Aabb? box = null;
+        foreach (var m in prop.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().Where(m => m.IsVisibleInTree()))
+        {
+            var b = m.GlobalTransform * m.GetAabb();
+            box = box is { } x ? x.Merge(b) : b;
+        }
+        if (box is not { } aabb || aabb.Size.Y < 0.05f) return null;
+        var space = prop.GetWorld3D().DirectSpaceState;
+        var mine = prop is CollisionObject3D body ? new Godot.Collections.Array<Rid> { body.GetRid() } : [];
+        var centre = aabb.GetCenter();
+        float? Ground(Vector3 from, float down)
+        {
+            var hit = space.IntersectRay(new PhysicsRayQueryParameters3D { From = from, To = from + Vector3.Down * down, Exclude = mine });
+            return hit.Count > 0 ? ((Vector3)hit["position"]).Y : null;
+        }
+        var bottom = aabb.Position.Y;
+        // What's under the middle of it, looking down from a little above its foot.
+        var under = Ground(new Vector3(centre.X, bottom + 0.15f, centre.Z), 40);
+        var terrain = (float)main.World.Height(centre.X, centre.Z);
+        var floor = under ?? terrain;
+        if (bottom - floor > 0.3f) return $"floats {bottom - floor:0.00} m above {(under is null ? "the land" : "what's under it")}";
+        var above = Ground(new Vector3(centre.X, bottom + aabb.Size.Y + 0.5f, centre.Z), aabb.Size.Y + 0.5f);
+        if (above is { } top && top - bottom > Math.Max(0.35f, aabb.Size.Y * 0.4f) && top < bottom + aabb.Size.Y + 0.4f)
+            return $"sunk {top - bottom:0.00} m into the ground or a floor (it's {aabb.Size.Y:0.00} m tall)";
+        // Inside a wall: the middle of it overlaps some other solid that isn't the land.
+        var probe = new PhysicsShapeQueryParameters3D
+        {
+            Shape = new BoxShape3D { Size = aabb.Size * 0.5f + Vector3.One * 0.01f }, Transform = new Transform3D(Basis.Identity, centre + Vector3.Up * aabb.Size.Y * 0.1f),
+            Exclude = mine, CollisionMask = uint.MaxValue,
+        };
+        foreach (var hit in space.IntersectShape(probe, 8))
+            if (hit["collider"].AsGodotObject() is Node3D other && !main.TerrainNode.IsAncestorOf(other) && !other.HasMeta("prop") && other is not CharacterBody3D)
+                return $"inside {other.Name} ({other.GetParent()?.Name})";
+        return null;
+    }
+
     /// <summary>The market stalls on the Gallows road, the menagerie's pen at the end (--market).</summary>
     async Task Market()
     {
         var p = main.PlayerNode;
-        p.GlobalPosition = new Vector3(60, 1, 2);
+        p.GlobalPosition = new Vector3(97, 1, 2);
         await Frames(30);
-        p.Face(new Vector3(56, 0, 16));
+        p.Face(new Vector3(95, 0, 16));
         await Shot("market-menagerie");
-        p.GlobalPosition = new Vector3(84, 1, 0);
+        p.GlobalPosition = new Vector3(78, 1, -4);
         await Frames(20);
-        p.Face(new Vector3(84, 0, 16));
+        p.Face(new Vector3(78, 0, 16));
         await Shot("market-row");
         var cam = new Camera3D { Far = 500 };
         main.AddChild(cam);

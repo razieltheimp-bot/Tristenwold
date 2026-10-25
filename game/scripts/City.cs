@@ -169,8 +169,8 @@ public static class City
         root.AddChild(new OmniLight3D { Position = Needle + new Vector3(0, 22, 0), LightColor = new Color("#ffd27a"), LightEnergy = 4, OmniRange = 60 });
 
         // The Tong sea-caves: crags on the north shore.
-        Models.Place(root, "medieval/nature/mountain_B.gltf", new Vector3(150, -3, -120), 14, 0.7f);
-        Models.Place(root, "medieval/nature/mountain_C.gltf", new Vector3(170, -3, -108), 9, 2.1f);
+        Models.Place(root, "medieval/nature/mountain_B.gltf", new Vector3(150, -4.2f, -120), 14, 0.7f);
+        Models.Place(root, "medieval/nature/mountain_C.gltf", new Vector3(170, -4.2f, -108), 9, 2.1f);
         Label(root, new Vector3(150, 16, -108), "The Tong Sea-Caves");
 
         // Lanterns along the gate roads.
@@ -210,6 +210,7 @@ public static class City
     static void Disc(Node3D parent, float radius, float top, string colour)
     {
         var platform = new StaticBody3D { Position = new Vector3(0, 0, 0) };
+        platform.SetMeta("ground", true);
         platform.AddChild(new CollisionShape3D { Shape = new CylinderShape3D { Radius = radius, Height = top }, Position = new Vector3(0, top / 2, 0) });
         parent.AddChild(platform);
         var look = Buildings.Place(parent, FormattableString.Invariant($"disc:{radius}:{top}"), Vector3.Zero, 0, 0);

@@ -286,6 +286,7 @@ public partial class Terrain(WorldGen world) : Node3D
         var mesh = st.Commit();
 
         var body = new StaticBody3D { Position = new Vector3(x0, 0, z0), Name = $"Chunk{cx}_{cz}" };
+        body.SetMeta("ground", true); // props settle onto it, never away from it
         body.AddChild(new MeshInstance3D { Mesh = mesh, MaterialOverride = _ground });
         body.AddChild(new CollisionShape3D { Shape = mesh.CreateTrimeshShape() });
         Trees(body, cx, cz, h);
