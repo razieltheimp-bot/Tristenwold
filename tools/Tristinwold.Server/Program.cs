@@ -119,11 +119,9 @@ try
 {
     gateway.Start();
 }
-catch (HttpListenerException ex)
+catch (SocketException ex)
 {
-    Log($"Could not listen for HTTP on port {httpPort} ({ex.Message}). On Windows, run once as administrator or: " +
-        $"netsh http add urlacl url=http://+:{httpPort}/ user=Everyone");
-    return 1;
+    Log($"Could not listen for HTTP on port {httpPort} ({ex.Message}): is another server already running? PC games can still join on TCP {port}.");
 }
 
 Log($"Tristinwold server: campaign \"{state.Campaign}\". PC games connect on TCP {port}; phones, tunnels and the Skyrim add-on on HTTP {httpPort}.");
