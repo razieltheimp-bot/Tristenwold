@@ -225,7 +225,9 @@ public static class City
         var mid = radius + length / 2 - 1;
         var ramp = Box(parent, new Vector3(Mathf.Cos(rad) * mid, fromY + rise / 2 - 0.25f, Mathf.Sin(rad) * mid),
             new Vector3(length + 2, 0.5f, 8), "#8a8070", solid: true);
-        ramp.Rotation = new Vector3(0, -rad, Mathf.Atan2(rise, length));
+        // Low at its outer end on the lower ring, rising to meet the gate (a positive tilt would lift the outer end
+        // instead, and leave it standing up like a half-raised drawbridge).
+        ramp.Rotation = new Vector3(0, -rad, -Mathf.Atan2(rise, length));
     }
 
     static void Houses(Node3D parent, Rng rng, float rMin, float rMax, float y, int count, string[] kinds)

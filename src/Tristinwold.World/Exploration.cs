@@ -113,6 +113,9 @@ public sealed class CompanySave
     public int Meat { get; set; }
     public GuildBook? Guilds { get; set; }
     public RaidBook? Raids { get; set; }
+    /// <summary>What the hero carries and wears, and their trades.</summary>
+    public Pack? Pack { get; set; }
+    public HerbBook? Herbs { get; set; }
 
     static readonly JsonSerializerOptions Options = new()
     {
@@ -122,8 +125,11 @@ public sealed class CompanySave
     };
 
     public static CompanySave Capture(ulong seed, int septims, ExploredMap map, QuestLog log,
-        Hero? hero = null, IEnumerable<Bond>? companions = null, DragonSaga? saga = null, int meat = 0, GuildBook? guilds = null, RaidBook? raids = null) => new()
+        Hero? hero = null, IEnumerable<Bond>? companions = null, DragonSaga? saga = null, int meat = 0, GuildBook? guilds = null, RaidBook? raids = null,
+        Pack? pack = null, HerbBook? herbs = null) => new()
     {
+        Pack = pack,
+        Herbs = herbs,
         Raids = raids,
         Guilds = guilds,
         Hero = hero,
