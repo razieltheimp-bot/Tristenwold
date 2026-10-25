@@ -46,6 +46,24 @@ public class AccountTests
     }
 
     [Fact]
+    public void Saving_through_the_account_is_answered_and_only_for_your_own_character()
+    {
+        var store = new AccountStore();
+        var joe = store.Handle(new AccountRequest("register", "Joe", Secret: "hunter22"));
+        store.Handle(new AccountRequest("create", "Joe", Token: joe.Token, Character: Sheet("Bram")));
+        var mira = store.Handle(new AccountRequest("register", "Mira", Secret: "pinewood"));
+
+        var saved = store.Handle(new AccountRequest("save", "Joe", Token: joe.Token, Character: Sheet("Bram"), Progress: new SaveProgress("{\"septims\":12}", 12, "the wilds")));
+        Assert.True(saved.Ok, saved.Error);
+        Assert.Equal(12, saved.Characters.Single().Septims);
+        Assert.Equal("{\"septims\":12}", store.Handle(new AccountRequest("load", "Joe", Token: joe.Token, Character: Sheet("Bram"))).Save);
+
+        Assert.False(store.Handle(new AccountRequest("save", "Mira", Token: mira.Token, Character: Sheet("Bram"), Progress: new SaveProgress("{}", 0, ""))).Ok);
+        Assert.False(store.Handle(new AccountRequest("save", "Joe", Token: "forged", Character: Sheet("Bram"), Progress: new SaveProgress("{}", 0, ""))).Ok);
+        Assert.False(store.Handle(new AccountRequest("save", "Joe", Token: joe.Token, Character: Sheet("Bram"))).Ok);
+    }
+
+    [Fact]
     public void Wrong_passwords_lock_the_account_for_a_minute()
     {
         var now = new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc);

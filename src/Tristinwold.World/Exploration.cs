@@ -94,6 +94,9 @@ public sealed class ExploredMap
     }
 }
 
+/// <summary>A place in the world (metres) and the way the hero faced (radians about the vertical).</summary>
+public sealed record Spot(float X, float Y, float Z, float Facing);
+
 /// <summary>
 /// Everything a company carries between sessions: its map, its quests, its purse, its hero's class and levels,
 /// its companions, the meat in its packs, and how far along the road to Dragon Knight it is.
@@ -116,6 +119,8 @@ public sealed class CompanySave
     /// <summary>What the hero carries and wears, and their trades.</summary>
     public Pack? Pack { get; set; }
     public HerbBook? Herbs { get; set; }
+    /// <summary>Where the hero stood, so the next session starts there.</summary>
+    public Spot? Where { get; set; }
 
     static readonly JsonSerializerOptions Options = new()
     {
@@ -126,8 +131,9 @@ public sealed class CompanySave
 
     public static CompanySave Capture(ulong seed, int septims, ExploredMap map, QuestLog log,
         Hero? hero = null, IEnumerable<Bond>? companions = null, DragonSaga? saga = null, int meat = 0, GuildBook? guilds = null, RaidBook? raids = null,
-        Pack? pack = null, HerbBook? herbs = null) => new()
+        Pack? pack = null, HerbBook? herbs = null, Spot? where = null) => new()
     {
+        Where = where,
         Pack = pack,
         Herbs = herbs,
         Raids = raids,

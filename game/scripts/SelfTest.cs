@@ -29,7 +29,9 @@ public partial class SelfTest(Main main) : Node
             await Frames(10);
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -933,6 +935,48 @@ public partial class SelfTest(Main main) : Node
     /// it shows in your hand and makes you hit harder; the forge smelts scrap into iron; a herb picked in the wild goes
     /// in the pack; a potion heals; the shops buy back what you don't want.
     /// </summary>
+    /// <summary>The game menu, saving on demand, and starting where the last session ended.</summary>
+    async Task SaveTest()
+    {
+        var (p, hud) = (main.PlayerNode, main.HudNode);
+        hud.EndTalk();
+        await Press("game_menu");
+        var leave = main.Choice.Account is null ? new[] { "Back to the start screen" } : ["Change character", "Log out"];
+        Check(hud.Talking && hud.Options.Contains("Save now (F5)") && leave.All(hud.Options.Contains) && hud.Options.Contains("Quit the game") == (RemotePlay.Current is null),
+            $"Esc opens the game menu: {string.Join(", ", hud.Options)}");
+        await Press("game_menu");
+        Check(!hud.Talking, "Esc again closes it");
+        hud.ToggleMap();
+        await Press("game_menu");
+        Check(!hud.MapOpen && !hud.Talking, "Esc closes the map before anything else");
+
+        p.GlobalPosition = new Vector3(-150, 1, -120);
+        p.Rotation = new Vector3(0, 0.7f, 0);
+        await Until(() => p.IsOnFloor(), 3);
+        await Press("save");
+        var said = main.Choice.Account is null ? "Saved." : "Saved, on the server too.";
+        await Until(() => hud.LastLine == said || hud.LastLine.StartsWith("The server didn't"), 10);
+        var saved = CompanySave.FromJson(Godot.FileAccess.GetFileAsString(main.SavePath));
+        Check(saved.Where is { } w && Math.Abs(w.X + 150) < 1 && Math.Abs(w.Z + 120) < 1 && Math.Abs(w.Facing - 0.7f) < 0.05f,
+            $"F5 saves where you stand ({saved.Where})");
+        Check(hud.LastLine == said, $"and says so: {hud.LastLine}");
+
+        main.StandAtForTest(new Spot(320, 0, 410, 2f));
+        await Until(() => p.IsOnFloor(), 4);
+        var floor = City.FloorAt(p.GlobalPosition);
+        Check(p.GlobalPosition.DistanceTo(new Vector3(320, floor, 410)) < 1.5f && Math.Abs(p.Rotation.Y - 2f) < 0.05f,
+            $"a saved spot puts you back there, on the ground ({p.GlobalPosition.X:0}, {p.GlobalPosition.Y:0.0}, {p.GlobalPosition.Z:0}; ground {floor:0.0})");
+    }
+
+    /// <summary>A key press the game's _Process sees (several physics frames can pass in one drawn frame).</summary>
+    async Task Press(string action)
+    {
+        Input.ActionPress(action);
+        for (var i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        Input.ActionRelease(action);
+        for (var i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+    }
+
     async Task TradeTest()
     {
         var p = main.PlayerNode;

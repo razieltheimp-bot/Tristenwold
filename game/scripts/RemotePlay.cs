@@ -30,6 +30,15 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
 
     public string? Link { get; private set; }
 
+    /// <summary>The remote play that's running: it sits on the tree's root, so logging out (which
+    /// reloads the game) keeps the phone's link and connection.</summary>
+    public static RemotePlay? Current { get; set; }
+
+    /// <summary>The game it shows; a new one after logging out.</summary>
+    public Main Main { get; set; } = main;
+
+    public int Viewers => _screen?.Viewers ?? 0;
+
     public override void _Ready()
     {
         _screen = new RemoteScreen(port, log: Say, everywhere: lan);
@@ -40,7 +49,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
             _screen = null;
             return;
         }
-        _screen.Connected += _ => Callable.From(main.EnableTouchSoon).CallDeferred();
+        _screen.Connected += _ => Callable.From(() => Main.EnableTouchSoon()).CallDeferred();
         Say($"Remote play on this computer: {_screen.LocalUrl}");
         if (lan) Say($"On your home Wi-Fi, use this computer's address instead of localhost, port {_screen.Port}.");
         _telegram = Telegram.FromEnvironment(Say);
@@ -53,14 +62,14 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
             if (_telegram is null) Say("Telegram isn't set up, so the link wasn't sent there (set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID).");
             else _telegram.SendAsync($"Tristinwold is ready to play from your iPhone. Open this link in Safari, turn the phone sideways, and log in:\n{Link}\n\n(In Safari: Share, then Add to Home Screen, and it opens full screen. The link changes each time the game is started on the PC; the new one is always posted here.)")
                 .ContinueWith(sent => { if (sent.Result) Say("Sent the link to your Telegram group."); });
-            Callable.From(() => main.ShowRemoteLink(Link)).CallDeferred();
+            Callable.From(() => Main.ShowRemoteLink(Link)).CallDeferred();
         });
     }
 
     void Say(string text)
     {
         GD.Print(text);
-        Callable.From(() => main.RemoteNote(text)).CallDeferred();
+        Callable.From(() => Main.RemoteNote(text)).CallDeferred();
     }
 
     public override void _Process(double delta)

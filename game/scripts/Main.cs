@@ -42,22 +42,37 @@ public partial class Main : Node3D
     public override void _Ready()
     {
         ParseArgs();
-        if (_args.TryGetValue("remote", out var remote))
+        // Closing the window (or Android's back button) saves first: see _Notification.
+        GetTree().AutoAcceptQuit = false;
+        GetTree().QuitOnGoBack = false;
+        if (RemotePlay.Current is { } playing)
+        {
+            // Back from logging out: the phone is still connected.
+            playing.Main = this;
+            _remoteTouch = playing.Viewers > 0;
+            if (playing.Link is { } link) Callable.From(() => ShowRemoteLink(link)).CallDeferred();
+        }
+        else if (_args.TryGetValue("remote", out var remote))
         {
             // Remote play: a phone's browser shows and controls this game (with --tunnel, from anywhere).
             var port = int.TryParse(remote, out var p) ? p : 8090;
-            AddChild(new RemotePlay(this, port, _args.ContainsKey("tunnel"), _args.GetValueOrDefault("cloudflared", "cloudflared"), _args.ContainsKey("remote-lan")));
+            RemotePlay.Current = new RemotePlay(this, port, _args.ContainsKey("tunnel"), _args.GetValueOrDefault("cloudflared", "cloudflared"), _args.ContainsKey("remote-lan"));
+            GetTree().Root.CallDeferred(Node.MethodName.AddChild, RemotePlay.Current);
         }
         if (Mobile) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.SensorLandscape); // landscape from the first frame
         if (_args.TryGetValue("portraits", out var folder)) { _ = Portraits(folder); return; }
         if (_args.TryGetValue("showroom", out var room)) { _ = Showroom(room); return; }
         if (_args.TryGetValue("lineup", out var line)) { Proportions.Enabled = !_args.ContainsKey("plain"); _ = Lineup(line); return; }
-        if (_args.ContainsKey("account") && _args.ContainsKey("server")) { _ = LogInFromCommandLine(); return; }
         var scripted = _args.ContainsKey("selftest") || _args.ContainsKey("shots");
-        if (scripted || _args.ContainsKey("server")) { Begin(ChoiceFromArgs()); return; }
+        if (!LeftToStart)
+        {
+            if (_args.ContainsKey("account") && _args.ContainsKey("server")) { _ = LogInFromCommandLine(); return; }
+            if (scripted || _args.ContainsKey("server")) { Begin(ChoiceFromArgs()); return; }
+        }
         var start = new StartScreen { DefaultServer = _args.GetValueOrDefault("login-server") };
         start.Play += Begin;
         AddChild(start);
+        if (LeftToStart && _args.ContainsKey("selftest")) ReportBackAtStart();
         if (_args.TryGetValue("snap", out var snap)) _ = Snap(start, snap);
     }
 
@@ -304,7 +319,7 @@ public partial class Main : Node3D
         Connect();
         if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
         else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid"), lairs: _args.TryGetValue("lairs", out var lairs) ? lairs : null, wild: _args.ContainsKey("wild")));
-        else _hud.Toast($"Tristinwold. You are a {_player.Class.Name}. M: map   J: journal   E: talk   K: skills   P: party   F10: the shared world");
+        else _hud.Toast($"Tristinwold. You are a {_player.Class.Name}. Esc: menu (save, log out)   M: map   J: journal   E: talk   K: skills   P: party   F10: the shared world");
     }
 
     // ---- the shared world ------------------------------------------------------------------------
@@ -484,6 +499,8 @@ public partial class Main : Node3D
             if (_hud.Talking) _hud.EndTalk();
             else near?.Act();
         }
+        if (Input.IsActionJustPressed("save")) _ = SaveNow(announce: true);
+        if (Input.IsActionJustPressed("game_menu")) Back();
         if (Input.IsActionJustPressed("menu")) _hud.ToggleWindow();
         if (Input.IsActionJustPressed("map")) _hud.ToggleMap();
         if (Input.IsActionJustPressed("journal")) { _hud.ShowJournal(_journal); _hud.OpenJournal(); }
@@ -494,7 +511,7 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("ride")) ToggleRide();
         if (Input.IsActionJustPressed("rest") && !_tracker.InFight) Rest();
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _area, TouchMode ? status : status + $"    M: map   J: journal   E: talk   K: skills   I: pack   H: heal   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(Dragon is { Rideable: true } ? "   V: ride" : "")}");
+        _hud.Update(_player, _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills   I: pack   H: heal   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(Dragon is { Rideable: true } ? "   V: ride" : "")}");
         var saga = _saga.Objective(Dragon) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
         // The nearest lair that suits the hero, and the nearest nemesis out roaming.
         if (Raids.For(_player.Hero.Level, pos.X, pos.Z).FirstOrDefault() is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
@@ -699,6 +716,7 @@ public partial class Main : Node3D
                 _saga = save.Saga ?? new DragonSaga();
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
+                if (!scripted && save.Where is { } where) StandAt(where);
                 return;
             }
         }
@@ -710,15 +728,17 @@ public partial class Main : Node3D
     string? _lastSent;
 
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
-    public void Save()
+    public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here()).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
+        _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)
         {
             _client.Send(new SaveProgress(json, _player.Septims, _area));
             _lastSent = json;
         }
+        return json;
     }
 
     // ---- people and enemies ------------------------------------------------------------------
@@ -808,6 +828,7 @@ public partial class Main : Node3D
         Key("interact", Godot.Key.E); Key("map", Godot.Key.M); Key("journal", Godot.Key.J);
         Key("party", Godot.Key.P); Key("skills", Godot.Key.K); Key("ride", Godot.Key.V); Key("descend", Godot.Key.C);
         Key("pack", Godot.Key.I); Key("drink", Godot.Key.H);
+        Key("save", Godot.Key.F5); Key("game_menu", Godot.Key.Escape);
     }
 
     public override void _ExitTree()

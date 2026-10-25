@@ -199,6 +199,20 @@ public partial class StartScreen : CanvasLayer
         return true;
     }
 
+    /// <summary>Logging out from inside the game: the next start screen asks for the password again.</summary>
+    public static void ForgetLogin()
+    {
+        if (!Godot.FileAccess.FileExists(SettingsPath)) return;
+        try
+        {
+            var settings = JsonSerializer.Deserialize<Dictionary<string, string>>(Godot.FileAccess.GetFileAsString(SettingsPath)) ?? [];
+            if (!settings.Remove("token")) return;
+            using var file = Godot.FileAccess.Open(SettingsPath, Godot.FileAccess.ModeFlags.Write);
+            file?.StoreString(JsonSerializer.Serialize(settings));
+        }
+        catch (JsonException) { }
+    }
+
     void LogOut()
     {
         _token = null;

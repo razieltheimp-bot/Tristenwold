@@ -40,4 +40,12 @@ public class HerbTests
         Assert.Equal(50, save.Pack.JobXp[Job.Herbalism]);
         Assert.Equal(42, save.Herbs!.PickedAt["herb_1_2_0"]);
     }
+
+    [Fact]
+    public void Where_the_hero_stood_is_saved_and_old_saves_have_no_spot()
+    {
+        var save = CompanySave.FromJson(CompanySave.Capture(1, 0, new ExploredMap(), new QuestLog(), where: new Spot(-300.5f, 12.25f, 80f, 1.5f)).ToJson());
+        Assert.Equal(new Spot(-300.5f, 12.25f, 80f, 1.5f), save.Where);
+        Assert.Null(CompanySave.FromJson("""{"seed":1,"septims":5}""").Where);
+    }
 }

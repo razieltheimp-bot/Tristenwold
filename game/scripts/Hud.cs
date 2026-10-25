@@ -45,7 +45,7 @@ public partial class Hud : CanvasLayer
         bars.AddChild(_septims);
         root.AddChild(_area = new Label { Position = new Vector2(24, 140) });
         root.AddChild(_status = new Label { Position = new Vector2(24, 166), Modulate = new Color(1, 1, 1, 0.6f) });
-        root.AddChild(_toastLabel = new Label { AnchorLeft = 1, AnchorRight = 1, OffsetLeft = -520, OffsetTop = 250, OffsetRight = -24, AutowrapMode = TextServer.AutowrapMode.Word, HorizontalAlignment = HorizontalAlignment.Right });
+        root.AddChild(_toastLabel = new Label { AnchorLeft = 1, AnchorRight = 1, OffsetLeft = -520, OffsetTop = 300, OffsetRight = -24, AutowrapMode = TextServer.AutowrapMode.Word, HorizontalAlignment = HorizontalAlignment.Right });
         root.AddChild(_tracker = new Label { Position = new Vector2(24, 200), Modulate = new Color("#ffd27a"), CustomMinimumSize = new Vector2(480, 0), AutowrapMode = TextServer.AutowrapMode.Word });
         root.AddChild(_party = new Label { AnchorTop = 1, AnchorBottom = 1, OffsetLeft = 24, OffsetTop = -190, Modulate = new Color("#a8e0a0"), CustomMinimumSize = new Vector2(320, 0) });
         root.AddChild(_center = new Label { AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0.68f, OffsetLeft = -300, OffsetRight = 300, HorizontalAlignment = HorizontalAlignment.Center });

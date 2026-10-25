@@ -396,6 +396,15 @@ Every company sees the same world, because it all grows from the `seed` in `worl
 seed for a different world. Each company's map, quests and septims are saved on its own computer, in
 Godot's user folder under `saves/`.
 
+**Saving, logging out and quitting.** The game saves by itself every 20 seconds, after anything that
+matters (a quest, a hoard, a level), when you close the window and when a phone switches away. It keeps
+where you stood, so the next session starts there. **F5** saves now. **Esc** (or **Menu** on a phone, under
+the little map; Android's back button too) closes whatever is open, else opens the game menu: Save now,
+Change character, Log out (back to the login page, which then asks for the password), and Quit. A logged-in
+character's save lives on the server; logging out, changing character and quitting wait for the server to
+say it has the save, and ask before going on if it doesn't answer. During remote play the menu has no Quit
+(the phone would close the game on the PC), and logging out keeps the phone's link.
+
 `--lineup ./shots` photographs the nine classes; add `--creatures`, `--young` (younglings and companions),
 `--dragons` (all ten colours), `--dragons --corrupt`, `--dragons --riders` or `--dragons --frost`. `--shots ./shots --skirmish`
 photographs a dragon knight and a corrupted dragon fighting over the meadows by a village.

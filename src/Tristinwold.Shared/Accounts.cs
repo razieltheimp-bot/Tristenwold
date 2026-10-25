@@ -12,7 +12,7 @@ public sealed record CharacterSheet(string Name, string Look, string Element, Da
 /// Sent before joining: register, log in, or manage characters. Answered with one
 /// <see cref="AccountReply"/>, over TCP (one request per connection) or POST /v1/account.
 /// </summary>
-/// <param name="Action">register, login, create, delete or load.</param>
+/// <param name="Action">register, login, create, delete, load or save.</param>
 /// <param name="Secret">The account's password (register, and login without a token).</param>
 /// <param name="Token">What login hands back, so the game can stay logged in without keeping the password.</param>
 /// <param name="ServerPassword">The server's own password, if it has one.</param>
@@ -22,7 +22,8 @@ public sealed record AccountRequest(
     string? Secret = null,
     string? Token = null,
     string ServerPassword = "",
-    CharacterSheet? Character = null) : Message;
+    CharacterSheet? Character = null,
+    SaveProgress? Progress = null) : Message;
 
 public sealed record AccountReply(bool Ok, string? Error, string? Token, IReadOnlyList<CharacterSheet> Characters, string? Save = null) : Message;
 
@@ -141,6 +142,12 @@ public sealed partial class AccountStore
                 {
                     if (r.Character is not { } c || !a.Characters.Any(x => Same(x.Name, c.Name))) return Fail("That isn't one of your characters.");
                     return Ok(a, token) with { Save = a.Saves.GetValueOrDefault(a.Characters.First(x => Same(x.Name, c.Name)).Name) };
+                }
+                case "save":
+                {
+                    // The same as the game's SaveProgress, but answered, so logging out or quitting can wait for it.
+                    if (r.Character is not { } c || r.Progress is not { } progress) return Fail("Nothing to save.");
+                    return Store(a.Name, c.Name, progress) ? Ok(a, token) : Fail("That isn't one of your characters.");
                 }
                 default:
                     return Fail($"Unknown account action '{r.Action}'.");
