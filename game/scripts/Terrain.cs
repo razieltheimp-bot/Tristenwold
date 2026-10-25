@@ -51,6 +51,9 @@ public partial class Terrain(WorldGen world) : Node3D
     /// <summary>How many chunks around the player get grass (0 for none).</summary>
     public int GrassChunks { get; set; }
 
+    /// <summary>How thick the grass grows (1 is sparse; the better the graphics, the fuller the meadows).</summary>
+    public float GrassDensity { get; set; } = 1;
+
     /// <summary>Wind in the trees and the wave shader on the water (set before the first chunk is built).</summary>
     public bool Fancy { get; set; }
 
@@ -208,12 +211,15 @@ public partial class Terrain(WorldGen world) : Node3D
         var biome = world.BiomeAt(x0 + ChunkSize / 2, z0 + ChunkSize / 2);
         var count = biome switch { Biome.Marsh => 1100, Biome.AutumnForest => 900, Biome.PineForest => 700, Biome.Tundra => 380, Biome.Crags => 160, _ => 0 };
         if (_cardGrass) count = count * 2 / 5; // each card tuft is a whole clump
+        count = (int)(count * GrassDensity);
         var clear = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
         var tufts = new List<(Transform3D, Color)>();
         for (var i = 0; i < count; i++)
         {
             var (lx, lz) = (rng.NextDouble() * ChunkSize, rng.NextDouble() * ChunkSize);
             var (wx, wz) = (x0 + lx, z0 + lz);
+            // Grass grows in drifts and patches, not evenly: skip most of it where the patch noise is low.
+            if (Noise.Value(world.Seed + 77, wx / 9, wz / 9) < -0.15 && rng.NextDouble() < 0.8) continue;
             if (wx * wx + wz * wz < 112 * 112 || clear.Any(s => s.DistanceTo(wx, wz) < s.Radius * 0.8)) continue;
             var y = world.Height(wx, wz);
             if (y < WorldGen.WaterLevel + 0.4) continue;

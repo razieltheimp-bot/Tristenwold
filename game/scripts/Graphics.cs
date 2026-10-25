@@ -24,6 +24,7 @@ public static class Graphics
         var mobile = OS.HasFeature("mobile");
         terrain.ViewChunks = q switch { Quality.Low => 4, Quality.Medium => mobile ? 4 : 6, Quality.High => 7, _ => 9 };
         terrain.GrassChunks = q switch { Quality.Low => 0, Quality.Medium => mobile ? 0 : 1, Quality.High => 2, _ => 3 };
+        terrain.GrassDensity = q switch { Quality.High => 2.5f, Quality.Ultra => 3.5f, _ => 1 };
         terrain.Fancy = q >= Quality.Medium;
 
         env.TonemapMode = q >= Quality.High ? Godot.Environment.ToneMapper.Agx : Godot.Environment.ToneMapper.Filmic;
