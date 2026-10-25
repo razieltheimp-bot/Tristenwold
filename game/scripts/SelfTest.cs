@@ -310,6 +310,19 @@ public partial class SelfTest(Main main) : Node
             $"a red dragon that beat the company twice grew to a giant ({before:0} to {red.Stats.MaxHealth:0} hp)");
         red.QueueFree();
 
+        // A winged dragon takes to the air to reach you from afar; the white frost dragon has no wings.
+        main.TerrainNode.EnsureAround(p.GlobalPosition, 2);
+        Vector3 Ground(Vector3 at) => at with { Y = City.FloorAt(at) + 0.5f };
+        var flyer = Spawn("dragon_bronze", Ground(p.GlobalPosition + new Vector3(90, 0, 0)));
+        var walker = Spawn("dragon_white", Ground(p.GlobalPosition + new Vector3(-90, 0, 0)));
+        await Frames(10);
+        flyer.Provoke(p);
+        float Up(Enemy e) => e.GlobalPosition.Y - City.FloorAt(e.GlobalPosition);
+        await Until(() => Up(flyer) > 4, 8);
+        Check(flyer.CanFly && Up(flyer) > 4 && !walker.CanFly, $"a bronze dragon flies in from 90 m ({flyer.GlobalPosition.Y - City.FloorAt(flyer.GlobalPosition):0} m up); the frost dragon walks");
+        flyer.QueueFree();
+        walker.QueueFree();
+
         // Find a season when this ancient is at war, and watch the border.
         DragonWar? war = null;
         var now = DateTime.UtcNow;

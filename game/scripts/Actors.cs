@@ -106,6 +106,15 @@ public partial class Enemy : Fighter
     /// <summary>How much bigger than its kind's normal size it is drawn.</summary>
     float Bulk => IsDragon ? Dragons.Scale(Size).Height / Dragons.Scale(DragonSize.Normal).Height : 1;
 
+    /// <summary>A winged dragon: it can take to the air.</summary>
+    public bool CanFly => Figure is Creature { Winged: true };
+
+    /// <summary>In the air (a dragon circling, or flying in to fight).</summary>
+    public bool Airborne { get; private set; }
+
+    float _altitude;
+    double _flightClock = 10 + Random.Shared.NextDouble() * 20;
+
     Player? _target;
     Enemy? _rival;
     double _attackCooldown;
@@ -196,7 +205,11 @@ public partial class Enemy : Fighter
 
     public override void _PhysicsProcess(double delta)
     {
-        if (State == EnemyState.Dead) return;
+        if (State == EnemyState.Dead)
+        {
+            if (!IsOnFloor()) FallAndSlide(delta, Vector3.Zero); // a dragon killed in the air falls
+            return;
+        }
         Stats.Tick(delta, State == EnemyState.Fighting);
         _attackCooldown -= delta;
         var bulk = Bulk;
@@ -249,7 +262,7 @@ public partial class Enemy : Fighter
                 break;
 
             case EnemyState.Fighting when _target is not null:
-                if (_target.Downed || _target.GlobalPosition.DistanceTo(Home) > Math.Max(60, Roam * 3))
+                if (_target.Downed || _target.GlobalPosition.DistanceTo(Home) > Math.Max(IsDragon ? 250 : 60, Roam * 3))
                 {
                     _target = null;
                     State = EnemyState.Idle;
@@ -287,9 +300,65 @@ public partial class Enemy : Fighter
                 }
                 break;
         }
-        if (State != EnemyState.Fighting) FaceAlong(move, delta);
-        FallAndSlide(delta, move);
-        Figure.Move(GroundSpeed, IsOnFloor(), Swimming);
+        if (CanFly) move = Fly(move, speed, bulk, delta);
+        if (State != EnemyState.Fighting || Airborne) FaceAlong(move, delta);
+        if (Airborne || _altitude > 0) Hover(delta, move);
+        else FallAndSlide(delta, move);
+        Figure.Move(GroundSpeed, IsOnFloor() && !Airborne, Swimming);
+    }
+
+    /// <summary>
+    /// Decides when a winged dragon takes to the air: now and then it rises to circle over its range and
+    /// comes down again; it flies in to a fight that's far off and lands to fight it; it flees by air.
+    /// </summary>
+    Vector3 Fly(Vector3 move, float speed, float bulk, double delta)
+    {
+        var lift = MathF.Sqrt(bulk);
+        Node3D? quarry = _target is not null ? _target : _rival is not null && IsInstanceValid(_rival) ? _rival : null;
+        switch (State)
+        {
+            case EnemyState.Idle:
+                if ((_flightClock -= delta) <= 0)
+                {
+                    _altitude = _altitude > 0 ? 0 : (22 + (float)_rng.NextDouble() * 20) * lift;
+                    _flightClock = _altitude > 0 ? 15 + _rng.NextDouble() * 20 : 25 + _rng.NextDouble() * 40;
+                }
+                if (Airborne)
+                {
+                    // Wheel over home in wide circles.
+                    var from = GlobalPosition - Home;
+                    from.Y = 0;
+                    var radius = Math.Max(Roam * 1.5f, 30 * lift);
+                    var round = new Vector3(-from.Z, 0, from.X).Normalized() + from.Normalized() * (radius - from.Length()) / radius;
+                    return round.Normalized() * speed * 1.4f;
+                }
+                break;
+            case EnemyState.Fighting when quarry is not null:
+                var away = quarry.GlobalPosition - GlobalPosition;
+                away.Y = 0;
+                _altitude = away.Length() > 35 * lift ? 14 * lift : 0; // fly in, then land to fight
+                if (Airborne) return away.Normalized() * speed * 1.8f;
+                break;
+            case EnemyState.Fleeing:
+                _altitude = 30 * lift;
+                return move * 1.6f;
+            default:
+                _altitude = 0;
+                break;
+        }
+        return move;
+    }
+
+    /// <summary>Flying: climb or sink towards the wanted height above the ground, no gravity.</summary>
+    void Hover(double delta, Vector3 move)
+    {
+        var ground = City.FloorAt(GlobalPosition);
+        var height = GlobalPosition.Y - ground;
+        var climb = Mathf.Clamp((_altitude - height) * 1.2f, -9, 7);
+        Velocity = new Vector3(move.X, climb, move.Z);
+        MoveAndSlide();
+        Airborne = height > 0.9f || _altitude > 0;
+        if (_altitude <= 0 && height < 1f) Airborne = false;
     }
 
     public HitResult TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Player by)
@@ -305,6 +374,8 @@ public partial class Enemy : Fighter
     void Die()
     {
         State = EnemyState.Dead;
+        _altitude = 0;
+        Airborne = false;
         Figure.Die();
         Plate.Text = "";
         CollisionLayer = 0;

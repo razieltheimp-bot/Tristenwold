@@ -122,22 +122,26 @@ public partial class Main : Node3D
     {
         AddChild(new WorldEnvironment { Environment = new Godot.Environment { BackgroundMode = Godot.Environment.BGMode.Color, BackgroundColor = new Color("#8fa6bd"), AmbientLightSource = Godot.Environment.AmbientSource.Color, AmbientLightColor = new Color("#b0a898"), AmbientLightEnergy = 0.7f, TonemapMode = Godot.Environment.ToneMapper.Filmic } });
         AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-35, 30, 0), LightEnergy = 1.3f, LightColor = new Color("#fff0d6"), ShadowEnabled = true });
-        AddChild(new MeshInstance3D { Mesh = new PlaneMesh { Size = new Vector2(40, 40) }, MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#6b6248") } });
-        string[] looks = _args.ContainsKey("creatures")
+        AddChild(new MeshInstance3D { Mesh = new PlaneMesh { Size = new Vector2(300, 300) }, MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#6b6248") } });
+        string[] dragons = ["dragon_red", "dragon_blue", "dragon_green", "dragon_black", "dragon_white", "dragon_gold", "dragon_silver", "dragon_bronze", "dragon_copper", "dragon_brass"];
+        if (_args.ContainsKey("hero")) dragons = ["dragon_red", "dragon_white", "dragon_gold"];
+        string[] looks = _args.ContainsKey("dragons") ? dragons : _args.ContainsKey("creatures")
             ? ["Knight", "skeever", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
             : ["Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded", "guard", "townsfolk", "draugr"];
         var figures = new List<Body>();
         for (var i = 0; i < looks.Length; i++)
         {
             var figure = Body.For(looks[i]);
-            figure.Position = new Vector3((i - (looks.Length - 1) / 2f) * 1.3f, 0, 0);
+            var spacing = _args.ContainsKey("hero") ? 11f : _args.ContainsKey("dragons") ? 9f : 1.3f;
+            figure.Position = new Vector3((i - (looks.Length - 1) / 2f) * spacing, 0, _args.ContainsKey("dragons") ? -(i % 2) * 7 : 0);
             figure.RotationDegrees = new Vector3(0, 160, 0);
             AddChild(figure);
             figures.Add(figure);
         }
-        var camera = new Camera3D { Position = new Vector3(0, 1.3f, 9f), Fov = 38 };
+        var wide = _args.ContainsKey("dragons");
+        var camera = new Camera3D { Position = _args.ContainsKey("hero") ? new Vector3(0, 9, 30) : wide ? new Vector3(0, 14, 62) : new Vector3(0, 1.3f, 9f), Fov = 38, Far = 500 };
         AddChild(camera);
-        camera.LookAt(new Vector3(0, 0.9f, 0), Vector3.Up);
+        camera.LookAt(wide ? new Vector3(0, 4, 0) : new Vector3(0, 0.9f, 0), Vector3.Up);
         async Task Shoot(string name)
         {
             for (var i = 0; i < 40; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
@@ -151,6 +155,14 @@ public partial class Main : Node3D
         GetViewport().GetTexture().GetImage().SavePng($"{folder}/attacking.png");
         foreach (var f in figures) { f.RotationDegrees = new Vector3(0, -20, 0); f.Move(0, true, false); }
         await Shoot("from-behind");
+        if (wide)
+        {
+            // In the air: wings beating (the white frost dragon has none, and stays down).
+            foreach (var f in figures) { f.RotationDegrees = new Vector3(0, 150, 0); f.Position += new Vector3(0, f is Creature { Winged: true } ? 8 : 0, 0); f.Move(6, false, false); }
+            await Shoot("flying");
+            for (var i = 0; i < 9; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            await Shoot("flying2");
+        }
         GetTree().Quit();
     }
 
@@ -520,7 +532,7 @@ public partial class Main : Node3D
         if (Dragons.WarsNear(_world, _wilds.Now(), npc.X, npc.Z, 8000).FirstOrDefault() is { } war)
             return $" And keep your head down: {war.Story} The fighting is {Direction(here, (war.FrontX, war.FrontZ))} of here.";
         if (Dragons.Near(_world, npc.X, npc.Z, 9000).MinBy(a => a.DistanceTo(npc.X, npc.Z)) is { } a)
-            return $" They say {a.FullName}, {a.What}, rules the land {Direction(here, (a.X, a.Z))} of here, {a.DistanceTo(npc.X, npc.Z) / 1000:0} km off.";
+            return $" They say {a.FullName}, {a.What}, rules the land {Direction(here, (a.X, a.Z))} of here.";
         return "";
     }
 

@@ -169,7 +169,10 @@ keeps making new cities as far as you care to walk, each with its own name, epit
   into one's land, and villagers gossip about the nearest. Every three hours (real time, the same for every
   company) neighbouring ancients may go to war, chromatic against metallic most often, and their dragons fight at
   the border like warring tribes, sometimes led by the ancients themselves. Dragons come in four sizes (normal,
-  large, giant, ancient), and a dragon nemesis grows a size each time it beats a party or rises a rank.
+  large, giant, ancient), and a dragon nemesis grows a size each time it beats a party or rises a rank. All but the
+  white (frost) dragon have great wings (`DragonWings.cs`): folded along the back on the ground, beating in flight.
+  They circle over their land, fly in to a distant fight and land to finish it, and take to the air to flee. The
+  frost dragon is wingless and fights on foot.
 - **Wildlife.** The land between them is lived in. Deer herds graze and foxes prowl almost everywhere,
   and they bolt when you get close; hawks wheel overhead. Away from home, wolf packs and wild boars roam the
   woods, goblin bands the woods and crags, bears and trolls the crags,

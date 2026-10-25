@@ -136,10 +136,24 @@ public abstract partial class Body : Node3D
     /// <summary>A red glow for a nemesis.</summary>
     public abstract void Mark(Color colour);
 
-    /// <summary>A dragon in one of the ten colours, normal-sized (4.5 m); the metallic ones shine.</summary>
-    static Body Dragon(string colour) =>
-        (Body?)Creature.Create("dragon.glb", 4.5f, coat: $"dragons/{colour}.png",
-            metallic: colour is "gold" or "silver" or "bronze" or "copper" or "brass") ?? Beast.Bear();
+    /// <summary>The colour of each dragon's wing membranes.</summary>
+    static readonly Dictionary<string, Color> Membranes = new()
+    {
+        ["red"] = new("#9a2418"), ["blue"] = new("#2c4ca8"), ["green"] = new("#2e7a30"), ["black"] = new("#26242a"),
+        ["gold"] = new("#d6a43c"), ["silver"] = new("#b8bec8"), ["bronze"] = new("#8e5c2c"), ["copper"] = new("#b4643a"), ["brass"] = new("#c0a050"),
+    };
+
+    /// <summary>
+    /// A dragon in one of the ten colours, normal-sized (4.5 m); the metallic ones shine. All but the white
+    /// (frost) dragon spread great wings and fly; the frost dragon keeps its small wings and stays on the ground.
+    /// </summary>
+    static Body Dragon(string colour)
+    {
+        var metallic = colour is "gold" or "silver" or "bronze" or "copper" or "brass";
+        if (Creature.Create("dragon.glb", 4.5f, coat: $"dragons/{colour}.png", metallic: metallic) is not { } dragon) return Beast.Bear();
+        if (Membranes.TryGetValue(colour, out var membrane)) dragon.SpreadWings(membrane, metallic);
+        return dragon;
+    }
 
     public static Body For(string look) => look switch
     {
@@ -654,11 +668,31 @@ public partial class Creature : Animal
     {
         base._Process(delta);
         _busy -= delta;
+        if (_wings is not null)
+        {
+            _wings.BeatRate = 1.4f / MathF.Sqrt(Math.Max(1, Scale.X)); // great dragons beat slowly
+            _wings.Update(_flying, _speed, delta);
+        }
     }
+
+    DragonWings? _wings;
+    bool _flying;
+    float _speed;
+
+    /// <summary>Gives a dragon its great wings (it can fly from now on).</summary>
+    public void SpreadWings(Color membrane, bool metallic)
+    {
+        _wings = DragonWings.Grow(Model, 4.5f * 1.25f / Model.Scale.X, membrane, metallic);
+    }
+
+    public bool Winged => _wings is not null;
 
     public override void Move(float speed, bool grounded, bool swimming)
     {
+        _flying = _wings is not null && !grounded && !Dead;
+        _speed = speed;
         if (Dead || _busy > 0) return;
+        if (_flying) { Play("Idle", 0.5f); return; } // legs tucked, the wings do the work
         if (speed > 4.5f && Has("Run")) Play("Run", Mathf.Clamp(speed / 7f, 0.6f, 1.6f));
         else if (speed > 0.3f) Play("Walk", Mathf.Clamp(speed / 2f, 0.6f, 2f));
         else Play("Idle");
