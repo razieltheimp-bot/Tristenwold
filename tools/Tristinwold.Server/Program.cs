@@ -126,6 +126,16 @@ catch (SocketException ex)
 
 Log($"Tristinwold server: campaign \"{state.Campaign}\". PC games connect on TCP {port}; phones, tunnels and the Skyrim add-on on HTTP {httpPort}.");
 Log($"Saving to {Path.GetFullPath(campaignPath)}.");
+// What to type into the game's Server box, so nobody has to go looking for this computer's address.
+var lan = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+    .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up
+        && n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+    .SelectMany(n => n.GetIPProperties().UnicastAddresses)
+    .Select(a => a.Address)
+    .Where(a => a.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(a) && !a.ToString().StartsWith("169.254."))
+    .Select(a => a.ToString()).Distinct().ToList();
+Log($"In the game's Server box, type: 127.0.0.1:{port}   (playing on this computer)");
+foreach (var ip in lan) Log($"                             or: {ip}:{port}   (phones and PCs on the same Wi-Fi{(ip.StartsWith("100.") ? ", or Tailscale" : "")})");
 Log(tunnel
     ? "Friends at home connect to this computer's address; everyone else uses the tunnel's address below."
     : "Friends connect to this computer's address. From anywhere else (phones too), restart with --tunnel, or use a VPN like Tailscale.");
