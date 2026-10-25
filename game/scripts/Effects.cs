@@ -130,6 +130,54 @@ public static class Effects
         Flash(n, c, 2, 5, 1);
     }
 
+    /// <summary>
+    /// A limit break going off: a pillar of light on the hero, a shockwave racing out along the ground,
+    /// sparks thrown high and the whole place lit up in the class's colour.
+    /// </summary>
+    public static void Limit(Node world, Vector3 at, Color c)
+    {
+        var n = Holder(world, at, 3);
+        var glow = Glow(c);
+        glow.BillboardMode = BaseMaterial3D.BillboardModeEnum.Disabled;
+        glow.AlbedoTexture = null;
+        glow.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
+        glow.AlbedoColor = new Color(c, 0.3f);
+        glow.EmissionEnergyMultiplier = 0.8f;
+        var pillar = new MeshInstance3D
+        {
+            Mesh = new CylinderMesh { TopRadius = 0.15f, BottomRadius = 0.7f, Height = 16, RadialSegments = 20, CapTop = false, CapBottom = false },
+            MaterialOverride = glow, Position = new Vector3(0, 8, 0), Scale = new Vector3(0.2f, 1, 0.2f),
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+        n.AddChild(pillar);
+        var t = pillar.CreateTween();
+        t.TweenProperty(pillar, "scale", new Vector3(1.1f, 1, 1.1f), 0.2).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        t.TweenProperty(pillar, "scale", new Vector3(0.01f, 1.2f, 0.01f), 0.6).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
+
+        var ringGlow = (StandardMaterial3D)glow.Duplicate();
+        ringGlow.AlbedoColor = new Color(c, 0.8f);
+        var ring = new MeshInstance3D
+        {
+            Mesh = new TorusMesh { InnerRadius = 0.85f, OuterRadius = 1, Rings = 48, RingSegments = 8 },
+            MaterialOverride = ringGlow, Position = new Vector3(0, 0.3f, 0), Scale = new Vector3(0.5f, 0.3f, 0.5f),
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+        n.AddChild(ring);
+        var r = ring.CreateTween().SetParallel();
+        r.TweenProperty(ring, "scale", new Vector3(12, 0.3f, 12), 0.9).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
+        r.TweenProperty(ringGlow, "albedo_color", new Color(c, 0), 0.9);
+
+        var p = Sparks(c, 120, 0.35f, 1.4);
+        p.Direction = Vector3.Up;
+        p.Spread = 35;
+        p.InitialVelocityMin = 6;
+        p.InitialVelocityMax = 16;
+        p.Gravity = new Vector3(0, -6, 0);
+        p.Position = new Vector3(0, 0.5f, 0);
+        n.AddChild(p);
+        Flash(n, c, 9, 26, 1.2);
+    }
+
     /// <summary>A puff of grey smoke (a thief's smoke bomb).</summary>
     public static void Smoke(Node world, Vector3 at, float radius)
     {

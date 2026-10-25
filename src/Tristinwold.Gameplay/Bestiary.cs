@@ -59,6 +59,8 @@ public static class Bestiary
         // Quarry: they bolt when they see you.
         new("deer", "Deer", 50, 4, 8.5, 0, 1.4, 1.2, DamageKind.Physical, "#8a6a48", 1.3, Timid: true),
         new("fox", "Red Fox", 25, 3, 7.5, 0, 1.0, 1.0, DamageKind.Physical, "#c06a30", 0.5, Timid: true),
+        // Only ever seen at a tamer's side: Wren's Menagerie raises them from the egg.
+        new("hawk", "Hawk", 35, 7, 8.0, 0, 1.4, 0.8, DamageKind.Physical, "#8a6a40", 0.6),
         .. DragonKinds(),
         .. DragonKinds().Select(Corrupted),
         // Companions: the youths who follow a hero, and a warlock's familiar.

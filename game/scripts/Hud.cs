@@ -246,6 +246,49 @@ public partial class Hud : CanvasLayer
 
     public void Center(string text) => _center.Text = text;
 
+    /// <summary>A limit break's name across the screen, over a flash of its colour.</summary>
+    public void LimitBanner(string name, string who, Color c)
+    {
+        var flash = new ColorRect { Color = new Color(c, 0.5f), MouseFilter = Control.MouseFilterEnum.Ignore };
+        flash.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _root.AddChild(flash);
+        var f = flash.CreateTween();
+        f.SetIgnoreTimeScale();
+        f.TweenProperty(flash, "color", new Color(c, 0), 0.6);
+        f.TweenCallback(Callable.From(flash.QueueFree));
+
+        var banner = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.Center };
+        banner.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        banner.OffsetBottom = -120;
+        banner.AddChild(new Label
+        {
+            Text = "LIMIT BREAK", HorizontalAlignment = HorizontalAlignment.Center,
+            LabelSettings = new LabelSettings { FontSize = 26, FontColor = Colors.White, OutlineSize = 8, OutlineColor = Colors.Black },
+        });
+        banner.AddChild(new Label
+        {
+            Text = name.ToUpperInvariant(), HorizontalAlignment = HorizontalAlignment.Center,
+            LabelSettings = new LabelSettings { FontSize = 72, FontColor = c.Lightened(0.35f), OutlineSize = 18, OutlineColor = c.Darkened(0.75f), ShadowSize = 12, ShadowColor = new Color(0, 0, 0, 0.6f) },
+        });
+        banner.AddChild(new Label
+        {
+            Text = who, HorizontalAlignment = HorizontalAlignment.Center,
+            LabelSettings = new LabelSettings { FontSize = 22, FontColor = new Color(1, 1, 1, 0.85f), OutlineSize = 6, OutlineColor = Colors.Black },
+        });
+        _root.AddChild(banner);
+        banner.PivotOffset = GetViewport().GetVisibleRect().Size / 2;
+        banner.Scale = new Vector2(1.6f, 1.6f);
+        banner.Modulate = new Color(1, 1, 1, 0);
+        var b = banner.CreateTween();
+        b.SetIgnoreTimeScale();
+        b.SetParallel();
+        b.TweenProperty(banner, "scale", Vector2.One, 0.25).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+        b.TweenProperty(banner, "modulate", Colors.White, 0.15);
+        b.Chain().TweenInterval(1.1);
+        b.Chain().TweenProperty(banner, "modulate", new Color(1, 1, 1, 0), 0.5);
+        b.Chain().TweenCallback(Callable.From(banner.QueueFree));
+    }
+
     /// <summary>The companions following, one line each.</summary>
     public void Party(IEnumerable<string> lines) => _party.Text = string.Join("\n", lines);
 

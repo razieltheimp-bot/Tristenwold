@@ -35,6 +35,7 @@ public partial class Main : Node3D
     IGameLink? _client;
     string _area = "", _sentArea = "", _savePath = "";
     string? _nemesisJson;
+    bool _limitWasReady;
     double _clock, _lastRespawnCheck, _lastReveal, _lastPlaces, _lastSave;
     readonly Dictionary<Lair, List<Enemy>> _lairs = [];
     readonly List<Person> _townsfolk = [];
@@ -271,6 +272,7 @@ public partial class Main : Node3D
         };
         AddChild(_player);
         _player.Said += text => _hud.Toast(text);
+        _player.LimitUsed += (a, c) => _hud.LimitBanner(a.Name, a.Text, c);
         _player.WentDown += () => { _tracker.Downed(); _hud.Center("You have fallen."); };
         _player.Struck += (enemy, hit, kind) =>
         {
@@ -318,7 +320,7 @@ public partial class Main : Node3D
         if (TouchMode) EnableTouch();
         Connect();
         if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
-        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid"), lairs: _args.TryGetValue("lairs", out var lairs) ? lairs : null, wild: _args.ContainsKey("wild")));
+        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid"), lairs: _args.TryGetValue("lairs", out var lairs) ? lairs : null, wild: _args.ContainsKey("wild"), limit: _args.ContainsKey("limit"), market: _args.ContainsKey("market")));
         else _hud.Toast($"Tristinwold. You are a {_player.Class.Name}. Esc: menu (save, log out)   M: map   J: journal   E: talk   K: skills   P: party   F10: the shared world");
     }
 
@@ -489,6 +491,9 @@ public partial class Main : Node3D
         TendGuilds(delta);
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
 
+        if (_player.Stats.LimitReady && !_limitWasReady)
+            _hud.Toast($"Limit break ready: {_player.Class.Limit.Name}. {(TouchMode ? "Tap Limit" : "Press R")}!", 5);
+        _limitWasReady = _player.Stats.LimitReady;
         if (_clock - _lastRespawnCheck > 30) { _lastRespawnCheck = _clock; RespawnEmptyLairs(); }
         if (_clock - _lastSave > 20) { _lastSave = _clock; Save(); }
 

@@ -230,6 +230,44 @@ public partial class Player : Fighter
     /// <summary>The limit break (R), once the gauge is full.</summary>
     public bool LimitBreak() => Use(Class.Limit);
 
+    /// <summary>A limit break went off (the HUD shows its name across the screen).</summary>
+    public event Action<Ability, Color>? LimitUsed;
+
+    /// <summary>The colour of each class's limit break.</summary>
+    public Color LimitColour => Class.Id switch
+    {
+        "MartialArtist" => new Color("#ffd27a"),
+        "Barbarian" => new Color("#ff4a32"),
+        "Paladin" => new Color("#fff0a0"),
+        "Ranger" => new Color("#9be07a"),
+        "Thief" => new Color("#ffcc33"),
+        "Assassin" => new Color("#b07aff"),
+        "Wizard" => new Color("#ff8a2a"),
+        "Warlock" => new Color("#9a5aff"),
+        "Sorcerer" => new Color("#ff5a1a"),
+        _ => Effects.Of(Class.Limit.Kind),
+    };
+
+    /// <summary>The moment a limit break goes off: light, a shockwave, the world slowing for a heartbeat, the camera shaking.</summary>
+    void LimitMoment(Ability a)
+    {
+        var c = LimitColour;
+        Effects.Limit(GetParent(), GlobalPosition, c);
+        LimitUsed?.Invoke(a, c);
+        Engine.TimeScale = 0.35;
+        GetTree().CreateTimer(0.45, processAlways: true, processInPhysics: false, ignoreTimeScale: true).Timeout += () => Engine.TimeScale = 1;
+        var shake = 0.0;
+        void Shake()
+        {
+            shake += 1.0 / 60;
+            if (shake > 0.6 || !IsInstanceValid(Camera)) { if (IsInstanceValid(Camera)) (Camera.HOffset, Camera.VOffset) = (0, 0); return; }
+            var k = (float)(0.25 * (1 - shake / 0.6));
+            (Camera.HOffset, Camera.VOffset) = ((float)GD.RandRange(-k, k), (float)GD.RandRange(-k, k));
+            GetTree().CreateTimer(1.0 / 60, ignoreTimeScale: true).Timeout += Shake;
+        }
+        Shake();
+    }
+
     /// <summary>How long until a move can be used again (0: ready).</summary>
     public double Cooldown(string id) => Math.Max(0, _ready.GetValueOrDefault(id) - Now);
 
@@ -241,7 +279,7 @@ public partial class Player : Fighter
         if (limit ? !Stats.LimitReady : Cooldown(a.Id) > 0) return false;
         var cost = a.Cost * (Class.Id == "Sorcerer" && a.Pays == AttackKind.Spell ? 0.85 : 1);
         if (!limit && !Stats.Spend(a.Pays, cost)) return false;
-        if (limit) Stats.UseLimit();
+        if (limit) { Stats.UseLimit(); LimitMoment(a); }
         _ready[a.Id] = Now + a.Cooldown;
         _actingUntil = Now + Math.Min(0.6, Math.Max(0.3, a.Cooldown));
         Figure.Rotation = Figure.Rotation with { Y = 0 };

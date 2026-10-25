@@ -73,7 +73,7 @@ public partial class Main
             .Select(s => pack.WornIn(s) is { } i ? i.Name : null).Where(n => n is not null));
         var text = $"{_player.Septims} septims, {_player.Meat} meat. Wearing: {(worn.Length > 0 ? worn : "nothing extra")} " +
                    $"(+{pack.Armor:0} armour, +{pack.Damage:P0} damage).\n" +
-                   $"Herbalism {pack.Level(Job.Herbalism)}, smithing {pack.Level(Job.Smithing)}.{(_player.Buffs is { } b ? $" Now: {b}." : "")}\n" +
+                   $"Herbalism {pack.Level(Job.Herbalism)}, smithing {pack.Level(Job.Smithing)}, beast taming {pack.Level(Job.Taming)}.{(_player.Buffs is { } b ? $" Now: {b}." : "")}\n" +
                    (pack.Items.Count == 0 ? "Your pack is empty." : string.Join(", ", pack.Contents.Select(c => Items.Count(c.Item.Id, c.N))));
         var options = new List<(string, Action)>();
         foreach (var slot in new[] { Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body, Slot.Cloak })
@@ -144,6 +144,18 @@ public partial class Main
     IEnumerable<(string, Action)> ShopTalk(Person person)
     {
         if (Shops.All.FirstOrDefault(s => s.Id == person.Npc.Id) is not { } shop) yield break;
+        if (shop.Beasts)
+        {
+            yield return ("Show me your animals.", () => ShowMenagerie(person));
+            yield return ("I need meat for my beasts.", () => Buy(person, shop));
+            yield return ("How do I tame one in the wild?", () => Say(person,
+                "Find a young one with none of its grown kin close by: they won't let you near it, and they'll come for you. " +
+                "Go up to it and press E (Use on a phone), with a bit of meat in your pack if you can. Rangers never fail; " +
+                "the rest of us get better at it. Every beast you tame, feed and raise teaches you beast taming: the better " +
+                "you are, the more often they take to you, the faster they learn, and the less I charge you. " +
+                "The only thing you can't tame is a grown beast. Or a dragon, unless you find the egg yourself."));
+            yield break;
+        }
         yield return ("Let me see what you have.", () => Buy(person, shop));
         yield return ("I've things to sell.", () => Sell(person, shop));
         if (shop.Forge) yield return ("Can I use your forge?", () => ShowCraft(Job.Smithing, () => Say(person, "Mind the anvil.")));
@@ -168,6 +180,19 @@ public partial class Main
         }).ToList();
         options.Add(("That's all.", () => Say(person, "Come back when your purse is heavier.")));
         _hud.Talk($"{shop.Name} ({_player.Septims} septims)", shop.Greeting, [.. options]);
+    }
+
+    /// <summary>Wren's young beasts: what each will grow into, how hard it is to raise, and the price.</summary>
+    void ShowMenagerie(Person person)
+    {
+        var level = _player.Pack.Level(Job.Taming);
+        var options = Menagerie.Stock.Select(o => ($"{o.Name}, {Menagerie.Price(o, level)} septims. Danger {Menagerie.Stars(o.Danger)}, training {Menagerie.Stars(o.Training)}. {o.Text}",
+            (Action)(() => { if (BuyPet(o) is not null) Say(person, "Feed it, and don't let it chew the rope."); }))).ToList();
+        options.Add(("Not today.", () => Say(person, "They'll be here. Most of them.")));
+        _hud.Talk($"Wren's Menagerie ({_player.Septims} septims)",
+            $"Danger is what it grows into; training is how much patience it takes. Your beast taming: {level}" +
+            $"{(level > 1 ? $", so {3 * (level - 1)}% off" : "")}. They follow you (up to {MaxFollowing} at a time; the rest wait at the Gallows Perch) " +
+            "and grow up at your side. Dragons aren't for sale: no one sells a dragon.", [.. options]);
     }
 
     void Sell(Person person, Shop shop)
@@ -195,7 +220,7 @@ public partial class Main
         _hud.Talk($"{shop.Name}: selling ({_player.Septims} septims)", $"{shop.Keeper} pays half what a thing's worth. Worn gear isn't for sale; take it off first.", [.. options]);
     }
 
-    /// <summary>The market on the road in from the east gate, right by the Gallows Perch: three stalls and their keepers.</summary>
+    /// <summary>The market on the road in from the east gate, right by the Gallows Perch: four stalls and their keepers.</summary>
     void AddMarket()
     {
         var stalls = new (Shop Shop, Vector3 At, string Look, Sex Sex, int Age, string Who, string Story, string Temper)[]
@@ -203,6 +228,7 @@ public partial class Main
             (Shops.Provisions, new(68, 0, 13), "worker", Sex.Male, 52, "provisioner", "Hollis Brandt has sold bread and rope on the Gallows road for thirty years. He knows every company that's walked out the east gate, and which ones came back.", "warm"),
             (Shops.Smithy, new(81, 0, 14), "warmaster", Sex.Female, 44, "smith of the Anvil Gate", "Hulda Ironhand learned her trade in the Sunken Forge's shadow, from a dwarf who never said where he came from. Her forge is open to anyone who'll pay for the coal.", "blunt"),
             (Shops.Apothecary, new(94, 0, 13), "priest", Sex.Female, 71, "apothecary", "Old Saffron has gathered herbs in the wilds since before the war. She pays fair for what you pick, and teaches anyone patient enough to grind it.", "kindly"),
+            (Shops.Menagerie, new(57, 0, 13), "hunter", Sex.Female, 38, "beastkeeper", "Wren Halloway was raised by a ranger who brought home every orphaned thing he found. She still does. She'll sell you anything she's raised, except the ones that won't leave her.", "dry"),
         };
         foreach (var (shop, at, look, sex, age, who, story, temper) in stalls)
         {

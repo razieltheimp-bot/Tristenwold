@@ -20,7 +20,7 @@ public static class Market
         world.AddChild(root);
         // The keeper stands behind the counter (to the north, off the road), facing the road.
         var back = new Vector3(0, 0, 1.6f);
-        var awning = shop.Forge ? "#5a5248" : shop.Bench ? "#4a7a5a" : "#a83a2a";
+        var awning = shop.Forge ? "#5a5248" : shop.Bench ? "#4a7a5a" : shop.Beasts ? "#7a5a2a" : "#a83a2a";
         Solid(root, back + new Vector3(0, 0.5f, -1.2f), new Vector3(3.4f, 1, 0.8f), Wood);
         foreach (var (x, z) in new[] { (-1.9f, -1.8f), (1.9f, -1.8f), (-1.9f, 1.8f), (1.9f, 1.8f) })
             root.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.07f, BottomRadius = 0.08f, Height = 2.8f }, MaterialOverride = Wood, Position = back + new Vector3(x, 1.4f, z) });
@@ -39,6 +39,7 @@ public static class Market
         });
         // Their goods.
         string[] goods = shop.Forge ? ["dungeon/sword_shield.glb", "dungeon/barrel_small_stack.glb"]
+            : shop.Beasts ? ["dungeon/box_small.glb", "dungeon/barrel_large.glb"]
             : shop.Bench ? ["halloween/candle_triple.gltf", "dungeon/shelf_small.glb", "dungeon/keg.glb"]
             : ["dungeon/crates_stacked.glb", "dungeon/barrel_large.glb", "dungeon/box_small.glb"];
         for (var i = 0; i < goods.Length; i++)
@@ -52,6 +53,27 @@ public static class Market
                     Position = back + new Vector3(-1.2f + i * 0.6f, 1.12f, -1.2f),
                 });
         if (shop.Forge) Forge(root, back + new Vector3(3.6f, 0, -0.4f));
+        if (shop.Beasts) Pen(root, back + new Vector3(4.2f, 0, -0.6f));
+    }
+
+    /// <summary>A little fenced pen beside the beastkeeper's stall, straw on the ground and a water trough.</summary>
+    static void Pen(Node3D root, Vector3 at)
+    {
+        var straw = new StandardMaterial3D { AlbedoColor = new Color("#c8a85a"), Roughness = 1 };
+        root.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(3.2f, 0.06f, 3.2f) }, MaterialOverride = straw, Position = at + new Vector3(0, 0.03f, 0) });
+        foreach (var (x, z, along) in new[] { (0f, -1.6f, true), (0f, 1.6f, true), (-1.6f, 0f, false), (1.6f, 0f, false) })
+        {
+            Solid(root, at + new Vector3(x, 0.55f, z), along ? new Vector3(3.3f, 0.1f, 0.1f) : new Vector3(0.1f, 0.1f, 3.3f), Wood);
+            root.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = along ? new Vector3(3.3f, 0.08f, 0.08f) : new Vector3(0.08f, 0.08f, 3.3f) }, MaterialOverride = Wood, Position = at + new Vector3(x, 0.3f, z) });
+        }
+        foreach (var (x, z) in new[] { (-1.6f, -1.6f), (1.6f, -1.6f), (-1.6f, 1.6f), (1.6f, 1.6f) })
+            root.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.06f, BottomRadius = 0.07f, Height = 0.8f }, MaterialOverride = Wood, Position = at + new Vector3(x, 0.4f, z) });
+        root.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(1.0f, 0.3f, 0.4f) }, MaterialOverride = Wood, Position = at + new Vector3(0.8f, 0.15f, 1.1f) });
+        root.AddChild(new MeshInstance3D
+        {
+            Mesh = new BoxMesh { Size = new Vector3(0.86f, 0.02f, 0.28f) }, Position = at + new Vector3(0.8f, 0.29f, 1.1f),
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#3a6a8a"), Roughness = 0.1f, Metallic = 0.2f },
+        });
     }
 
     static void Solid(Node3D root, Vector3 at, Vector3 size, Material m)

@@ -10,7 +10,7 @@ namespace Tristinwold.Game;
 /// </summary>
 /// <param name="lairs">Tour the wild lairs (--lairs, or --lairs goblin_warren,storm_eyrie for some of them).</param>
 /// <param name="wild">Portraits of the stranger things of the wilds (--wild).</param>
-public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null, bool wild = false) : Node
+public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null, bool wild = false, bool limit = false, bool market = false) : Node
 {
     public override async void _Ready()
     {
@@ -22,6 +22,8 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         if (raid) { await Raid(); return; }
         if (lairs is not null) { await Lairs(lairs); return; }
         if (wild) { await Wild(); return; }
+        if (limit) { await Limit(); return; }
+        if (market) { await Market(); return; }
         if (quick) { await Quick(); return; }
 
         // Tristinwold from the Gallows Perch, looking into the city.
@@ -354,6 +356,43 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         cam.QueueFree();
         main.PlayerNode.Camera.MakeCurrent();
         await Frames(2);
+    }
+
+    /// <summary>The market stalls on the Gallows road, the menagerie's pen at the end (--market).</summary>
+    async Task Market()
+    {
+        var p = main.PlayerNode;
+        p.GlobalPosition = new Vector3(60, 1, 2);
+        await Frames(30);
+        p.Face(new Vector3(56, 0, 16));
+        await Shot("market-menagerie");
+        p.GlobalPosition = new Vector3(84, 1, 0);
+        await Frames(20);
+        p.Face(new Vector3(84, 0, 16));
+        await Shot("market-row");
+        var cam = new Camera3D { Far = 500 };
+        main.AddChild(cam);
+        cam.GlobalPosition = new Vector3(75, 45, 45);
+        cam.LookAt(new Vector3(72, 0, 12), Vector3.Up);
+        cam.MakeCurrent();
+        await Shot("market-above");
+        GetTree().Quit();
+    }
+
+    /// <summary>The hero's limit break going off, a few moments of it (--limit, with --look for the class).</summary>
+    async Task Limit()
+    {
+        var p = main.PlayerNode;
+        p.GlobalPosition = new Vector3(-150, 1, -120);
+        await Frames(30);
+        for (var i = 0; i < 60 && !p.Stats.LimitReady; i++) { p.Stats.TakeHit(12, Tristinwold.Nemesis.DamageKind.Physical, AttackKind.Weapon); p.Stats.Heal(12); }
+        p.LimitBreak();
+        for (var i = 0; i < 4; i++)
+        {
+            await Frames(1);
+            GetViewport().GetTexture().GetImage().SavePng($"{dir}/limit-{p.Class.Id}-{i}.png");
+        }
+        GetTree().Quit();
     }
 
     async Task Shot(string name)

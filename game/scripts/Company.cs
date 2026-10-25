@@ -154,6 +154,7 @@ public partial class Main
         if (_player.Meat <= 0) { _hud.Toast("You have no meat. Hunt something: deer, boar, anything wild."); return; }
         _player.Meat--;
         bond.Feed();
+        if (_player.Pack.Practise(Job.Taming, 3) is { } level) _hud.Toast($"Beast taming rises to {level}!", 4);
         _hungerSaid.Remove(bond.Id);
         BodyOf(bond)?.RefreshPlate();
         _hud.Toast($"{bond.Name} eats, and looks at you for more.");
@@ -207,7 +208,9 @@ public partial class Main
         {
             var bond = body.Bond!;
             var before = bond.Level;
-            if (bond.Gain((int)Math.Round(xp * 0.8 * (bond.Role is BondRole.Pet or BondRole.Dragon ? beastmaster : 1))) == 0) continue;
+            var training = bond.Role is BondRole.Pet or BondRole.Dragon ? beastmaster * Taming.Training(_player.Pack.Level(Job.Taming)) : 1;
+            if (bond.Gain((int)Math.Round(xp * 0.8 * training)) == 0) continue;
+            if (bond.Role is BondRole.Pet or BondRole.Dragon && _player.Pack.Practise(Job.Taming, 10) is { } tamer) _hud.Toast($"Beast taming rises to {tamer}!", 4);
             body.Grew();
             var learned = bond.AllSkills.Where(s => s.Level > before && s.Level <= bond.Level).Select(s => s.Name).ToList();
             _hud.Toast($"{bond.Name} is now level {bond.Level}{(learned.Count > 0 ? $" and has learned {string.Join(", ", learned)}" : "")}.", 8);
@@ -232,7 +235,7 @@ public partial class Main
     {
         var kin = Enemies().Where(o => o != young && !o.Young && o.Kind.Id == young.Kind.Id && o.State != EnemyState.Dead
             && o.GlobalPosition.DistanceTo(young.GlobalPosition) < 25).ToList();
-        var chance = Taming.Chance(kin.Count > 0, _player.Meat > 0, _player.Class.Id == "Ranger", _player.Hero.Level);
+        var chance = Taming.Chance(kin.Count > 0, _player.Meat > 0, _player.Class.Id == "Ranger", _player.Hero.Level, _player.Pack.Level(Job.Taming));
         if (kin.Count > 0)
         {
             _hud.Toast($"The {young.Stats.Name}'s kin are close, and they won't let you near it.");
@@ -246,21 +249,46 @@ public partial class Main
             return false;
         }
         if (_player.Meat > 0) _player.Meat--;
-        var bond = new Bond
-        {
-            KindId = young.Kind.Id, Role = young.IsDragon ? BondRole.Dragon : BondRole.Pet,
-            Name = young.IsDragon ? Dragons.NameFor(_companyRng) : _companyRng.Pick(PetNames.Where(n => _bonds.All(b => b.Name != n)).DefaultIfEmpty("Scrap").ToList()),
-        };
-        _bonds.Add(bond);
         var at = young.GlobalPosition;
         young.QueueFree();
-        bond.Following = _bonds.Count(b => b.Following) <= MaxFollowing;
-        if (bond.Following) BringCompanion(bond, at);
-        _hud.Toast(bond.Following
+        var bond = Adopt(young.Kind.Id, young.IsDragon, at);
+        var up = _player.Pack.Practise(Job.Taming, 40);
+        _hud.Toast((bond.Following
             ? $"The {young.Stats.Name} sniffs your hand and decides you'll do. You call it {bond.Name}."
-            : $"The {young.Stats.Name} is yours: you call it {bond.Name}. With {MaxFollowing} already at your heels, it goes to wait at the Gallows Perch.", 9);
+            : $"The {young.Stats.Name} is yours: you call it {bond.Name}. With {MaxFollowing} already at your heels, it goes to wait at the Gallows Perch.")
+            + (up is { } level ? $" Beast taming rises to {level}!" : ""), 9);
         Save();
         return true;
+    }
+
+    /// <summary>A new beast for the company: named, and at your heels if there's room, else waiting at the Gallows Perch.</summary>
+    Bond Adopt(string kindId, bool dragon, Vector3 at)
+    {
+        var bond = new Bond
+        {
+            KindId = kindId, Role = dragon ? BondRole.Dragon : BondRole.Pet,
+            Name = dragon ? Dragons.NameFor(_companyRng) : _companyRng.Pick(PetNames.Where(n => _bonds.All(b => b.Name != n)).DefaultIfEmpty("Scrap").ToList()),
+        };
+        _bonds.Add(bond);
+        bond.Following = _bonds.Count(b => b.Following) <= MaxFollowing;
+        if (bond.Following) BringCompanion(bond, at);
+        return bond;
+    }
+
+    /// <summary>Buys a young beast from Wren's Menagerie (never a dragon: the menagerie has none).</summary>
+    public Bond? BuyPet(PetOffer offer)
+    {
+        var price = Menagerie.Price(offer, _player.Pack.Level(Job.Taming));
+        if (_player.Septims < price) { _hud.Toast($"The {offer.Name.ToLowerInvariant()} costs {price} septims; you have {_player.Septims}.", 4); return null; }
+        _player.Septims -= price;
+        var bond = Adopt(offer.KindId, dragon: false, _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 2);
+        var up = _player.Pack.Practise(Job.Taming, 15);
+        _hud.Toast((bond.Following
+            ? $"Wren hands you the {offer.Name.ToLowerInvariant()}. It already knows its name: {bond.Name}."
+            : $"The {offer.Name.ToLowerInvariant()} is yours ({bond.Name}). With {MaxFollowing} at your heels, Wren sends it to wait at the Gallows Perch.")
+            + (up is { } level ? $" Beast taming rises to {level}!" : ""), 8);
+        Save();
+        return bond;
     }
 
     /// <summary>What a youth would be to this hero: a warrior's squire, a mage's apprentice, a rogue's protege.</summary>

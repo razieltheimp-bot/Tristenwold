@@ -221,7 +221,7 @@ public static class Taming
 {
     /// <summary>The young of these can be raised: beasts and monsters (not people, and not the dead).</summary>
     public static bool Tameable(string kindId) => kindId is "skeever" or "wolf" or "ice_wolf" or "bear" or "frost_troll" or "mudcrab"
-        or "spriggan" or "goblin" or "boar" or "deer" or "fox" or "kipine" or "deathcrest_ape" or "winged_ape"
+        or "spriggan" or "goblin" or "boar" or "deer" or "fox" or "kipine" or "deathcrest_ape" or "winged_ape" or "hawk"
         || (kindId.StartsWith("dragon_") && !kindId.EndsWith("_corrupt"));
 
     /// <summary>What its young is called.</summary>
@@ -231,6 +231,7 @@ public static class Taming
         "ice_wolf" => "Ice Wolf Pup",
         "bear" => "Bear Cub",
         "fox" => "Fox Kit",
+        "hawk" => "Hawk Chick",
         "kipine" => "Kipine Chick",
         "deathcrest_ape" => "Deathcrest Whelp",
         "winged_ape" => "Winged Ape Infant",
@@ -250,10 +251,14 @@ public static class Taming
     /// close by, it can't be done (deal with them first, or find it alone). Offering meat helps; a Ranger
     /// never fails.
     /// </summary>
-    public static double Chance(bool kinNearby, bool offeringMeat, bool beastmaster, int heroLevel)
+    /// <param name="tamingLevel">The hero's beast taming (a trade, like herbalism): 3% better for each level past the first.</param>
+    public static double Chance(bool kinNearby, bool offeringMeat, bool beastmaster, int heroLevel, int tamingLevel = 1)
     {
         if (kinNearby) return 0;
         if (beastmaster) return 1;
-        return Math.Min(0.95, 0.45 + (offeringMeat ? 0.3 : 0) + 0.02 * heroLevel);
+        return Math.Min(0.95, 0.45 + (offeringMeat ? 0.3 : 0) + 0.02 * heroLevel + 0.03 * (tamingLevel - 1));
     }
+
+    /// <summary>How much faster a tamer's beasts learn: 5% for each level of beast taming past the first.</summary>
+    public static double Training(int tamingLevel) => 1 + 0.05 * (tamingLevel - 1);
 }

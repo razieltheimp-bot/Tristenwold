@@ -998,7 +998,7 @@ public partial class SelfTest(Main main) : Node
         // The market by the Gallows Perch: the smith sells a sword.
         await Teleport(new Vector3(80, 0, 8));
         var smith = main.GetChildren().OfType<Person>().FirstOrDefault(x => x.Npc.Id == Shops.Smithy.Id);
-        Check(smith is not null && main.GetChildren().OfType<Person>().Count(x => Shops.All.Any(s => s.Id == x.Npc.Id)) == 3, "three shopkeepers keep stalls on the Gallows road");
+        Check(smith is not null && main.GetChildren().OfType<Person>().Count(x => Shops.All.Any(s => s.Id == x.Npc.Id)) == 4, "four shopkeepers keep stalls on the Gallows road");
         p.Septims = 200;
         main.Talk(smith!);
         Check(main.HudNode.Choose("Let me see"), "the smith shows her wares");
@@ -1034,6 +1034,20 @@ public partial class SelfTest(Main main) : Node
         main.HudNode.Choose("I've things to sell");
         Check(main.HudNode.Choose("Sell every"), "she buys your pelts");
         Check(p.Septims > before && pack.Count("wolf_pelt") == 0, $"for {p.Septims - before} septims");
+        main.HudNode.EndTalk();
+
+        // Wren's Menagerie: a wolf pup, already tame, for a price; and never a dragon.
+        var wren = main.GetChildren().OfType<Person>().First(x => x.Npc.Id == Shops.Menagerie.Id);
+        p.Septims = 1000;
+        var bonds = main.Bonds.Count;
+        main.Talk(wren);
+        Check(main.HudNode.Choose("Show me your animals"), "the beastkeeper shows her animals");
+        Check(main.HudNode.Options.Count() == Menagerie.Stock.Count + 1 && !main.HudNode.Options.Any(o => o.Contains("Wyrmling") || o.Contains("Dragon,")),
+            $"{Menagerie.Stock.Count} young beasts, and no dragon among them");
+        var pup = Menagerie.Stock.Single(o => o.KindId == "wolf");
+        Check(main.HudNode.Choose("Wolf Pup") && main.Bonds.Count == bonds + 1 && main.Bonds[^1].KindId == "wolf" && p.Septims == 1000 - pup.BasePrice,
+            $"a wolf pup joins you for {pup.BasePrice} septims");
+        Check(pack.JobXp.GetValueOrDefault(Job.Taming) > 0, "and you learn a little beast taming");
         main.HudNode.EndTalk();
 
         // A herb in the wild.

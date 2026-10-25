@@ -3,7 +3,7 @@ using Tristinwold.Nemesis;
 namespace Tristinwold.Gameplay;
 
 /// <summary>A trade a hero can take up and get better at.</summary>
-public enum Job { Herbalism, Smithing }
+public enum Job { Herbalism, Smithing, Taming }
 
 /// <summary>
 /// What a hero carries and wears, and how good they are at their trades. Saved with the company.
@@ -269,7 +269,7 @@ public static class Loot
 }
 
 /// <summary>A shop: who keeps it, what they sell. Every shopkeeper buys anything at half what it's worth.</summary>
-public sealed record Shop(string Id, string Name, string Keeper, string Greeting, string[] Sells, bool Forge = false, bool Bench = false)
+public sealed record Shop(string Id, string Name, string Keeper, string Greeting, string[] Sells, bool Forge = false, bool Bench = false, bool Beasts = false)
 {
     public static int Price(Item item) => item.Value;
     public static int Offer(Item item) => Math.Max(1, item.Value / 2);
@@ -293,7 +293,12 @@ public static class Shops
          "oak_wand", "apprentice_staff", "spellbook", "wizard_hat"],
         Bench: true);
 
-    public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary];
+    /// <summary>Young beasts, raised tame (see <see cref="Gameplay.Menagerie"/>), and meat to feed them.</summary>
+    public static readonly Shop Menagerie = new("shop:menagerie", "Wren's Menagerie", "Wren Halloway",
+        "Every one of them raised by my own hand, and every one of them tame. Mostly. No dragons: nobody sells dragons.",
+        ["meat"], Beasts: true);
+
+    public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie];
 
     /// <summary>Buys one of something: the septims go, the item comes. Meat goes to the beasts' store, not the pack.</summary>
     public static bool Buy(Shop shop, string id, Pack pack, ref int septims, ref int meat)
