@@ -125,6 +125,7 @@ public partial class Main : Node3D
         AddChild(new MeshInstance3D { Mesh = new PlaneMesh { Size = new Vector2(300, 300) }, MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#6b6248") } });
         string[] dragons = ["dragon_red", "dragon_blue", "dragon_green", "dragon_black", "dragon_white", "dragon_gold", "dragon_silver", "dragon_bronze", "dragon_copper", "dragon_brass"];
         if (_args.ContainsKey("hero")) dragons = ["dragon_red", "dragon_white", "dragon_gold"];
+        if (_args.ContainsKey("frost")) dragons = ["dragon_white", "dragon_white", "dragon_white"]; // normal, large and giant
         string[] looks = _args.ContainsKey("dragons") ? dragons : _args.ContainsKey("creatures")
             ? ["Knight", "skeever", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
             : ["Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded", "guard", "townsfolk", "draugr"];
@@ -135,11 +136,18 @@ public partial class Main : Node3D
             var spacing = _args.ContainsKey("hero") ? 11f : _args.ContainsKey("dragons") ? 9f : 1.3f;
             figure.Position = new Vector3((i - (looks.Length - 1) / 2f) * spacing, 0, _args.ContainsKey("dragons") ? -(i % 2) * 7 : 0);
             figure.RotationDegrees = new Vector3(0, 160, 0);
+            if (_args.ContainsKey("frost"))
+            {
+                var size = (DragonSize)i;
+                figure.Scale = Vector3.One * (Dragons.Scale(size).Height / Dragons.Scale(DragonSize.Normal).Height);
+                figure.Position = new Vector3(new[] { -14f, -4f, 12f }[i], 0, 0);
+                figure.RotationDegrees = new Vector3(0, 110, 0); // side on, to see the ridge
+            }
             AddChild(figure);
             figures.Add(figure);
         }
         var wide = _args.ContainsKey("dragons");
-        var camera = new Camera3D { Position = _args.ContainsKey("hero") ? new Vector3(0, 9, 30) : wide ? new Vector3(0, 14, 62) : new Vector3(0, 1.3f, 9f), Fov = 38, Far = 500 };
+        var camera = new Camera3D { Position = _args.ContainsKey("frost") ? new Vector3(0, 5, 34) : _args.ContainsKey("hero") ? new Vector3(0, 9, 30) : wide ? new Vector3(0, 14, 62) : new Vector3(0, 1.3f, 9f), Fov = 38, Far = 500 };
         AddChild(camera);
         camera.LookAt(wide ? new Vector3(0, 4, 0) : new Vector3(0, 0.9f, 0), Vector3.Up);
         async Task Shoot(string name)

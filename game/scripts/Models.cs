@@ -148,13 +148,15 @@ public abstract partial class Body : Node3D
 
     /// <summary>
     /// A dragon in one of the ten colours, normal-sized (4.5 m); the metallic ones shine. All but the white
-    /// (frost) dragon spread great wings and fly; the frost dragon keeps its small wings and stays on the ground.
+    /// (frost) dragon spread great wings and fly; the frost dragon keeps its small wings and stays on the ground,
+    /// with a ridge of ice spikes grown down its back.
     /// </summary>
     static Body Dragon(string colour)
     {
         var metallic = colour is "gold" or "silver" or "bronze" or "copper" or "brass";
         if (Creature.Create("dragon.glb", 4.5f, coat: $"dragons/{colour}.png", metallic: metallic) is not { } dragon) return Beast.Bear();
         if (Wings.TryGetValue(colour, out var wings)) dragon.SpreadWings(wings.Membrane, wings.Bone, metallic);
+        else dragon.Freeze();
         return dragon;
     }
 
@@ -524,9 +526,12 @@ public abstract partial class Animal : Body
         if (Models.Scene($"creature:{file}")?.Instantiate() is not Node3D model) return false;
         Model = model;
         AddChild(model);
-        var tall = modelHeight ?? Models.Bounds(model).Size.Y;
+        var box = Models.Bounds(model);
+        var tall = modelHeight ?? box.Size.Y;
         if (tall > 0) model.Scale = Vector3.One * (height / tall);
         model.RotationDegrees = new Vector3(0, yaw, 0);
+        // Stand on the ground: some models (the dragon) have their origin mid-body, not at the feet.
+        if (modelHeight is null && tall > 0) model.Position = model.Position with { Y = -box.Position.Y * model.Scale.Y };
         _meshes.AddRange(model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>());
         return true;
     }
@@ -689,6 +694,9 @@ public partial class Creature : Animal
     }
 
     public bool Winged => _wings is not null;
+
+    /// <summary>Grows ice spikes on a frost dragon's back.</summary>
+    public void Freeze() => IceRidge.Grow(Model);
 
     public override void Move(float speed, bool grounded, bool swimming)
     {

@@ -172,7 +172,9 @@ keeps making new cities as far as you care to walk, each with its own name, epit
   large, giant, ancient), and a dragon nemesis grows a size each time it beats a party or rises a rank. All but the
   white (frost) dragon have great wings (`DragonWings.cs`): folded along the back on the ground, beating in flight.
   They circle over their land, fly in to a distant fight and land to finish it, and take to the air to flee. The
-  frost dragon is wingless and fights on foot.
+  frost dragon is wingless and fights on foot, with a ridge of translucent ice spikes grown down its back and
+  flanks and icicles at its jaw (`IceRidge.cs`), sized to the dragon. `--lineup ./shots --dragons --frost`
+  photographs a normal, large and giant frost dragon side by side.
 - **Wildlife.** The land between them is lived in. Deer herds graze and foxes prowl almost everywhere,
   and they bolt when you get close; hawks wheel overhead. Away from home, wolf packs and wild boars roam the
   woods, goblin bands the woods and crags, bears and trolls the crags,
