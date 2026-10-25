@@ -6,13 +6,15 @@ using System.Text.RegularExpressions;
 namespace Tristinwold.Shared;
 
 /// <summary>One of an account's characters, as the login screen lists it.</summary>
-public sealed record CharacterSheet(string Name, string Look, string Element, DateTime Created, int Septims = 0, string Where = "");
+/// <param name="Look">The character's class.</param>
+/// <param name="Avatar">How they look, apart from their class (see Tristinwold.Gameplay.Avatar); null for their class's own look.</param>
+public sealed record CharacterSheet(string Name, string Look, string Element, DateTime Created, int Septims = 0, string Where = "", string? Avatar = null);
 
 /// <summary>
 /// Sent before joining: register, log in, or manage characters. Answered with one
 /// <see cref="AccountReply"/>, over TCP (one request per connection) or POST /v1/account.
 /// </summary>
-/// <param name="Action">register, login, create, delete, load or save.</param>
+/// <param name="Action">register, login, create, delete, load, save, or restyle (a character's new look).</param>
 /// <param name="Secret">The account's password (register, and login without a token).</param>
 /// <param name="Token">What login hands back, so the game can stay logged in without keeping the password.</param>
 /// <param name="ServerPassword">The server's own password, if it has one.</param>
@@ -142,6 +144,14 @@ public sealed partial class AccountStore
                 {
                     if (r.Character is not { } c || !a.Characters.Any(x => Same(x.Name, c.Name))) return Fail("That isn't one of your characters.");
                     return Ok(a, token) with { Save = a.Saves.GetValueOrDefault(a.Characters.First(x => Same(x.Name, c.Name)).Name) };
+                }
+                case "restyle":
+                {
+                    if (r.Character is not { } c) return Fail("No character given.");
+                    var i = a.Characters.FindIndex(x => Same(x.Name, c.Name));
+                    if (i < 0) return Fail("That isn't one of your characters.");
+                    a.Characters[i] = a.Characters[i] with { Avatar = c.Avatar };
+                    return Ok(a, token);
                 }
                 case "save":
                 {

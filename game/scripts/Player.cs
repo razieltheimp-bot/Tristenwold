@@ -25,6 +25,11 @@ public partial class Player : Fighter
     /// <summary>Their look, chosen when the character was made (a class, or an older character's look).</summary>
     public string Outfit { get; init; } = "Paladin";
 
+    /// <summary>How the hero looks, picked on the character page (see <see cref="Gameplay.Avatar"/>); null for the class's own look.</summary>
+    public string? Avatar { get; init; }
+
+    Body MakeFigure() => Tristinwold.Game.Figure.Create(Class.Look, Gameplay.Avatar.Parse(Avatar, Class.Id));
+
     /// <summary>Their rank in their guild ("Adept of the Iron Circle").</summary>
     public string GuildTitle { get; set; } = "";
 
@@ -67,7 +72,7 @@ public partial class Player : Fighter
         Local = this;
         if (Hero.Discipline is null or "") Hero.Discipline = Classes.For(Outfit).Id;
         Stats = new Combatant(Company, 1);
-        Dress(Class.Look, 1.8f);
+        Dress(Class.Look, 1.8f, make: Avatar is null ? null : MakeFigure);
         Fit();
         Stats.Heal(1e9);
         Stats.Restore(1e9, 1e9);
@@ -110,7 +115,7 @@ public partial class Player : Fighter
     /// <summary>Puts on what's worn: the class's own look, then the gear over it, and the numbers to match.</summary>
     public void Dress()
     {
-        Restyle(Class.Look);
+        Restyle(Class.Look, Avatar is null ? null : MakeFigure);
         if (Figure is Figure f) Wardrobe.Wear(f, Pack);
         Fit();
     }

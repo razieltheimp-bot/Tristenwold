@@ -242,6 +242,16 @@ public partial class Main : Node3D
             for (var i = 0; i < 20; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             GetViewport().GetTexture().GetImage().SavePng(second);
         }
+        if (_args.TryGetValue("snap-look", out var third))
+        {
+            // The look editor, with a hero put together from four figures.
+            if (!_args.ContainsKey("snap-characters")) await start.PlayAloneForSnapshot();
+            start.LookForSnapshot(Avatar.Parse(_args.GetValueOrDefault("avatar", "head=Mage;body=Knight;arms=Barbarian;legs=Skeleton_Rogue;hat=Barbarian_Hat;outfit=Crimson;skin=Tan;height=Tall"))!);
+            for (var i = 0; i < 5; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            start.ScrollToLook();
+            for (var i = 0; i < 40; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            GetViewport().GetTexture().GetImage().SavePng(third);
+        }
         GetTree().Quit();
     }
 
@@ -266,7 +276,7 @@ public partial class Main : Node3D
 
         _player = new Player
         {
-            Company = choice.Character.Name, Outfit = choice.Character.Look, Position = City.PlayerStart,
+            Company = choice.Character.Name, Outfit = choice.Character.Look, Avatar = choice.Character.Avatar ?? _args.GetValueOrDefault("avatar"), Position = City.PlayerStart,
             Hero = new Hero { Discipline = Classes.For(choice.Character.Look).Id },
             Element = Enum.TryParse<DamageKind>(choice.Character.Element, out var element) ? element : DamageKind.Fire,
         };

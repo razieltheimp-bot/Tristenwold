@@ -64,6 +64,21 @@ public class AccountTests
     }
 
     [Fact]
+    public void A_character_keeps_its_look_and_can_change_it()
+    {
+        var store = new AccountStore();
+        var joe = store.Handle(new AccountRequest("register", "Joe", Secret: "hunter22"));
+        var made = store.Handle(new AccountRequest("create", "Joe", Token: joe.Token, Character: Sheet("Bram") with { Avatar = "head=Mage" }));
+        Assert.Equal("head=Mage", made.Characters.Single().Avatar);
+        var changed = store.Handle(new AccountRequest("restyle", "Joe", Token: joe.Token, Character: Sheet("Bram") with { Avatar = "head=Knight" }));
+        Assert.True(changed.Ok, changed.Error);
+        Assert.Equal("head=Knight", changed.Characters.Single().Avatar);
+        Assert.Equal("#c9a46a", changed.Characters.Single().Look); // only the look changes
+        var mira = store.Handle(new AccountRequest("register", "Mira", Secret: "pinewood"));
+        Assert.False(store.Handle(new AccountRequest("restyle", "Mira", Token: mira.Token, Character: Sheet("Bram"))).Ok);
+    }
+
+    [Fact]
     public void Wrong_passwords_lock_the_account_for_a_minute()
     {
         var now = new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc);

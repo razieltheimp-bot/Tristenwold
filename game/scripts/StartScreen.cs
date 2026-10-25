@@ -45,6 +45,15 @@ public partial class StartScreen : CanvasLayer
     readonly Label _about = new() { AutowrapMode = TextServer.AutowrapMode.Word, Modulate = new Color("#e8dcc4") };
     Dictionary<string, string> _settings = [];
     string _look = "Paladin";
+    Avatar _avatar = Avatar.For("Paladin");
+    bool _styled;                         // the player has changed the look, so picking a class keeps it
+    CharacterSheet? _restyling;           // changing the look of a character already made
+    readonly AvatarPreview _preview = new();
+    ScrollContainer _scroll = null!;
+    readonly VBoxContainer _newOnly = new(), _appearance = new();
+    readonly Label _lookTitle = new() { Modulate = new Color("#ffd27a") };
+    readonly Dictionary<string, Label> _lookValues = [];
+    readonly HBoxContainer _createButtons = new(), _restyleButtons = new();
     string? _token;
     bool _offline;
     List<CharacterSheet> _sheets = [];
@@ -55,7 +64,7 @@ public partial class StartScreen : CanvasLayer
     public override void _Ready()
     {
         AddChild(new ColorRect { Color = new Color("#15130f"), AnchorRight = 1, AnchorBottom = 1 });
-        var scroll = new ScrollContainer { AnchorRight = 1, AnchorBottom = 1, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        var scroll = _scroll = new ScrollContainer { AnchorRight = 1, AnchorBottom = 1, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         AddChild(scroll);
         var centre = new CenterContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         scroll.AddChild(centre);
@@ -96,8 +105,10 @@ public partial class StartScreen : CanvasLayer
         top.AddChild(MakeButton("Log out", LogOut));
         _characters.AddChild(top);
         _characters.AddChild(_list);
-        _characters.AddChild(new Label { Text = "A new character", Modulate = new Color("#ffd27a") });
-        _characters.AddChild(_newName);
+        _characters.AddChild(_newOnly);
+        _newOnly.AddThemeConstantOverride("separation", 10);
+        _newOnly.AddChild(new Label { Text = "A new character", Modulate = new Color("#ffd27a") });
+        _newOnly.AddChild(_newName);
         // Pick a class: three callings, three classes each, a portrait for each.
         var picks = new List<Button>();
         foreach (var calling in Enum.GetValues<Calling>())
@@ -112,21 +123,27 @@ public partial class StartScreen : CanvasLayer
                     Icon = Portrait(d.Look), IconAlignment = HorizontalAlignment.Center, VerticalIconAlignment = VerticalAlignment.Top, ExpandIcon = true,
                 };
                 pick.AddThemeStyleboxOverride("pressed", new StyleBoxFlat { BgColor = new Color("#3a3226"), BorderColor = new Color("#ffd27a"), BorderWidthBottom = 3, BorderWidthTop = 3, BorderWidthLeft = 3, BorderWidthRight = 3 });
-                pick.Pressed += () => { _look = d.Look; foreach (var b in picks) b.ButtonPressed = b == pick; Describe(d); };
+                pick.Pressed += () => { PickClass(d.Look); foreach (var b in picks) b.ButtonPressed = b == pick; };
                 picks.Add(pick);
                 row.AddChild(pick);
             }
             _swatches.AddChild(row);
         }
-        _characters.AddChild(_swatches);
-        _characters.AddChild(_about);
+        _newOnly.AddChild(_swatches);
+        _newOnly.AddChild(_about);
         Describe(Classes.Get(_look));
+        _characters.AddChild(BuildAppearance());
         var make = new HBoxContainer();
         make.AddChild(new Label { Text = "Starting spell", CustomMinimumSize = new Vector2(150, 0) });
         foreach (var e in Elements) _element.AddItem(e);
         make.AddChild(_element);
-        _characters.AddChild(make);
-        _characters.AddChild(MakeButton("Create character", () => _ = Create()));
+        _createButtons.AddChild(make);
+        _createButtons.AddChild(MakeButton("Create character", () => _ = Create(), expand: true));
+        _characters.AddChild(_createButtons);
+        _restyleButtons.AddChild(MakeButton("Save this look", () => _ = SaveRestyle(), expand: true));
+        _restyleButtons.AddChild(MakeButton("Cancel", () => EndRestyle(), expand: true));
+        _restyleButtons.Visible = false;
+        _characters.AddChild(_restyleButtons);
 
         page.AddChild(_status);
         LoadSettings();
@@ -136,8 +153,136 @@ public partial class StartScreen : CanvasLayer
     void Describe(Discipline d) => _about.Text =
         $"{d.Name}: {d.Text}\n  Left: {d.Primary.Name}.  Right: {d.Signature.Name}.  Q: {d.Utility.Name}.  R: {d.Limit.Name}.  Always: {d.Passive.Name}.";
 
-    /// <summary>Picks a class on the character page (for screenshots).</summary>
-    public void PickClass(string look) { _look = look; Describe(Classes.Get(look)); }
+    /// <summary>Picks a class on the character page. A look the player hasn't touched follows the class.</summary>
+    public void PickClass(string look)
+    {
+        _look = look;
+        Describe(Classes.Get(look));
+        if (!_styled) _avatar = Avatar.For(look);
+        ShowLook();
+    }
+
+    // ---- the look -------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The appearance editor: the hero turning on a little stage, and beside them a row for each part (head, body,
+    /// arms, legs from any of the nine figures; a hat; clothes and skin colours; height), each stepped with arrows.
+    /// </summary>
+    Control BuildAppearance()
+    {
+        _appearance.AddThemeConstantOverride("separation", 8);
+        _appearance.AddChild(_lookTitle);
+        var split = new HBoxContainer();
+        split.AddThemeConstantOverride("separation", 12);
+        split.AddChild(_preview);
+        var rows = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        rows.AddThemeConstantOverride("separation", 4);
+        var figures = Avatar.Figures;
+        Row(rows, "Head", () => Avatar.Called(_avatar.Head), d => _avatar = _avatar with { Head = Step(figures, _avatar.Head, d) });
+        Row(rows, "Body", () => Avatar.Called(_avatar.Body), d => _avatar = _avatar with { Body = Step(figures, _avatar.Body, d) });
+        Row(rows, "Arms", () => Avatar.Called(_avatar.Arms), d => _avatar = _avatar with { Arms = Step(figures, _avatar.Arms, d) });
+        Row(rows, "Legs", () => Avatar.Called(_avatar.Legs), d => _avatar = _avatar with { Legs = Step(figures, _avatar.Legs, d) });
+        Row(rows, "On the head", () => _avatar.HatName, d => _avatar = _avatar with { Hat = Step(Avatar.Hats.Select(h => h.Id).ToArray(), _avatar.Hat, d) });
+        Row(rows, "Clothes", () => _avatar.Outfit, d => _avatar = _avatar with { Outfit = Step(Avatar.Outfits.Select(o => o.Name).ToArray(), _avatar.Outfit, d) });
+        Row(rows, "Skin", () => _avatar.Skin, d => _avatar = _avatar with { Skin = Step(Avatar.Skins.Select(o => o.Name).ToArray(), _avatar.Skin, d) });
+        Row(rows, "Height", () => _avatar.Height, d => _avatar = _avatar with { Height = Step(Avatar.Heights.Select(o => o.Name).ToArray(), _avatar.Height, d) });
+        var quick = new HBoxContainer();
+        quick.AddChild(MakeButton("Class look", () => { _avatar = Avatar.For(_restyling?.Look ?? _look); _styled = false; ShowLook(); }, expand: true));
+        quick.AddChild(MakeButton("Surprise me", () => { _avatar = Avatar.Random(new Random()); _styled = true; ShowLook(); }, expand: true));
+        rows.AddChild(quick);
+        split.AddChild(rows);
+        _appearance.AddChild(split);
+        ShowLook();
+        return _appearance;
+    }
+
+    void Row(VBoxContainer rows, string name, Func<string> value, Action<int> step)
+    {
+        var row = new HBoxContainer();
+        row.AddChild(new Label { Text = name, CustomMinimumSize = new Vector2(104, 0), VerticalAlignment = VerticalAlignment.Center });
+        row.AddChild(Arrow("<", () => { step(-1); _styled = true; ShowLook(); }));
+        var shown = new Label { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        _lookValues[name] = shown;
+        row.AddChild(shown);
+        row.AddChild(Arrow(">", () => { step(1); _styled = true; ShowLook(); }));
+        rows.AddChild(row);
+        _refresh.Add(() => shown.Text = value());
+    }
+
+    readonly List<Action> _refresh = [];
+
+    static Button Arrow(string text, Action pressed)
+    {
+        var b = new Button { Text = text, CustomMinimumSize = new Vector2(46, 38) };
+        b.Pressed += pressed;
+        return b;
+    }
+
+    static string Step(string[] options, string current, int by) =>
+        options[((Array.IndexOf(options, current) + by) % options.Length + options.Length) % options.Length];
+
+    void ShowLook()
+    {
+        foreach (var r in _refresh) r();
+        _lookTitle.Text = _restyling is { } sheet ? $"{sheet.Name}'s look" : "How they look (the class decides what they carry)";
+        if (_preview.IsInsideTree()) _preview.Show(_restyling?.Look ?? _look, _avatar);
+        else _preview.Ready += () => _preview.Show(_restyling?.Look ?? _look, _avatar);
+    }
+
+    /// <summary>Shows this look in the editor, scrolled into view (for screenshots).</summary>
+    public void LookForSnapshot(Avatar a)
+    {
+        _avatar = a;
+        _styled = true;
+        ShowLook();
+    }
+
+    /// <summary>Scrolls the page down to the look editor (once the page has been laid out).</summary>
+    public void ScrollToLook() => _scroll.ScrollVertical = (int)_appearance.GlobalPosition.Y - 20 + _scroll.ScrollVertical;
+
+    /// <summary>The look as it's saved: null while it's still just the class's own.</summary>
+    string? LookToSave => _styled ? _avatar.Encode() : null;
+
+    /// <summary>Opens the look of a character already made, to change it.</summary>
+    public void Restyle(CharacterSheet sheet)
+    {
+        _restyling = sheet;
+        _avatar = Avatar.Parse(sheet.Avatar, sheet.Look) ?? Avatar.For(sheet.Look);
+        _styled = sheet.Avatar is not null;
+        (_newOnly.Visible, _createButtons.Visible, _restyleButtons.Visible, _list.Visible) = (false, false, true, false);
+        ShowLook();
+        _scroll.ScrollVertical = 0;
+    }
+
+    void EndRestyle()
+    {
+        _restyling = null;
+        _styled = false;
+        _avatar = Avatar.For(_look);
+        (_newOnly.Visible, _createButtons.Visible, _restyleButtons.Visible, _list.Visible) = (true, true, false, true);
+        ShowLook();
+    }
+
+    async Task SaveRestyle()
+    {
+        if (_restyling is not { } sheet) return;
+        var restyled = sheet with { Avatar = LookToSave };
+        if (_offline)
+        {
+            var i = _sheets.FindIndex(s => s.Name == sheet.Name);
+            if (i >= 0) _sheets[i] = restyled;
+            SaveLocalCharacters();
+        }
+        else
+        {
+            var reply = await Ask(new AccountRequest("restyle", _account.Text.Trim(), Token: _token, ServerPassword: _serverPassword.Text, Character: restyled));
+            if (!reply.Ok) { Say(reply.Error ?? "Couldn't save the look. Is the server up to date?"); return; }
+            _sheets = [.. reply.Characters];
+        }
+        EndRestyle();
+        ShowCharacters(_offline);
+        Say($"{sheet.Name}'s new look is saved.");
+    }
 
     static Button MakeButton(string text, Action pressed, bool expand = false)
     {
@@ -247,6 +392,7 @@ public partial class StartScreen : CanvasLayer
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             });
             row.AddChild(MakeButton("Play", () => _ = Choose(sheet)));
+            row.AddChild(MakeButton("Look", () => Restyle(sheet)));
             Button? delete = null;
             delete = MakeButton("Delete", () =>
             {
@@ -279,7 +425,7 @@ public partial class StartScreen : CanvasLayer
 
     public async Task<bool> Create()
     {
-        var sheet = new CharacterSheet(_newName.Text.Trim(), _look, Elements[_element.Selected], DateTime.UtcNow);
+        var sheet = new CharacterSheet(_newName.Text.Trim(), _look, Elements[_element.Selected], DateTime.UtcNow, Avatar: LookToSave);
         if (!AccountStore.ValidName(sheet.Name)) { Say("Names are 3-24 letters, digits, spaces, _ - or '."); return false; }
         if (_offline)
         {
@@ -294,6 +440,9 @@ public partial class StartScreen : CanvasLayer
             _sheets = [.. reply.Characters];
         }
         _newName.Text = "";
+        _styled = false;
+        _avatar = Avatar.For(_look);
+        ShowLook();
         ShowCharacters(_offline);
         return true;
     }

@@ -15,9 +15,9 @@ public abstract partial class Fighter : CharacterBody3D
     protected float Gravity = (float)ProjectSettings.GetSetting("physics/3d/default_gravity", 9.8);
 
     /// <summary>Gives this fighter its look (a character preset or an animal) and something to collide with.</summary>
-    protected void Dress(string look, float height, float radius = 0.4f)
+    protected void Dress(string look, float height, float radius = 0.4f, Func<Body>? make = null)
     {
-        Figure = Body.For(look);
+        Figure = make?.Invoke() ?? Body.For(look);
         AddChild(Figure);
         _shape = new CollisionShape3D();
         AddChild(_shape);
@@ -29,10 +29,10 @@ public abstract partial class Fighter : CharacterBody3D
     CollisionShape3D _shape = null!;
 
     /// <summary>Changes how it looks (a hero joining another class) without touching the rest.</summary>
-    protected void Restyle(string look)
+    protected void Restyle(string look, Func<Body>? make = null)
     {
         Figure.QueueFree();
-        Figure = Body.For(look);
+        Figure = make?.Invoke() ?? Body.For(look);
         AddChild(Figure);
     }
 

@@ -296,9 +296,13 @@ public partial class Figure : Body
     int _swing;
     string _loop = "";
 
-    public static Figure Create(string look)
+    /// <param name="avatar">A hero's own look (head, body, arms and legs from any figure; a hat; colours; height),
+    /// worn instead of the class's. The class still decides what they carry.</param>
+    public static Figure Create(string look, Tristinwold.Gameplay.Avatar? avatar = null)
     {
         var l = Looks.GetValueOrDefault(look) ?? (look.StartsWith('#') ? Looks["Knight"] : Looks["townsfolk"]);
+        if (avatar is not null)
+            l = l with { Scale = avatar.Scale, Tint = null, Glow = 0, Show = [.. l.Show.Where(x => !x.Contains("Hat") && !x.Contains("Helmet"))] };
         var f = new Figure { _look = l };
         if (Models.Scene($"characters/{l.Model}.glb")?.Instantiate() is Node3D model)
         {
@@ -308,6 +312,8 @@ public partial class Figure : Body
             foreach (var m in model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>())
                 if (Equipment.Any(e => m.Name.ToString().Contains(e))) m.Visible = l.Show.Contains(m.Name.ToString());
             if (l.Tint is { } tint) Models.Tint(model, tint, l.Glow);
+            if (avatar is not null && model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is { } frame)
+                Wear(frame, avatar);
             if (model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is { } skeleton)
             {
                 Hold(skeleton, "handslot.r", l.RightHand);
@@ -321,6 +327,76 @@ public partial class Figure : Body
                     if (Looping.Contains(name)) f._anim.GetAnimation(name).LoopMode = Animation.LoopModeEnum.Linear;
         }
         return f;
+    }
+
+    // ---- a hero's own look ---------------------------------------------------------------------
+
+    /// <summary>The parts of a figure's body, by the end of each mesh's name. Skeletons have eyes and a jaw with
+    /// their head (and the mage a skull for one), and some a cloak with their body.</summary>
+    static readonly Dictionary<string, string[]> Parts = new()
+    {
+        ["head"] = ["_Head", "_Head_Hooded", "_Skull", "_Eyes", "_Jaw"],
+        ["body"] = ["_Body", "_Cloak"],
+        ["arms"] = ["_ArmLeft", "_ArmRight"],
+        ["legs"] = ["_LegLeft", "_LegRight"],
+    };
+
+    static readonly Dictionary<string, Node3D?> Sources = [];
+
+    static Node3D? Source(string figure)
+    {
+        if (!Sources.TryGetValue(figure, out var source))
+            Sources[figure] = source = Models.Scene($"characters/{figure}.glb")?.Instantiate() as Node3D;
+        return source;
+    }
+
+    /// <summary>
+    /// Puts a hero's own look on a figure: its body parts are swapped for the ones picked (every KayKit figure
+    /// shares one skeleton, so a mage's head sits on a knight's body and moves with it), its hat for the one picked,
+    /// and the colours painted in.
+    /// </summary>
+    static void Wear(Skeleton3D skeleton, Tristinwold.Gameplay.Avatar a)
+    {
+        foreach (var m in skeleton.GetChildren().OfType<MeshInstance3D>().Where(m => m.Skin is not null).ToList())
+        {
+            skeleton.RemoveChild(m);
+            m.QueueFree();
+        }
+        var outfit = new Color(a.OutfitHex);
+        var skin = new Color(a.SkinHex);
+        foreach (var (part, figure) in new[] { ("head", a.Head), ("body", a.Body), ("arms", a.Arms), ("legs", a.Legs) })
+        {
+            if (Source(figure) is not { } source) continue;
+            foreach (var original in source.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>()
+                         .Where(m => m.Skin is not null && Parts[part].Any(end => m.Name.ToString().EndsWith(end))))
+            {
+                var copy = new MeshInstance3D { Name = original.Name, Mesh = original.Mesh, Skin = original.Skin, Transform = original.Transform };
+                skeleton.AddChild(copy);
+                copy.Skeleton = copy.GetPathTo(skeleton);
+                var colour = part == "head" ? skin : outfit;
+                if (colour != Colors.White && !original.Name.ToString().EndsWith("_Eyes")) Paint(copy, colour);
+            }
+        }
+        foreach (var m in skeleton.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>()
+                     .Where(m => m.Name.ToString().Contains("Hat") || m.Name.ToString().Contains("Helmet") || m.Name.ToString().Contains("_Hood")))
+            m.Visible = false;
+        if (a.HatFigure.Length > 0 && Source(a.HatFigure)?.FindChild(a.Hat, true, false) is MeshInstance3D hat)
+        {
+            var slot = skeleton.GetChildren().OfType<BoneAttachment3D>().FirstOrDefault(b => b.BoneName == "head")
+                       ?? new BoneAttachment3D { BoneName = "head" };
+            if (slot.GetParent() is null) skeleton.AddChild(slot);
+            slot.AddChild(new MeshInstance3D { Name = "Avatar_Hat", Mesh = hat.Mesh, Transform = hat.Transform });
+        }
+    }
+
+    static void Paint(MeshInstance3D m, Color tint)
+    {
+        for (var s = 0; s < m.Mesh.GetSurfaceCount(); s++)
+            if (m.Mesh.SurfaceGetMaterial(s)?.Duplicate() is BaseMaterial3D mat)
+            {
+                mat.AlbedoColor = tint;
+                m.SetSurfaceOverrideMaterial(s, mat);
+            }
     }
 
     static void Hold(Skeleton3D skeleton, string bone, string? item)
