@@ -103,3 +103,21 @@ public class ProgressionTests
         Assert.True(fallen.Health > gold.Health && fallen.Damage > gold.Damage);
     }
 }
+
+/// <summary>The Rift spreading from dragon to dragon.</summary>
+public class CorruptionTests
+{
+    [Fact]
+    public void Enough_wounds_from_a_corrupted_dragon_turn_another_and_a_little_ebbs_away()
+    {
+        var c = 0.0;
+        c = Corruption.Infect(c, 150, 600);
+        Assert.False(Corruption.Turns(c));
+        Assert.Equal(0.4, c, 3);
+        Assert.Equal(0.4 - 30 / Corruption.EbbSeconds, Corruption.Ebb(c, 30), 3);
+        Assert.Equal(0, Corruption.Ebb(c, 1000));
+        for (var i = 0; i < 3; i++) c = Corruption.Infect(c, 80, 600);
+        Assert.True(Corruption.Turns(c));
+        Assert.Equal(1, c); // never more than full
+    }
+}

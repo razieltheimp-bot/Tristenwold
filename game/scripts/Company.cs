@@ -43,6 +43,7 @@ public partial class Main
     {
         Enemy.Slain += OnSlain;
         Enemy.Felled += OnFelled;
+        Enemy.Turned += OnTurned;
         _player.Summoned += Summon;
         foreach (var bond in _bonds.Where(b => b.Following)) BringCompanion(bond);
     }
@@ -51,6 +52,7 @@ public partial class Main
     {
         Enemy.Slain -= OnSlain;
         Enemy.Felled -= OnFelled;
+        Enemy.Turned -= OnTurned;
     }
 
     // ---- companions ----------------------------------------------------------------------------
@@ -83,10 +85,28 @@ public partial class Main
         _hud.Toast("A familiar steps out of the dark to fight beside you.");
     }
 
+    /// <summary>A dragon has turned to the Rift: news if it's near, and a warning if it was yours.</summary>
+    void OnTurned(Enemy e)
+    {
+        if (e.Bond is { } bond && _bonds.Contains(bond))
+        {
+            _hud.Toast($"The Rift has taken {bond.Name}! Mad with it, {bond.Name} turns on you. Beat {bond.Name} down to break its hold.", 12);
+            return;
+        }
+        if (e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 400)
+            _hud.Toast($"The Rift takes the {Bestiary.Get(Dragons.KindFor(Dragons.ColourOf(e.Kind.Id)!.Value)).Name.ToLowerInvariant()}: {e.Stats.Name} flies into a frenzy!", 8);
+    }
+
     /// <summary>A companion was knocked down. A dragon too young to fly doesn't get up again.</summary>
     void OnFelled(Enemy e)
     {
         if (e.Bond is not { } bond || !_bonds.Contains(bond)) return;
+        if (e.Cleanse())
+        {
+            // Beaten down by its own hero, a turned dragon is freed, whatever its age.
+            _hud.Toast($"The Rift's hold on {bond.Name} breaks. {bond.Name} will get up when the fighting is over, yours again.", 10);
+            return;
+        }
         if (!bond.DiesIfFelled)
         {
             _hud.Toast($"{bond.Name} is down! {bond.Name} will get up when the fighting is over.");
@@ -180,7 +200,7 @@ public partial class Main
             _hud.Toast($"Level {hero.Level}! You have {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend (K).", 8);
         }
         var beastmaster = _player.Class.Id == "Ranger" ? 1 + _player.Class.Passive.Power * _player.Hero.Power("beastmaster") : 1;
-        foreach (var body in CompanionBodies.Where(c => c.Bond is not null && c.GlobalPosition.DistanceTo(_player.GlobalPosition) < 80))
+        foreach (var body in CompanionBodies.Where(c => c.Bond is not null && c.Leader == _player && c.GlobalPosition.DistanceTo(_player.GlobalPosition) < 80))
         {
             var bond = body.Bond!;
             var before = bond.Level;
@@ -447,7 +467,7 @@ public partial class Main
             _player.Dismount();
             return;
         }
-        var near = CompanionBodies.Where(e => e.Bond is { Role: BondRole.Dragon } && e.State != EnemyState.Dead && e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 4 + e.Figure.Scale.X * 4)
+        var near = CompanionBodies.Where(e => e.Bond is { Role: BondRole.Dragon } && e.Leader == _player && e.State != EnemyState.Dead && e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 4 + e.Figure.Scale.X * 4)
             .MinBy(e => e.GlobalPosition.DistanceTo(_player.GlobalPosition));
         if (near is null) { _hud.Toast("Your dragon isn't close enough to climb on."); return; }
         if (!near.Bond!.Rideable) { _hud.Toast($"{near.Bond.Name} is too small to carry you yet (level 10)."); return; }
@@ -497,5 +517,6 @@ public partial class Main
 
     /// <summary>Lines for the HUD about each companion following.</summary>
     IEnumerable<string> PartyLines() => CompanionBodies.Where(e => e.Bond is not null).Select(e =>
-        $"{e.Bond!.Name}  lv {e.Bond.Level}  {(e.State == EnemyState.Dead ? "down" : new string('|', (int)Math.Ceiling(e.Stats.Health / e.Stats.MaxHealth * 12)))}{(e.Bond.Hungry ? "  hungry" : "")}");
+        $"{e.Bond!.Name}  lv {e.Bond.Level}  {(e.State == EnemyState.Dead ? "down" : new string('|', (int)Math.Ceiling(e.Stats.Health / e.Stats.MaxHealth * 12)))}{(e.Bond.Hungry ? "  hungry" : "")}"
+        + (e.Corrupted ? "  TURNED" : e.Infection > 0.05 ? $"  Rift {e.Infection:P0}" : ""));
 }

@@ -164,7 +164,8 @@ public abstract partial class Body : Node3D
         if (Creature.Create("dragon.glb", 4.5f, coat: coat, metallic: metallic && !corrupt, glow: corrupt ? $"dragons/{colour}_corrupt_glow.png" : null) is not { } dragon) return Beast.Bear();
         if (Wings.TryGetValue(colour, out var wings))
         {
-            if (corrupt) dragon.SpreadWings(new Color("#2c1238"), new Color("#120a18"), false, glow: new Color("#b030ff"));
+            // Its own wings bled violet, the bones turned to the Rift's gold.
+            if (corrupt) dragon.SpreadWings(wings.Membrane.Lerp(new Color("#4a1a7e"), 0.75f), new Color("#d8b060"), false, glow: new Color("#8a3ae0"));
             else dragon.SpreadWings(wings.Membrane, wings.Bone, metallic);
         }
         else dragon.Freeze(corrupt);
@@ -805,7 +806,7 @@ public partial class Creature : Animal
     /// <summary>The Rift's mark: a dark haze rising off it and a violet light about it.</summary>
     public void Corrupt()
     {
-        var c = new Color(0.22f, 0.05f, 0.32f, 0.45f);
+        var c = new Color(0.5f, 0.22f, 0.85f, 0.3f);
         var fade = new Gradient { Offsets = [0, 0.3f, 1], Colors = [new Color(c, 0), c, new Color(0.05f, 0, 0.08f, 0)] };
         AddChild(new CpuParticles3D
         {
@@ -822,7 +823,7 @@ public partial class Creature : Animal
             EmissionBoxExtents = new Vector3(1.0f, 0.9f, 2.4f), Direction = Vector3.Up, Spread = 25, Gravity = new Vector3(0, 0.6f, 0),
             InitialVelocityMin = 0.3f, InitialVelocityMax = 0.9f, ScaleAmountMin = 0.8f, ScaleAmountMax = 2.2f, ColorRamp = fade,
         });
-        AddChild(new OmniLight3D { Position = new Vector3(0, 2.2f, 0), LightColor = new Color("#b040ff"), LightEnergy = 1.4f, OmniRange = 7 });
+        AddChild(new OmniLight3D { Position = new Vector3(0, 2.2f, 0), LightColor = new Color("#a050ff"), LightEnergy = 1.6f, OmniRange = 8 });
     }
 
     /// <summary>Where a rider sits, in this body's own space: on the back, behind the wings.</summary>

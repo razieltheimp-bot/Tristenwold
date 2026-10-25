@@ -80,6 +80,13 @@ public abstract partial class Fighter : CharacterBody3D
         else v.Y = IsOnFloor() ? Math.Max(v.Y, -0.1f) : v.Y - Gravity * (float)delta;
         Velocity = v;
         MoveAndSlide();
+        // Fell through land that wasn't built yet (after a long flight or a jump across the map): back on top of it.
+        var floor = City.FloorAt(GlobalPosition);
+        if (GlobalPosition.Y < floor - 4)
+        {
+            GlobalPosition = GlobalPosition with { Y = floor + 0.5f };
+            Velocity = Vector3.Zero;
+        }
     }
 }
 
@@ -147,6 +154,20 @@ public partial class Enemy : Fighter
 
     public bool IsDragon => Dragons.ColourOf(Kind.Id) is not null;
     public bool Undead => Kind.Id is "draugr" or "draugr_overlord" or "sea_wraith" or "familiar";
+
+    /// <summary>The Rift building up in a dragon wounded by corrupted ones (0 to 1; at 1 it turns).</summary>
+    public double Infection { get; private set; }
+
+    /// <summary>Seconds of madness left since it turned: it strikes at anything near.</summary>
+    public double Frenzy { get; private set; }
+
+    public bool Corrupted => Dragons.IsCorrupted(Kind.Id);
+
+    /// <summary>A dragon turned by the Rift.</summary>
+    public static event Action<Enemy>? Turned;
+
+    /// <summary>The hero whose companion this was, before the Rift took it.</summary>
+    public Player? Master { get; private set; }
 
     /// <summary>Something died: who, the creature that killed it (if one did), and whether it was the company's doing.</summary>
     public static event Action<Enemy, Enemy?, bool>? Slain;
@@ -270,7 +291,9 @@ public partial class Enemy : Fighter
             : Bond is not null ? $"{Stats.Name}\nlevel {Bond.Level} {Bond.Stage}{(Bond.Hungry ? ", hungry" : "")}\n{bar}"
             : Rider ? $"Dragon Knight {Stats.Name}\n{bar}"
             : $"{Stats.Name}\n{bar}";
-        Plate.Modulate = Leader is not null ? new Color("#a8e0a0") : Friendly ? new Color("#a8c8f0") : NemesisId is null ? new Color("#e8dcc4") : new Color("#ff7a5a");
+        if (State != EnemyState.Dead && Frenzy > 0) Plate.Text = $"FRENZIED\n{Plate.Text}";
+        else if (State != EnemyState.Dead && Infection > 0.05 && !Corrupted) Plate.Text += $"\nRift {Infection:P0}";
+        Plate.Modulate = Frenzy > 0 ? new Color("#d890ff") : Leader is not null ? new Color("#a8e0a0") : Friendly ? new Color("#a8c8f0") : NemesisId is null ? new Color("#e8dcc4") : new Color("#ff7a5a");
     }
 
     public void Provoke(Player by)
@@ -315,6 +338,12 @@ public partial class Enemy : Fighter
         if (State == EnemyState.Dead) return;
         var result = Stats.TakeHit(damage, kind ?? attacker.Kind.DamageKind, AttackKind.Weapon, crit, attacker.Stats);
         if (_target is null && State != EnemyState.Fleeing) { _rival = attacker; State = EnemyState.Fighting; }
+        // A corrupted dragon's wounds carry the Rift into another dragon; enough of them, and it turns.
+        if (attacker.Corrupted && IsDragon && !Corrupted && !result.Killed)
+        {
+            Infection = Corruption.Infect(Infection, result.Dealt, Stats.MaxHealth);
+            if (Corruption.Turns(Infection)) { Turn(); return; }
+        }
         RefreshPlate();
         if (result.Killed) Die(attacker);
         else Figure.Hurt();
@@ -333,6 +362,8 @@ public partial class Enemy : Fighter
                 .MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
         }
         var sight = IsDragon ? 120 : 60;
+        // Mad with the Rift: anything at all, the nearest first.
+        if (Frenzy > 0) return all.Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < 90).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
         return all.Where(e => !e.Young && e.GlobalPosition.DistanceTo(GlobalPosition) < sight
                 && ((Foe is not null && e.Faction == Foe) || Allegiance.Hostile(Side, e.Side)))
             .MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
@@ -365,6 +396,8 @@ public partial class Enemy : Fighter
         _attackCooldown -= delta;
         _ignore -= delta;
         _empowered -= delta;
+        if (Infection > 0 && !Corrupted && State != EnemyState.Fighting) Infection = Corruption.Ebb(Infection, delta); // once clear of the fight
+        if (Frenzy > 0 && (Frenzy -= delta) <= 0) Calm();
         if (Carrying is not null) { Carry(delta); return; }
 
         var bulk = Bulk;
@@ -383,6 +416,9 @@ public partial class Enemy : Fighter
         {
             _lookForRival = 0.5;
             _rival = FindRival();
+            // In a frenzy it goes for whatever's nearest, people included.
+            if (Frenzy > 0 && player is { Downed: false } && player.GlobalPosition.DistanceTo(GlobalPosition) is var pd and < 35
+                && (_rival is null || pd < _rival.GlobalPosition.DistanceTo(GlobalPosition))) { _rival = null; Provoke(player); }
             if (_rival is not null) State = EnemyState.Fighting;
             else if (State == EnemyState.Fighting) State = EnemyState.Idle;
         }
@@ -417,7 +453,7 @@ public partial class Enemy : Fighter
                 if (gap > 0) move = toRival.Normalized() * speed;
                 else if (_attackCooldown <= 0)
                 {
-                    _attackCooldown = Kind.AttackSeconds;
+                    _attackCooldown = Kind.AttackSeconds / (Frenzy > 0 ? 1.5 : 1);
                     var power = 1.0;
                     if (Bond?.Skills.FirstOrDefault(s => s.Id == "strike") is { } strike && Ready(strike)) power = strike.Power;
                     if (_empowered > 0) power *= 1.5;
@@ -447,7 +483,7 @@ public partial class Enemy : Fighter
                 if (toTarget.Length() > reach) move = toTarget.Normalized() * speed;
                 else if (_attackCooldown <= 0)
                 {
-                    _attackCooldown = Kind.AttackSeconds / (Stats.Statuses.Contains(AutoStatus.Haste) ? 1.3 : 1);
+                    _attackCooldown = Kind.AttackSeconds / (Stats.Statuses.Contains(AutoStatus.Haste) ? 1.3 : 1) / (Frenzy > 0 ? 1.5 : 1);
                     Figure.Attack();
                     var damage = Stats.Outgoing(AttackKind.Weapon, Kind.Damage, _rng, out var crit);
                     _target.TakeHit(damage, Kind.DamageKind, AttackKind.Weapon, crit, this);
@@ -664,6 +700,70 @@ public partial class Enemy : Fighter
         Plate.Text = "";
         var timer = GetTree().CreateTimer(20);
         timer.Timeout += QueueFree;
+    }
+
+    /// <summary>
+    /// The Rift takes it: it becomes a corrupted dragon of its colour (tougher, its own colour bled violet and veined
+    /// with gold), throws any rider, forgets every pact and master, and flies into a frenzy.
+    /// </summary>
+    public void Turn()
+    {
+        if (!IsDragon || Corrupted || State == EnemyState.Dead) return;
+        var colour = Dragons.ColourOf(Kind.Id)!.Value;
+        Carrying?.Dismount();
+        if (Leader is not null) (Master, Leader) = (Leader, null);
+        var named = Bond is not null || NemesisId is not null || Size == DragonSize.Ancient;
+        Kind = Bestiary.Get(Dragons.CorruptedKindFor(colour));
+        (Allied, Rider, Faction, Foe) = (false, false, Dragons.Rift, null);
+        Stats.Grow(1.3);
+        Stats.DamageMult *= 1.25 * Corruption.FrenzyMight;
+        Stats.SpeedMult *= Corruption.FrenzySpeed;
+        Stats.Statuses.Add(AutoStatus.Haste);
+        Stats.Name = named ? $"{Stats.Name}, Rift-Mad" : Size > DragonSize.Normal ? $"{Size} {Kind.Name}" : Kind.Name;
+        Infection = 1;
+        Frenzy = Corruption.FrenzySeconds;
+        (_rival, _target, State) = (null, null, EnemyState.Idle);
+        Restyle(Dragons.CorruptedKindFor(colour));
+        Shape();
+        Effects.Burst(GetParent(), GlobalPosition + Vector3.Up * 2 * Bulk, DamageKind.Shock, 4 * Bulk);
+        RefreshPlate();
+        Turned?.Invoke(this);
+    }
+
+    /// <summary>The frenzy burns out; what's left is a corrupted dragon, cruel but no longer mad.</summary>
+    void Calm()
+    {
+        Frenzy = 0;
+        Stats.DamageMult /= Corruption.FrenzyMight;
+        Stats.SpeedMult /= Corruption.FrenzySpeed;
+        Stats.Statuses.Remove(AutoStatus.Haste);
+        RefreshPlate();
+    }
+
+    /// <summary>Eases the Rift's hold on a dragon not yet turned (a paladin's light).</summary>
+    public void Soothe(double amount)
+    {
+        if (Corrupted) return;
+        Infection = Math.Max(0, Infection - amount);
+        RefreshPlate();
+    }
+
+    /// <summary>
+    /// A companion turned by the Rift, beaten down by its own hero: the Rift's hold breaks, and it is theirs again
+    /// (it gets up once the fighting's done).
+    /// </summary>
+    public bool Cleanse()
+    {
+        if (Bond is null || !Corrupted) return false;
+        if (Frenzy > 0) Calm();
+        Kind = Bestiary.Get(Bond.KindId);
+        (Faction, Infection, Leader) = (null, 0, Master);
+        Restyle(Bond.KindId);
+        Grew();
+        Stats.Name = Bond.Name;
+        if (State == EnemyState.Dead) Figure.Die();
+        RefreshPlate();
+        return true;
     }
 
     /// <summary>Falls where it stands (a companion starving).</summary>

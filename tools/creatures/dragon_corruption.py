@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Corrupts the ten dragon coats (made by dragon_colours.py): the hide darkened towards a bruised violet-black,
-with veins of Rift-light running through it and eyes burning magenta. Writes, for each colour, the coat
-(<colour>_corrupt.png) and what glows on it (<colour>_corrupt_glow.png, used as the emission map).
+Corrupts the ten dragon coats (made by dragon_colours.py): each dragon's own colour bled into a vivid Rift violet,
+with veins of molten gold running through the hide (darker where they cut in) and eyes burning violet-white.
+Writes, for each colour, the coat (<colour>_corrupt.png) and what glows on it (<colour>_corrupt_glow.png, the
+emission map: the gold veins and the eyes).
 
   python3 tools/creatures/dragon_corruption.py path/to/dragon_oga/dragon.png
 """
@@ -18,18 +19,21 @@ COLOURS = ["red", "blue", "green", "black", "white", "gold", "silver", "bronze",
 IMPORT = '[remap]\n\nimporter="texture"\n\n[params]\n\ncompress/mode=2\nmipmaps/generate=true\ndetect_3d/compress_to=0\n'
 
 
-def ridged(w, h, seed):
-    """Branching veins: ridged fractal noise, sharpened so only the creases show."""
+def ridged(w, h, seed, sharp=0.93):
+    """
+    Veins: the contour lines of a smooth random field, so they run long and curving like the gold streaks on a
+    Rift-corrupted hide. Higher sharp gives thinner lines; lower, a wider band (for the darkened rim).
+    """
     rng = np.random.default_rng(seed)
-    total = np.zeros((h, w))
-    amp = 1.0
-    for cells in (6, 12, 24, 48):
+    field = np.zeros((h, w))
+    for cells, weight in ((4, 1.0), (9, 0.45), (20, 0.15)):
         small = Image.fromarray((rng.random((cells, cells)) * 255).astype(np.uint8))
-        layer = np.asarray(small.resize((w, h), Image.Resampling.BICUBIC), dtype=float) / 255
-        total += (1 - np.abs(layer - 0.5) * 2) * amp
-        amp *= 0.55
-    total /= total.max()
-    return np.clip((total - 0.62) / 0.38, 0, 1) ** 3
+        field += np.asarray(small.resize((w, h), Image.Resampling.BICUBIC), dtype=float) / 255 * weight
+    field /= 1.6
+    lines = np.zeros((h, w))
+    for level in (0.3, 0.4, 0.5, 0.6, 0.7):
+        lines = np.maximum(lines, 1 - np.abs(field - level) * 14)
+    return np.clip((lines - sharp) / (1 - sharp), 0, 1)
 
 
 def eyes(src, size):
@@ -53,14 +57,16 @@ def main():
         a = np.asarray(coat, dtype=float)
         rgb, alpha = a[..., :3] / 255, a[..., 3:]
         lum = rgb @ np.array([0.3, 0.59, 0.11])
-        bruise = np.array([0.30, 0.12, 0.40])
-        base = rgb * 0.1 + lum[..., None] * bruise * 0.6  # a trace of its own colour, drowned in violet-black
+        violet = np.array([0.48, 0.18, 0.78])
+        base = (rgb * 0.4 + (np.maximum(lum, 0.3) ** 0.7)[..., None] * violet * 0.9) * 0.9  # its own colour, bled into violet
         veins = ridged(coat.width, coat.height, 17 + i)
+        rim = np.clip(ridged(coat.width, coat.height, 17 + i, sharp=0.55) - veins, 0, 1)
         eye = eyes(src, coat.size)
-        light = np.array([0.85, 0.25, 1.0])
-        base = base * (1 - veins[..., None] * 0.6) + veins[..., None] * light * 0.55
-        base = base * (1 - eye[..., None]) + eye[..., None] * np.array([1.0, 0.3, 0.9])
-        glow = veins[..., None] * light * 0.9 + eye[..., None] * np.array([1.0, 0.35, 1.0])
+        gold = np.array([1.0, 0.8, 0.45])
+        base = base * (1 - rim[..., None] * 0.45)                       # the hide darkens where the veins cut in
+        base = base * (1 - veins[..., None]) + veins[..., None] * gold * 0.85
+        base = base * (1 - eye[..., None]) + eye[..., None] * np.array([0.9, 0.7, 1.0])
+        glow = veins[..., None] * gold * 0.75 + eye[..., None] * np.array([0.85, 0.6, 1.0])
         out = Image.fromarray(np.concatenate([np.clip(base, 0, 1) * 255, alpha], axis=-1).astype(np.uint8), "RGBA")
         glow_img = Image.fromarray((np.clip(glow, 0, 1) * 255).astype(np.uint8), "RGB")
         for img, suffix in ((out, "_corrupt"), (glow_img, "_corrupt_glow")):

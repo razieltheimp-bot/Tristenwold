@@ -481,7 +481,7 @@ public partial class SelfTest(Main main) : Node
         hatchling.Velocity = Vector3.Zero;
         await Frames(10);
         main.RideNow();
-        Check(p.Mount == hatchling, $"you climb onto {hatchling.Bond.Name} ({main.HudNode.LastLine}; {hatchling.State}, {hatchling.GlobalPosition.DistanceTo(p.GlobalPosition):0.0} m)");
+        Check(p.Mount == hatchling, $"you climb onto {hatchling.Bond.Name} ({main.HudNode.LastLine}; {hatchling.State}, {hatchling.GlobalPosition.DistanceTo(p.GlobalPosition):0.0} m: you at {p.GlobalPosition}, {hatchling.Bond.Name} at {hatchling.GlobalPosition})");
         Input.ActionPress("jump");
         await Until(() => hatchling.GlobalPosition.Y - City.FloorAt(hatchling.GlobalPosition) > 10, 6);
         Input.ActionRelease("jump");
@@ -505,6 +505,27 @@ public partial class SelfTest(Main main) : Node
             $"a dragon knight and a corrupted red dragon fight ({knight.Stats.Health:0} and {fallen.Stats.Health:0} hp left)");
         knight.QueueFree();
         fallen.QueueFree();
+
+        // A corrupted dragon's wounds carry the Rift: a gold dragon that takes enough of them turns, and goes mad.
+        var gold = Spawn("dragon_gold", Ground(p.GlobalPosition + new Vector3(-70, 0, 60)));
+        var biter = Spawn("dragon_black_corrupt", Ground(p.GlobalPosition + new Vector3(-70, 0, 85)));
+        await Until(() => gold.Corrupted || gold.State == EnemyState.Dead || biter.State == EnemyState.Dead, 60);
+        Check(gold.Corrupted && gold.Frenzy > 0 && gold.Kind.Id == "dragon_gold_corrupt",
+            $"the gold dragon is infected and turns: {gold.Stats.Name} ({gold.Kind.Name}, frenzy {gold.Frenzy:0} s; gold {gold.Stats.Health:0}/{gold.Stats.MaxHealth:0} {gold.State} rival {gold.Rival?.Stats.Name}, infection {gold.Infection:P0}; biter {biter.Stats.Health:0}/{biter.Stats.MaxHealth:0} {biter.State} rival {biter.Rival?.Stats.Name}, {gold.GlobalPosition.DistanceTo(biter.GlobalPosition):0} m apart)");
+        gold.QueueFree();
+        biter.QueueFree();
+
+        // Your own dragon can be taken too; beat it down and it's yours again.
+        var rift = Spawn("dragon_red_corrupt", Ground(hatchling.GlobalPosition + new Vector3(0, 0, 40)));
+        for (var i = 0; i < 8 && !hatchling.Corrupted; i++) { hatchling.TakeHitFrom(rift, hatchling.Stats.MaxHealth * 0.2, false); hatchling.Stats.Heal(1e9); }
+        Check(hatchling.Corrupted && hatchling.Leader is null && hatchling.Frenzy > 0, $"the Rift takes {hatchling.Bond.Name}: {hatchling.Stats.Name}");
+        rift.QueueFree();
+        hatchling.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Frames(5);
+        Check(!hatchling.Corrupted && hatchling.Leader == p && hatchling.Stats.Name == hatchling.Bond.Name, $"beaten down, {hatchling.Bond.Name} is freed and yours again");
+        main.RestNow();
+        await Frames(5);
+        Check(hatchling.State != EnemyState.Dead, $"{hatchling.Bond.Name} gets up");
         p.Join("Paladin");
         await Teleport(field);
     }

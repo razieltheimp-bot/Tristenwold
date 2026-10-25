@@ -195,10 +195,19 @@ breath). It keeps growing: large at level 20, giant at 30.
 
 ### Corrupted dragons, pacts and the Dragonwatch
 
-- **Corrupted dragons.** The Rift has twisted some dragons of every colour: violet-black hides veined with
-  pulsing light, a dark haze rising off them, magenta eyes, tougher and harder-hitting. About one ancient in
-  seven has fallen, and all its kin with it; a few dragons of any flight have turned. They attack everything
-  living, dragons of every colour included. `tools/creatures/dragon_corruption.py` paints their hides.
+- **Corrupted dragons.** The Rift has twisted some dragons of every colour. A corrupted dragon keeps its own
+  colour, bled into a vivid violet and veined with molten gold that pulses; its eyes burn violet-white, its wings
+  are its own membrane turned violet on bones of gold, and a violet haze rises off it. Corrupted dragons are
+  tougher and hit harder, and they attack everything living, dragons of every colour included. About one ancient
+  in seven has fallen, and all its kin with it; a few dragons of any flight have turned.
+  `tools/creatures/dragon_corruption.py` paints their hides.
+- **The Rift spreads.** Every wound a corrupted dragon deals another dragon carries the corruption in; enough of
+  them (about two thirds of its health) and that dragon turns. It takes on the corrupted look, grows tougher,
+  throws any knight riding it, forgets its pact or its flight, and flies into a frenzy for 45 seconds: faster,
+  harder-hitting, striking at whatever is nearest, people included. The corruption ebbs away if a dragon gets
+  clear of the fight in time, and a fight against corrupted dragons can turn the defenders into raiders. Your
+  own dragon can be taken too: it turns on you, and beating it down breaks the Rift's hold and gives it back to
+  you. A paladin's Holy Light eases the corruption in their companions; Divine Judgement clears it.
 - **Pacts.** Some metallic ancients keep a pact with the nearest town or village in their land. Their dragons
   guard people rather than hunting them, and the town has a Dragonwatch: dragon knights on the ancient's
   dragons, circling over it. Knights and pact dragons attack chromatic and corrupted dragons on sight.

@@ -36,7 +36,7 @@ public partial class DragonWings : Node3D
         };
         if (glow is { } g)
         {
-            skin.Backlight = g * 0.6f;
+            skin.Backlight = g * 0.35f;
             skin.EmissionEnabled = true;
             skin.Emission = g;
             skin.EmissionEnergyMultiplier = 0.08f;

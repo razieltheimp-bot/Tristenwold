@@ -281,7 +281,7 @@ public partial class Player : Fighter
             case "holy_light":
                 Figure.Perform("Spellcast_Raise", 0.8);
                 Heal(a.Power * power);
-                foreach (var c in Companions()) { c.Stats.Heal(c.Stats.MaxHealth * a.Power * power); c.RefreshPlate(); Effects.Rise(c); }
+                foreach (var c in Companions()) { c.Stats.Heal(c.Stats.MaxHealth * a.Power * power); c.Soothe(0.5 * power); c.RefreshPlate(); Effects.Rise(c); }
                 Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Sun, 4);
                 foreach (var e in Around(a.Range).ToList()) Strike(e, 25 * power, DamageKind.Sun, AttackKind.Spell);
                 break;
@@ -296,7 +296,7 @@ public partial class Player : Fighter
                 Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Sun, (float)a.Range);
                 foreach (var e in Around(a.Range).ToList()) Strike(e, dmg, a.Kind, AttackKind.Spell);
                 Heal(0.5);
-                foreach (var c in Companions()) { c.Revive(); c.Stats.Heal(1e9); c.RefreshPlate(); }
+                foreach (var c in Companions()) { c.Revive(); c.Stats.Heal(1e9); c.Soothe(1); c.RefreshPlate(); }
                 break;
 
             // ---- the ranger ----

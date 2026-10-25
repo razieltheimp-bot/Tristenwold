@@ -126,7 +126,7 @@ public partial class Main : Node3D
         string[] dragons = ["dragon_red", "dragon_blue", "dragon_green", "dragon_black", "dragon_white", "dragon_gold", "dragon_silver", "dragon_bronze", "dragon_copper", "dragon_brass"];
         if (_args.ContainsKey("hero")) dragons = ["dragon_red", "dragon_white", "dragon_gold"];
         if (_args.ContainsKey("frost")) dragons = ["dragon_white", "dragon_white", "dragon_white"]; // normal, large and giant
-        if (_args.ContainsKey("corrupt")) dragons = ["dragon_red_corrupt", "dragon_white_corrupt", "dragon_gold_corrupt", "dragon_green_corrupt", "dragon_black_corrupt"];
+        if (_args.ContainsKey("corrupt")) dragons = ["dragon_red_corrupt", "dragon_gold_corrupt", "dragon_green_corrupt", "dragon_white_corrupt"];
         if (_args.ContainsKey("riders")) dragons = ["rider:dragon_gold", "rider:dragon_silver", "dragon_red_corrupt", "rider:dragon_bronze"];
         string[] looks = _args.ContainsKey("dragons") ? dragons : _args.ContainsKey("creatures")
             ? ["Paladin", "skeever", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
