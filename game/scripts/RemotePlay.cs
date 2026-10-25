@@ -76,8 +76,21 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
     {
         if (_screen is null) return;
         while (_screen.Input.TryDequeue(out var json)) Handle(json);
-        if ((_screen.Viewers > 0) != _watched) { _watched = _screen.Viewers > 0; Main.RemoteQrVisible(!_watched); _padSent = ""; }
+        if ((_screen.Viewers > 0) != _watched)
+        {
+            _watched = _screen.Viewers > 0;
+            Main.RemoteQrVisible(!_watched);
+            _padSent = "";
+            if (!_watched)
+            {
+                // The phone's gone: let go of its sticks, so nothing keeps walking or turning.
+                _pan = Vector2.Zero;
+                foreach (var a in new[] { "move_left", "move_right", "move_forward", "move_back" }) Input.ActionRelease(a);
+            }
+        }
         if (_watched && Upright) TellPad(delta);
+        // The camera stick turns the view for as long as it's held, faster the further it's pushed.
+        if (_pan != Vector2.Zero) Main.LookFromPhone(new Vector2(_pan.X * Mathf.Abs(_pan.X), _pan.Y * Mathf.Abs(_pan.Y)) * PanSpeed * (float)delta);
 
         var typing = GetViewport().GuiGetFocusOwner() is LineEdit or TextEdit;
         if (typing != _typing && _screen.Viewers > 0) _screen.Tell(typing ? """{"keyboard":true}""" : """{"keyboard":false}""");
@@ -134,6 +147,9 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
                 Axis("move_right", "move_left", e.GetProperty("x").GetSingle());
                 Axis("move_back", "move_forward", e.GetProperty("y").GetSingle());
                 break;
+            case "pan":
+                _pan = new Vector2(e.GetProperty("x").GetSingle(), e.GetProperty("y").GetSingle());
+                break;
             case "look":
                 Main.LookFromPhone(new Vector2(e.GetProperty("x").GetSingle(), e.GetProperty("y").GetSingle()) * LookSpeed);
                 break;
@@ -175,6 +191,11 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
 
     /// <summary>Radians of turn for each point the thumb drags across the phone's picture.</summary>
     const float LookSpeed = 0.009f;
+
+    /// <summary>Radians a second the camera stick turns the view, pushed all the way (sideways; half that up and down).</summary>
+    static readonly Vector2 PanSpeed = new(2.6f, 1.3f);
+
+    Vector2 _pan;
 
     static void Axis(string positive, string negative, float value)
     {

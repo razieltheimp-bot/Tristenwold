@@ -67,7 +67,8 @@ godot --path game -- --remote --tunnel   (the same thing by hand)
 ```
 
 Hold the phone sideways and the game fills the screen with its own on-screen controls. Hold it upright and
-the picture sits at the top with a controller underneath, where the keyboard would be: a joystick, the
+the picture sits at the top with a controller underneath, where the keyboard would be: a joystick to walk, a
+smaller one to turn the camera, the
 class's moves (named for your class, glowing when the limit is ready or there's someone to talk to), and
 Map, Quests, Pack, Party, Skills, Heal, Rest, World, Menu and Type buttons. Drag on the picture to look
 around; tap it to work menus. Turning the phone switches between the two at once.

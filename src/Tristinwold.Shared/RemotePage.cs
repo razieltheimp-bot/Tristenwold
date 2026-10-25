@@ -3,7 +3,8 @@ namespace Tristinwold.Shared;
 /// <summary>
 /// The web page a phone opens for remote play. Held sideways, it fills the screen with the game and sends every
 /// touch back (the game draws its own on-screen controls). Held upright, the game's picture sits at the top and
-/// the bottom of the screen, where the keyboard would be, is a controller: a joystick, the class's moves, and
+/// the bottom of the screen, where the keyboard would be, is a controller: a joystick to walk, a smaller one to
+/// turn the camera, the class's moves, and
 /// buttons for the map, quests, pack and menu; dragging on the picture looks around, and tapping it works menus.
 /// A keyboard button opens the phone's keyboard for names and passwords. On an iPhone, Safari's Share → Add to
 /// Home Screen makes it open full screen like an app. A hardware keyboard (an iPad's) also works.
@@ -44,10 +45,15 @@ public static class RemotePage
           #menus { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
           #menus button { height: 34px; font-size: 13px; border-radius: 8px; }
           #play { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 0; }
-          #stick { position: relative; width: min(42vw, 170px); aspect-ratio: 1; border-radius: 50%; flex: none;
+          #right { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+          .stick { position: relative; aspect-ratio: 1; border-radius: 50%; flex: none;
             background: radial-gradient(circle, rgba(232,220,196,.10), rgba(232,220,196,.04)); border: 2px solid rgba(232,220,196,.25); }
-          #knob { position: absolute; left: 50%; top: 50%; width: 38%; height: 38%; margin: -19% 0 0 -19%; border-radius: 50%;
+          #stick { width: min(40vw, 160px); }
+          #look { width: min(26vw, 104px); }
+          .knob { position: absolute; left: 50%; top: 50%; width: 38%; height: 38%; margin: -19% 0 0 -19%; border-radius: 50%;
             background: rgba(255, 210, 122, .55); border: 2px solid #ffd27a; pointer-events: none; }
+          #look .knob { background: rgba(154, 200, 255, .5); border-color: #9ac8ff; }
+          .stick span { position: absolute; left: 0; right: 0; bottom: -18px; text-align: center; font-size: 11px; opacity: .6; }
           #moves { display: grid; grid-template-columns: repeat(3, min(15vw, 62px)); grid-auto-rows: min(15vw, 62px); gap: 8px; }
           #pad button { background: rgba(58, 50, 38, .85); color: #e8dcc4; border: 1px solid rgba(232, 220, 196, .3);
             font: 600 12px -apple-system, system-ui, sans-serif; padding: 0 2px; touch-action: none; overflow: hidden; }
@@ -71,11 +77,14 @@ public static class RemotePage
             <button data-a="game_menu">Menu</button><button id="keys2">⌨︎ Type</button>
           </div>
           <div id="play">
-            <div id="stick"><div id="knob"></div></div>
-            <div id="moves">
-              <button data-a="ride">Ride</button><button data-a="descend">Dive</button><button data-a="jump">Jump</button>
-              <button data-a="interact">Use</button><button data-a="limit">Limit</button><button data-a="cycle_element">Q</button>
-              <button data-a="sprint" data-toggle="1">Run</button><button data-a="spell">Spell</button><button data-a="attack" class="big">Strike</button>
+            <div id="stick" class="stick"><div class="knob"></div><span>move</span></div>
+            <div id="right">
+              <div id="moves">
+                <button data-a="ride">Ride</button><button data-a="descend">Dive</button><button data-a="jump">Jump</button>
+                <button data-a="interact">Use</button><button data-a="limit">Limit</button><button data-a="cycle_element">Q</button>
+                <button data-a="sprint" data-toggle="1">Run</button><button data-a="spell">Spell</button><button data-a="attack" class="big">Strike</button>
+              </div>
+              <div id="look" class="stick"><div class="knob"></div><span>camera</span></div>
             </div>
           </div>
         </div>
@@ -172,21 +181,26 @@ public static class RemotePage
             b.addEventListener(ev, (e) => { e.preventDefault(); if (b.dataset.toggle) return; b.classList.remove("on"); send({ t: "act", a, p: false }); });
         }
 
-        // The joystick: how far and which way the thumb is from where it started, -1 to 1 each way.
-        const stick = document.getElementById("stick"), knob = document.getElementById("knob");
-        let thumb = null;
-        function steer(e) {
-          const r = stick.getBoundingClientRect(), radius = r.width / 2;
-          let x = (e.clientX - r.left - radius) / (radius * 0.7), y = (e.clientY - r.top - radius) / (radius * 0.7);
-          const len = Math.hypot(x, y);
-          if (len > 1) { x /= len; y /= len; }
-          knob.style.transform = `translate(${x * radius * 0.7}px, ${y * radius * 0.7}px)`;
-          send({ t: "stick", x: +x.toFixed(2), y: +y.toFixed(2) });
+        // The joysticks: how far and which way the thumb is from the middle, -1 to 1 each way. The big one walks;
+        // the small one turns the camera, faster the further it's pushed, for as long as it's held.
+        function joystick(id, kind) {
+          const pad = document.getElementById(id), knob = pad.querySelector(".knob");
+          let thumb = null;
+          function steer(e) {
+            const r = pad.getBoundingClientRect(), radius = r.width / 2;
+            let x = (e.clientX - r.left - radius) / (radius * 0.7), y = (e.clientY - r.top - radius) / (radius * 0.7);
+            const len = Math.hypot(x, y);
+            if (len > 1) { x /= len; y /= len; }
+            knob.style.transform = `translate(${x * radius * 0.7}px, ${y * radius * 0.7}px)`;
+            send({ t: kind, x: +x.toFixed(2), y: +y.toFixed(2) });
+          }
+          pad.addEventListener("pointerdown", (e) => { e.preventDefault(); hold(pad, e); thumb = e.pointerId; steer(e); });
+          pad.addEventListener("pointermove", (e) => { if (e.pointerId === thumb) { e.preventDefault(); steer(e); } });
+          for (const ev of ["pointerup", "pointercancel"])
+            pad.addEventListener(ev, (e) => { if (e.pointerId !== thumb) return; thumb = null; knob.style.transform = ""; send({ t: kind, x: 0, y: 0 }); });
         }
-        stick.addEventListener("pointerdown", (e) => { e.preventDefault(); hold(stick, e); thumb = e.pointerId; steer(e); });
-        stick.addEventListener("pointermove", (e) => { if (e.pointerId === thumb) { e.preventDefault(); steer(e); } });
-        for (const ev of ["pointerup", "pointercancel"])
-          stick.addEventListener(ev, (e) => { if (e.pointerId !== thumb) return; thumb = null; knob.style.transform = ""; send({ t: "stick", x: 0, y: 0 }); });
+        joystick("stick", "stick");
+        joystick("look", "pan");
 
         // The game says what the class's buttons are called now, and which are worth pressing (limit ready, someone to talk to).
         function label(pad) {
