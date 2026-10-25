@@ -136,11 +136,14 @@ public abstract partial class Body : Node3D
     /// <summary>A red glow for a nemesis.</summary>
     public abstract void Mark(Color colour);
 
-    /// <summary>The colour of each dragon's wing membranes.</summary>
-    static readonly Dictionary<string, Color> Membranes = new()
+    /// <summary>Each dragon's wings: the membrane, and the bones that hold it (a green dragon's are amber on green).</summary>
+    static readonly Dictionary<string, (Color Membrane, Color Bone)> Wings = new()
     {
-        ["red"] = new("#9a2418"), ["blue"] = new("#2c4ca8"), ["green"] = new("#2e7a30"), ["black"] = new("#26242a"),
-        ["gold"] = new("#d6a43c"), ["silver"] = new("#b8bec8"), ["bronze"] = new("#8e5c2c"), ["copper"] = new("#b4643a"), ["brass"] = new("#c0a050"),
+        ["red"] = (new("#b0281a"), new("#3a1410")), ["blue"] = (new("#4c7ad0"), new("#1c2c60")),
+        ["green"] = (new("#d97a2a"), new("#3e7a34")), ["black"] = (new("#3a2c44"), new("#141216")),
+        ["gold"] = (new("#e8b44a"), new("#9a6a1c")), ["silver"] = (new("#d4dae4"), new("#8a909c")),
+        ["bronze"] = (new("#3c8a7a"), new("#7a4c22")), ["copper"] = (new("#d07a44"), new("#5a8a7a")),
+        ["brass"] = (new("#d8b860"), new("#8a6a2a")),
     };
 
     /// <summary>
@@ -151,7 +154,7 @@ public abstract partial class Body : Node3D
     {
         var metallic = colour is "gold" or "silver" or "bronze" or "copper" or "brass";
         if (Creature.Create("dragon.glb", 4.5f, coat: $"dragons/{colour}.png", metallic: metallic) is not { } dragon) return Beast.Bear();
-        if (Membranes.TryGetValue(colour, out var membrane)) dragon.SpreadWings(membrane, metallic);
+        if (Wings.TryGetValue(colour, out var wings)) dragon.SpreadWings(wings.Membrane, wings.Bone, metallic);
         return dragon;
     }
 
@@ -680,9 +683,9 @@ public partial class Creature : Animal
     float _speed;
 
     /// <summary>Gives a dragon its great wings (it can fly from now on).</summary>
-    public void SpreadWings(Color membrane, bool metallic)
+    public void SpreadWings(Color membrane, Color bone, bool metallic)
     {
-        _wings = DragonWings.Grow(Model, 4.5f * 1.25f / Model.Scale.X, membrane, metallic);
+        _wings = DragonWings.Grow(Model, 4.5f * 1.55f / Model.Scale.X, membrane, bone, metallic);
     }
 
     public bool Winged => _wings is not null;

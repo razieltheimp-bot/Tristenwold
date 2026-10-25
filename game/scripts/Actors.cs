@@ -349,6 +349,14 @@ public partial class Enemy : Fighter
         return move;
     }
 
+    /// <summary>Sends a winged dragon up to circle at a height for a while (a show of strength, or a photograph).</summary>
+    public void TakeOff(float altitude, double seconds = 60)
+    {
+        if (!CanFly) return;
+        _altitude = altitude;
+        _flightClock = seconds;
+    }
+
     /// <summary>Flying: climb or sink towards the wanted height above the ground, no gravity.</summary>
     void Hover(double delta, Vector3 move)
     {

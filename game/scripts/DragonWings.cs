@@ -21,7 +21,7 @@ public partial class DragonWings : Node3D
 
     /// <param name="model">The dragon model the wings attach to (its skeleton has wing_lower.L/R bones).</param>
     /// <param name="halfSpan">How far each wing reaches, in the model's own units.</param>
-    public static DragonWings? Grow(Node3D model, float halfSpan, Color membrane, bool metallic)
+    public static DragonWings? Grow(Node3D model, float halfSpan, Color membrane, Color boneColour, bool metallic)
     {
         if (model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is not { } skeleton) return null;
         var bones = new[] { ("wing_lower.L", 1f), ("wing_lower.R", -1f) }.Select(b => (skeleton.FindBone(b.Item1), b.Item2)).ToArray();
@@ -30,10 +30,10 @@ public partial class DragonWings : Node3D
         var skin = new StandardMaterial3D
         {
             AlbedoColor = membrane, Roughness = metallic ? 0.35f : 0.75f, Metallic = metallic ? 0.7f : 0,
-            CullMode = BaseMaterial3D.CullModeEnum.Disabled, BacklightEnabled = true, Backlight = membrane.Lightened(0.2f) * 0.6f,
+            CullMode = BaseMaterial3D.CullModeEnum.Disabled, BacklightEnabled = true, Backlight = membrane.Lightened(0.3f) * 0.9f,
             VertexColorUseAsAlbedo = true,
         };
-        var bone = new StandardMaterial3D { AlbedoColor = membrane.Darkened(0.45f), Roughness = metallic ? 0.3f : 0.6f, Metallic = metallic ? 0.8f : 0 };
+        var bone = new StandardMaterial3D { AlbedoColor = boneColour, Roughness = metallic ? 0.3f : 0.6f, Metallic = metallic ? 0.8f : 0 };
         var built = new DragonWings(skeleton);
         foreach (var (index, side) in bones)
         {
@@ -70,8 +70,8 @@ public partial class DragonWings : Node3D
             }
         }
         // Membrane: darker by the body, lighter towards the edges; the trailing edge dips between the fingers.
-        Tri(shoulder, elbow, wrist, 0.7f, 0.8f, 0.9f);
-        Tri(shoulder, wrist, root, 0.7f, 0.9f, 0.65f);
+        Tri(shoulder, elbow, wrist, 0.55f, 0.75f, 0.9f);
+        Tri(shoulder, wrist, root, 0.55f, 0.9f, 0.6f);
         var edge = new List<Vector3> { tips[0] };
         for (var i = 0; i < tips.Length - 1; i++)
         {
@@ -82,7 +82,7 @@ public partial class DragonWings : Node3D
         var lastMid = tips[^1].Lerp(root, 0.5f).Lerp(wrist, 0.15f);
         edge.Add(lastMid);
         edge.Add(root);
-        for (var i = 0; i < edge.Count - 1; i++) Tri(wrist, edge[i], edge[i + 1], 0.9f, 1, 1);
+        for (var i = 0; i < edge.Count - 1; i++) Tri(wrist, edge[i], edge[i + 1], 1.1f, i % 2 == 0 ? 0.8f : 0.95f, i % 2 == 0 ? 0.95f : 0.8f);
         var mesh = st.Commit();
         mesh.SurfaceSetMaterial(0, skin);
 

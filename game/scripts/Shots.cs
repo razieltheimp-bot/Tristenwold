@@ -1,4 +1,5 @@
 using Godot;
+using Tristinwold.Gameplay;
 using Tristinwold.World;
 
 namespace Tristinwold.Game;
@@ -7,13 +8,14 @@ namespace Tristinwold.Game;
 /// Takes a tour of the world and saves screenshots, for checking how it looks without playing:
 ///   godot --path game -- --shots /some/folder --server off
 /// </summary>
-public partial class Shots(Main main, string dir, bool quick = false) : Node
+public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null) : Node
 {
     public override async void _Ready()
     {
         DirAccess.MakeDirRecursiveAbsolute(dir);
         var (p, w) = (main.PlayerNode, main.World);
         await Frames(60);
+        if (dragon is not null) { await Dragon(dragon); return; }
         if (quick) { await Quick(); return; }
 
         // Tristinwold from the Gallows Perch, looking into the city.
@@ -101,6 +103,33 @@ public partial class Shots(Main main, string dir, bool quick = false) : Node
                 GetTree().Quit();
                 return;
             }
+        GetTree().Quit();
+    }
+
+    /// <summary>A dragon of one colour circling over the pinewoods, seen from below: --shots dir --dragon green</summary>
+    async Task Dragon(string colour)
+    {
+        var p = main.PlayerNode;
+        var spot = new Vector3(-150, 0, -1500);
+        await Go(spot, 120);
+        var ground = City.FloorAt(spot);
+        var e = Enemy.Create(Bestiary.Get("dragon_" + colour), spot with { Y = ground + 1 } + new Vector3(0, 0, -30));
+        e.Roam = 6;
+        main.AddEnemy(e);
+        e.TakeOff(16, 600);
+        p.Frozen = true;
+        var cam = new Camera3D { Far = 2000, Fov = 55 };
+        main.AddChild(cam);
+        cam.MakeCurrent();
+        for (var i = 0; i < 4; i++)
+        {
+            await Frames(90 + i * 37);
+            var at = e.GlobalPosition + new Vector3(0, 3, 0);
+            var from = new Vector3(at.X + 14, ground + 2.5f, at.Z + 22); // from the ground, looking up
+            cam.GlobalPosition = from;
+            cam.LookAt(at, Vector3.Up);
+            await Shot($"dragon-{colour}-{i}");
+        }
         GetTree().Quit();
     }
 
