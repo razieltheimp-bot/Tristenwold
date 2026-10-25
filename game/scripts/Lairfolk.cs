@@ -232,16 +232,17 @@ public static class Lairfolk
         var rng = new RandomNumberGenerator { Seed = 7 };
         var plates = new (string Bone, float Up, float Side, float Size)[]
         {
-            ("Ursidae_Neck", 0.2f, 0, 0.32f), ("Ursidae_Spine_3", 0.26f, 0, 0.42f), ("Ursidae_Spine_3", 0.2f, 0.14f, 0.3f), ("Ursidae_Spine_3", 0.2f, -0.14f, 0.3f),
-            ("Ursidae_Spine_2", 0.27f, 0.05f, 0.38f), ("Ursidae_Spine_1", 0.25f, -0.05f, 0.34f), ("Ursidae_Spine", 0.22f, 0.08f, 0.28f),
-            ("Ursidae_Upperarm_R", 0.12f, 0.1f, 0.26f), ("Ursidae_Upperarm_L", 0.12f, -0.1f, 0.26f),
+            ("Ursidae_Neck", 0.06f, 0, 0.26f), ("Ursidae_Spine_3", 0.08f, 0, 0.34f), ("Ursidae_Spine_3", 0.05f, 0.1f, 0.24f), ("Ursidae_Spine_3", 0.05f, -0.1f, 0.24f),
+            ("Ursidae_Spine_2", 0.08f, 0.03f, 0.32f), ("Ursidae_Spine_1", 0.07f, -0.04f, 0.3f), ("Ursidae_Spine", 0.06f, 0.05f, 0.26f),
+            ("Ursidae_Upperarm_R", 0.03f, 0.06f, 0.22f), ("Ursidae_Upperarm_L", 0.03f, -0.06f, 0.22f),
         };
         foreach (var (bone, up, side, s) in plates)
         {
             if (!g.Has(bone)) continue;
             var at = g.Bone(bone) + new Vector3(side * g.Tall, up * g.Tall, 0);
-            var basis = new Basis(Vector3.Up, rng.RandfRange(0, Mathf.Tau)).Scaled(new Vector3(1, 0.55f, 1) * s * g.Tall * unit);
-            g.Add(bone, at, rock, null, basis);
+            var basis = new Basis(Vector3.Up, rng.RandfRange(0, Mathf.Tau)).Scaled(new Vector3(1, 0.5f, 1) * s * g.Tall * unit);
+            // Centred on the spot (the scan's origin is at its foot), half sunk into the hide.
+            g.Hold(bone, at, basis).AddChild(new MeshInstance3D { Mesh = rock, Position = -rock.GetAabb().GetCenter() });
         }
         return c;
     }

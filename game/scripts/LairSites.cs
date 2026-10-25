@@ -15,10 +15,22 @@ public sealed record LairLayout(Node3D Root, Vector3 BossAt, Vector3 ThrallsAt, 
 /// </summary>
 public static class LairSites
 {
-    static readonly StandardMaterial3D Stone = new() { AlbedoColor = new Color("#5a5650"), Roughness = 0.95f };
-    static readonly StandardMaterial3D DarkStone = new() { AlbedoColor = new Color("#3a3632"), Roughness = 0.95f };
+    static Material? _stone, _darkStone, _bramble;
+    /// <summary>Old stone, from Poly Haven's scans, laid on any shape by its position (so a wall of any size is right).</summary>
+    static Material Stone => _stone ??= Photo(Surface.Stone, "#b8b2a8", 0.5f);
+    static Material DarkStone => _darkStone ??= Photo(Surface.DarkStone, "#8a8680", 0.4f);
+
+    static Material Photo(Surface s, string tint, float perMetre)
+    {
+        if (BuildingMaterials.For(s).Duplicate() is not StandardMaterial3D m) return new StandardMaterial3D { AlbedoColor = new Color(tint), Roughness = 0.95f };
+        m.AlbedoColor = new Color(tint);
+        m.Uv1Triplanar = true;
+        m.Uv1WorldTriplanar = true;
+        m.Uv1Scale = Vector3.One * perMetre;
+        return m;
+    }
+
     static readonly StandardMaterial3D Dark = new() { AlbedoColor = new Color("#030202"), ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded };
-    static readonly StandardMaterial3D Moss = new() { AlbedoColor = new Color("#3c5a2a"), Roughness = 0.9f };
     static readonly StandardMaterial3D Wood = new() { AlbedoColor = new Color("#4a3624"), Roughness = 0.9f };
     static readonly StandardMaterial3D Iron = new() { AlbedoColor = new Color("#2e2e32"), Roughness = 0.5f, Metallic = 0.8f };
     static readonly StandardMaterial3D Molten = new()
@@ -32,7 +44,14 @@ public static class LairSites
         MetallicSpecular = 1, EmissionEnabled = true, Emission = new Color("#8a40ff"), EmissionEnergyMultiplier = 1.1f, RimEnabled = true, Rim = 0.8f,
     };
     static readonly StandardMaterial3D Petal = new() { AlbedoColor = new Color("#b81c26"), Roughness = 0.6f };
-    static readonly StandardMaterial3D Bramble = new() { AlbedoColor = new Color("#24361a"), Roughness = 0.9f };
+    /// <summary>Dense briar: leaves all over, dark.</summary>
+    static Material Bramble => _bramble ??= ResourceLoader.Exists("res://assets/polyhaven/foliage/leaves_green.png")
+        ? new StandardMaterial3D
+        {
+            AlbedoTexture = GD.Load<Texture2D>("res://assets/polyhaven/foliage/leaves_green.png"), AlbedoColor = new Color("#4a6a34"),
+            Uv1Triplanar = true, Uv1Scale = Vector3.One * 1.6f, Roughness = 0.85f,
+        }
+        : new StandardMaterial3D { AlbedoColor = new Color("#24361a"), Roughness = 0.9f };
 
     public static LairLayout Build(Raid raid, Vector3 c, Node3D into)
     {
@@ -247,7 +266,7 @@ public static class LairSites
         foreach (var (along, out_, size) in new[] { (0f, 5f, 11f), (-6f, 4f, 9f), (6f, 4f, 9f), (-3f, 9f, 12f), (4f, 10f, 12f), (-10f, 2f, 8f), (10f, 2f, 8f), (0f, 13f, 10f) })
             Rock(root, mouth + side * along + back * out_, new Vector3(size, size * 0.85f, size), rng.RandfRange(0, 6), sink: 0.3f);
         // The throat: black, going down out of sight.
-        Block(root, Floor(mouth) + back * 2.4f + Vector3.Up * 2.2f, new Vector3(5.2f, 5, 4), Mathf.Atan2(back.X, back.Z), Dark, solid: false);
+        Block(root, Floor(mouth) + back * 3.2f + Vector3.Up * 2.2f, new Vector3(4.4f, 5, 4), Mathf.Atan2(back.X, back.Z), Dark, solid: false);
         // The hollow's walls, boulders round the back half of the clearing.
         for (var i = 0; i < 9; i++)
         {
@@ -284,7 +303,7 @@ public static class LairSites
             case "rock_bear":
                 foreach (var i in Enumerable.Range(0, 14))
                     Prop(root, i % 5 == 0 ? "halloween/ribcage.gltf" : i % 4 == 0 ? "halloween/skull.gltf" : $"halloween/bone_{"ABC"[i % 3]}.gltf",
-                        mouth - back * rng.RandfRange(1, 9) + side * rng.RandfRange(-6, 6), 1.2f, rng.RandfRange(0, 6));
+                        mouth - back * rng.RandfRange(1, 9) + side * rng.RandfRange(-6, 6), i % 4 == 0 && i % 5 != 0 ? 0.45f : 1.1f, rng.RandfRange(0, 6));
                 Prop(root, "ph:dead_trunk.glb", c - side * 7 + back * 3, 1.2f, 0.7f, solid: true);
                 Prop(root, "ph:stump.glb", c + side * 8 - back * 2, 1.2f, 0, solid: true);
                 root.AddChild(Haze(Floor(mouth) + Vector3.Up * 0.6f, new Color(0.7f, 0.68f, 0.62f, 0.12f), 6, 3, 10));
@@ -313,7 +332,7 @@ public static class LairSites
         var briar = raid.BossKind == "briar_mother";
         var wall = briar ? Stone : DarkStone;
         root.AddChild(Ground(c, 22, briar ? new Color(0.2f, 0.26f, 0.13f, 0.7f) : new Color(0.12f, 0.1f, 0.14f, 0.85f)));
-        root.AddChild(Ground(c + back * 2, 10, new Color(0.42f, 0.4f, 0.37f, 0.85f), 2.2f)); // what's left of the flagstones
+        root.AddChild(Ground(c + back * 2, 10, new Color(0.27f, 0.26f, 0.24f, 0.7f), 2.2f)); // what's left of the flagstones
         // The walls of the old hall: a long rectangle, broken down to stumps in places, with gaps.
         var (w, d) = (11f, 9f);
         var corners = new[] { c - side * w - back * d, c + side * w - back * d, c + side * w + back * d, c - side * w + back * d };
