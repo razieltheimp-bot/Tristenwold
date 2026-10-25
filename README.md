@@ -73,6 +73,10 @@ app. The ⌨ button on the left opens the phone's keyboard for typing names and 
 with `--account`, `--secret` and `--server` so there's nothing to type). A Bluetooth keyboard plays with the
 usual keys. The `k=` part of the link is its key: only people with the whole link can watch or play.
 
+`--login-server 127.0.0.1:7777` makes the phone land on the login page with that server already filled in
+(the Windows download's `Play from iPhone.bat` does this for the server on the same PC). The link changes
+each time the game starts; the new one is posted to Telegram again, so the chat always has the current one.
+
 `--remote 9000` picks another port (8090 by default); `--remote-lan` also lets a phone on the same Wi-Fi
 connect directly at `http://<computer's address>:8090/?k=…` without the tunnel. Remote play needs
 `cloudflared` like the server's `--tunnel` (`winget install --id Cloudflare.cloudflared`).

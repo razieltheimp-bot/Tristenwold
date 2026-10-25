@@ -55,7 +55,7 @@ public partial class Main : Node3D
         if (_args.ContainsKey("account") && _args.ContainsKey("server")) { _ = LogInFromCommandLine(); return; }
         var scripted = _args.ContainsKey("selftest") || _args.ContainsKey("shots");
         if (scripted || _args.ContainsKey("server")) { Begin(ChoiceFromArgs()); return; }
-        var start = new StartScreen();
+        var start = new StartScreen { DefaultServer = _args.GetValueOrDefault("login-server") };
         start.Play += Begin;
         AddChild(start);
         if (_args.TryGetValue("snap", out var snap)) _ = Snap(start, snap);

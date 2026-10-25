@@ -16,6 +16,10 @@ public sealed record StartChoice(CharacterSheet Character, string Server, string
 /// </summary>
 public partial class StartScreen : CanvasLayer
 {
+    /// <summary>The server to fill in when this device has none saved yet (--login-server: a phone playing through
+    /// this computer starts out pointed at the server running here).</summary>
+    public string? DefaultServer { get; init; }
+
     const string SettingsPath = "user://settings.json";
     const string LocalCharactersPath = "user://characters.json";
 
@@ -153,7 +157,7 @@ public partial class StartScreen : CanvasLayer
                 _settings = JsonSerializer.Deserialize<Dictionary<string, string>>(Godot.FileAccess.GetFileAsString(SettingsPath)) ?? [];
         }
         catch (JsonException) { }
-        _server.Text = _settings.GetValueOrDefault("server", "");
+        _server.Text = _settings.GetValueOrDefault("server", DefaultServer ?? "");
         _serverPassword.Text = _settings.GetValueOrDefault("serverPassword", "");
         _account.Text = _settings.GetValueOrDefault("account", "");
         _quality.Selected = (int)(Enum.TryParse<Graphics.Quality>(_settings.GetValueOrDefault("quality", ""), out var q) ? q : Graphics.Default);

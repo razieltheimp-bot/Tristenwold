@@ -50,7 +50,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
         {
             Link = _screen.LinkFor(url);
             Say($"Play from your phone: {Link}");
-            _telegram?.Post($"Tristinwold is ready to play from your phone:\n{Link}\n\n(In Safari: Share, then Add to Home Screen, and it opens full screen.)");
+            _telegram?.Post($"Tristinwold is ready to play from your iPhone. Open this link in Safari, turn the phone sideways, and log in:\n{Link}\n\n(In Safari: Share, then Add to Home Screen, and it opens full screen. The link changes each time the game is started on the PC; the new one is always posted here.)");
             Callable.From(() => main.ShowRemoteLink(Link)).CallDeferred();
         });
     }
