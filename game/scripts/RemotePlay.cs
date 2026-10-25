@@ -50,12 +50,18 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
         {
             Link = _screen.LinkFor(url);
             Say($"Play from your phone: {Link}");
-            _telegram?.Post($"Tristinwold is ready to play from your iPhone. Open this link in Safari, turn the phone sideways, and log in:\n{Link}\n\n(In Safari: Share, then Add to Home Screen, and it opens full screen. The link changes each time the game is started on the PC; the new one is always posted here.)");
+            if (_telegram is null) Say("Telegram isn't set up, so the link wasn't sent there (set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID).");
+            else _telegram.SendAsync($"Tristinwold is ready to play from your iPhone. Open this link in Safari, turn the phone sideways, and log in:\n{Link}\n\n(In Safari: Share, then Add to Home Screen, and it opens full screen. The link changes each time the game is started on the PC; the new one is always posted here.)")
+                .ContinueWith(sent => { if (sent.Result) Say("Sent the link to your Telegram group."); });
             Callable.From(() => main.ShowRemoteLink(Link)).CallDeferred();
         });
     }
 
-    static void Say(string text) => GD.Print(text);
+    void Say(string text)
+    {
+        GD.Print(text);
+        Callable.From(() => main.RemoteNote(text)).CallDeferred();
+    }
 
     public override void _Process(double delta)
     {

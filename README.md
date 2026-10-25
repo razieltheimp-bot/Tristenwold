@@ -76,6 +76,10 @@ usual keys. The `k=` part of the link is its key: only people with the whole lin
 `--login-server 127.0.0.1:7777` makes the phone land on the login page with that server already filled in
 (the Windows download's `Play from iPhone.bat` does this for the server on the same PC). The link changes
 each time the game starts; the new one is posted to Telegram again, so the chat always has the current one.
+The game has no console window, so what remote play has to say (the tunnel, Telegram) shows in the top
+corner of the game window. A pasted token is cleaned up (a `bot` prefix, quotes or @BotFather's whole message
+still work), a wrong one is reported plainly, and a group that Telegram turned into a supergroup is followed
+to its new ID.
 
 `--remote 9000` picks another port (8090 by default); `--remote-lan` also lets a phone on the same Wi-Fi
 connect directly at `http://<computer's address>:8090/?k=…` without the tunnel. Remote play needs

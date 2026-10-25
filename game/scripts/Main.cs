@@ -332,12 +332,32 @@ public partial class Main : Node3D
     public void ShowRemoteLink(string link)
     {
         if (_hud is not null) _hud.Toast($"Play from your phone: {link}", 30);
-        AddChild(new CanvasLayer { Layer = 100, Name = "RemoteLink" });
-        GetNode<CanvasLayer>("RemoteLink").AddChild(new Label
+        RemoteLabel("RemoteLink", 4).Text = $"Phone link: {link}";
+    }
+
+    readonly List<string> _remoteNotes = [];
+
+    /// <summary>What remote play has to say (the tunnel, Telegram), in the corner of this computer's screen,
+    /// since the game has no console window to print it in.</summary>
+    public void RemoteNote(string text)
+    {
+        _remoteNotes.Add(text);
+        if (_remoteNotes.Count > 6) _remoteNotes.RemoveAt(0);
+        RemoteLabel("RemoteNotes", 24).Text = string.Join("\n", _remoteNotes);
+    }
+
+    Label RemoteLabel(string name, float y)
+    {
+        var layer = GetNodeOrNull<CanvasLayer>("RemoteLayer");
+        if (layer is null) AddChild(layer = new CanvasLayer { Layer = 100, Name = "RemoteLayer" });
+        if (layer.GetNodeOrNull<Label>(name) is { } label) return label;
+        label = new Label
         {
-            Text = $"Phone link: {link}", Position = new Vector2(12, 4), Modulate = new Color(1, 1, 1, 0.75f),
+            Name = name, Position = new Vector2(12, y), Modulate = new Color(1, 1, 1, 0.75f),
             LabelSettings = new LabelSettings { FontSize = 14, OutlineSize = 4, OutlineColor = Colors.Black },
-        });
+        };
+        layer.AddChild(label);
+        return label;
     }
 
     /// <summary>Turns on the on-screen controls (and stops a tap anywhere from counting as a sword swing).</summary>
