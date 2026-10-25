@@ -67,16 +67,8 @@ public partial class Crypt(Main main, Raid raid) : Node3D
         var c = Centre;
         var stone = new StandardMaterial3D { AlbedoColor = new Color("#4a4642"), Roughness = 0.95f };
         var scorch = new StandardMaterial3D { AlbedoColor = new Color("#1e1a17"), Roughness = 1 };
-        // The ground scorched black, darkest at the middle, painted onto the land itself.
-        _site.AddChild(new Decal
-        {
-            Position = c, Size = new Vector3(46, 8, 46), AlbedoMix = 0.92f, Modulate = new Color("#1a1512"),
-            TextureAlbedo = new GradientTexture2D
-            {
-                Width = 128, Height = 128, Fill = GradientTexture2D.FillEnum.Radial, FillFrom = new Vector2(0.5f, 0.5f), FillTo = new Vector2(0.5f, 0),
-                Gradient = new Gradient { Offsets = [0, 0.7f, 1], Colors = [Colors.White, new Color(1, 1, 1, 0.85f), new Color(1, 1, 1, 0)] },
-            },
-        });
+        // The ground scorched black, darkest at the middle: a skin laid over the land, following its every rise.
+        _site.AddChild(Scorch(c, 22));
         // The dais and the warden's sarcophagus.
         var dais = new StaticBody3D { Position = c + Vector3.Up * 0.3f };
         dais.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(7, 0.6f, 7) }, MaterialOverride = stone });
@@ -108,6 +100,38 @@ public partial class Crypt(Main main, Raid raid) : Node3D
         }
         // Mist lying on the ground.
         _site.AddChild(Mist(c));
+    }
+
+    static MeshInstance3D Scorch(Vector3 c, float radius)
+    {
+        const int n = 28;
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        Vector3 Point(int i, int j)
+        {
+            var (x, z) = ((i / (float)n * 2 - 1) * radius, (j / (float)n * 2 - 1) * radius);
+            var at = c + new Vector3(x, 0, z);
+            return new Vector3(x, City.FloorAt(at) - c.Y + 0.06f, z);
+        }
+        Color Shade(Vector3 p)
+        {
+            var d = new Vector2(p.X, p.Z).Length() / radius;
+            return new Color(0.09f, 0.075f, 0.065f, Mathf.Clamp(1.15f - d * d * 1.2f, 0, 0.92f));
+        }
+        for (var i = 0; i < n; i++)
+            for (var j = 0; j < n; j++)
+                foreach (var (a, b) in new[] { (0, 0), (1, 0), (1, 1), (0, 0), (1, 1), (0, 1) })
+                {
+                    var p = Point(i + a, j + b);
+                    st.SetColor(Shade(p));
+                    st.SetNormal(Vector3.Up);
+                    st.AddVertex(p);
+                }
+        return new MeshInstance3D
+        {
+            Mesh = st.Commit(), Position = c, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            MaterialOverride = new StandardMaterial3D { VertexColorUseAsAlbedo = true, Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 1 },
+        };
     }
 
     static CpuParticles3D Fire(float size, int amount) => new()
