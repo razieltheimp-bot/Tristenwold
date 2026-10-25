@@ -60,7 +60,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
             Link = _screen.LinkFor(url);
             Say($"Play from your phone: {Link}");
             if (_telegram is null) Say("Telegram isn't set up, so the link wasn't sent there (set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID).");
-            else _telegram.SendAsync($"Tristinwold is ready to play from your iPhone. Open this link in Safari, turn the phone sideways, and log in:\n{Link}\n\n(In Safari: Share, then Add to Home Screen, and it opens full screen. The link changes each time the game is started on the PC; the new one is always posted here.)")
+            else _telegram.SendAsync($"Tristinwold is ready to play from your iPhone. Open this link in Safari and log in (hold the phone sideways for the full picture, or upright for a controller under it):\n{Link}\n\n(In Safari: Share, then Add to Home Screen, and it opens full screen. The link changes each time the game is started on the PC; the new one is always posted here.)")
                 .ContinueWith(sent => { if (sent.Result) Say("Sent the link to your Telegram group."); });
             Callable.From(() => Main.ShowRemoteLink(Link)).CallDeferred();
         });
@@ -76,7 +76,8 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
     {
         if (_screen is null) return;
         while (_screen.Input.TryDequeue(out var json)) Handle(json);
-        if ((_screen.Viewers > 0) != _watched) { _watched = _screen.Viewers > 0; Main.RemoteQrVisible(!_watched); }
+        if ((_screen.Viewers > 0) != _watched) { _watched = _screen.Viewers > 0; Main.RemoteQrVisible(!_watched); _padSent = ""; }
+        if (_watched && Upright) TellPad(delta);
 
         var typing = GetViewport().GuiGetFocusOwner() is LineEdit or TextEdit;
         if (typing != _typing && _screen.Viewers > 0) _screen.Tell(typing ? """{"keyboard":true}""" : """{"keyboard":false}""");
@@ -120,6 +121,22 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
             case "press":
                 Press(e.GetProperty("k").GetString() ?? "", e.GetProperty("p").GetBoolean());
                 break;
+            // The upright phone's controller.
+            case "layout":
+                Upright = e.GetProperty("upright").GetBoolean();
+                Main.PhonePad(Upright);
+                break;
+            case "act" when e.GetProperty("a").GetString() is { } action && PadActions.Contains(action):
+                // Through the input queue, like a key, so the game sees it as just pressed on its next frame.
+                Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = e.GetProperty("p").GetBoolean(), Strength = 1 });
+                break;
+            case "stick":
+                Axis("move_right", "move_left", e.GetProperty("x").GetSingle());
+                Axis("move_back", "move_forward", e.GetProperty("y").GetSingle());
+                break;
+            case "look":
+                Main.LookFromPhone(new Vector2(e.GetProperty("x").GetSingle(), e.GetProperty("y").GetSingle()) * LookSpeed);
+                break;
         }
     }
 
@@ -144,6 +161,41 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
     {
         foreach (var pressed in new[] { true, false })
             Input.ParseInputEvent(new InputEventKey { Unicode = c, Pressed = pressed });
+    }
+
+    /// <summary>The phone is upright, playing with the controller under the picture.</summary>
+    public bool Upright { get; private set; }
+
+    /// <summary>What the controller's buttons may press: the game's own actions, nothing else.</summary>
+    static readonly HashSet<string> PadActions =
+    [
+        "attack", "spell", "limit", "jump", "interact", "cycle_element", "sprint", "ride", "descend",
+        "map", "journal", "pack", "party", "skills", "drink", "rest", "menu", "game_menu",
+    ];
+
+    /// <summary>Radians of turn for each point the thumb drags across the phone's picture.</summary>
+    const float LookSpeed = 0.009f;
+
+    static void Axis(string positive, string negative, float value)
+    {
+        if (value > 0.15f) { Input.ActionPress(positive, value); Input.ActionRelease(negative); }
+        else if (value < -0.15f) { Input.ActionPress(negative, -value); Input.ActionRelease(positive); }
+        else { Input.ActionRelease(positive); Input.ActionRelease(negative); }
+    }
+
+    double _padSince;
+    string _padSent = "";
+
+    /// <summary>Tells an upright phone what its buttons are called now (the class's moves) and which are lit.</summary>
+    void TellPad(double delta)
+    {
+        if ((_padSince += delta) < 0.4 || _screen is null) return;
+        _padSince = 0;
+        if (Main.PadState() is not { } pad) return;
+        var json = JsonSerializer.Serialize(new { pad });
+        if (json == _padSent) return;
+        _padSent = json;
+        _screen.Tell(json);
     }
 
     static void Press(string name, bool pressed)

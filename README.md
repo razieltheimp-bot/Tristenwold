@@ -66,6 +66,12 @@ play-from-iphone.bat                 (Windows; or ./play-from-iphone.sh)
 godot --path game -- --remote --tunnel   (the same thing by hand)
 ```
 
+Hold the phone sideways and the game fills the screen with its own on-screen controls. Hold it upright and
+the picture sits at the top with a controller underneath, where the keyboard would be: a joystick, the
+class's moves (named for your class, glowing when the limit is ready or there's someone to talk to), and
+Map, Quests, Pack, Party, Skills, Heal, Rest, World, Menu and Type buttons. Drag on the picture to look
+around; tap it to work menus. Turning the phone switches between the two at once.
+
 It prints a link like `https://….trycloudflare.com/?k=3f9a…` and shows it at the top of the game window; with
 `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` set it also sends the link to your Telegram. Open it in Safari,
 turn the phone sideways, and play. In Safari, Share → **Add to Home Screen** makes it open full screen like an

@@ -271,7 +271,7 @@ public partial class Main : Node3D
         AddChild(_terrain);
         _terrain.EnsureAround(City.PlayerStart, 2);
 
-        _hud = new Hud();
+        _hud = new Hud { PhonePad = _phonePad };
         AddChild(_hud);
 
         _player = new Player
@@ -435,6 +435,34 @@ public partial class Main : Node3D
         box.AddChild(label);
         if (name == "RemoteLink") box.MoveChild(label, -1); // the link last, at the very bottom
         return label;
+    }
+
+    /// <summary>An upright phone plays with the controller under its picture, so the game's own on-screen
+    /// controls step aside while it does (they come back when the phone is turned sideways).</summary>
+    public void PhonePad(bool on)
+    {
+        _phonePad = on;
+        if (_hud is not null) _hud.PhonePad = on;
+    }
+
+    bool _phonePad;
+
+    /// <summary>A drag on an upright phone's picture turns the view.</summary>
+    public void LookFromPhone(Vector2 by)
+    {
+        if (_player is not null && IsInstanceValid(_player)) _player.Look(by);
+    }
+
+    /// <summary>What an upright phone's buttons should say (the class's moves) and which should glow.</summary>
+    public Dictionary<string, object>? PadState()
+    {
+        if (_player is null || _hud is null || !IsInstanceValid(_player)) return null;
+        string[] moves = ["attack", "spell", "cycle_element", "limit", "interact", "ride", "descend", "jump"];
+        return new()
+        {
+            ["labels"] = moves.Where(a => _hud.Touch.LabelFor?.Invoke(a) is not null).ToDictionary(a => a, a => _hud.Touch.LabelFor!(a)!),
+            ["lit"] = moves.Where(a => _hud.Touch.Lit?.Invoke(a) == true).ToDictionary(a => a, _ => true),
+        };
     }
 
     /// <summary>Turns on the on-screen controls (and stops a tap anywhere from counting as a sword swing).</summary>

@@ -24,6 +24,9 @@ public partial class Hud : CanvasLayer
     /// <summary>On-screen controls for touch screens; hidden unless the game turns them on.</summary>
     public TouchControls Touch { get; } = new() { Visible = false };
     public bool TouchEnabled { get; set; }
+
+    /// <summary>An upright phone has its own controller under the picture: the on-screen one steps aside.</summary>
+    public bool PhonePad { get; set; }
     Label _log = new();
     LineEdit _say = new();
 
@@ -92,7 +95,7 @@ public partial class Hud : CanvasLayer
     public override void _Process(double delta)
     {
         // The touch controls step aside while a menu, the map or a conversation is open.
-        var show = TouchEnabled && !_window.Visible && !Talking && !MapOpen;
+        var show = TouchEnabled && !PhonePad && !_window.Visible && !Talking && !MapOpen;
         if (Touch.Visible && !show) Touch.ReleaseAll();
         Touch.Visible = show;
     }
