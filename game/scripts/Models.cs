@@ -133,6 +133,12 @@ public abstract partial class Body : Node3D
     public abstract void Rise();
     public virtual void Talk() { }
 
+    /// <summary>Plays one of its moves by name (a kick, a crossbow shot, a spell raised high), if it has it.</summary>
+    public virtual void Perform(string clip, double seconds = 0.7, float speed = 1.3f) => Attack();
+
+    /// <summary>Sits down (in a saddle) or gets up.</summary>
+    public virtual void Seat(bool seated) { }
+
     /// <summary>A red glow for a nemesis.</summary>
     public abstract void Mark(Color colour);
 
@@ -151,13 +157,27 @@ public abstract partial class Body : Node3D
     /// (frost) dragon spread great wings and fly; the frost dragon keeps its small wings and stays on the ground,
     /// with a ridge of ice spikes grown down its back.
     /// </summary>
-    static Body Dragon(string colour)
+    static Body Dragon(string colour, bool corrupt = false)
     {
         var metallic = colour is "gold" or "silver" or "bronze" or "copper" or "brass";
-        if (Creature.Create("dragon.glb", 4.5f, coat: $"dragons/{colour}.png", metallic: metallic) is not { } dragon) return Beast.Bear();
-        if (Wings.TryGetValue(colour, out var wings)) dragon.SpreadWings(wings.Membrane, wings.Bone, metallic);
-        else dragon.Freeze();
+        var coat = corrupt ? $"dragons/{colour}_corrupt.png" : $"dragons/{colour}.png";
+        if (Creature.Create("dragon.glb", 4.5f, coat: coat, metallic: metallic && !corrupt, glow: corrupt ? $"dragons/{colour}_corrupt_glow.png" : null) is not { } dragon) return Beast.Bear();
+        if (Wings.TryGetValue(colour, out var wings))
+        {
+            if (corrupt) dragon.SpreadWings(new Color("#2c1238"), new Color("#120a18"), false, glow: new Color("#b030ff"));
+            else dragon.SpreadWings(wings.Membrane, wings.Bone, metallic);
+        }
+        else dragon.Freeze(corrupt);
+        if (corrupt) dragon.Corrupt();
         return dragon;
+    }
+
+    /// <summary>A dragon knight on a dragon.</summary>
+    static Body Ridden(string dragonLook)
+    {
+        var body = For(dragonLook);
+        if (body is Creature c) c.Mount(Figure.Create("dragon_knight"));
+        return body;
     }
 
     public static Body For(string look) => look switch
@@ -167,6 +187,8 @@ public abstract partial class Body : Node3D
         "frost_troll" => (Body?)Creature.Create("troll.glb", 2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
         "goblin" => (Body?)Creature.Create("goblin.glb", 1.3f) ?? Figure.Create(look),
         "dragon" => Dragon("white"),
+        _ when look.StartsWith("rider:") => Ridden(look[6..]),
+        _ when look.StartsWith("dragon_") && look.EndsWith("_corrupt") => Dragon(look[7..^8], corrupt: true),
         _ when look.StartsWith("dragon_") => Dragon(look[7..]),
         "wolf" => (Body?)Creature.Create("wolf.glb", 0.95f) ?? Beast.Wolf(new Color("#5a5650")),
         "ice_wolf" => (Body?)Creature.Create("ice_wolf.glb", 1.0f) ?? Beast.Wolf(new Color("#d8e2ea")),
@@ -191,12 +213,31 @@ public partial class Figure : Body
 
     public static readonly Dictionary<string, Look> Looks = new()
     {
-        // Playable classes.
+        // Playable classes: three warriors, three rogues, three mages.
+        ["MartialArtist"] = new("Rogue", [], 0.74f, new Color("#f2c27a"), Unarmed: true),
+        ["Barbarian"] = new("Barbarian", ["2H_Axe", "Barbarian_Hat"]),
+        ["Paladin"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"], 0.75f, new Color("#fff0d0"), 0.06f),
+        ["Ranger"] = new("Rogue_Hooded", ["2H_Crossbow"], 0.74f, new Color("#b8d4a0")),
+        ["Thief"] = new("Rogue", ["Knife", "Knife_Offhand"]),
+        ["Assassin"] = new("Rogue_Hooded", ["Knife", "Knife_Offhand"], 0.74f, new Color("#8c88aa")),
+        ["Wizard"] = new("Mage", ["2H_Staff", "Mage_Hat"]),
+        ["Warlock"] = new("Mage", ["1H_Wand", "Spellbook_open"], 0.74f, new Color("#b49ad8")),
+        ["Sorcerer"] = new("Mage", [], 0.74f, new Color("#f2a888")),
+        // Characters made before there were nine classes.
         ["Knight"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"]),
-        ["Barbarian"] = new("Barbarian", ["1H_Axe", "Barbarian_Round_Shield", "Barbarian_Hat"]),
         ["Mage"] = new("Mage", ["2H_Staff", "Mage_Hat"]),
         ["Rogue"] = new("Rogue", ["Knife", "Knife_Offhand"]),
         ["Rogue_Hooded"] = new("Rogue_Hooded", ["Knife", "Knife_Offhand"]),
+        // Dragon knights, the guild masters, and the young who follow a hero.
+        ["dragon_knight"] = new("Knight", ["2H_Sword", "Knight_Helmet"], 0.74f, new Color("#e8dcb0"), 0.04f),
+        ["aldric"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"], 0.78f, new Color("#ffd890"), 0.12f),
+        ["warmaster"] = new("Barbarian", ["2H_Axe"], 0.8f),
+        ["velvet"] = new("Rogue_Hooded", ["Knife"], 0.74f, new Color("#c07a98")),
+        ["youth"] = new("Rogue", [], 0.6f, Unarmed: true),
+        ["squire"] = new("Knight", ["1H_Sword", "Round_Shield"], 0.62f),
+        ["apprentice"] = new("Mage", ["1H_Wand"], 0.6f),
+        ["protege"] = new("Rogue", ["Knife"], 0.6f),
+        ["familiar"] = new("Skeleton_Minion", [], 0.62f, new Color("#b080ff"), 0.7f),
         // Enemies.
         ["dock_thug"] = new("Barbarian", ["1H_Axe"]),
         ["lantern_boy"] = new("Rogue", ["Knife"], 0.66f, new Color("#ffcf9a")),
@@ -290,9 +331,27 @@ public partial class Figure : Body
         _loop = "";
     }
 
+    bool _seated;
+
+    public override void Seat(bool seated)
+    {
+        _seated = seated;
+        _busy = 0;
+        _loop = "";
+        Play(seated ? "Sit_Chair_Idle" : "Idle", 0.2f);
+        if (_anim is not null) _anim.SpeedScale = 1;
+    }
+
+    public override void Perform(string clip, double seconds = 0.7, float speed = 1.3f)
+    {
+        if (_anim is not null) _anim.SpeedScale = 1;
+        if (_anim?.HasAnimation(clip) != true) { Attack(); return; }
+        Once(clip, seconds, speed);
+    }
+
     public override void Move(float speed, bool grounded, bool swimming)
     {
-        if (_dead || _busy > 0) return;
+        if (_dead || _busy > 0 || _seated) return;
         var idle = _look.Unarmed ? "Unarmed_Idle" : "Idle";
         var (name, rate) = swimming ? ("Walking_C", 0.8f)
             : !grounded ? ("Jump_Idle", 1f)
@@ -308,7 +367,7 @@ public partial class Figure : Body
     public override void Attack(bool heavy = false)
     {
         if (_anim is not null) _anim.SpeedScale = 1;
-        string[] swings = _look.Model.StartsWith("Skeleton") || _look.Show.Contains("2H_Axe")
+        string[] swings = _look.Model.StartsWith("Skeleton") || _look.Show.Contains("2H_Axe") || _look.Show.Contains("2H_Sword")
             ? ["2H_Melee_Attack_Chop", "2H_Melee_Attack_Slice"]
             : _look.Unarmed ? ["Unarmed_Melee_Attack_Punch_A", "Unarmed_Melee_Attack_Punch_B"]
             : ["1H_Melee_Attack_Slice_Diagonal", "1H_Melee_Attack_Chop", "1H_Melee_Attack_Slice_Horizontal"];
@@ -340,7 +399,7 @@ public partial class Figure : Body
         _dead = false;
         _busy = 0;
         _loop = "";
-        Once("Lie_StandUp", 1.2);
+        if (!_seated) Once("Lie_StandUp", 1.2);
     }
 
     public override void Talk() => Once("Interact", 1.2);
@@ -377,6 +436,8 @@ public partial class Proportions : SkeletonModifier3D
 
     Vector3[] _scale = [];
     int _hips = -1;
+    int[] _arms = [];
+    const float ArmDrop = 0.75f;
     float _lift;
 
     void Measure(Skeleton3D s)
@@ -384,6 +445,7 @@ public partial class Proportions : SkeletonModifier3D
         _scale = new Vector3[s.GetBoneCount()];
         for (var i = 0; i < _scale.Length; i++) _scale[i] = Stretch.GetValueOrDefault(s.GetBoneName(i), Vector3.One);
         _hips = s.FindBone("hips");
+        _arms = [.. new[] { s.FindBone("upperarm.l"), s.FindBone("upperarm.r") }.Where(b => b >= 0)];
         int lower = s.FindBone("lowerleg.l"), foot = s.FindBone("foot.l");
         if (lower >= 0 && foot >= 0) _lift = (s.GetBoneRest(lower).Origin.Length() + s.GetBoneRest(foot).Origin.Length()) * (Leg - 1);
     }
@@ -401,6 +463,20 @@ public partial class Proportions : SkeletonModifier3D
             var basis = Basis.FromScale(Vector3.One / undo) * pose.Basis * Basis.FromScale(_scale[i]);
             var origin = i == _hips ? pose.Origin + Vector3.Up * _lift : pose.Origin;
             s.SetBonePose(i, new Transform3D(basis, origin));
+        }
+        // KayKit holds its arms out wide, to clear the chunky body; a slim body lets them hang closer. Only the
+        // sideways part is taken in, so a sword held out in front stays where it is.
+        foreach (var arm in _arms)
+        {
+            var parent = s.GetBoneParent(arm);
+            if (parent < 0) continue;
+            var global = s.GetBoneGlobalPose(arm);
+            var along = global.Basis.Y.Normalized();
+            var sideways = Mathf.Abs(along.X);
+            var axis = along.Cross(Vector3.Down);
+            if (sideways < 0.2f || axis.LengthSquared() < 1e-4f) continue;
+            var turned = new Basis(axis.Normalized(), ArmDrop * (sideways - 0.2f) / 0.8f) * global.Basis;
+            s.SetBonePose(arm, new Transform3D(s.GetBoneGlobalPose(parent).Basis.Inverse() * turned, s.GetBonePose(arm).Origin));
         }
     }
 }
@@ -537,7 +613,7 @@ public abstract partial class Animal : Body
     }
 
     /// <summary>Paints the model with another texture (a dragon's colour), shiny if metallic.</summary>
-    protected void Coat(string file, bool metallic)
+    protected void Coat(string file, bool metallic, string? glow = null)
     {
         var texture = GD.Load<Texture2D>($"res://assets/creatures/{file}");
         var material = new StandardMaterial3D
@@ -545,8 +621,34 @@ public abstract partial class Animal : Body
             AlbedoTexture = texture, Roughness = metallic ? 0.38f : 0.8f, Metallic = metallic ? 0.75f : 0,
             MetallicSpecular = metallic ? 0.7f : 0.4f,
         };
-        foreach (var m in _meshes) m.MaterialOverride = material;
+        Material coat = material;
+        if (glow is not null)
+        {
+            // A glowing coat: veins of light that pulse slowly (a corrupted dragon's).
+            var veins = new ShaderMaterial { Shader = GlowCoat };
+            veins.SetShaderParameter("albedo_tex", texture);
+            veins.SetShaderParameter("glow_tex", GD.Load<Texture2D>($"res://assets/creatures/{glow}"));
+            coat = veins;
+        }
+        foreach (var m in _meshes) m.MaterialOverride = coat;
     }
+
+    static readonly Shader GlowCoat = new()
+    {
+        Code = """
+            shader_type spatial;
+            uniform sampler2D albedo_tex : source_color, filter_linear_mipmap_anisotropic;
+            uniform sampler2D glow_tex : source_color, filter_linear_mipmap;
+            uniform float glow = 2.4;
+            void fragment() {
+                ALBEDO = texture(albedo_tex, UV).rgb;
+                ROUGHNESS = 0.7;
+                SPECULAR = 0.45;
+                float pulse = 0.7 + 0.3 * sin(TIME * 1.7 + UV.x * 9.0 + UV.y * 5.0);
+                EMISSION = texture(glow_tex, UV).rgb * glow * pulse;
+            }
+            """,
+    };
 
     public override void _Process(double delta)
     {
@@ -560,10 +662,10 @@ public abstract partial class Animal : Body
     public override void Hurt()
     {
         foreach (var m in _meshes)
-            if (m.MaterialOverride is StandardMaterial3D mat) { mat.EmissionEnabled = true; mat.Emission = new Color("#ff4020"); mat.EmissionEnergyMultiplier = 0.5f; }
+            if (m.MaterialOverride is StandardMaterial3D { EmissionTexture: null } mat) { mat.EmissionEnabled = true; mat.Emission = new Color("#ff4020"); mat.EmissionEnergyMultiplier = 0.5f; }
         GetTree().CreateTimer(0.15).Timeout += () =>
         {
-            foreach (var m in _meshes) if (IsInstanceValid(m) && m.MaterialOverride is StandardMaterial3D mat) mat.EmissionEnabled = false;
+            foreach (var m in _meshes) if (IsInstanceValid(m) && m.MaterialOverride is StandardMaterial3D { EmissionTexture: null } mat) mat.EmissionEnabled = false;
         };
     }
 
@@ -650,12 +752,13 @@ public partial class Creature : Animal
 
     /// <param name="coat">A texture (under assets/creatures) to paint it with instead of its own.</param>
     /// <param name="metallic">Make the coat shine like metal.</param>
-    public static Creature? Create(string file, float height, Color? tint = null, string? coat = null, bool metallic = false)
+    /// <param name="glow">An emission map to go with the coat (the veins of a corrupted dragon).</param>
+    public static Creature? Create(string file, float height, Color? tint = null, string? coat = null, bool metallic = false, string? glow = null)
     {
         var c = new Creature();
         if (!c.Load(file, height)) return null;
         if (tint is { } t) Models.Tint(c.Model, t);
-        if (coat is not null) c.Coat(coat, metallic);
+        if (coat is not null) c.Coat(coat, metallic, glow);
         c._anim = c.Model.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().FirstOrDefault();
         if (c._anim is not null)
             foreach (var name in c._anim.GetAnimationList())
@@ -681,6 +784,7 @@ public partial class Creature : Animal
             _wings.BeatRate = 1.4f / MathF.Sqrt(Math.Max(1, Scale.X)); // great dragons beat slowly
             _wings.Update(_flying, _speed, delta);
         }
+        if (_rider is not null && Scale.X > 0) _rider.Scale = Vector3.One / Scale.X; // a knight stays a knight's size on a giant
     }
 
     DragonWings? _wings;
@@ -688,15 +792,66 @@ public partial class Creature : Animal
     float _speed;
 
     /// <summary>Gives a dragon its great wings (it can fly from now on).</summary>
-    public void SpreadWings(Color membrane, Color bone, bool metallic)
+    public void SpreadWings(Color membrane, Color bone, bool metallic, Color? glow = null)
     {
-        _wings = DragonWings.Grow(Model, 4.5f * 1.55f / Model.Scale.X, membrane, bone, metallic);
+        _wings = DragonWings.Grow(Model, 4.5f * 1.55f / Model.Scale.X, membrane, bone, metallic, glow);
     }
 
     public bool Winged => _wings is not null;
 
-    /// <summary>Grows ice spikes on a frost dragon's back.</summary>
-    public void Freeze() => IceRidge.Grow(Model);
+    /// <summary>Grows ice spikes on a frost dragon's back (violet-black ice on a corrupted one).</summary>
+    public void Freeze(bool corrupt = false) => IceRidge.Grow(Model, corrupt);
+
+    /// <summary>The Rift's mark: a dark haze rising off it and a violet light about it.</summary>
+    public void Corrupt()
+    {
+        var c = new Color(0.22f, 0.05f, 0.32f, 0.45f);
+        var fade = new Gradient { Offsets = [0, 0.3f, 1], Colors = [new Color(c, 0), c, new Color(0.05f, 0, 0.08f, 0)] };
+        AddChild(new CpuParticles3D
+        {
+            Mesh = new QuadMesh
+            {
+                Size = Vector2.One * 0.9f,
+                Material = new StandardMaterial3D
+                {
+                    AlbedoColor = Colors.White, VertexColorUseAsAlbedo = true, Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+                    BillboardMode = BaseMaterial3D.BillboardModeEnum.Particles, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, AlbedoTexture = Effects.Dot,
+                },
+            },
+            Amount = 40, Lifetime = 2.2, Position = new Vector3(0, 1.8f, 0), EmissionShape = CpuParticles3D.EmissionShapeEnum.Box,
+            EmissionBoxExtents = new Vector3(1.0f, 0.9f, 2.4f), Direction = Vector3.Up, Spread = 25, Gravity = new Vector3(0, 0.6f, 0),
+            InitialVelocityMin = 0.3f, InitialVelocityMax = 0.9f, ScaleAmountMin = 0.8f, ScaleAmountMax = 2.2f, ColorRamp = fade,
+        });
+        AddChild(new OmniLight3D { Position = new Vector3(0, 2.2f, 0), LightColor = new Color("#b040ff"), LightEnergy = 1.4f, OmniRange = 7 });
+    }
+
+    /// <summary>Where a rider sits, in this body's own space: on the back, behind the wings.</summary>
+    public Vector3 Saddle { get; private set; }
+
+    Figure? _rider;
+
+    /// <summary>Puts a dragon knight in the saddle.</summary>
+    public void Mount(Figure rider)
+    {
+        _rider = rider;
+        AddChild(rider);
+        rider.Position = FindSaddle();
+        rider.Seat(true);
+    }
+
+    /// <summary>The saddle: part way along the first back bone, a little above the hide.</summary>
+    public Vector3 FindSaddle()
+    {
+        if (Saddle != Vector3.Zero) return Saddle;
+        var s = Model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault();
+        var (b1, b2) = (s?.FindBone("back1") ?? -1, s?.FindBone("back2") ?? -1);
+        if (s is null || b1 < 0 || b2 < 0) return Saddle = new Vector3(0, 2.2f, 0);
+        var space = Transform3D.Identity;
+        for (Node? n = s; n is not null && n != this; n = n.GetParent())
+            if (n is Node3D n3) space = n3.Transform * space;
+        var spot = space * s.GetBoneGlobalRest(b1).Origin.Lerp(s.GetBoneGlobalRest(b2).Origin, 0.45f);
+        return Saddle = spot + new Vector3(0, 0.5f - 0.45f, 0); // hips sit about this far above the bone, the feet hang below
+    }
 
     public override void Move(float speed, bool grounded, bool swimming)
     {

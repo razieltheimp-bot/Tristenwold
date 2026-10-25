@@ -9,8 +9,9 @@ namespace Tristinwold.Game;
 /// Brings the wilds to life around the player: the herds, packs and lone beasts that
 /// <see cref="Wildlife"/> places in the land appear as you come near and are put away behind you.
 /// A herd you wipe out stays gone for a while (ten minutes) before others move into its range.
-/// It also brings out the dragons: each ancient in its lair with its giants, and the warbands of the
-/// dragon wars being fought this season (see <see cref="Dragons"/>).
+/// It also brings out the dragons: each ancient in its lair with its giants, the warbands of the dragon wars
+/// being fought this season (see <see cref="Dragons"/>), the Dragonwatch over every pact town and the raids
+/// that come against them, and the Order of the Eyrie's dragon knights at their rookery outside Tristinwold.
 /// </summary>
 public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
 {
@@ -60,6 +61,18 @@ public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
                 if (herd.DistanceTo(player.X, player.Z) < DragonNear) Bring(herd, clock, regrow: AncientRegrow);
         }
 
+        // Dragon knights over the pact towns, the raids that come against them, and the Order's own rookery.
+        foreach (var pact in Dragons.PactsNear(world, player.X, player.Z, DragonNear))
+            foreach (var herd in Dragons.Watch(pact)) Bring(herd, clock, regrow: AncientRegrow);
+        foreach (var raid in Dragons.RaidsNear(world, Now(), player.X, player.Z, DragonNear))
+        {
+            if (_warsSeen.Add(raid.Id) && Dragons.PactsNear(world, player.X, player.Z, DragonNear).FirstOrDefault(a => a.Id == raid.Foe) is { } town)
+                main.HudNode.Toast($"{Bestiary.Get(raid.KindId).Name}s are raiding {town.Ward!.Name}! Its dragon knights fly to meet them.", 10);
+            Bring(raid, clock, regrow: AncientRegrow);
+        }
+        foreach (var herd in Rookery)
+            if (herd.DistanceTo(player.X, player.Z) < DragonNear) Bring(herd, clock, regrow: Regrow);
+
         // Crossing into an ancient's land.
         var lord = Dragons.TerritoryAt(world, player.X, player.Z);
         if (lord?.Id != _territory)
@@ -68,6 +81,13 @@ public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
             if (lord is not null) main.HudNode.Toast($"You enter the lands of {lord.FullName}, {lord.What}.", 8);
         }
     }
+
+    /// <summary>The Order of the Eyrie's rookery on the hill west of Tristinwold: two knights and their dragons, always.</summary>
+    static readonly Herd[] Rookery =
+    [
+        new("rookery_gold", "dragon_gold", DragonSaga.RookeryX - 20, DragonSaga.RookeryZ - 10, 1, 25, DragonSize.Large, "eyrie", Allied: true, Riders: true),
+        new("rookery_silver", "dragon_silver", DragonSaga.RookeryX + 15, DragonSaga.RookeryZ - 25, 1, 25, DragonSize.Normal, "eyrie", Allied: true, Riders: true),
+    ];
 
     void Bring(Herd herd, double clock, bool hawks = false, double regrow = Regrow)
     {
@@ -95,16 +115,19 @@ public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
         var kind = Bestiary.Get(herd.KindId);
         var danger = WorldGen.Danger(herd.X, herd.Z);
         var list = new List<Enemy>();
-        for (var i = 0; i < herd.Count; i++)
+        for (var i = 0; i < herd.Count + herd.Young; i++)
         {
+            var young = i >= herd.Count;
             var a = rng.NextDouble() * Mathf.Tau;
             var r = rng.NextDouble() * herd.Roam * 0.5;
             var at = new Vector3((float)(herd.X + Math.Cos(a) * r), 0, (float)(herd.Z + Math.Sin(a) * r));
             if (world.Height(at.X, at.Z) < WorldGen.WaterLevel + 0.2) at = new Vector3((float)herd.X, 0, (float)herd.Z);
-            var e = Enemy.Create(kind, at with { Y = City.FloorAt(at) + 0.5f }, danger, size: herd.Size);
+            var e = Enemy.Create(kind, at with { Y = City.FloorAt(at) + 0.5f }, danger, size: young ? DragonSize.Normal : herd.Size, young: young,
+                look: herd.Riders && !young ? $"rider:{kind.Id}" : null);
             e.Roam = (float)herd.Roam;
-            (e.Faction, e.Foe) = (herd.Faction, herd.Foe);
+            (e.Faction, e.Foe, e.Allied) = (herd.Faction, herd.Foe, herd.Allied);
             if (herd.Name is { } name) { e.Stats.Name = name; e.RefreshPlate(); }
+            if (herd.Riders && !young) { e.Stats.Name = Dragons.KnightName(WorldGen.StableHash(herd.Id) + i); e.RefreshPlate(); }
             e.RotationDegrees = new Vector3(0, (float)(rng.NextDouble() * 360), 0);
             main.AddEnemy(e);
             list.Add(e);

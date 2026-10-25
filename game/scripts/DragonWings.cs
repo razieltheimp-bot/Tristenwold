@@ -21,7 +21,8 @@ public partial class DragonWings : Node3D
 
     /// <param name="model">The dragon model the wings attach to (its skeleton has wing_lower.L/R bones).</param>
     /// <param name="halfSpan">How far each wing reaches, in the model's own units.</param>
-    public static DragonWings? Grow(Node3D model, float halfSpan, Color membrane, Color boneColour, bool metallic)
+    /// <param name="glow">A light shining through the membrane (the Rift's in a corrupted dragon's wings).</param>
+    public static DragonWings? Grow(Node3D model, float halfSpan, Color membrane, Color boneColour, bool metallic, Color? glow = null)
     {
         if (model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is not { } skeleton) return null;
         var bones = new[] { ("wing_lower.L", 1f), ("wing_lower.R", -1f) }.Select(b => (skeleton.FindBone(b.Item1), b.Item2)).ToArray();
@@ -33,6 +34,13 @@ public partial class DragonWings : Node3D
             CullMode = BaseMaterial3D.CullModeEnum.Disabled, BacklightEnabled = true, Backlight = membrane.Lightened(0.3f) * 0.9f,
             VertexColorUseAsAlbedo = true,
         };
+        if (glow is { } g)
+        {
+            skin.Backlight = g * 0.6f;
+            skin.EmissionEnabled = true;
+            skin.Emission = g;
+            skin.EmissionEnergyMultiplier = 0.08f;
+        }
         var bone = new StandardMaterial3D { AlbedoColor = boneColour, Roughness = metallic ? 0.3f : 0.6f, Metallic = metallic ? 0.8f : 0 };
         var built = new DragonWings(skeleton);
         foreach (var (index, side) in bones)

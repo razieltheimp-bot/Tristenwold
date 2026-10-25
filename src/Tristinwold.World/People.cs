@@ -178,6 +178,48 @@ public static class People
         return people;
     }
 
+    static readonly string[] YouthJobs = ["page", "stable hand", "apprentice smith", "temple novice", "errand runner", "goatherd", "scullion", "fletcher's apprentice"];
+
+    static readonly string[] Dreams =
+    [
+        "to be a knight, a real one, with a horse", "to learn magic from the Magi", "to see a dragon up close, just once",
+        "to leave {home} for {city} and never come back", "to be a famous thief, the kind they write songs about",
+        "to ride a dragon over the sea", "to find out who {their} real parents were", "to go adventuring, like you",
+    ];
+
+    /// <summary>
+    /// The young people of a settlement, 11 to 16 years old, working at whatever their family can find them. They
+    /// give no work, but one might follow a hero as a squire or an apprentice.
+    /// </summary>
+    internal static IReadOnlyList<Npc> Youths(WorldGen world, Settlement s)
+    {
+        if (s.Hostile || s.People == 0 || s.Kind is SettlementKind.Shrine or SettlementKind.Mine or SettlementKind.HuntingCamp) return [];
+        var rng = Noise.Dice(world.Seed, 5, WorldGen.StableHash(s.Id));
+        var count = s.Kind switch { SettlementKind.City => 3, SettlementKind.Town => 2 + rng.Next(2), SettlementKind.Hamlet => 1 + rng.Next(2), _ => rng.Next(2) };
+        var youths = new List<Npc>();
+        for (var i = 0; i < count; i++)
+        {
+            var sex = rng.PickWeighted<Sex>([(Sex.Female, 0.47), (Sex.Male, 0.47), (Sex.Other, 0.06)]);
+            var name = Names.Person(rng, sex, false);
+            var angle = rng.NextDouble() * Math.Tau;
+            var r = s.Radius * (0.2 + rng.NextDouble() * 0.3);
+            if (s.Id == "city:tristinwold") (angle, r) = (i % 2 == 0 ? Math.PI - 0.2 : 0.2, 70 + i * 7);
+            var npc = new Npc($"{s.Id}/y{i}", name, sex, 11 + rng.Next(6), rng.Pick(YouthJobs), s.Id, s.Name, "", ["children's tales"], "eager",
+                Fill(rng, rng.Pick(YouthGreetings), null, s, world), s.X + Math.Cos(angle) * r, s.Z + Math.Sin(angle) * r);
+            var story = "{First} is the child of a " + rng.Pick(Parents) + " in {home}, and works as a " + npc.Occupation + ". {They} dream{s} " + rng.Pick(Dreams) + ".";
+            youths.Add(npc with { Backstory = Fill(rng, story, npc, s, world) });
+        }
+        return youths;
+    }
+
+    static readonly string[] YouthGreetings =
+    [
+        "Are you an adventurer? A real one? Have you killed a troll?", "Mum says I'm not to talk to strangers. You don't look strange, though.",
+        "I could carry your things! I'm stronger than I look.", "Is that a real sword? Can I hold it?",
+    ];
+
+    public static bool IsYouth(Npc npc) => npc.Age is > 0 and < 17;
+
     static string Backstory(Rng rng, Npc npc, Settlement home, WorldGen world)
     {
         var origin = npc.Ashborn

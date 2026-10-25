@@ -27,6 +27,7 @@ public partial class SelfTest(Main main) : Node
         try
         {
             await Frames(10);
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); Finish(0); return; } // just the classes, companions and Dragon Knight
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -55,6 +56,7 @@ public partial class SelfTest(Main main) : Node
 
             await Touch();
             await Explore();
+            await CompanyTest();
             if (main.Choice.Account is { } account) await Account(account);
             await Teleport(new Vector3(-150, 0, -120));
             await Until(() => !main.Tracker.InFight, 15);
@@ -337,6 +339,172 @@ public partial class SelfTest(Main main) : Node
         var hurt = sides.Count(e => IsInstanceValid(e) && (e.Stats.Health < e.Stats.MaxHealth || e.State == EnemyState.Dead));
         Check(hurt > 0, $"{war.A.FullName} ({war.A.Colour}) and {war.B.FullName} ({war.B.Colour}) are at war: {sides.Count} dragons at the border, {hurt} wounded");
         main.WildsNode.Now = () => DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Every class fights with its own moves; kills bring levels; a youngling is tamed and fights beside you;
+    /// a youth becomes an apprentice; the road to Dragon Knight is walked from the egg to the saddle; and a
+    /// dragon knight of the alliance fights a corrupted dragon on sight.
+    /// </summary>
+    async Task CompanyTest()
+    {
+        var (p, w) = (main.PlayerNode, main.World);
+        var field = new Vector3(-150, 0, -120);
+        await Teleport(field);
+        var level = p.Hero.Level;
+
+        // Each of the nine classes, against a dock thug.
+        foreach (var d in Classes.All)
+        {
+            p.Join(d.Id);
+            p.Stats.Heal(1e6);
+            p.Stats.Restore(1e6, 1e6);
+            await Frames(3);
+            var foe = Spawn("dock_thug", p.GlobalPosition + new Vector3(0, 0, -2.5f));
+            await Frames(2);
+            var used = new List<string>();
+            for (var t = 0.0; t < 25 && foe.State != EnemyState.Dead; t += 1.0 / 60)
+            {
+                p.Face(foe.GlobalPosition);
+                if (p.GlobalPosition.DistanceTo(foe.GlobalPosition) > 2.2f && d.Primary.Range < 6) p.GlobalPosition = foe.GlobalPosition + new Vector3(0, 0.3f, 1.8f);
+                p.Stats.Heal(5);
+                p.Stats.Restore(5, 5);
+                foreach (var a in new[] { d.Signature, d.Utility, d.Primary })
+                    if (p.Use(a) && !used.Contains(a.Id)) used.Add(a.Id);
+                await Frames(1);
+            }
+            Check(foe.State == EnemyState.Dead, $"the {d.Name} fells a thug with {string.Join(", ", used)}");
+            for (var i = 0; i < 60 && !p.Stats.LimitReady; i++) { p.Stats.TakeHit(12, DamageKind.Physical, AttackKind.Weapon); p.Stats.Heal(12); }
+            var target = Spawn("skeever", p.GlobalPosition - p.GlobalTransform.Basis.Z * 2.5f);
+            await Frames(3);
+            p.Face(target.GlobalPosition);
+            Check(p.LimitBreak(), $"the {d.Name}'s limit break: {d.Limit.Name}");
+            await Frames(40);
+            if (IsInstanceValid(target)) target.QueueFree();
+            if (d.Id == "Warlock") Check(GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Any(e => e.Kind.Id == "familiar" && e.Leader == p), "the warlock's familiar answers");
+            await Until(() => !main.Tracker.InFight, 10);
+        }
+        Check(p.Hero.Level > level, $"kills bring levels: level {level} to {p.Hero.Level}, {p.Hero.Points} skill points");
+        var points = p.Hero.Points;
+        p.Join("Barbarian");
+        var health = p.Stats.MaxHealth;
+        Check(p.Hero.Raise("thick_hide") || points == 0, "a skill point ranks up Thick Hide");
+        p.Fit();
+        Check(points == 0 || p.Stats.MaxHealth > health, $"Thick Hide rank 2: {health:0} to {p.Stats.MaxHealth:0} health");
+
+        // A wolf pup with its mother close by can't be taken; alone, a ranger takes it easily.
+        await Teleport(field + new Vector3(30, 0, 0));
+        var pup = Enemy.Create(Bestiary.Get("wolf"), p.GlobalPosition + new Vector3(2, 0, 0), young: true);
+        main.AddEnemy(pup);
+        var mother = Spawn("wolf", p.GlobalPosition + new Vector3(8, 0, 4));
+        await Frames(5);
+        Check(pup.Stats.Name == "Wolf Pup" && pup.Figure.Scale.X < 0.6f, $"a wolf pup ({pup.Figure.Scale.X:0.00}x size, {pup.Stats.MaxHealth:0} hp)");
+        Check(!main.Tame(pup) && mother.FightingCompany, "its mother won't allow it, and comes for you");
+        mother.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, p);
+        await Until(() => !main.Tracker.InFight, 10);
+        p.Join("Ranger");
+        p.Meat = 3;
+        Check(main.Tame(pup), "with the mother gone, the ranger tames the pup");
+        await Frames(10);
+        var wolf = main.CompanionBodies.FirstOrDefault(e => e.Kind.Id == "wolf" && e.Bond is not null);
+        Check(wolf is not null && wolf.Leader == p, $"{wolf?.Bond?.Name} follows you");
+        var xp = wolf!.Bond!.Xp + wolf.Bond.Level * 1000;
+        var prey = Spawn("skeever", p.GlobalPosition + new Vector3(-3, 0, -3));
+        prey.Provoke(p);
+        await Until(() => prey.State == EnemyState.Dead || prey.Stats.Health < prey.Stats.MaxHealth, 10);
+        Check(prey.Stats.Health < prey.Stats.MaxHealth, $"{wolf.Bond.Name} fights what's attacking you");
+        prey.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, p);
+        await Frames(5);
+        Check(wolf.Bond.Xp + wolf.Bond.Level * 1000 > xp, $"{wolf.Bond.Name} shares the kill ({wolf.Bond.Xp} xp, level {wolf.Bond.Level})");
+        wolf.Bond.Fed = 10;
+        main.Feed(wolf.Bond);
+        Check(wolf.Bond.Fed > 50 && p.Meat < 3, $"fed: {wolf.Bond.Fed:0}% full, {p.Meat} meat left");
+
+        // A youth in Tristinwold becomes a hero's apprentice.
+        var youthNpc = w.YouthsOf(w.Tristinwold).First();
+        await Teleport(new Vector3((float)youthNpc.X + 2, 0, (float)youthNpc.Z));
+        await Until(() => main.PlacesNode.People.Any(x => x.Npc.Id == youthNpc.Id), 5);
+        var youth = main.PlacesNode.People.FirstOrDefault(x => x.Npc.Id == youthNpc.Id);
+        Check(youth is not null && youth.Figure.Scale.X <= 1, $"{youthNpc.Name}, {youthNpc.Age}, {youthNpc.Occupation} in Tristinwold");
+        p.Hero.Level = Math.Max(p.Hero.Level, Main.RecruitLevel);
+        p.Septims += Main.RecruitFee;
+        main.Talk(youth!);
+        Check(main.HudNode.Choose("Would you become my"), $"you can ask {youthNpc.First} to follow you");
+        await Frames(10);
+        Check(main.Bonds.Any(b => b.Id == youthNpc.Id && b.Role == BondRole.Apprentice) && main.CompanionBodies.Any(e => e.Bond?.Id == youthNpc.Id),
+            $"{youthNpc.First} becomes your apprentice");
+        main.HudNode.EndTalk();
+
+        // The road to Dragon Knight.
+        await Teleport(new Vector3((float)DragonSaga.RookeryX + 4, 0, (float)DragonSaga.RookeryZ + 10));
+        await Until(() => main.WildsNode.Creatures.Count(e => e.Rider) >= 2, 8);
+        Check(main.WildsNode.Creatures.Count(e => e.Rider) >= 2, $"dragon knights at the rookery: {string.Join(", ", main.WildsNode.Creatures.Where(e => e.Rider).Select(e => e.Stats.Name))}");
+        var aldric = main.Locals.First(x => x.Npc.Id == "eyrie/aldric");
+        main.Talk(aldric);
+        Check(main.HudNode.Choose("How do I become"), "Ser Aldric tells you how to become a Dragon Knight");
+        Check(main.HudNode.Choose("I'll do it"), "you take up the road");
+        Check(main.Saga.Stage == SagaStage.SeekEgg, $"seek an egg from {main.Saga.MatriarchName}");
+        main.Talk(aldric);
+        Check(main.HudNode.Choose("Can your knights fly me"), "a knight flies you to the nest");
+        main.TerrainNode.EnsureAround(p.GlobalPosition, 2);
+        await Frames(30);
+        p.GlobalPosition = p.GlobalPosition with { Y = City.FloorAt(p.GlobalPosition) + 1 };
+        var nestAt = new Vector3((float)main.Saga.NestX, 0, (float)main.Saga.NestZ);
+        await Until(() => main.Nest is not null, 5);
+        Check(main.Nest is not null, $"the nest at the lair of {main.Saga.MatriarchName}");
+        await Teleport(nestAt + new Vector3(30, 0, 30));
+        await Until(() => main.Enemies().Any(e => Dragons.IsCorrupted(e.Kind.Id)), 5);
+        var raiders = main.Enemies().Where(e => Dragons.IsCorrupted(e.Kind.Id) && e.State != EnemyState.Dead).ToList();
+        Check(raiders.Count >= 2, $"corrupted drakes at the nest: {string.Join(", ", raiders.Select(r => r.Stats.Name))}");
+        foreach (var r in raiders) r.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => !main.Tracker.InFight, 10);
+        p.GlobalPosition = main.Nest!.GlobalPosition + new Vector3(1.5f, 1, 0);
+        await Frames(5);
+        main.PickUp(main.Nest!);
+        Check(main.Saga.Stage == SagaStage.CarryEgg, "you take an egg");
+        main.RestNow();
+        await Frames(10);
+        var hatchling = main.CompanionBodies.FirstOrDefault(e => e.Bond?.Role == BondRole.Dragon);
+        Check(hatchling is not null && hatchling.Figure.Scale.X < 0.3f, $"it hatches: {hatchling?.Bond?.Name}, a {hatchling?.Kind.Name.ToLowerInvariant()} hatchling ({hatchling?.Figure.Scale.X:0.00}x)");
+        main.GainXp(60000);
+        await Frames(5);
+        Check(hatchling!.Bond!.Rideable && hatchling.Figure.Scale.X >= 1, $"{hatchling.Bond.Name} grows up: level {hatchling.Bond.Level}, a {hatchling.Bond.Stage}");
+        await Teleport(new Vector3((float)DragonSaga.RookeryX + 4, 0, (float)DragonSaga.RookeryZ + 10));
+        await Frames(30);
+        main.Talk(aldric);
+        Check(main.HudNode.Choose("I've raised"), "you bring your dragon to Ser Aldric");
+        Check(main.HudNode.Choose("(Kneel"), "and kneel");
+        Check(main.Saga.Stage == SagaStage.Knighted, "you rise a Dragon Knight");
+        main.HudNode.EndTalk();
+        hatchling.GlobalPosition = p.GlobalPosition + new Vector3(3, 0, 0);
+        await Frames(5);
+        main.RideNow();
+        Check(p.Mount == hatchling, $"you climb onto {hatchling.Bond.Name} ({main.HudNode.LastLine}; {hatchling.State}, {hatchling.GlobalPosition.DistanceTo(p.GlobalPosition):0.0} m)");
+        Input.ActionPress("jump");
+        await Until(() => hatchling.GlobalPosition.Y - City.FloorAt(hatchling.GlobalPosition) > 10, 6);
+        Input.ActionRelease("jump");
+        var high = hatchling.GlobalPosition.Y - City.FloorAt(hatchling.GlobalPosition);
+        Check(high > 10 && p.GlobalPosition.DistanceTo(hatchling.SaddleGlobal) < 0.5f, $"and fly: {high:0} m up, in the saddle");
+        Input.ActionPress("descend");
+        await Until(() => !hatchling.Flying, 12);
+        Input.ActionRelease("descend");
+        main.RideNow();
+        Check(p.Mount is null && !hatchling.Flying, "you land and climb down");
+
+        // A dragon knight of the alliance and a corrupted dragon fight on sight.
+        main.TerrainNode.EnsureAround(p.GlobalPosition, 2);
+        Vector3 Ground(Vector3 at) => at with { Y = City.FloorAt(at) + 0.5f };
+        var knight = Enemy.Create(Bestiary.Get("dragon_gold"), Ground(p.GlobalPosition + new Vector3(60, 0, 40)), look: "rider:dragon_gold");
+        knight.Allied = true;
+        main.AddEnemy(knight);
+        var fallen = Spawn("dragon_red_corrupt", Ground(p.GlobalPosition + new Vector3(60, 0, 100)));
+        await Until(() => knight.Stats.Health < knight.Stats.MaxHealth || fallen.Stats.Health < fallen.Stats.MaxHealth, 25);
+        Check(knight.Stats.Health < knight.Stats.MaxHealth || fallen.Stats.Health < fallen.Stats.MaxHealth,
+            $"a dragon knight and a corrupted red dragon fight ({knight.Stats.Health:0} and {fallen.Stats.Health:0} hp left)");
+        knight.QueueFree();
+        fallen.QueueFree();
+        p.Join("Paladin");
+        await Teleport(field);
     }
 
     /// <summary>A logged-in character's progress reaches the server, ready for the next device.</summary>

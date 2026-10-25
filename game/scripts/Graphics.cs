@@ -31,12 +31,22 @@ public static class Graphics
         env.GlowEnabled = q >= Quality.Medium;
         env.GlowIntensity = 0.6f;
         env.GlowBloom = 0.05f;
-        env.SsaoEnabled = q >= Quality.High && Full;
-        env.SsilEnabled = q >= Quality.Ultra && Full;
+        env.SsaoEnabled = q >= Quality.Medium && Full;
+        env.SsaoIntensity = 1.6f;
+        env.SsaoRadius = 1.4f;
+        env.SsaoDetail = 0.6f;
+        env.SsilEnabled = q >= Quality.High && Full; // light bouncing off the ground and walls
+        env.SsilIntensity = 0.8f;
+        env.SsrEnabled = q >= Quality.Ultra && Full;   // the water and wet stone mirror what's above them
         env.SdfgiEnabled = false; // global illumination goes murky on land that streams in around you, and costs the most
         env.VolumetricFogEnabled = q >= Quality.High && Full;
         env.VolumetricFogDensity = 0.004f;
         env.VolumetricFogAlbedo = new Color("#d8cbb0");
+        env.VolumetricFogAnisotropy = 0.65f; // light scatters forward: shafts of sun through the trees, a glow around the sun
+        env.VolumetricFogSkyAffect = 0.25f;
+        env.VolumetricFogAmbientInject = 0.35f;
+        env.FogSunScatter = 0.25f;
+        sun.LightVolumetricFogEnergy = 1.6f;
         env.AdjustmentEnabled = true;
         env.AdjustmentSaturation = q >= Quality.High ? 1.12f : 1.05f;
         env.AdjustmentContrast = 1.06f;
@@ -45,6 +55,21 @@ public static class Graphics
         sun.DirectionalShadowMaxDistance = q switch { Quality.Low => 0, Quality.Medium => 80, Quality.High => 140, _ => 220 };
         sun.ShadowBlur = q >= Quality.High ? 1.5f : 1f;
         sun.LightAngularDistance = q >= Quality.High ? 0.6f : 0; // soft shadows
+        sun.DirectionalShadowMode = q >= Quality.Medium ? DirectionalLight3D.ShadowMode.Parallel4Splits : DirectionalLight3D.ShadowMode.Parallel2Splits;
+        sun.DirectionalShadowBlendSplits = q >= Quality.High;
+        RenderingServer.DirectionalShadowAtlasSetSize(q switch { Quality.Ultra => 8192, Quality.High => 4096, _ => 2048 }, true);
+        RenderingServer.DirectionalSoftShadowFilterSetQuality(q switch
+        {
+            Quality.Ultra => RenderingServer.ShadowQuality.SoftHigh, Quality.High => RenderingServer.ShadowQuality.SoftMedium, _ => RenderingServer.ShadowQuality.SoftLow,
+        });
+
+        // The eye adjusts: walking from sunlight into the shade of the pines, or looking up at the sky.
+        viewport.World3D.CameraAttributes = new CameraAttributesPractical
+        {
+            AutoExposureEnabled = q >= Quality.High, AutoExposureScale = 0.35f, AutoExposureSpeed = 0.6f,
+            AutoExposureMinSensitivity = 80, AutoExposureMaxSensitivity = 400,
+            DofBlurFarEnabled = q >= Quality.Ultra, DofBlurFarDistance = 450, DofBlurFarTransition = 400, DofBlurAmount = 0.04f,
+        };
 
         // Upscaling: phones render a little under screen size; Ultra uses FSR 2 as its anti-aliasing.
         viewport.Scaling3DMode = q switch
@@ -55,6 +80,7 @@ public static class Graphics
         };
         viewport.Scaling3DScale = q switch { Quality.Low => 0.7f, Quality.Medium when mobile => 0.85f, _ => 1f };
         viewport.Msaa3D = q == Quality.High ? Viewport.Msaa.Msaa2X : Viewport.Msaa.Disabled;
+        viewport.UseTaa = q == Quality.High && Full; // smooths the shimmer of grass and needles
         viewport.ScreenSpaceAA = q == Quality.Medium ? Viewport.ScreenSpaceAAEnum.Fxaa : Viewport.ScreenSpaceAAEnum.Disabled;
     }
 

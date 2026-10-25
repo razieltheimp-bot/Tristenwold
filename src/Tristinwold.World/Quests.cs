@@ -124,6 +124,7 @@ public static class Quests
 {
     public static Quest? For(WorldGen world, Npc npc)
     {
+        if (People.IsYouth(npc)) return null;
         var rng = Noise.Dice(world.Seed, 4, WorldGen.StableHash(npc.Id));
         if (!rng.Chance(0.55) || world.Find(npc.HomeId) is not { } home) return null;
 

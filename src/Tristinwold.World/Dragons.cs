@@ -8,13 +8,20 @@ public enum DragonColour { Red, Blue, Green, Black, White, Gold, Silver, Bronze,
 /// <summary>How big a dragon has grown. A nemesis dragon that keeps winning grows a size at each promotion.</summary>
 public enum DragonSize { Normal = 0, Large = 1, Giant = 2, Ancient = 3 }
 
-/// <summary>An ancient dragon: its name, its lair, and the land it rules (where smaller dragons of its colour follow it).</summary>
-public sealed record Ancient(string Id, string Name, string Title, DragonColour Colour, double X, double Z, double Territory)
+/// <summary>
+/// An ancient dragon: its name, its lair, and the land it rules (where smaller dragons of its colour follow it).
+/// Some have been twisted by the Rift (<paramref name="Corrupted"/>), and they and all their kin with them. Some
+/// metallic ancients keep a pact with the people of a town in their land (<paramref name="Ward"/>): their dragons
+/// and the dragon knights who ride them guard it against chromatic and corrupted dragons.
+/// </summary>
+public sealed record Ancient(string Id, string Name, string Title, DragonColour Colour, double X, double Z, double Territory,
+    bool Corrupted = false, Settlement? Ward = null)
 {
     public bool Metallic => Dragons.IsMetallic(Colour);
     public string FullName => $"{Name} {Title}";
-    public string What => $"an ancient {Colour.ToString().ToLowerInvariant()} dragon";
-    public string KindId => Dragons.KindFor(Colour);
+    public string What => $"an ancient {(Corrupted ? "corrupted " : "")}{Colour.ToString().ToLowerInvariant()} dragon";
+    public string KindId => Corrupted ? Dragons.CorruptedKindFor(Colour) : Dragons.KindFor(Colour);
+    public bool Allied => Ward is not null;
     public double DistanceTo(double x, double z) => Math.Sqrt((X - x) * (X - x) + (Z - z) * (Z - z));
 }
 
@@ -45,7 +52,12 @@ public static class Dragons
     public static string KindFor(DragonColour c) => "dragon_" + c.ToString().ToLowerInvariant();
 
     public static DragonColour? ColourOf(string kindId) =>
-        kindId.StartsWith("dragon_") && Enum.TryParse<DragonColour>(kindId[7..], true, out var c) ? c : null;
+        kindId.StartsWith("dragon_") && Enum.TryParse<DragonColour>(kindId[7..].Replace("_corrupt", ""), true, out var c) ? c : null;
+
+    /// <summary>A dragon twisted by the Rift (its kind ends in "_corrupt").</summary>
+    public static bool IsCorrupted(string kindId) => kindId.StartsWith("dragon_") && kindId.EndsWith("_corrupt");
+
+    public static string CorruptedKindFor(DragonColour c) => KindFor(c) + "_corrupt";
 
     /// <summary>Health, damage and height for each size: an ancient is a mountain with teeth.</summary>
     public static (double Health, double Damage, float Height) Scale(DragonSize s) => s switch
@@ -72,7 +84,15 @@ public static class Dragons
             var colour = rng.PickWeighted(Habitat(world.BiomeAt(x, z, h)));
             var name = Name(rng);
             var title = rng.Pick(Titles[colour]);
-            return new Ancient($"ancient_{cx}_{cz}", name, title, colour, x, z, 1800 + rng.NextDouble() * 900);
+            var territory = 1800 + rng.NextDouble() * 900;
+            var corrupted = rng.Chance(0.15);
+            if (corrupted) title = rng.Pick(Corruption);
+            // A metallic ancient may keep a pact with the nearest town or village in its land.
+            var ward = !corrupted && IsMetallic(colour) && rng.Chance(0.55)
+                ? world.SettlementsNear(x, z, territory).Where(s => s.Kind is SettlementKind.City or SettlementKind.Town or SettlementKind.Hamlet && s.People > 0)
+                    .MinBy(s => s.DistanceTo(x, z))
+                : null;
+            return new Ancient($"ancient_{cx}_{cz}", name, title, colour, x, z, territory, corrupted, ward);
         }
         return null;
     }
@@ -93,6 +113,19 @@ public static class Dragons
 
     static string Name(Rng rng) => rng.Pick(First) + rng.Pick(Middle) + rng.Pick(Last);
 
+    /// <summary>A dragon's name, for a hatchling you raise.</summary>
+    public static string NameFor(Rng rng) => Name(rng);
+
+    static readonly string[] Corruption = ["the Rift-Touched", "the Hollow Crown", "Voidmaw", "the Blighted", "the Unmade"];
+
+    static readonly string[] Knights =
+    [
+        "Ser Aldra Vane", "Ser Corwin Hale", "Dame Isolde Brightmere", "Ser Tamsin Rook", "Dame Wren Ashby", "Ser Oric Stormhollow",
+        "Dame Maelis Corde", "Ser Bastian Fell", "Dame Sabine Thorne", "Ser Edric Gale", "Dame Rhosyn Vale", "Ser Kael Marrow",
+    ];
+
+    /// <summary>A dragon knight's name.</summary>
+    public static string KnightName(long seed) => Knights[(int)(Math.Abs(seed) % Knights.Length)];
     static readonly Dictionary<DragonColour, string[]> Titles = new()
     {
         [DragonColour.Red] = ["the Ember Tyrant", "Ashmaw", "the Burning Crown", "Kingsbane"],
@@ -133,7 +166,8 @@ public static class Dragons
             {
                 if (string.CompareOrdinal(a.Id, b.Id) >= 0 || a.DistanceTo(b.X, b.Z) > WarReach) continue;
                 var rng = Noise.Dice(world.Seed, 67, WorldGen.StableHash(a.Id + b.Id), season);
-                var odds = a.Metallic != b.Metallic ? 0.35 : 0.12; // old enmity, or a feud between kin
+                // The corrupted war on everything; otherwise old enmity, or a feud between kin.
+                var odds = a.Corrupted || b.Corrupted ? 0.5 : a.Metallic != b.Metallic ? 0.35 : 0.12;
                 if (!rng.Chance(odds)) continue;
                 var t = a.Territory / (a.Territory + b.Territory);
                 var (fx, fz) = (a.X + (b.X - a.X) * t, a.Z + (b.Z - a.Z) * t);
@@ -150,15 +184,59 @@ public static class Dragons
         var closeness = 1 - lord.DistanceTo(x, z) / lord.Territory; // thicker near the lair
         if (!rng.Chance(0.15 + 0.35 * closeness)) return null;
         var large = rng.Chance(0.25 + 0.3 * closeness);
-        return new Herd($"flight_{cx}_{cz}", lord.KindId, x, z, large ? 1 : 1 + rng.Next(2), 30,
-            Size: large ? DragonSize.Large : DragonSize.Normal, Faction: lord.Id);
+        var count = large ? 1 : 1 + rng.Next(2);
+        var young = rng.Chance(0.15) ? 1 : 0; // a wyrmling, now and then
+        // Some of a lord's kin have fallen to the Rift: they hunt everything, their own colour included.
+        if (!lord.Corrupted && rng.Chance(0.08))
+            return new Herd($"flight_{cx}_{cz}", CorruptedKindFor(lord.Colour), x, z, count, 30, large ? DragonSize.Large : DragonSize.Normal, Rift);
+        return new Herd($"flight_{cx}_{cz}", lord.KindId, x, z, count, 30,
+            Size: large ? DragonSize.Large : DragonSize.Normal, Faction: lord.Id, Allied: lord.Allied, Young: young);
     }
+
+    /// <summary>The faction of corrupted dragons that follow no ancient.</summary>
+    public const string Rift = "rift";
 
     /// <summary>Who keeps an ancient's lair: the ancient itself and two giants of its colour.</summary>
     public static IEnumerable<Herd> Lair(Ancient a)
     {
-        yield return new Herd($"lair_{a.Id}", a.KindId, a.X, a.Z, 1, 40, DragonSize.Ancient, a.Id, Name: a.FullName);
-        yield return new Herd($"lair_{a.Id}_guard", a.KindId, a.X + 45, a.Z + 30, 2, 50, DragonSize.Giant, a.Id);
+        yield return new Herd($"lair_{a.Id}", a.KindId, a.X, a.Z, 1, 40, DragonSize.Ancient, a.Id, Name: a.FullName, Allied: a.Allied);
+        yield return new Herd($"lair_{a.Id}_guard", a.KindId, a.X + 45, a.Z + 30, 2, 50, DragonSize.Giant, a.Id, Allied: a.Allied);
+    }
+
+    /// <summary>
+    /// The Dragonwatch over a pact ancient's town: dragon knights on its dragons, circling the town, with a
+    /// larger dragon and its knight standing guard.
+    /// </summary>
+    public static IEnumerable<Herd> Watch(Ancient a)
+    {
+        if (a.Ward is not { } town) yield break;
+        yield return new Herd($"watch_{a.Id}", a.KindId, town.X, town.Z, 2, Math.Max(60, town.Radius), DragonSize.Normal, a.Id, Allied: true, Riders: true);
+        yield return new Herd($"watch_{a.Id}_captain", a.KindId, town.X + town.Radius * 0.6, town.Z, 1, 20, DragonSize.Large, a.Id, Allied: true, Riders: true);
+    }
+
+    /// <summary>The ancients near a point that keep a pact with people.</summary>
+    public static IEnumerable<Ancient> PactsNear(WorldGen world, double x, double z, double radius) =>
+        Near(world, x, z, radius + 3000).Where(a => a.Ward is { } w && w.DistanceTo(x, z) <= radius);
+
+    /// <summary>
+    /// Raids on the pact towns this season: a band of chromatic or corrupted dragons comes for the town, and its
+    /// dragon knights meet them. The raiders are the kin of the nearest hostile ancient, or Rift-corrupted drakes.
+    /// </summary>
+    public static IEnumerable<Herd> RaidsNear(WorldGen world, DateTime utc, double x, double z, double radius)
+    {
+        var season = SeasonOf(utc);
+        foreach (var a in PactsNear(world, x, z, radius))
+        {
+            var town = a.Ward!;
+            var rng = Noise.Dice(world.Seed, 71, WorldGen.StableHash(a.Id), season);
+            if (!rng.Chance(0.4)) continue;
+            var foe = Near(world, a.X, a.Z, WarReach).Where(b => b.Corrupted || !b.Metallic).MinBy(b => b.DistanceTo(a.X, a.Z));
+            var (kind, faction) = foe is not null && rng.Chance(0.7) ? (foe.KindId, foe.Id) : (CorruptedKindFor(rng.Pick(Enum.GetValues<DragonColour>())), Rift);
+            var angle = rng.NextDouble() * Math.Tau;
+            var (rx, rz) = (town.X + Math.Cos(angle) * (town.Radius + 120), town.Z + Math.Sin(angle) * (town.Radius + 120));
+            yield return new Herd($"raid_{season}_{a.Id}", kind, rx, rz, 3, 30, DragonSize.Normal, faction, a.Id);
+            yield return new Herd($"raid_{season}_{a.Id}_large", kind, rx + 25, rz, 1, 30, DragonSize.Large, faction, a.Id);
+        }
     }
 
     /// <summary>The two warbands at a war's front: each ancient's smaller dragons, and sometimes the ancients.</summary>

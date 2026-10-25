@@ -8,10 +8,13 @@ namespace Tristinwold.World;
 /// </summary>
 /// <remarks>
 /// Dragons also carry their size, the ancient they follow (<paramref name="Faction"/>), the ancient they're at
-/// war with (<paramref name="Foe"/>), and for an ancient, its name.
+/// war with (<paramref name="Foe"/>), and for an ancient, its name. A dragon herd may be <paramref name="Allied"/>
+/// with people (a pact ancient's kin), and carry dragon knights (<paramref name="Riders"/>).
+/// <paramref name="Young"/> younglings go with the grown ones: find one alone and it can be tamed.
 /// </remarks>
 public sealed record Herd(string Id, string KindId, double X, double Z, int Count, double Roam,
-    DragonSize Size = DragonSize.Normal, string? Faction = null, string? Foe = null, string? Name = null)
+    DragonSize Size = DragonSize.Normal, string? Faction = null, string? Foe = null, string? Name = null,
+    bool Allied = false, bool Riders = false, int Young = 0)
 {
     public double DistanceTo(double x, double z) => Math.Sqrt((X - x) * (X - x) + (Z - z) * (Z - z));
 }
@@ -92,6 +95,8 @@ public static class Wildlife
             _ => 1, // bears and trolls keep to themselves
         };
         var roam = kind switch { "deer" => 22, "fox" => 18, "wolf" or "ice_wolf" => 16, "mudcrab" => 6, _ => 10 };
-        return new Herd($"wild_{cx}_{cz}", kind, x, z, count, roam);
+        // About a third of herds have young with them; a lone bear or troll sometimes has a cub.
+        var young = rng.Chance(count > 1 ? 0.4 : 0.25) ? 1 + (count > 3 && rng.Chance(0.3) ? 1 : 0) : 0;
+        return new Herd($"wild_{cx}_{cz}", kind, x, z, count, roam, Young: young);
     }
 }

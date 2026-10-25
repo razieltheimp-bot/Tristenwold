@@ -75,25 +75,36 @@ public static class City
     public static Godot.Environment Sky { get; private set; } = null!;
     public static DirectionalLight3D Sun { get; private set; } = null!;
 
+    const string SkyPhoto = "res://assets/polyhaven/sky/sky.hdr";
+
     public static void Build(Node3D root, float fog = 0.0035f)
     {
         var rng = new Rng(1337);
 
-        // A clear sky, warm sun, and haze that hides where the streamed land ends.
+        // A photographed sky (Poly Haven, CC0): real clouds, and the light they give. The land, the water and every
+        // shiny thing are lit and reflect from it, and the sun shines from where it stands in the photograph (it was
+        // shot at 48 degrees up, as high as our sun; the panorama is turned to put it in the same place).
+        // Haze hides where the streamed land ends.
+        var photo = ResourceLoader.Exists(SkyPhoto) ? GD.Load<Texture2D>(SkyPhoto) : null;
         var env = new Godot.Environment
         {
             BackgroundMode = Godot.Environment.BGMode.Sky,
             Sky = new Sky
             {
-                SkyMaterial = new ProceduralSkyMaterial
-                {
-                    SkyTopColor = new Color("#2f63a8"), SkyHorizonColor = new Color("#b4cde2"), SkyCurve = 0.12f,
-                    GroundBottomColor = new Color("#4a5a3e"), GroundHorizonColor = new Color("#b4cde2"), SunAngleMax = 25,
-                },
+                SkyMaterial = photo is not null
+                    ? new PanoramaSkyMaterial { Panorama = photo, EnergyMultiplier = 1.0f }
+                    : new ProceduralSkyMaterial
+                    {
+                        SkyTopColor = new Color("#2f63a8"), SkyHorizonColor = new Color("#b4cde2"), SkyCurve = 0.12f,
+                        GroundBottomColor = new Color("#4a5a3e"), GroundHorizonColor = new Color("#b4cde2"), SunAngleMax = 25,
+                    },
+                RadianceSize = Godot.Sky.RadianceSizeEnum.Size256,
             },
-            AmbientLightSource = Godot.Environment.AmbientSource.Color,
+            SkyRotation = new Vector3(0, Mathf.Pi, 0),
+            AmbientLightSource = photo is not null ? Godot.Environment.AmbientSource.Sky : Godot.Environment.AmbientSource.Color,
             AmbientLightColor = new Color("#9aa4b4"),
-            AmbientLightEnergy = 0.55f,
+            AmbientLightEnergy = photo is not null ? 0.75f : 0.55f,
+            ReflectedLightSource = Godot.Environment.ReflectionSource.Sky,
             FogEnabled = true,
             FogDensity = fog,
             FogLightColor = new Color("#a9c2da"),
@@ -102,7 +113,7 @@ public static class City
             TonemapMode = Godot.Environment.ToneMapper.Filmic,
         };
         root.AddChild(new WorldEnvironment { Environment = env });
-        root.AddChild(Sun = new DirectionalLight3D { RotationDegrees = new Vector3(-48, -35, 0), ShadowEnabled = true, LightEnergy = 1.25f, LightColor = new Color("#fff0d6") });
+        root.AddChild(Sun = new DirectionalLight3D { RotationDegrees = new Vector3(-48, -35, 0), ShadowEnabled = true, LightEnergy = photo is not null ? 1.6f : 1.25f, LightColor = new Color("#fff2dc") });
         Sky = env;
 
         // The land and the harbor come from the world generator (see Terrain).

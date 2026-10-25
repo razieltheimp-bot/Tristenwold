@@ -77,7 +77,7 @@ public sealed class WorldGen
 
     readonly ConcurrentDictionary<(long, long), Settlement?> _cities = new();
     readonly ConcurrentDictionary<(long, long), Settlement?> _sites = new();
-    readonly ConcurrentDictionary<string, IReadOnlyList<Npc>> _people = new();
+    readonly ConcurrentDictionary<string, IReadOnlyList<Npc>> _people = new(), _youths = new();
     readonly ConcurrentDictionary<string, Quest?> _quests = new();
 
     static readonly Dictionary<string, double> CitySizes = new()
@@ -231,6 +231,9 @@ public sealed class WorldGen
 
     /// <summary>The people of a settlement: always the same people, for every company.</summary>
     public IReadOnlyList<Npc> PeopleOf(Settlement s) => _people.GetOrAdd(s.Id, _ => World.People.Generate(this, s));
+
+    /// <summary>The young people of a settlement (not counted in <see cref="Settlement.People"/>).</summary>
+    public IReadOnlyList<Npc> YouthsOf(Settlement s) => _youths.GetOrAdd(s.Id, _ => World.People.Youths(this, s));
 
     /// <summary>The work this person has to offer, if any.</summary>
     public Quest? QuestOf(Npc npc) => _quests.GetOrAdd(npc.Id, _ => Quests.For(this, npc));

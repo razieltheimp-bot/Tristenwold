@@ -100,7 +100,7 @@ public partial class Main : Node3D
         var camera = new Camera3D { Position = new Vector3(0.35f, 1.25f, 5.2f), Fov = 30 };
         AddChild(camera);
         camera.LookAt(new Vector3(0, 1.0f, 0), Vector3.Up);
-        foreach (var look in new[] { "Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded" })
+        foreach (var look in Classes.All.Select(d => d.Look))
         {
             var figure = Figure.Create(look);
             figure.RotationDegrees = new Vector3(0, 155, 0); // three-quarter view
@@ -126,14 +126,19 @@ public partial class Main : Node3D
         string[] dragons = ["dragon_red", "dragon_blue", "dragon_green", "dragon_black", "dragon_white", "dragon_gold", "dragon_silver", "dragon_bronze", "dragon_copper", "dragon_brass"];
         if (_args.ContainsKey("hero")) dragons = ["dragon_red", "dragon_white", "dragon_gold"];
         if (_args.ContainsKey("frost")) dragons = ["dragon_white", "dragon_white", "dragon_white"]; // normal, large and giant
+        if (_args.ContainsKey("corrupt")) dragons = ["dragon_red_corrupt", "dragon_white_corrupt", "dragon_gold_corrupt", "dragon_green_corrupt", "dragon_black_corrupt"];
+        if (_args.ContainsKey("riders")) dragons = ["rider:dragon_gold", "rider:dragon_silver", "dragon_red_corrupt", "rider:dragon_bronze"];
         string[] looks = _args.ContainsKey("dragons") ? dragons : _args.ContainsKey("creatures")
-            ? ["Knight", "skeever", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
-            : ["Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded", "guard", "townsfolk", "draugr"];
+            ? ["Paladin", "skeever", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
+            : _args.ContainsKey("young") ? ["Paladin", "wolf", "bear", "deer", "fox", "boar", "dragon_gold", "squire", "apprentice", "youth"]
+            : [.. Classes.All.Select(d => d.Look)];
         var figures = new List<Body>();
         for (var i = 0; i < looks.Length; i++)
         {
             var figure = Body.For(looks[i]);
-            var spacing = _args.ContainsKey("hero") ? 11f : _args.ContainsKey("dragons") ? 9f : 1.3f;
+            // Younglings and the young who follow a hero, beside a grown hero for scale.
+            if (_args.ContainsKey("young") && i > 0 && i < 7) figure.Scale = Vector3.One * (looks[i].StartsWith("dragon") ? 0.22f : 0.45f);
+            var spacing = _args.ContainsKey("hero") ? 11f : _args.ContainsKey("dragons") ? 9f : _args.ContainsKey("young") ? 1.15f : 1.3f;
             figure.Position = new Vector3((i - (looks.Length - 1) / 2f) * spacing, 0, _args.ContainsKey("dragons") ? -(i % 2) * 7 : 0);
             figure.RotationDegrees = new Vector3(0, 160, 0);
             if (_args.ContainsKey("frost"))
@@ -243,7 +248,8 @@ public partial class Main : Node3D
 
         _player = new Player
         {
-            Company = choice.Character.Name, Outfit = Figure.Looks.ContainsKey(choice.Character.Look) ? choice.Character.Look : "Knight", Position = City.PlayerStart,
+            Company = choice.Character.Name, Outfit = choice.Character.Look, Position = City.PlayerStart,
+            Hero = new Hero { Discipline = Classes.For(choice.Character.Look).Id },
             Element = Enum.TryParse<DamageKind>(choice.Character.Element, out var element) ? element : DamageKind.Fire,
         };
         AddChild(_player);
@@ -253,13 +259,7 @@ public partial class Main : Node3D
         {
             _tracker.Engaged(enemy.Id, enemy.Kind.Id, enemy.Kind.Name, enemy.Stats.MaxHealth, ToNumerics(enemy.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, enemy.NemesisId);
             _tracker.Hit(enemy.Id, kind, _player.Company, _clock);
-            if (!hit.Killed) return;
-            _tracker.Died(enemy.Id, _player.Company, _clock);
-            if (enemy.SiteId is { } site)
-            {
-                foreach (var u in _journal.Killed(site).ToList()) Apply(u);
-                _places.KilledAt(site);
-            }
+            if (hit.Killed) _tracker.Died(enemy.Id, _player.Company, _clock);
         };
         _hud.Company = _player.Company;
 
@@ -270,6 +270,9 @@ public partial class Main : Node3D
         AddChild(_places);
         _wilds = new Wilds(this, _world, _terrain);
         AddChild(_wilds);
+        _places.Gone = id => _bonds.Any(b => b.Id == id);
+        AddGuildMasters();
+        SetUpCompany();
         _hud.AttachMap(_world, _explored, () => _player.GlobalPosition, () => -_player.GlobalTransform.Basis.Z, QuestGoals);
 
         _tracker = new EncounterTracker(
@@ -286,7 +289,7 @@ public partial class Main : Node3D
         Connect();
         if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
         else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon")));
-        else _hud.Toast("Tristinwold. M: map   J: journal   E: talk   F10: the shared world");
+        else _hud.Toast($"Tristinwold. You are a {_player.Class.Name}. M: map   J: journal   E: talk   K: skills   P: party   F10: the shared world");
     }
 
     // ---- the shared world ------------------------------------------------------------------------
@@ -330,7 +333,13 @@ public partial class Main : Node3D
             foreach (var e in InputMap.ActionGetEvents(action).OfType<InputEventMouseButton>()) InputMap.ActionEraseEvent(action, e);
         _hud.TouchEnabled = true;
         _hud.Touch.Look = by => _player.Look(by);
-        _hud.Touch.LabelFor = action => action == "cycle_element" ? _player.Element.ToString() : null;
+        _hud.Touch.LabelFor = action => action switch
+        {
+            "cycle_element" => _player.Class.Elemental ? _player.Element.ToString() : _player.Class.Utility.Name,
+            "spell" => _player.Class.Signature.Name,
+            "attack" => _player.Mount is not null ? "Breath" : _player.Class.Primary.Name,
+            _ => null,
+        };
         _hud.Touch.Lit = action => action switch
         {
             "limit" => _player.Stats.LimitReady,
@@ -416,8 +425,9 @@ public partial class Main : Node3D
         _tracker.Tick(_clock, ToNumerics(_player.GlobalPosition),
             id => FindEnemy(id) is { FightingCompany: true } e && e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 40,
             id => FindEnemy(id) is { } e ? ToNumerics(e.GlobalPosition) : null);
-        _player.InFight = _tracker.InFight;
+        _player.InFight = _tracker.InFight || _player.Attackers().Any();
         _player.Frozen = _hud.Talking || _hud.MapOpen;
+        TendCompany(delta);
 
         if (_clock - _lastRespawnCheck > 30) { _lastRespawnCheck = _clock; RespawnEmptyLairs(); }
         if (_clock - _lastSave > 20) { _lastSave = _clock; Save(); }
@@ -432,14 +442,15 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("menu")) _hud.ToggleWindow();
         if (Input.IsActionJustPressed("map")) _hud.ToggleMap();
         if (Input.IsActionJustPressed("journal")) { _hud.ShowJournal(_journal); _hud.OpenJournal(); }
-        if (Input.IsActionJustPressed("rest") && !_tracker.InFight)
-        {
-            _client?.Send(new Rested());
-            _hud.Toast("You rest. The world moves on without you.");
-        }
+        if (Input.IsActionJustPressed("party") && !_hud.Talking) ShowParty();
+        if (Input.IsActionJustPressed("skills") && !_hud.Talking) ShowSkills();
+        if (Input.IsActionJustPressed("ride")) ToggleRide();
+        if (Input.IsActionJustPressed("rest") && !_tracker.InFight) Rest();
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _area, TouchMode ? status : status + "    M: map   J: journal   E: talk   F10: shared world   T: rest   Q: element   R: limit");
-        _hud.Track(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})"));
+        _hud.Update(_player, _area, TouchMode ? status : status + $"    M: map   J: journal   E: talk   K: skills   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(Dragon is { Rideable: true } ? "   V: ride" : "")}");
+        var saga = _saga.Objective(Dragon) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
+        _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
+        _hud.Party(PartyLines());
     }
 
     // ---- exploring ----------------------------------------------------------------------------
@@ -456,7 +467,17 @@ public partial class Main : Node3D
         }
     }
 
-    IEnumerable<(double X, double Z)> QuestGoals() => _journal.Open.Select(e => e.Goal);
+    IEnumerable<(double X, double Z)> QuestGoals() => _journal.Open.Select(e => e.Goal).Concat(_saga.Goal(Dragon) is { } g ? [g] : []);
+
+    /// <summary>Resting: the world moves on, the wounded mend, and an egg kept warm by the fire hatches.</summary>
+    void Rest()
+    {
+        _client?.Send(new Rested());
+        foreach (var c in CompanionBodies) { c.Revive(); c.Stats.Heal(c.Stats.MaxHealth); c.RefreshPlate(); }
+        _hud.Toast("You rest. The world moves on without you.");
+        if (_saga.Warm(60, resting: true)) Hatch();
+        else if (_saga.Stage == SagaStage.CarryEgg) _hud.Toast($"The egg is warmer ({_saga.Warmth:P0}).");
+    }
 
     static string Direction(Vector3 from, (double X, double Z) to)
     {
@@ -475,8 +496,9 @@ public partial class Main : Node3D
         var pos = _player.GlobalPosition;
         var person = _places.People.Concat(_townsfolk).Where(p => p.GlobalPosition.DistanceTo(pos) < 3.5f).MinBy(p => p.GlobalPosition.DistanceTo(pos));
         if (person is not null) return ($"talk to {person.Npc.Name}", () => Talk(person));
-        var item = _places.Pickups.Where(p => p.GlobalPosition.DistanceTo(pos) < 3).FirstOrDefault();
+        var item = _places.Pickups.Append(_nest).OfType<Pickup>().Where(p => IsInstanceValid(p) && p.GlobalPosition.DistanceTo(pos) < 3).FirstOrDefault();
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
+        if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(_player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
         return null;
     }
 
@@ -510,12 +532,12 @@ public partial class Main : Node3D
             (_, { Stage: QuestStage.Done }) => ("Any work for me?", () => Say(person, "You've done enough for me already. Thank you.")),
             _ => ("About the job...", () => Say(person, $"Still waiting. {entry.Objective}.")),
         };
-        _hud.Talk(Who(npc), text,
-            ("Who are you?", () => Say(person, npc.Backstory)),
-            ("What do you care about?", () => Say(person, npc.InterestsSpeech)),
-            work,
-            ("Heard any news?", () => Say(person, Rumour(npc))),
-            ("Farewell.", _hud.EndTalk));
+        List<(string, Action)> options = [("Who are you?", () => Say(person, npc.Backstory)), ("What do you care about?", () => Say(person, npc.InterestsSpeech))];
+        if (!People.IsYouth(npc)) options.Add(work);
+        options.AddRange(MoreTalk(person));
+        options.Add(("Heard any news?", () => Say(person, Rumour(npc))));
+        options.Add(("Farewell.", _hud.EndTalk));
+        _hud.Talk(Who(npc), text, [.. options]);
     }
 
     static string Who(Npc npc) => $"{npc.Name}, {npc.Occupation}{(npc.Age > 0 ? $" ({npc.Age})" : "")}";
@@ -556,7 +578,8 @@ public partial class Main : Node3D
     void Apply(QuestUpdate u)
     {
         _hud.Toast(u.Text);
-        if (u.Reward > 0) _player.Septims += u.Reward;
+        if (u.Reward > 0) _player.Septims += _player.Class.Id == "Thief" ? (int)Math.Round(u.Reward * (1 + _player.Class.Passive.Power * _player.Hero.Power("light_fingers"))) : u.Reward;
+        if (u.Stage == QuestStage.Done) GainXp(40 + u.Quest.Reward / 2);
         if (u.Stage == QuestStage.Done) _hud.Toast($"Quest complete: {u.Quest.Title}.");
         _hud.ShowJournal(_journal);
         Save();
@@ -564,8 +587,20 @@ public partial class Main : Node3D
 
     public void PickUp(Pickup item)
     {
-        if (_journal.PickedUp(item.QuestId) is { } u) Apply(u);
+        if (item.QuestId == "saga:egg")
+        {
+            if (Enemies().Any(e => Dragons.IsCorrupted(e.Kind.Id) && e.State != EnemyState.Dead && e.GlobalPosition.DistanceTo(item.GlobalPosition) < 40))
+            {
+                _hud.Toast("Not with the corrupted drakes still at the nest.");
+                return;
+            }
+            _saga.TakeEgg();
+            _hud.Toast("You lift a dragon egg from the nest. It's heavy, and warm, and something inside it moves. Keep it warm until it hatches: rest (T) when you can.", 12);
+            Save();
+        }
+        else if (_journal.PickedUp(item.QuestId) is { } u) Apply(u);
         item.QueueFree();
+        if (item == _nest) _nest = null;
     }
 
     // ---- saving -------------------------------------------------------------------------------
@@ -587,6 +622,10 @@ public partial class Main : Node3D
             {
                 save.Restore(_explored, _journal);
                 _player.Septims = save.Septims;
+                _player.Meat = save.Meat;
+                if (save.Hero is { } hero) _player.Become(hero);
+                _bonds.AddRange(save.Companions);
+                _saga = save.Saga ?? new DragonSaga();
                 return;
             }
         }
@@ -600,7 +639,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public void Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)
         {
@@ -694,12 +733,14 @@ public partial class Main : Node3D
         Mouse("attack", MouseButton.Left); Mouse("spell", MouseButton.Right);
         Key("limit", Godot.Key.R); Key("cycle_element", Godot.Key.Q); Key("menu", Godot.Key.F10); Key("rest", Godot.Key.T);
         Key("interact", Godot.Key.E); Key("map", Godot.Key.M); Key("journal", Godot.Key.J);
+        Key("party", Godot.Key.P); Key("skills", Godot.Key.K); Key("ride", Godot.Key.V); Key("descend", Godot.Key.C);
     }
 
     public override void _ExitTree()
     {
         if (_player is null) return; // still on the start screen
         Save();
+        TearDownCompany();
         _client?.Dispose();
     }
 }

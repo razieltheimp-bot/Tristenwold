@@ -10,7 +10,7 @@ public partial class Hud : CanvasLayer
     readonly List<(string Text, double Until)> _toasts = [];
     readonly List<string> _chronicle = [];
     ProgressBar _health = new(), _magicka = new(), _stamina = new(), _limit = new();
-    Label _area = new(), _toastLabel = new(), _status = new(), _septims = new(), _center = new();
+    Label _area = new(), _toastLabel = new(), _status = new(), _septims = new(), _center = new(), _party = new();
     PanelContainer _window = new();
     VBoxContainer _board = new(), _companies = new(), _nemeses = new(), _journal = new();
     Control _root = new();
@@ -47,6 +47,7 @@ public partial class Hud : CanvasLayer
         root.AddChild(_status = new Label { Position = new Vector2(24, 166), Modulate = new Color(1, 1, 1, 0.6f) });
         root.AddChild(_toastLabel = new Label { AnchorLeft = 1, AnchorRight = 1, OffsetLeft = -520, OffsetTop = 250, OffsetRight = -24, AutowrapMode = TextServer.AutowrapMode.Word, HorizontalAlignment = HorizontalAlignment.Right });
         root.AddChild(_tracker = new Label { Position = new Vector2(24, 200), Modulate = new Color("#ffd27a"), CustomMinimumSize = new Vector2(480, 0), AutowrapMode = TextServer.AutowrapMode.Word });
+        root.AddChild(_party = new Label { AnchorTop = 1, AnchorBottom = 1, OffsetLeft = 24, OffsetTop = -190, Modulate = new Color("#a8e0a0"), CustomMinimumSize = new Vector2(320, 0) });
         root.AddChild(_center = new Label { AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0.68f, OffsetLeft = -300, OffsetRight = 300, HorizontalAlignment = HorizontalAlignment.Center });
 
         _window = new PanelContainer { AnchorLeft = 0.1f, AnchorRight = 0.9f, AnchorTop = 0.08f, AnchorBottom = 0.92f, Visible = false };
@@ -230,6 +231,9 @@ public partial class Hud : CanvasLayer
         Log(text);
     }
 
+    /// <summary>The last thing the chronicle heard (for the self-test).</summary>
+    public string LastLine => _chronicle.Count > 0 ? _chronicle[^1] : "";
+
     public void Log(string text)
     {
         _chronicle.Add(text);
@@ -239,13 +243,17 @@ public partial class Hud : CanvasLayer
 
     public void Center(string text) => _center.Text = text;
 
+    /// <summary>The companions following, one line each.</summary>
+    public void Party(IEnumerable<string> lines) => _party.Text = string.Join("\n", lines);
+
     public void Update(Player p, string area, string status)
     {
         _health.Value = p.Stats.Health / p.Stats.MaxHealth * 100;
         _magicka.Value = p.Stats.Magicka / p.Stats.MaxMagicka * 100;
         _stamina.Value = p.Stats.Stamina / p.Stats.MaxStamina * 100;
         _limit.Value = p.Stats.Limit;
-        _septims.Text = $"{p.Septims} septims    spell: {p.Element}{(p.Stats.LimitReady ? "    LIMIT READY (R)" : "")}";
+        _septims.Text = $"Level {p.Hero.Level} {p.Class.Name}{(p.Hero.Points > 0 ? $" ({p.Hero.Points} to spend, K)" : "")}    {p.Septims} septims    {p.Meat} meat"
+            + (p.Class.Elemental ? $"    {p.Element}" : "") + (p.Stats.LimitReady ? "    LIMIT READY (R)" : "");
         _area.Text = area;
         _status.Text = status;
         var now = Time.GetTicksMsec() / 1000.0;

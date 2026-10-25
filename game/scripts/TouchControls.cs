@@ -31,6 +31,10 @@ public partial class TouchControls : Control
         new("journal", "Quests", s => new(s.X / 2 - 55, 34), 28),
         new("menu", "World", s => new(s.X / 2 + 55, 34), 28),
         new("rest", "Rest", s => new(s.X / 2 + 165, 34), 28),
+        new("party", "Party", s => new(s.X / 2 + 275, 34), 28),
+        new("skills", "Skills", s => new(s.X / 2 - 275, 34), 28),
+        new("ride", "Ride", s => new(s.X - 395, s.Y - 300), 32),
+        new("descend", "Dive", s => new(s.X - 105, s.Y - 375), 30),
     ];
 
     // Which finger is doing what.

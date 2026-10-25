@@ -19,9 +19,11 @@ public partial class Person : StaticBody3D
     {
         if (captive) return "captive";
         if (npc.Ashborn) return "ashborn";
+        if (People.IsYouth(npc)) return "youth";
         var job = npc.Occupation.ToLowerInvariant();
         bool Any(params string[] words) => words.Any(job.Contains);
-        return Any("guard", "sellsword", "lookout") ? "guard"
+        return Any("iron circle") ? "warmaster" : Any("velvet knives") ? "velvet" : Any("order of the eyrie") ? "aldric"
+            : Any("guard", "sellsword", "lookout") ? "guard"
             : Any("priest", "shrine", "pilgrim", "midwife", "healer", "archivist") ? "priest"
             : Any("scholar", "alchemist", "scribe", "herbalist", "assayer") ? "scholar"
             : Any("hunter", "trapper", "tanner") ? "hunter"
@@ -60,8 +62,30 @@ public partial class Pickup : Node3D
     public required string QuestId { get; init; }
     public required string Item { get; init; }
 
+    /// <summary>A dragon egg of this colour in a nest of branches, rather than a chest.</summary>
+    public string? Egg { get; init; }
+
     public override void _Ready()
     {
+        if (Egg is { } shell)
+        {
+            var sticks = new StandardMaterial3D { AlbedoColor = new Color("#5a4630"), Roughness = 1 };
+            for (var i = 0; i < 14; i++)
+                AddChild(new MeshInstance3D
+                {
+                    Mesh = new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.06f, Height = 1.6f }, MaterialOverride = sticks,
+                    Position = new Vector3(Mathf.Cos(i * 0.9f) * 0.75f, 0.2f, Mathf.Sin(i * 0.9f) * 0.75f),
+                    RotationDegrees = new Vector3(80, i * 51, 0),
+                });
+            AddChild(new MeshInstance3D
+            {
+                Mesh = new SphereMesh { Radius = 0.32f, Height = 0.9f }, Position = new Vector3(0, 0.45f, 0),
+                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(shell), Metallic = 0.6f, Roughness = 0.35f, RimEnabled = true, Rim = 0.5f },
+            });
+            AddChild(new OmniLight3D { Position = new Vector3(0, 1.2f, 0), LightColor = new Color(shell).Lerp(Colors.White, 0.5f), OmniRange = 5, LightEnergy = 1.2f });
+            AddChild(new Label3D { Text = Item, Position = new Vector3(0, 1.5f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 28, OutlineSize = 8, PixelSize = 0.008f, Modulate = new Color("#ffd27a") });
+            return;
+        }
         if (Models.Scene("dungeon/chest_gold.glb")?.Instantiate() is Node3D chest)
         {
             chest.Scale = Vector3.One * 0.55f;
@@ -94,6 +118,9 @@ public partial class Places(Main main, WorldGen world) : Node3D
     readonly HashSet<string> _cleared = []; // lairs emptied this session stay empty
 
     public IEnumerable<Person> People => _built.Values.SelectMany(b => b.People).Where(IsInstanceValid);
+
+    /// <summary>Whether someone has left their home (a youth who became a squire or apprentice).</summary>
+    public Func<string, bool>? Gone { get; set; }
     public IEnumerable<Pickup> Pickups => _built.Values.SelectMany(b => b.QuestThings.Values).OfType<Pickup>().Where(IsInstanceValid);
     public bool IsBuilt(string id) => _built.ContainsKey(id);
 
@@ -176,6 +203,9 @@ public partial class Places(Main main, WorldGen world) : Node3D
         }
 
         foreach (var npc in world.PeopleOf(s))
+            b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z) }));
+        // The young, unless one has already left home to follow the company.
+        foreach (var npc in world.YouthsOf(s).Where(y => Gone?.Invoke(y.Id) != true))
             b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z) }));
 
         if (s.Lair is { } lair && !_cleared.Contains(s.Id))

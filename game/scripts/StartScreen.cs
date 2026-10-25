@@ -1,5 +1,6 @@
 using Godot;
 using System.Text.Json;
+using Tristinwold.Gameplay;
 using Tristinwold.Shared;
 
 namespace Tristinwold.Game;
@@ -20,16 +21,10 @@ public partial class StartScreen : CanvasLayer
 
     public event Action<StartChoice>? Play;
 
-    /// <summary>The classes a character can be, each with its portrait.</summary>
-    static readonly (string Look, string Label, string Portrait)[] Classes =
-    [
-        ("Knight", "Knight", "knight"), ("Barbarian", "Barbarian", "barbarian"), ("Mage", "Mage", "mage"),
-        ("Rogue", "Rogue", "rogue"), ("Rogue_Hooded", "Hooded Rogue", "rogue_hooded"),
-    ];
-
+    /// <summary>A portrait for each class (and the looks of characters made before there were nine).</summary>
     static Texture2D? Portrait(string look) =>
-        Classes.FirstOrDefault(c => c.Look == look) is { Portrait: { } p } && ResourceLoader.Exists($"res://assets/kaykit/portraits/{p}.png")
-            ? GD.Load<Texture2D>($"res://assets/kaykit/portraits/{p}.png") : null;
+        ResourceLoader.Exists($"res://assets/kaykit/portraits/{look.ToLowerInvariant()}.png")
+            ? GD.Load<Texture2D>($"res://assets/kaykit/portraits/{look.ToLowerInvariant()}.png") : null;
     static readonly string[] Elements = ["Fire", "Frost", "Shock"];
 
     readonly LineEdit _server = Field("Server: e.g. https://word-word-word.trycloudflare.com or 192.168.1.20:7777");
@@ -42,9 +37,10 @@ public partial class StartScreen : CanvasLayer
     readonly Label _status = new() { AutowrapMode = TextServer.AutowrapMode.Word, Modulate = new Color("#ffb08a") };
     readonly Label _who = new() { Modulate = new Color("#e8dcc4") };
     readonly VBoxContainer _login = new(), _characters = new(), _list = new();
-    readonly HBoxContainer _swatches = new();
+    readonly VBoxContainer _swatches = new();
+    readonly Label _about = new() { AutowrapMode = TextServer.AutowrapMode.Word, Modulate = new Color("#e8dcc4") };
     Dictionary<string, string> _settings = [];
-    string _look = "Knight";
+    string _look = "Paladin";
     string? _token;
     bool _offline;
     List<CharacterSheet> _sheets = [];
@@ -98,19 +94,29 @@ public partial class StartScreen : CanvasLayer
         _characters.AddChild(_list);
         _characters.AddChild(new Label { Text = "A new character", Modulate = new Color("#ffd27a") });
         _characters.AddChild(_newName);
-        // Pick a class: a portrait for each.
-        foreach (var (look, label, _) in Classes)
+        // Pick a class: three callings, three classes each, a portrait for each.
+        var picks = new List<Button>();
+        foreach (var calling in Enum.GetValues<Calling>())
         {
-            var pick = new Button
+            var row = new HBoxContainer();
+            row.AddChild(new Label { Text = calling + "s", CustomMinimumSize = new Vector2(96, 0), Modulate = new Color("#ffd27a"), VerticalAlignment = VerticalAlignment.Center });
+            foreach (var d in Classes.Of(calling))
             {
-                CustomMinimumSize = new Vector2(124, 150), ToggleMode = true, ButtonPressed = look == _look, Text = label,
-                Icon = Portrait(look), IconAlignment = HorizontalAlignment.Center, VerticalIconAlignment = VerticalAlignment.Top, ExpandIcon = true,
-            };
-            pick.AddThemeStyleboxOverride("pressed", new StyleBoxFlat { BgColor = new Color("#3a3226"), BorderColor = new Color("#ffd27a"), BorderWidthBottom = 3, BorderWidthTop = 3, BorderWidthLeft = 3, BorderWidthRight = 3 });
-            pick.Pressed += () => { _look = look; foreach (var b in _swatches.GetChildren().OfType<Button>()) b.ButtonPressed = b == pick; };
-            _swatches.AddChild(pick);
+                var pick = new Button
+                {
+                    CustomMinimumSize = new Vector2(176, 150), ToggleMode = true, ButtonPressed = d.Look == _look, Text = d.Name,
+                    Icon = Portrait(d.Look), IconAlignment = HorizontalAlignment.Center, VerticalIconAlignment = VerticalAlignment.Top, ExpandIcon = true,
+                };
+                pick.AddThemeStyleboxOverride("pressed", new StyleBoxFlat { BgColor = new Color("#3a3226"), BorderColor = new Color("#ffd27a"), BorderWidthBottom = 3, BorderWidthTop = 3, BorderWidthLeft = 3, BorderWidthRight = 3 });
+                pick.Pressed += () => { _look = d.Look; foreach (var b in picks) b.ButtonPressed = b == pick; Describe(d); };
+                picks.Add(pick);
+                row.AddChild(pick);
+            }
+            _swatches.AddChild(row);
         }
         _characters.AddChild(_swatches);
+        _characters.AddChild(_about);
+        Describe(Classes.Get(_look));
         var make = new HBoxContainer();
         make.AddChild(new Label { Text = "Starting spell", CustomMinimumSize = new Vector2(150, 0) });
         foreach (var e in Elements) _element.AddItem(e);
@@ -121,6 +127,13 @@ public partial class StartScreen : CanvasLayer
         page.AddChild(_status);
         LoadSettings();
     }
+
+    /// <summary>What a class is like, and how it fights.</summary>
+    void Describe(Discipline d) => _about.Text =
+        $"{d.Name}: {d.Text}\n  Left: {d.Primary.Name}.  Right: {d.Signature.Name}.  Q: {d.Utility.Name}.  R: {d.Limit.Name}.  Always: {d.Passive.Name}.";
+
+    /// <summary>Picks a class on the character page (for screenshots).</summary>
+    public void PickClass(string look) { _look = look; Describe(Classes.Get(look)); }
 
     static Button MakeButton(string text, Action pressed, bool expand = false)
     {
@@ -231,12 +244,12 @@ public partial class StartScreen : CanvasLayer
 
     public IReadOnlyList<CharacterSheet> Characters => _sheets;
 
-    static string ClassName(string look) => Classes.FirstOrDefault(c => c.Look == look).Label ?? "Knight";
+    static string ClassName(string look) => Classes.For(look).Name;
 
     /// <summary>Shows the characters page with an example character (for a screenshot of the layout).</summary>
     public Task PlayAloneForSnapshot()
     {
-        _sheets = [new("Bram Ashmane", "Barbarian", "Frost", DateTime.UtcNow, 212, "Hawkwake Mine"), new("Ilka", "Mage", "Shock", DateTime.UtcNow)];
+        _sheets = [new("Bram Ashmane", "Barbarian", "Frost", DateTime.UtcNow, 212, "Hawkwake Mine"), new("Ilka", "Warlock", "Shock", DateTime.UtcNow)];
         _offline = false;
         ShowCharacters(offline: false);
         _who.Text = "Joe, on https://seasonal-deck-organisms-sf.trycloudflare.com";

@@ -2,6 +2,7 @@ using Godot;
 using Tristinwold.Gameplay;
 using Tristinwold.Nemesis;
 using Tristinwold.World;
+using Side = Tristinwold.World.Side;
 
 namespace Tristinwold.Game;
 
@@ -26,6 +27,14 @@ public abstract partial class Fighter : CharacterBody3D
     }
 
     CollisionShape3D _shape = null!;
+
+    /// <summary>Changes how it looks (a hero joining another class) without touching the rest.</summary>
+    protected void Restyle(string look)
+    {
+        Figure.QueueFree();
+        Figure = Body.For(look);
+        AddChild(Figure);
+    }
 
     /// <summary>Sets how big it is to bump into, and where its name floats.</summary>
     protected void Resize(float height, float radius)
@@ -76,7 +85,12 @@ public abstract partial class Fighter : CharacterBody3D
 
 public enum EnemyState { Idle, Fighting, Fleeing, Dead }
 
-/// <summary>A Tong thug, a skeever, a draugr: wanders its lair, fights the company, sometimes runs.</summary>
+/// <summary>
+/// Anything in the world that fights besides the player: a Tong thug, a skeever, a draugr, a dragon. Wanders its
+/// lair and fights the company, sometimes runs. The same body serves the company's own: a beast raised from a
+/// youngling, a squire or an apprentice, a warlock's familiar, the dragon a knight rides. And the dragon knights
+/// of the alliance and their pact dragons, who fend off chromatic and corrupted dragons on sight.
+/// </summary>
 public partial class Enemy : Fighter
 {
     static long _nextId = 1;
@@ -101,13 +115,51 @@ public partial class Enemy : Fighter
     public string? Faction { get; set; }
     public string? Foe { get; set; }
 
+    /// <summary>A youngling: small, weak, it runs from people. Found alone, it can be tamed.</summary>
+    public bool Young { get; private set; }
+
+    /// <summary>A pact dragon: it guards people rather than hunting them.</summary>
+    public bool Allied { get; set; }
+
+    /// <summary>Carries a dragon knight of the alliance.</summary>
+    public bool Rider { get; private set; }
+
+    /// <summary>A companion's bond with its hero: its level, its hunger, what it has learned.</summary>
+    public Bond? Bond { get; private set; }
+
+    /// <summary>The hero it follows (a companion, or a summoned familiar).</summary>
+    public Player? Leader { get; set; }
+
+    /// <summary>Seconds until a summoned familiar fades away.</summary>
+    public double Expires { get; set; } = double.MaxValue;
+
+    /// <summary>The hero riding it.</summary>
+    public Player? Carrying { get; private set; }
+
+    /// <summary>On the company's side or the alliance's: the company's blows pass it by.</summary>
+    public bool Friendly => Leader is not null || Allied || Rider;
+
+    public Side Side => Leader is not null ? Side.Company
+        : Allied || Rider ? Side.Alliance
+        : Dragons.IsCorrupted(Kind.Id) ? Side.Corrupted
+        : IsDragon ? (Kind.Wary ? Side.Metallic : Side.Chromatic)
+        : Side.Wild;
+
     public bool IsDragon => Dragons.ColourOf(Kind.Id) is not null;
+    public bool Undead => Kind.Id is "draugr" or "draugr_overlord" or "sea_wraith" or "familiar";
+
+    /// <summary>Something died: who, the creature that killed it (if one did), and whether it was the company's doing.</summary>
+    public static event Action<Enemy, Enemy?, bool>? Slain;
+
+    /// <summary>A companion was knocked down.</summary>
+    public static event Action<Enemy>? Felled;
 
     /// <summary>How much bigger than its kind's normal size it is drawn.</summary>
-    float Bulk => IsDragon ? Dragons.Scale(Size).Height / Dragons.Scale(DragonSize.Normal).Height : 1;
+    float Bulk => Bond is not null ? (float)Bond.Size
+        : (IsDragon ? Dragons.Scale(Size).Height / Dragons.Scale(DragonSize.Normal).Height : 1) * (Young ? (IsDragon ? 0.22f : 0.45f) : 1);
 
     /// <summary>A winged dragon: it can take to the air.</summary>
-    public bool CanFly => Figure is Creature { Winged: true };
+    public bool CanFly => Figure is Creature { Winged: true } && !Young && (Bond is null || Bond.Rideable);
 
     /// <summary>In the air (a dragon circling, or flying in to fight).</summary>
     public bool Airborne { get; private set; }
@@ -120,27 +172,57 @@ public partial class Enemy : Fighter
     double _attackCooldown;
     double _wanderTimer;
     double _lookForRival;
+    double _ignore;      // lost sight of the company in smoke
+    double _empowered;   // a ranger's Call of the Wild
+    double _revive;
     Vector3 _wanderTo;
+    readonly Dictionary<string, double> _skillReady = [];
     readonly Rng _rng = new((ulong)Random.Shared.NextInt64());
 
-    public static Enemy Create(EnemyKind kind, Vector3 at, double danger = 1, string? siteId = null, DragonSize size = DragonSize.Normal)
+    /// <param name="young">A youngling of its kind.</param>
+    /// <param name="look">How it looks, if not as its kind (a dragon with a knight on it).</param>
+    /// <param name="bond">A companion: its numbers come from its level and growth.</param>
+    public static Enemy Create(EnemyKind kind, Vector3 at, double danger = 1, string? siteId = null, DragonSize size = DragonSize.Normal,
+        bool young = false, string? look = null, Bond? bond = null)
     {
         var (toughness, might, _) = Dragons.Scale(size);
-        var e = new Enemy { Kind = kind, Home = at, Position = at, Stats = kind.NewCombatant(danger, toughness, might), SiteId = siteId, Size = size };
-        e.Dress(kind.Id, (float)Math.Max(kind.Height, 0.6) * (kind.Id == "frost_troll" ? 1.2f : 1), kind.Height < 1 ? 0.3f : kind.Id is "bear" or "frost_troll" ? 0.6f : 0.4f);
+        if (bond is not null) (toughness, might) = (bond.Strength * (bond.Size > 1 ? bond.Size * bond.Size : 1), bond.Strength * Math.Max(1, bond.Size));
+        var e = new Enemy
+        {
+            Kind = kind, Home = at, Position = at, SiteId = siteId, Size = size, Young = young, Bond = bond,
+            Rider = look?.StartsWith("rider:") == true,
+            Stats = kind.NewCombatant(bond is null ? danger : 1, toughness, might),
+        };
+        if (young)
+        {
+            e.Stats.Grow(0.3);
+            e.Stats.DamageMult *= 0.3;
+            e.Stats.Name = Taming.YoungName(kind.Id, kind.Name);
+        }
+        if (bond is not null)
+        {
+            e.Stats.Name = bond.Name;
+            e.Stats.Lose(e.Stats.MaxHealth * (1 - Math.Clamp(bond.Health, 0.05, 1)));
+        }
+        e.Dress(look ?? kind.Id, (float)Math.Max(kind.Height, 0.6) * (kind.Id == "frost_troll" ? 1.2f : 1), kind.Height < 1 ? 0.3f : kind.Id is "bear" or "frost_troll" ? 0.6f : 0.4f);
         e.Shape();
-        if (size > DragonSize.Normal) e.Stats.Name = $"{size} {kind.Name}";
+        if (size > DragonSize.Normal && bond is null) e.Stats.Name = $"{size} {kind.Name}";
         e.RefreshPlate();
         return e;
     }
 
-    /// <summary>Fits the body and its collision to the dragon's size.</summary>
+    /// <summary>Fits the body and its collision to its size: a dragon's, a youngling's, a growing companion's.</summary>
     void Shape()
     {
-        if (!IsDragon) return;
-        Figure.Scale = Vector3.One * Bulk;
-        var height = Dragons.Scale(Size).Height;
-        Resize(height * 0.55f, height * 0.22f);
+        if (!IsDragon && !Young && Bond is null) return;
+        var bulk = Bulk;
+        Figure.Scale = Vector3.One * bulk;
+        if (IsDragon)
+        {
+            var height = Dragons.Scale(DragonSize.Normal).Height * bulk;
+            Resize(height * 0.55f, height * 0.22f);
+        }
+        else Resize((float)Math.Max(Kind.Height, 0.6) * bulk, (Kind.Height < 1 ? 0.3f : 0.4f) * Math.Max(0.5f, bulk));
     }
 
     /// <summary>
@@ -158,6 +240,17 @@ public partial class Enemy : Fighter
         Shape();
     }
 
+    /// <summary>A companion grew a level: stronger, and maybe bigger.</summary>
+    public void Grew()
+    {
+        if (Bond is null) return;
+        var fresh = Kind.NewCombatant(1, Bond.Strength * (Bond.Size > 1 ? Bond.Size * Bond.Size : 1), Bond.Strength * Math.Max(1, Bond.Size));
+        Stats.SetPools(fresh.MaxHealth, fresh.MaxMagicka, fresh.MaxStamina);
+        Stats.DamageMult = fresh.DamageMult;
+        Shape();
+        RefreshPlate();
+    }
+
     /// <summary>The server says this one is a nemesis: rename, strengthen, and let it speak.</summary>
     public void MakeNemesis(Guid id, BattleModifiers mods, string? taunt)
     {
@@ -172,58 +265,121 @@ public partial class Enemy : Fighter
 
     public void RefreshPlate()
     {
-        Plate.Text = Stats.Dead ? "" : $"{Stats.Name}\n{new string('|', (int)Math.Ceiling(Stats.Health / Stats.MaxHealth * 20))}";
-        Plate.Modulate = NemesisId is null ? new Color("#e8dcc4") : new Color("#ff7a5a");
+        var bar = new string('|', (int)Math.Ceiling(Stats.Health / Stats.MaxHealth * 20));
+        Plate.Text = State == EnemyState.Dead ? (Bond is not null ? $"{Stats.Name} (down)" : "")
+            : Bond is not null ? $"{Stats.Name}\nlevel {Bond.Level} {Bond.Stage}{(Bond.Hungry ? ", hungry" : "")}\n{bar}"
+            : Rider ? $"Dragon Knight {Stats.Name}\n{bar}"
+            : $"{Stats.Name}\n{bar}";
+        Plate.Modulate = Leader is not null ? new Color("#a8e0a0") : Friendly ? new Color("#a8c8f0") : NemesisId is null ? new Color("#e8dcc4") : new Color("#ff7a5a");
     }
 
     public void Provoke(Player by)
     {
-        if (State is EnemyState.Dead or EnemyState.Fleeing) return;
-        if (Kind.Timid) { _target = by; State = EnemyState.Fleeing; return; } // quarry runs
+        if (State is EnemyState.Dead or EnemyState.Fleeing || Friendly) return;
+        if (Kind.Timid || Young) { _target = by; State = EnemyState.Fleeing; return; } // quarry and the young run
         _target = by;
         State = EnemyState.Fighting;
     }
 
-    /// <summary>Another creature attacks it (a dragon of a warring flight): it fights back.</summary>
-    public void TakeHitFrom(Enemy attacker, double damage, bool crit)
+    /// <summary>A companion draws this foe off its hero and onto itself.</summary>
+    public void Distract(Enemy by)
     {
         if (State == EnemyState.Dead) return;
-        var result = Stats.TakeHit(damage, attacker.Kind.DamageKind, AttackKind.Weapon, crit, attacker.Stats);
+        _target = null;
+        _rival = by;
+        State = EnemyState.Fighting;
+    }
+
+    /// <summary>Loses sight of the company for a while (a thief's smoke).</summary>
+    public void LoseTrack(double seconds)
+    {
+        if (State == EnemyState.Dead || Friendly) return;
+        _target = null;
+        _rival = null;
+        State = EnemyState.Idle;
+        _ignore = seconds;
+    }
+
+    /// <summary>A ranger's call: healed, and fighting harder for a while.</summary>
+    public void Empower(double seconds, double heal)
+    {
+        _empowered = seconds;
+        Stats.Heal(Stats.MaxHealth * heal);
+        Effects.Rise(this, DamageKind.Poison, 1.2f * Bulk);
+        RefreshPlate();
+    }
+
+    /// <summary>Another creature attacks it (a dragon of a warring flight, a companion): it fights back.</summary>
+    public void TakeHitFrom(Enemy attacker, double damage, bool crit, DamageKind? kind = null)
+    {
+        if (State == EnemyState.Dead) return;
+        var result = Stats.TakeHit(damage, kind ?? attacker.Kind.DamageKind, AttackKind.Weapon, crit, attacker.Stats);
         if (_target is null && State != EnemyState.Fleeing) { _rival = attacker; State = EnemyState.Fighting; }
         RefreshPlate();
-        if (result.Killed) Die();
+        if (result.Killed) Die(attacker);
         else Figure.Hurt();
     }
 
-    /// <summary>The nearest living fighter of the flight it's at war with, within sight.</summary>
-    Enemy? FindRival() =>
-        Foe is null ? null : GetTree().GetNodesInGroup("enemies").OfType<Enemy>()
-            .Where(e => IsInstanceValid(e) && e.Faction == Foe && e.State != EnemyState.Dead && e.GlobalPosition.DistanceTo(GlobalPosition) < 120)
+    /// <summary>Who it should go after now, if anyone.</summary>
+    Enemy? FindRival()
+    {
+        var all = GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e != this && e.State != EnemyState.Dead);
+        if (Leader is { } leader)
+        {
+            // A companion fights what its hero is fighting: whatever is after the hero, what the hero last struck,
+            // and whatever is attacking the hero's other companions.
+            return all.Where(e => !e.Friendly && e.GlobalPosition.DistanceTo(leader.GlobalPosition) < 35
+                    && (e.FightingCompany || e == leader.LastStruck || e._rival?.Leader == leader))
+                .MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
+        }
+        var sight = IsDragon ? 120 : 60;
+        return all.Where(e => !e.Young && e.GlobalPosition.DistanceTo(GlobalPosition) < sight
+                && ((Foe is not null && e.Faction == Foe) || Allegiance.Hostile(Side, e.Side)))
             .MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
+    }
+
+    /// <summary>Picks fights with other creatures by itself: warring and hostile dragons, knights, companions.</summary>
+    bool SeeksFoes => !Young && (Foe is not null || Leader is not null || Side is Side.Alliance or Side.Chromatic or Side.Corrupted or Side.Metallic);
 
     public bool FightingCompany => State == EnemyState.Fighting && _target is not null;
+
+    /// <summary>Who it's fighting, if a creature (for tests).</summary>
+    public Enemy? Rival => _rival;
 
     public override void _PhysicsProcess(double delta)
     {
         if (State == EnemyState.Dead)
         {
             if (!IsOnFloor()) FallAndSlide(delta, Vector3.Zero); // a dragon killed in the air falls
+            // A companion gets back up once the fighting's done.
+            if (Bond is not null && Leader is { InFight: false } && (_revive -= delta) <= 0) Revive();
+            return;
+        }
+        if (Expires < double.MaxValue && (Expires -= delta) <= 0)
+        {
+            Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Shock);
+            QueueFree();
             return;
         }
         Stats.Tick(delta, State == EnemyState.Fighting);
         _attackCooldown -= delta;
+        _ignore -= delta;
+        _empowered -= delta;
+        if (Carrying is not null) { Carry(delta); return; }
+
         var bulk = Bulk;
         var speed = (float)(Kind.Speed * Stats.SpeedMult) * MathF.Pow(bulk, 0.35f);
         var reach = (float)Kind.Reach * MathF.Pow(bulk, 0.8f);
         var move = Vector3.Zero;
 
-        // Wary creatures (metallic dragons) leave people alone unless attacked.
+        // Wary creatures (metallic dragons) leave people alone unless attacked; friends and the young never start it.
         var player = _target ?? Player.Local;
-        if (State == EnemyState.Idle && !Kind.Wary && player is not null && !player.Downed && player.GlobalPosition.DistanceTo(GlobalPosition) < (Kind.Timid ? 16 : 14) * MathF.Sqrt(bulk))
+        if (State == EnemyState.Idle && !Kind.Wary && !Friendly && !Young && _ignore <= 0 && player is not null && !player.Downed
+            && player.GlobalPosition.DistanceTo(GlobalPosition) < (Kind.Timid ? 16 : 14) * MathF.Sqrt(bulk))
             Provoke(player);
 
-        // At war: look about for the enemy flight.
-        if (Foe is not null && _target is null && (_rival is null || !IsInstanceValid(_rival) || _rival.State == EnemyState.Dead) && (_lookForRival -= delta) <= 0)
+        // Looking about for a fight: the enemy flight in a war, hostile dragons, the company's foes.
+        if (SeeksFoes && _target is null && (_rival is null || !IsInstanceValid(_rival) || _rival.State == EnemyState.Dead) && (_lookForRival -= delta) <= 0)
         {
             _lookForRival = 0.5;
             _rival = FindRival();
@@ -233,6 +389,10 @@ public partial class Enemy : Fighter
 
         switch (State)
         {
+            case EnemyState.Idle when Leader is not null:
+                move = Follow(speed);
+                break;
+
             case EnemyState.Idle:
                 _wanderTimer -= delta;
                 if (_wanderTimer <= 0)
@@ -247,16 +407,23 @@ public partial class Enemy : Fighter
 
             case EnemyState.Fighting when _target is null && _rival is not null:
                 if (!IsInstanceValid(_rival) || _rival.State == EnemyState.Dead) { _rival = null; break; }
+                // A companion doesn't chase a foe far from its hero.
+                if (Leader is not null && _rival.GlobalPosition.DistanceTo(Leader.GlobalPosition) > 45) { _rival = null; State = EnemyState.Idle; break; }
                 var toRival = _rival.GlobalPosition - GlobalPosition;
                 toRival.Y = 0;
                 if (toRival.LengthSquared() > 0.01f) LookAt(GlobalPosition + toRival.Normalized(), Vector3.Up);
+                if (Bond is not null) UseSkills(toRival.Length(), bulk);
                 var gap = toRival.Length() - (reach + (float)_rival.Kind.Reach * MathF.Pow(_rival.Bulk, 0.8f) * 0.5f);
                 if (gap > 0) move = toRival.Normalized() * speed;
                 else if (_attackCooldown <= 0)
                 {
                     _attackCooldown = Kind.AttackSeconds;
-                    Figure.Attack();
-                    var bite = Stats.Outgoing(AttackKind.Weapon, Kind.Damage, _rng, out var bit);
+                    var power = 1.0;
+                    if (Bond?.Skills.FirstOrDefault(s => s.Id == "strike") is { } strike && Ready(strike)) power = strike.Power;
+                    if (_empowered > 0) power *= 1.5;
+                    if (Kind.Reach > 6) { Figure.Cast(); Effects.Bolt(GetParent(), GlobalPosition + Vector3.Up * 1.2f * bulk, _rival.GlobalPosition + Vector3.Up, Kind.DamageKind, 0.15f); }
+                    else Figure.Attack();
+                    var bite = Stats.Outgoing(AttackKind.Weapon, Kind.Damage, _rng, out var bit) * power;
                     _rival.TakeHitFrom(this, bite, bit);
                 }
                 break;
@@ -300,8 +467,102 @@ public partial class Enemy : Fighter
                 }
                 break;
         }
-        if (CanFly) move = Fly(move, speed, bulk, delta);
+        if (CanFly && Leader is null) move = Fly(move, speed, bulk, delta);
         if (State != EnemyState.Fighting || Airborne) FaceAlong(move, delta);
+        if (Airborne || _altitude > 0) Hover(delta, move);
+        else FallAndSlide(delta, move);
+        Figure.Move(GroundSpeed, IsOnFloor() && !Airborne, Swimming);
+    }
+
+    /// <summary>Keeps up with its hero: trots after them, runs to catch up, and finds them again if left far behind.</summary>
+    Vector3 Follow(float speed)
+    {
+        var leader = Leader!;
+        var to = leader.GlobalPosition - GlobalPosition;
+        to.Y = 0;
+        var d = to.Length();
+        if (d > 70)
+        {
+            var behind = leader.GlobalPosition + leader.GlobalTransform.Basis.Z * 4;
+            GlobalPosition = behind with { Y = City.FloorAt(behind) + 0.5f };
+            return Vector3.Zero;
+        }
+        if (d < 3.5f + Bulk) return Vector3.Zero;
+        return to.Normalized() * Math.Max(speed, d > 12 ? 9 : 5);
+    }
+
+    bool Ready(BondSkill skill)
+    {
+        if (_skillReady.GetValueOrDefault(skill.Id) > Time.GetTicksMsec() / 1000.0) return false;
+        _skillReady[skill.Id] = Time.GetTicksMsec() / 1000.0 + skill.Cooldown;
+        return true;
+    }
+
+    /// <summary>A companion's moves in a fight: breath, guarding its hero, rallying them.</summary>
+    void UseSkills(float distance, float bulk)
+    {
+        if (Leader is not { } leader || Bond is null) return;
+        foreach (var skill in Bond.Skills)
+            switch (skill.Id)
+            {
+                case "breath" when distance < 10 * Math.Max(1, bulk) && Ready(skill):
+                    Breathe(skill.Power * Kind.Damage * Stats.DamageMult * (_empowered > 0 ? 1.5 : 1), 10 * Math.Max(1, bulk));
+                    break;
+                case "guard" when leader.Attackers().FirstOrDefault() is { } bully && Ready(skill):
+                    bully.Distract(this);
+                    break;
+                case "rally" when leader.Stats.Health < leader.Stats.MaxHealth * 0.8 && Ready(skill):
+                    leader.Stats.Heal(leader.Stats.MaxHealth * skill.Power);
+                    Effects.Rise(leader, DamageKind.Sun);
+                    break;
+            }
+    }
+
+    /// <summary>A dragon's breath: its element poured over every foe in front of it.</summary>
+    public void Breathe(double damage, float length)
+    {
+        var forward = -GlobalTransform.Basis.Z;
+        var mouth = GlobalPosition + Vector3.Up * 2.2f * Bulk + forward * 2.5f * Bulk;
+        Figure.Attack();
+        Effects.Cone(GetParent(), mouth, forward with { Y = -0.15f }, Kind.DamageKind, length);
+        foreach (var e in GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e != this && e.State != EnemyState.Dead && !e.Friendly).ToList())
+        {
+            var to = e.GlobalPosition - GlobalPosition;
+            to.Y = 0;
+            if (to.Length() < length && forward.Dot(to.Normalized()) > 0.6f) e.TakeHitFrom(this, damage, false);
+        }
+    }
+
+    // ---- carrying a rider ---------------------------------------------------------------------
+
+    /// <summary>Takes the hero on its back.</summary>
+    public void Bear(Player? rider)
+    {
+        Carrying = rider;
+        _altitude = 0;
+        _rival = null;
+        State = EnemyState.Idle;
+    }
+
+    /// <summary>Where the rider sits, in the world.</summary>
+    public Vector3 SaddleGlobal => Figure is Creature c ? c.ToGlobal(c.FindSaddle()) : GlobalPosition + Vector3.Up * 2;
+
+    public bool Flying => Airborne;
+
+    /// <summary>Carrying the hero: goes where they steer, climbs and dives on their word, flies if it can.</summary>
+    void Carry(double delta)
+    {
+        var rider = Carrying!;
+        var (steer, climb, fast) = rider.Reins;
+        var d = (float)delta;
+        if (CanFly)
+        {
+            if (climb > 0) _altitude = Math.Min(_altitude + 14 * d, 140);
+            if (climb < 0) _altitude = Math.Max(0, _altitude - 18 * d);
+        }
+        var speed = (float)Kind.Speed * MathF.Pow(Bulk, 0.35f) * (fast ? 1.7f : 1.1f) * (Airborne ? 2.4f : 1);
+        var move = steer * speed;
+        FaceAlong(move, delta);
         if (Airborne || _altitude > 0) Hover(delta, move);
         else FallAndSlide(delta, move);
         Figure.Move(GroundSpeed, IsOnFloor() && !Airborne, Swimming);
@@ -310,6 +571,7 @@ public partial class Enemy : Fighter
     /// <summary>
     /// Decides when a winged dragon takes to the air: now and then it rises to circle over its range and
     /// comes down again; it flies in to a fight that's far off and lands to fight it; it flees by air.
+    /// Dragon knights keep to the sky, patrolling.
     /// </summary>
     Vector3 Fly(Vector3 move, float speed, float bulk, double delta)
     {
@@ -318,7 +580,8 @@ public partial class Enemy : Fighter
         switch (State)
         {
             case EnemyState.Idle:
-                if ((_flightClock -= delta) <= 0)
+                if (Rider && _altitude <= 0) _altitude = (24 + (float)_rng.NextDouble() * 16) * lift;
+                else if (!Rider && (_flightClock -= delta) <= 0)
                 {
                     _altitude = _altitude > 0 ? 0 : (22 + (float)_rng.NextDouble() * 20) * lift;
                     _flightClock = _altitude > 0 ? 15 + _rng.NextDouble() * 20 : 25 + _rng.NextDouble() * 40;
@@ -336,8 +599,10 @@ public partial class Enemy : Fighter
             case EnemyState.Fighting when quarry is not null:
                 var away = quarry.GlobalPosition - GlobalPosition;
                 away.Y = 0;
-                _altitude = away.Length() > 35 * lift ? 14 * lift : 0; // fly in, then land to fight
-                if (Airborne) return away.Normalized() * speed * 1.8f;
+                // Fly in, then fight: on the ground, or (two fliers) wing to wing.
+                var bothFly = quarry is Enemy { Airborne: true };
+                _altitude = away.Length() > 35 * lift ? 14 * lift : bothFly ? Math.Max(0, quarry.GlobalPosition.Y - City.FloorAt(quarry.GlobalPosition)) : 0;
+                if (Airborne) return away.Length() > 3 * bulk ? away.Normalized() * speed * 1.8f : Vector3.Zero;
                 break;
             case EnemyState.Fleeing:
                 _altitude = 30 * lift;
@@ -374,20 +639,47 @@ public partial class Enemy : Fighter
         var result = Stats.TakeHit(damage, kind, attack, crit, by.Stats);
         Provoke(by);
         RefreshPlate();
-        if (result.Killed) Die();
+        if (result.Killed) Die(null, byCompany: true);
         else Figure.Hurt();
         return result;
     }
 
-    void Die()
+    void Die(Enemy? killer = null, bool byCompany = false)
     {
         State = EnemyState.Dead;
         _altitude = 0;
         Airborne = false;
+        Carrying?.Dismount();
         Figure.Die();
-        Plate.Text = "";
         CollisionLayer = 0;
+        Slain?.Invoke(this, killer, byCompany || killer?.Leader is not null);
+        if (Bond is not null)
+        {
+            // A companion is knocked out, not killed (unless it's a dragon too young to fly: then the game decides).
+            _revive = 20;
+            RefreshPlate();
+            Felled?.Invoke(this);
+            return;
+        }
+        Plate.Text = "";
         var timer = GetTree().CreateTimer(20);
         timer.Timeout += QueueFree;
+    }
+
+    /// <summary>Falls where it stands (a companion starving).</summary>
+    public void Collapse()
+    {
+        if (State != EnemyState.Dead) Die();
+    }
+
+    /// <summary>A knocked-out companion gets up again, sore.</summary>
+    public void Revive()
+    {
+        if (State != EnemyState.Dead) return;
+        State = EnemyState.Idle;
+        CollisionLayer = 1;
+        Stats.Heal(Stats.MaxHealth * 0.4);
+        Figure.Rise();
+        RefreshPlate();
     }
 }

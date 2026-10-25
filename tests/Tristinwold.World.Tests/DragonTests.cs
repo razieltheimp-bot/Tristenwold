@@ -42,7 +42,8 @@ public class DragonTests
         var lord = Many.First();
         var flights = Wildlife.Near(World, lord.X, lord.Z, lord.Territory * 0.7).Where(h => h.KindId.StartsWith("dragon_")).ToList();
         Assert.NotEmpty(flights);
-        Assert.All(flights, f => Assert.Equal(Dragons.TerritoryAt(World, f.X, f.Z)!.Id, f.Faction));
+        // Its kin follow it; a few have fallen to the Rift and follow no one.
+        Assert.All(flights, f => Assert.Equal(Dragons.IsCorrupted(f.KindId) && !lord.Corrupted ? Dragons.Rift : Dragons.TerritoryAt(World, f.X, f.Z)!.Id, f.Faction));
         var lair = Dragons.Lair(lord).ToList();
         Assert.Contains(lair, h => h.Size == DragonSize.Ancient && h.Name == lord.FullName && h.KindId == lord.KindId);
     }

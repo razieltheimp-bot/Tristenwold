@@ -121,8 +121,8 @@ domain in Cloudflare and point it at `http://localhost:7778`.) Anyone with the a
 so always use `--password` with `--tunnel`. PCs can use the https address too, or the usual `host:7777`.
 
 On a touch screen the game shows on-screen controls: a joystick wherever your left thumb lands, drag on
-the right to look, and buttons for Strike, Spell, Limit, Jump, Use (talk or pick up), Run, the spell's
-element, Map, Quests, World and Rest. Pinch to zoom the map. `--touch` turns them on with a mouse, for trying
+the right to look, and buttons for your class's three moves, Limit, Jump, Use (talk, pick up or tame),
+Run, Map, Quests, World, Rest, Party, Skills, Ride and Dive. Pinch to zoom the map. `--touch` turns them on with a mouse, for trying
 them out on a PC.
 
 The game is built with Godot's C# support, which can't run in a web browser yet (Godot 4.7), so a phone
@@ -133,14 +133,77 @@ and an Apple developer account).
 |---|---|
 | WASD, Space, Shift | move, jump, sprint (sprinting uses stamina) |
 | Mouse | look |
-| Left / right mouse | sword / spell |
-| Q | switch spell between fire, frost and shock |
+| Left / right mouse | your class's main attack / its signature move |
+| Q | your class's third move (a wizard or sorcerer switches between fire, frost and shock) |
 | R | limit break, once the gold bar is full |
-| E | talk to someone, or pick something up |
+| E | talk to someone, pick something up, or tame a youngling |
+| K | skills: spend the points your levels bring |
+| P | your party: companions, feeding them, sending them home or calling them |
+| V | climb onto your dragon, or down (Dragon Knights only); in the saddle Space climbs and C dives |
 | M | the map (scroll to zoom, drag to pan) |
 | J | your journal of quests |
-| T | rest (the world moves on) |
+| T | rest (the world moves on, companions mend, and a dragon egg warms) |
 | F10 | the shared world: contract board, companies, nemeses, chronicle and chat |
+
+### Classes
+
+Nine classes, three to each calling, each fighting its own way (`src/Tristinwold.Gameplay/Classes.cs`). Pick
+one when you make a character; join another later at its guild in Tristinwold (Marshal Brannoc of the Iron
+Circle for warriors, Vesper Quill of the Velvet Knives for rogues, Sister Ilse at the Magi Archive for mages).
+
+| Class | Left | Right | Q | R (limit) | Always |
+|---|---|---|---|---|---|
+| Martial Artist | Flurry: punches, every third a kick | Flying Kick | Inner Focus: heal, haste | Hundred Fists | Evasion: slip blows |
+| Barbarian | Cleave: all in front | Leap Slam | Rage | Whirlwind | Thick Hide: more health, wounds close |
+| Paladin | Smite: sunlit sword | Holy Light: heal all, sear foes | Shield Wall: Protect and Shell | Divine Judgement | Devotion: harder to hurt, light burns the dead and corrupted |
+| Ranger | Shoot: crossbow, 35 m | Volley: four foes | Call of the Wild: beasts healed and fierce | Rain of Bolts | Beastmaster: always tames, beasts grow faster |
+| Thief | Quick Stab | Pilfer: steal as you strike | Smoke Bomb: foes lose you, next strike critical | Grand Heist | Light Fingers: more septims, free running |
+| Assassin | Stab: often critical | Shadowstep behind a foe | Poisoned Blades | Death Mark | Backstab: huge harm to foes not fighting you |
+| Wizard | Elemental Bolt | Elemental Blast | Attune: fire, frost, shock | Meteor | Arcane Mastery: stronger spells |
+| Warlock or Witch | Eldritch Blast | Drain Life | Summon Familiar | Soul Harvest | Dark Pact: kills restore you |
+| Sorcerer | Arcane Missiles | Chain Lightning | Attune | Dragonfire | Wild Surge: spells sometimes go off twice |
+
+Kills and jobs bring experience. Each level adds health, magicka and stamina and a skill point; spend points (K)
+to rank a move up to 5, each rank 15% stronger. Joining another class gives the points back.
+
+### Companions
+
+- **Younglings.** About a third of the herds and packs in the wilds have young with them: wolf pups, bear cubs,
+  fawns, fox kits, boarlets, troll whelps, goblin whelps, spriggan saplings, mudcrab hatchlings, and now and
+  then a dragon wyrmling. They're small and they run. Find one with none of its grown kin close by (they won't
+  let you near it, and they'll come for you) and press E: a little meat helps, and a ranger never fails. It
+  follows you from then on, levels up from the fights it shares, grows to full size, and learns moves
+  (guarding you, a savage strike, a rally that heals you). Beasts get hungry: hunting gives meat, and you feed
+  them from the party menu (P). One that starves weakens and collapses.
+- **Squires and apprentices.** Every town has young people (11 to 16) who dream of adventure. Once you've made a
+  name (level 3), ask one to follow you, with 25 septims to their family: a warrior's squire, a mage's
+  apprentice, a rogue's protege. They grow up at your side and learn Shield Bash and Battle Cry, or Firebolt,
+  Mend and Ward.
+- Up to four follow you at once; the rest wait at the Gallows Perch. A companion knocked down gets up when the
+  fight is over, and resting heals them all.
+
+### The Dragon Knight
+
+Any class can become one. Ser Aldric Brasswing keeps the Order of the Eyrie's rookery on the hill west of
+Tristinwold, with two dragon knights and their dragons. He sends you to the nest of the nearest metallic ancient
+that keeps a pact with people (his knights can fly you there), where Rift-corrupted drakes are tearing at the
+clutch. Take an egg and keep it warm: it hatches as you carry it, quickest when you rest. The hatchling is the
+size of a cat, hungry, and fragile: until it can fly, if it falls it is lost, and you must start again. Fight
+beside it until level 10 (it learns Claw Rake, then its colour's Breath), bring it to Ser Aldric and kneel. From
+then on it carries you (V): on the ground, and in the air (Space climbs, C dives, the attack button is its
+breath). It keeps growing: large at level 20, giant at 30.
+
+### Corrupted dragons, pacts and the Dragonwatch
+
+- **Corrupted dragons.** The Rift has twisted some dragons of every colour: violet-black hides veined with
+  pulsing light, a dark haze rising off them, magenta eyes, tougher and harder-hitting. About one ancient in
+  seven has fallen, and all its kin with it; a few dragons of any flight have turned. They attack everything
+  living, dragons of every colour included. `tools/creatures/dragon_corruption.py` paints their hides.
+- **Pacts.** Some metallic ancients keep a pact with the nearest town or village in their land. Their dragons
+  guard people rather than hunting them, and the town has a Dragonwatch: dragon knights on the ancient's
+  dragons, circling over it. Knights and pact dragons attack chromatic and corrupted dragons on sight.
+- **Raids.** Some seasons (every three hours, real time) a band of chromatic or corrupted dragons raids a pact
+  town, and its knights fly out to meet them. Ser Aldric hears of it.
 
 You start outside the Gallows Perch, in the outer ring. Thugs work the docks, skeevers infest the Warrens,
 the Lantern Boys keep their den, a draugr and a sea-wraith haunt the Drowned Chapel, and the Drowned Hand
@@ -195,7 +258,16 @@ Every company sees the same world, because it all grows from the `seed` in `worl
 seed for a different world. Each company's map, quests and septims are saved on its own computer, in
 Godot's user folder under `saves/`.
 
-Self-test (headless, exits 0 on success):
+`--lineup ./shots` photographs the nine classes; add `--creatures`, `--young` (younglings and companions),
+`--dragons` (all ten colours), `--dragons --corrupt`, `--dragons --riders` or `--dragons --frost`.
+
+The sky is a photograph (Poly Haven's "Kloofendal 48d Partly Cloudy (Pure Sky)", CC0), and the world is lit by
+it: ambient light and reflections come from the sky, and the sun shines from where it stands in the picture.
+On High and Ultra there is also light bouncing off the ground (SSIL), shafts of sunlight through the fog, eyes
+that adjust to bright and dark, and softer, sharper shadows; Ultra adds reflections on the water and a little
+haze-blur in the far distance. `tools/polyhaven/sky.py` finds the sun in a sky photograph.
+
+Self-test (headless, exits 0 on success; `--company-only` runs just the classes, companions and Dragon Knight):
 
 ```
 godot --headless --path game -- --selftest --server off                       # combat, exploring and one quest of each kind

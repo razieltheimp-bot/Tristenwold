@@ -60,7 +60,23 @@ public static class Bestiary
         new("deer", "Deer", 50, 4, 8.5, 0, 1.4, 1.2, DamageKind.Physical, "#8a6a48", 1.3, Timid: true),
         new("fox", "Red Fox", 25, 3, 7.5, 0, 1.0, 1.0, DamageKind.Physical, "#c06a30", 0.5, Timid: true),
         .. DragonKinds(),
+        .. DragonKinds().Select(Corrupted),
+        // Companions: the youths who follow a hero, and a warlock's familiar.
+        new("squire", "Squire", 120, 11, 5.0, 80, 1.9, 1.2, DamageKind.Physical, "#b0b8c8", 1.6),
+        new("apprentice", "Apprentice", 90, 13, 5.0, 30, 12, 1.6, DamageKind.Fire, "#7a5aa8", 1.55),
+        new("protege", "Protege", 100, 12, 5.6, 40, 1.8, 0.9, DamageKind.Physical, "#5a4a3a", 1.55),
+        new("familiar", "Familiar", 110, 14, 5.5, 40, 1.8, 1.1, DamageKind.Poison, "#8a5ad0", 1.4),
     ];
+
+    /// <summary>
+    /// A dragon twisted by the Rift: darker, tougher, harder-hitting, and at war with every living thing,
+    /// dragons of every colour included. Any colour can fall to it.
+    /// </summary>
+    static EnemyKind Corrupted(EnemyKind k) => k with
+    {
+        Id = k.Id + "_corrupt", Name = "Corrupted " + k.Name, Health = k.Health * 1.3, Damage = k.Damage * 1.25,
+        Colour = "#3a1a48", Wary = false,
+    };
 
     /// <summary>Dragons of every colour: chromatic ones hunt people; metallic ones are wary and leave them be unless attacked.</summary>
     static IEnumerable<EnemyKind> DragonKinds() =>

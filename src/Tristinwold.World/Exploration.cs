@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Tristinwold.Gameplay;
 
 namespace Tristinwold.World;
 
@@ -93,7 +94,10 @@ public sealed class ExploredMap
     }
 }
 
-/// <summary>Everything a company carries between sessions: its map, its quests, its purse.</summary>
+/// <summary>
+/// Everything a company carries between sessions: its map, its quests, its purse, its hero's class and levels,
+/// its companions, the meat in its packs, and how far along the road to Dragon Knight it is.
+/// </summary>
 public sealed class CompanySave
 {
     public int Version { get; set; } = 1;
@@ -103,6 +107,10 @@ public sealed class CompanySave
     public List<string> Discovered { get; set; } = [];
     public List<string> Rumored { get; set; } = [];
     public List<QuestEntry> Quests { get; set; } = [];
+    public Hero? Hero { get; set; }
+    public List<Bond> Companions { get; set; } = [];
+    public DragonSaga? Saga { get; set; }
+    public int Meat { get; set; }
 
     static readonly JsonSerializerOptions Options = new()
     {
@@ -111,8 +119,13 @@ public sealed class CompanySave
         Converters = { new JsonStringEnumConverter() },
     };
 
-    public static CompanySave Capture(ulong seed, int septims, ExploredMap map, QuestLog log) => new()
+    public static CompanySave Capture(ulong seed, int septims, ExploredMap map, QuestLog log,
+        Hero? hero = null, IEnumerable<Bond>? companions = null, DragonSaga? saga = null, int meat = 0) => new()
     {
+        Hero = hero,
+        Companions = companions?.ToList() ?? [],
+        Saga = saga,
+        Meat = meat,
         Seed = seed,
         Septims = septims,
         Explored = map.TilesToSave(),

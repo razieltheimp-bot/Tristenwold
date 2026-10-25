@@ -1,0 +1,105 @@
+using Tristinwold.Gameplay;
+
+namespace Tristinwold.Gameplay.Tests;
+
+/// <summary>The nine classes, levels and skill ranks, companions growing up, and taming the young.</summary>
+public class ProgressionTests
+{
+    [Fact]
+    public void Nine_classes_three_to_a_calling_each_with_its_own_moves()
+    {
+        Assert.Equal(9, Classes.All.Count);
+        foreach (var calling in Enum.GetValues<Calling>()) Assert.Equal(3, Classes.Of(calling).Count());
+        // No two classes share a move (bar the mages' element switch).
+        var moves = Classes.All.SelectMany(d => d.Skills).Where(a => a.Id != "attune").Select(a => a.Id).ToList();
+        Assert.Equal(moves.Count, moves.Distinct().Count());
+        Assert.All(Classes.All, d => Assert.False(string.IsNullOrWhiteSpace(d.Text)));
+        // Old characters keep the nearest class.
+        Assert.Equal("Paladin", Classes.For("Knight").Id);
+        Assert.Equal("Assassin", Classes.For("Rogue_Hooded").Id);
+        Assert.Equal("Barbarian", Classes.Get("barbarian").Id);
+    }
+
+    [Fact]
+    public void Levels_bring_skill_points_that_rank_up_moves()
+    {
+        var hero = new Hero { Discipline = "Barbarian" };
+        Assert.Equal(0, hero.Gain(Hero.XpToNext(1) - 1));
+        Assert.Equal(1, hero.Gain(1));
+        Assert.Equal(2, hero.Level);
+        Assert.Equal(1, hero.Points);
+        Assert.True(hero.Raise("cleave"));
+        Assert.False(hero.Raise("cleave")); // no points left
+        Assert.Equal(1.15, hero.Power("cleave"), 3);
+        hero.Gain(100000);
+        while (hero.Raise("cleave")) { }
+        Assert.Equal(Hero.MaxRank, hero.Rank("cleave"));
+        // Joining another class gives the points back.
+        var points = hero.Points;
+        hero.Join("Wizard");
+        Assert.Equal(points + Hero.MaxRank - 1, hero.Points);
+        Assert.Equal(1, hero.Rank("cleave"));
+    }
+
+    [Fact]
+    public void A_companion_grows_up_learns_moves_and_gets_hungry()
+    {
+        var pup = new Bond { KindId = "wolf", Role = BondRole.Pet };
+        Assert.True(pup.Size < 0.5);
+        Assert.Empty(pup.Skills);
+        pup.Gain(100000);
+        Assert.True(pup.Level > 10);
+        Assert.Equal(1, pup.Growth);
+        Assert.Contains(pup.Skills, s => s.Name == "Savage Bite");
+        pup.Tick(Bond.HungerSeconds);
+        Assert.True(pup.Starving);
+        var hungry = pup.Strength;
+        pup.Feed();
+        Assert.True(pup.Strength > hungry);
+
+        var squire = new Bond { KindId = "squire", Role = BondRole.Squire };
+        squire.Tick(Bond.HungerSeconds * 2);
+        Assert.False(squire.Hungry); // people feed themselves
+    }
+
+    [Fact]
+    public void A_dragon_can_carry_its_knight_from_level_ten_and_is_lost_if_it_falls_younger()
+    {
+        var dragon = new Bond { KindId = "dragon_gold", Role = BondRole.Dragon };
+        Assert.True(dragon.DiesIfFelled);
+        Assert.False(dragon.Rideable);
+        Assert.Equal("hatchling", dragon.Stage);
+        while (dragon.Level < 10) dragon.Gain(Bond.XpToNext(dragon.Level));
+        Assert.True(dragon.Rideable);
+        Assert.False(dragon.DiesIfFelled);
+        Assert.Equal(1, dragon.Size);
+        Assert.Contains(dragon.Skills, s => s.Id == "breath");
+    }
+
+    [Fact]
+    public void Young_beasts_and_monsters_can_be_tamed_but_not_people_or_the_dead()
+    {
+        Assert.True(Taming.Tameable("wolf"));
+        Assert.True(Taming.Tameable("frost_troll"));
+        Assert.True(Taming.Tameable("dragon_red"));
+        Assert.False(Taming.Tameable("dragon_red_corrupt"));
+        Assert.False(Taming.Tameable("bandit"));
+        Assert.False(Taming.Tameable("draugr"));
+        Assert.Equal("Bear Cub", Taming.YoungName("bear", "Cave Bear"));
+        Assert.Equal("Red Wyrmling", Taming.YoungName("dragon_red", "Red Dragon"));
+        Assert.Equal(0, Taming.Chance(kinNearby: true, offeringMeat: true, beastmaster: true, 30));
+        Assert.Equal(1, Taming.Chance(false, false, beastmaster: true, 1));
+        Assert.True(Taming.Chance(false, true, false, 1) > Taming.Chance(false, false, false, 1));
+    }
+
+    [Fact]
+    public void Corrupted_dragons_are_tougher_and_never_wary()
+    {
+        var gold = Bestiary.Get("dragon_gold");
+        var fallen = Bestiary.Get("dragon_gold_corrupt");
+        Assert.Equal("dragon_gold_corrupt", fallen.Id);
+        Assert.True(gold.Wary);
+        Assert.False(fallen.Wary);
+        Assert.True(fallen.Health > gold.Health && fallen.Damage > gold.Damage);
+    }
+}

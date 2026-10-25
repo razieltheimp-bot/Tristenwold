@@ -123,6 +123,25 @@ public sealed class Combatant
 
     public void Heal(double amount) => Health = Math.Min(MaxHealth, Health + amount);
 
+    /// <summary>Gives back magicka and stamina (a warlock's kill, a sorcerer's surge).</summary>
+    public void Restore(double magicka, double stamina = 0)
+    {
+        Magicka = Math.Min(MaxMagicka, Magicka + magicka);
+        Stamina = Math.Min(MaxStamina, Stamina + stamina);
+    }
+
+    /// <summary>New maximums (a level gained, a class joined), keeping the same share of each pool.</summary>
+    public void SetPools(double health, double magicka, double stamina)
+    {
+        Health = health * (MaxHealth > 0 ? Health / MaxHealth : 1);
+        Magicka = magicka * (MaxMagicka > 0 ? Magicka / MaxMagicka : 1);
+        Stamina = stamina * (MaxStamina > 0 ? Stamina / MaxStamina : 1);
+        (MaxHealth, MaxMagicka, MaxStamina) = (health, magicka, stamina);
+    }
+
+    /// <summary>Takes harm that nothing resists (starving, a fall).</summary>
+    public void Lose(double amount) => Health = Math.Max(0, Health - amount);
+
     /// <summary>Grows tougher by a factor, keeping the same share of its health (a dragon growing a size).</summary>
     public void Grow(double factor)
     {

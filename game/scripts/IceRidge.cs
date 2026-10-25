@@ -31,13 +31,14 @@ public static class IceRidge
         ("back1", 0.3f, 0.12f), ("back1", 0.8f, 0.14f), ("back2", 0.3f, 0.12f), ("tail1", 0.2f, 0.08f),
     ];
 
-    public static void Grow(Node3D model)
+    /// <param name="corrupt">Rift-blighted ice: violet-black, glowing within.</param>
+    public static void Grow(Node3D model, bool corrupt = false)
     {
         if (model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is not { } skeleton) return;
         var hide = Hide(model, skeleton);
         if (hide.Length == 0) return;
         var rng = new RandomNumberGenerator();
-        var ice = Material();
+        var ice = Material(corrupt);
 
         var tail = skeleton.FindBone("tail1") is var t1 and >= 0 && skeleton.FindBone("neck2") is var n2 and >= 0
             ? (skeleton.GetBoneGlobalRest(t1).Origin - skeleton.GetBoneGlobalRest(n2).Origin) with { Y = 0 }
@@ -129,13 +130,13 @@ public static class IceRidge
     }
 
     /// <summary>Pale, glassy, see-through ice that glints at its edges.</summary>
-    static StandardMaterial3D Material() => new()
+    static StandardMaterial3D Material(bool corrupt) => new()
     {
-        VertexColorUseAsAlbedo = true, AlbedoColor = new Color(0.84f, 0.94f, 1f, 0.88f),
+        VertexColorUseAsAlbedo = true, AlbedoColor = corrupt ? new Color(0.42f, 0.22f, 0.55f, 0.9f) : new Color(0.84f, 0.94f, 1f, 0.88f),
         Transparency = BaseMaterial3D.TransparencyEnum.Alpha, DepthDrawMode = BaseMaterial3D.DepthDrawModeEnum.Always,
         Roughness = 0.06f, MetallicSpecular = 1f,
         RimEnabled = true, Rim = 0.7f, RimTint = 0.3f,
-        EmissionEnabled = true, Emission = new Color("#3f92d8"), EmissionEnergyMultiplier = 0.45f,
+        EmissionEnabled = true, Emission = corrupt ? new Color("#b030ff") : new Color("#3f92d8"), EmissionEnergyMultiplier = corrupt ? 0.9f : 0.45f,
     };
 
     /// <summary>
