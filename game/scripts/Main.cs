@@ -257,6 +257,7 @@ public partial class Main : Node3D
         _player.WentDown += () => { _tracker.Downed(); _hud.Center("You have fallen."); };
         _player.Struck += (enemy, hit, kind) =>
         {
+            if (enemy.Sparring || enemy.Yielded) return; // a duel in the yard isn't a battle
             _tracker.Engaged(enemy.Id, enemy.Kind.Id, enemy.Kind.Name, enemy.Stats.MaxHealth, ToNumerics(enemy.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, enemy.NemesisId);
             _tracker.Hit(enemy.Id, kind, _player.Company, _clock);
             if (hit.Killed) _tracker.Died(enemy.Id, _player.Company, _clock);
@@ -272,6 +273,7 @@ public partial class Main : Node3D
         AddChild(_wilds);
         _places.Gone = id => _bonds.Any(b => b.Id == id);
         AddGuildMasters();
+        AddGuilds();
         SetUpCompany();
         _hud.AttachMap(_world, _explored, () => _player.GlobalPosition, () => -_player.GlobalTransform.Basis.Z, QuestGoals);
 
@@ -420,7 +422,7 @@ public partial class Main : Node3D
             _client.Send(new Presence(_area, [_player.Company]));
         }
 
-        foreach (var e in Enemies().Where(e => e.FightingCompany))
+        foreach (var e in Enemies().Where(e => e.FightingCompany && !e.Sparring && !e.Yielded))
             _tracker.Engaged(e.Id, e.Kind.Id, e.Kind.Name, e.Stats.MaxHealth, ToNumerics(e.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, e.NemesisId);
         _tracker.Tick(_clock, ToNumerics(_player.GlobalPosition),
             id => FindEnemy(id) is { FightingCompany: true } e && e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 40,
@@ -428,6 +430,8 @@ public partial class Main : Node3D
         _player.InFight = _tracker.InFight || _player.Attackers().Any();
         _player.Frozen = _hud.Talking || _hud.MapOpen;
         TendCompany(delta);
+        TendGuilds(delta);
+        _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
 
         if (_clock - _lastRespawnCheck > 30) { _lastRespawnCheck = _clock; RespawnEmptyLairs(); }
         if (_clock - _lastSave > 20) { _lastSave = _clock; Save(); }
@@ -515,7 +519,7 @@ public partial class Main : Node3D
             person.QueueFree();
             return;
         }
-        Say(person, news.Count > 0 ? news[^1].Text : person.Npc.Greeting);
+        Say(person, news.Count > 0 ? news[^1].Text : Greeting(person));
     }
 
     void Say(Person person, string text)
@@ -569,7 +573,8 @@ public partial class Main : Node3D
     public void Accept(Quest quest)
     {
         _journal.Accept(quest);
-        if (!_explored.Discovered.Contains(quest.TargetId)) _explored.Rumored.Add(quest.TargetId);
+        if (!_explored.Discovered.Contains(quest.TargetId) && _world.Find(quest.TargetId) is not null) _explored.Rumored.Add(quest.TargetId);
+        if (quest.Kind is QuestKind.Slay or QuestKind.Fetch) _places.Restock(quest.TargetId);
         _hud.Toast($"New quest: {quest.Title}.");
         _hud.ShowJournal(_journal);
         Save();
@@ -580,6 +585,7 @@ public partial class Main : Node3D
         _hud.Toast(u.Text);
         if (u.Reward > 0) _player.Septims += _player.Class.Id == "Thief" ? (int)Math.Round(u.Reward * (1 + _player.Class.Passive.Power * _player.Hero.Power("light_fingers"))) : u.Reward;
         if (u.Stage == QuestStage.Done) GainXp(40 + u.Quest.Reward / 2);
+        if (u.Stage == QuestStage.Done && ClassQuests.IsClassQuest(u.Quest.Id, out var discipline, out var step)) ClassTrialDone(discipline, step);
         if (u.Stage == QuestStage.Done) _hud.Toast($"Quest complete: {u.Quest.Title}.");
         _hud.ShowJournal(_journal);
         Save();
@@ -626,6 +632,7 @@ public partial class Main : Node3D
                 if (save.Hero is { } hero) _player.Become(hero);
                 _bonds.AddRange(save.Companions);
                 _saga = save.Saga ?? new DragonSaga();
+                _guilds = save.Guilds ?? new GuildBook();
                 return;
             }
         }
@@ -639,7 +646,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public void Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)
         {
@@ -662,10 +669,10 @@ public partial class Main : Node3D
             ["the Magi", "maps"], "wary", "The Archive is not a library. What are you looking for?", -34, 6));
     }
 
-    void Townsfolk(Npc npc)
+    void Townsfolk(Npc npc, string? look = null)
     {
         var at = new Vector3((float)npc.X, 0, (float)npc.Z);
-        var person = new Person { Npc = npc, Position = at with { Y = City.FloorAt(at) } };
+        var person = new Person { Npc = npc, Look = look, Position = at with { Y = City.FloorAt(at) } };
         AddChild(person);
         _townsfolk.Add(person);
     }

@@ -163,6 +163,37 @@ public partial class Enemy : Fighter
 
     public bool Corrupted => Dragons.IsCorrupted(Kind.Id);
 
+    /// <summary>A duel in a guild yard: whoever is beaten to the edge yields, and nobody dies.</summary>
+    public bool Sparring { get; private set; }
+
+    /// <summary>A duel ended: who, and whether the hero won it.</summary>
+    public static event Action<Enemy, bool>? SparEnded;
+
+    /// <summary>Makes this a duelling rival: their name, how much they can take, how hard they hit.</summary>
+    public void Spar(string name, double health, double damage)
+    {
+        Sparring = true;
+        Stats.SetPools(health, Stats.MaxMagicka, Stats.MaxStamina);
+        Stats.Heal(health);
+        Stats.DamageMult = damage / Kind.Damage;
+        Stats.Name = name;
+        RefreshPlate();
+    }
+
+    /// <summary>Lost or won a duel and stepped back: no longer a fight for anyone's records.</summary>
+    public bool Yielded { get; private set; }
+
+    void EndSpar(bool heroWon)
+    {
+        Sparring = false;
+        Yielded = true;
+        (_target, _rival, State, _ignore) = (null, null, EnemyState.Idle, 1e9);
+        Stats.Heal(Stats.MaxHealth * 0.15);
+        Figure.Perform(heroWon ? "Hit_B" : "Cheer", 1, 1);
+        RefreshPlate();
+        SparEnded?.Invoke(this, heroWon);
+    }
+
     /// <summary>A dragon turned by the Rift.</summary>
     public static event Action<Enemy>? Turned;
 
@@ -357,7 +388,7 @@ public partial class Enemy : Fighter
         {
             // A companion fights what its hero is fighting: whatever is after the hero, what the hero last struck,
             // and whatever is attacking the hero's other companions.
-            return all.Where(e => !e.Friendly && e.GlobalPosition.DistanceTo(leader.GlobalPosition) < 35
+            return all.Where(e => !e.Friendly && !e.Sparring && e.GlobalPosition.DistanceTo(leader.GlobalPosition) < 35
                     && (e.FightingCompany || e == leader.LastStruck || e._rival?.Leader == leader))
                 .MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
         }
@@ -486,6 +517,8 @@ public partial class Enemy : Fighter
                     _attackCooldown = Kind.AttackSeconds / (Stats.Statuses.Contains(AutoStatus.Haste) ? 1.3 : 1) / (Frenzy > 0 ? 1.5 : 1);
                     Figure.Attack();
                     var damage = Stats.Outgoing(AttackKind.Weapon, Kind.Damage, _rng, out var crit);
+                    // In a duel, the hero yields rather than falls.
+                    if (Sparring && _target.Stats.Health - damage <= _target.Stats.MaxHealth * 0.15) { EndSpar(false); break; }
                     _target.TakeHit(damage, Kind.DamageKind, AttackKind.Weapon, crit, this);
                 }
                 break;
@@ -673,6 +706,7 @@ public partial class Enemy : Fighter
     public HitResult TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Player by)
     {
         var result = Stats.TakeHit(damage, kind, attack, crit, by.Stats);
+        if (Sparring && (result.Killed || Stats.Health < Stats.MaxHealth * 0.15)) { EndSpar(true); return result; }
         Provoke(by);
         RefreshPlate();
         if (result.Killed) Die(null, byCompany: true);

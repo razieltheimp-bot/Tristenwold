@@ -25,6 +25,9 @@ public partial class Player : Fighter
     /// <summary>Their look, chosen when the character was made (a class, or an older character's look).</summary>
     public string Outfit { get; init; } = "Paladin";
 
+    /// <summary>Their rank in their guild ("Adept of the Iron Circle").</summary>
+    public string GuildTitle { get; set; } = "";
+
     /// <summary>Their class, level and skill ranks.</summary>
     public Hero Hero { get; set; } = new();
     public Discipline Class => Classes.Get(Hero.Discipline);

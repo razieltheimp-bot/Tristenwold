@@ -27,7 +27,7 @@ public partial class SelfTest(Main main) : Node
         try
         {
             await Frames(10);
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); Finish(0); return; } // just the classes, companions and Dragon Knight
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -57,6 +57,7 @@ public partial class SelfTest(Main main) : Node
             await Touch();
             await Explore();
             await CompanyTest();
+            await GuildTest();
             if (main.Choice.Account is { } account) await Account(account);
             await Teleport(new Vector3(-150, 0, -120));
             await Until(() => !main.Tracker.InFight, 15);
@@ -507,8 +508,11 @@ public partial class SelfTest(Main main) : Node
         fallen.QueueFree();
 
         // A corrupted dragon's wounds carry the Rift: a gold dragon that takes enough of them turns, and goes mad.
-        var gold = Spawn("dragon_gold", Ground(p.GlobalPosition + new Vector3(-70, 0, 60)));
-        var biter = Spawn("dragon_black_corrupt", Ground(p.GlobalPosition + new Vector3(-70, 0, 85)));
+        // (Far from the rookery, whose knights would join in.)
+        var away = new Vector3(-330, 0, 260);
+        main.TerrainNode.EnsureAround(away, 2);
+        var gold = Spawn("dragon_gold", Ground(away));
+        var biter = Spawn("dragon_black_corrupt", Ground(away + new Vector3(0, 0, 25)));
         await Until(() => gold.Corrupted || gold.State == EnemyState.Dead || biter.State == EnemyState.Dead, 60);
         Check(gold.Corrupted && gold.Frenzy > 0 && gold.Kind.Id == "dragon_gold_corrupt",
             $"the gold dragon is infected and turns: {gold.Stats.Name} ({gold.Kind.Name}, frenzy {gold.Frenzy:0} s; gold {gold.Stats.Health:0}/{gold.Stats.MaxHealth:0} {gold.State} rival {gold.Rival?.Stats.Name}, infection {gold.Infection:P0}; biter {biter.Stats.Health:0}/{biter.Stats.MaxHealth:0} {biter.State} rival {biter.Rival?.Stats.Name}, {gold.GlobalPosition.DistanceTo(biter.GlobalPosition):0} m apart)");
@@ -528,6 +532,89 @@ public partial class SelfTest(Main main) : Node
         Check(hatchling.State != EnemyState.Dead, $"{hatchling.Bond.Name} gets up");
         p.Join("Paladin");
         await Teleport(field);
+    }
+
+    /// <summary>
+    /// The Iron Circle: a lesson from the paladins' teacher, all three of the Paladin's trials (the last a duel with
+    /// Corin Vale), a piece of guild drama with a choice that sticks, and a duel lost.
+    /// </summary>
+    async Task GuildTest()
+    {
+        var (p, w, hud, journal) = (main.PlayerNode, main.World, main.HudNode, main.Journal);
+        var g = Guilds.Of(Calling.Warrior);
+        p.Join("Paladin");
+        await Teleport(new Vector3((float)g.X + 3, 0, (float)g.Z + 3));
+        Person Find(string id) => main.Locals.First(x => x.Npc.Id == id);
+        var teacher = Find(g.TeacherOf("Paladin")!.Id);
+        var rival = Find(g.Rival.Id);
+        Check(main.Area == "The Iron Circle's yard", $"the Iron Circle's yard, outside the west gate: {main.Area}");
+
+        // A lesson.
+        p.Septims += 1000;
+        var points = p.Hero.Points;
+        main.Talk(teacher);
+        Check(hud.Choose("Teach me"), "Ser Edwyn offers a lesson");
+        Check(p.Hero.Points == points + 1, "a lesson brings a skill point");
+
+        // The three trials.
+        for (var step = 0; step < ClassQuests.Steps; step++)
+        {
+            main.Talk(teacher);
+            Check(hud.Choose("Is there a trial"), $"Ser Edwyn sets trial {step + 1}");
+            Check(hud.Choose("I'll do it"), "you take it up");
+            var trial = ClassQuests.For(w, p.Class, step)!;
+            Check(journal.Get(trial.Id) is { Stage: QuestStage.Active }, $"{trial.Title}: {journal.Get(trial.Id)?.Objective}");
+            switch (trial.Kind)
+            {
+                case QuestKind.Slay: for (var i = 0; i < trial.Count; i++) journal.Killed(trial.TargetId).ToList(); break;
+                case QuestKind.Fetch: journal.PickedUp(trial.Id); break;
+                default:
+                    main.Talk(rival);
+                    Check(hud.Choose("Spar with me"), $"you challenge {g.Rival.Name}");
+                    await Frames(5);
+                    var duel = main.Enemies().First(e => e.Sparring);
+                    Check(duel.Stats.Name == g.Rival.Name, $"{duel.Stats.Name} fights as a {g.Rival.Teaches} ({duel.Stats.MaxHealth:0} hp)");
+                    for (var t = 0.0; t < 40 && duel.Sparring; t += 1.0 / 60)
+                    {
+                        if (p.GlobalPosition.DistanceTo(duel.GlobalPosition) > 2.2f) p.GlobalPosition = duel.GlobalPosition + new Vector3(0, 0.3f, 1.8f);
+                        p.Face(duel.GlobalPosition);
+                        p.Stats.Heal(30);
+                        p.Swing();
+                        await Frames(1);
+                    }
+                    Check(!duel.Sparring && duel.State != EnemyState.Dead && journal.Get(trial.Id) is { Stage: QuestStage.Return }, $"{g.Rival.Name} yields, alive");
+                    await Frames(200);
+                    Check(rival.Visible, $"{g.Rival.Npc.First} steps back into the yard");
+                    break;
+            }
+            main.Talk(teacher);
+            await Frames(2);
+            Check(journal.Get(trial.Id) is { Stage: QuestStage.Done } && main.GuildBook.Step("Paladin") == step + 1, $"trial {step + 1} done");
+            hud.EndTalk();
+        }
+        Check(main.GuildBook.Titles.Contains(ClassQuests.MasteryTitle("Paladin")), $"you are {ClassQuests.MasteryTitle("Paladin")}, {p.GuildTitle}");
+
+        // Drama, once enough time has passed.
+        main.GuildBook.PlaySeconds += Guilds.DramaGapSeconds;
+        var story = Guilds.NextDrama(main.GuildBook, Calling.Warrior)!;
+        await Frames(400); // the guild sends word
+        Check(story is not null, $"trouble in the Iron Circle: {story?.Title}");
+        main.Talk(Find(story!.TellerId));
+        Check(hud.Choose(story.Title), $"{Guilds.Member(story.TellerId)!.Name} tells you: {story.Intro[..60]}...");
+        var choice = story.Choices.First(c => !c.Duel);
+        Check(hud.Choose(choice.Label[..10]), $"you choose: {choice.Label}");
+        Check(main.GuildBook.For(Calling.Warrior).Done.Contains(story.Id), $"it's settled: {hud.TalkText[..60]}...");
+        hud.EndTalk();
+
+        // A duel lost: the hero yields rather than falls.
+        var lost = main.GuildBook.For(Calling.Warrior).DuelsLost;
+        main.Talk(rival);
+        hud.Choose("Spar with me");
+        await Frames(5);
+        p.Stats.Lose(p.Stats.Health - p.Stats.MaxHealth * 0.17);
+        await Until(() => main.GuildBook.For(Calling.Warrior).DuelsLost > lost, 20);
+        Check(main.GuildBook.For(Calling.Warrior).DuelsLost > lost && !p.Downed, "you lose a duel and yield, on your feet");
+        await Frames(200);
     }
 
     /// <summary>A logged-in character's progress reaches the server, ready for the next device.</summary>

@@ -252,7 +252,7 @@ public partial class Hud : CanvasLayer
         _magicka.Value = p.Stats.Magicka / p.Stats.MaxMagicka * 100;
         _stamina.Value = p.Stats.Stamina / p.Stats.MaxStamina * 100;
         _limit.Value = p.Stats.Limit;
-        _septims.Text = $"Level {p.Hero.Level} {p.Class.Name}{(p.Hero.Points > 0 ? $" ({p.Hero.Points} to spend, K)" : "")}    {p.Septims} septims    {p.Meat} meat"
+        _septims.Text = $"Level {p.Hero.Level} {p.Class.Name}{(p.GuildTitle.Length > 0 ? $", {p.GuildTitle}" : "")}{(p.Hero.Points > 0 ? $" ({p.Hero.Points} to spend, K)" : "")}    {p.Septims} septims    {p.Meat} meat"
             + (p.Class.Elemental ? $"    {p.Element}" : "") + (p.Stats.LimitReady ? "    LIMIT READY (R)" : "");
         _area.Text = area;
         _status.Text = status;

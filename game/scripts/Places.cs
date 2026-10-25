@@ -11,6 +11,9 @@ public partial class Person : StaticBody3D
 {
     public required Npc Npc { get; init; }
     public bool Captive { get; init; }
+
+    /// <summary>How they look, if not as their trade suggests (a guild teacher in their class's kit).</summary>
+    public string? Look { get; init; }
     public Body Figure { get; private set; } = null!;
     readonly Label3D _plate = new() { Position = new Vector3(0, 2.35f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 28, OutlineSize = 8, PixelSize = 0.006f, Modulate = new Color("#a8d8a0") };
 
@@ -35,7 +38,7 @@ public partial class Person : StaticBody3D
 
     public override void _Ready()
     {
-        Figure = Tristinwold.Game.Body.For(LookFor(Npc, Captive));
+        Figure = Tristinwold.Game.Body.For(Look ?? LookFor(Npc, Captive));
         AddChild(Figure);
         AddChild(new CollisionShape3D { Shape = new CapsuleShape3D { Radius = 0.38f, Height = 1.75f }, Position = new Vector3(0, 0.88f, 0) });
         AddChild(_plate);
@@ -131,6 +134,12 @@ public partial class Places(Main main, WorldGen world) : Node3D
         foreach (var b in _built.Values.Where(b => b.Site.DistanceTo(player.X, player.Z) > DropRange + b.Site.Radius).ToList())
             Drop(b);
         foreach (var b in _built.Values) Refresh(b);
+    }
+
+    /// <summary>A lair emptied this session fills again (a new job sends you back to it).</summary>
+    public void Restock(string siteId)
+    {
+        if (_cleared.Remove(siteId) && _built.TryGetValue(siteId, out var b)) Drop(b);
     }
 
     public void KilledAt(string siteId)

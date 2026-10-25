@@ -337,6 +337,9 @@ public partial class Figure : Body
     public override void Seat(bool seated)
     {
         _seated = seated;
+        // In the saddle the legs are tucked out of sight, and the rider sits a little down into the dragon's back.
+        foreach (var m in FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>())
+            if (m.Name.ToString().Contains("_Leg")) m.Visible = !seated;
         _busy = 0;
         _loop = "";
         Play(seated ? "Sit_Chair_Idle" : "Idle", 0.2f);
@@ -851,7 +854,7 @@ public partial class Creature : Animal
         for (Node? n = s; n is not null && n != this; n = n.GetParent())
             if (n is Node3D n3) space = n3.Transform * space;
         var spot = space * s.GetBoneGlobalRest(b1).Origin.Lerp(s.GetBoneGlobalRest(b2).Origin, 0.45f);
-        return Saddle = spot + new Vector3(0, 0.5f - 0.45f, 0); // hips sit about this far above the bone, the feet hang below
+        return Saddle = spot - new Vector3(0, 0.3f, 0); // the rider's hips sink a little into the back (the legs are hidden)
     }
 
     public override void Move(float speed, bool grounded, bool swimming)

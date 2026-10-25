@@ -3,7 +3,7 @@ using Tristinwold.Nemesis;
 
 namespace Tristinwold.World;
 
-public enum QuestKind { Slay, Fetch, Deliver, Rescue }
+public enum QuestKind { Slay, Fetch, Deliver, Rescue, Duel }
 
 /// <summary>
 /// A job someone in the world asks of a company. Targets are real places nearby: a lair to
@@ -46,6 +46,7 @@ public sealed class QuestEntry
         (QuestKind.Fetch, QuestStage.Active) => $"Find {Quest.Item} at {Quest.TargetName}",
         (QuestKind.Deliver, _) => $"Take the {Quest.Item} to {Quest.PersonName} at {Quest.TargetName}",
         (QuestKind.Rescue, QuestStage.Active) => $"Find {Quest.PersonName} at {Quest.TargetName}",
+        (QuestKind.Duel, QuestStage.Active) => $"Beat {Quest.PersonName} in a duel at {Quest.TargetName}",
         _ => $"Return to {Quest.GiverName} at {Quest.GiverHomeName}",
     };
 
@@ -92,6 +93,16 @@ public sealed class QuestLog
         if (Get(questId) is not { Stage: QuestStage.Active, Quest.Kind: QuestKind.Fetch } e) return null;
         e.Stage = QuestStage.Return;
         return new QuestUpdate(e.Quest, e.Stage, $"You found {e.Quest.Item}. Bring it to {e.Quest.GiverName}.");
+    }
+
+    /// <summary>A duel won against someone: any quest to beat them is done but for the telling.</summary>
+    public IEnumerable<QuestUpdate> DuelWon(string personId)
+    {
+        foreach (var e in Open.Where(e => e.Quest.Kind == QuestKind.Duel && e.Stage == QuestStage.Active && e.Quest.PersonId == personId).ToList())
+        {
+            e.Stage = QuestStage.Return;
+            yield return new QuestUpdate(e.Quest, e.Stage, $"{e.Quest.PersonName} yields. Return to {e.Quest.GiverName}.");
+        }
     }
 
     /// <summary>The company spoke to someone: a recipient, a captive, or a giver waiting on news.</summary>

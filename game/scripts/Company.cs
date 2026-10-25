@@ -44,6 +44,7 @@ public partial class Main
         Enemy.Slain += OnSlain;
         Enemy.Felled += OnFelled;
         Enemy.Turned += OnTurned;
+        Enemy.SparEnded += OnSparEnded;
         _player.Summoned += Summon;
         foreach (var bond in _bonds.Where(b => b.Following)) BringCompanion(bond);
     }
@@ -53,6 +54,7 @@ public partial class Main
         Enemy.Slain -= OnSlain;
         Enemy.Felled -= OnFelled;
         Enemy.Turned -= OnTurned;
+        Enemy.SparEnded -= OnSparEnded;
     }
 
     // ---- companions ----------------------------------------------------------------------------
@@ -294,12 +296,6 @@ public partial class Main
 
     void AddGuildMasters()
     {
-        Townsfolk(new Npc("tristinwold/brannoc", "Marshal Brannoc Steelhand", Sex.Male, 0, "master of the Iron Circle", "city:tristinwold", "Tristinwold",
-            "Brannoc trained the city watch for twenty years and the Tongs' best leg-breakers for ten before that. Now he trains anyone who can stand up again after he knocks them down.",
-            ["blades", "old battles"], "gruff", "You want to fight? Everyone wants to fight. Show me you can get up.", 64, 44));
-        Townsfolk(new Npc("tristinwold/vesper", "Vesper Quill", Sex.Female, 0, "mistress of the Velvet Knives", "city:tristinwold", "Tristinwold",
-            "Nobody knows how long Vesper has run the Velvet Knives. The Lantern Boys pay her a tithe, and the Tongs pretend she doesn't exist, which is how she likes it.",
-            ["cards", "the Tongs"], "dry", "You walk like a tourist. We can fix that.", -42, 62));
         Townsfolk(new Npc("eyrie/aldric", DragonSaga.Knight, Sex.Male, 0, "knight-commander of the Order of the Eyrie", "city:tristinwold", "Tristinwold",
             "Ser Aldric has ridden Auriel, a gold dragon older than the city walls, for thirty years. He keeps the Order's rookery on the hill west of Tristinwold, and he is looking for people worth trusting with an egg.",
             ["the stars", "old battles"], "proud", "Mind the dragons. They mind you.", DragonSaga.RookeryX + 8, DragonSaga.RookeryZ + 6));
@@ -309,14 +305,7 @@ public partial class Main
     IEnumerable<(string, Action)> MoreTalk(Person person)
     {
         var npc = person.Npc;
-        var calling = npc.Id switch
-        {
-            "tristinwold/brannoc" => Calling.Warrior,
-            "tristinwold/vesper" => Calling.Rogue,
-            "tristinwold/ilse" => Calling.Mage,
-            _ => (Calling?)null,
-        };
-        if (calling is { } c) yield return ($"I want to join {Classes.GuildOf(c)}.", () => Guild(person, c));
+        foreach (var o in GuildTalk(person)) yield return o;
         if (People.IsYouth(npc))
         {
             var word = Follower.Word;
@@ -342,7 +331,7 @@ public partial class Main
             });
         }))).ToList();
         options.Add(("Not yet.", () => Say(person, "The door stays open.")));
-        _hud.Talk(Who(npc), $"{Classes.GuildOf(calling)} teaches three paths. Which is yours?", [.. options]);
+        _hud.Talk(Who(npc), $"{Guilds.Of(calling).Name} teaches three paths. Which is yours?", [.. options]);
     }
 
     // ---- the road to Dragon Knight ----------------------------------------------------------------
@@ -505,7 +494,8 @@ public partial class Main
     {
         var hero = _player.Hero;
         var c = _player.Class;
-        var text = $"{c.Name}, level {hero.Level} ({hero.Xp}/{Hero.XpToNext(hero.Level)} xp). {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend.\n" +
+        var titles = _guilds.Titles.Count > 0 ? $" {string.Join(", ", _guilds.Titles)}." : "";
+        var text = $"{c.Name}, level {hero.Level} ({hero.Xp}/{Hero.XpToNext(hero.Level)} xp), {_player.GuildTitle}.{titles} {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend.\n" +
             string.Join("\n", c.Skills.Where(a => a.Id != "attune").Select(a => $"{Slot(a)} {a.Name} (rank {hero.Rank(a.Id)}/{Hero.MaxRank}): {a.Text}"));
         var options = c.Skills.Where(a => a.Id != "attune" && hero.CanRaise(a.Id))
             .Select(a => ($"Raise {a.Name} to rank {hero.Rank(a.Id) + 1}", (Action)(() => { hero.Raise(a.Id); _player.Fit(); Save(); ShowSkills(); }))).ToList();

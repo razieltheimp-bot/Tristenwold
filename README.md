@@ -148,8 +148,7 @@ and an Apple developer account).
 ### Classes
 
 Nine classes, three to each calling, each fighting its own way (`src/Tristinwold.Gameplay/Classes.cs`). Pick
-one when you make a character; join another later at its guild in Tristinwold (Marshal Brannoc of the Iron
-Circle for warriors, Vesper Quill of the Velvet Knives for rogues, Sister Ilse at the Magi Archive for mages).
+one when you make a character; learn another later from its teacher at the guilds outside Tristinwold.
 
 | Class | Left | Right | Q | R (limit) | Always |
 |---|---|---|---|---|---|
@@ -165,6 +164,36 @@ Circle for warriors, Vesper Quill of the Velvet Knives for rogues, Sister Ilse a
 
 Kills and jobs bring experience. Each level adds health, magicka and stamina and a skill point; spend points (K)
 to rank a move up to 5, each rank 15% stronger. Joining another class gives the points back.
+
+### The guilds
+
+Three guilds keep yards just outside Tristinwold's walls (`src/Tristinwold.World/Guilds.cs`), each with a
+leader, a teacher for each of its three classes, members with their own stories, and a rival:
+
+| Guild | Where | Leader | Teachers | Members | Rival |
+|---|---|---|---|---|---|
+| The Iron Circle (warriors) | a yard outside the west gate | Marshal Brannoc Steelhand | Master Yun Tsavo (Martial Artist), Hrothga Ironmane (Barbarian), Ser Edwyn Halloran (Paladin) | Sergeant Tamsin Brack, Odo Fennick, Greta Vosk | Corin Vale |
+| The Velvet Knives (rogues) | the old tannery south of the walls | Vesper Quill | Wren Ashcombe (Ranger), Pip Marlowe (Thief), Silas Morrow (Assassin) | Nell Cutwater, Jory Ash, Mags Dunmore | Sable Rue |
+| The Magi (mages) | the Archive Garden north-east of the walls | Archmage Selwyn Tarrow | Magister Orla Penhallow (Wizard), Morwen Hesk (Warlock or Witch), Daro Vey (Sorcerer) | Brother Anselm, Liesl Varro, Teodric Gale | Isadora Crane |
+
+- **Your guild** is your class's: you start as an Initiate and rise to Member, Adept, Veteran and Master by what
+  you do for it (shown beside your level). The leader tells you where you stand.
+- **Teachers.** Your class's teacher gives a lesson once a level (a skill point, for a fee) and sets your
+  class's trials. Any other teacher will teach you their class instead.
+- **Class trials.** Each of the nine classes has its own three trials (`src/Tristinwold.World/ClassQuests.cs`): clear
+  a lair the way your class would, bring back the relic of your art from where it was lost (the Scroll of the Open
+  Hand, the Bloodhorn of the Old Clans, the Reliquary of Saint Aubrel, the Greywood Bow, the Lockbreaker's Picks,
+  the Black Mercy, the Tome of the Three Fires, the Hollow Candle, the Dragonblood Pearl), and beat your guild's
+  rival in a duel. Pass all three for the class's title (Oathsworn of the Tide, Prince of Pockets, Dragonblood...)
+  and two skill points.
+- **Rivals.** Corin, Sable and Isadora want everything you want. Spar with them whenever you like: duels are to
+  the yield, and nobody dies. They fight as their class, as strong as you are, and stronger the hotter the rivalry
+  runs; what they say to you depends on how it's been going. Every so often you hear what they've been up to.
+- **Drama.** As time passes and you rise, trouble comes to you: someone in your guild wants a word. A snapped
+  sword and an accused recruit, a Tong bribe, a fight for First Blade; a skimmed take, a war with the Lantern
+  Boys, a betrayal, the Velvet Crown; a missing book about the Rift, a vial of corrupted dragon's blood, a wager
+  for a council seat, and what Sister Ilse keeps on a shelf that isn't on any list. Each choice changes how the
+  guild sees you, how your rival burns, and what people say about you after; some are settled with a duel.
 
 ### Companions
 
