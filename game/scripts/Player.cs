@@ -28,6 +28,26 @@ public partial class Player : Fighter
     /// <summary>How the hero looks, picked on the character page (see <see cref="Gameplay.Avatar"/>); null for the class's own look.</summary>
     public string? Avatar { get; init; }
 
+    Gameplay.Avatar? _look;
+    bool _looked;
+
+    /// <summary>Their look as picked on the character page, or null for their class's own.</summary>
+    public Gameplay.Avatar? Appearance
+    {
+        get
+        {
+            if (!_looked) (_look, _looked) = (Gameplay.Avatar.Parse(Avatar, Class.Id), true);
+            return _look;
+        }
+    }
+
+    /// <summary>Their people, and any dragon in their blood.</summary>
+    public Race Race => Appearance?.People ?? Races.Get("human");
+    public DragonBlood? Blood => Appearance?.Blood;
+
+    /// <summary>What shops ask of them, as a share of the usual price.</summary>
+    public double Markup => Races.Prices(Race);
+
     Body MakeFigure() => Tristinwold.Game.Figure.Create(Class.Look, Gameplay.Avatar.Parse(Avatar, Class.Id));
 
     /// <summary>Their rank in their guild ("Adept of the Iron Circle").</summary>
@@ -72,14 +92,15 @@ public partial class Player : Fighter
         Local = this;
         if (Hero.Discipline is null or "") Hero.Discipline = Classes.For(Outfit).Id;
         Stats = new Combatant(Company, 1);
-        Dress(Class.Look, 1.8f, make: Avatar is null ? null : MakeFigure);
+        var size = Appearance?.Size ?? 1;
+        Dress(Class.Look, 1.8f * size, make: Avatar is null ? null : MakeFigure);
         Fit();
         Stats.Heal(1e9);
         Stats.Restore(1e9, 1e9);
         Plate.Text = "";
-        _pivot = new Node3D { Position = new Vector3(0, 1.6f, 0) };
+        _pivot = new Node3D { Position = new Vector3(0, 1.6f * size, 0) };
         AddChild(_pivot);
-        _arm = new SpringArm3D { SpringLength = 5, Position = new Vector3(0.6f, 0, 0) };
+        _arm = new SpringArm3D { SpringLength = 5 * Math.Max(1, size), Position = new Vector3(0.6f, 0, 0) };
         _pivot.AddChild(_arm);
         _arm.AddChild(Camera = new Camera3D { Current = true, Far = 1500 });
         if (DisplayServer.GetName() != "headless") Input.MouseMode = Input.MouseModeEnum.Captured;
@@ -91,15 +112,17 @@ public partial class Player : Fighter
         var c = Class;
         var (h, m, s) = Hero.Growth;
         var passive = Hero.Power(c.Passive.Id);
-        var health = (c.Health + h) * (c.Id == "Barbarian" ? 1.2 * passive : 1);
-        var magicka = (c.Magicka + m) * (c.Id == "Wizard" ? 1 + 0.25 * passive : 1);
-        Stats.SetPools(health, magicka, c.Stamina + s);
+        var race = Race;
+        var health = (c.Health + h) * (c.Id == "Barbarian" ? 1.2 * passive : 1) * race.Health;
+        var magicka = (c.Magicka + m) * (c.Id == "Wizard" ? 1 + 0.25 * passive : 1) * race.Magicka;
+        Stats.SetPools(health, magicka, (c.Stamina + s) * race.Stamina);
         Stats.Armor = c.Armor + (Hero.Level - 1) * 3;
         Stats.SpellPower = 1 + (Hero.Level - 1) * 0.04 + (c.Id == "Wizard" ? c.Passive.Power * passive : 0);
         Stats.DamageMult = 1 + (Hero.Level - 1) * 0.04;
         Stats.CritChance = c.Id == "Assassin" ? 25 + 5 * (Hero.Rank("backstab") - 1) : c.Calling == Calling.Rogue ? 10 : 5;
         Stats.SpeedMult = c.Id == "MartialArtist" ? 1.15 : 1;
         Stats.Name = Company;
+        Races.Apply(Stats, race, Blood, Appearance?.PureDragon == true); // their people's gifts and costs, and a dragonkind's blood
         // What they wear, and what they've drunk.
         Stats.Armor += Pack.Armor + (_wardLeft > 0 ? _ward : 0);
         var might = (1 + Pack.Damage) * (_mightLeft > 0 ? 1 + _might : 1);

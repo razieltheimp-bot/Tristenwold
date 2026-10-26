@@ -168,10 +168,11 @@ public partial class Main
         {
             var item = Items.Get(id);
             var (name, price, text) = id == "meat" ? ("Meat", Shops.MeatPrice, "for your beasts") : (item!.Name, Shop.Price(item), item.Text);
+            price = Shops.Charge(price, _player.Markup);
             return ($"{name}, {price} septims: {text}", (Action)(() =>
             {
                 var (septims, meat) = (_player.Septims, _player.Meat);
-                if (!Shops.Buy(shop, id, _player.Pack, ref septims, ref meat)) { _hud.Toast("You can't afford that.", 3); return; }
+                if (!Shops.Buy(shop, id, _player.Pack, ref septims, ref meat, _player.Markup)) { _hud.Toast("You can't afford that.", 3); return; }
                 (_player.Septims, _player.Meat) = (septims, meat);
                 _hud.Toast($"Bought {name.ToLowerInvariant()}. ({_player.Septims} septims left)", 3);
                 Save();
@@ -186,7 +187,7 @@ public partial class Main
     void ShowMenagerie(Person person)
     {
         var level = _player.Pack.Level(Job.Taming);
-        var options = Menagerie.Stock.Select(o => ($"{o.Name}, {Menagerie.Price(o, level)} septims. Danger {Menagerie.Stars(o.Danger)}, training {Menagerie.Stars(o.Training)}. {o.Text}",
+        var options = Menagerie.Stock.Select(o => ($"{o.Name}, {Menagerie.Price(o, level, _player.Markup)} septims. Danger {Menagerie.Stars(o.Danger)}, training {Menagerie.Stars(o.Training)}. {o.Text}",
             (Action)(() => { if (BuyPet(o) is not null) Say(person, "Feed it, and don't let it chew the rope."); }))).ToList();
         options.Add(("Not today.", () => Say(person, "They'll be here. Most of them.")));
         _hud.Talk($"Wren's Menagerie ({_player.Septims} septims)",

@@ -52,6 +52,7 @@ public partial class StartScreen : CanvasLayer
     ScrollContainer _scroll = null!;
     readonly VBoxContainer _newOnly = new(), _appearance = new();
     readonly Label _lookTitle = new() { Modulate = new Color("#ffd27a") };
+    readonly Label _peopleText = new() { AutowrapMode = TextServer.AutowrapMode.Word, Modulate = new Color("#e8dcc4") };
     readonly Dictionary<string, Label> _lookValues = [];
     readonly HBoxContainer _createButtons = new(), _restyleButtons = new();
     string? _token;
@@ -172,12 +173,19 @@ public partial class StartScreen : CanvasLayer
     {
         _appearance.AddThemeConstantOverride("separation", 8);
         _appearance.AddChild(_lookTitle);
+        _appearance.AddChild(_peopleText);
         var split = new HBoxContainer();
         split.AddThemeConstantOverride("separation", 12);
         split.AddChild(_preview);
         var rows = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         rows.AddThemeConstantOverride("separation", 4);
         var figures = Avatar.Figures;
+        var races = Races.All.Select(r => r.Id).ToArray();
+        Row(rows, "People", () => Races.Get(_avatar.Race).Name, d => _avatar = _avatar with { Race = Step(races, _avatar.Race, d) });
+        Row(rows, "Dragon", () => _avatar.IsDragonkind ? _avatar.Dragon : "(dragonkind only)",
+            d => { if (_avatar.IsDragonkind) _avatar = _avatar with { Dragon = Step([.. Races.Dragons.Select(x => x.Colour)], _avatar.Dragon, d) }; });
+        Row(rows, "Other half", () => !_avatar.IsDragonkind ? "(dragonkind only)" : _avatar.Half == "none" ? "None: pure dragon" : Races.Get(_avatar.Half).Name,
+            d => { if (_avatar.IsDragonkind) _avatar = _avatar with { Half = Step(["none", .. Races.Halves.Select(r => r.Id)], _avatar.Half, d) }; });
         Row(rows, "Head", () => Avatar.Called(_avatar.Head), d => _avatar = _avatar with { Head = Step(figures, _avatar.Head, d) });
         Row(rows, "Body", () => Avatar.Called(_avatar.Body), d => _avatar = _avatar with { Body = Step(figures, _avatar.Body, d) });
         Row(rows, "Arms", () => Avatar.Called(_avatar.Arms), d => _avatar = _avatar with { Arms = Step(figures, _avatar.Arms, d) });
@@ -186,8 +194,19 @@ public partial class StartScreen : CanvasLayer
         Row(rows, "Clothes", () => _avatar.Outfit, d => _avatar = _avatar with { Outfit = Step(Avatar.Outfits.Select(o => o.Name).ToArray(), _avatar.Outfit, d) });
         Row(rows, "Skin", () => _avatar.Skin, d => _avatar = _avatar with { Skin = Step(Avatar.Skins.Select(o => o.Name).ToArray(), _avatar.Skin, d) });
         Row(rows, "Height", () => _avatar.Height, d => _avatar = _avatar with { Height = Step(Avatar.Heights.Select(o => o.Name).ToArray(), _avatar.Height, d) });
+        Row(rows, "Build", () => _avatar.Build, d => _avatar = _avatar with { Build = Step(Avatar.Builds.Select(o => o.Name).ToArray(), _avatar.Build, d) });
+        Row(rows, "Beard", () => _avatar.Beard == "none" ? "None" : _avatar.Beard, d => _avatar = _avatar with { Beard = Step(Avatar.Beards, _avatar.Beard, d) });
+        Row(rows, "Hair (beard)", () => _avatar.Hair, d => _avatar = _avatar with { Hair = Step(Avatar.Hairs.Select(o => o.Name).ToArray(), _avatar.Hair, d) });
+        Row(rows, "Horns", () => _avatar.Horns == "none" ? (_avatar.IsDragonkind ? "Swept (dragonkind)" : "None") : _avatar.Horns,
+            d => _avatar = _avatar with { Horns = Step(Avatar.HornStyles, _avatar.Horns, d) });
         var quick = new HBoxContainer();
-        quick.AddChild(MakeButton("Class look", () => { _avatar = Avatar.For(_restyling?.Look ?? _look); _styled = false; ShowLook(); }, expand: true));
+        quick.AddChild(MakeButton("Class look", () =>
+        {
+            // The class's own clothes back, but they stay who they are.
+            _avatar = Avatar.For(_restyling?.Look ?? _look) with { Race = _avatar.Race, Dragon = _avatar.Dragon, Half = _avatar.Half };
+            _styled = _avatar.Race != "human";
+            ShowLook();
+        }, expand: true));
         quick.AddChild(MakeButton("Surprise me", () => { _avatar = Avatar.Random(new Random()); _styled = true; ShowLook(); }, expand: true));
         rows.AddChild(quick);
         split.AddChild(rows);
@@ -224,7 +243,9 @@ public partial class StartScreen : CanvasLayer
     void ShowLook()
     {
         foreach (var r in _refresh) r();
-        _lookTitle.Text = _restyling is { } sheet ? $"{sheet.Name}'s look" : "How they look (the class decides what they carry)";
+        _lookTitle.Text = _restyling is { } sheet ? $"{sheet.Name}'s look" : "Who they are and how they look (the class decides what they carry)";
+        var people = _avatar.People;
+        _peopleText.Text = $"{_avatar.Kind}{(_avatar.Blood is { } blood ? $" ({blood.Says})" : "")}: {people.Text}\n  + {people.Good}.\n  - {people.Bad}.";
         if (_preview.IsInsideTree()) _preview.Show(_restyling?.Look ?? _look, _avatar);
         else _preview.Ready += () => _preview.Show(_restyling?.Look ?? _look, _avatar);
     }
@@ -388,7 +409,7 @@ public partial class StartScreen : CanvasLayer
             row.AddChild(new TextureRect { Texture = Portrait(sheet.Look) ?? Portrait("Knight"), CustomMinimumSize = new Vector2(56, 56), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered });
             row.AddChild(new Label
             {
-                Text = $"{sheet.Name}\n   {ClassName(sheet.Look)}, {sheet.Element}, {sheet.Septims} septims{(sheet.Where.Length > 0 ? $", last seen at {sheet.Where}" : "")}",
+                Text = $"{sheet.Name}\n   {(Avatar.Parse(sheet.Avatar, sheet.Look) is { } who ? who.Kind + " " : "")}{ClassName(sheet.Look)}, {sheet.Element}, {sheet.Septims} septims{(sheet.Where.Length > 0 ? $", last seen at {sheet.Where}" : "")}",
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             });
             row.AddChild(MakeButton("Play", () => _ = Choose(sheet)));

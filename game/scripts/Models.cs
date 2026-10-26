@@ -374,6 +374,7 @@ public partial class Figure : Body
         if (Models.Scene($"characters/{l.Model}.glb")?.Instantiate() is Node3D model)
         {
             model.Scale = Vector3.One * l.Scale;
+            if (avatar is not null) model.Scale = new Vector3(l.Scale * avatar.Width, l.Scale, l.Scale * avatar.Width); // a broad dwarf, a slim elf
             model.RotationDegrees = new Vector3(0, 180, 0); // KayKit faces +Z; Godot's forward is -Z
             f.AddChild(model);
             foreach (var m in model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>())
@@ -431,6 +432,7 @@ public partial class Figure : Body
         }
         var outfit = new Color(a.OutfitHex);
         var skin = new Color(a.SkinHex);
+        if (a.Blood is { } blood) skin = skin.Lerp(new Color(blood.Hex), a.PureDragon ? 0.8f : 0.45f); // dragon blood shows in the skin as scales
         foreach (var (part, figure) in new[] { ("head", a.Head), ("body", a.Body), ("arms", a.Arms), ("legs", a.Legs) })
         {
             if (Source(figure) is not { } source) continue;
@@ -445,7 +447,7 @@ public partial class Figure : Body
             }
         }
         foreach (var m in skeleton.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>()
-                     .Where(m => m.Name.ToString().Contains("Hat") || m.Name.ToString().Contains("Helmet") || m.Name.ToString().Contains("_Hood")))
+                     .Where(m => m.Skin is null && (m.Name.ToString().Contains("Hat") || m.Name.ToString().Contains("Helmet") || m.Name.ToString().Contains("_Hood"))))
             m.Visible = false;
         if (a.HatFigure.Length > 0 && Source(a.HatFigure)?.FindChild(a.Hat, true, false) is MeshInstance3D hat)
         {
@@ -453,6 +455,141 @@ public partial class Figure : Body
                        ?? new BoneAttachment3D { BoneName = "head" };
             if (slot.GetParent() is null) skeleton.AddChild(slot);
             slot.AddChild(new MeshInstance3D { Name = "Avatar_Hat", Mesh = hat.Mesh, Transform = hat.Transform });
+        }
+        Adorn(skeleton, a, skin);
+    }
+
+    // ---- what their people and their blood add: ears, tusks, beards, horns, a tail ---------------------------
+
+    static StandardMaterial3D Matte(Color c, float rough = 0.8f) => new() { AlbedoColor = c, Roughness = rough };
+
+    /// <summary>A cone along a direction: an ear, a tusk, a horn.</summary>
+    static MeshInstance3D Cone(Vector3 at, Vector3 along, float length, float radius, Material m, float flat = 1)
+    {
+        var d = along.Normalized();
+        var basis = new Basis(new Quaternion(Vector3.Up, d)) * Basis.FromScale(new Vector3(1, 1, flat));
+        return new MeshInstance3D
+        {
+            Mesh = new CylinderMesh { TopRadius = radius * 0.06f, BottomRadius = radius, Height = length, RadialSegments = 10, Rings = 1 },
+            Transform = new Transform3D(basis, at + d * length / 2), MaterialOverride = m,
+        };
+    }
+
+    /// <summary>
+    /// What a hero's people and blood add to their figure, sized from their own head and body: an elf's long ears,
+    /// a goblin's great flaps, an orc's tusks; a beard; horns; and for dragonkind a tail. Everything is placed in the
+    /// skeleton's resting space and hung from the head or hips, so it nods and sways with them.
+    /// </summary>
+    static void Adorn(Skeleton3D skeleton, Tristinwold.Gameplay.Avatar a, Color skin)
+    {
+        Aabb? Box(string part) => skeleton.GetChildren().OfType<MeshInstance3D>()
+            .Where(m => m.Skin is not null && Parts[part].Any(end => m.Name.ToString().EndsWith(end)) && !m.Name.ToString().EndsWith("_Eyes"))
+            .Select(m => m.Transform * m.GetAabb()).Aggregate((Aabb?)null, (x, b) => x is { } y ? y.Merge(b) : b);
+        Node3D? Hang(string bone)
+        {
+            var i = skeleton.FindBone(bone);
+            if (i < 0) return null;
+            var slot = skeleton.GetChildren().OfType<BoneAttachment3D>().FirstOrDefault(b => b.BoneName == bone) ?? new BoneAttachment3D { BoneName = bone };
+            if (slot.GetParent() is null) skeleton.AddChild(slot);
+            var space = new Node3D { Name = $"Adorn_{bone}", Transform = skeleton.GetBoneGlobalRest(i).AffineInverse() };
+            slot.AddChild(space);
+            return space;
+        }
+        var race = a.People;
+        var blood = a.Blood;
+        var flesh = Matte(new Color("#eab890") * skin);
+        if (Box("head") is { } head && Hang("head") is { } h)
+        {
+            var (c, sz) = (head.GetCenter(), head.Size);
+            var front = c.Z + sz.Z * 0.5f;
+            // Ears, out from the sides of the head.
+            foreach (var side in new[] { -1f, 1f })
+            {
+                var ear = new Vector3(c.X + side * sz.X * 0.44f, c.Y + sz.Y * 0.02f, c.Z - sz.Z * 0.04f);
+                switch (race.Ears)
+                {
+                    case "elf": h.AddChild(Cone(ear, new Vector3(side, 0.75f, -0.35f), sz.X * 0.36f, sz.X * 0.07f, flesh, 0.45f)); break;
+                    case "goblin": h.AddChild(Cone(ear, new Vector3(side, 0.3f, -0.15f), sz.X * 0.5f, sz.X * 0.15f, flesh, 0.35f)); break;
+                    case "orc": h.AddChild(Cone(ear, new Vector3(side, 0.55f, -0.3f), sz.X * 0.2f, sz.X * 0.07f, flesh, 0.5f)); break;
+                }
+                if (race.Tusks)
+                    h.AddChild(Cone(new Vector3(c.X + side * sz.X * 0.13f, c.Y - sz.Y * 0.2f, front - sz.Z * 0.06f), new Vector3(side * 0.15f, 1, 0.25f),
+                        sz.Y * 0.16f, sz.X * 0.035f, Matte(new Color("#f2ead2"), 0.4f)));
+            }
+            // A beard, from the chin down.
+            var hair = Matte(new Color(a.HairHex), 0.95f);
+            var chin = new Vector3(c.X, c.Y - sz.Y * 0.28f, front - sz.Z * 0.1f);
+            switch (a.Beard)
+            {
+                case "Stubble":
+                    h.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = sz.X * 0.3f, Height = sz.Y * 0.3f }, MaterialOverride = Matte(new Color(a.HairHex) with { A = 0.55f }), Position = chin + new Vector3(0, sz.Y * 0.05f, -sz.Z * 0.06f), Scale = new Vector3(1, 0.7f, 0.55f) });
+                    break;
+                case "Short":
+                    h.AddChild(new MeshInstance3D { Mesh = new CapsuleMesh { Radius = sz.X * 0.2f, Height = sz.Y * 0.42f }, MaterialOverride = hair, Position = chin, Scale = new Vector3(1.25f, 1, 0.6f) });
+                    break;
+                case "Long":
+                    h.AddChild(new MeshInstance3D { Mesh = new CapsuleMesh { Radius = sz.X * 0.21f, Height = sz.Y * 0.85f }, MaterialOverride = hair, Position = chin - new Vector3(0, sz.Y * 0.2f, 0), Scale = new Vector3(1.2f, 1, 0.55f) });
+                    break;
+                case "Forked":
+                    h.AddChild(new MeshInstance3D { Mesh = new CapsuleMesh { Radius = sz.X * 0.2f, Height = sz.Y * 0.4f }, MaterialOverride = hair, Position = chin, Scale = new Vector3(1.2f, 1, 0.55f) });
+                    foreach (var side in new[] { -1f, 1f })
+                        h.AddChild(Cone(chin + new Vector3(side * sz.X * 0.08f, -sz.Y * 0.1f, 0), new Vector3(side * 0.25f, -1, 0.1f), sz.Y * 0.45f, sz.X * 0.09f, hair));
+                    break;
+                case "Braided":
+                    h.AddChild(new MeshInstance3D { Mesh = new CapsuleMesh { Radius = sz.X * 0.2f, Height = sz.Y * 0.4f }, MaterialOverride = hair, Position = chin, Scale = new Vector3(1.2f, 1, 0.55f) });
+                    for (var i = 0; i < 4; i++)
+                        h.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = sz.X * (0.1f - i * 0.012f), Height = sz.X * (0.2f - i * 0.024f) }, MaterialOverride = hair, Position = chin - new Vector3(0, sz.Y * (0.24f + i * 0.13f), -sz.Z * 0.02f) });
+                    break;
+            }
+            // Horns, from the top of the head: always on dragonkind (swept, if none were picked).
+            var horns = a.Horns == "none" && blood is not null ? "Swept" : a.Horns;
+            var horn = Matte(blood is { } b ? new Color(b.Hex).Darkened(0.45f) : new Color("#d8ccb0"), 0.5f);
+            foreach (var side in new[] { -1f, 1f })
+            {
+                var root = new Vector3(c.X + side * sz.X * 0.24f, c.Y + sz.Y * 0.36f, c.Z + sz.Z * 0.08f);
+                switch (horns)
+                {
+                    case "Nubs": h.AddChild(Cone(root, new Vector3(side * 0.3f, 1, 0.1f), sz.Y * 0.14f, sz.X * 0.06f, horn)); break;
+                    case "Swept": h.AddChild(Cone(root, new Vector3(side * 0.3f, 0.55f, -1), sz.Y * 0.55f, sz.X * 0.07f, horn)); break;
+                    case "Long": h.AddChild(Cone(root, new Vector3(side * 0.25f, 1, -0.35f), sz.Y * 0.65f, sz.X * 0.07f, horn)); break;
+                    case "Ram":
+                        // Three pieces curling back, down and forward round the ear.
+                        var at = root + new Vector3(side * sz.X * 0.04f, 0, 0);
+                        var dirs = new[] { new Vector3(side * 0.6f, 0.5f, -0.6f), new Vector3(side * 0.5f, -0.6f, -0.5f), new Vector3(side * 0.2f, -0.6f, 0.7f) };
+                        for (var i = 0; i < dirs.Length; i++)
+                        {
+                            var len = sz.Y * (0.24f - i * 0.04f);
+                            var piece = new MeshInstance3D
+                            {
+                                Mesh = new CylinderMesh { TopRadius = sz.X * (0.065f - i * 0.018f), BottomRadius = sz.X * (0.08f - i * 0.018f), Height = len, RadialSegments = 10 },
+                                Transform = new Transform3D(new Basis(new Quaternion(Vector3.Up, dirs[i].Normalized())), at + dirs[i].Normalized() * len / 2), MaterialOverride = horn,
+                            };
+                            h.AddChild(piece);
+                            at += dirs[i].Normalized() * len * 0.92f;
+                        }
+                        h.AddChild(Cone(at, dirs[^1], sz.Y * 0.12f, sz.X * 0.03f, horn));
+                        break;
+                }
+            }
+        }
+        // A dragonkind's tail, from the small of the back, down and out behind, tapering.
+        if (blood is not null && Box("body") is { } body && skeleton.FindBone("hips") is var hips and >= 0 && Hang("hips") is { } low)
+        {
+            var scales = Matte(new Color(blood.Hex), 0.55f);
+            var at = skeleton.GetBoneGlobalRest(hips).Origin + new Vector3(0, -body.Size.Y * 0.05f, -body.Size.Z * 0.42f);
+            var dir = new Vector3(0, -0.55f, -1).Normalized();
+            for (var i = 0; i < 6; i++)
+            {
+                var len = body.Size.Y * 0.22f;
+                var r0 = body.Size.X * (0.16f - i * 0.024f);
+                low.AddChild(new MeshInstance3D
+                {
+                    Mesh = new CylinderMesh { TopRadius = Mathf.Max(0.005f, r0 - body.Size.X * 0.024f), BottomRadius = r0, Height = len, RadialSegments = 10 },
+                    Transform = new Transform3D(new Basis(new Quaternion(Vector3.Up, dir)), at + dir * len / 2), MaterialOverride = scales,
+                });
+                at += dir * len * 0.95f;
+                dir = (dir + new Vector3(0, 0.22f, 0)).Normalized(); // curling up towards the tip
+            }
         }
     }
 

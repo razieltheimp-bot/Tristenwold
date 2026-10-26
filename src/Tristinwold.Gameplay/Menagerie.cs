@@ -38,8 +38,8 @@ public static class Menagerie
     ];
 
     /// <summary>What it costs a tamer of this level: 3% off for each level of beast taming past the first.</summary>
-    public static int Price(PetOffer offer, int tamingLevel) =>
-        (int)Math.Round(offer.BasePrice * (1 - 0.03 * Math.Clamp(tamingLevel - 1, 0, Pack.MaxJobLevel - 1)));
+    public static int Price(PetOffer offer, int tamingLevel, double markup = 1) =>
+        (int)Math.Round(offer.BasePrice * (1 - 0.03 * Math.Clamp(tamingLevel - 1, 0, Pack.MaxJobLevel - 1)) * markup);
 
     /// <summary>The stars a number of 1 to 5 is shown as.</summary>
     public static string Stars(int n) => new string('*', n) + new string('.', 5 - n);

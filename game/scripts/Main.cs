@@ -61,6 +61,7 @@ public partial class Main : Node3D
             GetTree().Root.CallDeferred(Node.MethodName.AddChild, RemotePlay.Current);
         }
         if (Mobile) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.SensorLandscape); // landscape from the first frame
+        if (_args.TryGetValue("races", out var racesShot)) { _ = RaceLineup(racesShot); return; }
         if (_args.TryGetValue("portraits", out var folder)) { _ = Portraits(folder); return; }
         if (_args.TryGetValue("showroom", out var room)) { _ = Showroom(room); return; }
         if (_args.TryGetValue("lineup", out var line)) { Proportions.Enabled = !_args.ContainsKey("plain"); _ = Lineup(line); return; }
@@ -105,6 +106,46 @@ public partial class Main : Node3D
         }
         var loaded = await AccountClient.AskAsync(server, new AccountRequest("load", account, Token: choice.Token, ServerPassword: password, Character: sheet));
         Begin(choice with { Character = sheet, Save = loaded.Save });
+    }
+
+    /// <summary>Every people side by side, and dragonkind pure and half, for checking how they look: --races shot.png</summary>
+    async Task RaceLineup(string path)
+    {
+        var looks = new (string Class, string Look)[]
+        {
+            ("Paladin", "race=human;beard=Short;hair=Brown"),
+            ("Barbarian", "race=orc;head=Barbarian;body=Barbarian;arms=Barbarian;legs=Barbarian;hat=none"),
+            ("Thief", "race=goblin"),
+            ("Ranger", "race=elf;head=Rogue;hat=none;hair=Blond"),
+            ("Paladin", "race=dwarf;hat=none;beard=Braided;hair=Copper;build=Broad"),
+            ("Barbarian", "race=half_giant;hat=none;beard=Long;hair=Black"),
+            ("Sorcerer", "race=dragonkind;dragon=Red;half=none"),
+            ("Paladin", "race=dragonkind;dragon=Gold;half=dwarf;beard=Forked;hair=Auburn;hat=none"),
+            ("Wizard", "race=dragonkind;dragon=Silver;half=elf;horns=Long;hat=none"),
+            ("Barbarian", "race=dragonkind;dragon=Green;half=orc;horns=Ram;hat=none"),
+        };
+        AddChild(new WorldEnvironment { Environment = new Godot.Environment { BackgroundMode = Godot.Environment.BGMode.Color, BackgroundColor = new Color("#2a241c"), AmbientLightSource = Godot.Environment.AmbientSource.Color, AmbientLightColor = new Color("#e8dcc8"), AmbientLightEnergy = 0.6f, TonemapMode = Godot.Environment.ToneMapper.Filmic } });
+        AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-35, 25, 0), LightEnergy = 1.3f });
+        for (var i = 0; i < looks.Length; i++)
+        {
+            var f = Figure.Create(looks[i].Class, Avatar.Parse(looks[i].Look, looks[i].Class));
+            f.Position = new Vector3((i - (looks.Length - 1) / 2f) * 1.55f, 0, 0);
+            f.RotationDegrees = new Vector3(0, 180 + (i % 2 == 0 ? 25 : -25), 0); // facing the camera
+            AddChild(f);
+        }
+        var camera = new Camera3D { Fov = 40 };
+        AddChild(camera);
+        camera.Position = new Vector3(0, 1.6f, 12.5f);
+        camera.LookAt(new Vector3(0, 1.1f, 0), Vector3.Up);
+        camera.MakeCurrent();
+        for (var i = 0; i < 40; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        GetViewport().GetTexture().GetImage().SavePng(path);
+        // And a close look at three of them from the side, where horns and tails show.
+        camera.Position = new Vector3(-3.5f, 1.5f, 3.6f);
+        camera.LookAt(new Vector3(-3.5f, 1.1f, 0), Vector3.Up);
+        for (var i = 0; i < 10; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        GetViewport().GetTexture().GetImage().SavePng(path.Replace(".png", "-side.png"));
+        GetTree().Quit();
     }
 
     /// <summary>Renders a portrait of each class for the character page: --portraits game/assets/kaykit/portraits</summary>

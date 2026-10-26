@@ -300,11 +300,15 @@ public static class Shops
 
     public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie];
 
+    /// <summary>A price with a buyer's markup (never less than 1 septim).</summary>
+    public static int Charge(int price, double markup) => price < 0 ? price : Math.Max(1, (int)Math.Round(price * markup));
+
     /// <summary>Buys one of something: the septims go, the item comes. Meat goes to the beasts' store, not the pack.</summary>
-    public static bool Buy(Shop shop, string id, Pack pack, ref int septims, ref int meat)
+    /// <param name="markup">What this buyer pays, as a share of the price (their people and blood: see <see cref="Races.Prices"/>).</param>
+    public static bool Buy(Shop shop, string id, Pack pack, ref int septims, ref int meat, double markup = 1)
     {
         if (!shop.Sells.Contains(id)) return false;
-        var price = id == "meat" ? MeatPrice : Items.Get(id) is { } item ? Shop.Price(item) : -1;
+        var price = Charge(id == "meat" ? MeatPrice : Items.Get(id) is { } item ? Shop.Price(item) : -1, markup);
         if (price < 0 || septims < price) return false;
         septims -= price;
         if (id == "meat") meat++;

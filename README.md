@@ -191,6 +191,18 @@ their purses emptied; Death Mark, one foe, one blow of terrible force; Meteor, a
 and all around it; Soul Harvest, every foe around you drained at once; Dragonfire, fire poured over
 everything in front of you.
 
+**Peoples.** A hero is born to one of seven peoples, each with a gift and a cost (shown on the character page):
+humans learn 15% faster and pay 10% less in shops; orcs (green, tusked) have more health and hit harder with
+weapons but less magicka, and townsfolk charge them more; goblins (small, big-eared) are quick and strike true
+more often but are frail; elves (pointed ears) have deep magicka and stronger spells but less health and armour;
+dwarves (short and broad) are armoured and tireless and shrug off fire and poison but are slower; half-giants are
+huge, tough and hard-hitting but slow and poor at magic. Dragonkind are scaled, horned and tailed in the colour
+of their dragon (red, blue, green, black, white, gold, silver, bronze, copper or brass): its breath hardly hurts
+them and they're tough and hit hard, but its bane hurts them more and people fear them. A dragonkind can be pure,
+or half of any other people (a half-dragon dwarf, elf, orc...): half of each people's gifts and costs, that
+people's look with the dragon's horns, tail and some of its scales. Also on the character page: build (slim,
+average, broad), a beard (stubble, short, long, forked, braided) and its colour, and horns.
+
 **Your look.** On the character page a hero's look is picked apart from their class. Their head, body, arms
 and legs can each come from any of the nine KayKit figures (knight, barbarian, mage, rogue, hooded rogue and
 four skeletons: they share one skeleton, so any mix stands and moves), with something on the head (a knight's

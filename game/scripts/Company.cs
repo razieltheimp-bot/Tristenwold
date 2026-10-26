@@ -197,7 +197,7 @@ public partial class Main
     public void GainXp(int xp)
     {
         var hero = _player.Hero;
-        if (hero.Gain(xp) > 0)
+        if (hero.Gain((int)Math.Round(xp * _player.Race.Xp)) > 0)
         {
             _player.Fit();
             _player.Stats.Heal(_player.Stats.MaxHealth);
@@ -278,7 +278,7 @@ public partial class Main
     /// <summary>Buys a young beast from Wren's Menagerie (never a dragon: the menagerie has none).</summary>
     public Bond? BuyPet(PetOffer offer)
     {
-        var price = Menagerie.Price(offer, _player.Pack.Level(Job.Taming));
+        var price = Menagerie.Price(offer, _player.Pack.Level(Job.Taming), _player.Markup);
         if (_player.Septims < price) { _hud.Toast($"The {offer.Name.ToLowerInvariant()} costs {price} septims; you have {_player.Septims}.", 4); return null; }
         _player.Septims -= price;
         var bond = Adopt(offer.KindId, dragon: false, _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 2);

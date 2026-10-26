@@ -1005,7 +1005,8 @@ public partial class SelfTest(Main main) : Node
         main.Talk(smith!);
         Check(main.HudNode.Choose("Let me see"), "the smith shows her wares");
         Check(main.HudNode.Choose("Iron Sword"), "and sells you an iron sword");
-        Check(pack.Count("iron_sword") == 1 && p.Septims == 200 - Items.Get("iron_sword")!.Value, $"for {Items.Get("iron_sword")!.Value} septims");
+        var sword = Shops.Charge(Items.Get("iron_sword")!.Value, p.Markup); // a human pays a little less
+        Check(pack.Count("iron_sword") == 1 && p.Septims == 200 - sword, $"for {sword} septims");
         main.HudNode.EndTalk();
 
         // Worn, it shows in your hand and makes you hit harder.
@@ -1047,8 +1048,9 @@ public partial class SelfTest(Main main) : Node
         Check(main.HudNode.Options.Count() == Menagerie.Stock.Count + 1 && !main.HudNode.Options.Any(o => o.Contains("Wyrmling") || o.Contains("Dragon,")),
             $"{Menagerie.Stock.Count} young beasts, and no dragon among them");
         var pup = Menagerie.Stock.Single(o => o.KindId == "wolf");
-        Check(main.HudNode.Choose("Wolf Pup") && main.Bonds.Count == bonds + 1 && main.Bonds[^1].KindId == "wolf" && p.Septims == 1000 - pup.BasePrice,
-            $"a wolf pup joins you for {pup.BasePrice} septims");
+        var paid = Menagerie.Price(pup, pack.Level(Job.Taming), p.Markup);
+        Check(main.HudNode.Choose("Wolf Pup") && main.Bonds.Count == bonds + 1 && main.Bonds[^1].KindId == "wolf" && p.Septims == 1000 - paid,
+            $"a wolf pup joins you for {paid} septims");
         Check(pack.JobXp.GetValueOrDefault(Job.Taming) > 0, "and you learn a little beast taming");
         main.HudNode.EndTalk();
 

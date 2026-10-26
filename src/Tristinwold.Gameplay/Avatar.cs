@@ -8,6 +8,39 @@ namespace Tristinwold.Gameplay;
 /// </summary>
 public sealed record Avatar(string Head, string Body, string Arms, string Legs, string Hat, string Outfit, string Skin, string Height)
 {
+    /// <summary>Their people (see <see cref="Races"/>).</summary>
+    public string Race { get; init; } = "human";
+    /// <summary>For dragonkind: the colour of their dragon.</summary>
+    public string Dragon { get; init; } = "Red";
+    /// <summary>For dragonkind: the people they're half of, or "none" for pure dragonkind.</summary>
+    public string Half { get; init; } = "none";
+    public string Build { get; init; } = "Average";
+    public string Beard { get; init; } = "none";
+    public string Hair { get; init; } = "Brown";
+    public string Horns { get; init; } = "none";
+
+    public static readonly (string Name, float Width)[] Builds = [("Slim", 0.9f), ("Average", 1f), ("Broad", 1.12f)];
+    public static readonly string[] Beards = ["none", "Stubble", "Short", "Long", "Forked", "Braided"];
+    public static readonly (string Name, string Hex)[] Hairs =
+    [
+        ("Brown", "#5a3a22"), ("Black", "#1c1a1a"), ("Auburn", "#8a3a1c"), ("Blond", "#d8b060"), ("Copper", "#b8642a"),
+        ("Grey", "#8a8a88"), ("White", "#e8e8e4"),
+    ];
+    public static readonly string[] HornStyles = ["none", "Nubs", "Swept", "Ram", "Long"];
+
+    public bool IsDragonkind => Race == Races.Dragonkind;
+    public bool PureDragon => IsDragonkind && Half == "none";
+
+    /// <summary>Their people as it works out: a half-dragon is half of each.</summary>
+    public Race People => !IsDragonkind ? Races.Get(Race) : PureDragon ? Races.Get(Races.Dragonkind) : Races.Half(Races.Get(Half));
+
+    /// <summary>A dragonkind's dragon; null for everyone else.</summary>
+    public DragonBlood? Blood => IsDragonkind ? Races.Dragon(Dragon) ?? Races.Dragons[0] : null;
+    public float Width => (Builds.FirstOrDefault(b => b.Name == Build).Width is > 0 and var w ? w : 1) * (float)People.Width;
+    public string HairHex => Hairs.FirstOrDefault(h => h.Name == Hair).Hex ?? "#5a3a22";
+
+    /// <summary>What they are: "Elf", "Red dragonkind", "Gold half-dragon dwarf".</summary>
+    public string Kind => Blood is { } d ? (PureDragon ? $"{d.Colour} dragonkind" : $"{d.Colour} half-dragon {Races.Get(Half).Name.ToLowerInvariant()}") : People.Name;
     /// <summary>The nine figures the parts come from.</summary>
     public static readonly string[] Figures =
         ["Knight", "Barbarian", "Mage", "Rogue", "Rogue_Hooded", "Skeleton_Warrior", "Skeleton_Rogue", "Skeleton_Mage", "Skeleton_Minion"];
@@ -42,8 +75,12 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
     public string HatFigure => Hats.FirstOrDefault(h => h.Id == Hat).Figure ?? "";
     public string HatName => Hats.FirstOrDefault(h => h.Id == Hat).Name ?? "Nothing";
     public string OutfitHex => Outfits.FirstOrDefault(o => o.Name == Outfit).Hex ?? "#ffffff";
-    public string SkinHex => Skins.FirstOrDefault(s => s.Name == Skin).Hex ?? "#ffffff";
-    public float Scale => Heights.FirstOrDefault(h => h.Name == Height).Scale is > 0 and var s ? s : 0.74f;
+    /// <summary>Their skin: as picked, or their people's own (orcs and goblins are green) if left natural.</summary>
+    public string SkinHex => Skin == "Natural" ? People.Skin : Skins.FirstOrDefault(s => s.Name == Skin).Hex ?? "#ffffff";
+    public float Scale => (Heights.FirstOrDefault(h => h.Name == Height).Scale is > 0 and var s ? s : 0.74f) * (float)People.Size;
+
+    /// <summary>How much bigger or smaller than an average human (for their collision, and the camera).</summary>
+    public float Size => Scale / 0.74f;
 
     /// <summary>What a figure is called on the character page.</summary>
     public static string Called(string figure) => figure switch
@@ -71,7 +108,8 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
         return new(figure, figure, figure, figure, hat, "Natural", "Natural", "Average");
     }
 
-    public string Encode() => $"head={Head};body={Body};arms={Arms};legs={Legs};hat={Hat};outfit={Outfit};skin={Skin};height={Height}";
+    public string Encode() => $"head={Head};body={Body};arms={Arms};legs={Legs};hat={Hat};outfit={Outfit};skin={Skin};height={Height}" +
+                              $";race={Race};dragon={Dragon};half={Half};build={Build};beard={Beard};hair={Hair};horns={Horns}";
 
     /// <summary>Reads a saved look; anything missing or unknown is left as the class would have it. Null for none.</summary>
     public static Avatar? Parse(string? text, string classId = "")
@@ -85,7 +123,16 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
         return new(
             Pick("head", a.Head, Figures), Pick("body", a.Body, Figures), Pick("arms", a.Arms, Figures), Pick("legs", a.Legs, Figures),
             Pick("hat", a.Hat, Hats.Select(h => h.Id)), Pick("outfit", a.Outfit, Outfits.Select(o => o.Name)),
-            Pick("skin", a.Skin, Skins.Select(s => s.Name)), Pick("height", a.Height, Heights.Select(h => h.Name)));
+            Pick("skin", a.Skin, Skins.Select(s => s.Name)), Pick("height", a.Height, Heights.Select(h => h.Name)))
+        {
+            Race = Pick("race", "human", Races.All.Select(r => r.Id)),
+            Dragon = Pick("dragon", "Red", Races.Dragons.Select(d => d.Colour)),
+            Half = Pick("half", "none", ["none", .. Races.Halves.Select(r => r.Id)]),
+            Build = Pick("build", "Average", Builds.Select(b => b.Name)),
+            Beard = Pick("beard", "none", Beards),
+            Hair = Pick("hair", "Brown", Hairs.Select(h => h.Name)),
+            Horns = Pick("horns", "none", HornStyles),
+        };
     }
 
     /// <summary>A look thrown together at random ("Surprise me").</summary>
@@ -93,6 +140,15 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
     {
         string Any(string[] from) => from[rng.Next(from.Length)];
         return new(Any(Figures), Any(Figures), Any(Figures), Any(Figures), Hats[rng.Next(Hats.Length)].Id,
-            Outfits[rng.Next(Outfits.Length)].Name, Skins[rng.Next(Skins.Length)].Name, Heights[rng.Next(Heights.Length)].Name);
+            Outfits[rng.Next(Outfits.Length)].Name, Skins[rng.Next(Skins.Length)].Name, Heights[rng.Next(Heights.Length)].Name)
+        {
+            Race = Races.All[rng.Next(Races.All.Count)].Id,
+            Dragon = Races.Dragons[rng.Next(Races.Dragons.Count)].Colour,
+            Half = rng.Next(2) == 0 ? "none" : Races.Halves.ElementAt(rng.Next(Races.Halves.Count())).Id,
+            Build = Builds[rng.Next(Builds.Length)].Name,
+            Beard = rng.Next(3) == 0 ? Any(Beards) : "none",
+            Hair = Hairs[rng.Next(Hairs.Length)].Name,
+            Horns = rng.Next(4) == 0 ? Any(HornStyles) : "none",
+        };
     }
 }
