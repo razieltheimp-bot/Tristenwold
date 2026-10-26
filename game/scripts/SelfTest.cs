@@ -363,6 +363,8 @@ public partial class SelfTest(Main main) : Node
         var field = new Vector3(-150, 0, -120);
         await Teleport(field);
         var level = p.Hero.Level;
+        static int Earned(Hero h) => Enumerable.Range(1, h.Level - 1).Sum(Hero.XpToNext) + h.Xp;
+        var earned = Earned(p.Hero);
 
         // Each of the nine classes, against a dock thug.
         foreach (var d in Classes.All)
@@ -395,7 +397,10 @@ public partial class SelfTest(Main main) : Node
             if (d.Id == "Warlock") Check(GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Any(e => e.Kind.Id == "familiar" && e.Leader == p), "the warlock's familiar answers");
             await Until(() => !main.Tracker.InFight, 10);
         }
-        Check(p.Hero.Level > level, $"kills bring levels: level {level} to {p.Hero.Level}, {p.Hero.Points} skill points");
+        Check(Earned(p.Hero) > earned, $"kills bring experience: {earned} to {Earned(p.Hero)} (level {level} to {p.Hero.Level})");
+        var before = p.Hero.Level;
+        main.GainXp((int)Math.Ceiling(Hero.XpToNext(before) / p.Race.Xp));
+        Check(p.Hero.Level > before, $"and enough of it brings a level: level {before} to {p.Hero.Level}, {p.Hero.Points} skill points");
         var points = p.Hero.Points;
         p.Join("Barbarian");
         var health = p.Stats.MaxHealth;

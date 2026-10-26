@@ -181,6 +181,16 @@ one when you make a character; learn another later from its teacher at the guild
 Kills and jobs bring experience. Each level adds health, magicka and stamina and a skill point; spend points (K)
 to rank a move up to 5, each rank 15% stronger. Joining another class gives the points back.
 
+**What spells and blows look like** (`game/scripts/Effects.cs`). Fireballs trail flame and grey smoke and burst
+in embers; ice shards trail mist and shatter into splinters; lightning doesn't fly, it strikes, a jagged
+crackling arc that jumps about, and throws more arcs where it lands; venom drips as it flies and leaves a
+hanging green cloud; sunlight bursts in a shaft of light and rising motes; every burst swells with light and
+sends a ring along the ground. Breath rolls smoke, mist or a green cloud off it, and crackles if it's lightning.
+A heal is a ring of light at the feet, rising motes and a fading column. Where a weapon lands there's a bright
+arc where it swept through and sparks thrown along the blow, gold and bigger for a critical. Figures have a soft
+rim of light and a matte finish, they crouch and spring to jump and bend their knees to land, and the view
+widens a little at a sprint. `--shots DIR --spells` photographs each of them, slowed down.
+
 **Limit breaks.** The gold bar under stamina fills as you fight (hits taken and given); when it's full a toast
 says so, and R (Limit on a phone) lets it go: a pillar of light and a shockwave in the class's colour, the
 world slowing for a heartbeat, the camera shaking, and the move's name across the screen. What each does:

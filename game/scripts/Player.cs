@@ -225,7 +225,11 @@ public partial class Player : Fighter
         {
             var speed = (sprint ? SprintSpeed : WalkSpeed) * (float)Stats.SpeedMult;
             if (sprint && input != Vector2.Zero && Class.Id != "Thief") Stats.Spend(AttackKind.Weapon, 15 * delta);
-            if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming)) Velocity = Velocity with { Y = JumpSpeed };
+            if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming))
+            {
+                Velocity = Velocity with { Y = JumpSpeed };
+                if (!Swimming) Figure.Perform("Jump_Start", 0.22, 1.5f); // a crouch and a spring
+            }
             FallAndSlide(delta, dir * speed);
 
             // The body turns to run the way you're going; it faces forward to strike or cast.
@@ -242,6 +246,9 @@ public partial class Player : Fighter
             Figure.Rotation = new Vector3(Mathf.Lerp(Figure.Rotation.X, stoop, ease), yaw, Mathf.Lerp(Figure.Rotation.Z, lean, ease));
             Figure.Move(GroundSpeed, IsOnFloor(), Swimming);
         }
+        // The view widens a little at a sprint, and settles back when you slow.
+        var widen = GroundSpeed > WalkSpeed * 1.15f ? 82f : 75f;
+        Camera.Fov = Mathf.Lerp(Camera.Fov, widen, (float)Math.Min(1, delta * 3));
 
         if (Input.IsActionJustPressed("attack")) Swing();
         if (Input.IsActionJustPressed("spell")) Cast();
@@ -650,6 +657,8 @@ public partial class Player : Fighter
     {
         LastStruck = target;
         var result = target.TakeHit(damage, kind, attack, crit, this);
+        if (attack == AttackKind.Weapon && GetParent() is { } world) // where the blow lands
+            Effects.Impact(world, target.GlobalPosition + Vector3.Up * (float)Math.Max(0.8, target.Kind.Height * 0.55), target.GlobalPosition - GlobalPosition, kind, crit);
         Struck?.Invoke(target, result, kind);
         if (result.Healed > 0) Said?.Invoke($"{target.Stats.Name} drinks the {kind.ToString().ToLowerInvariant()}!");
         if (result.Reflected > 0) Said?.Invoke($"{target.Stats.Name} turns the blow back on you.");
@@ -668,6 +677,7 @@ public partial class Player : Fighter
         if (_rage > 0) damage *= 1.2;
         if (Class.Id == "Paladin") damage *= 1 - Class.Passive.Power * Hero.Power("devotion");
         Stats.TakeHit(damage, kind, attack, crit, from.Stats);
+        if (attack == AttackKind.Weapon && GetParent() is { } world) Effects.Impact(world, GlobalPosition + Vector3.Up * 1.1f, GlobalPosition - from.GlobalPosition, DamageKind.Physical, crit);
         if (!Stats.Dead && Mount is null) Figure.Hurt();
         if (Stats.Dead) GoDown();
     }

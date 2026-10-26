@@ -1,5 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
+using Tristinwold.Nemesis;
 using Tristinwold.World;
 
 namespace Tristinwold.Game;
@@ -10,7 +11,7 @@ namespace Tristinwold.Game;
 /// </summary>
 /// <param name="lairs">Tour the wild lairs (--lairs, or --lairs goblin_warren,storm_eyrie for some of them).</param>
 /// <param name="wild">Portraits of the stranger things of the wilds (--wild).</param>
-public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null, bool wild = false, bool limit = false, bool market = false, bool audit = false) : Node
+public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null, bool wild = false, bool limit = false, bool market = false, bool audit = false, bool spells = false) : Node
 {
     public override async void _Ready()
     {
@@ -25,6 +26,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         if (limit) { await Limit(); return; }
         if (market) { await Market(); return; }
         if (audit) { await Audit(); return; }
+        if (spells) { await Spells(); return; }
         if (quick) { await Quick(); return; }
 
         // Tristinwold from the Gallows Perch, looking into the city.
@@ -357,6 +359,47 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         cam.QueueFree();
         main.PlayerNode.Camera.MakeCurrent();
         await Frames(2);
+    }
+
+    /// <summary>Every kind of spell, a breath, a heal and a sword blow, slowed down and photographed (--spells).</summary>
+    async Task Spells()
+    {
+        var p = main.PlayerNode;
+        p.GlobalPosition = new Vector3(76, 1, 4); // the open square by the market
+        await Frames(40);
+        p.Rotation = Vector3.Zero;
+        var world = main;
+        var cam = new Camera3D { Fov = 55 };
+        main.AddChild(cam);
+        var origin = p.GlobalPosition;
+        cam.GlobalPosition = origin + new Vector3(8, 2.4f, -4.5f);
+        cam.LookAt(origin + new Vector3(0, 1.2f, -5.5f), Vector3.Up);
+        cam.MakeCurrent();
+        Engine.TimeScale = 0.12;
+        var hand = origin + new Vector3(0.4f, 1.3f, -0.6f);
+        var mark = origin + new Vector3(0, 1.0f, -10);
+        foreach (var kind in new[] { DamageKind.Fire, DamageKind.Frost, DamageKind.Shock, DamageKind.Poison, DamageKind.Sun, DamageKind.Physical })
+        {
+            Effects.Bolt(world, hand, mark, kind, 0.25f);
+            await Frames(2);
+            GetViewport().GetTexture().GetImage().SavePng($"{dir}/bolt-{kind}.png");
+            await Frames(4);
+            GetViewport().GetTexture().GetImage().SavePng($"{dir}/burst-{kind}.png");
+            await Frames(20);
+        }
+        Effects.Cone(world, origin + new Vector3(0, 1.5f, -1), new Vector3(0, -0.1f, -1), DamageKind.Fire, 9);
+        await Frames(3);
+        GetViewport().GetTexture().GetImage().SavePng($"{dir}/breath-fire.png");
+        await Frames(20);
+        Effects.Rise(p, DamageKind.Sun);
+        await Frames(3);
+        GetViewport().GetTexture().GetImage().SavePng($"{dir}/heal.png");
+        await Frames(20);
+        Effects.Impact(world, origin + new Vector3(0, 1.1f, -1.5f), new Vector3(0, 0, -1), DamageKind.Physical, true);
+        await Frames(1);
+        GetViewport().GetTexture().GetImage().SavePng($"{dir}/hit-crit.png");
+        Engine.TimeScale = 1;
+        GetTree().Quit();
     }
 
     // ---- the prop audit -------------------------------------------------------------------------

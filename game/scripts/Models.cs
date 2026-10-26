@@ -382,6 +382,7 @@ public partial class Figure : Body
             if (l.Tint is { } tint) Models.Tint(model, tint, l.Glow);
             if (avatar is not null && model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is { } frame)
                 Wear(frame, avatar);
+            Shade(model);
             if (model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is { } skeleton)
             {
                 Hold(skeleton, "handslot.r", l.RightHand);
@@ -395,6 +396,35 @@ public partial class Figure : Body
                     if (Looping.Contains(name)) f._anim.GetAnimation(name).LoopMode = Animation.LoopModeEnum.Linear;
         }
         return f;
+    }
+
+    // ---- shading -------------------------------------------------------------------------------
+
+    static readonly Dictionary<Material, Material> Shaded = [];
+
+    /// <summary>
+    /// Takes the plastic off: KayKit's colours with a soft rim of light round the edges (so a figure stands out
+    /// against what's behind it, as people do in daylight) and a matte, cloth-and-skin surface instead of a sheen.
+    /// Each material is done once and shared.
+    /// </summary>
+    static void Shade(Node3D model)
+    {
+        foreach (var m in model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>())
+            for (var i = 0; i < m.GetSurfaceOverrideMaterialCount(); i++)
+            {
+                if (m.GetActiveMaterial(i) is not BaseMaterial3D original) continue;
+                if (!Shaded.TryGetValue(original, out var done))
+                {
+                    var mat = (BaseMaterial3D)original.Duplicate();
+                    mat.RimEnabled = true;
+                    mat.Rim = 0.3f;
+                    mat.RimTint = 0.65f;
+                    mat.Roughness = Mathf.Max(mat.Roughness, 0.7f);
+                    mat.MetallicSpecular = 0.35f;
+                    Shaded[original] = Shaded[mat] = done = mat;
+                }
+                m.SetSurfaceOverrideMaterial(i, done);
+            }
     }
 
     // ---- a hero's own look ---------------------------------------------------------------------
@@ -461,7 +491,7 @@ public partial class Figure : Body
 
     // ---- what their people and their blood add: ears, tusks, beards, horns, a tail ---------------------------
 
-    static StandardMaterial3D Matte(Color c, float rough = 0.8f) => new() { AlbedoColor = c, Roughness = rough };
+    static StandardMaterial3D Matte(Color c, float rough = 0.8f) => new() { AlbedoColor = c, Roughness = rough, RimEnabled = true, Rim = 0.3f, RimTint = 0.65f };
 
     /// <summary>A cone along a direction: an ear, a tusk, a horn.</summary>
     static MeshInstance3D Cone(Vector3 at, Vector3 along, float length, float radius, Material m, float flat = 1)
@@ -651,12 +681,24 @@ public partial class Figure : Body
         Once(clip, seconds, speed);
     }
 
+    double _airborneSince = -1;
+
     public override void Move(float speed, bool grounded, bool swimming)
     {
+        // How long it's been off the ground: a step down a stair isn't a jump; a real fall lands with a bend of the knees.
+        var now = Time.GetTicksMsec() / 1000.0;
+        if (!grounded && !swimming) { if (_airborneSince < 0) _airborneSince = now; }
+        else if (_airborneSince >= 0)
+        {
+            var flew = now - _airborneSince;
+            _airborneSince = -1;
+            if (flew > 0.45 && !_dead && !_seated && _anim?.HasAnimation("Jump_Land") == true) { Once("Jump_Land", 0.28, 1.3f); return; }
+        }
         if (_dead || _busy > 0 || _seated) return;
         var idle = _look.Unarmed ? "Unarmed_Idle" : "Idle";
+        var inAir = !grounded && _airborneSince >= 0 && now - _airborneSince > 0.18;
         var (name, rate) = swimming ? ("Walking_C", 0.8f)
-            : !grounded ? ("Jump_Idle", 1f)
+            : inAir ? ("Jump_Idle", 1f)
             : speed > 6.5f ? ("Running_A", speed / 7.5f)
             : speed > 0.4f ? ("Walking_A", Mathf.Max(0.6f, speed / 3.8f))
             : (idle, 1f);
