@@ -36,6 +36,7 @@ public partial class Main
         _terrain.EnsureAround(at, 2);
         _player.GlobalPosition = at with { Y = Mathf.Max(where.Y, City.FloorAt(at)) + 0.3f };
         _player.Rotation = new Vector3(0, where.Facing, 0);
+        _player.ResetPhysicsInterpolation();
         _spot = where;
         GD.Print($"Back where {_player.Company} left off: {where.X:0}, {where.Z:0}");
     }

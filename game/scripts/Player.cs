@@ -208,7 +208,15 @@ public partial class Player : Fighter
             // The body turns to run the way you're going; it faces forward to strike or cast.
             var acting = Now < _actingUntil;
             var target = acting ? 0 : input == Vector2.Zero ? Figure.Rotation.Y : Mathf.Atan2(-input.X, -input.Y); // -Z is forward
-            Figure.Rotation = Figure.Rotation with { Y = Mathf.LerpAngle(Figure.Rotation.Y, target, (float)Math.Min(1, delta * 12)) };
+            var before = Figure.Rotation.Y;
+            var yaw = Mathf.LerpAngle(before, target, (float)Math.Min(1, delta * 12));
+            // Leaning into the turn and forward into a sprint, more the faster you go, and easing back upright.
+            var pace = Mathf.Clamp(GroundSpeed / SprintSpeed, 0, 1);
+            var turning = Mathf.AngleDifference(before, yaw) / (float)Math.Max(delta, 1e-4);
+            var lean = IsOnFloor() ? Mathf.Clamp(turning * 0.035f * pace, -0.22f, 0.22f) : 0;
+            var stoop = IsOnFloor() && sprint ? -0.12f * pace : 0;
+            var ease = (float)Math.Min(1, delta * 8);
+            Figure.Rotation = new Vector3(Mathf.Lerp(Figure.Rotation.X, stoop, ease), yaw, Mathf.Lerp(Figure.Rotation.Z, lean, ease));
             Figure.Move(GroundSpeed, IsOnFloor(), Swimming);
         }
 
@@ -287,7 +295,7 @@ public partial class Player : Fighter
         if (limit) { Stats.UseLimit(); LimitMoment(a); }
         _ready[a.Id] = Now + a.Cooldown;
         _actingUntil = Now + Math.Min(0.6, Math.Max(0.3, a.Cooldown));
-        Figure.Rotation = Figure.Rotation with { Y = 0 };
+        Figure.Rotation = new Vector3(0, 0, 0);
         var power = Hero.Power(a.Id);
         var dmg = a.Power * power;
         var near = InFront(a.Range > 0 ? a.Range : 2.4, a.Range > 6 ? 30 : 70).FirstOrDefault();

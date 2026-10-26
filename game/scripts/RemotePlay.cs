@@ -26,7 +26,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
     public float Quality { get; set; } = 0.6f;
 
     /// <summary>The most pictures a second to send.</summary>
-    public int Rate { get; set; } = 30;
+    public int Rate { get; set; } = 45;
 
     public string? Link { get; private set; }
 
@@ -97,17 +97,31 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
         _typing = typing;
 
         _since += delta;
-        if (_screen.Viewers == 0 || !_screen.Wanted || _since < 1.0 / Rate) return;
+        if (_screen.Viewers == 0 || !_screen.Wanted || _encoding || _since < 1.0 / Rate) return;
         _since = 0;
+        // Only the picture is taken here; shrinking and squeezing it to a JPEG happens off the game's own loop,
+        // so streaming to the phone doesn't cost the game frames.
         var image = GetViewport().GetTexture().GetImage();
-        var (w, h) = (image.GetWidth(), image.GetHeight());
-        if (Math.Max(w, h) > Width)
+        var (screen, width, quality) = (_screen, Width, Quality);
+        _encoding = true;
+        Task.Run(() =>
         {
-            var s = (float)Width / Math.Max(w, h);
-            image.Resize((int)(w * s), (int)(h * s), Image.Interpolation.Bilinear);
-        }
-        _screen.Show(image.SaveJpgToBuffer(Quality));
+            try
+            {
+                var (w, h) = (image.GetWidth(), image.GetHeight());
+                if (Math.Max(w, h) > width)
+                {
+                    var s = (float)width / Math.Max(w, h);
+                    image.Resize((int)(w * s), (int)(h * s), Image.Interpolation.Bilinear);
+                }
+                screen.Show(image.SaveJpgToBuffer(quality));
+            }
+            catch (Exception e) { GD.PushWarning($"Remote play couldn't send a picture: {e.Message}"); }
+            finally { _encoding = false; }
+        });
     }
+
+    volatile bool _encoding;
 
     // ---- input from the phone --------------------------------------------------------------------
 

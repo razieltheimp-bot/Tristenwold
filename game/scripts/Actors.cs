@@ -65,17 +65,24 @@ public abstract partial class Fighter : CharacterBody3D
 
     public bool Swimming => Depth > SwimDepth;
 
+    /// <summary>How quickly a body gets up to speed, and how quickly it stops (metres a second, each second):
+    /// quick enough to feel sharp, slow enough that it has weight. Less in the air, and in water.</summary>
+    const float Speeding = 28, Stopping = 40, AirControl = 0.3f;
+
     protected void FallAndSlide(double delta, Vector3 horizontal)
     {
         var v = Velocity;
-        v.X = horizontal.X;
-        v.Z = horizontal.Z;
-        if (Depth > SwimDepth - 0.1f)
+        var swimming = Depth > SwimDepth - 0.1f;
+        var want = new Vector2(horizontal.X, horizontal.Z) * (swimming ? 0.55f : 1);
+        var now = new Vector2(v.X, v.Z);
+        var rate = want.LengthSquared() > now.LengthSquared() * 0.98f && want.LengthSquared() > 0.01f ? Speeding : Stopping;
+        if (!IsOnFloor() && !swimming) rate *= AirControl;
+        now = now.MoveToward(want, rate * (float)delta);
+        (v.X, v.Z) = (now.X, now.Y);
+        if (swimming)
         {
             // Bob up to float at the surface, rather than walking along the bottom.
             v.Y = Mathf.Lerp(v.Y, (Depth - SwimDepth) * 3f, 0.2f);
-            v.X *= 0.55f;
-            v.Z *= 0.55f;
         }
         else v.Y = IsOnFloor() ? Math.Max(v.Y, -0.1f) : v.Y - Gravity * (float)delta;
         Velocity = v;
@@ -87,6 +94,7 @@ public abstract partial class Fighter : CharacterBody3D
         {
             GlobalPosition = GlobalPosition with { Y = floor + 0.5f };
             Velocity = Vector3.Zero;
+            ResetPhysicsInterpolation();
         }
     }
 }
@@ -527,7 +535,7 @@ public partial class Enemy : Fighter
                 if (Leader is not null && _rival.GlobalPosition.DistanceTo(Leader.GlobalPosition) > 45) { _rival = null; State = EnemyState.Idle; break; }
                 var toRival = _rival.GlobalPosition - GlobalPosition;
                 toRival.Y = 0;
-                if (toRival.LengthSquared() > 0.01f) LookAt(GlobalPosition + toRival.Normalized(), Vector3.Up);
+                FaceAlong(toRival, delta * 1.5); // turns to face it, rather than snapping round
                 if (Bond is not null) UseSkills(toRival.Length(), bulk);
                 var gap = toRival.Length() - (reach + (float)_rival.Kind.Reach * MathF.Pow(_rival.Bulk, 0.8f) * 0.5f);
                 if (gap > 0) move = toRival.Normalized() * speed;
@@ -559,7 +567,7 @@ public partial class Enemy : Fighter
                 }
                 var toTarget = _target.GlobalPosition - GlobalPosition;
                 toTarget.Y = 0;
-                if (toTarget.LengthSquared() > 0.01f) LookAt(GlobalPosition + toTarget.Normalized(), Vector3.Up);
+                FaceAlong(toTarget, delta * 1.5); // turns to face it, rather than snapping round
                 if (toTarget.Length() > reach) move = toTarget.Normalized() * speed;
                 else if (_attackCooldown <= 0)
                 {
@@ -603,6 +611,7 @@ public partial class Enemy : Fighter
         {
             var behind = leader.GlobalPosition + leader.GlobalTransform.Basis.Z * (4 + 3 * Bulk); // clear of the hero, however big
             GlobalPosition = behind with { Y = City.FloorAt(behind) + 0.5f };
+            ResetPhysicsInterpolation();
             return Vector3.Zero;
         }
         if (d < 3.5f + Bulk) return Vector3.Zero;

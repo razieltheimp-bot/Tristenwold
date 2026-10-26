@@ -525,7 +525,7 @@ public partial class Figure : Body
             : (idle, 1f);
         if (name == _loop) { if (_anim is not null) _anim.SpeedScale = rate; return; }
         _loop = name;
-        Play(name);
+        Play(name, 0.28f); // a soft blend from one gait into the next
         if (_anim is not null) _anim.SpeedScale = rate;
     }
 

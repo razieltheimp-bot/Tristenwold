@@ -133,7 +133,8 @@ public partial class SelfTest(Main main) : Node
         var touch = hud.Touch;
         main.EnableTouch();
         await Frames(3);
-        Check(touch.Visible, "touch controls on screen");
+        for (var i = 0; i < 30 && !touch.Visible; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); // shown on the next drawn frame
+        Check(touch.Visible, $"touch controls on screen (touch on {hud.TouchEnabled}, phone pad {hud.PhonePad}, window {hud.WindowOpen}, talking {hud.Talking}: {hud.TalkText}, map {hud.MapOpen})");
         Vector2 Screen(Vector2 local) => touch.GetGlobalTransformWithCanvas() * local;
 
         // 9. The left thumb walks.

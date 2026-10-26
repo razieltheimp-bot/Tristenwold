@@ -436,6 +436,7 @@ public partial class Main
         _terrain.EnsureAround(at, 1);
         _player.GlobalPosition = at with { Y = City.FloorAt(at) + 1 };
         _player.Velocity = Vector3.Zero;
+        _player.ResetPhysicsInterpolation();
         _hud.Toast(story, 10);
     }
 
