@@ -881,9 +881,10 @@ public partial class SelfTest(Main main) : Node
         await Until(() => p.Septims < 100, 25);
         var taken = 100 - p.Septims;
         Check(taken > 0, $"it snatches {taken} septims");
+        var purse = p.Septims;
         kipine.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
         await Frames(5);
-        Check(p.Septims == 100, "killed, it gives them back");
+        Check(p.Septims >= purse + taken, $"killed, it gives them back ({purse} -> {p.Septims}, and it may drop a few coins of its own)");
         await Until(() => !main.Tracker.InFight, 10);
 
         // Deathcrest apes: they hunt the walking dead, and blink through shadow to your flank.
