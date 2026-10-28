@@ -1143,7 +1143,9 @@ public partial class SelfTest(Main main) : Node
         for (var tries = 0; tries < 8 && book.Counters.GetValueOrDefault("laps") == laps; tries++)
             for (var i = 0; i < Agility.Course.Count; i++)
             {
-                await Teleport(main.CourseStart(i));
+                p.GlobalPosition = main.CourseStart(i) + Vector3.Up * 0.05f; // some start up on the platform
+                p.Velocity = Vector3.Zero;
+                await Frames(10);
                 Check(main.PursuitActionForTest(p.GlobalPosition)?.Verb == Agility.Course[i].Verb, $"at obstacle {i + 1}: E to {Agility.Course[i].Verb}");
                 await main.RunForTest(i);
                 await Frames(10);

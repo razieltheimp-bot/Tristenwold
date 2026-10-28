@@ -379,7 +379,10 @@ public partial class Main
     int? CourseObstacleAt(Vector3 pos)
     {
         for (var i = 0; i < CoursePaths.Length; i++)
-            if (CourseWorld(CoursePaths[i][0]).DistanceTo(pos) < 2.2f) return i;
+        {
+            var start = CourseWorld(CoursePaths[i][0]);
+            if (new Vector2(start.X - pos.X, start.Z - pos.Z).Length() < 2.2f && Math.Abs(start.Y - pos.Y) < 1.5f) return i;
+        }
         return null;
     }
 
