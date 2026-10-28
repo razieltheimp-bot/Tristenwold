@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Tristinwold.Deviant;
+using Tristinwold.Gameplay;
 
 namespace Tristinwold.World;
 
@@ -291,16 +292,42 @@ public sealed class RaidBook
 
     /// <summary>A roamer killed for good.</summary>
     public void Slain(Roamer roamer) => Roamers.RemoveAll(x => x.Id == roamer.Id);
+
+    /// <summary>How many deviants of the wilds roam at once; past that, the one that's done least moves on.</summary>
+    public const int MostWild = 8;
+
+    /// <summary>
+    /// Something out in the wilds beat the company (a bandit, a troll, a wolf): it takes a name and roams from where it
+    /// stood over them, a deviant like any lair boss that walked out of its lair.
+    /// </summary>
+    public Roamer Took(string kind, double x, double z, double playSeconds, ulong seed)
+    {
+        var wild = Roamers.Where(w => w.Lair is null).ToList();
+        if (wild.Count >= MostWild) Roamers.Remove(wild.OrderBy(w => w.Wins).ThenBy(w => w.Since).First());
+        var roamer = new Roamer { Id = $"roamer:{seed:x}", Kind = kind, StartX = x, StartZ = z, Name = Roaming.NameFor(seed), Seed = seed, Since = playSeconds, Wins = 1 };
+        Roamers.Add(roamer);
+        return roamer;
+    }
 }
 
 /// <summary>
-/// A lair boss that beat a company and walked out into the world: named, stronger, wandering the wilds, and
-/// stronger again every time it beats someone. In the shared world it is also a deviant on the roster.
+/// A deviant out in the world: a lair boss that beat a company and walked out of its lair, or anything in the wilds
+/// that beat them where it stood. Named, stronger, wandering the wilds, hunting the hero when it sees them, learning
+/// how they fight, and stronger again every time it beats them. In the shared world it is also on the roster.
 /// </summary>
 public sealed class Roamer
 {
     public string Id { get; set; } = "";
+    /// <summary>The lair it walked out of, if it was a lair's boss.</summary>
     public string RaidId { get; set; } = "";
+    /// <summary>What it is, if it was born in the wilds (a lair boss is its lair's boss kind), and where it beat the company.</summary>
+    public string? Kind { get; set; }
+    public double StartX { get; set; }
+    public double StartZ { get; set; }
+    /// <summary>What it has learned about how the hero fights.</summary>
+    public Lessons Lessons { get; set; } = new();
+    /// <summary>It has the hero's trail, and is coming after them.</summary>
+    public bool Hunting { get; set; }
     /// <summary>"Mokak the Grinning".</summary>
     public string Name { get; set; } = "";
     /// <summary>How many times it has beaten the company.</summary>
@@ -312,11 +339,19 @@ public sealed class Roamer
     public Guid? DeviantId { get; set; }
 
     [JsonIgnore]
-    public Raid Raid => Raids.Get(RaidId) ?? Raids.AshenCrypt;
+    public Raid? Lair => RaidId.Length == 0 ? null : Raids.Get(RaidId);
 
-    /// <summary>"Mokak the Grinning, the Goblin King".</summary>
+    /// <summary>Its kind in the bestiary.</summary>
     [JsonIgnore]
-    public string Title => $"{Name}, {Raid.Boss}";
+    public string KindId => Lair?.BossKind ?? Kind ?? "bandit";
+
+    /// <summary>"Mokak the Grinning, the Goblin King"; "Vorn the Patient, Frost Troll".</summary>
+    [JsonIgnore]
+    public string Title => $"{Name}, {Lair?.Boss ?? Bestiary.Get(KindId).Name}";
+
+    /// <summary>Where it set out from: its lair, or where it beat the company.</summary>
+    [JsonIgnore]
+    public (double X, double Z) Start => Lair is { } l ? (l.X, l.Z) : (StartX, StartZ);
 
     readonly List<(double X, double Z, double Start)> _legs = [];
 
@@ -326,7 +361,7 @@ public sealed class Roamer
     /// </summary>
     public (double X, double Z) Where(WorldGen world, double playSeconds)
     {
-        if (_legs.Count == 0) _legs.Add((Raid.X, Raid.Z, Since));
+        if (_legs.Count == 0) _legs.Add((Start.X, Start.Z, Since));
         var t = Math.Max(Since, playSeconds);
         // Each stop is where a leg starts; the leg in progress is the one after the last stop already reached.
         while (true)
@@ -358,7 +393,7 @@ public sealed class Roamer
             if (world.SettlementsNear(nx, nz, 400).Any(s => s.DistanceTo(nx, nz) < s.Radius + 60)) continue;
             return (nx, nz);
         }
-        return (Raid.X, Raid.Z); // nowhere good: back to the lair it came from
+        return Start; // nowhere good: back to where it came from
     }
 }
 
@@ -381,15 +416,26 @@ public static class Roaming
     /// company it has beaten.</summary>
     public static (double Health, double Damage) Numbers(Roamer r, int heroLevel)
     {
-        var raid = r.Raid;
-        var (health, damage) = Raids.Boss(raid with { MaxLevel = raid.MaxLevel + 3 }, heroLevel);
-        return (health * (1.15 + 0.2 * r.Wins), damage * (1.1 + 0.08 * r.Wins));
+        if (r.Lair is { } raid)
+        {
+            var (health, damage) = Raids.Boss(raid with { MaxLevel = raid.MaxLevel + 3 }, heroLevel);
+            return (health * (1.15 + 0.2 * r.Wins), damage * (1.1 + 0.08 * r.Wins));
+        }
+        // One of the wilds: its kind as the land there makes them, then a good deal more, for the hero it has beaten.
+        var kind = Bestiary.Get(r.KindId);
+        var scale = Math.Pow(Math.Max(1, WorldGen.Danger(r.StartX, r.StartZ)), 0.8) * (1 + 0.04 * (heroLevel - 1));
+        return (kind.Health * scale * (1.8 + 0.3 * r.Wins), kind.Damage * scale * (1.25 + 0.1 * r.Wins));
     }
 
     /// <summary>The price on its head, paid to whoever kills it: its lair's hoard, and more for every company it beat.</summary>
     public static (int Xp, int Crowns) Bounty(Roamer r, int heroLevel)
     {
-        var (xp, crowns) = Raids.Reward(r.Raid, heroLevel, firstTime: true);
+        if (r.Lair is null)
+        {
+            var (health, _) = Numbers(r, heroLevel);
+            return ((int)Math.Round(health / 4), 20 + 15 * r.Wins + (int)Math.Round(health / 12));
+        }
+        var (xp, crowns) = Raids.Reward(r.Lair, heroLevel, firstTime: true);
         var more = 1 + 0.25 * r.Wins;
         return ((int)Math.Round(xp * more), (int)Math.Round(crowns * more));
     }

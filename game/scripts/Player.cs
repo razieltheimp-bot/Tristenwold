@@ -81,6 +81,9 @@ public partial class Player : Fighter
     /// <summary>The foe this hero struck last: companions join in on it.</summary>
     public Enemy? LastStruck { get; private set; }
 
+    /// <summary>The last foe to land a blow on the hero (the one that put them down, when they fall).</summary>
+    public Enemy? LastHitBy { get; private set; }
+
     /// <summary>The dragon being ridden.</summary>
     public Enemy? Mount { get; private set; }
 
@@ -834,6 +837,7 @@ public partial class Player : Fighter
     public void TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Enemy from)
     {
         if (Downed) return;
+        LastHitBy = from;
         if (Class.Id == "MartialArtist" && _rng.Chance(Class.Passive.Power + 0.03 * (Hero.Rank("evasion") - 1)))
         {
             Figure.Perform("Dodge_Left", 0.4, 1.6f);

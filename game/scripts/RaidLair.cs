@@ -67,6 +67,7 @@ public partial class RaidLair(Main main, Raid raid) : Node3D
     Enemy Rise(string kind, Vector3 at, (double Health, double Damage) numbers, string clip, double delay)
     {
         var e = Enemy.Create(Bestiary.Get(kind), at with { Y = City.FloorAt(at) + 0.4f }, look: kind);
+        e.InLair = true;
         e.Tune(numbers.Health, numbers.Damage);
         e.Roam = 6;
         main.AddEnemy(e);

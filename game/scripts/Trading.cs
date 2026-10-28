@@ -104,6 +104,7 @@ public partial class Main
     {
         if (item.Use is null || !_player.Pack.Take(item.Id)) return;
         _player.Consume(item.Use);
+        _roamers.Drank();
         Sound.Ui(item.Kind == ItemKind.Food ? "pickup" : "potion");
         _hud.Toast($"You {(item.Kind == ItemKind.Food ? "eat" : "drink")} the {item.Name.ToLowerInvariant()}.", 3);
     }

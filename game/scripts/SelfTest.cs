@@ -24,9 +24,11 @@ public partial class SelfTest(Main main) : Node
     {
         main.FightEnded += _reports.Add;
         main.Received += m => { if (m is DeviantAppears a) _appearances.Add(a); };
+        main.RoamersNode.WildDeviants = false; // the scripted fights below lose on purpose: only the hunt's own test makes deviants
         try
         {
             await Frames(10);
+            if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sound-only"))
@@ -47,7 +49,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -968,6 +970,105 @@ public partial class SelfTest(Main main) : Node
     /// empty until its timer runs out, and then a new nameless one is there. The roamer wanders, comes for the hero
     /// when it finds them, and when it's killed it's gone for good, and its bounty paid.
     /// </summary>
+    /// <summary>
+    /// Deviants of the wilds: what beats you out there takes a name; once it sees you it hunts you; you can outrun it,
+    /// and it remembers; every blow teaches it how you fight, and it fights back with that; it won't follow you into
+    /// town; it's all kept; and killed, it's gone for good.
+    /// </summary>
+    async Task HuntTest()
+    {
+        var p = main.PlayerNode;
+        var roamers = main.RoamersNode;
+        var hud = main.HudNode;
+        roamers.WildDeviants = true;
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        float Apart(Enemy e) => new Vector2(e.GlobalPosition.X - p.GlobalPosition.X, e.GlobalPosition.Z - p.GlobalPosition.Z).Length();
+
+        // Beaten out in the wilds, by a frost troll: it takes a name.
+        var here = new Vector3(-150, 0, -120);
+        await Teleport(here);
+        Check(!roamers.InTown(here), "out in the wilds, past the walls");
+        var troll = Spawn("frost_troll", here + new Vector3(0, 0, -3));
+        var plain = troll.Stats.MaxHealth;
+        troll.Provoke(p);
+        await Frames(10);
+        p.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, troll);
+        await Until(() => main.RaidLog.Roamers.Any(r => r.Kind == "frost_troll"), 5);
+        var r = main.RaidLog.Roamers.FirstOrDefault(r => r.Kind == "frost_troll");
+        Check(r is not null && troll.Named && troll.Stats.Name == r.Title && troll.Stats.MaxHealth > plain,
+            $"the frost troll that beat you takes a name, {r?.Title}, and grows ({plain:0} -> {troll.Stats.MaxHealth:0} hp)");
+        if (r is null) return;
+        await Until(() => !p.Downed, 10);
+        Check(!r.Hunting, "it has beaten you: it isn't hunting you, for now");
+
+        // Out in the wilds again, within sight of it: it takes up your trail.
+        await Frames(60);
+        var (x, z) = r.Where(main.World, main.GuildBook.PlaySeconds);
+        await Teleport(new Vector3((float)x + 70, 0, (float)z));
+        await Until(() => r.Hunting, 10);
+        Check(r.Hunting, $"it sees you from 70 m, and comes for you: {hud.LastLine}");
+        var body = roamers.BodyOf(r);
+        Check(body is not null, "it's there, walking");
+        if (body is null) return;
+        var start = Apart(body);
+        await Until(() => Apart(body) < start - 15 || body.FightingCompany, 20);
+        Check(Apart(body) < start - 15 || body.FightingCompany, $"and closes in ({start:0} m, then {Apart(body):0} m)");
+
+        // Run: it follows your trail at its own pace, and you can get away. It remembers that you ran.
+        var away = new Vector3(1, 0, 0);
+        for (var i = 0; i < 40 && r.Hunting; i++)
+        {
+            await Teleport(p.GlobalPosition + away * 30);
+            p.Stats.Heal(1e9);
+        }
+        Check(!r.Hunting && r.Lessons.Escapes == 1, $"you outrun it, and it loses your trail ({hud.LastLine})");
+        Check(Tactics.Read(r.Lessons).Speed > 1, "and it's quicker on your trail next time");
+
+        // Find it again, and fight it with fire, from afar: it learns, there and then.
+        await Frames(30);
+        (x, z) = r.Where(main.World, main.GuildBook.PlaySeconds);
+        await Teleport(new Vector3((float)x + 60, 0, (float)z));
+        await Until(() => r.Hunting && roamers.BodyOf(r) is not null, 10);
+        body = roamers.BodyOf(r);
+        if (body is null) { Check(false, "it's back on your trail"); return; }
+        var dealt = new List<double>();
+        for (var i = 0; i < Tactics.HitsToLearn + 2; i++)
+        {
+            p.GlobalPosition = body.GlobalPosition + new Vector3(15, 0.5f, 0);
+            p.Stats.Heal(1e9);
+            dealt.Add(body.TakeHit(40, DamageKind.Fire, AttackKind.Spell, false, p).Dealt);
+            body.Stats.Heal(1e9);
+            await Frames(3);
+        }
+        var counter = roamers.FightsWith(r);
+        Check(counter.Resists == DamageKind.Fire && counter.Lunges && counter.Ward > 1 && body.Stats.Resist.GetValueOrDefault(DamageKind.Fire) >= 50,
+            $"it learns how you fight: it takes your fire now, closes the gap on you, and shrugs off spells ({string.Join(" / ", counter.Lines.Select(l => l.Id))})");
+        Check(dealt[^1] < dealt[0] * 0.6, $"your fire does far less to it than it did ({dealt[0]:0}, then {dealt[^1]:0})");
+
+        // Into town: it won't follow you in.
+        await Teleport(City.GallowsPerch + new Vector3(0, 0, 6));
+        await Until(() => !r.Hunting, 5);
+        Check(!r.Hunting, $"it won't follow you inside the walls ({hud.LastLine})");
+
+        // All of it is kept: what it is, where it set out, what it learned.
+        var saved = CompanySave.FromJson(main.Save()).Raids?.Roamers.FirstOrDefault(x => x.Id == r.Id);
+        Check(saved is { Kind: "frost_troll", Lessons.Escapes: 1 } && saved.Lessons.Damage.GetValueOrDefault(DamageKind.Fire) > 0 && saved.Title == r.Title,
+            "what it learned about you is saved with it");
+
+        // Kill it, for good.
+        (x, z) = r.Where(main.World, main.GuildBook.PlaySeconds);
+        await Teleport(new Vector3((float)x + 40, 0, (float)z));
+        await Until(() => roamers.BodyOf(r) is not null, 10);
+        var crowns = p.Crowns;
+        roamers.BodyOf(r)?.TakeHit(1e8, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => main.RaidLog.Roamers.All(x => x.Id != r.Id), 5);
+        Check(main.RaidLog.Roamers.All(x => x.Id != r.Id) && p.Crowns > crowns, $"killed, it's gone for good: a bounty of {p.Crowns - crowns} crowns");
+        roamers.WildDeviants = false;
+        await Teleport(new Vector3(-150, 0, -120));
+        await Until(() => !main.Tracker.InFight, 15);
+        p.Stats.Heal(1e9);
+    }
+
     async Task DeviantLairTest()
     {
         var (p, raid) = (main.PlayerNode, Raids.GoblinWarren);

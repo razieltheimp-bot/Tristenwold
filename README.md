@@ -321,6 +321,30 @@ within sight of it and it's there, and it knows you, and it comes for you. Every
 stronger still. Kill it and it's gone for good, and the price on its head is yours: more than its hoard, and more
 for every time it beat you.
 
+#### Deviants hunt you, and learn how you fight
+
+It isn't only lair bosses. **Anything out in the wilds that puts you down** (a bandit, a frost troll, a wolf, a
+dragon) stands over you, **takes a name** ("Vorn the Patient, Frost Troll") and roams from where it beat you, a
+good deal stronger than its kind. Lair creatures and anything inside a town don't; up to eight roam at once, and the
+least of them moves on when a ninth rises.
+
+- **It hunts you.** Come within about 85 m and it sees you, says so, and **comes after you**. Close by it runs you
+  down; further off it follows your trail across the wilds at its own pace. Stand and fight, or run: get far enough
+  ahead and it loses you, but it **remembers that you ran**, and it's quicker on your trail every time. It won't
+  follow you into a town or village; it waits outside. The tracker shows who's hunting you, how far off, and
+  which way.
+- **It learns how you fight.** Every blow you land teaches it: what kind of damage, spell or weapon, from close or
+  from far off, and every potion you drink to stay up. Once it has taken enough, **it fights back with that, there
+  and then**, and tells you so:
+  - **The damage you lean on** (half of everything you hit it with): it learns to take it, and it does half as much.
+  - **Fighting from a distance**: it learns to close the gap, with a quicker step and a bound across the ground at you.
+  - **Fighting up close**: a harder hide.
+  - **Mostly spells**: it learns to shrug them off.
+  - **Drinking potions to stay up**: when you're low, it goes for the kill.
+  - **Running away**: quicker on your trail.
+  It never forgets: what it has learned is saved with it, so the next time you meet it, it's ready for you. Mix up
+  how you fight it and it has less to learn.
+
 The lair doesn't stay empty: within a minute and a half **a new nameless boss has moved in**, no stronger than its kind (the one that beat you is out roaming, a deviant of its own, wherever its road takes it). Roamers are saved with
 your company. In the shared world the server names it (the boss that beat you is the one the deviant system
 promotes), so it's on everyone's roster under the same name, its fights count there, and if it cheats death there
@@ -614,6 +638,9 @@ godot --headless --path game -- --selftest --server https://….trycloudflare.co
 - It **comes back**: the next time you fight its kind, especially on its home ground, it can take one of
   those enemies' place, renamed and stronger.
 - **Killing it isn't always final.** It can come back scarred, and resist whatever killed it.
+- **It hunts and it learns.** In the game, a deviant out in the wilds hunts you once it sees you, and learns how you
+  fight it (your damage, your range, your spells, your potions, your escapes) and adapts to counter you
+  (`src/Tristinwold.World/Tactics.cs`).
 - **Ranks**: one Tyrant over the Scourges, each with Ringleaders under them, and the Strays below, with
   promotions, grudges fought out between deviants, and pacts (kill one of a pact, and the other comes for you).
 

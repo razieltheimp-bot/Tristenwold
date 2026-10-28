@@ -167,6 +167,12 @@ public partial class Enemy : Fighter
     /// <summary>Called every moment it's fighting: a boss's own moves (the raid sets it).</summary>
     public Action<Enemy, double>? Think { get; set; }
 
+    /// <summary>Told of every blow the hero lands on it (how much, what kind, spell or weapon): a deviant learns from them.</summary>
+    public Action<double, DamageKind, AttackKind, Player>? Struck { get; set; }
+
+    /// <summary>A lair's boss or one of its creatures: the lair, not the wilds, decides what becomes of it.</summary>
+    public bool InLair { get; set; }
+
     /// <summary>Who it's fighting now, hero or creature.</summary>
     public Node3D? Foe3D => _target is not null ? _target : _rival is not null && IsInstanceValid(_rival) ? _rival : null;
 
@@ -786,6 +792,7 @@ public partial class Enemy : Fighter
     public HitResult TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Player by)
     {
         var result = Stats.TakeHit(damage, kind, attack, crit, by.Stats);
+        Struck?.Invoke(result.Dealt, kind, attack, by);
         if (Sparring && (result.Killed || Stats.Health < Stats.MaxHealth * 0.15)) { EndSpar(true); return result; }
         Provoke(by);
         RefreshPlate();
