@@ -7,7 +7,7 @@ namespace Tristinwold.Game;
 /// <summary>
 /// Remote play: this computer runs the game and a phone plays it in its web browser, through a
 /// Cloudflare tunnel, so an iPhone needs nothing installed. Each frame (as often as the phone
-/// keeps up) the game's picture goes out as a JPEG; the phone's touches come back as real touches,
+/// keeps up) the game's picture goes out as a JPEG, and its sound goes too; the phone's touches come back as real touches,
 /// so the on-screen controls work exactly as on a phone, and its keyboard types into the game.
 ///   godot --path game -- --remote --tunnel
 /// </summary>
@@ -96,6 +96,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
         if (typing != _typing && _screen.Viewers > 0) _screen.Tell(typing ? """{"keyboard":true}""" : """{"keyboard":false}""");
         _typing = typing;
 
+        Listen();
         _since += delta;
         if (_screen.Viewers == 0 || !_screen.Wanted || _encoding || _since < 1.0 / Rate) return;
         _since = 0;
@@ -122,6 +123,45 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
     }
 
     volatile bool _encoding;
+
+    // ---- the sound -----------------------------------------------------------------------------
+
+    AudioEffectCapture? _capture;
+    double _phase;
+
+    /// <summary>
+    /// The game's sound to the phone too: everything the game plays is caught as it goes out, mixed down to one
+    /// channel, brought down to <see cref="RemoteAudio.Rate"/> and sent every twentieth of a second or so. The
+    /// phone plays it once it's been tapped (a phone won't play a web page's sound before that).
+    /// </summary>
+    void Listen()
+    {
+        if (_screen is null) return;
+        if (_capture is null)
+        {
+            if (_screen.Viewers == 0) return;
+            _capture = new AudioEffectCapture { BufferLength = 0.5f };
+            AudioServer.AddBusEffect(AudioServer.GetBusIndex("Master"), _capture);
+        }
+        var mix = AudioServer.GetMixRate();
+        var available = _capture.GetFramesAvailable();
+        if (_screen.Viewers == 0) { if (available > 0) _capture.ClearBuffer(); return; }
+        if (available < mix * 0.05) return;
+        var frames = _capture.GetBuffer(available);
+        var step = mix / RemoteAudio.Rate;
+        var mono = new List<float>((int)(frames.Length / step) + 2);
+        // Each sample the phone gets is the average of the game's samples it stands for, which keeps the sound
+        // clean as the rate comes down.
+        for (; _phase < frames.Length; _phase += step)
+        {
+            var (from, to) = ((int)_phase, Math.Min(frames.Length, (int)(_phase + step)));
+            var sum = 0f;
+            for (var i = from; i < Math.Max(from + 1, to); i++) sum += (frames[i].X + frames[i].Y) * 0.5f;
+            mono.Add(sum / Math.Max(1, to - from));
+        }
+        _phase -= frames.Length;
+        _screen.Hear(RemoteAudio.Packet(mono.ToArray()));
+    }
 
     // ---- input from the phone --------------------------------------------------------------------
 

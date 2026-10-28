@@ -29,7 +29,11 @@ public partial class SelfTest(Main main) : Node
             await Frames(10);
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--sound-only")) { await SoundTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--sound-only"))
+            {
+                if (OS.GetCmdlineUserArgs().Contains("--after-classes")) { await Teleport(new Vector3(-150, 0, -120)); await ClassesTest(); } // a busy countryside first
+                await SoundTest(); Finish(0); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--classes-only")) { await Teleport(new Vector3(-150, 0, -120)); await ClassesTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
@@ -379,21 +383,30 @@ public partial class SelfTest(Main main) : Node
         Check(bus >= 0 && Mathf.Abs(AudioServer.GetBusVolumeDb(bus) - Mathf.LinearToDb(0.3f)) < 0.1f, $"the music slider sets the music bus ({AudioServer.GetBusVolumeDb(bus):0.0} dB)");
         Sound.SetVolume(Sound.Music, before);
 
-        async Task<string> MoodAt(Vector3 at)
+        // Who's keeping a fight going, if anyone (for a failure's message).
+        string Fighting() => $"in a fight: {main.Tracker.InFight}, attackers: {string.Join(", ", p.Attackers().Select(e => e.Stats.Name))}; fighting the company: " +
+            string.Join(", ", GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => e.FightingCompany).Select(e => $"{e.Stats.Name} ({e.Kind.Id}, {e.GlobalPosition.DistanceTo(p.GlobalPosition):0} m{(e.Friendly ? ", friendly" : "")})"));
+        // Fight music rings on a few seconds after a fight, and tunes cross-fade: give it time to settle.
+        async Task<string> MoodAt(Vector3 at, string expect)
         {
             await Teleport(at);
-            // Earlier tests leave the countryside busy; listen with nothing hostile about.
-            foreach (var e in GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => !e.Friendly && e.GlobalPosition.DistanceTo(at) < 90).ToList()) e.QueueFree();
-            await Until(() => !main.Tracker.InFight && !p.Attackers().Any(), 30);
-            await Frames(90);
+            // Earlier tests leave the countryside busy, and the wilds bring more: listen with nothing hostile about.
+            for (var round = 0; round < 4; round++)
+            {
+                foreach (var e in GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => !e.Friendly && e.GlobalPosition.DistanceTo(at) < 90).ToList()) e.QueueFree();
+                await Until(() => !main.Tracker.InFight && !p.Attackers().Any(), 30);
+                await Frames(60);
+                if (!main.Tracker.InFight && !p.Attackers().Any()) break;
+            }
+            await Until(() => Sound.Current!.Mood == expect, 15);
             return Sound.Current!.Mood;
         }
-        var wild = await MoodAt(new Vector3(-150, 0, -120));
-        Check(wild == "explore", $"out in the wilds the music is {wild}, and the place sounds of {Sound.Current!.Place}");
-        var town = await MoodAt(new Vector3(20, 0, 20));
+        var wild = await MoodAt(new Vector3(-150, 0, -120), "explore");
+        Check(wild == "explore", $"out in the wilds the music is {wild}, and the place sounds of {Sound.Current!.Place}{(wild == "explore" ? "" : $" ({Fighting()})")}");
+        var town = await MoodAt(new Vector3(20, 0, 20), "town");
         Check(town == "town", $"in the city the music is {town}, and the place sounds of {Sound.Current!.Place}");
         var college = Guilds.Of(Calling.Bard);
-        var bards = await MoodAt(new Vector3((float)college.X + 3, 0, (float)college.Z + 3));
+        var bards = await MoodAt(new Vector3((float)college.X + 3, 0, (float)college.Z + 3), "bard");
         Check(bards == "bard", $"at the Bards' College the music is {bards}");
         await Teleport(new Vector3(-150, 0, -120));
         var foe = Spawn("dock_thug", p.GlobalPosition + new Vector3(0, 0, -3));

@@ -32,6 +32,9 @@ public static class RemotePage
           #keys { position: fixed; left: max(6px, env(safe-area-inset-left)); top: 50%; transform: translateY(-50%);
             background: rgba(20, 18, 14, .55); color: #e8dcc4; border: 1px solid rgba(232, 220, 196, .35); border-radius: 8px;
             font: 20px -apple-system, system-ui, sans-serif; padding: 6px 8px; touch-action: manipulation; }
+          #snd { position: fixed; right: max(6px, env(safe-area-inset-right)); top: max(6px, env(safe-area-inset-top));
+            background: rgba(20, 18, 14, .55); color: #e8dcc4; border: 1px solid rgba(232, 220, 196, .35); border-radius: 8px;
+            font: 18px -apple-system, system-ui, sans-serif; padding: 4px 8px; touch-action: manipulation; z-index: 2; }
           #probe { position: fixed; top: 0; left: 0; width: 1px; height: env(safe-area-inset-top); visibility: hidden; }
           #type { position: fixed; left: -1000px; top: 0; opacity: 0; width: 10px; height: 10px; font-size: 16px; }
 
@@ -67,6 +70,7 @@ public static class RemotePage
         <canvas id="screen"></canvas>
         <div id="note">Connecting to the game…</div>
         <button id="keys" aria-label="Keyboard">⌨︎</button>
+        <button id="snd" aria-label="Sound">🔇</button>
         <div id="probe"></div>
         <input id="type" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">
         <div id="pad">
@@ -122,7 +126,7 @@ public static class RemotePage
           say("Connecting to the game…");
           const proto = location.protocol === "https:" ? "wss:" : "ws:";
           socket = new WebSocket(`${proto}//${location.host}/ws?k=${encodeURIComponent(key)}`);
-          socket.binaryType = "blob";
+          socket.binaryType = "arraybuffer";
           socket.onopen = () => { wait = 500; say(""); send({ t: "hello", w: innerWidth, h: innerHeight }); send({ t: "layout", upright }); };
           socket.onmessage = async (e) => {
             if (typeof e.data === "string") {
@@ -134,8 +138,10 @@ public static class RemotePage
               if (m.pad) label(m.pad);
               return;
             }
+            const head = new Uint8Array(e.data, 0, 1)[0];
+            if (head === 0x41) { hear(new Uint8Array(e.data)); return; } // 'A': a moment of the game's sound
             try {
-              const image = await createImageBitmap(e.data);
+              const image = await createImageBitmap(new Blob([e.data], { type: "image/jpeg" }));
               if (image.width !== frame.w || image.height !== frame.h) { frame = { w: image.width, h: image.height }; fit(); }
               ctx.clearRect(0, 0, canvas.width, canvas.height);
               ctx.drawImage(image, box.x, box.y, box.w, box.h);
@@ -146,6 +152,50 @@ public static class RemotePage
           socket.onclose = () => { say("Lost the game. Reconnecting…"); setTimeout(connect, wait); wait = Math.min(wait * 2, 8000); };
         }
         connect();
+
+        // The game's sound. A phone plays a page's sound only after a tap, so the first touch anywhere wakes it;
+        // the speaker button turns it off and on. Each packet is mu-law (a byte a sample), played just after the
+        // last, a little ahead, and if it falls behind it skips ahead rather than lagging.
+        let audio = null, heardUntil = 0, soundOn = true;
+        try { soundOn = localStorage.getItem("tristinwold-sound") !== "off"; } catch (_) {}
+        const snd = document.getElementById("snd");
+        const MU = new Float32Array(256);
+        for (let i = 0; i < 256; i++) {
+          const u = ~i & 0xff, exp = (u >> 4) & 7, s = ((((u & 0x0f) << 3) + 0x84) << exp) - 0x84;
+          MU[i] = (u & 0x80 ? -s : s) / 32768;
+        }
+        function showSound() { snd.textContent = soundOn && audio && audio.state === "running" ? "🔊" : "🔇"; }
+        function wake() {
+          if (!soundOn) return;
+          try {
+            if (!audio) { audio = new (window.AudioContext || window.webkitAudioContext)(); audio.onstatechange = showSound; }
+            if (audio.state !== "running") audio.resume().then(showSound, showSound);
+          } catch (_) {}
+          showSound();
+        }
+        document.addEventListener("pointerdown", wake, true);
+        document.addEventListener("touchend", wake, true);
+        snd.addEventListener("click", (e) => {
+          e.stopPropagation();
+          soundOn = !(soundOn && audio && audio.state === "running");
+          try { localStorage.setItem("tristinwold-sound", soundOn ? "on" : "off"); } catch (_) {}
+          if (soundOn) wake(); else if (audio) audio.suspend().then(showSound, showSound);
+          showSound();
+        });
+        function hear(bytes) {
+          if (!soundOn || !audio || audio.state !== "running" || bytes.length < 5) return;
+          const rate = bytes[1] | (bytes[2] << 8) | (bytes[3] << 16);
+          const buffer = audio.createBuffer(1, bytes.length - 4, rate);
+          const data = buffer.getChannelData(0);
+          for (let i = 4; i < bytes.length; i++) data[i - 4] = MU[bytes[i]];
+          const now = audio.currentTime;
+          if (heardUntil < now + 0.03 || heardUntil > now + 0.5) heardUntil = now + 0.12;
+          const source = audio.createBufferSource();
+          source.buffer = buffer;
+          source.connect(audio.destination);
+          source.start(heardUntil);
+          heardUntil += buffer.duration;
+        }
 
         // Touches on the picture (and a mouse, for trying it on a computer), as fractions of the game's picture.
         // Upright, a drag on the picture also turns the view, since the game's own look-pad is put away.

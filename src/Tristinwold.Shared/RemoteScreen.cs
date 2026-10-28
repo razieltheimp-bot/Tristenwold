@@ -10,8 +10,8 @@ namespace Tristinwold.Shared;
 /// <summary>
 /// Remote play: the game runs on a computer and a phone's web browser shows it and controls it.
 /// This is the little web server for that. It serves the page (<see cref="RemotePage"/>), then
-/// keeps a WebSocket open to each browser: pictures of the game go out, touches and typing come
-/// back. A Cloudflare tunnel in front of it puts it on the internet, so an iPhone can play from
+/// keeps a WebSocket open to each browser: pictures and sound of the game go out, touches and typing
+/// come back. A Cloudflare tunnel in front of it puts it on the internet, so an iPhone can play from
 /// anywhere with nothing installed.
 ///
 /// It speaks plain HTTP on a TCP socket rather than through HttpListener, so Windows doesn't ask
@@ -54,6 +54,9 @@ public sealed class RemoteScreen : IDisposable
         public bool Busy => Interlocked.Read(ref _sentAt) != 0 && Environment.TickCount64 - Interlocked.Read(ref _sentAt) < 3000;
         public void Sent() => Interlocked.Exchange(ref _sentAt, Environment.TickCount64);
         public void Drawn() => Interlocked.Exchange(ref _sentAt, 0);
+
+        /// <summary>Sound on its way to this phone and not yet gone.</summary>
+        public int Hearing;
 
         public async Task Send(byte[] bytes, WebSocketMessageType type, CancellationToken token)
         {
@@ -210,6 +213,20 @@ public sealed class RemoteScreen : IDisposable
             if (v.Busy || v.Socket.State != WebSocketState.Open) continue;
             v.Sent();
             _ = v.Send(jpeg, WebSocketMessageType.Binary, _cts.Token);
+        }
+    }
+
+    /// <summary>
+    /// Sends a moment of the game's sound (a <see cref="RemoteAudio"/> packet) to every browser. A connection too
+    /// slow to keep up loses some sound rather than falling behind: late sound is worse than a gap.
+    /// </summary>
+    public void Hear(byte[] packet)
+    {
+        foreach (var v in _viewers.Values)
+        {
+            if (v.Socket.State != WebSocketState.Open || Volatile.Read(ref v.Hearing) > 4) continue;
+            Interlocked.Increment(ref v.Hearing);
+            _ = v.Send(packet, WebSocketMessageType.Binary, _cts.Token).ContinueWith(_ => Interlocked.Decrement(ref v.Hearing), TaskScheduler.Default);
         }
     }
 

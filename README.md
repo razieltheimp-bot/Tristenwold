@@ -180,8 +180,10 @@ drum, sound a horn, chant, turn pages and scratch with a quill. Menus click; coi
 anvil rings; potions pour; a level up and a quest have their own fanfares.
 
 Volumes (all sound, music, ambience, effects) are on the login page and in the game menu (Esc, then "Sound and
-music"), kept on the device. Phone remote play sends the picture only, so on an iPhone you hear nothing yet; the
-PC running the game plays the sound.
+music"), kept on the device. Playing from a phone, the sound comes too: the game catches what it plays and sends
+it along with the picture (one channel, 22 kHz, about 22 KB a second). A phone won't play a web page's sound until
+it's touched, so it starts with your first tap; the speaker button at the top right turns it off and on (and the
+iPhone's silent switch silences it). The PC plays it as well.
 
 ### Classes
 
