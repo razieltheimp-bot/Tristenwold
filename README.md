@@ -361,6 +361,33 @@ your company. In the shared world the server names it (the boss that beat you is
 promotes), so it's on everyone's roster under the same name, its fights count there, and if it cheats death there
 it comes back roaming, scarred and angrier.
 
+### A living world
+
+(`game/scripts/TownLife.cs`, `Skylife.cs`, `Watch.cs`; `src/Tristinwold.World/TownLife.cs` and `Wildlife.cs`.)
+
+- **Animals people keep.** Farmsteads keep cows, sheep, pigs, hens, a horse and a dog; hamlets and towns have sheep,
+  hens, dogs and cats; inns their horses; Tristinwold its dogs, cats, hens and the Watch's horses. They stand about
+  with the people who keep them. Kill one where its owners can see and you pay for it (and Tristinwold hears of it).
+  Sheep give wool (the loom makes linen of it), cows meat and hide, hens feathers.
+- **Wild horses** run the autumn woods and the tundra in herds; their foals can be tamed and raised.
+- **Life overhead and in the water.** Eagles circle over the wilds; songbirds forage in the woods and scatter when
+  you come close; fish swim in the water near you; and whales roll at the surface in the mouth of the harbour, for
+  anyone on the docks to see.
+- **Food to forage.** Raspberries, penny buns, wild garlic and flax in the autumn woods; bilberries and chanterelles
+  under the pines; wild hives in the trees (the bees don't like a novice). Cook berry tarts, mushroom stew (restores
+  mana), honey cakes and roast meat; spin flax and wool into linen.
+- **The guilds' initiates are about town on their first errands.** The Velvet Knives' young thieves lift purses in
+  the streets, the townsfolk's and **yours** if they get close (the better a thief you are, the more likely you
+  catch the hand in your purse); strike a thief who has your purse and they drop it, and if the townsfolk or you see
+  them at it, the Watch runs them down. The Iron Circle's initiates go bouts with one another, the Magi's
+  apprentices work their cantrips, the College's busk for whoever'll listen.
+- **Crime, and the Watch.** Now and then a Velvet Knife comes for a hero who's made a name ("The Velvet Knives send
+  their regards"), and muggers work the docks and the Warrens. The Watch goes after any thief or cutthroat in the
+  streets and pays for each one brought down.
+
+`--selftest --living-only` walks through all of it. The animals are Quaternius's CC0 packs from OpenGameArt
+(converted by `tools/creatures/quaternius.py`).
+
 ### Stranger things in the wilds
 
 Out past the safe country (`src/Tristinwold.World/Wildlife.cs`; bodies in `game/scripts/Wildfolk.cs`, tricks in

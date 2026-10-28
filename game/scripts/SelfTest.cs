@@ -25,10 +25,12 @@ public partial class SelfTest(Main main) : Node
         main.FightEnded += _reports.Add;
         main.Received += m => { if (m is DeviantAppears a) _appearances.Add(a); };
         main.RoamersNode.WildDeviants = false; // the scripted fights below lose on purpose: only the hunt's own test makes deviants
+        main.TownLifeNode.Stirring = false; // no young thief lifts the scripted hero's purse mid-test: the town's own test turns it on
         try
         {
             await Frames(10);
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sound-only"))
@@ -49,7 +51,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -970,6 +972,104 @@ public partial class SelfTest(Main main) : Node
     /// empty until its timer runs out, and then a new nameless one is there. The roamer wanders, comes for the hero
     /// when it finds them, and when it's killed it's gone for good, and its bounty paid.
     /// </summary>
+    /// <summary>
+    /// The world going about its business: the animals people keep, wild horses, eagles overhead, food to forage; the
+    /// guilds' initiates on their errands in Tristinwold; a young thief at your purse; a cutthroat, and the Watch.
+    /// </summary>
+    async Task LivingWorldTest()
+    {
+        var p = main.PlayerNode;
+        var pack = p.Pack;
+        var life = main.TownLifeNode;
+        IEnumerable<Enemy> Owned(string place) => GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e.Owner == place && e.State != EnemyState.Dead);
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+
+        // Tristinwold's own animals, and a farm's.
+        await Teleport(City.PlayerStart);
+        await Frames(30);
+        var town = Owned("Tristinwold").ToList();
+        Check(town.Count(e => e.Kind.Id == "dog") >= 2 && town.Any(e => e.Kind.Id == "cat") && town.Any(e => e.Kind.Id == "hen"),
+            $"Tristinwold has its dogs, cats and hens ({string.Join(", ", town.GroupBy(e => e.Kind.Id).Select(g => $"{g.Count()} {g.Key}"))})");
+        var farm = main.World.SettlementsNear(0, 0, 5000).Where(s => s.Kind == SettlementKind.Farmstead).MinBy(s => s.DistanceTo(0, 0))!;
+        await Teleport(new Vector3((float)(farm.X + farm.Radius + 6), 0, (float)farm.Z));
+        await Until(() => main.PlacesNode.IsBuilt(farm.Id) && Owned(farm.Name).Any(), 10);
+        var stock = Owned(farm.Name).ToList();
+        Check(stock.Any(e => e.Kind.Id == "cow") && stock.Any(e => e.Kind.Id == "sheep"),
+            $"{farm.Name} keeps its livestock ({string.Join(", ", stock.GroupBy(e => e.Kind.Id).Select(g => $"{g.Count()} {g.Key}"))})");
+        p.Crowns = 100;
+        var sheep = stock.FirstOrDefault(e => e.Kind.Id == "sheep");
+        if (sheep is not null)
+        {
+            var wool = pack.Count("wool");
+            sheep.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, p);
+            await Frames(5);
+            Check(p.Crowns == 100 - Livestock.Fine("sheep"), $"killing somebody's sheep costs you {100 - p.Crowns} crowns ({main.HudNode.LastLine})");
+        }
+
+        // Eagles over the wilds.
+        await Teleport(new Vector3(-150, 0, -160));
+        await Until(() => main.SkyNode.Eagles > 0, 10);
+        Check(main.SkyNode.Eagles > 0, $"eagles circle overhead ({main.SkyNode.Eagles}), songbirds in the woods ({main.SkyNode.Birds})");
+
+        // Food to forage.
+        var berries = Herbs.Near(main.World, -600, -600, 1400).FirstOrDefault(x => x.HerbId is "raspberries" or "bilberries" && main.HerbLog.Ready(x, main.GuildBook.PlaySeconds));
+        if (berries is null) Check(false, "berries grow wild");
+        else
+        {
+            var at = new Vector3((float)berries.X, City.FloorAt(new Vector3((float)berries.X, 0, (float)berries.Z)), (float)berries.Z);
+            await Teleport(at + new Vector3(1, 0, 0));
+            await Until(() => main.HerbPatchNode.Within(at) is not null, 5);
+            p.GlobalPosition = at + new Vector3(0.5f, 0.5f, 0);
+            await Frames(5);
+            var had = pack.Count(berries.HerbId);
+            Check(main.PickHere() && pack.Count(berries.HerbId) > had, $"you pick {Items.Get(berries.HerbId)!.Name.ToLowerInvariant()} in the wild");
+        }
+
+        // The guilds' initiates about Tristinwold.
+        life.Stirring = true;
+        await Teleport(City.PlayerStart);
+        await Until(() => life.Walkers.Count >= 6, 10);
+        Check(life.Walkers.Select(w => w.Who.Calling).Distinct().Count() == 4,
+            $"the guilds' initiates are out on their errands: {string.Join("; ", life.Walkers.Select(w => w.Who.Title))}");
+        var starts = life.Walkers.ToDictionary(w => w, w => w.Body.GlobalPosition);
+        await Frames(240);
+        Check(life.Walkers.Any(w => starts.TryGetValue(w, out var s) && w.Body.GlobalPosition.DistanceTo(s) > 2), "and they walk the town");
+
+        // A young thief at your purse: strike them, and it's back.
+        p.Crowns = 100;
+        TownLife.Walker? thief = null;
+        for (var i = 0; i < 8 && p.Crowns == 100; i++)
+        {
+            await Until(() => life.Walkers.Any(w => w.Who.Calling == Calling.Rogue && !w.Body.Criminal), 10);
+            thief = life.Walkers.FirstOrDefault(w => w.Who.Calling == Calling.Rogue && !w.Body.Criminal);
+            if (thief is null) break;
+            thief.Body.GlobalPosition = p.GlobalPosition + new Vector3(1.2f, 0.4f, 0);
+            life.LiftForTest(thief);
+            await Frames(5);
+        }
+        Check(p.Crowns < 100 && thief is { Body.Criminal: true }, $"a young thief lifts your purse ({100 - p.Crowns} crowns): {main.HudNode.LastLine}");
+        if (thief is not null && IsInstanceValid(thief.Body))
+        {
+            p.GlobalPosition = thief.Body.GlobalPosition + new Vector3(1.5f, 0.4f, 0);
+            thief.Body.TakeHit(5, DamageKind.Physical, AttackKind.Weapon, false, p);
+            await Frames(5);
+            Check(p.Crowns == 100, $"strike them, and they drop it ({p.Crowns} crowns)");
+        }
+
+        // A cutthroat from the Velvet Knives: the Watch comes running, and pays for it.
+        await Teleport(City.PlayerStart);
+        var knife = life.Cutthroat();
+        await Until(() => main.WatchNode.Guards.Any(g => g.Rival == knife), 20);
+        Check(main.WatchNode.Guards.Any(g => g.Rival == knife), $"a Velvet Knife comes for you, and the Watch comes running ({main.WatchNode.Guards.Count(g => g.Rival == knife)} watchmen)");
+        var crowns = p.Crowns;
+        if (IsInstanceValid(knife)) knife.TakeHit(1e6, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Frames(5);
+        Check(p.Crowns > crowns, $"you bring them down, and the Watch pays for it (+{p.Crowns - crowns} crowns)");
+        life.Stirring = false;
+        await Until(() => !main.Tracker.InFight, 10);
+        p.Stats.Heal(1e9);
+    }
+
     /// <summary>
     /// Deviants of the wilds: what beats you out there takes a name; once it sees you it hunts you; you can outrun it,
     /// and it remembers; every blow teaches it how you fight, and it fights back with that; it won't follow you into

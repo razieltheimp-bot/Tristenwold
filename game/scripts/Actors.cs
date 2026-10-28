@@ -179,13 +179,16 @@ public partial class Enemy : Fighter
     /// <summary>Someone's animal (a farm's cow, a town's dog): the place it belongs to.</summary>
     public string? Owner { get; set; }
 
+    /// <summary>Caught at a crime in the streets (a thief, a cutthroat, a mugger): the Watch is after it.</summary>
+    public bool Criminal { get; set; }
+
     /// <summary>
     /// What the Watch will fight: a deviant in the town, or anything out of the wilds that's after the hero in the
     /// streets. A lair's or a camp's own creatures are the hero's business.
     /// </summary>
     bool Disturbs(Enemy e) =>
         !e.Friendly && !e.Sparring && e.State != EnemyState.Dead && TownWatch.InTristinwold(e.GlobalPosition)
-        && (e.DeviantId is not null || e.Named || e.FightingCompany && e.SiteId is null && !e.InLair);
+        && (e.Criminal || e.DeviantId is not null || e.Named || e.FightingCompany && e.SiteId is null && !e.InLair);
 
     /// <summary>
     /// A blow from one of the townsfolk (a stone, a bottle, a smith's hammer): a share of its health. It hurts, but it

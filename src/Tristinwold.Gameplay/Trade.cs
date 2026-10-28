@@ -249,6 +249,7 @@ public static class Loot
         "dire_imp" => [("devil_hide", 0.8, 1, 1), ("brimstone", 0.8, 1, 3), ("imp_horn", 0.6, 1, 2)],
         "winged_ape" => [("black_feather", 0.9, 2, 3), ("ape_hide", 0.6, 1, 1), ("iron_greatsword", 0.12, 1, 1)],
         "stormwing" => [("storm_feather", 0.6, 1, 1)],
+        "velvet_assassin" => [("iron_dagger", 0.4, 1, 1), ("healing_draught", 0.3, 1, 1), ("linen", 0.3, 1, 1)],
         _ => [],
     };
 
@@ -264,6 +265,7 @@ public static class Loot
             "goblin" or "goblin_tinker" => rng.Next(6),
             "dock_thug" or "lantern_boy" or "drowned_hand" or "bandit" => 3 + rng.Next(10),
             "bandit_chief" or "draugr_overlord" => 15 + rng.Next(25),
+            "velvet_assassin" => 10 + rng.Next(20),
             "draugr" or "sea_wraith" => rng.Next(8),
             _ => 0,
         };

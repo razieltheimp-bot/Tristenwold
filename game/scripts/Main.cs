@@ -366,6 +366,8 @@ public partial class Main : Node3D
         AddChild(_watch);
         _sky = new Skylife(this);
         AddChild(_sky);
+        _life = new TownLife(this);
+        AddChild(_life);
         SetUpCompany();
         _hud.AttachMap(_world, _explored, () => _player.GlobalPosition, () => -_player.GlobalTransform.Basis.Z, QuestGoals);
 

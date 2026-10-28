@@ -15,6 +15,8 @@ namespace Tristinwold.Game;
 /// </summary>
 public partial class TownWatch(Main main) : Node
 {
+    public static IEnumerable<Vector3> PostSpots => Posts.Select(p => p.At);
+
     static readonly (Vector3 At, string Post)[] Posts =
     [
         (new(64, 0, 48), "the Watch House"), (new(92, 0, 5), "the east gate"), (new(-92, 0, 2), "the west gate"),
