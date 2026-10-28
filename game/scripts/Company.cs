@@ -396,27 +396,46 @@ public partial class Main
             case SagaStage.NotStarted:
                 yield return ("How do I become a Dragon Knight?", () =>
                 {
-                    var m = DragonSaga.Matriarch(_world);
-                    if (m is null) { Say(person, "There's no clutch to be had this year. Ask me again."); return; }
-                    var here = new Vector3((float)DragonSaga.RookeryX, 0, (float)DragonSaga.RookeryZ);
+                    if (DragonSaga.Matriarch(_world) is null) { Say(person, "There's no clutch to be had this year. Ask me again."); return; }
                     _hud.Talk(Who(person.Npc),
-                        $"Every knight of the Eyrie raised their dragon from the egg. {m.FullName}, {m.What}, keeps a pact with {m.Ward!.Name}, and her clutch lies in her lair, {Direction(here, (m.X, m.Z))} of here. Rift-corrupted drakes have been preying on it. Bring back an egg and keep it warm. What hatches will be small, and hungry, and it will need you: feed it, keep it alive, and fight beside it until it's grown enough to carry you. Then bring it to me, and kneel.",
-                        ("I'll do it.", () =>
+                        "Every knight of the Eyrie raised their dragon from the egg, and every one of them earned it. I don't hand out eggs to whoever walks up the hill. " +
+                        $"Show me you can stand on your own feet out there (level {DragonSaga.MinLevel}), and show me you'll do the work: my dragons eat, and they eat a great deal. Bring me {DragonSaga.MeatDue} meat you've hunted yourself. " +
+                        "Then we'll talk about where an egg might be found.",
+                        ("I'll earn it.", () =>
                         {
                             _saga.Begin(_world);
-                            _hud.Toast("New quest: the Dragon Knight's road.");
+                            _hud.Toast("New quest: the Dragon Knight's road. Prove yourself to Ser Aldric.");
                             Save();
-                            Say(person, "Then go. And come back with an egg, not an excuse.");
+                            Say(person, "Good. The dragons are hungry now.");
                         }),
                         ("Not yet.", () => Say(person, "The dragons will wait. They're good at it.")));
                 });
                 break;
+            case SagaStage.Proving:
+                if (_player.Meat > 0 && _saga.MeatGiven < DragonSaga.MeatDue)
+                    yield return ($"Here's meat for the dragons. ({_player.Meat} in your pack)", () =>
+                    {
+                        var took = _saga.Feed(_player.Meat);
+                        _player.Meat -= took;
+                        Save();
+                        Say(person, _saga.MeatGiven >= DragonSaga.MeatDue ? "That'll do them. They know your smell now." : $"{took} more. {DragonSaga.MeatDue - _saga.MeatGiven} to go. They're always hungry.");
+                    });
+                if (_saga.Proven(_player.Hero.Level))
+                    yield return ("I've done what you asked.", () =>
+                    {
+                        _saga.Bless(_player.Hero.Level);
+                        Save();
+                        _hud.Talk(Who(person.Npc),
+                            $"So you have. {_saga.MatriarchName} keeps a pact with people, and her clutch lies in her lair, somewhere {_saga.Hint} of here. " +
+                            "I won't draw you a map and I won't fly you there: a knight who can't find a dragon won't keep one. Rift-corrupted drakes have been at her clutch. Bring back an egg, and keep it warm.",
+                            ("I'll find it.", () => Say(person, "Then go.")));
+                    });
+                else
+                    yield return ("What do you still need of me?", () => Say(person,
+                        _player.Hero.Level < DragonSaga.MinLevel ? $"You're not ready. Come back at level {DragonSaga.MinLevel}, and with the meat." : $"Meat. {DragonSaga.MeatDue - _saga.MeatGiven} more."));
+                break;
             case SagaStage.SeekEgg:
-                yield return ("Can your knights fly me to the nest?", () =>
-                {
-                    _hud.EndTalk();
-                    FlyTo(_saga.NestX + 60, _saga.NestZ + 40, $"A knight of the Eyrie flies you over the wilds to the lair of {_saga.MatriarchName}, and sets you down at the edge of the nest.");
-                });
+                yield return ("Where is the lair again?", () => Say(person, $"Somewhere {_saga.Hint} of here. {(_saga.FoundNest ? "You've found it, I hear. Then why are you here?" : "Look for her. You'll know her when you see her.")}"));
                 if (_saga.Lost > 0) yield return ("I lost my dragon.", () => Say(person, "Then you know what it costs. Try again. The nest is where it was."));
                 break;
             case SagaStage.CarryEgg:
@@ -450,21 +469,17 @@ public partial class Main
         return "Quiet, for once. The Dragonwatch flies over every pact town; go and see them.";
     }
 
-    void FlyTo(double x, double z, string story)
-    {
-        var at = new Vector3((float)x, 0, (float)z);
-        _terrain.EnsureAround(at, 1);
-        _player.GlobalPosition = at with { Y = City.FloorAt(at) + 1 };
-        _player.Velocity = Vector3.Zero;
-        _player.ResetPhysicsInterpolation();
-        _hud.Toast(story, 10);
-    }
-
     /// <summary>The nest at the matriarch's lair: the egg waits there, and the first time you come, corrupted drakes are at it.</summary>
     void TendNest()
     {
         var nest = new Vector3((float)_saga.NestX, 0, (float)_saga.NestZ);
         var d = _player.GlobalPosition.DistanceTo(nest with { Y = _player.GlobalPosition.Y });
+        if (!_saga.FoundNest && d < 300)
+        {
+            _saga.Found();
+            _hud.Toast($"There: the lair of {_saga.MatriarchName}, and her nest. You found it yourself.", 8);
+            Save();
+        }
         if (_nest is null && d < 350 && _terrain.HasGround(nest))
         {
             _nest = new Pickup { QuestId = "saga:egg", Item = "Dragon egg", Egg = Bestiary.Get(Dragons.KindFor(_saga.Colour)).Colour };

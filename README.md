@@ -482,7 +482,9 @@ your company, and **Tristinwold's own caravans start trading with it**: every da
 one of the places you've found, bringing what it makes and taking home what it wants, and Tristinwold's stores move
 with it.
 
-**The caravan yard**, outside the west gate, is kept by Garrick Wain. Three ranks of work:
+**The caravan yard** stands right up against the city wall south of the west gate, where the Watch can see it (it
+has its own post). It's a busy place: wagons standing waiting for teams and drivers, goods piled everywhere, three
+traders' stalls along the wall, a spice trader and an old harness-maker. Garrick Wain keeps it. Three ranks of work:
 
 1. **Loader.** Lift goods from the stack onto the yard's wagon (E, then E at the wagon), four crowns a load. Ten
    loads and he makes you a driver.
@@ -493,6 +495,12 @@ with it.
    horses to it, or buy a draught horse from him (140): each horse is room for a dozen loads, two at most. Buy goods at
    the Exchange, take them where they're wanted, buy what that place makes cheap, and bring it home to sell. The
    tracker keeps count of what's aboard, and Garrick of what you've made on the road.
+
+**Gluts.** Sell a village a hundred fish and fish there is worth next to nothing: the village is *drowning* in it.
+Whenever that happens anywhere along the routes (or in Tristinwold itself), word comes to the yard, and Garrick has
+work for a driver: take the wagon to where it's piled up, load it for next to nothing, and cart it to the known place
+that will pay most for it. The pay is half the difference in price, plus the road. A trader with their own wagon can
+just buy up a glut where it lies (any glutted good is for sale, not only what the place makes) and sell it on.
 
 **Guarding the city's caravans.** Tristinwold's caravans run along every trade route, and **the trade routes are the
 places you've found, and only those**: each village, farmstead, mine or town you discover adds one. Garrick hires
@@ -622,9 +630,13 @@ Everything is saved with your company. `--selftest --pursuits-only` walks throug
 
 ### The Dragon Knight
 
-Any class can become one. Ser Aldric Brasswing keeps the Order of the Eyrie's rookery on the hill west of
-Tristinwold, with two dragon knights and their dragons. He sends you to the nest of the nearest metallic ancient
-that keeps a pact with people (his knights can fly you there), where Rift-corrupted drakes are tearing at the
+Any class can become one, **and it's earned**. Nobody tells a new hero about it. The Order of the Eyrie keeps its
+rookery on the hill west of Tristinwold, and **every day one of its riders comes in over the wilds and lands there**
+(you'll see it from the walls); rest a while, and go again. Go and see what's happening, or don't: that's on you.
+Ser Aldric Brasswing doesn't hand out eggs. First he wants you on your own feet (level 5) and willing to do the work:
+**feed his dragons ten meat you've hunted yourself**. Then he tells you, roughly, which way the lair of the nearest
+metallic ancient that keeps a pact with people lies ("somewhere to the north-east"), and no more: **no map, no
+flight there**. The tracker shows no spot until you've found it for yourself. Rift-corrupted drakes are tearing at the
 clutch. Take an egg and keep it warm: it hatches as you carry it, quickest when you rest. The hatchling is the
 size of a cat, hungry, and fragile: until it can fly, if it falls it is lost, and you must start again. Fight
 beside it until level 10 (it learns Claw Rake, then its colour's Breath), bring it to Ser Aldric and kneel. From

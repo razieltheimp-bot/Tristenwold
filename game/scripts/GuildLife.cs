@@ -58,6 +58,8 @@ public partial class Main
     TownWatch _watch = null!;
     public TownWatch WatchNode => _watch;
     Skylife _sky = null!;
+    RiderFlights _riders = null!;
+    public RiderFlights RiderFlightsNode => _riders;
     public Skylife SkyNode => _sky;
     TownLife _life = null!;
     public TownLife TownLifeNode => _life;

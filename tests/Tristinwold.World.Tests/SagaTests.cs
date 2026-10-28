@@ -75,6 +75,22 @@ public class SagaTests
         Assert.True(saga.Begin(World));
         var matriarch = Many.Concat(Dragons.Near(World, 0, 0, 30000)).First(a => a.Id == saga.MatriarchId);
         Assert.True(matriarch.Allied);
+        // It's earned: no egg, and no word of where one is, until Ser Aldric is satisfied.
+        Assert.Equal(SagaStage.Proving, saga.Stage);
+        Assert.False(saga.TakeEgg());
+        Assert.Contains("level 5", saga.Objective(null, 2));
+        Assert.Equal(6, saga.Feed(6));
+        Assert.False(saga.Bless(9)); // the dragons are still hungry
+        Assert.Equal(4, saga.Feed(30)); // no more than they need
+        Assert.False(saga.Bless(DragonSaga.MinLevel - 1)); // and the hero isn't ready
+        Assert.True(saga.Bless(DragonSaga.MinLevel));
+        Assert.Equal(SagaStage.SeekEgg, saga.Stage);
+        // He says roughly which way, no more; the tracker shows no spot until the hero has found it.
+        Assert.Matches("to the (north|south|east|west)", saga.Hint);
+        Assert.Null(saga.Goal(null));
+        Assert.Contains("for yourself", saga.Objective(null));
+        saga.Found();
+        Assert.Equal((saga.NestX, saga.NestZ), saga.Goal(null));
         Assert.True(saga.TakeEgg());
         Assert.False(saga.Warm(DragonSaga.HatchSeconds / 2, resting: false));
         Assert.True(saga.Warm(DragonSaga.HatchSeconds / 12, resting: true));
@@ -89,6 +105,8 @@ public class SagaTests
         // A hatchling lost sends you back for another egg.
         var again = new DragonSaga();
         again.Begin(World);
+        again.Feed(10);
+        again.Bless(10);
         again.TakeEgg();
         again.Warm(DragonSaga.HatchSeconds, false);
         again.Lose();

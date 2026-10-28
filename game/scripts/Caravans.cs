@@ -16,7 +16,7 @@ public partial class Main
 {
     TradeBook _trade = new();
     Wagon? _wagon;
-    double _caravanTick, _ambushAt = 120;
+    double _caravanTick, _ambushAt = 120, _glutCheck = 5;
     int _tradeDay;
     (int Left, bool Holding)? _loading;
     Node3D? _sack;
@@ -24,8 +24,8 @@ public partial class Main
     public TradeBook TradeLog => _trade;
     public Wagon? WagonNode => _wagon;
 
-    /// <summary>On the west road, out past the Iron Circle's yard and the Tumblers' Run.</summary>
-    public static readonly Vector3 YardAt = new(-185, 0, -20);
+    /// <summary>Right up against the city wall, south of the west gate, where the Watch can see it.</summary>
+    public static readonly Vector3 YardAt = new(-108, 0, 34);
     static Vector3 YardWagon => YardAt + new Vector3(5, 0, -2);
     static Vector3 YardStack => YardAt + new Vector3(-5, 0, 4);
     const string Master = "tristinwold/caravans";
@@ -36,15 +36,33 @@ public partial class Main
         Townsfolk(new Npc(Master, "Garrick Wain", Sex.Male, 52, "master of the caravan yard", "city:tristinwold", "Tristinwold",
             "Garrick has driven every road out of Tristinwold and lost a wagon on most of them. He keeps the caravan yard outside the west gate, and he'll take on anyone with a strong back, then anyone who can drive, and sell a wagon to anyone who's proved they can bring one home.",
             ["the roads", "money"], "gruff", "Loading, driving or buying? I've work for all three.", YardAt.X - 1.5, YardAt.Z + 1.5));
+        // The loading stack, and goods piled all about the yard.
+        string[] goods = ["crate_apples.glb", "bag.glb", "barrel_apples.glb"];
         for (var i = 0; i < 6; i++)
-            Models.Place(this, i % 3 == 2 ? Cargo + "barrel_apples.glb" : i % 3 == 1 ? Cargo + "bag.glb" : Cargo + "crate_apples.glb", YardStack + new Vector3(i % 3 * 0.9f, 0, i / 3 * 0.9f), 1.1f, i * 0.4f, solid: false);
-        Models.Place(this, Cargo + "stall_red.glb", YardAt + new Vector3(-2, 0, -5), 2.4f, 0.3f);
-        var parked = new Wagon(this, null) { Parked = true };
-        AddChild(parked);
-        parked.GlobalPosition = YardWagon with { Y = City.FloorAt(YardWagon) };
-        parked.Rotation = new Vector3(0, 0.4f, 0);
+            Models.Place(this, Cargo + goods[i % 3], YardStack + new Vector3(i % 3 * 0.9f, 0, i / 3 * 0.9f), 1.1f, i * 0.4f, solid: false);
+        foreach (var (x, z, n) in new[] { (9f, -9f, 4), (-13f, 6f, 3), (2f, 13f, 5), (14f, 4f, 3) })
+            for (var i = 0; i < n; i++)
+                Models.Place(this, Cargo + goods[(i + n) % 3], YardAt + new Vector3(x + i % 2 * 0.9f, 0, z + i / 2 * 0.9f), 1.1f, i * 0.7f, solid: false);
+        // Traders' stalls along the wall, and their keepers.
+        Models.Place(this, Cargo + "stall_red.glb", YardAt + new Vector3(-4, 0, -9), 2.4f, 0.3f);
+        Models.Place(this, Cargo + "stall_green.glb", YardAt + new Vector3(4, 0, -11), 2.4f, -0.2f);
+        Models.Place(this, Cargo + "stall_red.glb", YardAt + new Vector3(12, 0, -7), 2.4f, -0.6f);
+        Townsfolk(new Npc("tristinwold/yard_spice", "Imra Dask", Sex.Female, 38, "spice trader at the caravan yard", "city:tristinwold", "Tristinwold",
+            "Imra buys whatever the wagons bring from the far places and sells it to whoever'll pay. She knows every road's prices by heart.",
+            ["money", "the roads"], "sly", "Fresh off the wagons. Don't ask from where.", YardAt.X - 4, YardAt.Z - 7), "traveller");
+        Townsfolk(new Npc("tristinwold/yard_harness", "Bodo Hask", Sex.Male, 61, "harness-maker at the caravan yard", "city:tristinwold", "Tristinwold",
+            "Bodo has mended every harness on every wagon that's left this yard for forty years. He talks to the horses more than to people.",
+            ["horses", "old battles"], "warm", "Mind the mare, she bites.", YardAt.X + 4, YardAt.Z - 9), "worker");
+        // Wagons standing in the yard: the one you load, and others waiting for their teams or their drivers.
+        foreach (var (at, yaw, horse) in new[] { (YardWagon, 0.4f, (string?)"horse"), (YardAt + new Vector3(-11, 0, -3), 1.2f, null), (YardAt + new Vector3(11, 0, 10), -0.8f, "horse"), (YardAt + new Vector3(-4, 0, 12), 2.2f, null) })
+        {
+            var parked = new Wagon(this, horse) { Parked = true };
+            AddChild(parked);
+            parked.GlobalPosition = at with { Y = City.FloorAt(at) };
+            parked.Rotation = new Vector3(0, yaw, 0);
+        }
         Sign(YardAt + new Vector3(0, 3.4f, -3), "Caravan Yard");
-        City.Zones.Add(new Zone("The Caravan Yard", YardAt, 16, 9));
+        City.Zones.Add(new Zone("The Caravan Yard", YardAt, 20, 9));
     }
 
     IEnumerable<(string, Action)> CaravanTalk(Person person)
@@ -70,7 +88,11 @@ public partial class Main
         if (_loading is null && t.Run is null)
             yield return (t.Rank <= CaravanRank.Loader ? $"Any loading work? ({TradeBook.LoadWage} crowns a load)" : "I'll load a wagon.", () => StartLoading(person));
         if (t.Rank >= CaravanRank.Driver && t.Run is null && !t.WagonOut && t.Guarding is null)
+        {
             yield return ("Give me a wagon to drive.", () => StartRun(person));
+            var gluts = t.Gluts(_city).ToList();
+            if (gluts.Count > 0) yield return ($"Any gluts to move? ({gluts.Count})", () => OfferGluts(person));
+        }
         if (t.Run is null && !t.WagonOut && t.Guarding is null)
             yield return ("Any caravans that need a guard?", () => OfferGuardWork(person));
         if (t.Run is { } r)
@@ -154,6 +176,7 @@ public partial class Main
     {
         if (_trade.Run is not { } r || _wagon is null) return;
         var at = _wagon.GlobalPosition;
+        if (r.Glut) { TendGlutRun(r, at); return; }
         if (!r.Returning && _world.Find(r.To) is { } town && town.DistanceTo(at.X, at.Z) < town.Radius + 25)
         {
             var pay = _trade.Arrive(_city.Day);
@@ -177,6 +200,60 @@ public partial class Main
                 : $"+{rest} crowns, and {r.ToName}'s {CityEconomy.Info(r.Back).Name} goes into the city's stores.", 9);
             Save();
         }
+    }
+
+    // ---- gluts ---------------------------------------------------------------------------------------------------
+
+    readonly HashSet<string> _gluts = [];
+
+    /// <summary>A place drowning in something, and the work of carting it to where it's wanted.</summary>
+    void OfferGluts(Person master)
+    {
+        var options = _trade.Gluts(_city).Take(6).Select(j => ($"{j.N} {CityEconomy.Info(j.Good).Name} from {j.FromName} to {j.ToName}: {j.Pay} crowns",
+            (Action)(() =>
+            {
+                var run = _trade.Take(j);
+                TakeWagon(null);
+                if (run.From == TradeBook.CityId) _trade.LoadGlut(_city, _city.Day); // it's here in the city's stores: loaded at the yard
+                Say(master, run.Loaded
+                    ? $"The Exchange is drowning in {CityEconomy.Info(j.Good).Name}. It's loaded. Take it to {j.ToName}, {Direction(master.GlobalPosition, (j.ToX, j.ToZ))} of here, where they'll pay for it. {j.Pay} crowns when it's there."
+                    : $"{j.FromName} is drowning in {CityEconomy.Info(j.Good).Name}; they'll practically give it away. Take the wagon there, {Direction(master.GlobalPosition, (j.FromX, j.FromZ))} of here, load up, and take it to {j.ToName}, where they'll pay for it. {j.Pay} crowns when it's there.");
+                Save();
+            }))).ToList();
+        options.Add(("Not now.", () => Say(master, "Gluts don't last. Somebody else will have it.")));
+        _hud.Talk(Who(master.Npc), "Somebody's sold a town more of something than it'll ever use, and now it's worth nothing there and good money elsewhere. That's work for a wagon.", [.. options]);
+    }
+
+    void TendGlutRun(CaravanRun r, Vector3 at)
+    {
+        if (!r.Loaded)
+        {
+            var near = r.From == TradeBook.CityId ? at.DistanceTo(YardAt with { Y = at.Y }) < 20 : _world.Find(r.From) is { } from && from.DistanceTo(at.X, at.Z) < from.Radius + 25;
+            if (!near) return;
+            _trade.LoadGlut(_city, _city.Day);
+            _hud.Toast($"{r.FromName} loads you up with {r.Load} {CityEconomy.Info(r.Out).Name} for next to nothing. Now to {r.ToName}.", 7);
+            Save();
+            return;
+        }
+        var there = r.To == TradeBook.CityId ? at.DistanceTo(YardAt with { Y = at.Y }) < 20 : _world.Find(r.To) is { } to && to.DistanceTo(at.X, at.Z) < to.Radius + 25;
+        if (!there) return;
+        var pay = _trade.DeliverGlut(_city, _city.Day);
+        if (r.To == TradeBook.CityId) Share(CityAction.Cargo(r.Out, Math.Min(10, r.Load)));
+        _player.Crowns += pay;
+        _city.Renown += 2;
+        Sound.Ui("coin", -2);
+        StableWagon();
+        _hud.Toast($"{r.ToName} takes the {CityEconomy.Info(r.Out).Name} gladly. +{pay} crowns. (The wagon goes back to the yard with a carter.)", 8);
+        Save();
+    }
+
+    /// <summary>Word comes to the yard when a glut forms anywhere along the routes.</summary>
+    void WatchGluts()
+    {
+        var now = _trade.Gluts(_city).ToList();
+        foreach (var j in now.Where(j => _gluts.Add(j.Key)))
+            _hud.Toast($"Word at the caravan yard: {j.FromName} is drowning in {CityEconomy.Info(j.Good).Name}, and the price there has fallen through the floor. Garrick has work carting it to {j.ToName}.", 8);
+        _gluts.IntersectWith(now.Select(j => j.Key));
     }
 
     // ---- guarding the city's caravans --------------------------------------------------------------------------
@@ -386,7 +463,7 @@ public partial class Main
                 Save();
                 TradeHere(person, m);
             }));
-        foreach (var g in m.Makes.Where(g => m.ForSale(g) > 0 && _trade.Room > 0))
+        foreach (var g in m.Makes.Concat(Enum.GetValues<Good>().Where(m.Glut)).Distinct().Where(g => m.ForSale(g) > 0 && _trade.Room > 0))
         {
             var n = Math.Min(Math.Min(_trade.Room, m.ForSale(g)), 6);
             options.Add(($"Buy {n} {CityEconomy.Info(g).Name} ({m.Cost(g, n)} crowns; Tristinwold pays about {ExchangePays(g)} a load)", () =>
@@ -413,7 +490,8 @@ public partial class Main
         StableWagon();
         _wagon = new Wagon(this, horse);
         AddChild(_wagon);
-        _wagon.GlobalPosition = YardWagon with { Y = City.FloorAt(YardWagon) };
+        var setOff = YardAt + new Vector3(6, 0, 6);
+        _wagon.GlobalPosition = setOff with { Y = City.FloorAt(setOff) };
     }
 
     void StableWagon()
@@ -430,6 +508,7 @@ public partial class Main
         if (_wagon is null && (_trade.Run is not null || _trade.WagonOut)) TakeWagon(_trade.WagonOut ? "horse" : null);
         TendRun();
         TendGuarding(0.5);
+        if ((_glutCheck -= 0.5) <= 0) { _glutCheck = 5; WatchGluts(); }
         // A loaded wagon out on the road draws bandits.
         if (_wagon is not null && (_trade.Run is not null || _trade.Loaded > 0) && new Vector2(_wagon.GlobalPosition.X, _wagon.GlobalPosition.Z).Length() > 400 && (_ambushAt -= 0.5) <= 0)
         {
@@ -467,7 +546,11 @@ public partial class Main
             yield return l.Holding
                 ? $"Caravan yard: load it onto the wagon ({Direction(pos, (YardWagon.X, YardWagon.Z))}). {l.Left} to go."
                 : $"Caravan yard: lift a load from the stack ({Direction(pos, (YardStack.X, YardStack.Z))}). {l.Left} to go.";
-        if (_trade.Run is { } r)
+        if (_trade.Run is { Glut: true } gr)
+            yield return gr.Loaded
+                ? $"Glut: take {gr.Load} {CityEconomy.Info(gr.Out).Name} to {gr.ToName} ({Direction(pos, gr.To == TradeBook.CityId ? (YardAt.X, YardAt.Z) : (gr.X, gr.Z))}), {gr.Pay} crowns"
+                : $"Glut: load {CityEconomy.Info(gr.Out).Name} at {gr.FromName} ({Direction(pos, (gr.FromX, gr.FromZ))})";
+        else if (_trade.Run is { } r)
             yield return r.Returning
                 ? $"Caravan: bring {r.ToName}'s {CityEconomy.Info(r.Back).Name} home to the yard ({Direction(pos, (YardAt.X, YardAt.Z))})"
                 : $"Caravan: take the wagon to {r.ToName} ({Direction(pos, (r.X, r.Z))}), {r.Pay} crowns";

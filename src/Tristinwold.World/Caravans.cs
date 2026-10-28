@@ -63,6 +63,15 @@ public sealed class TownMarket
         return crowns;
     }
 
+    /// <summary>
+    /// Drowning in a good: far more of it than it usually keeps (someone sold it a hundred fish), so cheap that it's worth
+    /// carting somewhere else.
+    /// </summary>
+    public bool Glut(Good g) => Stock.GetValueOrDefault(g, Usual(g)) >= Usual(g) * 2 + 6;
+
+    /// <summary>How much more of a good it has than it usually keeps.</summary>
+    public int Surplus(Good g) => Math.Max(0, (int)Math.Floor(Stock.GetValueOrDefault(g, Usual(g)) - Usual(g)));
+
     /// <summary>How many of a good it has to sell.</summary>
     public int ForSale(Good g) => Math.Max(0, (int)Math.Floor(Stock.GetValueOrDefault(g, Usual(g))) - 1);
 
@@ -149,6 +158,20 @@ public sealed class CaravanRun
     /// <summary>Delivered, and on the way home with the town's goods.</summary>
     public bool Returning { get; set; }
     public int Pay { get; set; }
+    /// <summary>Moving a glut: picked up where it's piled up (the From place), dropped where it's wanted (To), and done.</summary>
+    public bool Glut { get; set; }
+    public string From { get; set; } = "";
+    public string FromName { get; set; } = "";
+    public double FromX { get; set; }
+    public double FromZ { get; set; }
+    /// <summary>A glut picked up, and on its way to where it's wanted.</summary>
+    public bool Loaded { get; set; }
+}
+
+/// <summary>A glut somewhere along the routes (or in Tristinwold itself), and where it would fetch a price: work for the yard.</summary>
+public sealed record GlutJob(string From, string FromName, double FromX, double FromZ, Good Good, int N, string To, string ToName, double ToX, double ToZ, int Pay)
+{
+    public string Key => $"{From}:{Good}";
 }
 
 /// <summary>
@@ -325,6 +348,78 @@ public sealed class TradeBook
         Guarding = null;
         Lost++;
     }
+
+    // ---- gluts --------------------------------------------------------------------------------------------------
+
+    public const string CityId = "city:tristinwold";
+
+    /// <summary>Tristinwold itself drowning in a good: far more than its usual stores.</summary>
+    public static bool Glut(CityEconomy city, Good g) => city.Stock.GetValueOrDefault(g) >= CityEconomy.Info(g).Target * 1.8;
+
+    static int CityPays(CityEconomy city, Good g) => Math.Max(1, (int)Math.Round(CityEconomy.Info(g).Worth * city.Factor(g) * 0.85));
+    static int CityAsks(CityEconomy city, Good g) => Math.Max(1, (int)Math.Round(CityEconomy.Info(g).Worth * city.Factor(g)));
+
+    /// <summary>
+    /// The gluts along the routes, each a job for the yard: take the surplus from where it's piled up (and cheap) to the
+    /// known place that'll pay most for it. The bigger the gap between the two prices and the longer the road, the
+    /// better it pays.
+    /// </summary>
+    public IEnumerable<GlutJob> Gluts(CityEconomy city)
+    {
+        var places = Routes.ToList();
+        var sources = places.SelectMany(m => Enum.GetValues<Good>().Where(m.Glut).Select(g => (Id: m.Id, Name: m.Name, m.X, m.Z, Good: g, Surplus: m.Surplus(g), Price: m.Asks(g))))
+            .Concat(Enum.GetValues<Good>().Where(g => Glut(city, g))
+                .Select(g => (Id: CityId, Name: "Tristinwold", X: 0.0, Z: 0.0, Good: g, Surplus: (int)(city.Stock[g] - CityEconomy.Info(g).Target), Price: CityAsks(city, g))));
+        foreach (var (id, name, x, z, g, surplus, price) in sources)
+        {
+            var best = places.Where(m => m.Id != id).Select(m => (m.Id, m.Name, m.X, m.Z, Pays: m.Pays(g)))
+                .Concat(id == CityId ? [] : [(Id: CityId, Name: "Tristinwold", X: 0.0, Z: 0.0, Pays: CityPays(city, g))])
+                .MaxBy(t => t.Pays);
+            if (best.Id is null || best.Pays < price * 1.3) continue;
+            var n = Math.Clamp(surplus, 1, 12);
+            var road = Math.Sqrt((best.X - x) * (best.X - x) + (best.Z - z) * (best.Z - z));
+            yield return new GlutJob(id, name, x, z, g, n, best.Id, best.Name, best.X, best.Z,
+                15 + n * (best.Pays - price) / 2 + (int)Math.Round(road / 40));
+        }
+    }
+
+    /// <summary>Takes on a glut job: a run from where it's piled up to where it's wanted.</summary>
+    public CaravanRun Take(GlutJob j) => Run = new CaravanRun
+    {
+        Glut = true, From = j.From, FromName = j.FromName, FromX = j.FromX, FromZ = j.FromZ,
+        To = j.To, ToName = j.ToName, X = j.ToX, Z = j.ToZ, Out = j.Good, Back = j.Good, Load = j.N, Pay = j.Pay,
+    };
+
+    /// <summary>The wagon's at the glut: loaded, out of that place's stores.</summary>
+    public void LoadGlut(CityEconomy city, int day)
+    {
+        if (Run is not { Glut: true, Loaded: false } r) return;
+        if (r.From == CityId) city.Stock[r.Out] = Math.Max(1, city.Stock.GetValueOrDefault(r.Out) - r.Load);
+        else if (Towns.TryGetValue(r.From, out var m))
+        {
+            m.Catch(day);
+            m.Stock[r.Out] = Math.Max(1, m.Stock.GetValueOrDefault(r.Out) - r.Load);
+        }
+        r.Loaded = true;
+    }
+
+    /// <summary>Delivered where it's wanted: into that place's stores, and the run is done. Returns the pay.</summary>
+    public int DeliverGlut(CityEconomy city, int day)
+    {
+        if (Run is not { Glut: true, Loaded: true } r) return 0;
+        if (r.To == CityId) city.Stock[r.Out] = city.Stock.GetValueOrDefault(r.Out) + r.Load;
+        else if (Towns.TryGetValue(r.To, out var m))
+        {
+            m.Catch(day);
+            m.Stock[r.Out] = m.Stock.GetValueOrDefault(r.Out) + r.Load;
+        }
+        Run = null;
+        GlutsMoved++;
+        return r.Pay;
+    }
+
+    /// <summary>How many gluts the hero has carted away.</summary>
+    public int GlutsMoved { get; set; }
 }
 
 /// <summary>A caravan of Tristinwold's on the road to a known place, with the hero hired to guard it.</summary>

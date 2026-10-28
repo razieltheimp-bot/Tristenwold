@@ -160,4 +160,44 @@ public class CaravanTests
         Assert.Equal(1, book.Lost);
         Assert.Null(book.Guarding);
     }
+
+    [Fact]
+    public void A_glut_opens_work_carting_it_where_it_is_wanted()
+    {
+        var w = WorldGen.Default;
+        var book = new TradeBook();
+        var city = CityEconomy.Start(1);
+        var places = w.SettlementsNear(0, 0, 3000).Where(TownMarket.Trades).OrderBy(s => s.DistanceTo(0, 0)).Take(4).ToList();
+        foreach (var s in places) book.Market(s, 1);
+        Assert.Empty(book.Gluts(city));
+
+        // Somebody sells the first village a hundred fish.
+        var town = book.Towns[places[0].Id];
+        var before = town.Asks(Good.Fish);
+        town.Sell(Good.Fish, 100);
+        Assert.True(town.Glut(Good.Fish) && town.Asks(Good.Fish) < before);
+        var job = Assert.Single(book.Gluts(city), j => j.From == town.Id && j.Good == Good.Fish);
+        Assert.NotEqual(town.Id, job.To);
+        Assert.InRange(job.N, 1, 12);
+        Assert.True(job.Pay > 15);
+
+        // Carted away: out of the glut, into the place that wanted it, and paid.
+        var run = book.Take(job);
+        Assert.True(run.Glut && !run.Loaded);
+        Assert.Equal(0, book.DeliverGlut(city, 2)); // not loaded yet
+        town.Catch(2);
+        var glut = town.Stock[Good.Fish];
+        book.LoadGlut(city, 2);
+        Assert.Equal(glut - job.N, town.Stock[Good.Fish], 3);
+        var to = job.To == TradeBook.CityId ? city.Stock[Good.Fish] : book.Towns[job.To].Stock[Good.Fish];
+        Assert.Equal(job.Pay, book.DeliverGlut(city, 2));
+        var after = job.To == TradeBook.CityId ? city.Stock[Good.Fish] : book.Towns[job.To].Stock[Good.Fish];
+        Assert.True(after > to);
+        Assert.Null(book.Run);
+        Assert.Equal(1, book.GlutsMoved);
+
+        // Tristinwold itself can drown in something too.
+        city.Stock[Good.Timber] = CityEconomy.Info(Good.Timber).Target * 3;
+        Assert.Contains(book.Gluts(city), j => j.From == TradeBook.CityId && j.Good == Good.Timber);
+    }
 }

@@ -707,18 +707,31 @@ public partial class SelfTest(Main main) : Node
         await Teleport(new Vector3((float)DragonSaga.RookeryX + 4, 0, (float)DragonSaga.RookeryZ + 10));
         await Until(() => main.WildsNode.Creatures.Count(e => e.Rider) >= 2, 8);
         Check(main.WildsNode.Creatures.Count(e => e.Rider) >= 2, $"dragon knights at the rookery: {string.Join(", ", main.WildsNode.Creatures.Where(e => e.Rider).Select(e => e.Stats.Name))}");
+        // Every day a rider of the Order comes down at the rookery, for anyone who's looking.
+        main.RiderFlightsNode.LandForTest();
+        await Until(() => main.RiderFlightsNode.Landed, 10);
+        Check(main.RiderFlightsNode.Landed && main.RiderFlightsNode.Landings >= 1, "a dragon rider of the Order comes down at the rookery");
         var aldric = main.Locals.First(x => x.Npc.Id == "eyrie/aldric");
         main.Talk(aldric);
-        Check(main.HudNode.Choose("How do I become"), "Ser Aldric tells you how to become a Dragon Knight");
-        Check(main.HudNode.Choose("I'll do it"), "you take up the road");
-        Check(main.Saga.Stage == SagaStage.SeekEgg, $"seek an egg from {main.Saga.MatriarchName}");
+        Check(main.HudNode.Choose("How do I become") && main.HudNode.TalkText.Contains("earned"), "Ser Aldric doesn't hand out eggs: you earn one");
+        Check(main.HudNode.Choose("I'll earn it") && main.Saga.Stage == SagaStage.Proving, "you take up the road: prove yourself");
+        var heroLevel = p.Hero.Level;
+        p.Hero.Level = 1;
         main.Talk(aldric);
-        Check(main.HudNode.Choose("Can your knights fly me"), "a knight flies you to the nest");
-        main.TerrainNode.EnsureAround(p.GlobalPosition, 2);
-        await Frames(30);
-        p.GlobalPosition = p.GlobalPosition with { Y = City.FloorAt(p.GlobalPosition) + 1 };
+        Check(!main.HudNode.Options.Any(o => o.StartsWith("I've done what")), "not at level 1, and not with his dragons unfed");
+        main.HudNode.EndTalk();
+        p.Hero.Level = Math.Max(heroLevel, DragonSaga.MinLevel);
+        p.Meat = 12;
+        main.Talk(aldric);
+        Check(main.HudNode.Choose("Here's meat") && main.Saga.MeatGiven == DragonSaga.MeatDue && p.Meat == 2, "you feed the rookery's dragons with meat you hunted");
+        main.Talk(aldric);
+        Check(main.HudNode.Choose("I've done what you asked") && main.Saga.Stage == SagaStage.SeekEgg && !main.Saga.FoundNest,
+            $"then he says where an egg is to be had, roughly: somewhere {main.Saga.Hint}, and no flight there");
+        main.HudNode.EndTalk();
         var nestAt = new Vector3((float)main.Saga.NestX, 0, (float)main.Saga.NestZ);
-        await Until(() => main.Nest is not null, 5);
+        await Teleport(nestAt + new Vector3(60, 0, 40));
+        await Until(() => main.Saga.FoundNest && main.Nest is not null, 6);
+        Check(main.Saga.FoundNest, $"you find the lair of {main.Saga.MatriarchName} yourself");
         Check(main.Nest is not null, $"the nest at the lair of {main.Saga.MatriarchName}");
         await Teleport(nestAt + new Vector3(30, 0, 30));
         await Until(() => main.Enemies().Any(e => Dragons.IsCorrupted(e.Kind.Id)), 5);
@@ -1730,6 +1743,29 @@ public partial class SelfTest(Main main) : Node
             await Teleport(near + new Vector3(3, 0, 3));
             await Until(() => trade.Guarding is null, 6);
             Check(trade.Guarded == 1 && p.Crowns > purse0 && hud.Heard("The caravan you guarded"), $"you see it through to {g.ToName}: +{p.Crowns - purse0} crowns, and a big load each way for Tristinwold");
+        }
+
+        // A glut: someone sells the village a hundred fish, and the price there falls through the floor.
+        var glutted = trade.Towns[village.Id];
+        glutted.Sell(Good.Fish, 100);
+        await Until(() => hud.Heard("drowning in fish"), 8);
+        Check(hud.Heard("drowning in fish"), $"{village.Name} drowns in fish, and word comes to the yard");
+        await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Any gluts to move"), "Garrick has work carting it");
+        var glutJob = hud.Options.FirstOrDefault(o => o.Contains("fish from"));
+        Check(glutJob is not null && hud.Choose(glutJob) && trade.Run is { Glut: true }, $"you take it: {glutJob}");
+        hud.EndTalk();
+        if (trade.Run is { Glut: true } gr)
+        {
+            await Teleport(new Vector3((float)gr.FromX + 6, 0, (float)gr.FromZ + 6));
+            await Until(() => gr.Loaded, 6);
+            Check(gr.Loaded, $"loaded at {gr.FromName} for next to nothing");
+            var purseG = p.Crowns;
+            var dest = gr.To == TradeBook.CityId ? Main.YardAt + new Vector3(0, 0, 4) : new Vector3((float)gr.X + 6, 0, (float)gr.Z + 6);
+            await Teleport(dest);
+            await Until(() => trade.Run is null, 6);
+            Check(trade.Run is null && p.Crowns > purseG && trade.GlutsMoved == 1, $"and carted to {gr.ToName}, where they want it: +{p.Crowns - purseG} crowns");
         }
 
         // And Tristinwold's own caravans trade with the places it knows, a day at a time.

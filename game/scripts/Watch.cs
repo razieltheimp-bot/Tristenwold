@@ -20,7 +20,7 @@ public partial class TownWatch(Main main) : Node
     static readonly (Vector3 At, string Post)[] Posts =
     [
         (new(64, 0, 48), "the Watch House"), (new(92, 0, 5), "the east gate"), (new(-92, 0, 2), "the west gate"),
-        (new(25, 0, -18), "the Exchange"), (new(40, 0, 64), "the Salt Barrel"), (new(-20, 0, -72), "the Warrens"), (new(104, 0, 8), "the docks"),
+        (new(25, 0, -18), "the Exchange"), (new(40, 0, 64), "the Salt Barrel"), (new(-20, 0, -72), "the Warrens"), (new(104, 0, 8), "the docks"), (Main.YardAt + new Vector3(2, 0, 4), "the caravan yard"),
     ];
 
     static readonly string[] Surnames = ["Bracken", "Holt", "Tamsin", "Corrow", "Edda", "Marl", "Pike", "Wrenn", "Ashby"];
