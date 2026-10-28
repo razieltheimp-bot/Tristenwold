@@ -371,6 +371,8 @@ public partial class Main : Node3D
         AddChild(_sky);
         _riders = new RiderFlights(this);
         AddChild(_riders);
+        _raiders = new Raiders(this) { Record = _raidRecord };
+        AddChild(_raiders);
         _life = new TownLife(this);
         AddChild(_life);
         SetUpCompany();
@@ -707,6 +709,7 @@ public partial class Main : Node3D
         // The nearest lair that suits the hero, and the nearest deviant out roaming.
         if (_suited is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
+        if (_raiders.Tracker(pos, Direction) is { } clanLine) saga = [.. saga, clanLine];
         saga = [.. saga, .. TownLines(pos), .. CaravanLines(pos), .. PursuitLines(pos)];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
@@ -915,6 +918,7 @@ public partial class Main : Node3D
                 _saga = save.Saga ?? new DragonSaga();
                 _story = save.Story ?? new ImmortalSaga();
                 _trade = save.Trade ?? new TradeBook();
+                _raidRecord = save.Warbands ?? new RaidRecord();
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
                 _city = save.City ?? CityEconomy.Start(_world.Seed);
@@ -933,7 +937,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade, _raiders?.Record ?? _raidRecord).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)

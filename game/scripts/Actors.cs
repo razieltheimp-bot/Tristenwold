@@ -187,8 +187,14 @@ public partial class Enemy : Fighter
     /// streets. A lair's or a camp's own creatures are the hero's business.
     /// </summary>
     bool Disturbs(Enemy e) =>
-        !e.Friendly && !e.Sparring && e.State != EnemyState.Dead && TownWatch.InTristinwold(e.GlobalPosition)
-        && (e.Criminal || e.DeviantId is not null || e.Named || e.FightingCompany && e.SiteId is null && !e.InLair);
+        !e.Friendly && !e.Sparring && e.State != EnemyState.Dead && (Keeps ?? TownWatch.InTristinwold)(e.GlobalPosition)
+        && (e.Criminal || e.Raider || e.DeviantId is not null || e.Named || e.FightingCompany && e.SiteId is null && !e.InLair);
+
+    /// <summary>The streets a guard keeps: Tristinwold's for the Watch, a village's own for its couple of guards.</summary>
+    public Func<Vector3, bool>? Keeps { get; set; }
+
+    /// <summary>One of a barbarian clan, raiding: every guard goes for it.</summary>
+    public bool Raider { get; set; }
 
     /// <summary>
     /// A blow from one of the townsfolk (a stone, a bottle, a smith's hammer): a share of its health. It hurts, but it

@@ -241,6 +241,8 @@ public static class Loot
         "draugr" or "draugr_overlord" or "cinder_thrall" or "hollow_soldier" or "familiar" =>
             [("bone_dust", 0.8, 1, 2), ("ancient_coin", 0.4, 1, 2), ("scrap_iron", 0.4, 1, 1), (kind == "cinder_thrall" ? "ember_ash" : kind == "hollow_soldier" ? "ectoplasm" : "bone_dust", 0.5, 1, 1)],
         "sea_wraith" => [("ectoplasm", 0.9, 1, 2), ("ancient_coin", 0.4, 1, 2)],
+        "raider" or "raider_chief" =>
+            [("raw_meat", 0.5, 1, 2), ("leather", 0.5, 1, 2), ("ancient_coin", 0.3, 1, 2), ("iron_dagger", 0.15, 1, 1), ("healing_draught", 0.15, 1, 1)],
         "dock_thug" or "lantern_boy" or "drowned_hand" or "bandit" or "bandit_chief" =>
             [("bread", 0.4, 1, 2), ("linen", 0.4, 1, 2), ("iron_dagger", 0.1, 1, 1), ("healing_draught", 0.12, 1, 1), ("leather", 0.25, 1, 1)],
         "kipine" => [("kipine_feather", 0.95, 2, 4), ("antler", 0.7, 1, 2), ("goblin_trinket", 0.6, 1, 3), ("ancient_coin", 0.5, 1, 3)],
@@ -265,6 +267,8 @@ public static class Loot
             "goblin" or "goblin_tinker" => rng.Next(6),
             "dock_thug" or "lantern_boy" or "drowned_hand" or "bandit" => 3 + rng.Next(10),
             "bandit_chief" or "draugr_overlord" => 15 + rng.Next(25),
+            "raider" => 5 + rng.Next(12),
+            "raider_chief" => 30 + rng.Next(40),
             "velvet_assassin" => 10 + rng.Next(20),
             "draugr" or "sea_wraith" => rng.Next(8),
             _ => 0,

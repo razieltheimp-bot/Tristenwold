@@ -52,6 +52,9 @@ public static class Bestiary
         new("sea_wraith", "Sea Wraith", 120, 18, 4.6, 0, 2.2, 2.0, DamageKind.Frost, "#7fc6c0", 2.0),
         new("bandit", "Bandit", 100, 11, 4.4, 50, 1.8, 1.3, DamageKind.Physical, "#6a5a3a", 1.8),
         new("bandit_chief", "Bandit Chief", 220, 18, 4.2, 140, 2.0, 1.5, DamageKind.Physical, "#8a2a1a", 1.95),
+        // The barbarian clans that raid the frontier: big, painted, and they hit hard.
+        new("raider", "Barbarian Raider", 140, 14, 4.6, 70, 1.9, 1.4, DamageKind.Physical, "#7a4a2a", 1.95),
+        new("raider_chief", "Barbarian Warchief", 340, 22, 4.4, 200, 2.1, 1.6, DamageKind.Physical, "#9a3a1a", 2.1),
         new("draugr_overlord", "Draugr Overlord", 320, 22, 3.6, 220, 2.2, 1.8, DamageKind.Frost, "#b0c8d0", 2.1),
         new("wolf", "Wolf", 55, 8, 6.5, 0, 1.6, 0.9, DamageKind.Physical, "#5a5a5a", 0.9),
         new("ice_wolf", "Ice Wolf", 80, 10, 6.5, 20, 1.6, 0.9, DamageKind.Frost, "#d8e4ea", 0.95),

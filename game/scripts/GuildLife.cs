@@ -59,6 +59,9 @@ public partial class Main
     public TownWatch WatchNode => _watch;
     Skylife _sky = null!;
     RiderFlights _riders = null!;
+    Raiders _raiders = null!;
+    RaidRecord _raidRecord = new();
+    public Raiders RaidersNode => _raiders;
     public RiderFlights RiderFlightsNode => _riders;
     public Skylife SkyNode => _sky;
     TownLife _life = null!;

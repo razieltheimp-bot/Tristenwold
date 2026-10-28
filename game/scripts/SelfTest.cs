@@ -34,6 +34,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--frontier-only")) { await FrontierTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--story-only")) { await StoryTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--caravan-only")) { await CaravanTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sound-only"))
@@ -54,7 +55,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1597,6 +1598,51 @@ public partial class SelfTest(Main main) : Node
         Check(hud.Choose("The dragon is dead") && story.Chapter == Chapter.Done && hud.TalkText.Contains(ImmortalSaga.Title),
             $"Mother Corva writes you into her ledger: {ImmortalSaga.Title}");
         hud.EndTalk();
+    }
+
+    /// <summary>Barbarian clans raiding the frontier's small places, and the couple of guards each place has.</summary>
+    async Task RaidersTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        var raiders = main.RaidersNode;
+        var book = main.GuildBook;
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+
+        // A clan's next raid, and the place it falls on.
+        if (raiders.NextRaid(p.GlobalPosition) is not { } next) { Check(false, "a clan with somewhere to raid"); return; }
+        var (clan, place, start) = next;
+        await Teleport(new Vector3((float)place.X + 10, 0, (float)place.Z + 10));
+        await Frames(60);
+        var guards = main.PlacesNode.GuardsOf(place.Id).ToList();
+        Check(guards.Count == Warband.Guards(place) && guards.Count > 0, $"{place.Name}, {place.What}, has {guards.Count} guard{(guards.Count == 1 ? "" : "s")} of its own (no Watch out here)");
+        book.PlaySeconds = start;
+        await Until(() => raiders.Out.Any(b => b.W.Id == clan.Id), 6);
+        var band = raiders.Out.FirstOrDefault(b => b.W.Id == clan.Id);
+        Check(band.Raiding?.Id == place.Id && band.Bodies.Count == clan.Raiders && hud.Heard($"have fallen on {place.Name}"),
+            $"{clan.Name} under {clan.Chief} fall on {place.Name}: {band.Bodies?.Count} raiders");
+        await Frames(90);
+        Check(guards.Any(g => IsInstanceValid(g) && g.Rival is { Raider: true }) || guards.Any(g => !IsInstanceValid(g) || g.State == EnemyState.Dead),
+            "and its guards fight them");
+        Check(hud.Tracked.Any(t => t.StartsWith($"Raiders: {clan.Name} are raiding {place.Name}")), "the tracker shows the raid");
+        var purse = p.Crowns;
+        foreach (var e in band.Bodies?.ToList() ?? []) if (IsInstanceValid(e)) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => raiders.Record.Defended == 1, 6);
+        Check(raiders.Record.Defended == 1 && p.Crowns >= purse + clan.Reward && raiders.Record.IsBroken(clan, book.PlaySeconds),
+            $"you break the raid: {place.Name} pays you {p.Crowns - purse} crowns, and the clan falls back");
+
+        // A raid nobody stops, on one of Tristinwold's trade routes: the place is plundered.
+        var other = Warband.Near(0, 0, 4000).Where(w => w.Id != clan.Id && w.Targets(main.World).Count > 0)
+            .Select(w => (W: w, At: (Math.Floor(book.PlaySeconds / Warband.Round) + 2) * Warband.Round - Warband.RaidSeconds + 5))
+            .Select(x => (x.W, x.At, Place: x.W.Where(main.World, x.At).Raiding)).FirstOrDefault(x => x.Place is not null && x.Place.Id != place.Id);
+        if (other.W is null) { Check(false, "another clan to raid a trade route"); return; }
+        var market = main.TradeLog.Market(other.Place!, main.Economy.Day);
+        var stock = market.Stock.Values.Sum();
+        await Teleport(City.PlayerStart);
+        book.PlaySeconds = other.At;
+        await Until(() => market.Raided > 0, 25);
+        Check(market.Raided == 1 && market.Stock.Values.Sum() < stock * 0.7 && hud.Heard($"raided {other.Place!.Name}"),
+            $"nobody stops {other.W.Name} at {other.Place!.Name}: its stores are plundered, and word comes to the city");
     }
 
     /// <summary>The caravan yard: load, drive, then trade on your own account, with your own wagon and horses.</summary>

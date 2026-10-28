@@ -350,6 +350,8 @@ public partial class Figure : Body
         ["drowned_hand"] = new("Rogue_Hooded", ["Knife", "Knife_Offhand"], 0.76f, new Color("#9ac8e8")),
         ["bandit"] = new("Rogue_Hooded", ["Knife", "1H_Crossbow"], 0.74f, new Color("#c8b08a")),
         ["bandit_chief"] = new("Barbarian", ["2H_Axe", "Barbarian_Hat"], 0.84f, new Color("#e0a090")),
+        ["raider"] = new("Barbarian", ["1H_Axe", "Round_Shield", "Barbarian_Hat"], 0.86f, new Color("#d8a888")),
+        ["raider_chief"] = new("Barbarian", ["2H_Axe", "Barbarian_Hat"], 0.95f, new Color("#e08870")),
         ["draugr"] = new("Skeleton_Warrior", [], 0.7f, RightHand: "Skeleton_Axe", LeftHand: "Skeleton_Shield_Small_A"),
         ["draugr_overlord"] = new("Skeleton_Warrior", [], 0.92f, new Color("#bfe4ff"), 0.15f, RightHand: "Skeleton_Blade", LeftHand: "Skeleton_Shield_Large_A"),
         ["sea_wraith"] = new("Skeleton_Mage", [], 0.74f, new Color("#7fe0d8"), 0.6f, RightHand: "Skeleton_Staff"),

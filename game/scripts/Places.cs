@@ -123,6 +123,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
         public readonly List<Person> People = [];
         public readonly List<Enemy> Enemies = [];
         public readonly List<Enemy> Animals = [];
+        public readonly List<Enemy> Guards = [];
         public readonly Dictionary<string, Node3D> QuestThings = [];
     }
 
@@ -130,6 +131,10 @@ public partial class Places(Main main, WorldGen world) : Node3D
     readonly HashSet<string> _cleared = []; // lairs emptied this session stay empty
 
     public IEnumerable<Person> People => _built.Values.SelectMany(b => b.People).Where(IsInstanceValid);
+
+    /// <summary>A place's own guards, while it's built.</summary>
+    public IEnumerable<Enemy> GuardsOf(string siteId) =>
+        _built.TryGetValue(siteId, out var b) ? b.Guards.Where(g => IsInstanceValid(g) && g.State != EnemyState.Dead) : [];
 
     /// <summary>Whether someone has left their home (a youth who became a squire or apprentice).</summary>
     public Func<string, bool>? Gone { get; set; }
@@ -158,7 +163,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     void Drop(Built b)
     {
-        foreach (var e in b.Enemies.Concat(b.Animals).Where(IsInstanceValid)) e.QueueFree();
+        foreach (var e in b.Enemies.Concat(b.Animals).Concat(b.Guards).Where(IsInstanceValid)) e.QueueFree();
         b.Root.QueueFree();
         _built.Remove(b.Site.Id);
     }
@@ -239,6 +244,23 @@ public partial class Places(Main main, WorldGen world) : Node3D
                 e.Roam = kind is "hen" or "cat" ? 4 : 6;
                 main.AddEnemy(e);
                 b.Animals.Add(e);
+            }
+
+        // A couple of guards, by how big a place it is: no Watch out here.
+        if (s.Id != "city:tristinwold")
+            for (var i = 0; i < Warband.Guards(s); i++)
+            {
+                var a = i * Math.Tau / Math.Max(1, Warband.Guards(s)) + rng.NextDouble();
+                var g = Enemy.Create(Bestiary.Get("watchman"), Ground(s.X + Math.Cos(a) * s.Radius * 0.35, s.Z + Math.Sin(a) * s.Radius * 0.35) + new Vector3(0, 0.5f, 0), look: "guard");
+                g.Allied = true;
+                g.Watch = true;
+                g.Roam = 8;
+                var keep = s;
+                g.Keeps = p => keep.DistanceTo(p.X, p.Z) < keep.Radius + 40;
+                g.Stats.Name = $"Guard of {s.Name}";
+                main.AddEnemy(g);
+                g.RefreshPlate();
+                b.Guards.Add(g);
             }
 
         if (s.Lair is { } lair && !_cleared.Contains(s.Id))

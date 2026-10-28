@@ -472,6 +472,22 @@ Kipines and both kinds of ape sometimes have young with them: find one alone and
   beasts, cloth, leather, coal, a kit), the Anvil Gate (Hulda's smithy: ingots and iron gear), and Saffron's
   Remedies (potions, herbs, wands and staves). Every shopkeeper buys at half today's price (see the economy below).
 
+### Barbarian raiders on the frontier
+
+Out past Tristinwold's fields (more than a kilometre from the walls), **barbarian clans** roam the frontier: "the Red
+Axe clan" under "Hrodgar the Burner", four to seven raiders and a warchief. They're the real terror of the small
+places (hamlets, farmsteads, hunting camps, inns and mines), which have **a couple of guards at most** and no Watch
+to call: a town keeps three, a hamlet or a mine two, a farmstead, an inn or a hunting camp one. Each clan works its own
+stretch of country: on the road for a while, camped out of sight, then down on one of its places for a raid, and on
+to the next. Every company sees the same clan in the same place at the same time.
+
+- **Come near and it's there.** On the road, you'll find it camped; at a raid, the clan is fighting the place's
+  guards. The tracker names the nearest clan within a mile and a half, and what it's doing.
+- **Break the raid** (bring down every raider, warchief included) and the place pays you from what you saved; the
+  clan falls back to lick its wounds for an hour.
+- **A raid nobody stops** on a place you know plunders it: its market loses nearly half of everything, word comes to
+  the city, and you'll see it in the prices (and in what Tristinwold's caravans bring home from it).
+
 ### Trade beyond the walls: town markets and the caravan yard
 
 **Every place you find keeps its own little economy.** A hamlet, a farmstead, a mine, an inn, a town: each makes a few

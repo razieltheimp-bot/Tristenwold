@@ -72,6 +72,23 @@ public sealed class TownMarket
     /// <summary>How much more of a good it has than it usually keeps.</summary>
     public int Surplus(Good g) => Math.Max(0, (int)Math.Floor(Stock.GetValueOrDefault(g, Usual(g)) - Usual(g)));
 
+    /// <summary>Raided: the clan carries off nearly half of everything in its stores. Returns how many loads were taken.</summary>
+    public int Plundered(int day)
+    {
+        Catch(day);
+        var taken = 0.0;
+        foreach (var g in Stock.Keys.ToList())
+        {
+            taken += Stock[g] * 0.45;
+            Stock[g] *= 0.55;
+        }
+        Raided++;
+        return (int)Math.Round(taken);
+    }
+
+    /// <summary>How many times raiders have plundered it.</summary>
+    public int Raided { get; set; }
+
     /// <summary>How many of a good it has to sell.</summary>
     public int ForSale(Good g) => Math.Max(0, (int)Math.Floor(Stock.GetValueOrDefault(g, Usual(g))) - 1);
 
