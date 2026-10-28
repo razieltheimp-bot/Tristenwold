@@ -1238,15 +1238,17 @@ public partial class SelfTest(Main main) : Node
         main.GainXp(100);
         Check(p.Hero.Level > heroLevel || p.Hero.Xp - heroXp == (int)Math.Round(100 * p.Race.Xp * Housing.RestedXp), $"well rested, you learn faster ({p.Hero.Xp - heroXp} for 100)");
         pack.Add("pine_log", 3);
+        var logs = pack.Count("pine_log");
         main.PursuitActionForTest(p.GlobalPosition)?.Act();
-        Check(hud.Choose("Open the chest") && hud.Choose("Put in 3 Pine") && book.House.Chest.GetValueOrDefault("pine_log") == 3, "you put logs in your chest");
+        Check(hud.Choose("Open the chest") && hud.Choose($"Put in {logs} Pine") && book.House.Chest.GetValueOrDefault("pine_log") == logs && pack.Count("pine_log") == 0,
+            $"you put {logs} logs in your chest ({string.Join(" | ", hud.Options.Take(3))})");
         hud.EndTalk();
         Check(book.Plots.Count == 0 && main.PursuitActionForTest(main.BedAt("home_0") + new Vector3(0, 0, -1.8f)) is { Verb: "plant something" }, "and there's a garden to plant by the house");
 
         // And all of it's kept.
         TradeFeatsCheck();
         var saved = CompanySave.FromJson(main.Save());
-        Check(saved.Pursuits is { } kept && kept.House.Finished && kept.House.Chest.GetValueOrDefault("pine_log") == 3 && kept.Feats.SetEquals(book.Feats) && kept.RestedUntil == book.RestedUntil,
+        Check(saved.Pursuits is { } kept && kept.House.Finished && kept.House.Chest.GetValueOrDefault("pine_log") == logs && kept.Feats.SetEquals(book.Feats) && kept.RestedUntil == book.RestedUntil,
             $"the house, the chest and {book.Feats.Count} feats ({book.Points} points) are saved: {string.Join(", ", book.Feats)}");
 
         void TradeFeatsCheck() => Check(book.Points > 0, $"{book.Points} feat points");
