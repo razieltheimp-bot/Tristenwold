@@ -359,6 +359,8 @@ public partial class Main : Node3D
         }
         _roamers = new Roamers(this);
         AddChild(_roamers);
+        _watch = new TownWatch(this);
+        AddChild(_watch);
         SetUpCompany();
         _hud.AttachMap(_world, _explored, () => _player.GlobalPosition, () => -_player.GlobalTransform.Basis.Z, QuestGoals);
 

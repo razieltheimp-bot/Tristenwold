@@ -23,6 +23,8 @@ public partial class Main
     public RaidLair LairOf(Raid r) => _raidLairs.First(l => l.Raid == r);
     public RaidLair CryptNode => LairOf(Raids.AshenCrypt);
     public Roamers RoamersNode => _roamers;
+    TownWatch _watch = null!;
+    public TownWatch WatchNode => _watch;
     readonly HashSet<string> _dramaTold = [];
     (Enemy Foe, Person Rival, Action<bool>? Then)? _duel;
     double _guildClock;

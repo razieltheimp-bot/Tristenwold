@@ -1011,11 +1011,13 @@ public partial class SelfTest(Main main) : Node
         Check(body is not null, "it's there, walking");
         if (body is null) return;
         var start = Apart(body);
-        await Until(() => Apart(body) < start - 15 || body.FightingCompany, 20);
-        Check(Apart(body) < start - 15 || body.FightingCompany, $"and closes in ({start:0} m, then {Apart(body):0} m)");
+        await Until(() => Apart(body) < start - 15, 40);
+        Check(Apart(body) < start - 15, $"and closes in ({start:0} m, then {Apart(body):0} m)");
 
-        // Run: it follows your trail at its own pace, and you can get away. It remembers that you ran.
-        var away = new Vector3(1, 0, 0);
+        // Run (across open country, clear of any village): it follows your trail at its own pace, and you can get
+        // away. It remembers that you ran.
+        var away = new[] { 0f, 45, 90, 135, 180, 225, 270, 315 }.Select(a => new Vector3(Mathf.Cos(Mathf.DegToRad(a)), 0, Mathf.Sin(Mathf.DegToRad(a))))
+            .FirstOrDefault(dir => Enumerable.Range(1, 40).All(k => !roamers.InTown(p.GlobalPosition + dir * 30 * k)), new Vector3(1, 0, 0));
         for (var i = 0; i < 40 && r.Hunting; i++)
         {
             await Teleport(p.GlobalPosition + away * 30);
@@ -1045,10 +1047,41 @@ public partial class SelfTest(Main main) : Node
             $"it learns how you fight: it takes your fire now, closes the gap on you, and shrugs off spells ({string.Join(" / ", counter.Lines.Select(l => l.Id))})");
         Check(dealt[^1] < dealt[0] * 0.6, $"your fire does far less to it than it did ({dealt[0]:0}, then {dealt[^1]:0})");
 
-        // Into town: it won't follow you in.
+        // Into town, hale: it won't follow you in.
         await Teleport(City.GallowsPerch + new Vector3(0, 0, 6));
         await Until(() => !r.Hunting, 5);
-        Check(!r.Hunting, $"it won't follow you inside the walls ({hud.LastLine})");
+        Check(!r.Hunting, $"while you're hale, it won't follow you inside the walls ({hud.LastLine})");
+
+        // Hurt, though, it thinks it can finish you in town, and comes in after you. The town fights for you.
+        var watch = main.WatchNode;
+        Check(watch.Guards.Count() >= 7, $"the Watch is at its posts ({watch.Guards.Count()} watchmen)");
+        (x, z) = r.Where(main.World, main.GuildBook.PlaySeconds);
+        await Teleport(new Vector3((float)x + 60, 0, (float)z));
+        await Until(() => r.Hunting && roamers.BodyOf(r) is not null, 10);
+        body = roamers.BodyOf(r);
+        if (body is null) { Check(false, "it's back on your trail"); return; }
+        p.Stats.Lose(p.Stats.MaxHealth * 0.7);
+        var inTown = City.GallowsPerch + new Vector3(-6, 0, 10);
+        await Teleport(inTown);
+        p.Stats.Lose(Math.Max(0, p.Stats.Health - p.Stats.MaxHealth * 0.3));
+        var behind = inTown + new Vector3(18, 0, 0); // it's followed you to the door
+        body.GlobalPosition = behind with { Y = City.FloorAt(behind) + 0.4f };
+        body.ResetPhysicsInterpolation();
+        var helped = watch.Helped;
+        await Until(() => watch.Guards.Any(g => g.Rival == body) && watch.Helped > helped, 30);
+        Check(r.Hunting, $"hurt, you're no safer in town: it comes in after you ({hud.LastLine})");
+        Check(watch.Guards.Any(g => g.Rival == body), $"the Watch comes running ({watch.Guards.Count(g => g.Rival == body)} watchmen on it)");
+        Check(watch.Helped > helped, $"and the townsfolk join in ({watch.Helped - helped} blows, throws and poultices)");
+        p.Stats.Heal(1e9);
+        // With enough of the Watch around you, it thinks better of it.
+        foreach (var (g, i) in watch.Guards.Select((g, i) => (g, i)))
+        {
+            var post = p.GlobalPosition + new Vector3(Mathf.Cos(i) * 4, 0, Mathf.Sin(i) * 4);
+            g.GlobalPosition = post with { Y = City.FloorAt(post) + 0.4f };
+            g.ResetPhysicsInterpolation();
+        }
+        await Until(() => !r.Hunting, 10);
+        Check(!r.Hunting, $"with the Watch all round you, it breaks off ({hud.LastLine})");
 
         // All of it is kept: what it is, where it set out, what it learned.
         var saved = CompanySave.FromJson(main.Save()).Raids?.Roamers.FirstOrDefault(x => x.Id == r.Id);

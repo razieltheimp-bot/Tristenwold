@@ -78,6 +78,35 @@ public class TacticsTests
     }
 
     [Fact]
+    public void It_follows_the_hero_into_town_only_when_it_thinks_it_can_kill_them_there()
+    {
+        Assert.False(Tactics.Dares(wins: 1, heroHealth: 1, learned: 0, guardsNear: 0)); // a fresh hero, beaten once: it waits outside
+        Assert.True(Tactics.Dares(1, 0.4, 0, 0)); // the hero's hurt: it comes in after them
+        Assert.False(Tactics.Dares(1, 0.4, 0, 2)); // unless the Watch is standing by
+        Assert.True(Tactics.Dares(3, 1, 2, 0)); // one that has beaten them three times and learned their ways fears no walls
+        Assert.False(Tactics.Dares(3, 1, 2, 3));
+        Assert.True(Tactics.StillHunting(50, heroInTown: true, dares: true));
+        Assert.False(Tactics.StillHunting(50, heroInTown: true, dares: false));
+    }
+
+    static Npc Townsman(string occupation, int age = 35) => new("t", "T", Sex.Male, age, occupation, "city:tristinwold", "Tristinwold", "", [], "warm", "", 0, 0);
+
+    [Fact]
+    public void Townsfolk_fight_throw_heal_or_take_cover_by_who_they_are()
+    {
+        Assert.Equal(Defender.Fights, TownDefence.Role(Townsman("blacksmith")));
+        Assert.Equal(Defender.Fights, TownDefence.Role(Townsman("dockhand")));
+        Assert.Equal(Defender.Fights, TownDefence.Role(Townsman("sergeant of the Watch")));
+        Assert.Equal(Defender.Heals, TownDefence.Role(Townsman("priest of the Tide")));
+        Assert.Equal(Defender.Throws, TownDefence.Role(Townsman("weaver")));
+        Assert.Equal(Defender.Cowers, TownDefence.Role(Townsman("weaver", age: 12)));
+        Assert.Equal(Defender.Cowers, TownDefence.Role(Townsman("blacksmith", age: 78)));
+        Assert.Equal(Defender.Cowers, TownDefence.Role(Townsman("blacksmith"), captive: true));
+        Assert.True(TownDefence.Blow(Defender.Fights, close: true) > TownDefence.Blow(Defender.Throws, close: false));
+        Assert.Equal(0, TownDefence.Blow(Defender.Cowers, close: true));
+    }
+
+    [Fact]
     public void Something_that_beats_you_in_the_wilds_takes_a_name_and_roams_from_where_it_stood()
     {
         var book = new RaidBook();

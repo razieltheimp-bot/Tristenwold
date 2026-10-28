@@ -173,6 +173,31 @@ public partial class Enemy : Fighter
     /// <summary>A lair's boss or one of its creatures: the lair, not the wilds, decides what becomes of it.</summary>
     public bool InLair { get; set; }
 
+    /// <summary>One of the town Watch: it keeps the peace in Tristinwold's streets (see <see cref="TownWatch"/>).</summary>
+    public bool Watch { get; set; }
+
+    /// <summary>
+    /// What the Watch will fight: a deviant in the town, or anything out of the wilds that's after the hero in the
+    /// streets. A lair's or a camp's own creatures are the hero's business.
+    /// </summary>
+    bool Disturbs(Enemy e) =>
+        !e.Friendly && !e.Sparring && e.State != EnemyState.Dead && TownWatch.InTristinwold(e.GlobalPosition)
+        && (e.DeviantId is not null || e.Named || e.FightingCompany && e.SiteId is null && !e.InLair);
+
+    /// <summary>
+    /// A blow from one of the townsfolk (a stone, a bottle, a smith's hammer): a share of its health. It hurts, but it
+    /// never finishes it: that's for the hero, or the Watch.
+    /// </summary>
+    public void Pelted(double share)
+    {
+        if (State == EnemyState.Dead) return;
+        var blow = Math.Min(Stats.MaxHealth * share, Stats.Health - Stats.MaxHealth * TownDefence.FloorShare);
+        if (blow <= 0) return;
+        Stats.Lose(blow);
+        Figure.Hurt();
+        RefreshPlate();
+    }
+
     /// <summary>Who it's fighting now, hero or creature.</summary>
     public Node3D? Foe3D => _target is not null ? _target : _rival is not null && IsInstanceValid(_rival) ? _rival : null;
 
@@ -464,6 +489,7 @@ public partial class Enemy : Fighter
                     && (e.FightingCompany || e == leader.LastStruck || e._rival?.Leader == leader))
                 .MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
         }
+        if (Watch) return all.Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < 70 && Disturbs(e)).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
         var sight = IsDragon ? 120 : 60;
         // Mad with the Rift: anything at all, the nearest first.
         if (Frenzy > 0) return all.Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < 90).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
@@ -476,7 +502,7 @@ public partial class Enemy : Fighter
     bool Hunter => Wildlife.HuntsUndead(Kind.Id);
 
     /// <summary>Picks fights with other creatures by itself: warring and hostile dragons, knights, companions, the apes that hunt the dead.</summary>
-    bool SeeksFoes => !Young && (Foe is not null || Leader is not null || Hunter || Side is Side.Alliance or Side.Chromatic or Side.Corrupted or Side.Metallic);
+    bool SeeksFoes => !Young && (Watch || Foe is not null || Leader is not null || Hunter || Side is Side.Alliance or Side.Chromatic or Side.Corrupted or Side.Metallic);
 
     /// <summary>Takes another shape (an imp turning into a raven to get away).</summary>
     public void Reshape(string look) => Restyle(look);
@@ -559,8 +585,9 @@ public partial class Enemy : Fighter
 
             case EnemyState.Fighting when _target is null && _rival is not null:
                 if (!IsInstanceValid(_rival) || _rival.State == EnemyState.Dead) { _rival = null; break; }
-                // A companion doesn't chase a foe far from its hero.
+                // A companion doesn't chase a foe far from its hero; the Watch doesn't chase one out of town.
                 if (Leader is not null && _rival.GlobalPosition.DistanceTo(Leader.GlobalPosition) > 45) { _rival = null; State = EnemyState.Idle; break; }
+                if (Watch && !Disturbs(_rival)) { _rival = null; State = EnemyState.Idle; break; }
                 var toRival = _rival.GlobalPosition - GlobalPosition;
                 toRival.Y = 0;
                 FaceAlong(toRival, delta * 1.5); // turns to face it, rather than snapping round

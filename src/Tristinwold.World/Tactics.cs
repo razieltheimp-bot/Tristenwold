@@ -142,8 +142,69 @@ public static class Tactics
     }
 
     /// <summary>
-    /// Whether it keeps after the hero: not into a town (it waits outside the walls), and not once they're well
-    /// clear of it.
+    /// Whether it keeps after the hero: not once they're well clear of it, and into a town only if it dares (see
+    /// <see cref="Dares"/>).
     /// </summary>
-    public static bool StillHunting(double metresApart, bool heroInTown) => !heroInTown && metresApart < LoseRange;
+    public static bool StillHunting(double metresApart, bool heroInTown, bool dares = false) => (!heroInTown || dares) && metresApart < LoseRange;
+
+    /// <summary>
+    /// Whether it thinks it can kill the hero in a town, guards or no: the more often it has beaten them, the lower they
+    /// are, and the more it has learned of how they fight, the bolder it is; every guard near them gives it pause.
+    /// </summary>
+    public static bool Dares(int wins, double heroHealth, int learned, int guardsNear) =>
+        Boldness(wins, heroHealth, learned) - 0.3 * guardsNear >= 0.9;
+
+    public static double Boldness(int wins, double heroHealth, int learned) =>
+        0.35 * wins + 1.2 * (1 - Math.Clamp(heroHealth, 0, 1)) + 0.1 * learned;
+}
+
+/// <summary>What one of the townsfolk does when a deviant comes into their town.</summary>
+public enum Defender
+{
+    /// <summary>Grabs a tool or a blade and goes at it, if it's close; throws whatever's to hand if not.</summary>
+    Fights,
+    /// <summary>Throws stones, bottles, whatever's to hand.</summary>
+    Throws,
+    /// <summary>Patches the hero up while they fight.</summary>
+    Heals,
+    /// <summary>Takes cover: the young, the old, the captive.</summary>
+    Cowers,
+}
+
+/// <summary>
+/// A town defends itself: when a deviant comes in after the hero, the people there don't just stand about. Those who
+/// work with their hands or carry steel go at it; most throw whatever's to hand; the priests and healers patch the
+/// hero up; the young and the old take cover. The Watch does the rest.
+/// </summary>
+public static class TownDefence
+{
+    /// <summary>How close to a deviant the townsfolk join in, and how close the fighters close to strike.</summary>
+    public const double JoinRange = 25, Reach = 3.5;
+    /// <summary>Seconds between one person's blows, throws or poultices.</summary>
+    public const double Every = 2.5;
+
+    public static Defender Role(Npc npc, bool captive = false)
+    {
+        if (captive || People.IsYouth(npc) || npc.Age >= 70) return Defender.Cowers;
+        var job = npc.Occupation.ToLowerInvariant();
+        bool Any(params string[] words) => words.Any(job.Contains);
+        if (Any("priest", "healer", "midwife", "shrine", "apothecary", "herbalist")) return Defender.Heals;
+        if (Any("guard", "watch", "sellsword", "knight", "iron circle", "smith", "miner", "foreman", "woodcutter", "dockhand", "labourer", "hunter",
+                "carpenter", "butcher", "quarry", "fishwife", "fisher", "tanner", "thug", "velvet")) return Defender.Fights;
+        return Defender.Throws;
+    }
+
+    /// <summary>What one blow or throw takes off a deviant (a share of its health): enough that a crowd counts, not enough that it does the work.</summary>
+    public static double Blow(Defender role, bool close) => role switch
+    {
+        Defender.Fights => close ? 0.02 : 0.008,
+        Defender.Throws => 0.006,
+        _ => 0,
+    };
+
+    /// <summary>What a poultice gives back (a share of the hero's health).</summary>
+    public const double Poultice = 0.04;
+
+    /// <summary>The townsfolk wear it down, but they don't finish it: that's for the hero, or the Watch.</summary>
+    public const double FloorShare = 0.1;
 }

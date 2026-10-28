@@ -330,9 +330,20 @@ least of them moves on when a ninth rises.
 
 - **It hunts you.** Come within about 85 m and it sees you, says so, and **comes after you**. Close by it runs you
   down; further off it follows your trail across the wilds at its own pace. Stand and fight, or run: get far enough
-  ahead and it loses you, but it **remembers that you ran**, and it's quicker on your trail every time. It won't
-  follow you into a town or village; it waits outside. The tracker shows who's hunting you, how far off, and
-  which way.
+  ahead and it loses you, but it **remembers that you ran**, and it's quicker on your trail every time. The tracker
+  shows who's hunting you, how far off, and which way.
+- **Towns aren't always safe.** Run into a town or village and it stops at the walls, unless **it thinks it can
+  kill you there**: the more often it has beaten you, the more hurt you are and the more it has learned of you, the
+  bolder it is, and every watchman near you gives it pause. If it dares, it comes in after you, and if the Watch
+  closes in around you it thinks better of it and makes for the walls.
+- **The town fights for you** (`game/scripts/Watch.cs`). **Tristinwold's Watch** stands at its posts (the Watch
+  House, both gates, the Exchange, the Salt Barrel, the Warrens, the docks) and walks its beat; when a deviant comes
+  into town, or something out of the wilds chases you through the streets, the Watch comes running (a fallen
+  watchman's post is filled again in a couple of minutes). And the **townsfolk don't just stand there**, in
+  Tristinwold or any village: smiths, dockhands, miners and anyone carrying steel go at it, most throw whatever's to
+  hand, the priests and healers patch you up, and the young and the old take cover. The crowd wears it down but
+  leaves the killing to you and the Watch; if the Watch brings it down with you, the price on its head is still
+  yours.
 - **It learns how you fight.** Every blow you land teaches it: what kind of damage, spell or weapon, from close or
   from far off, and every potion you drink to stay up. Once it has taken enough, **it fights back with that, there
   and then**, and tells you so:

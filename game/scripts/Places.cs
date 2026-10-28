@@ -49,6 +49,14 @@ public partial class Person : StaticBody3D
     /// <summary>A gold "!" over anyone with work to give.</summary>
     public void Mark(bool hasWork) => _plate.Text = $"{(hasWork ? "! " : "")}{Npc.Name}\n{Npc.Occupation}";
 
+    /// <summary>Turns to face something (a deviant in the street, the hero they're patching up).</summary>
+    public void Face(Vector3 at)
+    {
+        var to = at - GlobalPosition;
+        to.Y = 0;
+        if (to.LengthSquared() > 0.01f) LookAt(GlobalPosition + to, Vector3.Up);
+    }
+
     /// <summary>Turns to face whoever is talking to them, and gestures.</summary>
     public void TalkTo(Vector3 who)
     {

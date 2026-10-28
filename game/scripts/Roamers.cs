@@ -29,6 +29,8 @@ public partial class Roamers(Main main) : Node
         public Counter Applied = Counter.None;
         public double BaseDamage = 1, BaseArmor, BaseWard, BaseSpeed = 1;
         public double LungeIn;
+        /// <summary>It has come into a town after the hero.</summary>
+        public bool Inside;
     }
 
     readonly List<Out> _out = [];
@@ -94,8 +96,19 @@ public partial class Roamers(Main main) : Node
             if (o.Body.State == EnemyState.Dead) continue;
             if (r.Hunting)
             {
-                if (!Tactics.StillHunting(d, heroInTown)) LoseTrail(o, heroInTown);
-                else if (!p.Downed) Pursue(o, d);
+                var dares = heroInTown && Dares(o);
+                if (!Tactics.StillHunting(d, heroInTown, dares)) LoseTrail(o, heroInTown);
+                else if (!p.Downed)
+                {
+                    if (heroInTown && !o.Inside)
+                    {
+                        o.Inside = true;
+                        Sound.At("creature/growl_big", o.Body.GlobalPosition + Vector3.Up, 8, 0.7f, 250);
+                        main.HudNode.Toast($"{r.Title} doesn't stop at the walls: it thinks it can finish you here. It's coming in after you!", 8);
+                        main.HudNode.Log($"{r.Title} came into town after you.");
+                    }
+                    Pursue(o, d);
+                }
             }
             else if (!p.Downed && !heroInTown && d < Tactics.NoticeRange) TakeUpTrail(o);
             if (!r.Hunting)
@@ -163,18 +176,31 @@ public partial class Roamers(Main main) : Node
         }
     }
 
+    /// <summary>
+    /// Whether it thinks it can kill the hero in the town they're in: bolder the more it has beaten them, the lower they
+    /// are and the more it has learned of them; every watchman near them gives it pause.
+    /// </summary>
+    bool Dares(Out o)
+    {
+        var p = main.PlayerNode;
+        return Tactics.Dares(o.Roamer.Wins, p.Stats.Health / p.Stats.MaxHealth, Tactics.Read(o.Roamer.Lessons).Lines.Count, main.WatchNode.GuardsNear(p.GlobalPosition, 40));
+    }
+
     /// <summary>The hero got away, into a town or clear of it. Running teaches it too.</summary>
     void LoseTrail(Out o, bool heroInTown)
     {
         var r = o.Roamer;
         r.Hunting = false;
-        if (heroInTown)
+        if (heroInTown && o.Inside)
+            main.HudNode.Toast($"{r.Title} sees the Watch closing in around you, and thinks better of it. It breaks off and makes for the walls.", 7);
+        else if (heroInTown)
             main.HudNode.Toast($"{r.Title} won't follow you inside the walls. It'll be out there, waiting.", 6);
         else
         {
             r.Lessons.Escapes++;
             main.HudNode.Toast($"You've lost {r.Title}, for now. It remembers that you ran.", 6);
         }
+        o.Inside = false;
         main.HudNode.Log($"{r.Title} lost your trail.");
         o.Body.Wander(Where(r));
         o.Body.LoseTrack(3);
@@ -326,7 +352,8 @@ public partial class Roamers(Main main) : Node
         main.RaidLog.Slain(r);
         _out.Remove(o);
         foreach (var add in o.Adds.Where(a => IsInstanceValid(a) && a.State != EnemyState.Dead)) add.Collapse();
-        if (!byCompany)
+        var watch = killer is { Watch: true };
+        if (!byCompany && !watch)
         {
             main.HudNode.Toast($"{r.Title} has been killed, and not by you.", 8);
             return;
@@ -340,7 +367,7 @@ public partial class Roamers(Main main) : Node
         if (spoils.Count > 0) main.HudNode.Log($"From {r.Title}: {Loot.Describe(spoils)}");
         main.GainXp(xp);
         _fallen.Add(r);
-        main.HudNode.Toast($"{r.Title} is dead, for good. The price on its head: {crowns} crowns. (+{xp} experience)", 12);
+        main.HudNode.Toast($"{r.Title} is dead, for good{(watch ? ", brought down by the Watch with you" : "")}. The price on its head: {crowns} crowns. (+{xp} experience)", 12);
         main.HudNode.Log($"Deviant slain: {r.Title}.");
     }
 
