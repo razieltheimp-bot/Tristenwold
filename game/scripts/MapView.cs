@@ -15,6 +15,8 @@ public partial class MapView : Control
     public required Func<Vector3> Player { get; init; }
     public required Func<Vector3> Facing { get; init; }
     public Func<IEnumerable<(double X, double Z)>> Goals { get; init; } = () => [];
+    /// <summary>The lairs found, near home and out in the far country.</summary>
+    public Func<IEnumerable<(double X, double Z, string Name)>> Lairs { get; init; } = () => [];
     public bool Mini { get; init; }
 
     /// <summary>Metres per pixel.</summary>
@@ -116,6 +118,15 @@ public partial class MapView : Control
             if (Mini && !s.IsCity) continue;
             var label = heard ? $"{s.Name} ?" : s.Name;
             DrawString(font, p + new Vector2(r + 3, 4), label, HorizontalAlignment.Left, -1, s.IsCity ? 15 : 12, colour);
+        }
+
+        foreach (var (x, z, name) in Lairs())
+        {
+            var p = ToScreen(x, z);
+            if (p.X < -50 || p.Y < -20 || p.X > size.X + 50 || p.Y > size.Y + 20) continue;
+            var lair = new Color("#b070e0");
+            DrawColoredPolygon([p + new Vector2(0, -6), p + new Vector2(5, 4), p + new Vector2(-5, 4)], lair);
+            if (!Mini) DrawString(font, p + new Vector2(7, 4), name, HorizontalAlignment.Left, -1, 11, lair);
         }
 
         foreach (var (x, z) in Goals())

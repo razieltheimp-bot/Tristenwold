@@ -141,9 +141,15 @@ public sealed class Bond
         _ => 0.82 + 0.18 * Growth, // a youth grows into a squire's or apprentice's full height
     };
 
-    /// <summary>A dragon of level 10 or more can carry its knight.</summary>
+    /// <summary>A dragon of level 10 or more can carry its knight; a horse, once it's grown (level 6).</summary>
     [JsonIgnore]
-    public bool Rideable => Role == BondRole.Dragon && Level >= 10;
+    public bool Rideable => Role == BondRole.Dragon ? Level >= 10 : Steed && Growth >= 1;
+
+    /// <summary>A horse: it can be ridden once grown, and pull a wagon.</summary>
+    [JsonIgnore]
+    public bool Steed => IsSteed(KindId);
+
+    public static bool IsSteed(string kindId) => kindId is "horse" or "wild_horse";
 
     [JsonIgnore]
     public string Stage => Role switch

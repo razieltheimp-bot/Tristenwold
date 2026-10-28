@@ -350,6 +350,13 @@ public sealed class RaidBook
     public Dictionary<string, double> ReadyAt { get; set; } = [];
     public Dictionary<string, int> Clears { get; set; } = [];
     public List<Roamer> Roamers { get; set; } = [];
+    /// <summary>The lairs the hero has found, near home or out in the far country: they stay on the map, whatever the game lets go of.</summary>
+    public List<string> Seen { get; set; } = [];
+
+    public void Saw(Raid r)
+    {
+        if (!Seen.Contains(r.Id)) Seen.Add(r.Id);
+    }
 
     public bool Ready(Raid r, double playSeconds) => playSeconds >= ReadyAt.GetValueOrDefault(r.Id);
 

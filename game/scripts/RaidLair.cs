@@ -38,7 +38,11 @@ public partial class RaidLair(Main main, Raid raid) : Node3D
     {
         var p = main.PlayerNode;
         var d = new Vector2(p.GlobalPosition.X - (float)raid.X, p.GlobalPosition.Z - (float)raid.Z).Length();
-        if (_site is null && d < 350 && main.TerrainNode.HasGround(Centre)) _site = LairSites.Build(raid, Centre, this);
+        if (_site is null && d < 350 && main.TerrainNode.HasGround(Centre))
+        {
+            _site = LairSites.Build(raid, Centre, this);
+            main.RaidLog.Saw(raid);
+        }
         else if (_site is not null && d > 500 && _phase == Phase.Waiting) { _site.Root.QueueFree(); _site = null; }
         if (_site is null) return;
 

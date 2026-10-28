@@ -208,36 +208,3 @@ public static class TownDefence
     /// <summary>The townsfolk wear it down, but they don't finish it: that's for the hero, or the Watch.</summary>
     public const double FloorShare = 0.1;
 }
-
-/// <summary>
-/// Who has the hero on the ropes. It takes two blows in a row from the one foe to count: the first that strikes the
-/// hero starts its count, a second strike from it makes two, and a strike from anything else in between wipes the
-/// first one's count and starts its own. So a hero who falls back from one foe in a crowded hall and is clipped by
-/// another on the way doesn't hand the kill to either; only the one that struck twice running put them down (and
-/// only that one takes a name for it, or counts it as a win).
-/// </summary>
-public sealed class Strikes<T> where T : class
-{
-    /// <summary>Blows in a row from one foe that it takes to count.</summary>
-    public const int Needed = 2;
-
-    /// <summary>The foe whose count is running, and how many in a row it has landed.</summary>
-    public T? By { get; private set; }
-    public int Count { get; private set; }
-
-    /// <summary>A blow landed: from the same foe, its count goes up; from another, the old count is gone.</summary>
-    public void Struck(T by)
-    {
-        if (ReferenceEquals(by, By)) Count++;
-        else (By, Count) = (by, 1);
-    }
-
-    /// <summary>Whether this foe has struck the hero twice running, with nothing else between.</summary>
-    public bool Counts(T by) => ReferenceEquals(by, By) && Count >= Needed;
-
-    /// <summary>The foe that has, if any.</summary>
-    public T? Holder => Count >= Needed ? By : null;
-
-    /// <summary>Back on their feet: everybody starts again.</summary>
-    public void Clear() => (By, Count) = (null, 0);
-}

@@ -519,6 +519,34 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             await Shot(name);
         }
         if (OS.GetCmdlineUserArgs().Contains("--exchange")) goto exchange;
+        if (OS.GetCmdlineUserArgs().Contains("--caravans"))
+        {
+            // The caravan yard; a wagon following the hero out on the road; the hero on a horse; the Host's breach.
+            await From("caravan-yard", Main.YardAt + new Vector3(12, 7, 14), Main.YardAt + new Vector3(0, 1, -1));
+            p.GlobalPosition = new Vector3(-215, 1, 40);
+            main.WagonForShot();
+            await Frames(10);
+            p.GlobalPosition = new Vector3(-235, 1, 44);
+            await Frames(120);
+            var wagon = main.WagonNode!.GlobalPosition;
+            await From("caravan-road", wagon + new Vector3(9, 4, 6), wagon + new Vector3(0, 1, -2));
+            main.HorseForShot();
+            await Frames(60);
+            cam.GlobalPosition = p.GlobalPosition + new Vector3(5, 2.5f, 5);
+            cam.LookAt(p.GlobalPosition, Vector3.Up);
+            cam.MakeCurrent();
+            await Shot("caravan-riding");
+            main.Story.Chapter = Chapter.Breach;
+            await Frames(200);
+            if (main.BreachNode is { } b)
+            {
+                p.GlobalPosition = b.At + new Vector3(14, 1, 10);
+                await Frames(240);
+                await From("story-breach", b.At + new Vector3(10, 5, 12), b.At + new Vector3(0, 2.5f, 0));
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--pursuits"))
         {
             // The allotments, half of them growing (two ripe), the Tumblers' Run, and the house: a bare plot, half built, finished.

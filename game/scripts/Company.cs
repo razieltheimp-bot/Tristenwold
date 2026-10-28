@@ -276,11 +276,11 @@ public partial class Main
     }
 
     /// <summary>A new beast for the company: named, and at your heels if there's room, else waiting at the Gallows Perch.</summary>
-    Bond Adopt(string kindId, bool dragon, Vector3 at)
+    Bond Adopt(string kindId, bool dragon, Vector3 at, int level = 1)
     {
         var bond = new Bond
         {
-            KindId = kindId, Role = dragon ? BondRole.Dragon : BondRole.Pet,
+            KindId = kindId, Role = dragon ? BondRole.Dragon : BondRole.Pet, Level = level,
             Name = dragon ? Dragons.NameFor(_companyRng) : _companyRng.Pick(PetNames.Where(n => _bonds.All(b => b.Name != n)).DefaultIfEmpty("Scrap").ToList()),
         };
         _bonds.Add(bond);
@@ -357,6 +357,7 @@ public partial class Main
         }
         if (npc.Id == "eyrie/aldric") foreach (var o in Aldric(person)) yield return o;
         foreach (var o in StoryTalk(person)) yield return o;
+        foreach (var o in CaravanTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;
         foreach (var o in PursuitTalk(person)) yield return o;
@@ -506,11 +507,12 @@ public partial class Main
             _player.Dismount();
             return;
         }
-        var near = CompanionBodies.Where(e => e.Bond is { Role: BondRole.Dragon } && e.Leader == _player && e.State != EnemyState.Dead && e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 4 + e.Figure.Scale.X * 4)
-            .MinBy(e => e.GlobalPosition.DistanceTo(_player.GlobalPosition));
-        if (near is null) { _hud.Toast("Your dragon isn't close enough to climb on."); return; }
-        if (!near.Bond!.Rideable) { _hud.Toast($"{near.Bond.Name} is too small to carry you yet (level 10)."); return; }
-        if (_saga.Stage != SagaStage.Knighted) { _hud.Toast($"Only a knight of the Eyrie may ride. Take {near.Bond.Name} to {DragonSaga.Knight} at the rookery."); return; }
+        var near = CompanionBodies.Where(e => e.Bond is { Role: BondRole.Dragon } or { Steed: true } && e.Leader == _player && e.State != EnemyState.Dead && e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 4 + e.Figure.Scale.X * 4)
+            .OrderByDescending(e => e.Bond!.Rideable).ThenBy(e => e.GlobalPosition.DistanceTo(_player.GlobalPosition)).FirstOrDefault();
+        if (near is null) { _hud.Toast("Neither your dragon nor your horse is close enough to climb on."); return; }
+        var bond = near.Bond!;
+        if (!bond.Rideable) { _hud.Toast(bond.Steed ? $"{bond.Name} is only a foal. Raise {bond.Name} to level 6, and then ride." : $"{bond.Name} is too small to carry you yet (level 10)."); return; }
+        if (bond.Role == BondRole.Dragon && _saga.Stage != SagaStage.Knighted) { _hud.Toast($"Only a knight of the Eyrie may ride. Take {bond.Name} to {DragonSaga.Knight} at the rookery."); return; }
         _player.Ride(near);
     }
 

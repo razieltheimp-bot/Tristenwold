@@ -11,7 +11,8 @@ public enum Chapter { NotStarted, Waking, Archive, Proving, Breach, Dragonfire, 
 /// Magi had ringed: a Wake sunk under each, a well of Keystone-light the demons can't abide. Then the Magi found what
 /// the Host fears most, and set about making it. In the undercroft of the Needle they took the people nobody would
 /// miss (foundlings out of the Warrens, the condemned off the gallows, Ashborn orphans from outside the walls) and
-/// remade them in the Ringing: Keystone ground into the blood, the old life burned out, a ring of black iron sunk into
+/// remade them in the Ringing, the greatest working the Magi ever wrought: nine nights of spellwork in a circle of
+/// Keystone-light, the blood sung through with it, the old life burned out by the spell, a ring of black iron sunk into
 /// the bone of one finger and bound to the Wake beneath the city. Of every hundred given to the Needle, a handful
 /// woke. Those who did remember nothing before it. They're quicker and harder than anyone born, cold to pain, and
 /// bound: when one dies, the ring drags what's left of them back down its tether to the Wake, and the Wake makes them
@@ -74,7 +75,7 @@ public sealed class ImmortalSaga
                 Chapter = Chapter.Proving;
                 return
                     "Sister Ilse finds the ledger without having to look. \"The Ringing, autumn intake. A hundred given to the Needle: foundlings, " +
-                    "two from the gallows, Ashborn children from outside the walls. Keystone in the blood, the old life burned out, the ring " +
+                    "two from the gallows, Ashborn children from outside the walls. Nine nights in the circle, the Keystone-light sung into the blood, the old life burned out, the ring " +
                     "sunk into the bone and tied to the Wake.\" She turns the page round so you can see the column of crosses, and the few names " +
                     "without them. \"Nine woke. You're one. Whoever you were before, that person didn't survive it.\" She closes the book. " +
                     "\"The Magi will tell you the ring holds. Don't take their word. Go out past the walls, and find out.\"";

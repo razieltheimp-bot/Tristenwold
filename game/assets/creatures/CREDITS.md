@@ -10,3 +10,6 @@
   and `songbird.glb`, `chick.glb`, `fish.glb`, `whale.glb` (Animals Pack): by Quaternius, CC0, from OpenGameArt.org
   (opengameart.org/content/lowpoly-animated-farm-animal-pack, /animated-animales-low-poly, /5-low-poly-animals).
   Converted by `tools/creatures/quaternius.py`; the older packs' plain grey materials are painted there.
+- `imp.glb` (Demon) and `dire_imp.glb` (Green Demon): from the Textured Cute Monster Pack by Quaternius, CC0, from
+  OpenGameArt.org (https://opengameart.org/content/textured-cute-monster-pack). Their animations were renamed to the
+  game's clips (Idle, Walk, Attack, Death) in the glTF; nothing else was changed.

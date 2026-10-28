@@ -115,6 +115,8 @@ public sealed class CompanySave
     public DragonSaga? Saga { get; set; }
     /// <summary>How far along the main story: what the hero is, and the road from waking to warden of the Rings.</summary>
     public ImmortalSaga? Story { get; set; }
+    /// <summary>Trade beyond the walls: the markets of the places the hero knows, and their place at the caravan yard.</summary>
+    public TradeBook? Trade { get; set; }
     public int Meat { get; set; }
     public GuildBook? Guilds { get; set; }
     public RaidBook? Raids { get; set; }
@@ -137,8 +139,9 @@ public sealed class CompanySave
 
     public static CompanySave Capture(ulong seed, int crowns, ExploredMap map, QuestLog log,
         Hero? hero = null, IEnumerable<Bond>? companions = null, DragonSaga? saga = null, int meat = 0, GuildBook? guilds = null, RaidBook? raids = null,
-        Pack? pack = null, HerbBook? herbs = null, Spot? where = null, CityEconomy? city = null, PursuitBook? pursuits = null, ImmortalSaga? story = null) => new()
+        Pack? pack = null, HerbBook? herbs = null, Spot? where = null, CityEconomy? city = null, PursuitBook? pursuits = null, ImmortalSaga? story = null, TradeBook? trade = null) => new()
     {
+        Trade = trade,
         Story = story,
         City = city,
         Pursuits = pursuits,

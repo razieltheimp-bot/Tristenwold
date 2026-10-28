@@ -456,7 +456,7 @@ public partial class Terrain(WorldGen world) : Node3D
             .. FarLairs.Near(world, x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize + 30)];
 
     public static readonly (Vector3 At, float Radius)[] Clearings =
-        [(Main.QuarryAt, 24), (Main.WoodlotAt, 18), (Main.AllotmentsAt, 18), (Main.HousePlotAt, 16), (Main.CourseAt + new Vector3(-2, 0, -14), 24)];
+        [(Main.QuarryAt, 24), (Main.WoodlotAt, 18), (Main.AllotmentsAt, 18), (Main.HousePlotAt, 16), (Main.CourseAt + new Vector3(-2, 0, -14), 24), (Main.YardAt, 20)];
 
     static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C)> items, Material material) =>
         Multi(parent, mesh, items.Select(i => (i.T, i.C, 0f)).ToList(), material);

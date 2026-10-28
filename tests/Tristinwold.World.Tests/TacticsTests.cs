@@ -153,31 +153,4 @@ public class TacticsTests
         Assert.Equal(1, copy.Lessons.Escapes);
         Assert.Equal(r.Where(WorldGen.Default, 5000), copy.Where(WorldGen.Default, 5000));
     }
-
-    sealed class Foe;
-
-    [Fact]
-    public void Only_a_foe_that_strikes_twice_running_counts()
-    {
-        var (a, b) = (new Foe(), new Foe());
-        var s = new Strikes<Foe>();
-        s.Struck(a);
-        Assert.False(s.Counts(a)); // once is not enough
-        s.Struck(a);
-        Assert.True(s.Counts(a));
-        Assert.Same(a, s.Holder);
-        // Falling back, the hero is clipped by the other one in the hall: the first one's count is gone,
-        // and the other has only the one.
-        s.Struck(b);
-        Assert.False(s.Counts(a));
-        Assert.False(s.Counts(b));
-        Assert.Null(s.Holder);
-        // Back and forth between them never counts for either.
-        s.Struck(a); s.Struck(b); s.Struck(a);
-        Assert.Null(s.Holder);
-        s.Struck(a);
-        Assert.True(s.Counts(a));
-        s.Clear();
-        Assert.Null(s.Holder);
-    }
 }

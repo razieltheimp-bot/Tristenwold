@@ -23,7 +23,8 @@ When the Rift tore open and the **Hollow Host** came through it, the only cities
 had *ringed*: a **Wake** sunk under each, a well of Keystone-light the demons can't abide. Then the Magi found what the
 Host fears most, and set about making it. In the undercroft of the Needle they took the people nobody would miss
 (foundlings out of the Warrens, the condemned off the gallows, Ashborn orphans from outside the walls) and remade them
-in **the Ringing**: Keystone ground into the blood, the old life burned out, a **ring of black iron** sunk into the
+in **the Ringing**, the greatest working of magic the Magi ever wrought: nine nights of spellwork in a circle of
+Keystone-light, the blood sung through with it, the old life burned out by the spell, a **ring of black iron** sunk into the
 bone of one finger and bound to the Wake beneath the city. Of every hundred given to the Needle, a handful woke. Those
 who did remember nothing before it. They're quicker and harder than anyone born, cold to pain, and **bound: when one
 dies, the ring drags what's left of them back to the Wake, and the Wake makes them again**, at the Gallows Perch,
@@ -355,15 +356,6 @@ within sight of it and it's there, and it knows you, and it comes for you. Every
 stronger still. Kill it and it's gone for good, and the price on its head is yours: more than its hoard, and more
 for every time it beat you.
 
-#### Two strikes, from the one foe
-
-Only the foe that **struck you twice running** gets the credit for putting you down. The first one to hit you starts
-its count; a second hit from it makes two; a hit from anything else in between wipes the first one's count and starts
-its own. So in a crowded hall, if one foe hits you and you fall back and another clips you on the way down, **neither**
-of them counts, and neither takes a name or a win for it. It has to be the first one hitting you twice, or the second
-one getting you twice in a row. The same goes for the shared world's roster: the game tells the server which foe put
-you down, and only that one triumphs (`Strikes` in `src/Tristinwold.World/Tactics.cs`).
-
 #### Deviants hunt you, and learn how you fight
 
 It isn't only lair bosses. **Anything out in the wilds that puts you down** (a bandit, a frost troll, a wolf, a
@@ -479,6 +471,31 @@ Kipines and both kinds of ape sometimes have young with them: find one alone and
 - **The market** on the Gallows Perch road, right where you start: Hollis's Provisions (food, meat for your
   beasts, cloth, leather, coal, a kit), the Anvil Gate (Hulda's smithy: ingots and iron gear), and Saffron's
   Remedies (potions, herbs, wands and staves). Every shopkeeper buys at half today's price (see the economy below).
+
+### Trade beyond the walls: town markets and the caravan yard
+
+**Every place you find keeps its own little economy.** A hamlet, a farmstead, a mine, an inn, a town: each makes a few
+goods (cheap there, because there's plenty) by its country and its trade, and is short of a few (dear there). Ask
+anyone who lives there what it trades in. Sell it what it lacks and it pays well, but every load fills it up and the
+price falls; left alone, its stores drift back a little each day. Once a place is known, its market is remembered with
+your company, and **Tristinwold's own caravans start trading with it**: every day the Exchange hears of a caravan from
+one of the places you've found, bringing what it makes and taking home what it wants, and Tristinwold's stores move
+with it.
+
+**The caravan yard**, outside the west gate, is kept by Brannoc Vell. Three ranks of work:
+
+1. **Loader.** Lift goods from the stack onto the yard's wagon (E, then E at the wagon), four crowns a load. Ten
+   loads and he makes you a driver.
+2. **Driver.** He gives you a wagon and a horse and a run: Tristinwold's goods out to a town, the town's goods home.
+   The wagon follows you; half the pay when you get there, half when you're back. A loaded wagon on the road draws
+   bandits.
+3. **Entrepreneur.** After three runs he'll sell you **a wagon of your own** (300 crowns). Hitch your own grown
+   horses to it, or buy a draught horse from him (140): each horse is room for a dozen loads, two at most. Buy goods at
+   the Exchange, take them where they're wanted, buy what that place makes cheap, and bring it home to sell. The
+   tracker keeps count of what's aboard, and Brannoc of what you've made on the road.
+
+**Riding horses.** A horse that's grown (level 6, so a wild foal you've tamed and raised, or a draught horse from the
+yard) can be ridden: stand by it and press V. Shift gallops. Horses stay on the ground; only dragons fly.
 
 ### Work in town, and the city's economy
 
@@ -640,7 +657,9 @@ for every 320 m square as you come near it; a new city for every 2.4 km square p
 near home** (about 2.4 km out), the far country has lairs of its own, one in most 1.6 km squares, for ever: a crypt,
 a warren, a forge, a dead fort, an eyrie, each under its own name ("the Thorned Hold", "the Manse of Coldton"), each
 harder and better-paid the further out it lies, so a hero who has outgrown home always has somewhere to go. The
-tracker suggests the nearest that suits you, near home or out there. A deviant born out there roams from where it beat
+tracker suggests the nearest that suits you, near home or out there. The game lets go of a far lair's buildings once
+you're well past it, but **every lair you've found stays on your map** (a violet triangle), and every place you've
+found keeps its market. A deviant born out there roams from where it beat
 you, not back towards Tristinwold. (The self-test walks 31 km out to check.)
 
 Tristinwold sits at its centre, and you start knowing five cities:

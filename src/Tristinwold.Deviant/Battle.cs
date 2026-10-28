@@ -19,10 +19,7 @@ public sealed record EnemyReport(
     DamageKind? KillingBlow = null,
     string? KilledBy = null,
     /// <summary>The actor base the game can spawn this kind from (its kind in the bestiary, say "bandit").</summary>
-    string? BaseForm = null,
-    /// <summary>In a defeat, whether this is the one that put the player down: it struck them twice running, with no
-    /// other between. Null when the game layer doesn't say, and then every enemy left standing shares the credit.</summary>
-    bool? PutDown = null);
+    string? BaseForm = null);
 
 /// <summary>What the game layer hands the deviant world after every battle.</summary>
 public sealed record BattleReport(

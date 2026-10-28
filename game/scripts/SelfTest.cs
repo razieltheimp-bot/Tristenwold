@@ -33,6 +33,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--frontier-only")) { await FrontierTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--story-only")) { await StoryTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--caravan-only")) { await CaravanTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sound-only"))
@@ -53,7 +54,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1090,26 +1091,10 @@ public partial class SelfTest(Main main) : Node
         var here = new Vector3(-150, 0, -120);
         await Teleport(here);
         Check(!roamers.InTown(here), "out in the wilds, past the walls");
-        // Clipped once by a wolf and finished by a bandit: neither struck twice running, so neither takes a name.
-        var wolf = Spawn("wolf", here + new Vector3(3, 0, 0));
-        var bandit = Spawn("bandit", here + new Vector3(-3, 0, 0));
-        await Frames(10);
-        var before = main.RaidLog.Roamers.Count;
-        p.TakeHit(1, DamageKind.Physical, AttackKind.Weapon, false, wolf);
-        p.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, bandit);
-        await Frames(30);
-        Check(p.Downed && main.RaidLog.Roamers.Count == before && !wolf.Named && !bandit.Named,
-            "struck by a wolf and then finished by a bandit, you fall, but neither takes a name for it (it takes two in a row from the one foe)");
-        await Until(() => !p.Downed, 10);
-        wolf.QueueFree();
-        bandit.QueueFree();
-        await Teleport(here);
-        // Struck by the frost troll, and struck again, and down: that counts.
         var troll = Spawn("frost_troll", here + new Vector3(0, 0, -3));
         var plain = troll.Stats.MaxHealth;
         troll.Provoke(p);
         await Frames(10);
-        p.TakeHit(1, DamageKind.Physical, AttackKind.Weapon, false, troll);
         p.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, troll);
         await Until(() => main.RaidLog.Roamers.Any(r => r.Kind == "frost_troll"), 5);
         var r = main.RaidLog.Roamers.FirstOrDefault(r => r.Kind == "frost_troll");
@@ -1599,6 +1584,115 @@ public partial class SelfTest(Main main) : Node
         Check(hud.Choose("The dragon is dead") && story.Chapter == Chapter.Done && hud.TalkText.Contains(ImmortalSaga.Title),
             $"Mother Corva writes you into her ledger: {ImmortalSaga.Title}");
         hud.EndTalk();
+    }
+
+    /// <summary>The caravan yard: load, drive, then trade on your own account, with your own wagon and horses.</summary>
+    async Task CaravanTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        var trade = main.TradeLog;
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Any loading work"), "Brannoc Vell at the caravan yard takes you on as a loader");
+        hud.EndTalk();
+        var purse = p.Crowns;
+        for (var i = 0; i < TradeBook.LoadsToDrive; i++) main.LoadForTest();
+        Check(trade.Rank == CaravanRank.Driver && p.Crowns == purse + TradeBook.LoadWage * TradeBook.LoadsToDrive,
+            $"ten loads onto the wagon (+{p.Crowns - purse} crowns), and he makes you a driver");
+
+        for (var run = 1; run <= TradeBook.RunsToOwn; run++)
+        {
+            await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+            main.Talk(Who("tristinwold/caravans"));
+            var asked = hud.Choose("Give me a wagon to drive");
+            hud.EndTalk();
+            var r = trade.Run;
+            if (run == 1) Check(asked && r is not null && main.WagonNode is not null, $"he gives you a wagon and a horse: {r?.Load} loads of {r?.Out} for {r?.ToName}, {r?.Pay} crowns");
+            if (r is null) return;
+            var town = main.World.Find(r.To)!;
+            await Teleport(new Vector3((float)town.X + 6, 0, (float)town.Z + 6));
+            await Until(() => r.Returning, 8);
+            if (run == 1) Check(r.Returning && main.WagonNode!.GlobalPosition.DistanceTo(p.GlobalPosition) < 20, $"the wagon follows you to {r.ToName}: unloaded, and loaded with {r.Back} for home");
+            var stock = main.Economy.Stock[r.Back];
+            await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+            await Until(() => trade.Run is null, 8);
+            if (run == 1) Check(trade.Run is null && trade.Runs == 1 && main.Economy.Stock[r.Back] > stock, $"home again: the run is paid, and {r.ToName}'s {r.Back} goes into Tristinwold's stores");
+        }
+        Check(trade.MayOwn, $"after {TradeBook.RunsToOwn} runs, Brannoc will sell you a wagon of your own");
+
+        // A trader: your own wagon, a draught horse to pull it (and ride).
+        p.Crowns += 1000;
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Sell me a wagon") && trade.OwnWagon && trade.Rank == CaravanRank.Entrepreneur, "you buy a wagon: you're in business for yourself");
+        hud.EndTalk();
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Sell me a draught horse") && main.Bonds.Any(b => b.Steed && b.Rideable), $"and a draught horse: {main.Bonds.FirstOrDefault(b => b.Steed)?.Name}");
+        hud.EndTalk();
+        await Frames(30);
+        main.RideNow();
+        await Frames(20);
+        Check(p.Mount is { } mount && mount.Bond?.Steed == true, $"you can ride your horse ({p.Mount?.Stats.Name})");
+        var from = p.GlobalPosition;
+        if (p.Mount is { } m)
+        {
+            Input.ActionPress("move_forward");
+            Input.ActionPress("sprint");
+            await Frames(90);
+            Input.ActionRelease("move_forward");
+            Input.ActionRelease("sprint");
+            Check(p.GlobalPosition.DistanceTo(from) > 4 && !m.Flying, $"and gallop on it ({p.GlobalPosition.DistanceTo(from):0} m), on the ground");
+        }
+        main.RideNow();
+        await Frames(10);
+        await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Hitch up my wagon") && trade.WagonOut && trade.Capacity == TradeBook.PerHorse, $"hitched: room for {trade.Capacity} loads");
+        hud.EndTalk();
+        main.Talk(Who("tristinwold/caravans"));
+        hud.Choose("Load goods");
+        var spent = p.Crowns;
+        hud.Choose(hud.Options.First());
+        Check(trade.Loaded > 0 && p.Crowns < spent, $"you buy goods at the Exchange for the road ({trade.Loaded} aboard)");
+        hud.EndTalk();
+
+        // Out to a town you know: it makes some things cheap and wants others.
+        var known = trade.Towns.Values.OrderBy(t => t.DistanceTo(0, 0)).First();
+        await Teleport(new Vector3((float)known.X + 4, 0, (float)known.Z + 4));
+        await Frames(60);
+        var local = main.PlacesNode.People.FirstOrDefault(x => x.Npc.HomeId == known.Id);
+        Check(local is not null, $"at {known.Name}, someone to trade with ({local?.Npc.Name})");
+        if (local is null) return;
+        local.GlobalPosition = p.GlobalPosition + new Vector3(1.5f, 0, 0);
+        main.Talk(local);
+        Check(hud.Choose($"What does {known.Name} trade in") && hud.TalkText.Contains("We make"), $"{local.Npc.Name}: {hud.TalkText}");
+        hud.EndTalk();
+        main.Talk(local);
+        var before = p.Crowns;
+        Check(hud.Choose("Trade from my wagon") && hud.Choose("Sell") && p.Crowns > before, $"you sell from your wagon at {known.Name} (+{p.Crowns - before} crowns)");
+        if (hud.Options.FirstOrDefault(o => o.StartsWith("Buy")) is { } buy)
+        {
+            hud.Choose(buy);
+            Check(trade.Loaded > 0, $"and buy what they make cheap, for Tristinwold ({buy})");
+        }
+        hud.EndTalk();
+        await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+        if (trade.Loaded > 0)
+        {
+            main.Talk(Who("tristinwold/caravans"));
+            before = p.Crowns;
+            Check(hud.Choose("Sell what's on my wagon") && trade.Loaded == 0 && p.Crowns > before, $"home, the Exchange takes the load (+{p.Crowns - before}; {trade.Profit} made on the road all told)");
+            hud.EndTalk();
+        }
+        main.Talk(Who("tristinwold/caravans"));
+        hud.Choose("Put my wagon away");
+        hud.EndTalk();
+
+        // And Tristinwold's own caravans trade with the places it knows, a day at a time.
+        main.Economy.NextDayAt = main.GuildBook.PlaySeconds;
+        await Until(() => hud.Heard("A caravan from"), 6);
+        Check(hud.Heard("A caravan from"), "a new day: Tristinwold's own caravans trade with the places you've found");
     }
 
     /// <summary>Far past the edge of every map: the land goes on, with its villages and dens, and lairs of its own.</summary>

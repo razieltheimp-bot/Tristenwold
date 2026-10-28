@@ -20,7 +20,7 @@ public static class Models
     public static PackedScene? Scene(string path)
     {
         if (Scenes.TryGetValue(path, out var scene)) return scene;
-        var full = path.StartsWith("ph:") ? PolyHaven + path[3..] : path.StartsWith("creature:") ? "res://assets/creatures/" + path[9..] : Root + path;
+        var full = path.StartsWith("ph:") ? PolyHaven + path[3..] : path.StartsWith("creature:") ? "res://assets/creatures/" + path[9..] : path.StartsWith("res://") ? path : Root + path;
         return Scenes[path] = ResourceLoader.Exists(full) ? GD.Load<PackedScene>(full) : null;
     }
 
@@ -277,6 +277,9 @@ public abstract partial class Body : Node3D
         "mud_crab" => Beast.Crab(),
         // Farm and town animals, birds, fish and whales: Quaternius's packs (CC0).
         "cow" => (Body?)Creature.Create("cow.glb", 1.45f) ?? Beast.Bear(),
+        // Imps of the Hollow Host: Quaternius's little demons, red; a dire imp is the big green one.
+        "imp" => (Body?)Creature.Create("imp.glb", 0.9f) ?? Figure.Create(look),
+        "dire_imp" => (Body?)Creature.Create("dire_imp.glb", 1.8f) ?? Figure.Create(look),
         "horse" or "wild_horse" => (Body?)Creature.Create("horse.glb", 1.75f, look == "wild_horse" ? new Color("#8a6a4a") : null) ?? Beast.Wolf(new Color("#6a4a30")),
         "sheep" => (Body?)Creature.Create("sheep.glb", 0.95f) ?? Beast.Wolf(new Color("#e8e4d8")),
         "pig" => (Body?)Creature.Create("pig.glb", 0.75f) ?? Beast.Wolf(new Color("#e0a8a0")),
@@ -1293,6 +1296,7 @@ public partial class Creature : Animal
         if (Saddle != Vector3.Zero) return Saddle;
         var s = Model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault();
         var (b1, b2) = (s?.FindBone("back1") ?? -1, s?.FindBone("back2") ?? -1);
+        if (s is not null && (b1 < 0 || b2 < 0)) (b1, b2) = (s.FindBone("Hips"), s.FindBone("Shoulders")); // a horse
         if (s is null || b1 < 0 || b2 < 0) return Saddle = new Vector3(0, 2.2f, 0);
         var space = Transform3D.Identity;
         for (Node? n = s; n is not null && n != this; n = n.GetParent())

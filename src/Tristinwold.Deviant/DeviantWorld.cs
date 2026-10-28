@@ -180,10 +180,6 @@ public sealed class DeviantWorld
             .Select(e => (Enemy: e, Deviant: Find(e.DeviantId!.Value)))
             .Where(x => x.Deviant is { Alive: true })
             .ToList();
-        // In a defeat only the one that put the player down takes the credit: the one that struck them twice running.
-        // One that only clipped them on the way down gets nothing. When the game doesn't say, they all share it.
-        var known = report.Result == BattleResult.Defeat && report.Enemies.Any(e => e.PutDown is not null);
-        bool Credited(EnemyReport e) => !known || e.PutDown == true;
 
         foreach (var (enemy, n) in deviantsInBattle)
         {
@@ -192,9 +188,7 @@ public sealed class DeviantWorld
             foreach (var p in report.Players) n.Player(p).Memory |= Memory.MetPlayer;
 
             if (report.Result == BattleResult.Defeat)
-            {
-                if (Credited(enemy)) Triumph(n, report, events);
-            }
+                Triumph(n, report, events);
             else if (report.Result == BattleResult.PartyEscaped)
                 PlayerFled(n, report, events);
             else if (enemy.Escaped)
@@ -205,11 +199,9 @@ public sealed class DeviantWorld
 
         // A plain monster that wipes the party, or that the party runs from or that runs
         // away itself, gets a name. This is how the roster fills up.
-        var candidates = known
-            ? report.Enemies.Where(e => Credited(e) && deviantsInBattle.All(d => d.Enemy != e))
-            : deviantsInBattle.Count == 0 ? report.Enemies : [];
+        if (deviantsInBattle.Count == 0)
         {
-            var survivor = candidates.Where(e => !e.Killed).OrderByDescending(e => e.MaxHealth).FirstOrDefault();
+            var survivor = report.Enemies.Where(e => !e.Killed).OrderByDescending(e => e.MaxHealth).FirstOrDefault();
             if (survivor is not null)
             {
                 var (rank, memory) = report.Result switch
