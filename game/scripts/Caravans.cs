@@ -6,7 +6,7 @@ namespace Tristinwold.Game;
 
 /// <summary>
 /// Trade beyond the walls (see <see cref="TradeBook"/>). Every place you come to know keeps its own little market,
-/// and Tristinwold's own caravans start trading with it. The caravan yard outside the west gate, kept by Brannoc Vell,
+/// and Tristinwold's own caravans start trading with it. The caravan yard outside the west gate, kept by Garrick Wain,
 /// takes on anyone: load the yard's wagon first; then drive it out to a town with Tristinwold's goods and back with
 /// the town's; and once you've made three runs, buy a wagon of your own, hitch your own horses to it, and trade on
 /// your own account, buying cheap where a thing is made and selling dear where it's wanted. The roads aren't safe for
@@ -33,8 +33,8 @@ public partial class Main
 
     void AddCaravanYard()
     {
-        Townsfolk(new Npc(Master, "Brannoc Vell", Sex.Male, 52, "master of the caravan yard", "city:tristinwold", "Tristinwold",
-            "Brannoc has driven every road out of Tristinwold and lost a wagon on most of them. He keeps the caravan yard outside the west gate, and he'll take on anyone with a strong back, then anyone who can drive, and sell a wagon to anyone who's proved they can bring one home.",
+        Townsfolk(new Npc(Master, "Garrick Wain", Sex.Male, 52, "master of the caravan yard", "city:tristinwold", "Tristinwold",
+            "Garrick has driven every road out of Tristinwold and lost a wagon on most of them. He keeps the caravan yard outside the west gate, and he'll take on anyone with a strong back, then anyone who can drive, and sell a wagon to anyone who's proved they can bring one home.",
             ["the roads", "money"], "gruff", "Loading, driving or buying? I've work for all three.", YardAt.X - 1.5, YardAt.Z + 1.5));
         for (var i = 0; i < 6; i++)
             Models.Place(this, i % 3 == 2 ? Cargo + "barrel_apples.glb" : i % 3 == 1 ? Cargo + "bag.glb" : Cargo + "crate_apples.glb", YardStack + new Vector3(i % 3 * 0.9f, 0, i / 3 * 0.9f), 1.1f, i * 0.4f, solid: false);
@@ -129,7 +129,7 @@ public partial class Main
         Sound.Ui("coin", -2);
         var promoted = _trade.Loaded1();
         _loading = left > 0 ? (left, false) : null;
-        if (promoted) _hud.Toast("Brannoc: \"You can lift. Can you drive? Come and ask me for a wagon.\" (You're a driver for the caravan yard now.)", 10);
+        if (promoted) _hud.Toast("Garrick: \"You can lift. Can you drive? Come and ask me for a wagon.\" (You're a driver for the caravan yard now.)", 10);
         else _hud.Toast(left > 0 ? $"+{TradeBook.LoadWage} crowns. {left} to go." : $"+{TradeBook.LoadWage} crowns. That's the wagon loaded.", 3);
         Save();
     }
@@ -171,7 +171,7 @@ public partial class Main
             Sound.Ui("coin", -2);
             StableWagon();
             _hud.Toast(ready
-                ? $"+{rest} crowns. Brannoc looks the wagon over: \"Three runs and not a wheel lost. You could run your own, you know. I'll sell you one.\""
+                ? $"+{rest} crowns. Garrick looks the wagon over: \"Three runs and not a wheel lost. You could run your own, you know. I'll sell you one.\""
                 : $"+{rest} crowns, and {r.ToName}'s {CityEconomy.Info(r.Back).Name} goes into the city's stores.", 9);
             Save();
         }

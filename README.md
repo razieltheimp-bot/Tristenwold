@@ -482,7 +482,7 @@ your company, and **Tristinwold's own caravans start trading with it**: every da
 one of the places you've found, bringing what it makes and taking home what it wants, and Tristinwold's stores move
 with it.
 
-**The caravan yard**, outside the west gate, is kept by Brannoc Vell. Three ranks of work:
+**The caravan yard**, outside the west gate, is kept by Garrick Wain. Three ranks of work:
 
 1. **Loader.** Lift goods from the stack onto the yard's wagon (E, then E at the wagon), four crowns a load. Ten
    loads and he makes you a driver.
@@ -492,7 +492,7 @@ with it.
 3. **Entrepreneur.** After three runs he'll sell you **a wagon of your own** (300 crowns). Hitch your own grown
    horses to it, or buy a draught horse from him (140): each horse is room for a dozen loads, two at most. Buy goods at
    the Exchange, take them where they're wanted, buy what that place makes cheap, and bring it home to sell. The
-   tracker keeps count of what's aboard, and Brannoc of what you've made on the road.
+   tracker keeps count of what's aboard, and Garrick of what you've made on the road.
 
 **Riding horses.** A horse that's grown (level 6, so a wild foal you've tamed and raised, or a draught horse from the
 yard) can be ridden: stand by it and press V. Shift gallops. Horses stay on the ground; only dragons fly.

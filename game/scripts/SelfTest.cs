@@ -1595,7 +1595,7 @@ public partial class SelfTest(Main main) : Node
         Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
         await Teleport(Main.YardAt + new Vector3(0, 0, 4));
         main.Talk(Who("tristinwold/caravans"));
-        Check(hud.Choose("Any loading work"), "Brannoc Vell at the caravan yard takes you on as a loader");
+        Check(hud.Choose("Any loading work"), "Garrick Wain at the caravan yard takes you on as a loader");
         hud.EndTalk();
         var purse = p.Crowns;
         for (var i = 0; i < TradeBook.LoadsToDrive; i++) main.LoadForTest();
@@ -1620,7 +1620,7 @@ public partial class SelfTest(Main main) : Node
             await Until(() => trade.Run is null, 8);
             if (run == 1) Check(trade.Run is null && trade.Runs == 1 && main.Economy.Stock[r.Back] > stock, $"home again: the run is paid, and {r.ToName}'s {r.Back} goes into Tristinwold's stores");
         }
-        Check(trade.MayOwn, $"after {TradeBook.RunsToOwn} runs, Brannoc will sell you a wagon of your own");
+        Check(trade.MayOwn, $"after {TradeBook.RunsToOwn} runs, Garrick will sell you a wagon of your own");
 
         // A trader: your own wagon, a draught horse to pull it (and ride).
         p.Crowns += 1000;

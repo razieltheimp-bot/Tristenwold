@@ -23,7 +23,12 @@ public partial class Hud : CanvasLayer
 
     /// <summary>On-screen controls for touch screens; hidden unless the game turns them on.</summary>
     public TouchControls Touch { get; } = new() { Visible = false };
-    public bool TouchEnabled { get; set; }
+    public bool TouchEnabled
+    {
+        get => _touchEnabled;
+        set { _touchEnabled = value; PlaceParty(); }
+    }
+    bool _touchEnabled;
 
     /// <summary>An upright phone has its own controller under the picture: the on-screen one steps aside.</summary>
     public bool PhonePad { get; set; }
@@ -50,7 +55,8 @@ public partial class Hud : CanvasLayer
         root.AddChild(_status = new Label { Position = new Vector2(24, 166), Modulate = new Color(1, 1, 1, 0.6f) });
         root.AddChild(_toastLabel = new Label { AnchorLeft = 1, AnchorRight = 1, OffsetLeft = -520, OffsetTop = 300, OffsetRight = -24, AutowrapMode = TextServer.AutowrapMode.Word, HorizontalAlignment = HorizontalAlignment.Right });
         root.AddChild(_tracker = new Label { Position = new Vector2(24, 200), Modulate = new Color("#ffd27a"), CustomMinimumSize = new Vector2(480, 0), AutowrapMode = TextServer.AutowrapMode.Word });
-        root.AddChild(_party = new Label { AnchorTop = 1, AnchorBottom = 1, OffsetLeft = 24, OffsetTop = -190, Modulate = new Color("#a8e0a0"), CustomMinimumSize = new Vector2(320, 0) });
+        root.AddChild(_party = new Label { Modulate = new Color("#a8e0a0"), HorizontalAlignment = HorizontalAlignment.Right });
+        PlaceParty();
         root.AddChild(_center = new Label { AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0.68f, OffsetLeft = -300, OffsetRight = 300, HorizontalAlignment = HorizontalAlignment.Center });
 
         _window = new PanelContainer { AnchorLeft = 0.1f, AnchorRight = 0.9f, AnchorTop = 0.08f, AnchorBottom = 0.92f, Visible = false };
@@ -311,6 +317,27 @@ public partial class Hud : CanvasLayer
 
     /// <summary>The companions following, one line each.</summary>
     public void Party(IEnumerable<string> lines) => _party.Text = string.Join("\n", lines);
+
+    /// <summary>
+    /// The companions' names, levels and health, out of the way in the bottom-right corner; with the on-screen
+    /// controls there, under the mini-map instead.
+    /// </summary>
+    void PlaceParty()
+    {
+        if (_party is null) return;
+        (_party.AnchorLeft, _party.AnchorRight) = (1, 1);
+        (_party.OffsetLeft, _party.OffsetRight) = (-360, -24);
+        if (_touchEnabled)
+        {
+            (_party.AnchorTop, _party.AnchorBottom, _party.OffsetTop, _party.OffsetBottom) = (0, 0, 236, 420);
+            _party.VerticalAlignment = VerticalAlignment.Top;
+        }
+        else
+        {
+            (_party.AnchorTop, _party.AnchorBottom, _party.OffsetTop, _party.OffsetBottom) = (1, 1, -200, -20);
+            _party.VerticalAlignment = VerticalAlignment.Bottom;
+        }
+    }
 
     public void Update(Player p, string area, string status)
     {
