@@ -193,7 +193,7 @@ public partial class Roamers(Main main) : Node
     }
 
     /// <summary>The shared world says one we killed wasn't as dead as it looked: it's out there again.</summary>
-    public void CheatedDeath(Guid deviantId)
+    public void Returned(Guid deviantId)
     {
         if (_fallen.FirstOrDefault(r => r.DeviantId == deviantId) is not { } r) return;
         _fallen.Remove(r);

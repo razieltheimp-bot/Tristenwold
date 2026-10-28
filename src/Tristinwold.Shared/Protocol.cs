@@ -119,7 +119,7 @@ public sealed record GroupView(string Player, string Area, IReadOnlyList<string>
 
 public static class Wire
 {
-    public const int ProtocolVersion = 3; // 2: the shared city; 3: deviants
+    public const int ProtocolVersion = 4; // 2: the shared city; 3: deviants; 4: their new ranks
     public const int DefaultPort = 7777;
     public const int MaxLineBytes = 4 * 1024 * 1024; // a big deviant world is still well under this
 

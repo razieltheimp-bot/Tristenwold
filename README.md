@@ -605,16 +605,17 @@ godot --headless --path game -- --selftest --server https://….trycloudflare.co
 
 ## The Deviant system
 
-- An enemy that **kills you** becomes a named **Captain**. One you **run from**, or one that **flees from
-  you**, becomes a named **Grunt**.
+- An enemy that **kills you** becomes a named **Ringleader**. One you **run from**, or one that **flees from
+  you**, becomes a named **Stray**.
 - Each deviant gets strengths and weaknesses: health, armour, damage, speed, spell power, crit chance,
   fire/frost/shock/poison/sun resistances (or absorbing them), plus auto-statuses (Haste, Protect, Shell,
   Regen, Reflect).
 - It **remembers** who it killed, who ran and who beat it, per player, and taunts you by name.
 - It **comes back**: the next time you fight its kind, especially on its home ground, it can take one of
   those enemies' place, renamed and stronger.
-- **Killing it isn't always final.** It can cheat death, come back scarred and resist whatever killed it.
-- **Hierarchy**: Overlord → Warchiefs → Captains → Grunts, with promotions, feuds, duels and blood oaths.
+- **Killing it isn't always final.** It can come back scarred, and resist whatever killed it.
+- **Ranks**: one Tyrant over the Scourges, each with Ringleaders under them, and the Strays below, with
+  promotions, grudges fought out between deviants, and pacts (kill one of a pact, and the other comes for you).
 
 Names, epithets and taunts are data (`NamePack` in `src/Tristinwold.Deviant/Content.cs`).
 

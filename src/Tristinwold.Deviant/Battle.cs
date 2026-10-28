@@ -40,7 +40,7 @@ public sealed record BattleModifiers(
     IReadOnlyDictionary<Stat, double> StatMultipliers,
     IReadOnlyDictionary<DamageKind, Affinity> Affinities,
     IReadOnlyList<AutoStatus> AutoStatuses,
-    Rank Rank = Rank.Grunt,
+    Rank Rank = Rank.Stray,
     int Victories = 0)
 {
     /// <summary>Applies a multiplier to an actor value, kept inside what the game plays well with.</summary>
@@ -63,9 +63,9 @@ public sealed record DeviantSpawn(int Slot, Guid DeviantId, BattleModifiers Modi
 
 public enum WorldEventKind
 {
-    Born, Promoted, Demoted, Slain, CheatedDeath, Escaped, Triumph, Taunted,
-    FeudStarted, FeudWon, FeudLost, BloodOath, Avenger, Succession,
+    Born, Promoted, Demoted, Slain, Returned, Escaped, Triumph, Taunted,
+    GrudgeStarted, GrudgeWon, GrudgeLost, Pact, Vengeful, Succession,
 }
 
-/// <summary>Something worth telling the players about ("Grask Gutter-Fang is now a Warchief").</summary>
+/// <summary>Something worth telling the players about ("Grask Gutter-Fang is now a Scourge").</summary>
 public sealed record WorldEvent(WorldEventKind Kind, Guid DeviantId, string Text, Guid? OtherId = null);

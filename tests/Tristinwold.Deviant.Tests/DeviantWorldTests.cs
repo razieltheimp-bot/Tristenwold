@@ -13,7 +13,7 @@ public class DeviantWorldTests
     static BattleReport Report(BattleResult result, params EnemyReport[] enemies) =>
         new("The Warrens", result, enemies, Players, PartyLevel: 10);
 
-    static Deviant BirthCaptain(DeviantWorld world, string kind = "Wolf")
+    static Deviant BirthRingleader(DeviantWorld world, string kind = "Wolf")
     {
         world.RecordBattle(Report(BattleResult.Defeat, Enemy(0, kind, kind, maxHp: 50), Enemy(1, kind, kind, maxHp: 300)));
         return world.Living.Last();
@@ -23,17 +23,23 @@ public class DeviantWorldTests
     public void A_world_saved_under_the_old_name_still_loads_with_everyone_in_it()
     {
         var world = new DeviantWorld(7);
-        var captain = BirthCaptain(world);
-        var old = world.ToJson().Replace("\"deviants\"", "\"nemeses\"");
+        var ringleader = BirthRingleader(world);
+        ringleader.Memory |= Memory.Returned;
+        // Written as it was before the rename: the old list name, the old rank, an old memory among others.
+        var old = world.ToJson().Replace("\"deviants\"", "\"nemeses\"").Replace("\"Ringleader\"", "\"Captain\"").Replace("Returned", "CheatedDeath");
         Assert.Contains("\"nemeses\"", old);
-        var loaded = DeviantWorld.FromJson(old);
-        Assert.Equal(captain.Id, Assert.Single(loaded.Living).Id);
+        Assert.Contains("\"Captain\"", old);
+        Assert.Contains("CheatedDeath\"", old);
+        var back = Assert.Single(DeviantWorld.FromJson(old).Living);
+        Assert.Equal(ringleader.Id, back.Id);
+        Assert.Equal(Rank.Ringleader, back.Rank);
+        Assert.True(back.Memory.HasFlag(Memory.Returned) && back.Memory.HasFlag(Memory.KilledPlayer));
 
         // The server keeps the world as a string inside its campaign file, under the old field name: the file is
         // upgraded as it's read, and the world inside it as that's read in turn.
         var campaign = SaveUpgrade.Upgrade($$"""{"nemesisWorldJson":{{System.Text.Json.JsonSerializer.Serialize(old)}}}""");
         var inner = System.Text.Json.JsonDocument.Parse(campaign).RootElement.GetProperty("deviantWorldJson").GetString()!;
-        Assert.Equal(captain.Id, Assert.Single(DeviantWorld.FromJson(inner).Living).Id);
+        Assert.Equal(ringleader.Id, Assert.Single(DeviantWorld.FromJson(inner).Living).Id);
     }
 
     [Fact]
@@ -44,7 +50,7 @@ public class DeviantWorldTests
             Enemy(0, maxHp: 50, killed: true), Enemy(1, maxHp: 300), Enemy(2, maxHp: 120)));
 
         var n = Assert.Single(world.Living);
-        Assert.Equal(Rank.Captain, n.Rank);
+        Assert.Equal(Rank.Ringleader, n.Rank);
         Assert.True(n.Memory.HasFlag(Memory.KilledPlayer));
         Assert.All(Players, p => Assert.Equal(1, n.Players[p].TimesKilledThem));
         Assert.Equal(2, n.Traits.Count(t => t.Kind == TraitKind.Strength));
@@ -58,7 +64,7 @@ public class DeviantWorldTests
     {
         var world = new DeviantWorld(2);
         world.RecordBattle(Report(BattleResult.PartyEscaped, Enemy(0)));
-        Assert.Equal(Rank.Grunt, Assert.Single(world.Living).Rank);
+        Assert.Equal(Rank.Stray, Assert.Single(world.Living).Rank);
 
         world.RecordBattle(Report(BattleResult.Victory, Enemy(0, killed: true), Enemy(1, killed: true)));
         Assert.Single(world.Living);
@@ -70,7 +76,7 @@ public class DeviantWorldTests
         for (ulong seed = 0; seed < 200; seed++)
         {
             var world = new DeviantWorld(seed);
-            var n = BirthCaptain(world);
+            var n = BirthRingleader(world);
             var elements = n.Traits.Where(t => t.Affinities is not null).SelectMany(t => t.Affinities!.Keys).ToList();
             Assert.Equal(elements.Count, elements.Distinct().Count());
         }
@@ -80,7 +86,7 @@ public class DeviantWorldTests
     public void Deviants_only_replace_monsters_of_their_own_species()
     {
         var world = new DeviantWorld(3, new DeviantRules { AppearanceChance = 1, HomeAreaAppearanceChance = 1 });
-        var n = BirthCaptain(world, kind: "Wolf");
+        var n = BirthRingleader(world, kind: "Wolf");
 
         var none = world.PlanEncounter("The Warrens", [new FormationSlot(0, "Bandit", "Bandit")], Players);
         Assert.Empty(none);
@@ -99,13 +105,13 @@ public class DeviantWorldTests
     public void Repeated_wins_promote_a_captain_to_warchief_and_then_overlord()
     {
         var world = new DeviantWorld(4);
-        var n = BirthCaptain(world);
+        var n = BirthRingleader(world);
         var promotions = new List<WorldEvent>();
-        for (var i = 0; i < 6 && n.Rank != Rank.Overlord; i++)
+        for (var i = 0; i < 6 && n.Rank != Rank.Tyrant; i++)
             promotions.AddRange(world.RecordBattle(Report(BattleResult.Defeat, Enemy(0, deviant: n.Id))));
 
-        Assert.Equal(Rank.Overlord, n.Rank);
-        Assert.Contains(promotions, e => e.Kind == WorldEventKind.Promoted && e.Text.Contains("Warchief"));
+        Assert.Equal(Rank.Tyrant, n.Rank);
+        Assert.Contains(promotions, e => e.Kind == WorldEventKind.Promoted && e.Text.Contains("Scourge"));
         Assert.True(world.ModifiersFor(n).StatMultipliers[Stat.Health] > 3.0);
     }
 
@@ -117,7 +123,7 @@ public class DeviantWorldTests
         for (ulong seed = 0; seed < 100 && !(sawDeath && sawScar); seed++)
         {
             var world = new DeviantWorld(seed);
-            var n = BirthCaptain(world);
+            var n = BirthRingleader(world);
             n.Traits.RemoveAll(t => t.Affinities?.ContainsKey(DamageKind.Fire) == true);
             var events = world.RecordBattle(Report(BattleResult.Victory,
                 Enemy(0, killed: true, deviant: n.Id, blow: DamageKind.Fire)));
@@ -133,27 +139,27 @@ public class DeviantWorldTests
                 sawScar = true;
                 Assert.Single(n.Scars, s => s.Cause == DamageKind.Fire);
                 Assert.Equal(Affinity.Resist, world.ModifiersFor(n).Affinities[DamageKind.Fire]);
-                Assert.True(n.Memory.HasFlag(Memory.CheatedDeath));
+                Assert.True(n.Memory.HasFlag(Memory.Returned));
             }
         }
         Assert.True(sawDeath && sawScar);
     }
 
     [Fact]
-    public void A_slain_deviant_blood_brother_hunts_the_killer()
+    public void A_slain_deviants_pact_sworn_hunts_the_killer()
     {
         for (ulong seed = 0; seed < 100; seed++)
         {
             var world = new DeviantWorld(seed);
-            var a = BirthCaptain(world);
-            var b = BirthCaptain(world, kind: "Bandit");
-            a.BloodBrother = b.Id;
-            b.BloodBrother = a.Id;
+            var a = BirthRingleader(world);
+            var b = BirthRingleader(world, kind: "Bandit");
+            a.PactSworn = b.Id;
+            b.PactSworn = a.Id;
             world.RecordBattle(Report(BattleResult.Victory, Enemy(0, killed: true, deviant: a.Id)));
             if (a.Alive) continue;
 
-            Assert.True(b.Memory.HasFlag(Memory.Avenger));
-            Assert.True(b.Players["Joe"].Memory.HasFlag(Memory.Avenger));
+            Assert.True(b.Memory.HasFlag(Memory.Vengeful));
+            Assert.True(b.Players["Joe"].Memory.HasFlag(Memory.Vengeful));
             return;
         }
         Assert.Fail("no seed killed the deviant outright");
@@ -163,7 +169,7 @@ public class DeviantWorldTests
     public void Save_and_load_round_trips_the_whole_world_including_the_dice()
     {
         var world = new DeviantWorld(5, new DeviantRules { AppearanceChance = 0.5 });
-        for (var i = 0; i < 5; i++) BirthCaptain(world, $"Kind{i}");
+        for (var i = 0; i < 5; i++) BirthRingleader(world, $"Kind{i}");
         world.AdvanceDay();
 
         var json = world.ToJson();
@@ -185,7 +191,7 @@ public class DeviantWorldTests
             var world = new DeviantWorld(11);
             for (var i = 0; i < 20; i++)
             {
-                var n = BirthCaptain(world, $"Kind{i % 4}");
+                var n = BirthRingleader(world, $"Kind{i % 4}");
                 world.RecordBattle(Report(BattleResult.Victory, Enemy(0, n.Kind, killed: true, deviant: n.Id)));
                 world.AdvanceDay();
             }
@@ -211,11 +217,11 @@ public class DeviantWorldTests
                     deviant: deviant, blow: (DamageKind)rng.Next(6))));
             world.AdvanceDay();
 
-            Assert.True(world.Living.Count(n => n.Rank == Rank.Overlord) <= 1);
-            Assert.True(world.Warchiefs.Count() <= rules.MaxWarchiefs);
-            Assert.True(world.Grunts.Count() <= rules.MaxGrunts);
-            foreach (var w in world.Warchiefs)
-                Assert.True(world.CaptainsUnder(w.Id).Count() <= rules.MaxCaptainsPerWarchief);
+            Assert.True(world.Living.Count(n => n.Rank == Rank.Tyrant) <= 1);
+            Assert.True(world.Scourges.Count() <= rules.MaxScourges);
+            Assert.True(world.Strays.Count() <= rules.MaxStrays);
+            foreach (var w in world.Scourges)
+                Assert.True(world.RingleadersUnder(w.Id).Count() <= rules.MaxRingleadersPerScourge);
             Assert.All(world.Living, n => Assert.True(n.Level <= rules.MaxLevel));
             Assert.All(world.Living, n => Assert.DoesNotContain(n.Id, n.Rivals));
         }
@@ -239,7 +245,7 @@ public class DeviantWorldTests
         var world = new DeviantWorld(7, new DeviantRules { MaxDisplayNameLength = 12 });
         for (var i = 0; i < 30; i++)
         {
-            var n = BirthCaptain(world, $"Kind{i}");
+            var n = BirthRingleader(world, $"Kind{i}");
             Assert.True(world.DisplayName(n).Length <= 12);
         }
     }

@@ -586,7 +586,7 @@ public partial class Main : Node3D
                 {
                     _hud.Log(ev.Text);
                     if (ev.Kind == WorldEventKind.Born && _deviantJson is { } json && DeviantWorld.FromJson(json).Find(ev.DeviantId) is { } born) _roamers.Named(born);
-                    if (ev.Kind == WorldEventKind.CheatedDeath) _roamers.CheatedDeath(ev.DeviantId);
+                    if (ev.Kind == WorldEventKind.Returned) _roamers.Returned(ev.DeviantId);
                 }
                 break;
             case Drops d: foreach (var note in d.Notes) _hud.Toast($"A hidden note from {note.From}: \"{note.Text}\""); break;

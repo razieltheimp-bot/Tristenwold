@@ -60,9 +60,9 @@ public sealed class NamePack
             ["killed"] = ["Back again, {player}? I remember how you fell.", "I killed you once. I'll enjoy the second time."],
             ["fled"] = ["Running didn't save you last time, {player}.", "Look who stopped running."],
             ["escaped"] = ["You let me go once. Mistake.", "Missed me, {player}?"],
-            ["cheated"] = ["You thought I was dead? Look what you did to me!", "These scars are yours, {player}. I'm returning them."],
+            ["returned"] = ["You thought I was dead? Look what you did to me!", "These scars are yours, {player}. I'm returning them."],
             ["friend"] = ["I killed {player}. You're next.", "{player} begged at the end. Will you?"],
-            ["avenger"] = ["You killed my blood-brother, {player}. Now you die.", "For my brother!"],
+            ["vengeful"] = ["You killed my pact-sworn, {player}. Now you die.", "For my sworn kin!"],
             ["generic"] = ["{name} will be remembered!", "Another hero for my collection."],
         },
     };

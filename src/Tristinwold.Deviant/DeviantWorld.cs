@@ -3,13 +3,13 @@ namespace Tristinwold.Deviant;
 /// <summary>Tuning knobs. Defaults aim for "a deviant shows up every few battles".</summary>
 public sealed class DeviantRules
 {
-    public int MaxWarchiefs { get; init; } = 5;
-    public int MaxCaptainsPerWarchief { get; init; } = 4;
-    public int MaxUnassignedCaptains { get; init; } = 6;
-    public int MaxGrunts { get; init; } = 12;
+    public int MaxScourges { get; init; } = 5;
+    public int MaxRingleadersPerScourge { get; init; } = 4;
+    public int MaxUnassignedRingleaders { get; init; } = 6;
+    public int MaxStrays { get; init; } = 12;
 
-    public int PowerForWarchief { get; init; } = 100;
-    public int PowerForOverlord { get; init; } = 250;
+    public int PowerForScourge { get; init; } = 100;
+    public int PowerForTyrant { get; init; } = 250;
 
     public double AppearanceChance { get; init; } = 0.35;
     public double HomeAreaAppearanceChance { get; init; } = 0.6;
@@ -18,9 +18,9 @@ public sealed class DeviantRules
     public int MaxLevel { get; init; } = 20;
     public int MaxDisplayNameLength { get; init; } = 40;
 
-    public double FeudChancePerDay { get; init; } = 0.2;
-    public double FeudFightChancePerDay { get; init; } = 0.5;
-    public double BloodOathChancePerDay { get; init; } = 0.1;
+    public double GrudgeChancePerDay { get; init; } = 0.2;
+    public double GrudgeFightChancePerDay { get; init; } = 0.5;
+    public double PactChancePerDay { get; init; } = 0.1;
 }
 
 /// <summary>
@@ -57,13 +57,13 @@ public sealed class DeviantWorld
 
     // ---- Hierarchy -------------------------------------------------------------------------
 
-    public Deviant? Overlord => Living.FirstOrDefault(n => n.Rank == Rank.Overlord);
-    public IEnumerable<Deviant> Warchiefs => Living.Where(n => n.Rank == Rank.Warchief).OrderByDescending(n => n.Power);
-    public IEnumerable<Deviant> CaptainsUnder(Guid warchiefId) =>
-        Living.Where(n => n.Rank == Rank.Captain && n.ServesUnder == warchiefId).OrderByDescending(n => n.Power);
-    public IEnumerable<Deviant> UnassignedCaptains =>
-        Living.Where(n => n.Rank == Rank.Captain && (n.ServesUnder is null || Find(n.ServesUnder.Value)?.Alive != true));
-    public IEnumerable<Deviant> Grunts => Living.Where(n => n.Rank == Rank.Grunt).OrderByDescending(n => n.Power);
+    public Deviant? Tyrant => Living.FirstOrDefault(n => n.Rank == Rank.Tyrant);
+    public IEnumerable<Deviant> Scourges => Living.Where(n => n.Rank == Rank.Scourge).OrderByDescending(n => n.Power);
+    public IEnumerable<Deviant> RingleadersUnder(Guid warchiefId) =>
+        Living.Where(n => n.Rank == Rank.Ringleader && n.ServesUnder == warchiefId).OrderByDescending(n => n.Power);
+    public IEnumerable<Deviant> UnassignedRingleaders =>
+        Living.Where(n => n.Rank == Rank.Ringleader && (n.ServesUnder is null || Find(n.ServesUnder.Value)?.Alive != true));
+    public IEnumerable<Deviant> Strays => Living.Where(n => n.Rank == Rank.Stray).OrderByDescending(n => n.Power);
 
     // ---- Battle setup ----------------------------------------------------------------------
 
@@ -102,9 +102,9 @@ public sealed class DeviantWorld
             if (!n.Players.TryGetValue(p, out var rec)) continue;
             if (rec.Memory.HasFlag(Memory.KilledPlayer)) weight += 1.0;
             if (rec.Memory.HasFlag(Memory.PlayerFled)) weight += 0.5;
-            if (rec.Memory.HasFlag(Memory.Avenger)) weight += 2.0; // hunting this player
+            if (rec.Memory.HasFlag(Memory.Vengeful)) weight += 2.0; // hunting this player
         }
-        if (n.Memory.HasFlag(Memory.CheatedDeath)) weight += 0.5;
+        if (n.Memory.HasFlag(Memory.Returned)) weight += 0.5;
         return weight;
     }
 
@@ -150,15 +150,15 @@ public sealed class DeviantWorld
         foreach (var p in players)
         {
             if (!n.Players.TryGetValue(p, out var rec)) continue;
-            var k = rec.Memory.HasFlag(Memory.Avenger) ? "avenger"
-                : n.Memory.HasFlag(Memory.CheatedDeath) && rec.TimesTheyBeatMe > 0 ? "cheated"
+            var k = rec.Memory.HasFlag(Memory.Vengeful) ? "vengeful"
+                : n.Memory.HasFlag(Memory.Returned) && rec.TimesTheyBeatMe > 0 ? "returned"
                 : rec.Memory.HasFlag(Memory.KilledPlayer) ? "killed"
                 : rec.Memory.HasFlag(Memory.PlayerFled) ? "fled"
                 : n.Memory.HasFlag(Memory.FledFromPlayer) ? "escaped"
                 : null;
             if (k is null) continue;
             (key, target) = (k, p);
-            if (k == "avenger") break;
+            if (k == "vengeful") break;
         }
         // In a shared world it may have killed one of your friends in their own game.
         if (target is null)
@@ -206,10 +206,10 @@ public sealed class DeviantWorld
             {
                 var (rank, memory) = report.Result switch
                 {
-                    BattleResult.Defeat => (Rank.Captain, Memory.KilledPlayer),
-                    BattleResult.PartyEscaped => (Rank.Grunt, Memory.PlayerFled),
-                    _ when survivor.Escaped => (Rank.Grunt, Memory.FledFromPlayer),
-                    _ => (Rank.Grunt, Memory.None),
+                    BattleResult.Defeat => (Rank.Ringleader, Memory.KilledPlayer),
+                    BattleResult.PartyEscaped => (Rank.Stray, Memory.PlayerFled),
+                    _ when survivor.Escaped => (Rank.Stray, Memory.FledFromPlayer),
+                    _ => (Rank.Stray, Memory.None),
                 };
                 if (memory != Memory.None) Birth(survivor, rank, memory, report, events);
             }
@@ -262,16 +262,16 @@ public sealed class DeviantWorld
         var killer = enemy.KilledBy ?? report.Players.FirstOrDefault();
         foreach (var p in report.Players) n.Player(p).TimesTheyBeatMe++;
 
-        var cheatChance = n.Rank switch { Rank.Grunt => 0.35, Rank.Captain => 0.55, Rank.Warchief => 0.65, _ => 0.75 }
+        var cheatChance = n.Rank switch { Rank.Stray => 0.35, Rank.Ringleader => 0.55, Rank.Scourge => 0.65, _ => 0.75 }
             - 0.2 * n.Scars.Count;
         if (_rng.Chance(Math.Max(0.05, cheatChance)))
         {
             var cause = enemy.KillingBlow ?? DamageKind.Physical;
             AddScar(n, cause);
-            n.Memory |= Memory.CheatedDeath;
+            n.Memory |= Memory.Returned;
             GainPower(n, 10, levels: 1);
             Log(n, $"Was cut down by {killer ?? "the party"} but survived, scarred by {cause}.");
-            events.Add(new(WorldEventKind.CheatedDeath, n.Id, $"{n.FullName} was not as dead as it looked."));
+            events.Add(new(WorldEventKind.Returned, n.Id, $"{n.FullName} was not as dead as it looked."));
             return;
         }
 
@@ -279,23 +279,23 @@ public sealed class DeviantWorld
         Log(n, $"Slain by {killer ?? "the party"} in {report.AreaId}.");
         events.Add(new(WorldEventKind.Slain, n.Id, $"{n.FullName} has been slain by {killer ?? "the party"}!"));
 
-        // Death has consequences: a blood-brother swears revenge on whoever did it.
-        if (n.BloodBrother is { } bid && Find(bid) is { Alive: true } brother)
+        // Death has consequences: a pact-sworn swears revenge on whoever did it.
+        if (n.PactSworn is { } bid && Find(bid) is { Alive: true } sworn)
         {
-            brother.Memory |= Memory.Avenger;
-            if (killer is not null) brother.Player(killer).Memory |= Memory.Avenger;
-            GainPower(brother, 15, levels: 1);
-            Log(brother, $"Swore revenge on {killer ?? "the party"} for {n.FullName}.");
-            events.Add(new(WorldEventKind.Avenger, brother.Id, $"{brother.FullName} swears to avenge {n.FullName}!", n.Id));
+            sworn.Memory |= Memory.Vengeful;
+            if (killer is not null) sworn.Player(killer).Memory |= Memory.Vengeful;
+            GainPower(sworn, 15, levels: 1);
+            Log(sworn, $"Swore revenge on {killer ?? "the party"} for {n.FullName}.");
+            events.Add(new(WorldEventKind.Vengeful, sworn.Id, $"{sworn.FullName} swears to avenge {n.FullName}!", n.Id));
         }
     }
 
     void Birth(EnemyReport enemy, Rank rank, Memory memory, BattleReport report, List<WorldEvent> events)
     {
-        if (rank == Rank.Grunt && Grunts.Count() >= Rules.MaxGrunts)
+        if (rank == Rank.Stray && Strays.Count() >= Rules.MaxStrays)
         {
-            // Roster full: the newcomer replaces the weakest grunt, who fades into the horde.
-            var weakest = Grunts.Last();
+            // Roster full: the newcomer replaces the weakest stray, who fades into the horde.
+            var weakest = Strays.Last();
             weakest.Alive = false;
             Log(weakest, "Was pushed out of the ranks by a newcomer.");
         }
@@ -321,10 +321,10 @@ public sealed class DeviantWorld
             if (memory.HasFlag(Memory.KilledPlayer)) rec.TimesKilledThem = 1;
             if (memory.HasFlag(Memory.PlayerFled)) rec.TimesTheyFled = 1;
         }
-        n.Power = rank == Rank.Captain ? 40 : 10;
+        n.Power = rank == Rank.Ringleader ? 40 : 10;
         AddTrait(n, TraitKind.Strength);
         AddTrait(n, TraitKind.Weakness);
-        if (rank >= Rank.Captain) AddTrait(n, TraitKind.Strength);
+        if (rank >= Rank.Ringleader) AddTrait(n, TraitKind.Strength);
         n.Epithet = n.Traits.Select(t => t.Epithet).FirstOrDefault(e => e is not null) ?? _rng.Pick(Names.Epithets);
         _deviants.Add(n);
 
@@ -385,61 +385,61 @@ public sealed class DeviantWorld
 
     void UpdateHierarchy(List<WorldEvent> events)
     {
-        // Grunts with enough renown become captains.
-        foreach (var g in Grunts.Where(g => g.Power >= 40).ToList())
+        // Strays with enough renown become ringleaders.
+        foreach (var g in Strays.Where(g => g.Power >= 40).ToList())
         {
-            if (UnassignedCaptains.Count() >= Rules.MaxUnassignedCaptains && !HasCaptainVacancy()) break;
-            Promote(g, Rank.Captain, events);
+            if (UnassignedRingleaders.Count() >= Rules.MaxUnassignedRingleaders && !HasRingleaderVacancy()) break;
+            Promote(g, Rank.Ringleader, events);
         }
 
-        // Captains under nobody look for a warchief with room.
-        foreach (var c in UnassignedCaptains.ToList())
+        // Ringleaders under nobody look for a scourge with room.
+        foreach (var c in UnassignedRingleaders.ToList())
         {
-            var chief = Warchiefs.Where(w => CaptainsUnder(w.Id).Count() < Rules.MaxCaptainsPerWarchief)
-                .OrderBy(w => CaptainsUnder(w.Id).Count()).FirstOrDefault();
+            var chief = Scourges.Where(w => RingleadersUnder(w.Id).Count() < Rules.MaxRingleadersPerScourge)
+                .OrderBy(w => RingleadersUnder(w.Id).Count()).FirstOrDefault();
             if (chief is not null) c.ServesUnder = chief.Id;
         }
 
-        // The strongest captains rise when there's room at the top.
-        while (Warchiefs.Count() < Rules.MaxWarchiefs
-               && Living.Where(n => n.Rank == Rank.Captain && n.Power >= Rules.PowerForWarchief)
+        // The strongest ringleaders rise when there's room at the top.
+        while (Scourges.Count() < Rules.MaxScourges
+               && Living.Where(n => n.Rank == Rank.Ringleader && n.Power >= Rules.PowerForScourge)
                    .OrderByDescending(n => n.Power).FirstOrDefault() is { } rising)
         {
             var oldChief = rising.ServesUnder;
-            Promote(rising, Rank.Warchief, events);
-            // Its old warchief's other captains stay put; the new warchief starts with none.
-            if (oldChief is not null) Log(rising, "Left its warchief's service to lead its own band.");
+            Promote(rising, Rank.Scourge, events);
+            // Its old scourge's other ringleaders stay put; the new scourge starts with none.
+            if (oldChief is not null) Log(rising, "Left its scourge's service to lead its own band.");
         }
 
-        if (Overlord is null && Warchiefs.FirstOrDefault(w => w.Power >= Rules.PowerForOverlord) is { } heir)
+        if (Tyrant is null && Scourges.FirstOrDefault(w => w.Power >= Rules.PowerForTyrant) is { } heir)
         {
-            Promote(heir, Rank.Overlord, events);
-            foreach (var c in CaptainsUnder(heir.Id).ToList()) c.ServesUnder = null; // they need a new chief
+            Promote(heir, Rank.Tyrant, events);
+            foreach (var c in RingleadersUnder(heir.Id).ToList()) c.ServesUnder = null; // they need a new chief
         }
 
-        // With no vacancy, an ambitious captain challenges the weakest warchief.
-        if (Warchiefs.Count() >= Rules.MaxWarchiefs)
+        // With no vacancy, an ambitious ringleader challenges the weakest scourge.
+        if (Scourges.Count() >= Rules.MaxScourges)
         {
-            var weakest = Warchiefs.Last();
-            var challenger = Living.Where(n => n.Rank == Rank.Captain && n.Power > weakest.Power + 20)
+            var weakest = Scourges.Last();
+            var challenger = Living.Where(n => n.Rank == Rank.Ringleader && n.Power > weakest.Power + 20)
                 .OrderByDescending(n => n.Power).FirstOrDefault();
             if (challenger is not null && challenger.Rivals.Add(weakest.Id))
             {
                 weakest.Rivals.Add(challenger.Id);
-                events.Add(new(WorldEventKind.FeudStarted, challenger.Id,
-                    $"{challenger.FullName} challenges Warchief {weakest.FullName} for its title.", weakest.Id));
+                events.Add(new(WorldEventKind.GrudgeStarted, challenger.Id,
+                    $"{challenger.FullName} challenges Scourge {weakest.FullName} for its title.", weakest.Id));
             }
         }
     }
 
-    bool HasCaptainVacancy() =>
-        Warchiefs.Any(w => CaptainsUnder(w.Id).Count() < Rules.MaxCaptainsPerWarchief);
+    bool HasRingleaderVacancy() =>
+        Scourges.Any(w => RingleadersUnder(w.Id).Count() < Rules.MaxRingleadersPerScourge);
 
     void Promote(Deviant n, Rank rank, List<WorldEvent> events)
     {
         var from = n.Rank;
         n.Rank = rank;
-        if (rank >= Rank.Warchief) n.ServesUnder = null;
+        if (rank >= Rank.Scourge) n.ServesUnder = null;
         AddTrait(n, TraitKind.Strength);
         Log(n, $"Promoted from {from} to {rank}.");
         events.Add(new(WorldEventKind.Promoted, n.Id, $"{n.FullName} has been promoted to {rank}!"));
@@ -462,37 +462,37 @@ public sealed class DeviantWorld
     // ---- Time passing ------------------------------------------------------------------------
 
     /// <summary>
-    /// The world moves while the party rests: feuds are fought, oaths sworn, titles change
+    /// The world moves while the party rests: grudges are fought, oaths sworn, titles change
     /// hands. Call it when the party saves, sleeps at an inn, or every N battles.
     /// </summary>
     public IReadOnlyList<WorldEvent> AdvanceDay()
     {
         Day++;
         var events = new List<WorldEvent>();
-        var living = Living.Where(n => n.Rank >= Rank.Captain).ToList();
+        var living = Living.Where(n => n.Rank >= Rank.Ringleader).ToList();
 
-        if (living.Count >= 2 && _rng.Chance(Rules.FeudChancePerDay))
+        if (living.Count >= 2 && _rng.Chance(Rules.GrudgeChancePerDay))
         {
             var a = _rng.Pick(living);
-            var b = _rng.Pick(living.Where(x => x != a && x.BloodBrother != a.Id).ToList() is { Count: > 0 } others ? others : [a]);
+            var b = _rng.Pick(living.Where(x => x != a && x.PactSworn != a.Id).ToList() is { Count: > 0 } others ? others : [a]);
             if (a != b && a.Rivals.Add(b.Id))
             {
                 b.Rivals.Add(a.Id);
-                events.Add(new(WorldEventKind.FeudStarted, a.Id, $"{a.FullName} and {b.FullName} are now bitter rivals.", b.Id));
+                events.Add(new(WorldEventKind.GrudgeStarted, a.Id, $"{a.FullName} and {b.FullName} are now bitter rivals.", b.Id));
             }
         }
 
-        if (living.Count >= 2 && _rng.Chance(Rules.BloodOathChancePerDay))
+        if (living.Count >= 2 && _rng.Chance(Rules.PactChancePerDay))
         {
             var a = _rng.Pick(living);
-            var b = living.FirstOrDefault(x => x != a && x.BloodBrother is null && a.BloodBrother is null && !a.Rivals.Contains(x.Id));
+            var b = living.FirstOrDefault(x => x != a && x.PactSworn is null && a.PactSworn is null && !a.Rivals.Contains(x.Id));
             if (b is not null)
             {
-                a.BloodBrother = b.Id;
-                b.BloodBrother = a.Id;
-                Log(a, $"Swore a blood oath with {b.FullName}.");
-                Log(b, $"Swore a blood oath with {a.FullName}.");
-                events.Add(new(WorldEventKind.BloodOath, a.Id, $"{a.FullName} and {b.FullName} swore a blood oath.", b.Id));
+                a.PactSworn = b.Id;
+                b.PactSworn = a.Id;
+                Log(a, $"Swore a pact with {b.FullName}.");
+                Log(b, $"Swore a pact with {a.FullName}.");
+                events.Add(new(WorldEventKind.Pact, a.Id, $"{a.FullName} and {b.FullName} swore a pact.", b.Id));
             }
         }
 
@@ -502,7 +502,7 @@ public sealed class DeviantWorld
             {
                 var b = Find(rivalId);
                 if (b is null || !b.Alive) { a.Rivals.Remove(rivalId); continue; }
-                if (a.Id.CompareTo(b.Id) > 0 || !_rng.Chance(Rules.FeudFightChancePerDay)) continue; // each pair once
+                if (a.Id.CompareTo(b.Id) > 0 || !_rng.Chance(Rules.GrudgeFightChancePerDay)) continue; // each pair once
                 Duel(a, b, events);
             }
         }
@@ -519,22 +519,22 @@ public sealed class DeviantWorld
         loser.Rivals.Remove(winner.Id);
         GainPower(winner, 30, levels: 1);
 
-        // Taking a warchief's place: the winner inherits the title.
+        // Taking a scourge's place: the winner inherits the title.
         if (loser.Rank > winner.Rank)
         {
             (winner.Rank, loser.Rank) = (loser.Rank, winner.Rank);
             winner.ServesUnder = null;
             foreach (var c in Living.Where(c => c.ServesUnder == loser.Id).ToList()) c.ServesUnder = winner.Id;
-            loser.ServesUnder = winner.Rank == Rank.Warchief ? winner.Id : null;
+            loser.ServesUnder = winner.Rank == Rank.Scourge ? winner.Id : null;
             events.Add(new(WorldEventKind.Succession, winner.Id, $"{winner.FullName} took {loser.FullName}'s place as {winner.Rank}!", loser.Id));
         }
 
-        if (_rng.Chance(loser.Rank <= Rank.Captain ? 0.5 : 0.25))
+        if (_rng.Chance(loser.Rank <= Rank.Ringleader ? 0.5 : 0.25))
         {
             loser.Alive = false;
-            Log(loser, $"Killed in a feud with {winner.FullName}.");
+            Log(loser, $"Killed settling a grudge with {winner.FullName}.");
             Log(winner, $"Killed its rival {loser.FullName}.");
-            events.Add(new(WorldEventKind.FeudWon, winner.Id, $"{winner.FullName} killed its rival {loser.FullName}.", loser.Id));
+            events.Add(new(WorldEventKind.GrudgeWon, winner.Id, $"{winner.FullName} killed its rival {loser.FullName}.", loser.Id));
         }
         else
         {
@@ -543,7 +543,7 @@ public sealed class DeviantWorld
             AddScar(loser, DamageKind.Physical);
             Log(loser, $"Beaten and humiliated by {winner.FullName}.");
             Log(winner, $"Humiliated its rival {loser.FullName}.");
-            events.Add(new(WorldEventKind.FeudLost, loser.Id, $"{loser.FullName} was humiliated by {winner.FullName}.", winner.Id));
+            events.Add(new(WorldEventKind.GrudgeLost, loser.Id, $"{loser.FullName} was humiliated by {winner.FullName}.", winner.Id));
         }
     }
 

@@ -336,7 +336,7 @@ public partial class SelfTest(Main main) : Node
         // A dragon deviant that has beaten the company twice is a giant now.
         var red = Spawn("dragon_red", p.GlobalPosition + new Vector3(0, 0, 60));
         var before = red.Stats.MaxHealth;
-        red.MakeDeviant(Guid.NewGuid(), new BattleModifiers("Ashjaw", new Dictionary<Stat, double>(), new Dictionary<DamageKind, Affinity>(), [], Rank.Grunt, Victories: 2), null);
+        red.MakeDeviant(Guid.NewGuid(), new BattleModifiers("Ashjaw", new Dictionary<Stat, double>(), new Dictionary<DamageKind, Affinity>(), [], Rank.Stray, Victories: 2), null);
         Check(red.Size == DragonSize.Giant && red.Stats.MaxHealth > before * 4 && red.Figure.Scale.X > 2,
             $"a red dragon that beat the company twice grew to a giant ({before:0} to {red.Stats.MaxHealth:0} hp)");
         red.QueueFree();

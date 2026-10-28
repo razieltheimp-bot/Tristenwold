@@ -48,15 +48,15 @@ for (var b = 1; b <= battles; b++)
 }
 
 Console.WriteLine();
-Console.WriteLine("=== THE CAPTAIN GRID ===");
-if (world.Overlord is { } o) Console.WriteLine($"OVERLORD  {Describe(o)}");
-foreach (var w in world.Warchiefs)
+Console.WriteLine("=== THE RANKS ===");
+if (world.Tyrant is { } o) Console.WriteLine($"TYRANT     {Describe(o)}");
+foreach (var w in world.Scourges)
 {
-    Console.WriteLine($"WARCHIEF  {Describe(w)}");
-    foreach (var c in world.CaptainsUnder(w.Id)) Console.WriteLine($"   captain {Describe(c)}");
+    Console.WriteLine($"SCOURGE    {Describe(w)}");
+    foreach (var c in world.RingleadersUnder(w.Id)) Console.WriteLine($"   ringleader {Describe(c)}");
 }
-foreach (var c in world.UnassignedCaptains) Console.WriteLine($"CAPTAIN   {Describe(c)}");
-foreach (var g in world.Grunts) Console.WriteLine($"grunt     {Describe(g)}");
+foreach (var c in world.UnassignedRingleaders) Console.WriteLine($"RINGLEADER {Describe(c)}");
+foreach (var g in world.Strays) Console.WriteLine($"stray      {Describe(g)}");
 Console.WriteLine($"Fallen: {world.All.Count(n => !n.Alive)}");
 
 string Describe(Deviant n) =>

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Tristinwold.Deviant;
 
 /// <summary>Place in the hierarchy. Higher ranks hit harder and are harder to kill for good.</summary>
-public enum Rank { Grunt = 0, Captain = 1, Warchief = 2, Overlord = 3 }
+public enum Rank { Stray = 0, Ringleader = 1, Scourge = 2, Tyrant = 3 }
 
 /// <summary>What an enemy remembers about the party, across sessions.</summary>
 [Flags]
@@ -14,9 +14,9 @@ public enum Memory
     KilledPlayer = 1 << 1,     // wiped the party
     PlayerFled = 1 << 2,       // the party ran from it
     FledFromPlayer = 1 << 3,   // it escaped the party
-    CheatedDeath = 1 << 4,     // "killed", came back scarred
-    Humiliated = 1 << 5,       // lost a feud to another deviant
-    Avenger = 1 << 6,          // swore revenge for a slain blood-brother
+    Returned = 1 << 4,     // "killed", came back scarred
+    Humiliated = 1 << 5,       // lost a grudge fight to another deviant
+    Vengeful = 1 << 6,          // swore revenge for a slain pact-sworn
 }
 
 /// <summary>The damage families, which leave scars and teach resistances (Sun is holy light, the bane of the undead).</summary>
@@ -79,7 +79,7 @@ public sealed class Deviant
     /// <summary>An actor base to spawn it from when it comes hunting (its kind in the bestiary, say "bandit").</summary>
     public string? BaseForm { get; set; }
 
-    public Rank Rank { get; set; } = Rank.Captain;
+    public Rank Rank { get; set; } = Rank.Ringleader;
     public int Level { get; set; } = 1;
     /// <summary>Renown. Earned by beating players and other deviants; drives promotion.</summary>
     public int Power { get; set; }
@@ -92,7 +92,7 @@ public sealed class Deviant
     /// <summary>Per-player memory, keyed by player id, so a deviant can single out one friend.</summary>
     public Dictionary<string, PlayerRecord> Players { get; init; } = [];
     public HashSet<Guid> Rivals { get; init; } = [];
-    public Guid? BloodBrother { get; set; }
+    public Guid? PactSworn { get; set; }
     public Guid? ServesUnder { get; set; }
     public List<HistoryEntry> History { get; init; } = [];
 
