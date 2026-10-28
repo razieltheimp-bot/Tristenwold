@@ -176,6 +176,8 @@ public partial class Main
         var inTown = new Vector2(pos.X, pos.Z).Length() < City.OuterRadius + 30;
         if (pack.Count("tinderbox") > 0 && Firemaking.Best(pack) is { } log)
             yield return (inTown ? "Light a fire (not in town)" : $"Light a fire ({Items.Get(log.Log)!.Name.ToLowerInvariant()})", () => { _hud.EndTalk(); LightFire(); });
+        else if (pack.Count("tinderbox") > 0 && Firemaking.Logs.FirstOrDefault(l => pack.Count(l.Log) > 0) is { Log: not null } hard)
+            yield return ($"Light a fire ({Items.Get(hard.Log)!.Name.ToLowerInvariant()} needs firemaking {hard.Level}; pine burns for anyone)", () => Sound.Ui("error"));
         if (pack.Count("snare") > 0) yield return (inTown ? "Set a snare (out in the wilds, not in town)" : "Set a snare here", () => { _hud.EndTalk(); SetSnare(); });
         if (pack.Count("torn_map") > 0 && _pursuits.Hunt is null) yield return ("Read the torn map", ReadMap);
         if (_pursuits.Hunt is not null && pack.Count("spade") > 0) yield return ("Dig here (spade)", () => { _hud.EndTalk(); Dig(); });
@@ -338,8 +340,10 @@ public partial class Main
             var mid = (from + to) / 2;
             var n = new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = r, BottomRadius = r, Height = from.DistanceTo(to) }, MaterialOverride = m, Position = mid };
             root.AddChild(n);
+            // A cylinder stands up already; anything else is turned to face along its length.
             var dir = (to - from).Normalized();
-            if (Mathf.Abs(dir.Dot(Vector3.Up)) < 0.999f) n.LookAt(n.GlobalPosition + dir, Vector3.Up, useModelFront: false);
+            if (Mathf.Abs(dir.Dot(Vector3.Up)) >= 0.999f) return;
+            n.LookAt(n.GlobalPosition + dir, Vector3.Up, useModelFront: false);
             n.RotateObjectLocal(Vector3.Right, Mathf.Pi / 2);
         }
         // 1. The balance log, on two trestles over a ditch.

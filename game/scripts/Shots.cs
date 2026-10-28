@@ -541,7 +541,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             await From("pursuit-house", Main.HousePlotAt + new Vector3(6, 7, 18), Main.HousePlotAt + new Vector3(0, 1, 2));
             // A fire out past the walls.
             p.Pack.Add("tinderbox");
-            p.Pack.Add("oak_log", 3);
+            p.Pack.Add("pine_log", 3);
             p.GlobalPosition = new Vector3(-150, 1, -120);
             await Frames(30);
             for (var i = 0; i < 8 && main.FiresLit == 0; i++) { main.LightFireForTest(); await Frames(5); }
