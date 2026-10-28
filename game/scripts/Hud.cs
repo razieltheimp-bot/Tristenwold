@@ -192,6 +192,9 @@ public partial class Hud : CanvasLayer
 
     public void Track(IEnumerable<string> lines) => _tracker.Text = string.Join("\n", lines);
 
+    /// <summary>What the quest tracker shows (for the self-test).</summary>
+    public IEnumerable<string> Tracked => _tracker.Text.Split('\n');
+
     public void ShowJournal(QuestLog log)
     {
         Clear(_journal);
@@ -248,6 +251,9 @@ public partial class Hud : CanvasLayer
 
     /// <summary>The last thing the chronicle heard (for the self-test).</summary>
     public string LastLine => _chronicle.Count > 0 ? _chronicle[^1] : "";
+
+    /// <summary>Whether the chronicle has heard something lately (for the self-test).</summary>
+    public bool Heard(string part) => _chronicle.Any(c => c.Contains(part));
 
     public void Log(string text)
     {

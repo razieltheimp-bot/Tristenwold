@@ -308,21 +308,23 @@ public partial class Roamers(Main main) : Node
     public void Adopt(Roamer r, Enemy boss) => Spawn(r, boss.GlobalPosition, boss);
 
     /// <summary>
-    /// The hero went down. A deviant that was at them has beaten them again, and grows (and, satisfied for now, stops
-    /// hunting). Anything else out in the wilds that put them down takes a name and becomes one.
+    /// The hero went down. Only the one foe that struck them twice running put them down (see <see cref="Strikes{T}"/>):
+    /// one that was clipped in by another on the way down gets nothing. A deviant that did it has beaten them again,
+    /// and grows (and, satisfied for now, stops hunting); anything else out in the wilds that did takes a name and
+    /// becomes one.
     /// </summary>
     void OnHeroDown()
     {
         var p = main.PlayerNode;
-        foreach (var o in _out.Where(o => IsInstanceValid(o.Body) && o.Body.State != EnemyState.Dead
-                     && (p.LastHitBy == o.Body || p.LastStruck == o.Body || o.Body.FightingCompany && Flat(o.Body.GlobalPosition, p.GlobalPosition) < 40)).ToList())
+        if (p.Strikes.Holder is not { } killer || !IsInstanceValid(killer) || killer.State == EnemyState.Dead) return;
+        if (_out.FirstOrDefault(o => o.Body == killer) is { } o)
         {
             o.Roamer.Wins++;
             o.Roamer.Hunting = false;
             Strengthen(o);
             main.HudNode.Toast($"{o.Roamer.Title} stands over you. That's {o.Roamer.Wins} times it has beaten you, and it grows stronger every time.", 10);
         }
-        if (p.LastHitBy is { } killer && WildDeviants && Becomes(killer)) Rise(killer);
+        else if (WildDeviants && Becomes(killer)) Rise(killer);
     }
 
     /// <summary>Whether what put the hero down takes a name for it: a foe of the wilds, not a lair's, a town's or a friend.</summary>

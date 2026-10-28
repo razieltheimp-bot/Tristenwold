@@ -183,6 +183,7 @@ public partial class Main
         }
         if (victim.Leader is not null || victim.Friendly) return;
         if (victim.Owner is { } owner) Poached(victim, owner);
+        StorySlain(victim);
         _player.Killed(victim);
         Spoils(victim);
         var xp = Math.Max(3, (int)Math.Round(victim.Stats.MaxHealth / 6 * (victim.DeviantId is null ? 1 : 2)));
@@ -355,6 +356,7 @@ public partial class Main
             yield return ($"Would you become my {word}? ({RecruitFee} crowns to your family)", () => Recruit(person));
         }
         if (npc.Id == "eyrie/aldric") foreach (var o in Aldric(person)) yield return o;
+        foreach (var o in StoryTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;
         foreach (var o in PursuitTalk(person)) yield return o;

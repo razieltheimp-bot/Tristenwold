@@ -130,8 +130,12 @@ public class EncounterTests
         Assert.Equal(BattleResult.PartyEscaped, ends[0].Result);
 
         t.Engaged(2, "draugr", "Draugr", 160, new Vector3(5, 0, 0), "The Warrens", Vector3.Zero, 10);
-        t.Downed();
+        t.Engaged(3, "draugr", "Draugr", 160, new Vector3(-5, 0, 0), "The Warrens", Vector3.Zero, 10);
+        t.Downed(by: 3);
         t.Tick(10.1, Vector3.Zero, _ => true, _ => null);
         Assert.Equal(BattleResult.Defeat, ends[1].Result);
+        // Only the one that struck twice running put them down.
+        Assert.Equal([false, true], ends[1].Enemies.Select(e => e.PutDown == true));
+        Assert.All(ends[1].Enemies, e => Assert.NotNull(e.PutDown));
     }
 }

@@ -31,6 +31,8 @@ public partial class SelfTest(Main main) : Node
             await Frames(10);
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--frontier-only")) { await FrontierTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--story-only")) { await StoryTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sound-only"))
@@ -51,7 +53,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1088,10 +1090,26 @@ public partial class SelfTest(Main main) : Node
         var here = new Vector3(-150, 0, -120);
         await Teleport(here);
         Check(!roamers.InTown(here), "out in the wilds, past the walls");
+        // Clipped once by a wolf and finished by a bandit: neither struck twice running, so neither takes a name.
+        var wolf = Spawn("wolf", here + new Vector3(3, 0, 0));
+        var bandit = Spawn("bandit", here + new Vector3(-3, 0, 0));
+        await Frames(10);
+        var before = main.RaidLog.Roamers.Count;
+        p.TakeHit(1, DamageKind.Physical, AttackKind.Weapon, false, wolf);
+        p.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, bandit);
+        await Frames(30);
+        Check(p.Downed && main.RaidLog.Roamers.Count == before && !wolf.Named && !bandit.Named,
+            "struck by a wolf and then finished by a bandit, you fall, but neither takes a name for it (it takes two in a row from the one foe)");
+        await Until(() => !p.Downed, 10);
+        wolf.QueueFree();
+        bandit.QueueFree();
+        await Teleport(here);
+        // Struck by the frost troll, and struck again, and down: that counts.
         var troll = Spawn("frost_troll", here + new Vector3(0, 0, -3));
         var plain = troll.Stats.MaxHealth;
         troll.Provoke(p);
         await Frames(10);
+        p.TakeHit(1, DamageKind.Physical, AttackKind.Weapon, false, troll);
         p.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, troll);
         await Until(() => main.RaidLog.Roamers.Any(r => r.Kind == "frost_troll"), 5);
         var r = main.RaidLog.Roamers.FirstOrDefault(r => r.Kind == "frost_troll");
@@ -1515,6 +1533,96 @@ public partial class SelfTest(Main main) : Node
         Check(back is not null && back.City.Stock[Good.Fish] >= landed + 9.9, $"cargo landed in this game reaches the server's city ({landed:0} fish, then {back?.City.Stock[Good.Fish]:0})");
         await Frames(5);
         Check(main.Economy.Renown == 77, "and your own name at the Exchange stays yours");
+    }
+
+    /// <summary>The main story: the hero is an Immortal, made under the Needle; the road from waking to warden of the Rings.</summary>
+    async Task StoryTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        var story = main.Story;
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        Check(story.Chapter == Chapter.Waking && hud.Heard("ring of black iron"), $"you wake at the Gallows Perch with an iron ring on your finger, remembering nothing ({story.Chapter})");
+        await Teleport(new Vector3(City.GallowsPerch.X - 2.5f, 0, City.GallowsPerch.Z + 13));
+        main.Talk(Who(ImmortalSaga.Corva));
+        Check(hud.Choose("What am I?") && hud.TalkText.Contains("Immortal") && story.Chapter == Chapter.Archive,
+            $"Mother Corva tells you what you are: {hud.TalkText[..Math.Min(110, hud.TalkText.Length)]}...");
+        hud.EndTalk();
+        main.Talk(Who(ImmortalSaga.Ilse));
+        Check(hud.Choose("Mother Corva says") && hud.TalkText.Contains("Nine woke") && story.Chapter == Chapter.Proving,
+            "Sister Ilse shows you the Magi's ledger: of a hundred given to the Needle, nine woke");
+        hud.EndTalk();
+
+        // Prove the ring holds: fall, and come back.
+        var here = new Vector3(-150, 0, -120);
+        await Teleport(here);
+        var wolf = Spawn("wolf", here + new Vector3(2, 0, 0));
+        await Frames(5);
+        p.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, wolf);
+        await Until(() => !p.Downed, 10);
+        Check(story.Chapter == Chapter.Breach && story.Returns == 1 && hud.Heard("It holds"),
+            $"you fall, and the ring brings you back to the Gallows Perch ({p.GlobalPosition.DistanceTo(City.PlayerStart):0} m from where you woke): it holds");
+        if (IsInstanceValid(wolf)) wolf.QueueFree();
+
+        // The Host's breach, beyond the walls.
+        await Until(() => main.BreachNode is not null, 5);
+        var breach = main.BreachNode;
+        Check(breach is not null, $"the Host tears a breach open beyond the walls ({breach?.At.X:0}, {breach?.At.Z:0})");
+        if (breach is null) return;
+        await Teleport(breach.At + new Vector3(12, 0, 0));
+        var kinds = new HashSet<string>();
+        for (var i = 0; i < 40 && story.Chapter == Chapter.Breach; i++)
+        {
+            await Until(() => breach.Host.Count > 0, 6);
+            foreach (var e in breach.Host.ToList())
+            {
+                kinds.Add(e.Kind.Name);
+                e.TakeHit(1e6, DamageKind.Sun, AttackKind.Spell, false, p);
+            }
+            await Frames(10);
+            if (p.Downed) { await Until(() => !p.Downed, 10); await Teleport(breach.At + new Vector3(12, 0, 0)); }
+        }
+        await Frames(150);
+        Check(story.Chapter == Chapter.Dragonfire && main.BreachNode is null && kinds.Contains("Dire Imp"),
+            $"the Host pours out ({string.Join(", ", kinds)}); slay {ImmortalSaga.BreachToClose} of it and the breach closes");
+        Check(hud.Tracked.Any(t => t.StartsWith("The Rings of Tristinwold: Bring down a dragon the Rift has taken") && t.EndsWith(")")),
+            $"and the tracker points you at a dragon the Rift has taken: {hud.Tracked.FirstOrDefault(t => t.StartsWith("The Rings"))}");
+
+        // A dragon the Rift has taken.
+        var dragon = Spawn("dragon_red_corrupt", breach.At + new Vector3(40, 0, 0));
+        await Frames(5);
+        dragon.TakeHit(1e9, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Frames(10);
+        Check(story.Chapter == Chapter.Warden, "and you bring down a dragon the Rift has taken, as no soldier could");
+        await Teleport(new Vector3(City.GallowsPerch.X - 2.5f, 0, City.GallowsPerch.Z + 13));
+        main.Talk(Who(ImmortalSaga.Corva));
+        Check(hud.Choose("The dragon is dead") && story.Chapter == Chapter.Done && hud.TalkText.Contains(ImmortalSaga.Title),
+            $"Mother Corva writes you into her ledger: {ImmortalSaga.Title}");
+        hud.EndTalk();
+    }
+
+    /// <summary>Far past the edge of every map: the land goes on, with its villages and dens, and lairs of its own.</summary>
+    async Task FrontierTest()
+    {
+        var p = main.PlayerNode;
+        var world = main.World;
+        var far = new Vector3(30_000, 0, -8_000);
+        await Teleport(far);
+        await Frames(90);
+        Check(main.TerrainNode.HasGround(p.GlobalPosition) && main.TerrainNode.Count > 20,
+            $"31 km from Tristinwold the land goes on ({main.TerrainNode.Count} chunks around you, {world.BiomeAt(far.X, far.Z)})");
+        var sites = world.SettlementsNear(far.X, far.Z, 3000).ToList();
+        Check(sites.Count > 0, $"with places of its own ({string.Join(", ", sites.Take(4).Select(s => s.Name))})");
+        var lair = FarLairs.Near(world, far.X, far.Z, 3000).MinBy(r => r.DistanceTo(far.X, far.Z));
+        Check(lair is not null, $"and lairs no map in Tristinwold shows: {lair?.Name}, {lair?.Boss}, for heroes of level {lair?.MinLevel} to {lair?.MaxLevel}");
+        if (lair is null) return;
+        await Teleport(new Vector3((float)lair.X + 70, 0, (float)lair.Z));
+        await Until(() => main.RaidLairs.Any(l => l.Raid.Id == lair.Id && l.Built), 12);
+        Check(main.RaidLairs.Any(l => l.Raid.Id == lair.Id && l.Built), $"{lair.Name} is there, built, when you get to it");
+        await Teleport(City.PlayerStart);
+        await Until(() => main.RaidLairs.All(l => l.Raid.Id != lair.Id), 12);
+        Check(main.RaidLairs.All(l => l.Raid.Id != lair.Id) && main.RaidLairs.Count >= Raids.All.Count,
+            "and it's let go once you're far from it (the nine near home stay)");
     }
 
     async Task Teleport(Vector3 at)

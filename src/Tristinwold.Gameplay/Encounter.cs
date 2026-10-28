@@ -35,6 +35,7 @@ public sealed class EncounterTracker(
     readonly List<long> _unannounced = [];
     int _nextSlot;
     bool _active, _downed;
+    long? _downedBy;
     Vector3 _playerStart, _playerLast;
     double _announceAt;
     string _area = "";
@@ -90,9 +91,13 @@ public sealed class EncounterTracker(
         t.LastFight = now;
     }
 
-    public void Downed()
+    /// <summary>The company went down: <paramref name="by"/> is the one that put them down (struck them twice running),
+    /// or null when nothing did, and then no enemy gets the credit.</summary>
+    public void Downed(long? by = null)
     {
-        if (_active) _downed = true;
+        if (!_active) return;
+        _downed = true;
+        _downedBy = by;
     }
 
     public void Tick(double now, Vector3 player, Func<long, bool> stillFighting, Func<long, Vector3?> posOf)
@@ -139,7 +144,8 @@ public sealed class EncounterTracker(
             DeviantId: t.DeviantId,
             KillingBlow: t.Killed ? t.Blow ?? DamageKind.Physical : null,
             KilledBy: t.Killed ? t.KilledBy : null,
-            BaseForm: t.Kind)).ToList(), [company], PartyLevel: 5));
+            BaseForm: t.Kind,
+            PutDown: result == BattleResult.Defeat ? t.Id == _downedBy : null)).ToList(), [company], PartyLevel: 5));
 
         _byId.Clear();
         _bySlot.Clear();
@@ -147,5 +153,6 @@ public sealed class EncounterTracker(
         _nextSlot = 0;
         _active = false;
         _downed = false;
+        _downedBy = null;
     }
 }

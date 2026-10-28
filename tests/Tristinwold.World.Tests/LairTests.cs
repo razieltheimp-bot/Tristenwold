@@ -91,7 +91,8 @@ public class LairTests
             var (x, z) = roamer.Where(w, t);
             travelled += Math.Sqrt((x - last.X) * (x - last.X) + (z - last.Z) * (z - last.Z));
             last = (x, z);
-            Assert.True(Math.Sqrt(x * x + z * z) < Roaming.FarthestOut + 50);
+            Assert.True(Math.Sqrt((x - r.X) * (x - r.X) + (z - r.Z) * (z - r.Z)) < Roaming.FarthestOut + 50);
+            Assert.True(Math.Sqrt(x * x + z * z) > Roaming.NearestToCity - 50);
         }
         Assert.True(travelled > 3000, $"it only went {travelled:0} m");
         Assert.True(roamer.Where(w, 10_000) != (r.X, r.Z));
@@ -104,5 +105,49 @@ public class LairTests
         book.Roamers.Add(roamer);
         var save = CompanySave.FromJson(CompanySave.Capture(1, 0, new ExploredMap(), new QuestLog(), raids: book).ToJson());
         Assert.Equal(roamer.Name, save.Raids!.Roamers.Single().Name);
+    }
+
+    [Fact]
+    public void Past_the_nine_the_far_country_has_lairs_for_ever_and_harder_the_further_out()
+    {
+        var w = WorldGen.Default;
+        Assert.Empty(FarLairs.Near(w, 0, 0, FarLairs.Beyond - 100)); // near home, only the nine
+        foreach (var (x, z) in new[] { (6000.0, 0.0), (-20_000.0, 15_000.0), (0.0, -60_000.0) })
+        {
+            var found = FarLairs.Near(w, x, z, 3000).ToList();
+            Assert.NotEmpty(found);
+            foreach (var r in found)
+            {
+                Assert.True(w.Height(r.X, r.Z) > WorldGen.WaterLevel + 1.4, $"{r.Name} is in the water");
+                Assert.DoesNotContain(w.SettlementsNear(r.X, r.Z, 300), s => s.DistanceTo(r.X, r.Z) < s.Radius + 80);
+                Assert.StartsWith("the ", r.Name);
+                Assert.Contains(r.Name, r.Story);
+                // The same lair every time it's asked for, by its id too (a roamer from it, saved, finds its way home).
+                Assert.Equal(r, Raids.Get(r.Id));
+                Assert.Equal(r.Id, FarLairs.Near(w, r.X, r.Z, 1).Single().Id);
+            }
+        }
+        // Further out, harder: a hero who's outgrown everything near home has somewhere to go.
+        var near = FarLairs.Near(w, 3500, 0, 2000).Min(r => r.MinLevel);
+        var far = FarLairs.Near(w, 40_000, 0, 3000).Min(r => r.MinLevel);
+        Assert.True(far > near + 20, $"{near} near, {far} far");
+        Assert.True(FarLairs.Near(w, 40_000, 0, 3000).All(r => r.MaxLevel > Raids.All.Max(o => o.MaxLevel)));
+    }
+
+    [Fact]
+    public void A_roamer_from_a_far_lair_wanders_out_there_not_back_to_town()
+    {
+        var w = WorldGen.Default;
+        var lair = FarLairs.Near(w, 9000, 4000, 3000).First();
+        var roamer = new RaidBook().Escaped(lair, 0, 11);
+        Assert.Equal(lair, roamer.Lair);
+        var moved = false;
+        for (var t = 600.0; t < 6 * 3600; t += 600)
+        {
+            var (x, z) = roamer.Where(w, t);
+            moved |= (x, z) != (lair.X, lair.Z);
+            Assert.True(Math.Sqrt((x - lair.X) * (x - lair.X) + (z - lair.Z) * (z - lair.Z)) < Roaming.FarthestOut + 50);
+        }
+        Assert.True(moved);
     }
 }

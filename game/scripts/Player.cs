@@ -1,5 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
+using Tristinwold.World;
 using Tristinwold.Deviant;
 
 namespace Tristinwold.Game;
@@ -83,6 +84,12 @@ public partial class Player : Fighter
 
     /// <summary>The last foe to land a blow on the hero (the one that put them down, when they fall).</summary>
     public Enemy? LastHitBy { get; private set; }
+
+    /// <summary>Who has struck the hero twice running (see <see cref="Strikes{T}"/>): only that one gets the credit when they fall.</summary>
+    public Strikes<Enemy> Strikes { get; } = new();
+
+    /// <summary>The ring brought them back: they wake at the Gallows Perch.</summary>
+    public event Action? Woke;
 
     /// <summary>The dragon being ridden.</summary>
     public Enemy? Mount { get; private set; }
@@ -843,6 +850,7 @@ public partial class Player : Fighter
             Figure.Perform("Dodge_Left", 0.4, 1.6f);
             return;
         }
+        Strikes.Struck(from);
         if (_rage > 0) damage *= 1.2;
         if (Class.Id == "Paladin") damage *= 1 - Class.Passive.Power * Hero.Power("devotion");
         Stats.TakeHit(damage, kind, attack, crit, from.Stats);
@@ -883,10 +891,11 @@ public partial class Player : Fighter
     void Rise()
     {
         Downed = false;
+        Strikes.Clear();
         Figure.Rise();
         Stats.Heal(Stats.MaxHealth);
         GlobalPosition = City.PlayerStart;
-        Said?.Invoke("You wake at the Gallows Perch. Someone dragged you here.");
+        Woke?.Invoke();
     }
 
     // ---- riding ----------------------------------------------------------------------------------

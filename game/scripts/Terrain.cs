@@ -213,6 +213,7 @@ public partial class Terrain(WorldGen world) : Node3D
         if (_cardGrass) count = count * 2 / 5; // each card tuft is a whole clump
         count = (int)(count * GrassDensity);
         var clear = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
+        var lairs = LairsNear(x0, z0);
         var tufts = new List<(Transform3D, Color)>();
         for (var i = 0; i < count; i++)
         {
@@ -220,7 +221,7 @@ public partial class Terrain(WorldGen world) : Node3D
             var (wx, wz) = (x0 + lx, z0 + lz);
             // Grass grows in drifts and patches, not evenly: skip most of it where the patch noise is low.
             if (Noise.Value(world.Seed + 77, wx / 9, wz / 9) < -0.15 && rng.NextDouble() < 0.8) continue;
-            if (wx * wx + wz * wz < 112 * 112 || clear.Any(s => s.DistanceTo(wx, wz) < s.Radius * 0.8) || Raids.All.Any(r => r.DistanceTo(wx, wz) < 22)) continue;
+            if (wx * wx + wz * wz < 112 * 112 || clear.Any(s => s.DistanceTo(wx, wz) < s.Radius * 0.8) || lairs.Any(r => r.DistanceTo(wx, wz) < 22)) continue;
             var y = world.Height(wx, wz);
             if (y < WorldGen.WaterLevel + 0.4) continue;
             var tint = _cardGrass ? world.BiomeAt(wx, wz, y) switch
@@ -424,6 +425,7 @@ public partial class Terrain(WorldGen world) : Node3D
         };
         var rocks = mid == Biome.Crags ? 6 : 2;
         var clear = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
+        var lairs = LairsNear(x0, z0);
         var groups = new Dictionary<Plant, List<(Transform3D, Color, float)>>();
         for (var i = 0; i < count + rocks; i++)
         {
@@ -431,7 +433,7 @@ public partial class Terrain(WorldGen world) : Node3D
             var (wx, wz) = (x0 + lx, z0 + lz);
             if (wx * wx + wz * wz < 140 * 140) continue; // not inside Tristinwold
             if (clear.Any(s => s.DistanceTo(wx, wz) < s.Radius + (s.IsCity ? 30 : 8))) continue;
-            if (Raids.All.Any(r => r.DistanceTo(wx, wz) < 26)) continue; // the crypt's ring stands in a clearing
+            if (lairs.Any(r => r.DistanceTo(wx, wz) < 26)) continue; // a lair stands in a clearing
             if (Clearings.Any(c => new Vector2((float)wx - c.At.X, (float)wz - c.At.Z).Length() < c.Radius)) continue;
             var y = h[(int)Math.Round(lz / Step) * (Steps + 1) + (int)Math.Round(lx / Step)];
             if (y < WorldGen.WaterLevel + 0.5) continue;
@@ -448,6 +450,11 @@ public partial class Terrain(WorldGen world) : Node3D
     }
 
     /// <summary>Places kept clear of wild trees and rocks: the quarry floor, and the woodlot (its own trees are planted).</summary>
+    /// <summary>The lairs near a chunk, the nine near home and the far country's, for the trees and grass to keep clear of.</summary>
+    List<Raid> LairsNear(double x0, double z0) =>
+        [.. Raids.All.Where(r => r.DistanceTo(x0 + ChunkSize / 2, z0 + ChunkSize / 2) < ChunkSize + 30),
+            .. FarLairs.Near(world, x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize + 30)];
+
     public static readonly (Vector3 At, float Radius)[] Clearings =
         [(Main.QuarryAt, 24), (Main.WoodlotAt, 18), (Main.AllotmentsAt, 18), (Main.HousePlotAt, 16), (Main.CourseAt + new Vector3(-2, 0, -14), 24)];
 

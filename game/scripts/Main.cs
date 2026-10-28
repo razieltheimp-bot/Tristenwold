@@ -329,7 +329,14 @@ public partial class Main : Node3D
         AddChild(_player);
         _player.Said += text => _hud.Toast(text);
         _player.LimitUsed += (a, c) => _hud.LimitBanner(a.Name, a.Text, c);
-        _player.WentDown += () => { _tracker.Downed(); _hud.Center("You have fallen."); };
+        _player.WentDown += () =>
+        {
+            // Only the foe that struck twice running put the hero down; it's in the fight even if they never struck back.
+            if (_player.Strikes.Holder is { } by && IsInstanceValid(by))
+                _tracker.Engaged(by.Id, by.Kind.Id, by.Kind.Name, by.Stats.MaxHealth, ToNumerics(by.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, by.DeviantId);
+            _tracker.Downed(_player.Strikes.Holder is { } holder && IsInstanceValid(holder) ? holder.Id : null);
+            _hud.Center("You have fallen.");
+        };
         _player.Struck += (enemy, hit, kind) =>
         {
             if (enemy.Sparring || enemy.Yielded) return; // a duel in the yard isn't a battle
@@ -340,6 +347,7 @@ public partial class Main : Node3D
         _hud.Company = _player.Company;
 
         Load();
+        BeginStory();
         AddPeople();
         foreach (var lair in City.Lairs) _lairs[lair] = SpawnLair(lair);
         _places = new Places(this, _world);
@@ -665,6 +673,8 @@ public partial class Main : Node3D
         TendCompany(delta);
         TendGuilds(delta);
         TendPursuits(delta);
+        TendFarLairs();
+        TendStory();
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
 
         if (_player.Stats.LimitReady && !_limitWasReady)
@@ -694,8 +704,9 @@ public partial class Main : Node3D
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
         _hud.Update(_player, _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills   I: pack   H: heal   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(Dragon is { Rideable: true } ? "   V: ride" : "")}");
         var saga = _saga.Objective(Dragon) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
+        if (StoryLine(pos) is { } story) saga = [story, .. saga];
         // The nearest lair that suits the hero, and the nearest deviant out roaming.
-        if (Raids.For(_player.Hero.Level, pos.X, pos.Z).FirstOrDefault() is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
+        if (_suited is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
         saga = [.. saga, .. TownLines(pos), .. PursuitLines(pos)];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
@@ -716,7 +727,7 @@ public partial class Main : Node3D
         }
     }
 
-    IEnumerable<(double X, double Z)> QuestGoals() => _journal.Open.Select(e => e.Goal).Concat(_saga.Goal(Dragon) is { } g ? [g] : [])
+    IEnumerable<(double X, double Z)> QuestGoals() => _journal.Open.Select(e => e.Goal).Concat(_saga.Goal(Dragon) is { } g ? [g] : []).Concat(_storyGoal is { } s ? [s] : [])
         .Concat(Raids.For(_player.Hero.Level, 0, 0).Where(r => _raids.Ready(r, _guilds.PlaySeconds)).Select(r => (r.X, r.Z)))
         .Concat(_roamers.Spots);
 
@@ -902,6 +913,7 @@ public partial class Main : Node3D
                 if (save.Hero is { } hero) _player.Become(hero);
                 _bonds.AddRange(save.Companions);
                 _saga = save.Saga ?? new DragonSaga();
+                _story = save.Story ?? new ImmortalSaga();
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
                 _city = save.City ?? CityEconomy.Start(_world.Seed);
@@ -920,7 +932,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)

@@ -12,7 +12,41 @@ perks.
 | **Deviant rules** (`src/Tristinwold.Deviant`) | Built and tested: named enemies that remember, return and rise, with their own strengths, weaknesses and damage types. |
 | **Shared world server + Vann** (`src/Tristinwold.Shared`, `tools/Tristinwold.Server`) | Built and tested end to end. Game-agnostic. |
 | **The world** (`world/world.json`) | Nine cities with their own names, places, stories and contracts, and the characters written by hand. |
-| **Story, character creator, summons, co-op inside a company** | Planned. |
+| **The main story** (`src/Tristinwold.World/Immortals.cs`, `game/scripts/Story.cs`) | Built and tested: every hero is an Immortal. See *The story* below. |
+| **Summons, co-op inside a company** | Planned. |
+
+## The story: the Immortals
+
+Every hero in the world, yours and every other player's, is an **Immortal**, and none of them was born one.
+
+When the Rift tore open and the **Hollow Host** came through it, the only cities left standing were the ones the Magi
+had *ringed*: a **Wake** sunk under each, a well of Keystone-light the demons can't abide. Then the Magi found what the
+Host fears most, and set about making it. In the undercroft of the Needle they took the people nobody would miss
+(foundlings out of the Warrens, the condemned off the gallows, Ashborn orphans from outside the walls) and remade them
+in **the Ringing**: Keystone ground into the blood, the old life burned out, a **ring of black iron** sunk into the
+bone of one finger and bound to the Wake beneath the city. Of every hundred given to the Needle, a handful woke. Those
+who did remember nothing before it. They're quicker and harder than anyone born, cold to pain, and **bound: when one
+dies, the ring drags what's left of them back to the Wake, and the Wake makes them again**, at the Gallows Perch,
+where Mother Corva waits with a blanket and a bottle (and writes every return in her ledger).
+
+That's why they're the line the cities hold against the Host: a soldier dies once. And it's why an Immortal can bring
+down a dragon the Rift has taken, which no army can: they can come back, try again, and know a little more of how it
+fights each time. The townsfolk pay them and need them and don't love them: *Immortals* to their faces; *gallows-born*,
+*cuckoos*, *the Needle's get* behind their backs.
+
+The main quest, **The Rings of Tristinwold**, is on the tracker from the moment you first wake:
+
+1. **Waking.** You open your eyes on the straw at the Gallows Perch with an iron ring on your finger. Mother Corva
+   tells you what you are.
+2. **The Archive.** Sister Ilse shows you the Magi's ledger of your intake: a hundred given to the Needle, nine woke.
+3. **The Proving.** Fall in battle, and come back: the ring holds.
+4. **The Breach.** The Host has torn a breach open beyond the walls: a wound of violet light that imps crawl out of,
+   and worse. Slay eight of them and it closes.
+5. **Dragonfire.** Bring down a dragon the Rift has taken. The tracker points you at the nearest.
+6. **Warden of the Rings.** Mother Corva writes the title after your name, and tells you the Magi aren't telling you
+   everything: one of them walked out of the Needle with the whole of the Ringing in his head, years back.
+
+Every time you fall afterwards you still wake at the Gallows Perch, and Mother Corva has something to say about it.
 
 ## Play
 
@@ -321,6 +355,15 @@ within sight of it and it's there, and it knows you, and it comes for you. Every
 stronger still. Kill it and it's gone for good, and the price on its head is yours: more than its hoard, and more
 for every time it beat you.
 
+#### Two strikes, from the one foe
+
+Only the foe that **struck you twice running** gets the credit for putting you down. The first one to hit you starts
+its count; a second hit from it makes two; a hit from anything else in between wipes the first one's count and starts
+its own. So in a crowded hall, if one foe hits you and you fall back and another clips you on the way down, **neither**
+of them counts, and neither takes a name or a win for it. It has to be the first one hitting you twice, or the second
+one getting you twice in a row. The same goes for the shared world's roster: the game tells the server which foe put
+you down, and only that one triumphs (`Strikes` in `src/Tristinwold.World/Tactics.cs`).
+
 #### Deviants hunt you, and learn how you fight
 
 It isn't only lair bosses. **Anything out in the wilds that puts you down** (a bandit, a frost troll, a wolf, a
@@ -590,7 +633,17 @@ named, stronger and taunting, and Vann may send it hunting for you. Fall, and yo
 
 ### The world beyond the walls
 
-The world has no edge. Tristinwold sits at its centre, and you start knowing five cities:
+The world has no edge, and there is nothing to find at one. **What happens as you walk out:** the ground streams in
+64 m chunks around you, about 450 m in every direction, built ahead of you as you go and dropped behind you, all grown
+from the world's seed, so the same hill is always in the same place. Villages, camps, barrows and dens are worked out
+for every 320 m square as you come near it; a new city for every 2.4 km square past the nine. **Past the nine lairs
+near home** (about 2.4 km out), the far country has lairs of its own, one in most 1.6 km squares, for ever: a crypt,
+a warren, a forge, a dead fort, an eyrie, each under its own name ("the Thorned Hold", "the Manse of Coldton"), each
+harder and better-paid the further out it lies, so a hero who has outgrown home always has somewhere to go. The
+tracker suggests the nearest that suits you, near home or out there. A deviant born out there roams from where it beat
+you, not back towards Tristinwold. (The self-test walks 31 km out to check.)
+
+Tristinwold sits at its centre, and you start knowing five cities:
 Tristinwold, Cinderhelm to the north, Galeholt and Mirewatch to the north-west, and Gravenmoor to the west.
 They show on your map with a "?" until you get there. The other four reworked cities (Argentdeep,
 Vespergate, Duskwake, Hollowreach) are further out, waiting to be found. Past all nine, the generator

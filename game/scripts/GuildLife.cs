@@ -20,7 +20,39 @@ public partial class Main
     public RaidBook RaidLog => _raids;
     /// <summary>Every raid's lair, the Ashen Crypt first.</summary>
     public IReadOnlyList<RaidLair> RaidLairs => _raidLairs;
-    public RaidLair LairOf(Raid r) => _raidLairs.First(l => l.Raid == r);
+    public RaidLair LairOf(Raid r) => _raidLairs.FirstOrDefault(l => l.Raid.Id == r.Id) ?? AddLair(r);
+
+    RaidLair AddLair(Raid r)
+    {
+        var lair = new RaidLair(this, r);
+        _raidLairs.Add(lair);
+        AddChild(lair);
+        return lair;
+    }
+
+    /// <summary>The nearest lair that suits the hero, near home or out in the far country (worked out now and then).</summary>
+    Raid? _suited;
+    double _lastFar;
+
+    /// <summary>
+    /// The far country's lairs (see <see cref="FarLairs"/>) come and go as the hero travels: each is there, waiting,
+    /// by the time they could see it, and let go again once they're well past it (unless they're in the middle of it).
+    /// </summary>
+    void TendFarLairs()
+    {
+        if (_clock - _lastFar < 3) return;
+        _lastFar = _clock;
+        var at = _player.GlobalPosition;
+        foreach (var r in FarLairs.Near(_world, at.X, at.Z, 1200)) LairOf(r);
+        foreach (var l in _raidLairs.Where(l => l.Raid.Id.StartsWith("raid:far:") && !l.Fighting && !l.Built && l.Raid.DistanceTo(at.X, at.Z) > 2400).ToList())
+        {
+            _raidLairs.Remove(l);
+            l.QueueFree();
+        }
+        var level = _player.Hero.Level;
+        _suited = Raids.All.Concat(FarLairs.Near(_world, at.X, at.Z, 4000))
+            .Where(r => !Raids.Outgrown(r, level) && !Raids.Daunting(r, level)).MinBy(r => r.DistanceTo(at.X, at.Z));
+    }
     public RaidLair CryptNode => LairOf(Raids.AshenCrypt);
     public Roamers RoamersNode => _roamers;
     TownWatch _watch = null!;

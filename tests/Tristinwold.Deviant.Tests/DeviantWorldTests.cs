@@ -43,6 +43,33 @@ public class DeviantWorldTests
     }
 
     [Fact]
+    public void Only_the_one_that_struck_twice_running_gets_the_credit_for_putting_the_player_down()
+    {
+        var world = new DeviantWorld(3);
+        var first = BirthRingleader(world, "Bandit");
+        var second = BirthRingleader(world, "Ghoul");
+        var (firstWins, secondWins) = (first.Wins, second.Wins);
+        // Both of them on the floor; the first struck twice running and put the player down, the second only
+        // clipped them as they fell back.
+        world.RecordBattle(Report(BattleResult.Defeat,
+            Enemy(0, "Bandit", "Bandit", deviant: first.Id) with { PutDown = true },
+            Enemy(1, "Ghoul", "Ghoul", deviant: second.Id) with { PutDown = false }));
+        Assert.Equal(firstWins + 1, first.Wins);
+        Assert.Equal(secondWins, second.Wins);
+
+        // Nobody struck twice running: nobody gets it, and no plain monster takes a name for it either.
+        var living = world.Living.Count();
+        world.RecordBattle(Report(BattleResult.Defeat,
+            Enemy(0, maxHp: 300) with { PutDown = false }, Enemy(1, maxHp: 120) with { PutDown = false }));
+        Assert.Equal(living, world.Living.Count());
+
+        // A plain wolf that did it is the one named, not the bigger one beside it.
+        world.RecordBattle(Report(BattleResult.Defeat,
+            Enemy(0, "Wolf", "Wolf", maxHp: 80) with { PutDown = true }, Enemy(1, "Troll", "Troll", maxHp: 900) with { PutDown = false }));
+        Assert.Equal("Wolf", world.Living.Last().Kind);
+    }
+
+    [Fact]
     public void Wiping_the_party_turns_the_toughest_survivor_into_a_captain()
     {
         var world = new DeviantWorld(1);

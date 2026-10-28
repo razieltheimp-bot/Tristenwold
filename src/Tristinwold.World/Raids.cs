@@ -210,7 +210,8 @@ public static class Raids
 
     public static IReadOnlyList<Raid> All { get; } = [AshenCrypt, GoblinWarren, RockBearDen, BriarRuin, HollowBastion, AmethystHollow, SunkenForge, GloamingRuin, StormEyrie];
 
-    public static Raid? Get(string id) => All.FirstOrDefault(r => r.Id == id);
+    /// <summary>A raid by its id: one of the nine, or one of the far country's (see <see cref="FarLairs"/>).</summary>
+    public static Raid? Get(string id) => All.FirstOrDefault(r => r.Id == id) ?? FarLairs.Get(id);
 
     /// <summary>How strong the boss stands against a hero: their level, within what the raid was made for.</summary>
     public static int Strength(Raid r, int heroLevel) => Math.Clamp(heroLevel, r.MinLevel, r.MaxLevel);
@@ -251,6 +252,95 @@ public static class Raids
     /// <summary>The raids that suit a hero of this level, nearest first.</summary>
     public static IEnumerable<Raid> For(int heroLevel, double x, double z) =>
         All.Where(r => !Outgrown(r, heroLevel) && !Daunting(r, heroLevel)).OrderBy(r => r.DistanceTo(x, z));
+}
+
+/// <summary>
+/// The far country. The nine lairs anyone in Tristinwold can name lie within a day's walk of it; past them the wilds go
+/// on for ever, and so do the lairs: one in most <see cref="Cell"/>-metre squares of the far country, each a kind of
+/// place already known (a crypt, a warren, a forge, an eyrie) under a name of its own, and harder the further out it
+/// lies. Each is worked out from its square alone, so every company finds the same lair in the same place.
+/// </summary>
+public static class FarLairs
+{
+    public const double Cell = 1600;
+    /// <summary>Nearer Tristinwold than this, there are only the nine.</summary>
+    public const double Beyond = 2400;
+    const string Prefix = "raid:far:";
+    const ulong Salt = 0xFA2_1A12;
+
+    static readonly Raid[] Kinds = [.. Raids.All.Where(r => r != Raids.AshenCrypt)];
+
+    static readonly Dictionary<LairSite, string[]> Places = new()
+    {
+        [LairSite.Crypt] = ["Crypt", "Barrow", "Tomb", "Ossuary"],
+        [LairSite.Cave] = ["Hollow", "Warren", "Den", "Deeps", "Grotto"],
+        [LairSite.Ruin] = ["Ruin", "Shrine", "Fane", "Manse"],
+        [LairSite.Dungeon] = ["Forge", "Pit", "Undercroft", "Delve"],
+        [LairSite.Fort] = ["Bastion", "Hold", "Keep", "Redoubt"],
+        [LairSite.Eyrie] = ["Eyrie", "Spire", "Crag", "Aerie"],
+    };
+
+    static readonly string[] Words =
+    [
+        "Weeping", "Bitter", "Sundered", "Black", "Drowned", "Hungry", "Silent", "Red", "Thorned", "Gallows", "Starless",
+        "Broken", "Ember", "Grey", "Howling", "Rotting", "Gilded", "Sorrowing", "Iron", "Last",
+    ];
+
+    /// <summary>The lair in a square of the far country, if it has one (not every square does, and not in the water
+    /// or on top of a town).</summary>
+    public static Raid? In(WorldGen world, long cx, long cz)
+    {
+        if (Noise.Unit(Noise.Hash(Salt, cx, cz, 99)) < 0.2) return null; // empty country
+        for (var k = 0; k < 6; k++)
+        {
+            if (Make(cx, cz, k) is not { } r) return null;
+            if (world.Height(r.X, r.Z) < WorldGen.WaterLevel + 1.5) continue;
+            if (world.SettlementsNear(r.X, r.Z, 300).Any(s => s.DistanceTo(r.X, r.Z) < s.Radius + 90)) continue;
+            return r;
+        }
+        return null;
+    }
+
+    /// <summary>The far lairs within <paramref name="radius"/> metres of a place.</summary>
+    public static IEnumerable<Raid> Near(WorldGen world, double x, double z, double radius)
+    {
+        for (var cx = (long)Math.Floor((x - radius) / Cell); cx <= (long)Math.Floor((x + radius) / Cell); cx++)
+            for (var cz = (long)Math.Floor((z - radius) / Cell); cz <= (long)Math.Floor((z + radius) / Cell); cz++)
+                if (In(world, cx, cz) is { } r && r.DistanceTo(x, z) <= radius) yield return r;
+    }
+
+    /// <summary>A far lair by its id (its square, and which spot in it, are in the id).</summary>
+    public static Raid? Get(string id)
+    {
+        if (!id.StartsWith(Prefix)) return null;
+        var parts = id[Prefix.Length..].Split(':');
+        return parts.Length == 3 && long.TryParse(parts[0], out var cx) && long.TryParse(parts[1], out var cz) && int.TryParse(parts[2], out var k)
+            ? Make(cx, cz, k) : null;
+    }
+
+    static Raid? Make(long cx, long cz, int k)
+    {
+        var rng = Noise.Dice(Salt, cx, cz, k);
+        var (x, z) = ((cx + 0.15 + 0.7 * rng.NextDouble()) * Cell, (cz + 0.15 + 0.7 * rng.NextDouble()) * Cell);
+        var far = Math.Sqrt(x * x + z * z);
+        if (far < Beyond) return null;
+        var kind = Kinds[rng.Next(Kinds.Length)];
+        var place = rng.Pick(Places[kind.Site]);
+        var name = rng.Chance(0.5) ? $"the {rng.Pick(Words)} {place}" : $"the {place} of {Names.Place(rng)}";
+        // Every square further out, the harder (and the better paid).
+        var tier = (far - Beyond) / Cell;
+        string Named(string text) => text.Replace(kind.Name, name).Replace(Cap(kind.Name), Cap(name));
+        return kind with
+        {
+            Id = $"{Prefix}{cx}:{cz}:{k}", Name = name, X = Math.Round(x), Z = Math.Round(z),
+            Story = $"Out past where Tristinwold's maps give up, there is {name}. " + Named(kind.Story),
+            Waking = Named(kind.Waking), Falling = Named(kind.Falling),
+            MinLevel = kind.MinLevel + (int)(2 * tier), MaxLevel = kind.MaxLevel + 2 + (int)(3 * tier),
+            Might = kind.Might * Math.Min(2.5, 1 + 0.08 * tier), Thralls = kind.Thralls + Math.Min(3, (int)(tier / 2)),
+        };
+    }
+
+    static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }
 
 /// <summary>When each raid can be fought again, how often each has been beaten, and the bosses that beat a company
@@ -388,7 +478,8 @@ public sealed class Roamer
             var d = 150 + rng.NextDouble() * 200;
             var (nx, nz) = (x + Math.Cos(a) * d, z + Math.Sin(a) * d);
             var fromHome = Math.Sqrt(nx * nx + nz * nz);
-            if (fromHome < Roaming.NearestToCity || fromHome > Roaming.FarthestOut) continue;
+            var fromStart = Math.Sqrt((nx - Start.X) * (nx - Start.X) + (nz - Start.Z) * (nz - Start.Z));
+            if (fromHome < Roaming.NearestToCity || fromStart > Roaming.FarthestOut) continue;
             if (world.Height(nx, nz) < WorldGen.WaterLevel + 1.5) continue;
             if (world.SettlementsNear(nx, nz, 400).Any(s => s.DistanceTo(nx, nz) < s.Radius + 60)) continue;
             return (nx, nz);
@@ -402,6 +493,8 @@ public static class Roaming
 {
     /// <summary>How fast a roamer walks between stops (m/s), and how long it rests at each.</summary>
     public const double Pace = 1.1, RestSeconds = 90;
+    /// <summary>Never nearer Tristinwold than this, and never further than <see cref="FarthestOut"/> from where it set out
+    /// (its lair, or where it beat the company), however far out in the wilds that is.</summary>
     public const double NearestToCity = 240, FarthestOut = 1400;
 
     /// <summary>A name in the deviant roster's own style: "Mokak the Grinning".</summary>
