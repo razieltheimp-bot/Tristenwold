@@ -640,7 +640,7 @@ public partial class Figure : Body
 
     static void Hold(Skeleton3D skeleton, string bone, string? item)
     {
-        if (item is not null && item.StartsWith('@')) { Craft(skeleton, bone, item[1..]); return; }
+        if (item is not null && item.StartsWith('@')) { _ = Craft(skeleton, bone, item[1..]); return; }
         if (item is null || skeleton.FindBone(bone) < 0 || Models.Scene($"weapons/{item}.gltf")?.Instantiate() is not Node3D weapon) return;
         var slot = new BoneAttachment3D { BoneName = bone };
         skeleton.AddChild(slot);
@@ -652,7 +652,7 @@ public partial class Figure : Body
     /// poet's laurel (worn round the head, whatever <paramref name="bone"/> says). Sizes are in the hand slot's units,
     /// where a KayKit blade is about one and a half long.
     /// </summary>
-    static void Craft(Skeleton3D skeleton, string bone, string item)
+    static Node3D? Craft(Skeleton3D skeleton, string bone, string item)
     {
         var thing = new Node3D { Name = $"Craft_{item}" };
         StandardMaterial3D Paint(string hex, float rough = 0.65f) => new() { AlbedoColor = new Color(hex), Roughness = rough, RimEnabled = true, Rim = 0.25f };
@@ -672,6 +672,19 @@ public partial class Figure : Body
                     Part(new BoxMesh { Size = new Vector3(0.006f, 0.95f, 0.006f) }, Paint("#f4ecd8", 0.3f), new Vector3(i * 0.025f, -0.2f, 0.1f));
                 break;
             }
+            case "rod":
+                // Held near the butt, the rod reaching up and out ahead; a reel by the hand.
+                Part(new CylinderMesh { TopRadius = 0.008f, BottomRadius = 0.03f, Height = 2.4f }, Paint("#8a6a3e"), new Vector3(0, 1.0f, 0.35f), new Vector3(16, 0, 0));
+                Part(new CylinderMesh { TopRadius = 0.06f, BottomRadius = 0.06f, Height = 0.05f }, Paint("#4a3a2a"), new Vector3(0.06f, 0.05f, 0.05f), new Vector3(0, 0, 90));
+                break;
+            case "pick":
+                Part(new CylinderMesh { TopRadius = 0.035f, BottomRadius = 0.04f, Height = 1.1f }, Paint("#8a6a3e"), new Vector3(0, 0.35f, 0));
+                Part(new PrismMesh { Size = new Vector3(0.9f, 0.12f, 0.08f) }, Paint("#7a7e86", 0.4f), new Vector3(0, 0.9f, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+                break;
+            case "axe":
+                Part(new CylinderMesh { TopRadius = 0.035f, BottomRadius = 0.04f, Height = 1.1f }, Paint("#8a6a3e"), new Vector3(0, 0.35f, 0));
+                Part(new BoxMesh { Size = new Vector3(0.36f, 0.26f, 0.04f) }, Paint("#8a8e96", 0.4f), new Vector3(0.18f, 0.82f, 0));
+                break;
             case "quill":
                 Part(new CylinderMesh { TopRadius = 0.012f, BottomRadius = 0.006f, Height = 0.5f }, Paint("#e8e0d0"), new Vector3(0, 0.15f, 0));
                 Part(new SphereMesh { Radius = 0.08f, Height = 0.4f }, Paint("#f6f2ea", 0.9f), new Vector3(0.03f, 0.28f, 0), new Vector3(0, 0, -10), new Vector3(0.6f, 1, 0.12f)); // the vane
@@ -684,7 +697,7 @@ public partial class Figure : Body
                 var head = skeleton.GetChildren().OfType<MeshInstance3D>().Where(m => m.Skin is not null && Parts["head"].Any(end => m.Name.ToString().EndsWith(end)) && !m.Name.ToString().EndsWith("_Eyes"))
                     .Select(m => m.Transform * m.GetAabb()).Aggregate((Aabb?)null, (x, b) => x is { } y ? y.Merge(b) : b);
                 var i = skeleton.FindBone(bone);
-                if (head is not { } box || i < 0) return;
+                if (head is not { } box || i < 0) return null;
                 thing.Transform = skeleton.GetBoneGlobalRest(i).AffineInverse();
                 var (c, sz) = (box.GetCenter(), box.Size);
                 var leaf = Paint("#6f9a34", 0.8f);
@@ -698,13 +711,18 @@ public partial class Figure : Body
                 }
                 break;
             }
-            default: return;
+            default: return null;
         }
-        if (skeleton.FindBone(bone) < 0) return;
+        if (skeleton.FindBone(bone) < 0) return null;
         var slot = new BoneAttachment3D { BoneName = bone };
         skeleton.AddChild(slot);
         slot.AddChild(thing);
+        return slot;
     }
+
+    /// <summary>Puts something made from shapes (a fishing rod) in the right hand for a while; free the node to put it away.</summary>
+    public Node3D? Carry(string item) =>
+        FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is { } skeleton ? Craft(skeleton, "handslot.r", item) : null;
 
     public override void _Ready() => Play(_look.Unarmed ? "Unarmed_Idle" : "Idle");
 

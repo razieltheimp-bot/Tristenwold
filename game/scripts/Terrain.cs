@@ -432,6 +432,7 @@ public partial class Terrain(WorldGen world) : Node3D
             if (wx * wx + wz * wz < 140 * 140) continue; // not inside Tristinwold
             if (clear.Any(s => s.DistanceTo(wx, wz) < s.Radius + (s.IsCity ? 30 : 8))) continue;
             if (Raids.All.Any(r => r.DistanceTo(wx, wz) < 26)) continue; // the crypt's ring stands in a clearing
+            if (Clearings.Any(c => new Vector2((float)wx - c.At.X, (float)wz - c.At.Z).Length() < c.Radius)) continue;
             var y = h[(int)Math.Round(lz / Step) * (Steps + 1) + (int)Math.Round(lx / Step)];
             if (y < WorldGen.WaterLevel + 0.5) continue;
             var biome = world.BiomeAt(wx, wz, y);
@@ -445,6 +446,9 @@ public partial class Terrain(WorldGen world) : Node3D
         foreach (var (plant, items) in groups)
             if (Look(plant) is { } look) Multi(chunk, look.Mesh, items, look.Material);
     }
+
+    /// <summary>Places kept clear of wild trees and rocks: the quarry floor, and the woodlot (its own trees are planted).</summary>
+    public static readonly (Vector3 At, float Radius)[] Clearings = [(Main.QuarryAt, 24), (Main.WoodlotAt, 18)];
 
     static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C)> items, Material material) =>
         Multi(parent, mesh, items.Select(i => (i.T, i.C, 0f)).ToList(), material);

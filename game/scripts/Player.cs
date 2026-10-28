@@ -218,7 +218,7 @@ public partial class Player : Fighter
         }
 
         var input = Input.GetVector("move_left", "move_right", "move_forward", "move_back");
-        var sprint = Input.IsActionPressed("sprint") && (Stats.Stamina > 1 || Class.Id == "Thief");
+        var sprint = Input.IsActionPressed("sprint") && (Stats.Stamina > 1 || Class.Id == "Thief") && !Burdened;
         var dir = (Transform.Basis * new Vector3(input.X, 0, input.Y)).Normalized();
         if (Mount is not null)
         {
@@ -226,7 +226,7 @@ public partial class Player : Fighter
         }
         else
         {
-            var speed = (sprint ? SprintSpeed : WalkSpeed) * (float)Stats.SpeedMult;
+            var speed = (sprint ? SprintSpeed : WalkSpeed) * (float)Stats.SpeedMult * (Burdened ? 0.7f : 1);
             if (sprint && input != Vector2.Zero && Class.Id != "Thief") Stats.Spend(AttackKind.Weapon, 15 * delta);
             if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming))
             {
@@ -265,6 +265,9 @@ public partial class Player : Fighter
 
     /// <summary>Set while talking or reading the map: no walking off mid-sentence.</summary>
     public bool Frozen { get; set; }
+
+    /// <summary>Carrying something heavy (a crate on the docks): slower, and no running.</summary>
+    public bool Burdened { get; set; }
 
     // ---- the moves -----------------------------------------------------------------------------
 

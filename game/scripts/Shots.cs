@@ -11,7 +11,7 @@ namespace Tristinwold.Game;
 /// </summary>
 /// <param name="lairs">Tour the wild lairs (--lairs, or --lairs goblin_warren,storm_eyrie for some of them).</param>
 /// <param name="wild">Portraits of the stranger things of the wilds (--wild).</param>
-public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null, bool wild = false, bool limit = false, bool market = false, bool audit = false, bool spells = false) : Node
+public partial class Shots(Main main, string dir, bool quick = false, string? dragon = null, bool skirmish = false, bool raid = false, string? lairs = null, bool wild = false, bool limit = false, bool market = false, bool audit = false, bool spells = false, bool town = false) : Node
 {
     public override async void _Ready()
     {
@@ -25,6 +25,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         if (wild) { await Wild(); return; }
         if (limit) { await Limit(); return; }
         if (market) { await Market(); return; }
+        if (town) { await Town(); return; }
         if (audit) { await Audit(); return; }
         if (spells) { await Spells(); return; }
         if (quick) { await Quick(); return; }
@@ -498,6 +499,46 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         cam.LookAt(new Vector3(72, 0, 12), Vector3.Up);
         cam.MakeCurrent();
         await Shot("market-above");
+        GetTree().Quit();
+    }
+
+    /// <summary>The town's work (--town): the fish stall, the docks, the quarry, the woodlot, the Exchange, a line in the water.</summary>
+    async Task Town()
+    {
+        var p = main.PlayerNode;
+        var cam = new Camera3D { Far = 500 };
+        main.AddChild(cam);
+        async Task From(string name, Vector3 at, Vector3 look)
+        {
+            main.TerrainNode.EnsureAround(look, 1);
+            p.GlobalPosition = look + new Vector3(0, 1, 6); // the hero nearby, so what's near them is shown
+            await Frames(40);
+            cam.GlobalPosition = at;
+            cam.LookAt(look, Vector3.Up);
+            cam.MakeCurrent();
+            await Shot(name);
+        }
+        if (OS.GetCmdlineUserArgs().Contains("--exchange")) goto exchange;
+        await From("town-fishstall", new Vector3(64, 7, 0), new Vector3(64, 1, -13));
+        await From("town-docks", new Vector3(92, 14, 22), new Vector3(118, 0, 0));
+        await From("town-quarry", Main.QuarryAt + new Vector3(0, 14, 22), Main.QuarryAt + new Vector3(0, 1, -4));
+        await From("town-woodlot", Main.WoodlotAt + new Vector3(0, 12, 22), Main.WoodlotAt + new Vector3(0, 2, -2));
+        exchange:
+        await From("town-exchange", new Vector3(30.3f, 5, -17.5f), Main.FactorAt + Vector3.Up);
+        await From("town-exchange-above", Main.FactorAt + new Vector3(0, 30, 14), Main.FactorAt);
+        await From("town-quarry-close", Main.QuarryAt + new Vector3(3, 4, 10), Main.QuarryAt + new Vector3(0, 0, -6));
+        await From("town-saltbarrel", new Vector3(40, 5, 58), new Vector3(40, 1, 69));
+        // A line in the water off the middle pier.
+        p.GlobalPosition = new Vector3(124, 1, 0);
+        await Frames(20);
+        p.Face(new Vector3(124, 0, 10));
+        p.Pack.Add("fishing_rod");
+        if (main.WaterAhead() is { } w) main.CastForTest(w);
+        await Frames(40);
+        cam.GlobalPosition = new Vector3(118, 3, -4);
+        cam.LookAt(new Vector3(124, 1, 5), Vector3.Up);
+        cam.MakeCurrent();
+        await Shot("town-fishing");
         GetTree().Quit();
     }
 

@@ -344,6 +344,7 @@ public partial class Main
         }
         if (npc.Id == "eyrie/aldric") foreach (var o in Aldric(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
+        foreach (var o in TownTalk(person)) yield return o;
     }
 
     void Guild(Person person, Calling calling)
@@ -530,7 +531,8 @@ public partial class Main
         var c = _player.Class;
         var titles = _guilds.Titles.Count > 0 ? $" {string.Join(", ", _guilds.Titles)}." : "";
         var text = $"{c.Name}, level {hero.Level} ({hero.Xp}/{Hero.XpToNext(hero.Level)} xp), {_player.GuildTitle}.{titles} {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend.\n" +
-            string.Join("\n", c.Skills.Where(a => a.Id != "attune").Select(a => $"{Slot(a)} {a.Name} (rank {hero.Rank(a.Id)}/{Hero.MaxRank}): {a.Text}"));
+            string.Join("\n", c.Skills.Where(a => a.Id != "attune").Select(a => $"{Slot(a)} {a.Name} (rank {hero.Rank(a.Id)}/{Hero.MaxRank}): {a.Text}")) +
+            $"\nTrades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j)} {_player.Pack.Level(j)}"))}. The Exchange knows you as {_city.RenownTitle}.";
         var options = c.Skills.Where(a => a.Id != "attune" && hero.CanRaise(a.Id))
             .Select(a => ($"Raise {a.Name} to rank {hero.Rank(a.Id) + 1}", (Action)(() => { hero.Raise(a.Id); _player.Fit(); Save(); ShowSkills(); }))).ToList();
         options.Add(("Close", _hud.EndTalk));

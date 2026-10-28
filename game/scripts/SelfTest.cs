@@ -35,9 +35,10 @@ public partial class SelfTest(Main main) : Node
                 await SoundTest(); Finish(0); return;
             }
             if (OS.GetCmdlineUserArgs().Contains("--classes-only")) { await Teleport(new Vector3(-150, 0, -120)); await ClassesTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--town-only")) { await TownWorkTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -356,6 +357,167 @@ public partial class SelfTest(Main main) : Node
         var hurt = sides.Count(e => IsInstanceValid(e) && (e.Stats.Health < e.Stats.MaxHealth || e.State == EnemyState.Dead));
         Check(hurt > 0, $"{war.A.FullName} ({war.A.Colour}) and {war.B.FullName} ({war.B.Colour}) are at war: {sides.Count} dragons at the border, {hurt} wounded");
         main.WildsNode.Now = () => DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Work in town and the city's economy: a rod from Bryn, a fish off the middle pier, grilled at the Salt Barrel;
+    /// a pick from Dagna and ore from a Greyhollow vein; an axe from Hollin and logs from a felled pine; selling a lot
+    /// brings the price down; a contract for what's short, filled at the Exchange; the city's works; a shift on the docks;
+    /// a letter run; the days turning over; and the city in the save.
+    /// </summary>
+    async Task TownWorkTest()
+    {
+        var p = main.PlayerNode;
+        var pack = p.Pack;
+        var city = main.Economy;
+        var hud = main.HudNode;
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        p.Septims = 600;
+        int FishCount() => pack.Contents.Where(c => CityEconomy.GoodOf(c.Item.Id) == Good.Fish || c.Item.Id is "old_boot" or "pearl").Sum(c => c.N);
+
+        // Fishing: a rod from Bryn, then a line off the middle pier.
+        await Teleport(new Vector3(68, 0, -9));
+        main.Talk(Who(Shops.Fishmonger.Id));
+        Check(hud.Choose("Let me see") && hud.Choose("Fishing Rod") && pack.Count("fishing_rod") == 1, "Bryn sells you a fishing rod");
+        hud.EndTalk();
+        await Teleport(new Vector3(124, 0, 0));
+        // Earlier tests leave things about that might come for you; fish in peace.
+        foreach (var e in GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => !e.Friendly && e.GlobalPosition.DistanceTo(p.GlobalPosition) < 60).ToList()) e.QueueFree();
+        await Until(() => !main.Tracker.InFight && !p.Attackers().Any(), 30);
+        p.Face(new Vector3(124, 0, 10));
+        await Frames(3);
+        var water = main.WaterAhead();
+        Check(water is { Kind: Water.Sea }, $"from the pier you face the harbour ({water?.Kind})");
+        var fish = FishCount();
+        if (water is { } w) main.CastForTest(w);
+        Check(main.LineOut, "the line goes out");
+        await Until(() => main.Biting, 25);
+        Check(main.Biting, "something bites");
+        main.StrikeForTest();
+        Check(FishCount() == fish + 1 && pack.JobXp.GetValueOrDefault(Job.Fishing) > 0 && !main.LineOut, $"and you land it: {hud.LastLine}");
+
+        // Cooking at the Salt Barrel.
+        pack.Add("herring", 2);
+        await Teleport(new Vector3(40, 0, 65));
+        main.Talk(Who(Shops.SaltBarrel.Id));
+        Check(hud.Choose("Can I use your kitchen"), "Fenna lets you use her kitchen");
+        Check(hud.Choose("Make Grilled Fish"), $"and you grill a fish ({hud.TalkText[..Math.Min(40, hud.TalkText.Length)]}...)");
+        Check(pack.Count("grilled_fish") >= 1 && pack.JobXp.GetValueOrDefault(Job.Cooking) > 0, "it's in your pack, and you've learned a little cooking");
+        hud.EndTalk();
+
+        // Mining at Greyhollow.
+        await Teleport(Main.QuarryAt + new Vector3(5, 0, 6));
+        main.Talk(Who(Shops.Quarry.Id));
+        Check(hud.Choose("Let me see") && hud.Choose("Pickaxe") && pack.Count("pickaxe") == 1, "Dagna sells you a pickaxe");
+        hud.EndTalk();
+        await Until(() => main.WorkingsNode.Shown.Any(s => s.Kind == "iron"), 10);
+        var vein = main.WorkingsNode.Shown.FirstOrDefault(s => s.Kind == "iron");
+        Check(vein is not null, $"the quarry's veins are there ({main.WorkingsNode.Shown.Count(s => !s.IsTree)} near)");
+        if (vein is not null)
+        {
+            await Teleport(vein.At + (Main.QuarryAt - vein.At).Normalized() * 2.2f);
+            Check(main.WorkingsNode.Within(p.GlobalPosition) == vein, "you can reach the iron vein");
+            var ore = pack.Count("iron_ore");
+            main.WorkForTest(vein);
+            await Until(() => !main.Working && pack.Count("iron_ore") > ore, 20);
+            Check(pack.Count("iron_ore") > ore && pack.JobXp.GetValueOrDefault(Job.Mining) > 0, $"you mine it: {hud.LastLine}");
+            Check(!main.WorkingsNode.Shown.Contains(vein), "and the vein's worked out for now");
+        }
+
+        // Woodcutting at Hollin's woodlot.
+        await Teleport(Main.WoodlotAt + new Vector3(6, 0, 9));
+        main.Talk(Who(Shops.Woodlot.Id));
+        Check(hud.Choose("Let me see") && hud.Choose("Woodcutter's Axe") && pack.Count("woodcutters_axe") == 1, "Hollin sells you an axe");
+        hud.EndTalk();
+        await Until(() => main.WorkingsNode.Shown.Any(s => s.Kind == "pine"), 10);
+        var pine = main.WorkingsNode.Shown.FirstOrDefault(s => s.Kind == "pine");
+        if (pine is not null)
+        {
+            await Teleport(pine.At + new Vector3(0, 0, 2.2f));
+            var logs = pack.Count("pine_log");
+            main.WorkForTest(pine);
+            await Until(() => !main.Working && pack.Count("pine_log") > logs, 20);
+            Check(pack.Count("pine_log") >= logs + 2 && pack.JobXp.GetValueOrDefault(Job.Woodcutting) > 0, $"you fell a pine: {hud.LastLine}");
+            await Frames(60);
+            Check(!main.WorkingsNode.Shown.Contains(pine), "and it leaves a stump");
+        }
+        else Check(false, "the woodlot's pines are there");
+
+        // Selling a lot at once brings the price down.
+        var herring = Items.Get("herring")!;
+        var offer = city.Offer(herring);
+        var factor = city.Factor(Good.Fish);
+        pack.Add("herring", 60);
+        await Teleport(new Vector3(68, 0, -9));
+        main.Talk(Who(Shops.Fishmonger.Id));
+        hud.Choose("I've things to sell");
+        var septims = p.Septims;
+        Check(hud.Choose("Sell every"), "Bryn buys the lot");
+        Check(p.Septims > septims && city.Factor(Good.Fish) < factor * 0.85, $"for {p.Septims - septims} septims, and fish is cheaper now ({factor:0.00}x to {city.Factor(Good.Fish):0.00}x; herring {offer} to {city.Offer(herring)})");
+        hud.EndTalk();
+
+        // A contract for what's short, filled at the Exchange.
+        city.Stock[Good.Timber] = 5;
+        city.Contracts.Clear();
+        city.NextDay();
+        var contract = city.Contracts.FirstOrDefault(c => c.Good == Good.Timber);
+        Check(contract is not null, $"timber's short, so a contract's posted: {string.Join("; ", city.Contracts.Select(c => $"{c.Buyer} want {c.Wanted} {c.Good} at {c.PricePer}"))}");
+        await Teleport(Main.FactorAt + new Vector3(0, 0, 2));
+        var factorPerson = Who("tristinwold/factor");
+        if (contract is not null)
+        {
+            pack.Add("pine_log", contract.Left);
+            septims = p.Septims;
+            main.Talk(factorPerson);
+            Check(hud.Choose("What's wanted"), "Ottilie shows the contracts");
+            Check(hud.Choose(char.ToUpperInvariant(contract.Buyer[0]) + contract.Buyer[1..]), "you deliver the timber");
+            Check(p.Septims >= septims + contract.Wanted * contract.PricePer && !city.Contracts.Contains(contract), $"and it's filled: +{p.Septims - septims} septims");
+            hud.EndTalk();
+        }
+        // The city's works.
+        pack.Add("stone_block", 10);
+        var stone = city.WorkGoods.GetValueOrDefault(Good.Stone);
+        main.Talk(factorPerson);
+        Check(hud.Choose("What's the city building"), $"the city's building: {city.Work?.Title}");
+        Check(hud.Choose("Give stone") && city.WorkGoods.GetValueOrDefault(Good.Stone) == stone + 10, "you give it ten blocks of stone");
+        hud.EndTalk();
+        main.Talk(factorPerson);
+        Check(hud.Choose("How's trade") && hud.TalkText.Contains("Day") && hud.TalkText.Contains("Fish"), "and the market report");
+        hud.EndTalk();
+
+        // A letter for someone in town.
+        main.Talk(factorPerson);
+        hud.Choose("Any errands");
+        var to = main.ErrandTo;
+        Check(to is not null, $"Ottilie gives you a letter for {to?.Npc.Name}");
+        septims = p.Septims;
+        if (to is not null) Check(main.DeliverForTest(to) && p.Septims > septims && main.ErrandTo is null, $"and it's delivered for {p.Septims - septims} septims");
+        hud.EndTalk();
+
+        // A shift on the docks.
+        await Teleport(Main.ForemanAt + new Vector3(-1, 0, 0));
+        main.Talk(Who("tristinwold/foreman"));
+        Check(hud.Choose("Any work on the docks") && main.OnShift, "Haskel puts you to work");
+        hud.EndTalk();
+        await Teleport(Main.CrateStack + new Vector3(-2, 0, 0));
+        main.LiftForTest();
+        Check(main.Holding && p.Burdened, "you lift a crate, and walk slower with it");
+        await Teleport(Main.Warehouse + new Vector3(0, 0, 1.5f));
+        septims = p.Septims;
+        var wage = city.DockWage;
+        main.SetDownForTest();
+        Check(!main.Holding && !p.Burdened && p.Septims == septims + wage, $"and set it down in the warehouse: +{wage} septims");
+
+        // The days turn over by themselves as you play.
+        var day = city.Day;
+        city.NextDayAt = main.GuildBook.PlaySeconds;
+        await Frames(120);
+        Check(city.Day > day, $"a new day at the Exchange (day {city.Day}): {string.Join(" ", city.News.TakeLast(2))}");
+
+        // And it's all kept with the company.
+        var saved = CompanySave.FromJson(main.Save());
+        Check(saved.City is { } c2 && c2.Day == city.Day && c2.Renown == city.Renown && saved.Pack!.JobXp.ContainsKey(Job.Fishing), $"the city and the trades are saved (renown {city.Renown}: {city.RenownTitle})");
     }
 
     /// <summary>Every sound the game plays is there, the volumes are kept, and the music follows the hero: the wilds,
@@ -823,7 +985,15 @@ public partial class SelfTest(Main main) : Node
         // It roams: a while later it's somewhere else in the wilds. Find it, and it comes for you.
         main.GuildBook.PlaySeconds += 1800;
         var (x, z) = roamer!.Where(main.World, main.GuildBook.PlaySeconds);
-        Check(new Vector2((float)(x - raid.X), (float)(z - raid.Z)).Length() > 100, $"half an hour on it's {new Vector2((float)(x - raid.X), (float)(z - raid.Z)).Length():0} m from its lair");
+        // Its road is its own (random, by its seed), so it may have wandered back near home: what matters is that it's been walking.
+        var walked = 0.0;
+        for (var t = roamer.Since; t < main.GuildBook.PlaySeconds; t += 30)
+        {
+            var (ax, az) = roamer.Where(main.World, t);
+            var (bx, bz) = roamer.Where(main.World, Math.Min(t + 30, main.GuildBook.PlaySeconds));
+            walked += Math.Sqrt((bx - ax) * (bx - ax) + (bz - az) * (bz - az));
+        }
+        Check(walked > 400, $"half an hour on it has walked {walked:0} m, and is {new Vector2((float)(x - raid.X), (float)(z - raid.Z)).Length():0} m from its lair");
         await Teleport(new Vector3((float)x + 25, 0, (float)z));
         await Until(() => main.RoamersNode.Near.Any(n => n.Body.FightingCompany), 10);
         var found = main.RoamersNode.Near.FirstOrDefault();
@@ -1077,7 +1247,7 @@ public partial class SelfTest(Main main) : Node
         // The market by the Gallows Perch: the smith sells a sword.
         await Teleport(new Vector3(80, 0, 8));
         var smith = main.GetChildren().OfType<Person>().FirstOrDefault(x => x.Npc.Id == Shops.Smithy.Id);
-        Check(smith is not null && main.GetChildren().OfType<Person>().Count(x => Shops.All.Any(s => s.Id == x.Npc.Id)) == 4, "four shopkeepers keep stalls on the Gallows road");
+        Check(smith is not null && main.GetChildren().OfType<Person>().Count(x => Shops.All.Any(s => s.Id == x.Npc.Id)) == Shops.All.Count, $"all {Shops.All.Count} shopkeepers are at their stalls, yards and kitchens");
         p.Septims = 200;
         main.Talk(smith!);
         Check(main.HudNode.Choose("Let me see"), "the smith shows her wares");

@@ -3,7 +3,7 @@ using Tristinwold.Nemesis;
 namespace Tristinwold.Gameplay;
 
 /// <summary>A trade a hero can take up and get better at.</summary>
-public enum Job { Herbalism, Smithing, Taming }
+public enum Job { Herbalism, Smithing, Taming, Fishing, Mining, Woodcutting, Cooking }
 
 /// <summary>
 /// What a hero carries and wears, and how good they are at their trades. Saved with the company.
@@ -98,7 +98,7 @@ public sealed class Pack
 }
 
 /// <summary>Something a trade makes: what, how many, from what, and how skilled you must be. Smithing is done at a
-/// forge; herbalism needs an alchemist's kit (or the apothecary's bench).</summary>
+/// forge; herbalism needs an alchemist's kit (or the apothecary's bench); cooking a tavern's kitchen.</summary>
 public sealed record Recipe(Job Job, int Level, string Makes, int Count, (string Id, int N)[] Needs)
 {
     public string Id => $"{Job}:{Makes}";
@@ -109,11 +109,15 @@ public static class Recipes
 {
     static Recipe Forge(int level, string makes, params (string, int)[] needs) => new(Job.Smithing, level, makes, 1, needs);
     static Recipe Brew(int level, string makes, params (string, int)[] needs) => new(Job.Herbalism, level, makes, 1, needs);
+    static Recipe Cook(int level, string makes, int count, params (string, int)[] needs) => new(Job.Cooking, level, makes, count, needs);
 
     public static IReadOnlyList<Recipe> All { get; } =
     [
         // Smelting and tanning.
         new(Job.Smithing, 1, "iron_ingot", 1, [("scrap_iron", 3)]),
+        new(Job.Smithing, 1, "iron_ingot", 1, [("iron_ore", 2)]),
+        new(Job.Smithing, 3, "silver_ingot", 1, [("silver_ore", 2), ("coal", 1)]),
+        new(Job.Smithing, 5, "gold_ingot", 1, [("gold_ore", 2), ("coal", 1)]),
         new(Job.Smithing, 3, "steel_ingot", 1, [("iron_ingot", 1), ("coal", 2)]),
         new(Job.Smithing, 1, "leather", 1, [("deer_hide", 1)]),
         new(Job.Smithing, 1, "leather", 1, [("boar_hide", 1)]),
@@ -167,6 +171,14 @@ public static class Recipes
         Brew(4, "greater_healing", ("healing_draught", 1), ("bloodcap", 1), ("troll_fat", 1)),
         Brew(5, "elixir_of_might", ("bloodcap", 2), ("silverthorn", 1), ("troll_fat", 1)),
         Brew(5, "warding_draught", ("frostbloom", 2), ("silverthorn", 1), ("nightshade", 1)),
+        // Meals, at a tavern's kitchen: any fish will grill.
+        .. new[] { "herring", "mackerel", "cod", "sea_bass", "perch", "trout", "carp", "pike", "arctic_char", "ice_pike", "salmon" }
+            .Select(f => Cook(1, "grilled_fish", 1, (f, 1))),
+        Cook(2, "roast_venison", 1, ("venison", 2)),
+        Cook(3, "fish_stew", 2, ("cod", 1), ("herring", 2), ("bread", 1)),
+        Cook(3, "smoked_eel", 1, ("eel", 1), ("pine_log", 1)),
+        Cook(4, "hunters_pie", 2, ("venison", 2), ("bread", 1), ("ladys_mantle", 1)),
+        Cook(6, "seafood_platter", 1, ("lobster", 1), ("salmon", 1), ("eel", 1)),
     ];
 
     public static IEnumerable<Recipe> For(Job job) => All.Where(r => r.Job == job);
@@ -184,8 +196,8 @@ public static class Loot
         "wolf" or "shadow_wolf" => [("wolf_pelt", 0.9, 1, 1), ("wolf_fang", 0.6, 1, 2), (kind == "shadow_wolf" ? "shadow_essence" : "wolf_fang", 0.4, 1, 1)],
         "ice_wolf" => [("frost_pelt", 0.9, 1, 1), ("wolf_fang", 0.6, 1, 2)],
         "bear" or "rock_bear" => [("bear_pelt", 0.95, 1, 1), ("bear_claw", 0.8, 1, 3)],
-        "boar" => [("boar_hide", 0.9, 1, 1), ("boar_tusk", 0.7, 1, 2)],
-        "deer" => [("deer_hide", 0.9, 1, 1), ("antler", 0.5, 1, 1)],
+        "boar" => [("boar_hide", 0.9, 1, 1), ("boar_tusk", 0.7, 1, 2), ("venison", 0.8, 1, 2)],
+        "deer" => [("deer_hide", 0.9, 1, 1), ("antler", 0.5, 1, 1), ("venison", 0.9, 1, 2)],
         "fox" => [("fox_pelt", 0.9, 1, 1)],
         "skeever" => [("skeever_tail", 0.8, 1, 1)],
         "crystal_skeever" => [("amethyst_shard", 0.6, 1, 1), ("skeever_tail", 0.5, 1, 1)],
@@ -269,7 +281,10 @@ public static class Loot
 }
 
 /// <summary>A shop: who keeps it, what they sell. Every shopkeeper buys anything at half what it's worth.</summary>
-public sealed record Shop(string Id, string Name, string Keeper, string Greeting, string[] Sells, bool Forge = false, bool Bench = false, bool Beasts = false)
+/// <param name="Kitchen">A tavern's kitchen, where a hero can cook.</param>
+/// <param name="Trade">The trade it's the place for (a fishmonger's is fishing): its keeper talks about it.</param>
+public sealed record Shop(string Id, string Name, string Keeper, string Greeting, string[] Sells, bool Forge = false, bool Bench = false, bool Beasts = false,
+    bool Kitchen = false, Job? Trade = null)
 {
     public static int Price(Item item) => item.Value;
     public static int Offer(Item item) => Math.Max(1, item.Value / 2);
@@ -279,7 +294,7 @@ public static class Shops
 {
     public static readonly Shop Provisions = new("shop:provisions", "Hollis's Provisions", "Hollis Brandt",
         "Bread, rope, leather, meat for your beasts. If it keeps you alive on the road, I sell it.",
-        ["bread", "travel_rations", "meat", "linen", "leather", "coal", "healing_draught", "traveller_cloak", "alchemist_kit"]);
+        ["bread", "travel_rations", "ale", "meat", "linen", "leather", "coal", "healing_draught", "traveller_cloak", "alchemist_kit", "fishing_rod"]);
 
     public static readonly Shop Smithy = new("shop:smithy", "The Anvil Gate", "Hulda Ironhand",
         "Steel's honest. People aren't. What do you need hitting, or hitting you less?",
@@ -298,7 +313,27 @@ public static class Shops
         "Every one of them raised by my own hand, and every one of them tame. Mostly. No dragons: nobody sells dragons.",
         ["meat"], Beasts: true);
 
-    public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie];
+    /// <summary>Bryn's stall by the east gate: rods, and the morning's catch. Bryn buys any fish.</summary>
+    public static readonly Shop Fishmonger = new("shop:fishmonger", "Bryn's Fish Stall", "Bryn Saltmarsh",
+        "Herring, mackerel, cod, whatever the boats brought. Or catch your own: rods are twelve septims, and the sea's free.",
+        ["fishing_rod", "herring", "mackerel", "cod", "grilled_fish", "smoked_eel"], Trade: Job.Fishing);
+
+    /// <summary>The Greyhollow quarry and mine, west of the walls: picks, stone and ore.</summary>
+    public static readonly Shop Quarry = new("shop:quarry", "Greyhollow Quarry", "Dagna Flint",
+        "Stone for the walls, ore for the smelters, coal for everyone. Grab a pick and swing it, if you've the arms for it.",
+        ["pickaxe", "stone_block", "iron_ore", "coal"], Trade: Job.Mining);
+
+    /// <summary>Hollin's woodlot, south-west of the walls: axes and timber.</summary>
+    public static readonly Shop Woodlot = new("shop:woodlot", "Hollin's Woodlot", "Hollin Ashby",
+        "Pine for the fires, oak for the ships, and a yew or two for the bowyers. Fell what's marked, and I'll buy every log.",
+        ["woodcutters_axe", "pine_log", "oak_log"], Trade: Job.Woodcutting);
+
+    /// <summary>The Salt Barrel's kitchen, down by the south road: ale, hot food, and a hearth a hero can cook at.</summary>
+    public static readonly Shop SaltBarrel = new("shop:salt_barrel", "The Salt Barrel", "Fenna Rook",
+        "Sit down before you fall down. Ale's four, stew's eighteen, and if you've caught something, the hearth's yours.",
+        ["ale", "bread", "grilled_fish", "fish_stew", "roast_venison"], Kitchen: true, Trade: Job.Cooking);
+
+    public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie, Fishmonger, Quarry, Woodlot, SaltBarrel];
 
     /// <summary>A price with a buyer's markup (never less than 1 septim).</summary>
     public static int Charge(int price, double markup) => price < 0 ? price : Math.Max(1, (int)Math.Round(price * markup));

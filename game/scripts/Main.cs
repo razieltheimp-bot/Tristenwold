@@ -347,6 +347,7 @@ public partial class Main : Node3D
         AddGuildMasters();
         AddGuilds();
         AddMarket();
+        AddTownWork();
         _herbPatch = new HerbPatch(this);
         AddChild(_herbPatch);
         foreach (var raid in Raids.All)
@@ -373,7 +374,7 @@ public partial class Main : Node3D
         if (TouchMode) EnableTouch();
         Connect();
         if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
-        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid"), lairs: _args.TryGetValue("lairs", out var lairs) ? lairs : null, wild: _args.ContainsKey("wild"), limit: _args.ContainsKey("limit"), market: _args.ContainsKey("market"), audit: _args.ContainsKey("audit"), spells: _args.ContainsKey("spells")));
+        else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid"), lairs: _args.TryGetValue("lairs", out var lairs) ? lairs : null, wild: _args.ContainsKey("wild"), limit: _args.ContainsKey("limit"), market: _args.ContainsKey("market"), audit: _args.ContainsKey("audit"), spells: _args.ContainsKey("spells"), town: _args.ContainsKey("town")));
         else _hud.Toast($"Tristinwold. You are a {_player.Class.Name}. Esc: menu (save, log out)   M: map   J: journal   E: talk   K: skills   P: party   F10: the shared world");
     }
 
@@ -647,7 +648,9 @@ public partial class Main : Node3D
             id => FindEnemy(id) is { FightingCompany: true } e && e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 40,
             id => FindEnemy(id) is { } e ? ToNumerics(e.GlobalPosition) : null);
         _player.InFight = _tracker.InFight || _player.Attackers().Any();
-        _player.Frozen = _hud.Talking || _hud.MapOpen;
+        _player.Frozen = _hud.Talking || _hud.MapOpen || _working;
+        TendCity(delta);
+        TendLine(delta);
         TendCompany(delta);
         TendGuilds(delta);
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
@@ -682,6 +685,7 @@ public partial class Main : Node3D
         // The nearest lair that suits the hero, and the nearest nemesis out roaming.
         if (Raids.For(_player.Hero.Level, pos.X, pos.Z).FirstOrDefault() is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
+        saga = [.. saga, .. TownLines(pos)];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
     }
@@ -729,13 +733,14 @@ public partial class Main : Node3D
     (string Verb, Action Act)? Nearest()
     {
         var pos = _player.GlobalPosition;
+        if (FishingAction() is { } fishing) return fishing;
         var person = _places.People.Concat(_townsfolk).Where(p => p.GlobalPosition.DistanceTo(pos) < 3.5f).MinBy(p => p.GlobalPosition.DistanceTo(pos));
         if (person is not null) return ($"talk to {person.Npc.Name}", () => Talk(person));
         var item = _places.Pickups.Append(_nest).Concat(_raidLairs.Select(l => l.Hoard)).OfType<Pickup>().Where(p => IsInstanceValid(p) && p.GlobalPosition.DistanceTo(pos) < 3).FirstOrDefault();
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(_player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return null;
+        return TownAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>
@@ -781,6 +786,8 @@ public partial class Main : Node3D
     /// <summary>People know what's near them. Asking puts a place on your map with a "?".</summary>
     string Rumour(Npc npc)
     {
+        // Townsfolk talk about the market too: what's dear, and what's happened.
+        if (npc.HomeId == "city:tristinwold" && _city.News.Count > 0 && _lootRng.Chance(0.4)) return $"Have you heard? {_city.News[^1]}";
         var place = _world.SettlementsNear(npc.X, npc.Z, 3000)
             .Where(s => !_explored.Discovered.Contains(s.Id) && !_explored.Rumored.Contains(s.Id))
             .OrderBy(s => s.DistanceTo(npc.X, npc.Z) * (s.IsCity ? 0.5 : 1)).FirstOrDefault();
@@ -867,6 +874,7 @@ public partial class Main : Node3D
         DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(_savePath).GetBaseDir());
         if (scripted && Godot.FileAccess.FileExists(_savePath)) DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(_savePath));
         if (Choice.Account is not null) _savePath = $"user://saves/{string.Concat(Choice.Account.Where(char.IsLetterOrDigit))}-{company}.json";
+        _city = CityEconomy.Start(_world.Seed);
         var stored = Choice.Save ?? (Choice.Account is null && Godot.FileAccess.FileExists(_savePath) ? Godot.FileAccess.GetFileAsString(_savePath) : null);
         if (stored is not null)
         {
@@ -883,6 +891,7 @@ public partial class Main : Node3D
                 _saga = save.Saga ?? new DragonSaga();
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
+                _city = save.City ?? CityEconomy.Start(_world.Seed);
                 if (!scripted && save.Where is { } where) StandAt(where);
                 return;
             }
@@ -897,7 +906,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here()).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)

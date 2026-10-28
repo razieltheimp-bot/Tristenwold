@@ -42,6 +42,7 @@ public static class Items
     static Item Mat(string id, string name, int value, string text) => new(id, name, ItemKind.Material, value, text);
     static Item Herb(string id, string name, int value, string text) => new(id, name, ItemKind.Herb, value, text);
     static Item Trophy(string id, string name, int value, string text) => new(id, name, ItemKind.Trophy, value, text);
+    static Item Fish(string id, string name, int value, string text) => new(id, name, ItemKind.Material, value, text);
 
     /// <summary>The ten dragon colours, for scales and the armour made from them.</summary>
     public static readonly (string Id, string Name, string Tint)[] DragonColours =
@@ -116,8 +117,51 @@ public static class Items
         new("elixir_of_might", "Elixir of Might", ItemKind.Potion, 80, "A quarter more damage for two minutes.") { Use = new Effect(Might: 0.25, Seconds: 120) },
         new("warding_draught", "Warding Draught", ItemKind.Potion, 70, "Armour like plate for two minutes.") { Use = new Effect(Ward: 60, Seconds: 120) },
         new("bread", "Bread", ItemKind.Food, 3, "Heals a little.") { Use = new Effect(Health: 0.1, Stamina: 0.2) },
+        new("ale", "Ale", ItemKind.Food, 4, "A tankard of brown ale. Restores some stamina.") { Use = new Effect(Stamina: 0.3) },
         new("travel_rations", "Travel Rations", ItemKind.Food, 8, "Dried meat, hard cheese, an apple. Heals a fair bit.") { Use = new Effect(Health: 0.25, Stamina: 0.5) },
         new("alchemist_kit", "Alchemist's Kit", ItemKind.Tool, 40, "Mortar, pestle, little bottles. Lets you brew potions anywhere (from your pack, I)."),
+        // ---- tools of the town's trades ----------------------------------------------------------------
+        new("fishing_rod", "Fishing Rod", ItemKind.Tool, 12, "Ash rod, horsehair line, a bone hook. Face open water and press E to cast."),
+        new("pickaxe", "Pickaxe", ItemKind.Tool, 18, "For ore veins. Walk up to one and press E."),
+        new("woodcutters_axe", "Woodcutter's Axe", ItemKind.Tool, 15, "A broad, heavy bit. For felling trees at a woodlot."),
+        // ---- fish (raw: cook them, or sell them) ---------------------------------------------------------
+        Fish("herring", "Herring", 4, "Silver and slippery. The harbour's bread and butter."),
+        Fish("mackerel", "Mackerel", 6, "Striped blue-green, oily and good grilled."),
+        Fish("cod", "Cod", 8, "Big, white-fleshed, a fisherman's staple."),
+        Fish("sea_bass", "Sea Bass", 11, "A fine fish; the Crown's cooks pay well for it."),
+        Fish("eel", "Eel", 9, "It doesn't want to be caught, and it doesn't want to be cooked."),
+        Fish("lobster", "Lobster", 18, "Blue-black and furious."),
+        Fish("salmon", "Salmon", 16, "Pink-fleshed and strong; it fought all the way in."),
+        Fish("perch", "Perch", 4, "A little striped river fish."),
+        Fish("trout", "Trout", 7, "Speckled, from cold clear water."),
+        Fish("carp", "Carp", 6, "Bronze and bony, from still water."),
+        Fish("pike", "Pike", 12, "All teeth. Mind your fingers."),
+        Fish("golden_carp", "Golden Carp", 45, "A carp the colour of a crown. They say it brings luck."),
+        Fish("arctic_char", "Arctic Char", 10, "Red-bellied, from icy northern water."),
+        Fish("ice_pike", "Ice Pike", 17, "Pale as frost, and just as cold to hold."),
+        Mat("pearl", "Pearl", 45, "A pearl from a harbour oyster, pale and perfect."),
+        Mat("old_boot", "Old Boot", 1, "Somebody's boot. Somebody's foot isn't in it, thankfully."),
+        // ---- the quarry and the mines --------------------------------------------------------------------
+        Mat("iron_ore", "Iron Ore", 4, "Rust-red rock. A forge smelts two into an iron ingot."),
+        Mat("silver_ore", "Silver Ore", 10, "Grey rock threaded with silver. Two smelt to a silver ingot."),
+        Mat("gold_ore", "Gold Ore", 18, "Rock with a yellow gleam. Two smelt to a gold ingot."),
+        Mat("silver_ingot", "Silver Ingot", 28, "Bright, soft, and much wanted by jewellers."),
+        Mat("gold_ingot", "Gold Ingot", 50, "Heavy and warm-coloured. The Crown mints these."),
+        Mat("rough_garnet", "Rough Garnet", 25, "A dark red stone, uncut."),
+        Mat("rough_sapphire", "Rough Sapphire", 45, "A deep blue stone, uncut."),
+        Mat("stone_block", "Stone Block", 2, "Squared grey stone. The city always needs more."),
+        // ---- the woodlot ---------------------------------------------------------------------------------
+        Mat("pine_log", "Pine Log", 4, "Straight, light and full of sap."),
+        Mat("oak_log", "Oak Log", 7, "Heavy, hard and slow-grown: shipwrights want it."),
+        Mat("yew_log", "Yew Log", 14, "Red-hearted and springy. Bowyers prize it."),
+        // ---- the kitchen ---------------------------------------------------------------------------------
+        Mat("venison", "Venison", 5, "Raw meat from deer or boar. Cook it."),
+        new("grilled_fish", "Grilled Fish", ItemKind.Food, 8, "Charred skin, flaky inside. Heals a fair bit and restores stamina.") { Use = new Effect(Health: 0.25, Stamina: 0.4) },
+        new("fish_stew", "Fish Stew", ItemKind.Food, 18, "A thick harbour stew. Heals well, and you're harder to hurt for two minutes.") { Use = new Effect(Health: 0.4, Stamina: 0.3, Ward: 12, Seconds: 120) },
+        new("roast_venison", "Roast Venison", ItemKind.Food, 14, "Rich and filling. Heals well, and your blows land harder for two minutes.") { Use = new Effect(Health: 0.35, Stamina: 0.3, Might: 0.08, Seconds: 120) },
+        new("hunters_pie", "Hunter's Pie", ItemKind.Food, 24, "Venison and gravy under a crust. Heals most of your wounds.") { Use = new Effect(Health: 0.6, Stamina: 0.6) },
+        new("seafood_platter", "Seafood Platter", ItemKind.Food, 45, "Lobster, salmon and eel, fit for the Crown. Heals you fully and fires you up.") { Use = new Effect(Health: 1, Stamina: 1, Magicka: 0.5, Might: 0.12, Seconds: 180) },
+        new("smoked_eel", "Smoked Eel", ItemKind.Food, 15, "Keeps for weeks. Heals and restores magicka.") { Use = new Effect(Health: 0.3, Magicka: 0.4) },
         // ---- weapons ----------------------------------------------------------------------------------
         Gear("iron_sword", "Iron Sword", 40, Slot.Weapon, Grip.OneHand, "Knight/1H_Sword", damage: 0.1),
         Gear("steel_sword", "Steel Sword", 110, Slot.Weapon, Grip.OneHand, "Knight/1H_Sword", damage: 0.2, tint: "#e4ecf4", metal: true),

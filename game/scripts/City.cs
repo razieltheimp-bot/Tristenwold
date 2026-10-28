@@ -45,7 +45,7 @@ public static class City
     public static List<Lair> Lairs { get; } =
     [
         new("skeever", 3, new(-20, 0, -82), 6),
-        new("dock_thug", 2, new(118, 0, 14), 5),
+        new("dock_thug", 2, new(130, 0, 30), 2), // the far end of the south pier, away from the honest work on the middle one
         new("lantern_boy", 2, new(-50, 0, 72), 4),
         new("draugr", 1, new(-80, 0, -40), 3),
         new("sea_wraith", 1, new(-84, 0, -46), 3),
@@ -65,8 +65,15 @@ public static class City
     }
 
     /// <summary>Ground height at a point: the city's ring platforms, or the land outside them.</summary>
+    /// <summary>Where the piers run out into the harbour (their centre lines), and how far.</summary>
+    public static readonly float[] Piers = [-30, -15, 0, 15, 30];
+    public const float PierFrom = 102, PierTo = 142;
+
+    public static bool OnPier(Vector3 p) => p.X is > PierFrom and < PierTo && Piers.Any(z => Math.Abs(p.Z - z) < 2.5f);
+
     public static float FloorAt(Vector3 p)
     {
+        if (OnPier(p)) return Mathf.Max(0, (float)WorldGen.Default.Height(p.X, p.Z)); // the boards
         var r = new Vector2(p.X, p.Z).Length();
         return r < CrownRadius ? CrownHeight : r < InnerRadius ? InnerHeight : (float)WorldGen.Default.Height(p.X, p.Z);
     }
@@ -154,9 +161,9 @@ public static class City
         Label(root, new Vector3(-20, 8, -82), "The Warrens");
 
         // The Docks: piers out into the harbor, stacked with cargo.
-        for (var z = -30; z <= 30; z += 15)
+        foreach (var z in Piers)
         {
-            Buildings.Place(root, "pier", new Vector3(122, 0, z), 0, 0);
+            Buildings.Place(root, "pier", new Vector3((PierFrom + PierTo) / 2, 0, z), 0, 0);
             for (var k = 0; k < 3; k++)
                 Models.Place(root, rng.Chance(0.5) ? "ph:barrel.glb" : "ph:crate.glb",
                     new Vector3(108 + rng.Next(28), 0, z + (float)rng.NextDouble() * 3 - 1.5f), 1, (float)rng.NextDouble() * Mathf.Tau);

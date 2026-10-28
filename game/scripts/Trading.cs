@@ -120,9 +120,18 @@ public partial class Main
     {
         var pack = _player.Pack;
         var level = pack.Level(job);
-        var known = Recipes.For(job).Where(r => r.Level <= level + 1).OrderBy(r => !pack.Has(r.Needs) || r.Level > level).ThenBy(r => r.Level).ToList();
-        var text = $"{job} {level} ({pack.JobXp.GetValueOrDefault(job)}/{(level < Pack.MaxJobLevel ? Pack.XpFor(level + 1) : pack.JobXp.GetValueOrDefault(job))} xp). " +
-                   (job == Job.Smithing ? "Smelt scrap into iron, iron and coal into steel; tan hides into leather; forge weapons and armour." : "Brew potions from the herbs you pick in the wild.");
+        var known = Recipes.For(job).Where(r => r.Level <= level + 1)
+            // Any fish will grill: show one way to grill, with the cheapest fish you have.
+            .GroupBy(r => r.Makes).SelectMany(g => g.Count() > 1 && g.All(r => r.Needs.Length == 1)
+                ? [g.OrderBy(r => !pack.Has(r.Needs)).ThenBy(r => Items.Get(r.Needs[0].Id)!.Value).First()] : g.AsEnumerable())
+            .OrderBy(r => !pack.Has(r.Needs) || r.Level > level).ThenBy(r => r.Level).ToList();
+        var text = $"{TradeName(job)} {level} ({pack.JobXp.GetValueOrDefault(job)}/{(level < Pack.MaxJobLevel ? Pack.XpFor(level + 1) : pack.JobXp.GetValueOrDefault(job))} xp). " +
+                   job switch
+                   {
+                       Job.Smithing => "Smelt ore or scrap into iron, silver and gold, iron and coal into steel; tan hides into leather; forge weapons and armour.",
+                       Job.Cooking => "Cook what you catch and hunt: any fish grills; venison roasts; stews, pies and a seafood platter fit for the Crown, as you get better. Meals heal, and some make you harder to hurt or harder-hitting for a while.",
+                       _ => "Brew potions from the herbs you pick in the wild.",
+                   };
         var options = known.Select(r =>
         {
             var needs = string.Join(", ", r.Needs.Select(n => $"{Items.Count(n.Id, n.N)} ({pack.Count(n.Id)})"));
@@ -132,14 +141,14 @@ public partial class Main
             {
                 var before = pack.Level(job);
                 if (!pack.Make(r)) { Sound.Ui("error"); _hud.Toast(r.Level > level ? $"You need {job.ToString().ToLowerInvariant()} {r.Level} for that." : "You don't have everything for that.", 3); return; }
-                Sound.Ui(job == Job.Smithing ? "anvil" : "potion");
+                Sound.Ui(job == Job.Smithing ? "anvil" : job == Job.Cooking ? "herb" : "potion");
                 _hud.Toast($"You make {Items.Count(r.Makes, r.Count).ToLowerInvariant()}.{(pack.Level(job) > before ? $" {job} rises to {pack.Level(job)}!" : "")}", 4);
                 Save();
                 ShowCraft(job, back);
             }));
         }).ToList();
         options.Add(("Back", back));
-        _hud.Talk(job == Job.Smithing ? "The forge" : "Brewing", text, [.. options]);
+        _hud.Talk(job switch { Job.Smithing => "The forge", Job.Cooking => "The kitchen", _ => "Brewing" }, text, [.. options]);
     }
 
     // ---- shops ----------------------------------------------------------------------------------
@@ -164,21 +173,36 @@ public partial class Main
         yield return ("I've things to sell.", () => Sell(person, shop));
         if (shop.Forge) yield return ("Can I use your forge?", () => ShowCraft(Job.Smithing, () => Say(person, "Mind the anvil.")));
         if (shop.Bench) yield return ("Can I use your bench?", () => ShowCraft(Job.Herbalism, () => Say(person, "Wash the mortar after.")));
+        if (shop.Kitchen) yield return ("Can I use your kitchen?", () => ShowCraft(Job.Cooking, () => Say(person, "Leave the pans how you found them.")));
     }
 
+    /// <summary>How a price compares with usual, for the shop's list.</summary>
+    string Dearness(string id) => CityEconomy.GoodOf(id) is { } g ? _city.Factor(g) switch
+    {
+        >= 1.6 => " (very dear today)", >= 1.2 => " (dear today)", <= 0.65 => " (very cheap today)", <= 0.85 => " (cheap today)", _ => "",
+    } : "";
+
+    /// <summary>
+    /// A shop's wares at today's prices (the goods the city trades in cost what the market says, less the city's regard
+    /// for this hero, plus their people's markup). What runs short can run out.
+    /// </summary>
     void Buy(Person person, Shop shop)
     {
         var options = shop.Sells.Select(id =>
         {
             var item = Items.Get(id);
-            var (name, price, text) = id == "meat" ? ("Meat", Shops.MeatPrice, "for your beasts") : (item!.Name, Shop.Price(item), item.Text);
-            price = Shops.Charge(price, _player.Markup);
-            return ($"{name}, {price} septims: {text}", (Action)(() =>
+            var (name, price, text) = id == "meat" ? ("Meat", Shops.MeatPrice, "for your beasts") : (item!.Name, _city.Price(item), item.Text);
+            price = Shops.Charge(price, ShopMarkup);
+            var sold = item is not null && !_city.InStock(item);
+            return (sold ? $"{name}: sold out" : $"{name}, {price} septims{Dearness(id)}: {text}", (Action)(() =>
             {
-                var (septims, meat) = (_player.Septims, _player.Meat);
-                if (!Shops.Buy(shop, id, _player.Pack, ref septims, ref meat, _player.Markup)) { Sound.Ui("error"); _hud.Toast("You can't afford that.", 3); return; }
+                if (sold) { Sound.Ui("error"); Say(person, $"None left. {CityEconomy.Info(CityEconomy.GoodOf(id)!.Value).Makers} haven't brought any in."); return; }
+                if (_player.Septims < price) { Sound.Ui("error"); _hud.Toast("You can't afford that.", 3); return; }
+                _player.Septims -= price;
+                if (id == "meat") _player.Meat++;
+                else _player.Pack.Add(id);
+                _city.Bought(id, price);
                 Sound.Ui("coin");
-                (_player.Septims, _player.Meat) = (septims, meat);
                 _hud.Toast($"Bought {name.ToLowerInvariant()}. ({_player.Septims} septims left)", 3);
                 Save();
                 Buy(person, shop);
@@ -201,30 +225,40 @@ public partial class Main
             "and grow up at your side. Dragons aren't for sale: no one sells a dragon.", [.. options]);
     }
 
+    /// <summary>Sells one of something at today's offer: the city's stock grows, and the price for the next one falls.</summary>
+    int SellOne(string id)
+    {
+        if (Items.Get(id) is not { } item || !_player.Pack.Take(id)) return 0;
+        var offer = _city.Offer(item);
+        _player.Septims += offer;
+        _city.Sold(id, offer);
+        return offer;
+    }
+
     void Sell(Person person, Shop shop)
     {
-        var options = _player.Pack.Contents.Where(c => c.Item.Id != "alchemist_kit" || c.N > 1).Select(c => ($"{c.Item.Name} ({c.N}): {Shop.Offer(c.Item)} septims each",
+        var options = _player.Pack.Contents.Where(c => c.Item.Id != "alchemist_kit" || c.N > 1).Select(c => ($"{c.Item.Name} ({c.N}): {_city.Offer(c.Item)} septims each{Dearness(c.Item.Id)}",
             (Action)(() =>
             {
-                var septims = _player.Septims;
-                if (Shops.Sell(c.Item.Id, _player.Pack, ref septims)) _player.Septims = septims;
+                SellOne(c.Item.Id);
+                Sound.Ui("coin", -6);
                 Save();
                 Sell(person, shop);
             }))).ToList();
         if (_player.Pack.Contents.Any(c => c.Item.Kind is ItemKind.Material or ItemKind.Trophy))
-            options.Insert(0, ("Sell every trophy and all the pelts, hides and bits (keep herbs, potions and gear)", () =>
+            options.Insert(0, ("Sell every trophy and all the pelts, hides, ore, logs, fish and bits (keep herbs, potions, food and gear)", () =>
             {
-                var septims = _player.Septims;
+                var got = 0;
                 foreach (var (item, n) in _player.Pack.Contents.Where(c => c.Item.Kind is ItemKind.Material or ItemKind.Trophy).ToList())
-                    for (var i = 0; i < n; i++) Shops.Sell(item.Id, _player.Pack, ref septims);
-                _hud.Toast($"Sold for {septims - _player.Septims} septims.", 4);
+                    for (var i = 0; i < n; i++) got += SellOne(item.Id);
+                _hud.Toast($"Sold for {got} septims. (Selling a lot at once brings the price down: the market's only so hungry.)", 5);
                 Sound.Ui("coin");
-                _player.Septims = septims;
                 Save();
                 Sell(person, shop);
             }));
         options.Add(("That's all.", () => Say(person, "Pleasure.")));
-        _hud.Talk($"{shop.Name}: selling ({_player.Septims} septims)", $"{shop.Keeper} pays half what a thing's worth. Worn gear isn't for sale; take it off first.", [.. options]);
+        _hud.Talk($"{shop.Name}: selling ({_player.Septims} septims)",
+            $"{shop.Keeper} pays half today's price{(_city.Discount > 0 ? ", and a little more to someone the Exchange speaks well of" : "")}. Worn gear isn't for sale; take it off first.", [.. options]);
     }
 
     /// <summary>The market on the road in from the east gate, right by the Gallows Perch: four stalls and their keepers.</summary>

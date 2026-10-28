@@ -73,11 +73,63 @@ public sealed class HerbBook
     public bool Ready(Plant p, double playSeconds) =>
         !PickedAt.TryGetValue(p.Id, out var at) || playSeconds - at >= Herbs.RegrowSeconds;
 
+    /// <summary>The same for anything else that's gathered and comes back (a mined vein, a felled tree).</summary>
+    public bool Ready(string id, double playSeconds, double regrow) =>
+        !PickedAt.TryGetValue(id, out var at) || playSeconds - at >= regrow;
+
+    public void Worked(string id, double playSeconds) => PickedAt[id] = playSeconds;
+
     public void Picked(Plant p, double playSeconds)
     {
         PickedAt[p.Id] = playSeconds;
         // Forget plants long grown back, so the book doesn't grow forever.
         if (PickedAt.Count > 400)
             foreach (var old in PickedAt.Where(kv => playSeconds - kv.Value > Herbs.RegrowSeconds).Select(kv => kv.Key).ToList()) PickedAt.Remove(old);
+    }
+}
+
+/// <summary>An ore vein out in the wild, on the crags and the cold heights: richer than the quarry's, and further to walk.</summary>
+public sealed record Outcrop(string Id, string VeinId, double X, double Z)
+{
+    public double DistanceTo(double x, double z) => Math.Sqrt((X - x) * (X - x) + (Z - z) * (Z - z));
+}
+
+/// <summary>
+/// Where ore breaks the surface out in the wilds, worked out from the seed like the herbs: iron, coal, silver and
+/// sometimes gold, up on the crags and in the cold north. Gold is only found out here, never at the quarry.
+/// </summary>
+public static class Outcrops
+{
+    public const double Cell = 110;
+
+    public static IEnumerable<Outcrop> Near(WorldGen world, double x, double z, double radius)
+    {
+        var (c0, c1) = ((long)Math.Floor((x - radius) / Cell), (long)Math.Floor((x + radius) / Cell));
+        var (r0, r1) = ((long)Math.Floor((z - radius) / Cell), (long)Math.Floor((z + radius) / Cell));
+        for (var cx = c0; cx <= c1; cx++)
+            for (var cz = r0; cz <= r1; cz++)
+                foreach (var o in In(world, cx, cz))
+                    if (o.DistanceTo(x, z) <= radius) yield return o;
+    }
+
+    public static IEnumerable<Outcrop> In(WorldGen world, long cx, long cz)
+    {
+        var rng = Noise.Dice(world.Seed, 91, cx, cz);
+        if (!rng.Chance(0.45)) yield break;
+        var x = (cx + 0.2 + rng.NextDouble() * 0.6) * Cell;
+        var z = (cz + 0.2 + rng.NextDouble() * 0.6) * Cell;
+        var h = world.Height(x, z);
+        if (h < WorldGen.WaterLevel + 1) yield break;
+        if (world.BiomeAt(x, z, h) is not (Biome.Crags or Biome.Tundra or Biome.Snowfield) && h < 25) yield break;
+        if (Math.Sqrt(x * x + z * z) < 200) yield break;
+        if (world.SettlementsNear(x, z, 80).Any(s => s.DistanceTo(x, z) < s.Radius + 30)) yield break;
+        var vein = rng.PickWeighted(new (string, double)[] { ("iron", 3), ("coal", 2), ("silver", 2), ("gold", 1) });
+        var count = 2 + rng.Next(3);
+        for (var i = 0; i < count; i++)
+        {
+            var (px, pz) = (x + (rng.NextDouble() * 2 - 1) * 6, z + (rng.NextDouble() * 2 - 1) * 6);
+            if (world.Height(px, pz) < WorldGen.WaterLevel + 0.6) continue;
+            yield return new Outcrop($"vein_{cx}_{cz}_{i}", vein, px, pz);
+        }
     }
 }

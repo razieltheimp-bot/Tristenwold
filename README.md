@@ -378,7 +378,53 @@ Kipines and both kinds of ape sometimes have young with them: find one alone and
   from what the wilds leave you.
 - **The market** on the Gallows Perch road, right where you start: Hollis's Provisions (food, meat for your
   beasts, cloth, leather, coal, a kit), the Anvil Gate (Hulda's smithy: ingots and iron gear), and Saffron's
-  Remedies (potions, herbs, wands and staves). Every shopkeeper buys anything at half what it's worth.
+  Remedies (potions, herbs, wands and staves). Every shopkeeper buys at half today's price (see the economy below).
+
+### Work in town, and the city's economy
+
+(`src/Tristinwold.Gameplay/Gathering.cs` and `Economy.cs`, `src/Tristinwold.World/Herbs.cs` for the wild ore; in
+the game `TownWork.cs`.) Four more trades, each levelling from 1 to 10 like herbalism and smithing (K shows them all):
+
+- **Fishing.** Buy a rod from Bryn's Fish Stall (south of the Gallows road) or Hollis's, face open water (the
+  piers, the shore, a lake or river) and press E to cast. Wait for the float to go under, then press E again,
+  quick. The harbour gives herring, mackerel, cod, sea bass, eels, lobster and salmon (and now and then a pearl);
+  lakes and rivers give perch, carp, trout, pike and, rarely, a golden carp; the cold north gives char and ice
+  pike. Better anglers wait less, have longer to strike, and land the rarer fish. Sometimes it's a boot.
+- **Mining.** At the Greyhollow Quarry west of the walls, Dagna Flint sells pickaxes and buys stone and ore. Its
+  veins give grey stone, iron ore and coal, and a silver seam for skilled miners; out on the crags and in the cold
+  north there are outcrops of iron, coal, silver and gold. A vein takes a few strokes (fewer as you get better),
+  sometimes gives a rough garnet or sapphire, and comes back in eight minutes. A forge smelts two ore into an
+  ingot (iron, silver or gold).
+- **Woodcutting.** At Hollin's Woodlot south-west of the walls, fell the trees with a red band (pine; oak from
+  level 2; yew from level 4) with a woodcutter's axe. They fall, leave a stump, and grow back.
+- **Cooking.** In the Salt Barrel's kitchen (Fenna Rook) or the Gallows Perch's (Mother Corva): grill any fish,
+  roast venison (deer and boar now leave it), and as you improve, fish stew (harder to hurt for two minutes),
+  smoked eel (magicka), hunter's pie and a seafood platter fit for the Crown (heals fully, hits harder).
+- **Day work.** Haskel Brine, the dock foreman by the east gate, pays by the crate: lift one at the end of the
+  middle pier and carry it (slowly; no running) to the warehouse by the gate, six to a shift. Factor Ottilie
+  Marsh at the Exchange has sealed letters to carry to people around town.
+
+**The economy.** Tristinwold keeps a stock of thirteen goods: fish, meat, bread, ale, timber, stone, ore, coal,
+iron, leather and hides, herbs, potions, and silver, gold and gems. Every day (ten minutes of play) its boats,
+farms, quarry, mine and woodlot add to them, its people use them up, the smelters turn ore and coal into iron and
+the apothecaries herbs into potions, and merchants bring in what's short and ship out a glut. Every shop's price
+for those goods follows the stock: scarce is dear (up to two and a half times), plentiful is cheap (down to under
+half), and the shop lists say so. Everything you sell or buy moves it: sell sixty herring at once and herring gets
+cheap; a storm empties the fishmongers. Things happen for a few days at a time: a storm keeps the boats in, the
+herring run, the mine floods, a caravan brings iron and silver, the harvest festival drinks the taverns dry,
+bandits stop the farm carts, marsh fever empties the apothecaries, a fire takes the lumber yard, a ship goes on the
+slips, a dragon takes the cattle, a good harvest comes in. Townsfolk talk about it.
+
+At the Exchange, **Factor Ottilie Marsh** has the market report (every price, which way it's going, what's
+happening, the treasury), **contracts** for whatever's short (a business paying over the odds for fish, timber,
+ore, potions... delivered to her, paid as it comes in, with a bonus for the lot), and the **city's works**: mend
+the harbour wall, shore up the mine, new ovens for the bakers, lamps and drains for the Warrens, a new wing for the
+Exchange, a shipyard. The city puts its taxes and spare stock into them each day; your goods and coin speed them
+along, and each one finished makes a trade better for good (more fish, ore, bread; more taxes; better dock pay).
+Everything you do for the city (contracts, works, letters, dock work) builds your name at the Exchange, from a
+stranger to a known trader, a trusted supplier, a pillar of Tristinwold and the Exchange's favourite: shopkeepers
+take up to 8% off and pay a little more. The city is saved with your company. `--selftest --town-only` walks
+through all of it; `--shots DIR --town` photographs the new places.
 
 ### Companions
 
