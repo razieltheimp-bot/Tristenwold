@@ -122,12 +122,12 @@ public partial class Player : Fighter
         Stats.SpellPower = (1 + (Hero.Level - 1) * 0.04 + (c.Id == "Wizard" ? c.Passive.Power * passive : 0)) * (c.Id == "Poet" ? 1 + c.Passive.Power * passive : 1);
         Stats.DamageMult = 1 + (Hero.Level - 1) * 0.04;
         Stats.CritChance = c.Id == "Assassin" ? 25 + 5 * (Hero.Rank("backstab") - 1) : c.Calling == Calling.Rogue ? 10 : 5;
-        Stats.SpeedMult = c.Id == "MartialArtist" ? 1.15 : 1;
+        Stats.SpeedMult = (c.Id == "MartialArtist" ? 1.15 : 1) * Agility.Speed(Pack.Level(Job.Agility)); // quicker on their feet for every level of agility
         Stats.Name = Company;
         Races.Apply(Stats, race, Blood, Appearance?.PureDragon == true); // their people's gifts and costs, and a dragonkind's blood
         // What they wear, and what they've drunk.
         Stats.Armor += Pack.Armor + (_wardLeft > 0 ? _ward : 0);
-        var might = (1 + Pack.Damage) * (_mightLeft > 0 ? 1 + _might : 1);
+        var might = (1 + Pack.Damage) * (_mightLeft > 0 ? 1 + _might : 1) * Trophies;
         Stats.DamageMult *= might;
         Stats.SpellPower *= might;
     }
@@ -210,6 +210,11 @@ public partial class Player : Fighter
         if (Class.Id == "Barbarian" && InFight) Stats.Heal(Stats.MaxHealth * Class.Passive.Power * Hero.Power("thick_hide") * delta);
         if (Class.Id == "Sorcerer") Stats.Restore(Stats.MaxMana * 0.02 * delta);
         if (Class.Id == "Musician") Stats.Restore(Stats.MaxMana * Class.Passive.Power * Hero.Power("perfect_pitch") * delta, Stats.MaxStamina * Class.Passive.Power * Hero.Power("perfect_pitch") * delta);
+        if (Scripted)
+        {
+            Figure.Move(3, true, false);
+            return;
+        }
         if (Frozen)
         {
             if (Mount is null) FallAndSlide(delta, Vector3.Zero);
@@ -265,6 +270,12 @@ public partial class Player : Fighter
 
     /// <summary>Set while talking or reading the map: no walking off mid-sentence.</summary>
     public bool Frozen { get; set; }
+
+    /// <summary>Set while the game moves the hero itself (over an obstacle on the Tumblers' Run): no gravity, no input.</summary>
+    public bool Scripted { get; set; }
+
+    /// <summary>What the trophies hung on the hero's wall at home are worth (more harm: see <see cref="Housing.TrophyBonus"/>).</summary>
+    public double Trophies { get; set; } = 1;
 
     /// <summary>Carrying something heavy (a crate on the docks): slower, and no running.</summary>
     public bool Burdened { get; set; }

@@ -421,6 +421,47 @@ stranger to a known trader, a trusted supplier, a pillar of Tristinwold and the 
 take up to 8% off and pay a little more. The city is saved with your company. `--selftest --town-only` walks
 through all of it; `--shots DIR --town` photographs the new places.
 
+### Life beyond the sword
+
+(`src/Tristinwold.Gameplay/Pursuits.cs` and `src/Tristinwold.World/Pursuits.cs`; in the game `Pursuits.cs`.) Seven
+more trades, levelling 1 to 10 like the rest, and things to do that aren't fighting:
+
+- **Farming.** Gilly Thatch keeps the Commons Allotments, south of the walls, and sells seed. Take any empty bed
+  (E) and plant potatoes, onions or cabbages, or, as you get better, herb seed: emberleaf, bluebells, bloodcaps,
+  frostbloom, silverthorn. They grow while you play (six to fourteen minutes); you can watch them come up. Dig them
+  up when they're ripe; better growers get more.
+- **Firemaking.** A tinderbox (Hollis sells them) and a log: light a fire anywhere outside town (from the pack,
+  I). Cook at it, or rest by it out of a fight and your wounds close. Better logs burn longer; better hands catch
+  first time.
+- **Agility: the Tumblers' Run.** Cole Sparrow's obstacle course west of the walls: the balance log, the climbing
+  net, the rope swing over the pit, the stepping stones, the wall, and the ladder and slide. Take them in order for
+  a lap and a bonus; fall off (it hurts, a little) and the lap starts over. Every level makes you a percent quicker
+  everywhere.
+- **Thieving.** Any grown townsfolk can have their pocket picked (talk to them). Commoners are easy and carry
+  little; merchants more; the Watch and the gentry are harder, and carry better. Get caught and you're fined, the
+  Exchange thinks less of you, and they keep a hand on their purse for a while. Rogues and thieves are better at it.
+- **Trapping.** Buy a snare from Hollis, set it out in the wilds (from the pack), and come back in a few minutes:
+  rabbits and their pelts, game birds and feathers, martens in the pines, snow hares in the north. Better trappers
+  watch more snares at once.
+- **Crafting.** Ilka Brightwater, the jeweller by the Exchange, lends her bench and loom: silver and gold rings and
+  amulets (a garnet or sapphire, or a pearl, for the best), worn in two new slots, and linen tunics and padded
+  jerkins.
+- **Building: a house of your own.** Buy the plot at Hearthside, north of the walls, from Factor Marsh (250 crowns),
+  saw planks on it (and Hulda makes nails), and build it stage by stage: foundation, frame, walls, roof, door and
+  windows. You can watch it go up. Then furnish it: a bed (sleep in it to wake healed and well rested, a tenth more
+  experience for half an hour), a chest to keep things in, a garden of two more beds, a hearth to cook at, and a
+  trophy wall (each lair trophy hung makes your blows a percent harder, up to ten). Carve a home charm to come home
+  from anywhere, every five minutes.
+- **Treasure hunts.** Bandits and thugs sometimes carry a torn map. Read it, and it names a landmark (a village, a
+  farmstead, the gates of a city) and how far from it to dig, and which way; dig there with a spade for the next
+  scrap, two to four of them, and a chest at the end. Dig in the wrong place and you're told how warm you are.
+- **Feats.** Thirty-one of them, for all of it: your first fish and your hundredth, a lap of the Run, a purse
+  lifted (and getting caught), a treasure dug up, a house finished, five contracts filled, a hundred crates
+  carried, a trade mastered, ten trades at five. The game menu and the skills window (K) list them, with your
+  points.
+
+Everything is saved with your company. `--selftest --pursuits-only` walks through all of it.
+
 ### Companions
 
 - **Younglings.** About a third of the herds and packs in the wilds have young with them: wolf pups, bear cubs,

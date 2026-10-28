@@ -348,6 +348,7 @@ public partial class Main : Node3D
         AddGuilds();
         AddMarket();
         AddTownWork();
+        AddPursuits();
         _herbPatch = new HerbPatch(this);
         AddChild(_herbPatch);
         foreach (var raid in Raids.All)
@@ -653,6 +654,7 @@ public partial class Main : Node3D
         TendLine(delta);
         TendCompany(delta);
         TendGuilds(delta);
+        TendPursuits(delta);
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
 
         if (_player.Stats.LimitReady && !_limitWasReady)
@@ -685,7 +687,7 @@ public partial class Main : Node3D
         // The nearest lair that suits the hero, and the nearest nemesis out roaming.
         if (Raids.For(_player.Hero.Level, pos.X, pos.Z).FirstOrDefault() is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
-        saga = [.. saga, .. TownLines(pos)];
+        saga = [.. saga, .. TownLines(pos), .. PursuitLines(pos)];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
     }
@@ -740,7 +742,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(_player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return TownAction(pos);
+        return TownAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>
@@ -875,6 +877,7 @@ public partial class Main : Node3D
         if (scripted && Godot.FileAccess.FileExists(_savePath)) DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(_savePath));
         if (Choice.Account is not null) _savePath = $"user://saves/{string.Concat(Choice.Account.Where(char.IsLetterOrDigit))}-{company}.json";
         _city = CityEconomy.Start(_world.Seed);
+        _pursuits = new PursuitBook();
         var stored = Choice.Save ?? (Choice.Account is null && Godot.FileAccess.FileExists(_savePath) ? Godot.FileAccess.GetFileAsString(_savePath) : null);
         if (stored is not null)
         {
@@ -892,6 +895,7 @@ public partial class Main : Node3D
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
                 _city = save.City ?? CityEconomy.Start(_world.Seed);
+                _pursuits = save.Pursuits ?? new PursuitBook();
                 if (!scripted && save.Where is { } where) StandAt(where);
                 return;
             }
@@ -906,7 +910,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)

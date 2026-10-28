@@ -519,6 +519,40 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             await Shot(name);
         }
         if (OS.GetCmdlineUserArgs().Contains("--exchange")) goto exchange;
+        if (OS.GetCmdlineUserArgs().Contains("--pursuits"))
+        {
+            // The allotments, half of them growing (two ripe), the Tumblers' Run, and the house: a bare plot, half built, finished.
+            var book = main.Pursuits;
+            var now = main.GuildBook.PlaySeconds;
+            book.Plots["allotment_0"] = new Planting { Seed = "potato_seed", PlantedAt = now - 9999 };
+            book.Plots["allotment_1"] = new Planting { Seed = "cabbage_seed", PlantedAt = now - 200 };
+            book.Plots["allotment_4"] = new Planting { Seed = "emberleaf_seed", PlantedAt = now - 9999 };
+            await From("pursuit-allotments", Main.AllotmentsAt + new Vector3(0, 7, 13), Main.AllotmentsAt);
+            await From("pursuit-course", Main.CourseAt + new Vector3(16, 14, 8), Main.CourseAt + new Vector3(-2, 0, -16));
+            await From("pursuit-course-swing", Main.CourseAt + new Vector3(14, 4, -12), Main.CourseAt + new Vector3(7, 2, -18));
+            await From("pursuit-plot", Main.HousePlotAt + new Vector3(0, 6, 14), Main.HousePlotAt);
+            book.House.Owned = true;
+            book.House.Built = 2;
+            await From("pursuit-house-frame", Main.HousePlotAt + new Vector3(4, 6, 14), Main.HousePlotAt);
+            book.House.Built = 3;
+            await From("pursuit-house-walls", Main.HousePlotAt + new Vector3(4, 6, 14), Main.HousePlotAt);
+            book.House.Built = 5;
+            foreach (var f in Housing.Furniture) book.House.Furniture.Add(f.Id);
+            await From("pursuit-house", Main.HousePlotAt + new Vector3(6, 7, 18), Main.HousePlotAt + new Vector3(0, 1, 2));
+            // A fire out past the walls.
+            p.Pack.Add("tinderbox");
+            p.Pack.Add("oak_log", 3);
+            p.GlobalPosition = new Vector3(-150, 1, -120);
+            await Frames(30);
+            for (var i = 0; i < 8 && main.FiresLit == 0; i++) { main.LightFireForTest(); await Frames(5); }
+            await Frames(30);
+            cam.GlobalPosition = p.GlobalPosition + new Vector3(3, 2.5f, 3);
+            cam.LookAt(p.GlobalPosition - p.GlobalTransform.Basis.Z * 1.6f, Vector3.Up);
+            cam.MakeCurrent();
+            await Shot("pursuit-fire");
+            GetTree().Quit();
+            return;
+        }
         await From("town-fishstall", new Vector3(64, 7, 0), new Vector3(64, 1, -13));
         await From("town-docks", new Vector3(92, 14, 22), new Vector3(118, 0, 0));
         await From("town-quarry", Main.QuarryAt + new Vector3(0, 14, 22), Main.QuarryAt + new Vector3(0, 1, -4));

@@ -36,9 +36,10 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--classes-only")) { await Teleport(new Vector3(-150, 0, -120)); await ClassesTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--town-only")) { await TownWorkTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--pursuits-only")) { await PursuitsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1077,6 +1078,176 @@ public partial class SelfTest(Main main) : Node
         Check(thing() is not null, $"{typeof(T).Name.ToLowerInvariant()} waiting at {q.TargetName}");
         main.PlayerNode.Stats.Heal(10_000);
         return thing();
+    }
+
+    /// <summary>
+    /// The pursuits besides fighting: growing things at the allotments, a fire out past the walls, a lap of the
+    /// Tumblers' Run, lifting a purse, a snare in the wilds, a treasure hunt, and a house of your own, built and
+    /// furnished; and the feats for it all, kept with the company.
+    /// </summary>
+    async Task PursuitsTest()
+    {
+        var p = main.PlayerNode;
+        var pack = p.Pack;
+        var hud = main.HudNode;
+        var book = main.Pursuits;
+        var guilds = main.GuildBook;
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        foreach (var e in GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => !e.Friendly).ToList()) e.QueueFree();
+        p.Crowns = 2000;
+
+        // The allotments: potato seed from Gilly, a bed, and a crop that grows while you play.
+        await Teleport(Main.AllotmentsAt + new Vector3(8, 0, -4));
+        main.Talk(Who(Shops.Allotments.Id));
+        Check(hud.Choose("Let me see") && hud.Choose("Potato Seed") && pack.Count("potato_seed") == 1, $"Gilly sells you seed potatoes ({string.Join(" | ", hud.Options.Take(3))})");
+        hud.EndTalk();
+        var bed = main.BedAt("allotment_0");
+        await Teleport(bed + new Vector3(0, 0, -1.8f));
+        var act = main.PursuitActionForTest(p.GlobalPosition);
+        Check(act?.Verb == "plant something", $"at an empty bed: E to {act?.Verb}");
+        act?.Act();
+        Check(hud.Choose("Plant potatoes") && book.Plots.ContainsKey("allotment_0") && pack.Count("potato_seed") == 0, "you plant the potatoes");
+        await Frames(90);
+        Check(main.BedPlants("allotment_0") > 0, "and shoots come up in the bed");
+        guilds.PlaySeconds += 7 * 60;
+        await Frames(90);
+        act = main.PursuitActionForTest(p.GlobalPosition);
+        Check(act?.Verb.StartsWith("harvest") == true, $"in a few minutes they're ready: E to {act?.Verb}");
+        act?.Act();
+        Check(pack.Count("potato") >= 3 && !book.Plots.ContainsKey("allotment_0") && pack.Level(Job.Farming) >= 1 && pack.JobXp.GetValueOrDefault(Job.Farming) > 0, $"and you dig up {pack.Count("potato")} potatoes: {hud.LastLine}");
+        Check(book.Feats.Contains("green_fingers"), "a feat for your first harvest");
+
+        // A fire, out past the walls; you can cook at it, and it warms you whole.
+        pack.Add("tinderbox");
+        pack.Add("pine_log", 4);
+        await Teleport(new Vector3(-150, 0, -120));
+        Check(main.PackPursuitsForTest().Any(o => o.StartsWith("Light a fire")), "the pack offers to light a fire");
+        for (var i = 0; i < 8 && main.FiresLit == 0; i++) { main.LightFireForTest(); await Frames(5); }
+        Check(main.FiresLit == 1 && pack.Count("pine_log") < 4 && book.Feats.Contains("first_fire"), $"you light one: {hud.LastLine}");
+        p.Stats.TakeHit(p.Stats.MaxHealth * 0.4, DamageKind.Physical, AttackKind.Weapon);
+        var hurt = p.Stats.Health;
+        await Frames(120);
+        Check(p.Stats.Health > hurt, $"and resting by it heals ({hurt:0} to {p.Stats.Health:0})");
+        await Teleport(p.GlobalPosition - p.GlobalTransform.Basis.Z * 0.5f);
+        act = main.PursuitActionForTest(p.GlobalPosition);
+        Check(act?.Verb == "cook at the fire", $"by the fire: E to {act?.Verb}");
+
+        // The Tumblers' Run: every obstacle in order makes a lap.
+        await Teleport(Main.CourseAt + new Vector3(4, 0, 6));
+        main.Talk(Who(Shops.Course.Id));
+        Check(hud.Choose("Teach me about agility"), "Cole tells you how the Run works");
+        hud.EndTalk();
+        var laps = book.Counters.GetValueOrDefault("laps");
+        var xp = pack.JobXp.GetValueOrDefault(Job.Agility);
+        for (var tries = 0; tries < 8 && book.Counters.GetValueOrDefault("laps") == laps; tries++)
+            for (var i = 0; i < Agility.Course.Count; i++)
+            {
+                await Teleport(main.CourseStart(i));
+                Check(main.PursuitActionForTest(p.GlobalPosition)?.Verb == Agility.Course[i].Verb, $"at obstacle {i + 1}: E to {Agility.Course[i].Verb}");
+                await main.RunForTest(i);
+                await Frames(10);
+                if (main.LapNext == 0 && i < Agility.Course.Count - 1) break; // fell: start the lap again
+                if (i < Agility.Course.Count - 1) Check(p.GlobalPosition.DistanceTo(main.CourseEnd(i)) < 1.5f, $"over {Agility.Course[i].Name}, and down the other side ({p.GlobalPosition.DistanceTo(main.CourseEnd(i)):0.0} m off)");
+            }
+        Check(book.Counters.GetValueOrDefault("laps") > laps && pack.JobXp.GetValueOrDefault(Job.Agility) >= xp + Agility.LapBonus, $"a whole lap: {pack.JobXp.GetValueOrDefault(Job.Agility)} agility xp");
+        Check(!p.Scripted && !main.Working, "and you're your own again");
+
+        // Lifting a purse.
+        await Teleport(Main.FactorAt + new Vector3(0, 0, 2));
+        var marks = main.Locals.Where(x => x.Npc.Id == Shops.Jeweller.Id).ToList();
+        var pockets = book.Counters.GetValueOrDefault("pockets") + book.Counters.GetValueOrDefault("caught");
+        if (marks.FirstOrDefault() is { } mark)
+        {
+            main.Talk(mark);
+            Check(hud.Options.Any(o => o.StartsWith("(Pick their pocket)")), "you could pick Ilka's pocket");
+            hud.EndTalk();
+            main.PickPocketForTest(mark);
+            Check(book.Counters.GetValueOrDefault("pockets") + book.Counters.GetValueOrDefault("caught") == pockets + 1, $"you try it: {hud.LastLine}");
+            if (book.WaryUntil.ContainsKey(mark.Npc.Id))
+            {
+                main.PickPocketForTest(mark);
+                Check(book.Counters.GetValueOrDefault("pockets") + book.Counters.GetValueOrDefault("caught") == pockets + 1, "and once caught, they're wary of you");
+            }
+        }
+        else Check(false, "Ilka's at her stall by the Exchange");
+
+        // A snare in the wilds.
+        pack.Add("snare");
+        await Teleport(new Vector3(-150, 0, -160));
+        main.SetSnareForTest();
+        Check(book.Snares.Count == 1 && pack.Count("snare") == 0, $"you set a snare: {hud.LastLine}");
+        var snare = book.Snares[0];
+        guilds.PlaySeconds = Math.Max(guilds.PlaySeconds, snare.ReadyAt) + 1;
+        await Teleport(new Vector3((float)snare.X, 0, (float)snare.Z + 1));
+        await Frames(70);
+        act = main.PursuitActionForTest(p.GlobalPosition);
+        Check(act?.Verb == "check the snare", $"by the snare: E to {act?.Verb}");
+        var before = pack.Contents.Sum(c => c.N);
+        main.CheckSnareForTest(snare);
+        Check(book.Snares.Count == 0 && pack.Contents.Sum(c => c.N) > before && book.Feats.Contains("first_snare"), $"and something's in it: {hud.LastLine}");
+
+        // A treasure hunt, from a torn map.
+        pack.Add("torn_map");
+        pack.Add("spade");
+        main.ReadMapForTest();
+        Check(book.Hunt is { Clues.Count: >= 2 }, $"the map shows {book.Hunt?.Clues.Count} places: {book.Hunt?.Current?.Text}");
+        hud.EndTalk();
+        var crowns = p.Crowns;
+        for (var step = 0; step < 6 && book.Hunt is { Current: { } clue }; step++)
+        {
+            await Teleport(new Vector3((float)clue.X + 30, 0, (float)clue.Z));
+            main.DigForTest();
+            Check(book.Hunt?.Current == clue, $"dig too far off and there's nothing: {hud.LastLine}");
+            await Teleport(new Vector3((float)clue.X + 1, 0, (float)clue.Z));
+            main.DigForTest();
+            hud.EndTalk();
+        }
+        Check(book.Hunt is null && p.Crowns > crowns && book.Feats.Contains("x_marks"), $"dig at every mark, and the treasure's yours: {hud.LastLine}");
+
+        // A house: the plot from the Exchange, and building it stage by stage.
+        await Teleport(Main.FactorAt + new Vector3(0, 0, 2));
+        main.Talk(Who("tristinwold/factor"));
+        crowns = p.Crowns;
+        Check(hud.Choose("I'd like to buy land") && book.House.Owned && p.Crowns == crowns - Housing.PlotPrice, "Ottilie sells you the plot at Hearthside");
+        hud.EndTalk();
+        pack.Practise(Job.Building, 4000);
+        foreach (var s in Housing.Stages.Concat(Housing.Furniture)) foreach (var (id, n) in s.Needs) pack.Add(id, n);
+        await Teleport(Main.HousePlotAt + new Vector3(0, 0, 7));
+        for (var i = 0; i < Housing.Stages.Count; i++)
+        {
+            act = main.PursuitActionForTest(p.GlobalPosition);
+            act?.Act();
+            Check(hud.Choose(Housing.Stages[i].Name) && book.House.Built == i + 1, $"{Housing.Stages[i].Name.ToLowerInvariant()} ({hud.LastLine})");
+            hud.EndTalk();
+            await Frames(70);
+        }
+        Check(book.House.Finished && book.Feats.Contains("homeowner") && main.HouseShown.Contains(":5:"), "the house is built");
+        foreach (var f in Housing.Furniture)
+        {
+            main.PursuitActionForTest(p.GlobalPosition)?.Act();
+            Check(hud.Choose($"Make {f.Name.ToLowerInvariant()}") && book.House.Furniture.Contains(f.Id), $"and furnished: {f.Name.ToLowerInvariant()}");
+            hud.EndTalk();
+        }
+        main.PursuitActionForTest(p.GlobalPosition)?.Act();
+        Check(hud.Choose("Sleep in your own bed") && main.WellRested, "you sleep in your own bed, and wake well rested");
+        hud.EndTalk();
+        var (heroXp, heroLevel) = (p.Hero.Xp, p.Hero.Level);
+        main.GainXp(100);
+        Check(p.Hero.Level > heroLevel || p.Hero.Xp - heroXp == (int)Math.Round(100 * p.Race.Xp * Housing.RestedXp), $"well rested, you learn faster ({p.Hero.Xp - heroXp} for 100)");
+        pack.Add("pine_log", 3);
+        main.PursuitActionForTest(p.GlobalPosition)?.Act();
+        Check(hud.Choose("Open the chest") && hud.Choose("Put in 3 Pine") && book.House.Chest.GetValueOrDefault("pine_log") == 3, "you put logs in your chest");
+        hud.EndTalk();
+        Check(book.Plots.Count == 0 && main.PursuitActionForTest(main.BedAt("home_0") + new Vector3(0, 0, -1.8f)) is { Verb: "plant something" }, "and there's a garden to plant by the house");
+
+        // And all of it's kept.
+        TradeFeatsCheck();
+        var saved = CompanySave.FromJson(main.Save());
+        Check(saved.Pursuits is { } kept && kept.House.Finished && kept.House.Chest.GetValueOrDefault("pine_log") == 3 && kept.Feats.SetEquals(book.Feats) && kept.RestedUntil == book.RestedUntil,
+            $"the house, the chest and {book.Feats.Count} feats ({book.Points} points) are saved: {string.Join(", ", book.Feats)}");
+
+        void TradeFeatsCheck() => Check(book.Points > 0, $"{book.Points} feat points");
     }
 
     async Task Teleport(Vector3 at)

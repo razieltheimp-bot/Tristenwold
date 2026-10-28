@@ -18,7 +18,7 @@ public class TradeTests
         foreach (var kind in Bestiary.All.Select(k => k.Id))
             Assert.All(Loot.Roll(kind, new Rng(3)).Items, i => Assert.NotNull(Items.Get(i.Id)));
         Assert.Equal(Items.All.Count, Items.All.Select(i => i.Id).Distinct().Count());
-        Assert.All(Items.All.Where(i => i.Wearable), i => Assert.True(i.Look is not null || i.Slot == Slot.Body, i.Id));
+        Assert.All(Items.All.Where(i => i.Wearable), i => Assert.True(i.Look is not null || i.Slot is Slot.Body or Slot.Ring or Slot.Neck, i.Id));
     }
 
     [Fact]

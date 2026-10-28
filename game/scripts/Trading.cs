@@ -26,6 +26,9 @@ public partial class Main
     void Spoils(Enemy victim)
     {
         var drop = Loot.Roll(victim.Kind.Id, _lootRng, victim.Young);
+        // Cutthroats sometimes carry a scrap of a treasure map.
+        if (victim.Kind.Id is "dock_thug" or "bandit" or "bandit_chief" or "lantern_boy" or "drowned_hand" or "goblin" or "goblin_tinker" && _lootRng.Chance(0.06))
+            drop = drop with { Items = [.. drop.Items, ("torn_map", 1)] };
         if (drop.Items.Count == 0 && drop.Crowns == 0) return;
         Take(drop.Items);
         _player.Crowns += drop.Crowns;
@@ -71,14 +74,14 @@ public partial class Main
     public void ShowPack()
     {
         var pack = _player.Pack;
-        var worn = string.Join(", ", new[] { Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body, Slot.Cloak }
+        var worn = string.Join(", ", new[] { Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body, Slot.Cloak, Slot.Ring, Slot.Neck }
             .Select(s => pack.WornIn(s) is { } i ? i.Name : null).Where(n => n is not null));
         var text = $"{_player.Crowns} crowns, {_player.Meat} meat. Wearing: {(worn.Length > 0 ? worn : "nothing extra")} " +
                    $"(+{pack.Armor:0} armour, +{pack.Damage:P0} damage).\n" +
-                   $"Herbalism {pack.Level(Job.Herbalism)}, smithing {pack.Level(Job.Smithing)}, beast taming {pack.Level(Job.Taming)}.{(_player.Buffs is { } b ? $" Now: {b}." : "")}\n" +
+                   $"Trades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j).ToLowerInvariant()} {pack.Level(j)}"))}.{(_player.Buffs is { } b ? $" Now: {b}." : "")}\n" +
                    (pack.Items.Count == 0 ? "Your pack is empty." : string.Join(", ", pack.Contents.Select(c => Items.Count(c.Item.Id, c.N))));
         var options = new List<(string, Action)>();
-        foreach (var slot in new[] { Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body, Slot.Cloak })
+        foreach (var slot in new[] { Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body, Slot.Cloak, Slot.Ring, Slot.Neck })
             if (pack.WornIn(slot) is { } on) options.Add(($"Take off {on.Name}", () => { pack.Unequip(slot); Redress(); ShowPack(); }));
         foreach (var (item, n) in pack.Contents)
         {
@@ -86,6 +89,7 @@ public partial class Main
             else if (item.Usable) options.Add(($"{(item.Kind == ItemKind.Food ? "Eat" : "Drink")} {item.Name} ({n}): {item.Text}", () => { Consume(item); ShowPack(); }));
         }
         if (pack.Count("alchemist_kit") > 0) options.Add(("Brew potions (alchemist's kit)", () => ShowCraft(Job.Herbalism, ShowPack)));
+        options.AddRange(PackPursuits());
         options.Add(("Close", _hud.EndTalk));
         _hud.Talk("Your pack", text, [.. options]);
     }
@@ -129,7 +133,9 @@ public partial class Main
                    job switch
                    {
                        Job.Smithing => "Smelt ore or scrap into iron, silver and gold, iron and coal into steel; tan hides into leather; forge weapons and armour.",
-                       Job.Cooking => "Cook what you catch and hunt: any fish grills; venison roasts; stews, pies and a seafood platter fit for the Crown, as you get better. Meals heal, and some make you harder to hurt or harder-hitting for a while.",
+                       Job.Cooking => "Cook what you catch, hunt, snare and grow: any fish grills; venison roasts; stews, pies and a seafood platter fit for the Crown, as you get better. Meals heal, and some make you harder to hurt or harder-hitting for a while.",
+                       Job.Crafting => "Cut gems, and make rings and amulets from silver and gold (worn on a finger and at the throat), and clothes on the loom.",
+                       Job.Building => "Saw logs into planks for your house, and carve a charm to come home by.",
                        _ => "Brew potions from the herbs you pick in the wild.",
                    };
         var options = known.Select(r =>
@@ -142,13 +148,14 @@ public partial class Main
                 var before = pack.Level(job);
                 if (!pack.Make(r)) { Sound.Ui("error"); _hud.Toast(r.Level > level ? $"You need {job.ToString().ToLowerInvariant()} {r.Level} for that." : "You don't have everything for that.", 3); return; }
                 Sound.Ui(job == Job.Smithing ? "anvil" : job == Job.Cooking ? "herb" : "potion");
+                Made(r);
                 _hud.Toast($"You make {Items.Count(r.Makes, r.Count).ToLowerInvariant()}.{(pack.Level(job) > before ? $" {job} rises to {pack.Level(job)}!" : "")}", 4);
                 Save();
                 ShowCraft(job, back);
             }));
         }).ToList();
         options.Add(("Back", back));
-        _hud.Talk(job switch { Job.Smithing => "The forge", Job.Cooking => "The kitchen", _ => "Brewing" }, text, [.. options]);
+        _hud.Talk(job switch { Job.Smithing => "The forge", Job.Cooking => "Cooking", Job.Crafting => "The bench and loom", Job.Building => "The sawhorse", _ => "Brewing" }, text, [.. options]);
     }
 
     // ---- shops ----------------------------------------------------------------------------------
@@ -174,6 +181,7 @@ public partial class Main
         if (shop.Forge) yield return ("Can I use your forge?", () => ShowCraft(Job.Smithing, () => Say(person, "Mind the anvil.")));
         if (shop.Bench) yield return ("Can I use your bench?", () => ShowCraft(Job.Herbalism, () => Say(person, "Wash the mortar after.")));
         if (shop.Kitchen) yield return ("Can I use your kitchen?", () => ShowCraft(Job.Cooking, () => Say(person, "Leave the pans how you found them.")));
+        if (shop.Workshop) yield return ("Can I use your bench and loom?", () => ShowCraft(Job.Crafting, () => Say(person, "Sweep up the filings.")));
     }
 
     /// <summary>How a price compares with usual, for the shop's list.</summary>

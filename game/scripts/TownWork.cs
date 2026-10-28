@@ -282,6 +282,8 @@ public partial class Main
         Sound.Ui("pickup");
         Ripple(_bobberAt);
         var item = Items.Get(id)!;
+        if (id != "old_boot") Did("fish");
+        if (id == "pearl") Did("pearl");
         EndLine(id == "old_boot" ? "You haul in... an old boot." : $"You land {(item.Name.StartsWith('A') ? "an" : "a")} {item.Name.ToLowerInvariant()}! ({_city.Offer(item)} crowns at market today.)" +
             (up is { } l ? $" Fishing rises to {l}!" : ""));
         Save();
@@ -359,6 +361,7 @@ public partial class Main
         var up = _player.Pack.Practise(job, xp);
         _herbs.Worked(spot.Id, _guilds.PlaySeconds);
         _workings.Worked(spot);
+        Did(spot.IsTree ? "trees" : "veins");
         Sound.Ui("pickup");
         _hud.Toast($"{(spot.IsTree ? "Timber!" : "You break it open:")} {Loot.Describe(got)}.{(up is { } l ? $" {job} rises to {l}!" : "")}", 4);
         Save();
@@ -410,6 +413,7 @@ public partial class Main
         _city.Stock[cargo] = _city.Stock.GetValueOrDefault(cargo) + 2;
         _city.Renown += 1;
         s = (s.Left - 1, s.Done + 1);
+        Did("crates");
         Sound.Ui("coin", -2);
         if (s.Left > 0) { _shift = s; _hud.Toast($"+{wage} crowns ({CityEconomy.Info(cargo).Name}). {s.Left} to go.", 3); }
         else
@@ -446,6 +450,7 @@ public partial class Main
         _city.Renown += 2;
         Sound.Ui("coin");
         _hud.Toast($"Letter delivered: +{e.Pay} crowns.", 4);
+        Did("letters");
         Save();
         return true;
     }
@@ -498,6 +503,13 @@ public partial class Main
                       $"there's silver and gold. The smelters take the ore, and a forge turns two into an ingot. You're a level {_player.Pack.Level(Job.Mining)} miner.",
         Job.Woodcutting => "An axe, and the trees with the red band: pine for anyone, oak once you've the knack, yew for the skilled. Shipwrights and " +
                            $"builders want the timber, and the city's always building. You're a level {_player.Pack.Level(Job.Woodcutting)} woodcutter.",
+        Job.Farming => "Buy seed from me, take any empty bed (E) and plant it. Potatoes come up in a few minutes; onions and cabbages take longer; the herbs " +
+                       "(emberleaf, bluebell, bloodcap, frostbloom, silverthorn) want a surer hand and come up as herbs for the alchemists. Come back when it's ripe and dig it up. " +
+                       $"You're a level {_player.Pack.Level(Job.Farming)} grower. Buy a house and you can put a garden in, too.",
+        Job.Crafting => "Silver and gold from the forge, a cut stone if you've one, and my bench: rings and amulets that make your blows land harder or turn others' aside. " +
+                        $"The loom's for linen: tunics and jerkins. Ask to use the bench any time. You're a level {_player.Pack.Level(Job.Crafting)} crafter.",
+        Job.Agility => "Six obstacles: the log, the net, the swing, the stones, the wall, and the ladder and slide. Take them in order for a whole lap, and the bonus. " +
+                       $"Fall off and you start again. The quicker you get, the quicker you are everywhere. You're a level {_player.Pack.Level(Job.Agility)} tumbler.",
         _ => "",
     };
 
@@ -531,6 +543,7 @@ public partial class Main
                     Sound.Ui("coin");
                     Save();
                     _hud.Toast($"Delivered {ids.Count}: +{paid} crowns.{(finishing ? " Contract filled!" : "")}", 5);
+                    if (finishing) Did("contracts");
                     ShowContracts(factor);
                 }));
         }).ToList();
@@ -561,6 +574,7 @@ public partial class Main
                 var ids = have.OrderBy(x => x.Item.Value).SelectMany(x => Enumerable.Repeat(x.Item.Id, x.N)).Take(n).ToList();
                 var taken = _city.Donate(ids, out var done);
                 foreach (var id in ids.Take(taken)) _player.Pack.Take(id);
+                if (taken > 0) Did("donations");
                 Sound.Ui("pickup");
                 _hud.Toast($"You give {taken} {CityEconomy.Info(good).Name} to the works.{(done is not null ? " " + done : "")}", 6);
                 Save();
@@ -572,6 +586,7 @@ public partial class Main
             {
                 var taken = _city.DonateCrowns(Math.Min(gift, coin), out var done);
                 _player.Crowns -= taken;
+                if (taken > 0) Did("donations");
                 Sound.Ui("coin");
                 if (done is not null) _hud.Toast(done, 8);
                 Save();

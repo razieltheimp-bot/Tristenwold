@@ -50,7 +50,7 @@ public static class City
         new("draugr", 1, new(-80, 0, -40), 3),
         new("sea_wraith", 1, new(-84, 0, -46), 3),
         new("drowned_hand", 2, new(150, 0, -110), 5),
-        new("dock_thug", 2, new(-170, 0, 40), 6),
+        new("dock_thug", 2, new(-205, 0, 55), 6),
     ];
 
     public static string AreaAt(Vector3 p)

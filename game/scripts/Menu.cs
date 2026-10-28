@@ -83,6 +83,7 @@ public partial class Main
             options.Add(("Log out", () => _ = Leave("Log out", () => Restart(forget: true))));
         }
         else options.Add(("Back to the start screen", () => _ = Leave("Leave", () => Restart(forget: false))));
+        options.Add(("Feats", ShowFeats));
         options.Add(("Sound and music", SoundMenu));
         if (RemotePlay.Current is null) options.Add(("Quit the game", () => _ = Leave("Quit", Quit))); // on a phone, the PC's game must stay open
         options.Add(("Back to the game", _hud.EndTalk));

@@ -4,7 +4,7 @@ namespace Tristinwold.Gameplay;
 public enum ItemKind { Material, Herb, Potion, Food, Gear, Trophy, Tool }
 
 /// <summary>Where a piece of gear is worn.</summary>
-public enum Slot { None, Weapon, Offhand, Head, Body, Cloak }
+public enum Slot { None, Weapon, Offhand, Head, Body, Cloak, Ring, Neck }
 
 /// <summary>How a weapon is held, which decides how its wielder swings it.</summary>
 public enum Grip { None, OneHand, TwoHand, Ranged, Caster }
@@ -124,6 +124,33 @@ public static class Items
         new("fishing_rod", "Fishing Rod", ItemKind.Tool, 12, "Ash rod, horsehair line, a bone hook. Face open water and press E to cast."),
         new("pickaxe", "Pickaxe", ItemKind.Tool, 18, "For ore veins. Walk up to one and press E."),
         new("woodcutters_axe", "Woodcutter's Axe", ItemKind.Tool, 15, "A broad, heavy bit. For felling trees at a woodlot."),
+        new("tinderbox", "Tinderbox", ItemKind.Tool, 5, "Flint, steel and char-cloth. With a log, light a fire anywhere outside town (from your pack, I)."),
+        new("spade", "Spade", ItemKind.Tool, 8, "For digging where a treasure map says."),
+        new("snare", "Snare", ItemKind.Tool, 4, "A wire noose on a peg. Set it in the wild (from your pack, I) and come back later."),
+        new("torn_map", "Torn Map", ItemKind.Tool, 15, "A scrap of a treasure map. Read it (from your pack, I) to begin a hunt; you'll need a spade."),
+        new("home_charm", "Home Charm", ItemKind.Tool, 60, "A carved token from your own hearth. Use it (from your pack, I) to go home, once every five minutes."),
+        // ---- the allotments ------------------------------------------------------------------------------
+        new("potato_seed", "Potato Seed", ItemKind.Material, 1, "A seed potato. Plant it in an allotment."),
+        new("onion_seed", "Onion Seed", ItemKind.Material, 1, "Onion sets. Plant them in an allotment."),
+        new("cabbage_seed", "Cabbage Seed", ItemKind.Material, 2, "Cabbage seed. Plant it in an allotment."),
+        new("emberleaf_seed", "Emberleaf Seed", ItemKind.Material, 3, "Grows emberleaf in a garden, if you've the knack."),
+        new("bluebell_seed", "Bluebell Seed", ItemKind.Material, 3, "Grows bluebells in a garden."),
+        new("bloodcap_spore", "Bloodcap Spores", ItemKind.Material, 6, "Grows bloodcaps, in good dark soil."),
+        new("frostbloom_seed", "Frostbloom Seed", ItemKind.Material, 8, "Grows frostbloom, for a patient gardener."),
+        new("silverthorn_seed", "Silverthorn Seed", ItemKind.Material, 8, "Grows silverthorn, for a skilled gardener."),
+        new("potato", "Potato", ItemKind.Food, 2, "Raw. Better in a stew.") { Use = new Effect(Health: 0.05) },
+        new("onion", "Onion", ItemKind.Material, 2, "Makes a stew a stew."),
+        new("cabbage", "Cabbage", ItemKind.Food, 3, "Crunchy. Better in a stew.") { Use = new Effect(Health: 0.05, Stamina: 0.1) },
+        // ---- snares --------------------------------------------------------------------------------------
+        Mat("rabbit", "Rabbit", 4, "A snared rabbit. Cook it."),
+        Mat("game_bird", "Grouse", 5, "A plump game bird. Roast it."),
+        Mat("rabbit_pelt", "Rabbit Pelt", 3, "Soft and small."),
+        Mat("marten_pelt", "Marten Pelt", 18, "Rich brown fur, prized by furriers."),
+        Mat("snow_hare_pelt", "Snow Hare Pelt", 12, "White as the north."),
+        Mat("feather", "Feather", 1, "A good flight feather."),
+        // ---- the jeweller's bench ------------------------------------------------------------------------
+        Mat("garnet", "Garnet", 60, "A cut garnet, deep red."),
+        Mat("sapphire", "Sapphire", 110, "A cut sapphire, blue as deep water."),
         // ---- fish (raw: cook them, or sell them) ---------------------------------------------------------
         Fish("herring", "Herring", 4, "Silver and slippery. The harbour's bread and butter."),
         Fish("mackerel", "Mackerel", 6, "Striped blue-green, oily and good grilled."),
@@ -150,6 +177,8 @@ public static class Items
         Mat("rough_garnet", "Rough Garnet", 25, "A dark red stone, uncut."),
         Mat("rough_sapphire", "Rough Sapphire", 45, "A deep blue stone, uncut."),
         Mat("stone_block", "Stone Block", 2, "Squared grey stone. The city always needs more."),
+        Mat("iron_nails", "Iron Nails", 1, "A handful of nails, from an iron ingot at the forge."),
+        Mat("plank", "Plank", 3, "A sawn plank, from a log at your building site."),
         // ---- the woodlot ---------------------------------------------------------------------------------
         Mat("pine_log", "Pine Log", 4, "Straight, light and full of sap."),
         Mat("oak_log", "Oak Log", 7, "Heavy, hard and slow-grown: shipwrights want it."),
@@ -161,6 +190,9 @@ public static class Items
         new("roast_venison", "Roast Venison", ItemKind.Food, 14, "Rich and filling. Heals well, and your blows land harder for two minutes.") { Use = new Effect(Health: 0.35, Stamina: 0.3, Might: 0.08, Seconds: 120) },
         new("hunters_pie", "Hunter's Pie", ItemKind.Food, 24, "Venison and gravy under a crust. Heals most of your wounds.") { Use = new Effect(Health: 0.6, Stamina: 0.6) },
         new("seafood_platter", "Seafood Platter", ItemKind.Food, 45, "Lobster, salmon and eel, fit for the Crown. Heals you fully and fires you up.") { Use = new Effect(Health: 1, Stamina: 1, Mana: 0.5, Might: 0.12, Seconds: 180) },
+        new("vegetable_stew", "Vegetable Stew", ItemKind.Food, 12, "Potato, onion and cabbage. Heals and restores stamina.") { Use = new Effect(Health: 0.3, Stamina: 0.5) },
+        new("roast_bird", "Roast Grouse", ItemKind.Food, 12, "Crisp skin and dark meat. Heals a fair bit.") { Use = new Effect(Health: 0.3, Stamina: 0.3) },
+        new("rabbit_stew", "Rabbit Stew", ItemKind.Food, 20, "Rabbit, potato and onion. Heals well, and keeps you going for two minutes.") { Use = new Effect(Health: 0.45, Stamina: 0.6, Ward: 8, Seconds: 120) },
         new("smoked_eel", "Smoked Eel", ItemKind.Food, 15, "Keeps for weeks. Heals and restores mana.") { Use = new Effect(Health: 0.3, Mana: 0.4) },
         // ---- weapons ----------------------------------------------------------------------------------
         Gear("iron_sword", "Iron Sword", 40, Slot.Weapon, Grip.OneHand, "Knight/1H_Sword", damage: 0.1),
@@ -213,6 +245,16 @@ public static class Items
         Gear("knight_cape", "Knight's Cape", 60, Slot.Cloak, Grip.None, "Knight/Knight_Cape", armor: 4, tint: "#a02828"),
         Gear("kipine_cloak", "Kipine-Feather Cloak", 240, Slot.Cloak, Grip.None, "Mage/Mage_Cape", armor: 12, damage: 0.04, tint: "#6a5e56"),
         Gear("duskprowler_cloak", "Duskprowler's Mantle", 520, Slot.Cloak, Grip.None, "Rogue/Rogue_Cape", armor: 16, damage: 0.08, tint: "#1a1424", glow: "#a050ff"),
+        // ---- rings and amulets (made at a jeweller's bench) -------------------------------------------------
+        Gear("silver_ring", "Silver Ring", 70, Slot.Ring, Grip.None, null, damage: 0.03),
+        Gear("gold_ring", "Gold Ring", 120, Slot.Ring, Grip.None, null, damage: 0.05, armor: 2),
+        Gear("garnet_ring", "Garnet Ring", 220, Slot.Ring, Grip.None, null, damage: 0.08, armor: 2),
+        Gear("silver_amulet", "Silver Amulet", 80, Slot.Neck, Grip.None, null, armor: 5),
+        Gear("pearl_necklace", "Pearl Necklace", 150, Slot.Neck, Grip.None, null, damage: 0.03, armor: 5),
+        Gear("sapphire_amulet", "Sapphire Amulet", 300, Slot.Neck, Grip.None, null, damage: 0.05, armor: 9),
+        // ---- clothes from the loom -------------------------------------------------------------------------
+        Gear("linen_tunic", "Linen Tunic", 25, Slot.Body, Grip.None, null, armor: 6, tint: "#d8ccb4"),
+        Gear("padded_jerkin", "Padded Jerkin", 55, Slot.Body, Grip.None, null, armor: 13, tint: "#9a8a6a"),
         // ---- trophies of the lairs -------------------------------------------------------------------------
         Trophy("warden_skull", "The Cinder Warden's Skull", 220, "Still smouldering."),
         Trophy("bear_plate", "Rock Bear's Stone Plate", 180, "A plate of rock that grew on a living bear."),
@@ -234,7 +276,7 @@ public static class Items
         var what = slot switch
         {
             Slot.Weapon => grip switch { Grip.TwoHand => "A two-handed weapon.", Grip.Ranged => "A ranged weapon.", Grip.Caster => "A caster's focus.", _ => "A one-handed weapon." },
-            Slot.Offhand => "For the off hand.", Slot.Head => "Worn on the head.", Slot.Body => "Body armour.", _ => "A cloak.",
+            Slot.Offhand => "For the off hand.", Slot.Head => "Worn on the head.", Slot.Body => "Body armour.", Slot.Ring => "A ring.", Slot.Neck => "Worn at the throat.", _ => "A cloak.",
         };
         var stats = new List<string>();
         if (damage > 0) stats.Add($"+{damage:P0} damage");

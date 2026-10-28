@@ -3,7 +3,7 @@ using Tristinwold.Nemesis;
 namespace Tristinwold.Gameplay;
 
 /// <summary>A trade a hero can take up and get better at.</summary>
-public enum Job { Herbalism, Smithing, Taming, Fishing, Mining, Woodcutting, Cooking }
+public enum Job { Herbalism, Smithing, Taming, Fishing, Mining, Woodcutting, Cooking, Farming, Firemaking, Crafting, Agility, Thieving, Trapping, Building }
 
 /// <summary>
 /// What a hero carries and wears, and how good they are at their trades. Saved with the company.
@@ -110,6 +110,7 @@ public static class Recipes
     static Recipe Forge(int level, string makes, params (string, int)[] needs) => new(Job.Smithing, level, makes, 1, needs);
     static Recipe Brew(int level, string makes, params (string, int)[] needs) => new(Job.Herbalism, level, makes, 1, needs);
     static Recipe Cook(int level, string makes, int count, params (string, int)[] needs) => new(Job.Cooking, level, makes, count, needs);
+    static Recipe Craft(int level, string makes, params (string, int)[] needs) => new(Job.Crafting, level, makes, 1, needs);
 
     public static IReadOnlyList<Recipe> All { get; } =
     [
@@ -179,6 +180,24 @@ public static class Recipes
         Cook(3, "smoked_eel", 1, ("eel", 1), ("pine_log", 1)),
         Cook(4, "hunters_pie", 2, ("venison", 2), ("bread", 1), ("ladys_mantle", 1)),
         Cook(6, "seafood_platter", 1, ("lobster", 1), ("salmon", 1), ("eel", 1)),
+        Cook(1, "roast_bird", 1, ("game_bird", 1)),
+        Cook(2, "vegetable_stew", 2, ("potato", 2), ("onion", 1), ("cabbage", 1)),
+        Cook(3, "rabbit_stew", 2, ("rabbit", 1), ("potato", 1), ("onion", 1)),
+        // The jeweller's bench and the loom.
+        Craft(1, "linen_tunic", ("linen", 4)),
+        Craft(2, "silver_ring", ("silver_ingot", 1)),
+        Craft(2, "silver_amulet", ("silver_ingot", 2)),
+        Craft(3, "garnet", ("rough_garnet", 1)),
+        Craft(3, "padded_jerkin", ("linen", 4), ("leather", 2)),
+        Craft(4, "gold_ring", ("gold_ingot", 1)),
+        Craft(5, "pearl_necklace", ("silver_ingot", 1), ("pearl", 3)),
+        Craft(5, "garnet_ring", ("gold_ingot", 1), ("garnet", 1)),
+        Craft(6, "sapphire", ("rough_sapphire", 1)),
+        Craft(7, "sapphire_amulet", ("gold_ingot", 2), ("sapphire", 1)),
+        new(Job.Smithing, 1, "iron_nails", 10, [("iron_ingot", 1)]),
+        new(Job.Building, 1, "plank", 2, [("pine_log", 1)]),
+        new(Job.Building, 2, "plank", 3, [("oak_log", 1)]),
+        new(Job.Building, 3, "home_charm", 1, [("oak_log", 1), ("silver_ingot", 1)]),
     ];
 
     public static IEnumerable<Recipe> For(Job job) => All.Where(r => r.Job == job);
@@ -284,7 +303,7 @@ public static class Loot
 /// <param name="Kitchen">A tavern's kitchen, where a hero can cook.</param>
 /// <param name="Trade">The trade it's the place for (a fishmonger's is fishing): its keeper talks about it.</param>
 public sealed record Shop(string Id, string Name, string Keeper, string Greeting, string[] Sells, bool Forge = false, bool Bench = false, bool Beasts = false,
-    bool Kitchen = false, Job? Trade = null)
+    bool Kitchen = false, Job? Trade = null, bool Workshop = false)
 {
     public static int Price(Item item) => item.Value;
     public static int Offer(Item item) => Math.Max(1, item.Value / 2);
@@ -294,7 +313,7 @@ public static class Shops
 {
     public static readonly Shop Provisions = new("shop:provisions", "Hollis's Provisions", "Hollis Brandt",
         "Bread, rope, leather, meat for your beasts. If it keeps you alive on the road, I sell it.",
-        ["bread", "travel_rations", "ale", "meat", "linen", "leather", "coal", "healing_draught", "traveller_cloak", "alchemist_kit", "fishing_rod"]);
+        ["bread", "travel_rations", "ale", "meat", "linen", "leather", "coal", "healing_draught", "traveller_cloak", "alchemist_kit", "fishing_rod", "tinderbox", "spade", "snare"]);
 
     public static readonly Shop Smithy = new("shop:smithy", "The Anvil Gate", "Hulda Ironhand",
         "Steel's honest. People aren't. What do you need hitting, or hitting you less?",
@@ -333,7 +352,23 @@ public static class Shops
         "Sit down before you fall down. Ale's four, stew's eighteen, and if you've caught something, the hearth's yours.",
         ["ale", "bread", "grilled_fish", "fish_stew", "roast_venison"], Kitchen: true, Trade: Job.Cooking);
 
-    public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie, Fishmonger, Quarry, Woodlot, SaltBarrel];
+    /// <summary>The allotments south of the walls: seeds, and a plot to grow them in.</summary>
+    public static readonly Shop Allotments = new("shop:allotments", "The Commons Allotments", "Gilly Thatch",
+        "Seed potatoes, onion sets, cabbage seed; herb seed for them with the knack. Pick a bed, any bed, and mind the slugs.",
+        ["potato_seed", "onion_seed", "cabbage_seed", "emberleaf_seed", "bluebell_seed", "bloodcap_spore", "frostbloom_seed", "silverthorn_seed", "potato", "onion", "cabbage"],
+        Trade: Job.Farming);
+
+    /// <summary>The jeweller by the Exchange, with a bench and a loom anyone can use.</summary>
+    public static readonly Shop Jeweller = new("shop:jeweller", "Brightwater's Jewels", "Ilka Brightwater",
+        "Rings, amulets, a pearl or two. Bring me silver and gold and I'll lend you my bench; there's a loom in the back for linen.",
+        ["silver_ring", "silver_amulet", "linen", "linen_tunic"], Trade: Job.Crafting, Workshop: true);
+
+    /// <summary>The keeper of the Tumblers' Run, the obstacle course west of the walls.</summary>
+    public static readonly Shop Course = new("shop:course", "The Tumblers' Run", "Cole Sparrow",
+        "Log, net, rope, stones, wall, slide. In that order, and don't stop. Every lap makes you quicker.",
+        ["stamina_brew", "travel_rations"], Trade: Job.Agility);
+
+    public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie, Fishmonger, Quarry, Woodlot, SaltBarrel, Allotments, Jeweller, Course];
 
     /// <summary>A price with a buyer's markup (never less than 1 crown).</summary>
     public static int Charge(int price, double markup) => price < 0 ? price : Math.Max(1, (int)Math.Round(price * markup));
