@@ -186,10 +186,44 @@ public partial class HerbPatch(Main main) : Node3D
             "snowberry" => ("#3a5a4a", "#f0f0f4", "berries"),
             "frostbloom" => ("#5a8aa0", "#a0e0ff", "flower"),
             "silverthorn" => ("#8a9aa0", "#c8d0d8", "leafy"),
+            "raspberries" => ("#3a6a2a", "#c8203a", "bush"),
+            "bilberries" => ("#2a5a3a", "#3a3a7a", "bush"),
+            "penny_bun" => ("#e8dcc0", "#7a4a24", "mushroom"),
+            "chanterelle" => ("#e0a030", "#e8b040", "mushroom"),
+            "wild_garlic" => ("#3a7a2a", "#f0f0e8", "leafy"),
+            "flax" => ("#6a8a4a", "#6a8ae0", "reed"),
+            "honeycomb" => ("#6a4a2a", "#e0a020", "hive"),
             _ => ("#4a6a3a", "#a050c0", "flower"), // mountain thistle
         };
         switch (kind)
         {
+            case "bush":
+                // A low, leafy bush, studded with berries.
+                for (var i = 0; i < 6; i++)
+                {
+                    var at = new Vector3(rng.RandfRange(-0.3f, 0.3f), rng.RandfRange(0.2f, 0.45f), rng.RandfRange(-0.3f, 0.3f));
+                    n.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.22f, Height = 0.36f }, MaterialOverride = Mat(leaf), Position = at });
+                }
+                for (var i = 0; i < 16; i++)
+                {
+                    var a = rng.RandfRange(0, Mathf.Tau);
+                    var at = new Vector3(Mathf.Cos(a) * rng.RandfRange(0.25f, 0.45f), rng.RandfRange(0.15f, 0.6f), Mathf.Sin(a) * rng.RandfRange(0.25f, 0.45f));
+                    n.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.035f, Height = 0.07f }, MaterialOverride = Mat(flower, 0.1f), Position = at });
+                }
+                break;
+            case "hive":
+                // A wild hive in a hollow stump, with bees about it.
+                Models.Place(n, "ph:stump.glb", Vector3.Zero, 1, rng.RandfRange(0, Mathf.Tau), solid: false);
+                n.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.22f, Height = 0.5f }, MaterialOverride = Mat(flower, 0.15f), Position = new Vector3(0.05f, 0.75f, 0.05f), Scale = new Vector3(1, 1, 0.85f) });
+                for (var i = 0; i < 3; i++)
+                    n.AddChild(new MeshInstance3D { Mesh = new TorusMesh { InnerRadius = 0.2f, OuterRadius = 0.23f }, MaterialOverride = Mat("#8a6a20"), Position = new Vector3(0.05f, 0.6f + i * 0.12f, 0.05f), Scale = new Vector3(1 - i * 0.12f, 1, 0.85f * (1 - i * 0.12f)) });
+                n.AddChild(new CpuParticles3D
+                {
+                    Amount = 10, Lifetime = 1.6, Position = new Vector3(0, 0.9f, 0), EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere, EmissionSphereRadius = 0.4f,
+                    Gravity = Vector3.Zero, InitialVelocityMin = 0.2f, InitialVelocityMax = 0.6f, Direction = Vector3.Up, Spread = 180,
+                    Mesh = new SphereMesh { Radius = 0.015f, Height = 0.03f, Material = Mat("#1a1408") },
+                });
+                break;
             case "mushroom":
                 for (var i = 0; i < 4; i++)
                 {

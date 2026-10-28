@@ -162,6 +162,17 @@ public partial class Main
 
     // ---- kills and experience --------------------------------------------------------------------
 
+    /// <summary>Somebody's cow, sheep or dog, killed where they could see: it's paid for, and Tristinwold hears of it.</summary>
+    void Poached(Enemy victim, string owner)
+    {
+        var fine = Math.Min(_player.Crowns, Livestock.Fine(victim.Kind.Id));
+        _player.Crowns -= fine;
+        if (owner == "Tristinwold") _city.Renown = Math.Max(0, _city.Renown - 2);
+        Sound.Ui("error");
+        _hud.Toast($"That was somebody's {victim.Kind.Name.ToLowerInvariant()}. The folk of {owner} make you pay for it: {fine} crowns.", 5);
+    }
+
+
     void OnSlain(Enemy victim, Enemy? killer, bool byCompany)
     {
         if (victim.Bond is not null || !byCompany) return;
@@ -171,6 +182,7 @@ public partial class Main
             _places.KilledAt(site);
         }
         if (victim.Leader is not null || victim.Friendly) return;
+        if (victim.Owner is { } owner) Poached(victim, owner);
         _player.Killed(victim);
         Spoils(victim);
         var xp = Math.Max(3, (int)Math.Round(victim.Stats.MaxHealth / 6 * (victim.DeviantId is null ? 1 : 2)));

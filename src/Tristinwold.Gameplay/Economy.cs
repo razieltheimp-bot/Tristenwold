@@ -171,15 +171,15 @@ public sealed class CityEconomy
     public static Good? GoodOf(string itemId) => itemId switch
     {
         "herring" or "mackerel" or "cod" or "sea_bass" or "eel" or "lobster" or "salmon" or "perch" or "trout" or "carp" or "pike" or "golden_carp" or "arctic_char" or "ice_pike" => Good.Fish,
-        "venison" or "meat" or "rabbit" or "game_bird" => Good.Meat,
-        "bread" or "travel_rations" or "potato" or "onion" or "cabbage" => Good.Bread,
+        "venison" or "meat" or "rabbit" or "game_bird" or "raw_meat" => Good.Meat,
+        "bread" or "travel_rations" or "potato" or "onion" or "cabbage" or "raspberries" or "bilberries" or "honeycomb" or "penny_bun" or "chanterelle" or "wild_garlic" => Good.Bread,
         "ale" => Good.Ale,
         "pine_log" or "oak_log" or "yew_log" or "plank" => Good.Timber,
         "stone_block" => Good.Stone,
         "iron_ore" or "silver_ore" or "gold_ore" or "scrap_iron" => Good.Ore,
         "coal" => Good.Coal,
         "iron_ingot" or "steel_ingot" or "iron_nails" => Good.Iron,
-        "leather" or "wolf_pelt" or "frost_pelt" or "bear_pelt" or "boar_hide" or "deer_hide" or "fox_pelt" or "troll_hide" or "ape_hide" or "rabbit_pelt" or "marten_pelt" or "snow_hare_pelt" => Good.Leather,
+        "leather" or "wool" or "cow_hide" or "wolf_pelt" or "frost_pelt" or "bear_pelt" or "boar_hide" or "deer_hide" or "fox_pelt" or "troll_hide" or "ape_hide" or "rabbit_pelt" or "marten_pelt" or "snow_hare_pelt" => Good.Leather,
         "silver_ingot" or "gold_ingot" or "rough_garnet" or "rough_sapphire" or "pearl" or "garnet" or "sapphire" => Good.Precious,
         _ => Items.Get(itemId)?.Kind switch { ItemKind.Herb => Good.Herbs, ItemKind.Potion => Good.Potions, _ => null },
     };

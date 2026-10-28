@@ -275,6 +275,18 @@ public abstract partial class Body : Node3D
         "hawk" => (Body?)Creature.Create("hawk.glb", 0.35f) ?? Beast.Rat(),
         "bear" => (Body?)Creature.Create(GD.Randf() < 0.3f ? "bear_black.glb" : "bear.glb", 1.5f) ?? Beast.Bear(),
         "mud_crab" => Beast.Crab(),
+        // Farm and town animals, birds, fish and whales: Quaternius's packs (CC0).
+        "cow" => (Body?)Creature.Create("cow.glb", 1.45f) ?? Beast.Bear(),
+        "horse" or "wild_horse" => (Body?)Creature.Create("horse.glb", 1.75f, look == "wild_horse" ? new Color("#8a6a4a") : null) ?? Beast.Wolf(new Color("#6a4a30")),
+        "sheep" => (Body?)Creature.Create("sheep.glb", 0.95f) ?? Beast.Wolf(new Color("#e8e4d8")),
+        "pig" => (Body?)Creature.Create("pig.glb", 0.75f) ?? Beast.Wolf(new Color("#e0a8a0")),
+        "dog" => (Body?)Creature.Create("dog.glb", 0.75f, yaw: 90) ?? Beast.Wolf(new Color("#8a6a48")),
+        "cat" => (Body?)Creature.Create("cat.glb", 0.32f, yaw: 90) ?? Beast.Rat(),
+        "hen" => (Body?)Creature.Create("chick.glb", 0.4f, new Color("#e8dcc8"), yaw: 90) ?? Beast.Rat(),
+        "eagle" => (Body?)Creature.Create("eagle.glb", 0.25f, yaw: 0) ?? Beast.Rat(),
+        "songbird" => (Body?)Creature.Create("songbird.glb", 0.18f) ?? Beast.Rat(),
+        "fish" => (Body?)Creature.Create("fish.glb", 0.35f) ?? Beast.Rat(),
+        "whale" => (Body?)Creature.Create("whale.glb", 4f) ?? Beast.Bear(),
         _ when Lairfolk.For(look) is { } lairfolk => lairfolk,
         _ when Wildfolk.For(look) is { } wildfolk => wildfolk,
         _ => Figure.Create(look),
@@ -1185,10 +1197,11 @@ public partial class Creature : Animal
     /// <param name="coat">A texture (under assets/creatures) to paint it with instead of its own.</param>
     /// <param name="metallic">Make the coat shine like metal.</param>
     /// <param name="glow">An emission map to go with the coat (the veins of a corrupted dragon).</param>
-    public static Creature? Create(string file, float height, Color? tint = null, string? coat = null, bool metallic = false, string? glow = null)
+    /// <param name="yaw">Degrees to turn the model so its head points forward (models face different ways).</param>
+    public static Creature? Create(string file, float height, Color? tint = null, string? coat = null, bool metallic = false, string? glow = null, float yaw = 180)
     {
         var c = new Creature();
-        if (!c.Load(file, height)) return null;
+        if (!c.Load(file, height, yaw: yaw)) return null;
         if (tint is { } t) Models.Tint(c.Model, t);
         if (coat is not null) c.Coat(coat, metallic, glow);
         c._anim = c.Model.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().FirstOrDefault();

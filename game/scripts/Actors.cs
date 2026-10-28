@@ -176,6 +176,9 @@ public partial class Enemy : Fighter
     /// <summary>One of the town Watch: it keeps the peace in Tristinwold's streets (see <see cref="TownWatch"/>).</summary>
     public bool Watch { get; set; }
 
+    /// <summary>Someone's animal (a farm's cow, a town's dog): the place it belongs to.</summary>
+    public string? Owner { get; set; }
+
     /// <summary>
     /// What the Watch will fight: a deviant in the town, or anything out of the wilds that's after the hero in the
     /// streets. A lair's or a camp's own creatures are the hero's business.

@@ -122,6 +122,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
         public required Node3D Root;
         public readonly List<Person> People = [];
         public readonly List<Enemy> Enemies = [];
+        public readonly List<Enemy> Animals = [];
         public readonly Dictionary<string, Node3D> QuestThings = [];
     }
 
@@ -157,7 +158,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     void Drop(Built b)
     {
-        foreach (var e in b.Enemies.Where(IsInstanceValid)) e.QueueFree();
+        foreach (var e in b.Enemies.Concat(b.Animals).Where(IsInstanceValid)) e.QueueFree();
         b.Root.QueueFree();
         _built.Remove(b.Site.Id);
     }
@@ -224,6 +225,21 @@ public partial class Places(Main main, WorldGen world) : Node3D
         // The young, unless one has already left home to follow the company.
         foreach (var npc in world.YouthsOf(s).Where(y => Gone?.Invoke(y.Id) != true))
             b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z) }));
+
+        // The animals people keep, near the people who keep them (in the open, where people stand).
+        foreach (var (kind, count) in Livestock.Of(s, rng))
+            for (var i = 0; i < count; i++)
+            {
+                var by = b.People.Count > 0 ? b.People[rng.Next(b.People.Count)].Npc : null;
+                var (ax, az) = by is null ? (s.X, s.Z) : (by.X, by.Z);
+                var a = rng.NextDouble() * Math.Tau;
+                var r = 2.5 + rng.NextDouble() * 4;
+                var e = Enemy.Create(Bestiary.Get(kind), Ground(ax + Math.Cos(a) * r, az + Math.Sin(a) * r) + new Vector3(0, 0.5f, 0));
+                e.Owner = s.Name;
+                e.Roam = kind is "hen" or "cat" ? 4 : 6;
+                main.AddEnemy(e);
+                b.Animals.Add(e);
+            }
 
         if (s.Lair is { } lair && !_cleared.Contains(s.Id))
         {

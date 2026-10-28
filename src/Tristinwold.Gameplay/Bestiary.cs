@@ -60,6 +60,15 @@ public static class Bestiary
         // Quarry: they bolt when they see you.
         new("deer", "Deer", 50, 4, 8.5, 0, 1.4, 1.2, DamageKind.Physical, "#8a6a48", 1.3, Timid: true),
         new("fox", "Red Fox", 25, 3, 7.5, 0, 1.0, 1.0, DamageKind.Physical, "#c06a30", 0.5, Timid: true),
+        // Farm and town animals, and wild horses on the open land: they run, they don't fight.
+        new("cow", "Cow", 120, 4, 4.5, 10, 1.6, 1.4, DamageKind.Physical, "#e8e4dc", 1.45, Timid: true),
+        new("sheep", "Sheep", 50, 2, 5.0, 5, 1.0, 1.2, DamageKind.Physical, "#e8e4d8", 0.95, Timid: true),
+        new("pig", "Pig", 70, 3, 4.5, 5, 1.0, 1.2, DamageKind.Physical, "#e0a8a0", 0.75, Timid: true),
+        new("hen", "Hen", 10, 1, 4.0, 0, 0.5, 1.0, DamageKind.Physical, "#e8dcc8", 0.4, Timid: true),
+        new("horse", "Horse", 150, 6, 9.0, 15, 1.8, 1.4, DamageKind.Physical, "#6a4a30", 1.75, Timid: true),
+        new("wild_horse", "Wild Horse", 150, 6, 10.0, 15, 1.8, 1.4, DamageKind.Physical, "#8a6a4a", 1.75, Timid: true),
+        new("dog", "Dog", 45, 5, 7.0, 5, 1.2, 1.1, DamageKind.Physical, "#8a6a48", 0.75, Timid: true, Wary: true),
+        new("cat", "Cat", 15, 2, 6.5, 0, 0.6, 0.9, DamageKind.Physical, "#6e6a66", 0.32, Timid: true, Wary: true),
         // Only ever seen at a tamer's side: Wren's Menagerie raises them from the egg.
         new("hawk", "Hawk", 35, 7, 8.0, 0, 1.4, 0.8, DamageKind.Physical, "#8a6a40", 0.6),
         .. DragonKinds(),

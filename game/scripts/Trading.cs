@@ -66,7 +66,14 @@ public partial class Main
         _herbPatch.Picked(plant);
         var up = pack.Practise(Job.Herbalism, 5);
         Sound.Ui("herb");
-        _hud.Toast($"Picked {Items.Count(plant.HerbId, n).ToLowerInvariant()}.{(up is { } level ? $" Herbalism rises to {level}!" : "")}", 3);
+        // The bees don't give their comb up gladly, not to someone who doesn't know how to take it.
+        var stung = plant.HerbId == "honeycomb" && pack.Level(Job.Herbalism) < 3 && _lootRng.Chance(0.6);
+        if (stung)
+        {
+            _player.Stats.Lose(_player.Stats.MaxHealth * 0.06);
+            Hands()?.Hurt();
+        }
+        _hud.Toast($"{(plant.HerbId == "honeycomb" ? "Took" : "Picked")} {Items.Count(plant.HerbId, n).ToLowerInvariant()}.{(stung ? " The bees take exception." : "")}{(up is { } level ? $" Herbalism rises to {level}!" : "")}", 3);
     }
 
     // ---- the pack (I) ---------------------------------------------------------------------------

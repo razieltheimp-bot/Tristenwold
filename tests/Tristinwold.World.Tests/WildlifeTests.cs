@@ -1,3 +1,4 @@
+using Tristinwold.Deviant;
 using Tristinwold.Gameplay;
 using Tristinwold.World;
 
@@ -33,9 +34,28 @@ public class WildlifeTests
     public void Home_is_safe_and_the_far_wilds_are_not()
     {
         var home = Wildlife.Near(World, 0, 0, Wildlife.SafeRadius - 20).ToList();
-        Assert.All(home, h => Assert.Contains(h.KindId, new[] { "deer", "fox", "giant_rat", "mud_crab" }));
+        Assert.All(home, h => Assert.Contains(h.KindId, new[] { "deer", "fox", "wild_horse", "giant_rat", "mud_crab" }));
         var far = Wildlife.Near(World, 0, -6000, 1500).ToList();
         Assert.Contains(far, h => !Wildlife.Timid.Contains(h.KindId));
         Assert.Contains(Wildlife.Near(World, 0, -2000, 2000), h => Wildlife.Timid.Contains(h.KindId));
+    }
+
+    [Fact]
+    public void Farms_keep_livestock_towns_keep_dogs_and_cats_and_killing_them_costs_you()
+    {
+        var farm = World.SettlementsNear(0, 0, 6000).First(s => s.Kind == SettlementKind.Farmstead);
+        var animals = Livestock.Of(farm, new Rng(1));
+        Assert.Contains(animals, a => a.Kind == "cow" && a.Count >= 2);
+        Assert.Contains(animals, a => a.Kind == "sheep");
+        var town = World.SettlementsNear(0, 0, 6000).First(s => s.Kind == SettlementKind.Town);
+        Assert.Contains(Livestock.Of(town, new Rng(1)), a => a.Kind is "dog" or "cat");
+        Assert.All(new[] { "cow", "sheep", "pig", "hen", "horse", "dog", "cat", "wild_horse" }, k => Assert.Contains(k, Wildlife.Timid));
+        Assert.True(Livestock.Fine("cow") > Livestock.Fine("hen"));
+        // What they're good for.
+        Assert.Contains(Loot.Roll("sheep", new Rng(3)).Items, i => i.Id == "wool");
+        Assert.Contains(Loot.Roll("cow", new Rng(3)).Items, i => i.Id == "raw_meat");
+        // Wild horses run the open land, and a foal can be raised.
+        Assert.Contains(Wildlife.Near(World, 0, -2500, 2500), h => h.KindId == "wild_horse");
+        Assert.True(Taming.Tameable("wild_horse"));
     }
 }

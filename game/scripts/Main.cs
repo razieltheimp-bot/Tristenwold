@@ -192,6 +192,8 @@ public partial class Main : Node3D
             ? ["Paladin", "giant_rat", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
             : _args.ContainsKey("young") ? ["Paladin", "wolf", "bear", "deer", "fox", "boar", "dragon_gold", "squire", "apprentice", "youth"]
             : _args.ContainsKey("crypt") ? ["cinder_thrall", "cinder_warden", "Paladin"]
+            : _args.TryGetValue("only", out var only) ? only.Split(',')
+            : _args.ContainsKey("animals") ? ["Paladin", "cow", "horse", "sheep", "pig", "dog", "cat", "hen", "eagle", "songbird", "fish", "whale"]
             : [.. Classes.All.Select(d => d.Look)];
         var figures = new List<Body>();
         for (var i = 0; i < looks.Length; i++)
@@ -199,9 +201,9 @@ public partial class Main : Node3D
             var figure = Body.For(looks[i]);
             // Younglings and the young who follow a hero, beside a grown hero for scale.
             if (_args.ContainsKey("young") && i > 0 && i < 7) figure.Scale = Vector3.One * (looks[i].StartsWith("dragon") ? 0.22f : 0.45f);
-            var spacing = _args.ContainsKey("hero") ? 11f : _args.ContainsKey("dragons") ? 9f : _args.ContainsKey("young") ? 1.15f : _args.ContainsKey("crypt") ? 1.9f : 1.3f;
+            var spacing = _args.ContainsKey("hero") ? 11f : _args.ContainsKey("dragons") ? 9f : _args.ContainsKey("young") ? 1.15f : _args.ContainsKey("crypt") ? 1.9f : _args.ContainsKey("animals") ? 2.4f : 1.3f;
             figure.Position = new Vector3((i - (looks.Length - 1) / 2f) * spacing, 0, _args.ContainsKey("dragons") ? -(i % 2) * 7 : 0);
-            figure.RotationDegrees = new Vector3(0, 160, 0);
+            figure.RotationDegrees = new Vector3(0, _args.ContainsKey("top") ? 0 : 160, 0);
             if (_args.ContainsKey("frost"))
             {
                 var size = (DragonSize)i;
@@ -209,11 +211,12 @@ public partial class Main : Node3D
                 figure.Position = new Vector3(new[] { -14f, -4f, 12f }[i], 0, 0);
                 figure.RotationDegrees = new Vector3(0, 110, 0); // side on, to see the ridge
             }
+            if (_args.TryGetValue("scale", out var big)) figure.Scale *= float.Parse(big, System.Globalization.CultureInfo.InvariantCulture);
             AddChild(figure);
             figures.Add(figure);
         }
         var wide = _args.ContainsKey("dragons");
-        var camera = new Camera3D { Position = _args.ContainsKey("frost") ? new Vector3(0, 5, 34) : _args.ContainsKey("hero") ? new Vector3(0, 9, 30) : wide ? new Vector3(0, 14, 62) : new Vector3(0, 1.3f, 9f), Fov = 38, Far = 500 };
+        var camera = new Camera3D { Position = _args.ContainsKey("top") ? new Vector3(0, _args.ContainsKey("only") ? 9 : 28, 0.01f) : _args.ContainsKey("animals") ? new Vector3(0, 3.5f, 30) : _args.ContainsKey("frost") ? new Vector3(0, 5, 34) : _args.ContainsKey("hero") ? new Vector3(0, 9, 30) : wide ? new Vector3(0, 14, 62) : new Vector3(0, 1.3f, 9f), Fov = 38, Far = 500 };
         AddChild(camera);
         camera.LookAt(wide ? new Vector3(0, 4, 0) : new Vector3(0, 0.9f, 0), Vector3.Up);
         async Task Shoot(string name)
@@ -361,6 +364,8 @@ public partial class Main : Node3D
         AddChild(_roamers);
         _watch = new TownWatch(this);
         AddChild(_watch);
+        _sky = new Skylife(this);
+        AddChild(_sky);
         SetUpCompany();
         _hud.AttachMap(_world, _explored, () => _player.GlobalPosition, () => -_player.GlobalTransform.Basis.Z, QuestGoals);
 

@@ -12,8 +12,12 @@ public class HerbTests
         var w = WorldGen.Default;
         var plants = Herbs.Near(w, 0, 0, 1500).ToList();
         Assert.True(plants.Count > 100);
-        Assert.All(plants, p => Assert.True(Math.Sqrt(p.X * p.X + p.Z * p.Z) > 110 && Items.Get(p.HerbId)?.Kind == ItemKind.Herb, p.Id));
+        // Herbs for the alchemist, and food for the pot: berries, mushrooms, wild garlic, flax, honeycomb.
+        Assert.All(plants, p => Assert.True(Math.Sqrt(p.X * p.X + p.Z * p.Z) > 110 && Items.Get(p.HerbId)?.Kind is ItemKind.Herb or ItemKind.Food or ItemKind.Material, p.Id));
         Assert.True(plants.Select(p => p.HerbId).Distinct().Count() >= 4);
+        Assert.Contains(plants, p => Items.Get(p.HerbId)?.Kind == ItemKind.Herb);
+        Assert.Contains(plants, p => p.HerbId is "raspberries" or "bilberries");
+        Assert.Contains(plants, p => p.HerbId is "penny_bun" or "chanterelle");
         Assert.Equal(plants.Select(p => p.Id), Herbs.Near(w, 0, 0, 1500).Select(p => p.Id)); // the same for everyone
         var book = new HerbBook();
         var p = plants[0];

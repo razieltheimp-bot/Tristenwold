@@ -25,6 +25,8 @@ public partial class Main
     public Roamers RoamersNode => _roamers;
     TownWatch _watch = null!;
     public TownWatch WatchNode => _watch;
+    Skylife _sky = null!;
+    public Skylife SkyNode => _sky;
     readonly HashSet<string> _dramaTold = [];
     (Enemy Foe, Person Rival, Action<bool>? Then)? _duel;
     double _guildClock;

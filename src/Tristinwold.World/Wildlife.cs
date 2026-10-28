@@ -67,7 +67,7 @@ public static class Wildlife
     public const double SafeRadius = 450;
 
     /// <summary>Animals that run rather than fight.</summary>
-    public static readonly IReadOnlySet<string> Timid = new HashSet<string> { "deer", "fox" };
+    public static readonly IReadOnlySet<string> Timid = new HashSet<string> { "deer", "fox", "wild_horse", "cow", "sheep", "pig", "hen", "horse", "dog", "cat" };
 
     public static IEnumerable<Herd> Near(WorldGen world, double x, double z, double radius)
     {
@@ -101,10 +101,10 @@ public static class Wildlife
         var d = safe ? 0 : danger;
         (string, double)[] choices = biome switch
         {
-            Biome.AutumnForest => [("deer", 4), ("fox", 2), ("wolf", 0.8 * d), ("bear", 0.3 * d), ("spriggan", 0.25 * d), ("boar", 0.7 * d), ("goblin", 0.4 * d), ("kipine", 0.18 * d), ("imp", 0.12 * d)],
+            Biome.AutumnForest => [("deer", 4), ("fox", 2), ("wild_horse", 1.2), ("wolf", 0.8 * d), ("bear", 0.3 * d), ("spriggan", 0.25 * d), ("boar", 0.7 * d), ("goblin", 0.4 * d), ("kipine", 0.18 * d), ("imp", 0.12 * d)],
             Biome.PineForest => [("deer", 3.5), ("fox", 1.5), ("wolf", 1.1 * d), ("bear", 0.6 * d), ("boar", 0.5 * d), ("goblin", 0.4 * d), ("kipine", 0.25 * d), ("deathcrest_ape", 0.15 * d), ("winged_ape", 0.12 * d)],
             Biome.Marsh => [("goblin", 0.3 * d), ("giant_rat", 3), ("mud_crab", near ? 3 : 0.5), ("deer", 1), ("wolf", 0.5 * d), ("deathcrest_ape", 0.35 * d), ("dire_imp", 0.2 * d)],
-            Biome.Tundra => [("deer", 2), ("fox", 1), ("wolf", 2 * d), ("ice_wolf", 1 * d), ("bear", 0.5 * d), ("winged_ape", 0.2 * d)],
+            Biome.Tundra => [("deer", 2), ("fox", 1), ("wild_horse", 1.5), ("wolf", 2 * d), ("ice_wolf", 1 * d), ("bear", 0.5 * d), ("winged_ape", 0.2 * d)],
             Biome.Snowfield => [("ice_wolf", 1.4 * Math.Max(d, 0.1)), ("frost_troll", 0.5 * d), ("deer", 0.8), ("fox", 0.8)],
             _ => [("bear", 1.5 * Math.Max(d, 0.1)), ("frost_troll", 1 * d), ("wolf", 1.5 * d), ("deer", 0.6), ("goblin", 0.6 * d), ("deathcrest_ape", 0.4 * d), ("dire_imp", 0.3 * d), ("winged_ape", 0.4 * d)],
         };
@@ -116,6 +116,7 @@ public static class Wildlife
         var count = kind switch
         {
             "deer" => 3 + rng.Next(3),
+            "wild_horse" => 3 + rng.Next(4),
             "fox" => 1 + rng.Next(2),
             "wolf" => 2 + rng.Next(2) + extra,
             "ice_wolf" => 2 + rng.Next(2) + extra,
@@ -129,7 +130,7 @@ public static class Wildlife
             "winged_ape" => 2 + rng.Next(2),
             _ => 1, // bears, trolls, kipines and dire imps keep to themselves (a dire imp has its band)
         };
-        var roam = kind switch { "deer" => 22, "fox" => 18, "wolf" or "ice_wolf" or "deathcrest_ape" => 16, "kipine" => 24, "mud_crab" => 6, _ => 10 };
+        var roam = kind switch { "deer" => 22, "wild_horse" => 30, "fox" => 18, "wolf" or "ice_wolf" or "deathcrest_ape" => 16, "kipine" => 24, "mud_crab" => 6, _ => 10 };
         // About a third of herds have young with them; a lone bear or troll sometimes has a cub. Fiends don't.
         var fiend = kind is "imp" or "dire_imp";
         var young = !fiend && rng.Chance(count > 1 ? 0.4 : 0.25) ? 1 + (count > 3 && rng.Chance(0.3) ? 1 : 0) : 0;
@@ -137,4 +138,29 @@ public static class Wildlife
         var (band, banded) = kind == "dire_imp" ? ("imp", 2 + rng.Next(3)) : ((string?)null, 0);
         return new Herd($"wild_{cx}_{cz}", kind, x, z, count, roam, Young: young, Band: band, BandCount: banded);
     }
+}
+
+/// <summary>
+/// The animals people keep: cows, sheep, pigs and hens at a farmstead, with a horse and a dog; a few of each in a
+/// hamlet or a town, and cats about the houses; horses at an inn; dogs at a hunting camp. Tristinwold has its dogs, its
+/// cats, its hens in the yards and the Watch's horses. They stand by the people who keep them.
+/// </summary>
+public static class Livestock
+{
+    public static IReadOnlyList<(string Kind, int Count)> Of(Settlement s, Rng rng) => s.Kind switch
+    {
+        SettlementKind.Farmstead => [("cow", 2 + rng.Next(2)), ("sheep", 3 + rng.Next(3)), ("pig", 1 + rng.Next(2)), ("hen", 3 + rng.Next(3)), ("horse", rng.Next(2)), ("dog", 1)],
+        SettlementKind.Hamlet => [("sheep", 2 + rng.Next(3)), ("hen", 2 + rng.Next(3)), ("pig", rng.Next(2)), ("dog", 1), ("cat", 1 + rng.Next(2))],
+        SettlementKind.Town => [("hen", 2 + rng.Next(3)), ("dog", 1 + rng.Next(2)), ("cat", 2 + rng.Next(2)), ("horse", 1 + rng.Next(2))],
+        SettlementKind.City => s.Id == "city:tristinwold"
+            ? [("dog", 3), ("cat", 4), ("hen", 3), ("horse", 2)]
+            : [("dog", 2), ("cat", 3), ("hen", 2), ("horse", 2)],
+        SettlementKind.Inn => [("horse", 2 + rng.Next(2)), ("dog", 1), ("hen", 2)],
+        SettlementKind.HuntingCamp => [("dog", 2)],
+        SettlementKind.Mine => [("dog", 1)],
+        _ => [],
+    };
+
+    /// <summary>What it costs to kill someone's animal where they can see it.</summary>
+    public static int Fine(string kind) => kind switch { "cow" or "horse" => 40, "sheep" or "pig" => 20, "dog" or "cat" => 15, _ => 5 };
 }

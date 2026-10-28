@@ -10,8 +10,9 @@ public sealed record Plant(string Id, string HerbId, double X, double Z)
 /// Herbs growing wild, worked out from the seed like the beasts, so everyone finds the same patch of emberleaf in the
 /// same wood. Each kind of land grows its own: emberleaf, lady's mantle and bloodcap in the autumn woods; bluebells
 /// and ghostcap under the pines; reeds and nightshade in the marsh; snowberries and frostbloom in the cold north;
-/// thistle and silverthorn up on the crags. Nothing grows in the towns or in the water. Picked, a plant grows back
-/// in a while.
+/// thistle and silverthorn up on the crags. Food grows wild too: raspberries, penny buns, wild garlic and flax in the
+/// autumn woods; bilberries and chanterelles under the pines; wild hives in the trees (honeycomb, if you don't mind
+/// the bees). Nothing grows in the towns or in the water. Picked, a plant grows back in a while.
 /// </summary>
 public static class Herbs
 {
@@ -22,9 +23,11 @@ public static class Herbs
 
     static (string, double)[] Growing(Biome b) => b switch
     {
-        Biome.AutumnForest => [("emberleaf", 3), ("ladys_mantle", 2), ("bloodcap", 1), ("thistle", 0.6)],
-        Biome.PineForest => [("bluebell", 3), ("ghostcap", 1.5), ("ladys_mantle", 1), ("emberleaf", 0.8)],
-        Biome.Marsh => [("marsh_reed", 3), ("nightshade", 1.5), ("bloodcap", 1), ("ghostcap", 0.6)],
+        Biome.AutumnForest => [("emberleaf", 3), ("ladys_mantle", 2), ("bloodcap", 1), ("thistle", 0.6),
+            ("raspberries", 2.2), ("penny_bun", 1.6), ("wild_garlic", 1.2), ("flax", 1), ("honeycomb", 0.5)],
+        Biome.PineForest => [("bluebell", 3), ("ghostcap", 1.5), ("ladys_mantle", 1), ("emberleaf", 0.8),
+            ("bilberries", 2.4), ("chanterelle", 1.6), ("honeycomb", 0.4)],
+        Biome.Marsh => [("marsh_reed", 3), ("nightshade", 1.5), ("bloodcap", 1), ("ghostcap", 0.6), ("wild_garlic", 1.4), ("flax", 1.2)],
         Biome.Tundra => [("snowberry", 3), ("frostbloom", 1), ("thistle", 1)],
         Biome.Snowfield => [("frostbloom", 2), ("snowberry", 1)],
         _ => [("thistle", 3), ("silverthorn", 1.5), ("frostbloom", 0.4), ("bluebell", 0.6)],
