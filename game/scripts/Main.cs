@@ -1,6 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.Shared;
 using Tristinwold.World;
 
@@ -34,7 +34,7 @@ public partial class Main : Node3D
     EncounterTracker _tracker = null!;
     IGameLink? _client;
     string _area = "", _sentArea = "", _savePath = "";
-    string? _nemesisJson;
+    string? _deviantJson;
     bool _limitWasReady;
     double _clock, _lastScore, _fightMusicUntil, _lastRespawnCheck, _lastReveal, _lastPlaces, _lastSave;
     readonly Dictionary<Lair, List<Enemy>> _lairs = [];
@@ -330,7 +330,7 @@ public partial class Main : Node3D
         _player.Struck += (enemy, hit, kind) =>
         {
             if (enemy.Sparring || enemy.Yielded) return; // a duel in the yard isn't a battle
-            _tracker.Engaged(enemy.Id, enemy.Kind.Id, enemy.Kind.Name, enemy.Stats.MaxHealth, ToNumerics(enemy.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, enemy.NemesisId);
+            _tracker.Engaged(enemy.Id, enemy.Kind.Id, enemy.Kind.Name, enemy.Stats.MaxHealth, ToNumerics(enemy.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, enemy.DeviantId);
             _tracker.Hit(enemy.Id, kind, _player.Company, _clock);
             if (hit.Killed) _tracker.Died(enemy.Id, _player.Company, _clock);
         };
@@ -554,25 +554,25 @@ public partial class Main : Node3D
             case Welcome w: _hud.Toast($"{_player.Company}'s company joins {w.Campaign}."); break;
             case Rejected r: _hud.Toast($"The server turned us away: {r.Reason}"); break;
             case Notice n: _hud.Toast(n.From is null ? n.Text : n.Kind == NoticeKind.Vann ? $"{n.From}: \"{n.Text}\"" : $"{n.From}: {n.Text}"); break;
-            case NemesisAppears a:
+            case DeviantAppears a:
                 foreach (var spawn in a.Spawns)
                 {
                     if (_tracker.ActorForSlot(spawn.Slot) is not { } id || FindEnemy(id) is not { } e) continue;
                     if (Raids.All.Any(r => r.BossKind == e.Kind.Id) && !e.Named) continue; // a lair's boss is a nobody until it beats someone
-                    e.MakeNemesis(spawn.NemesisId, spawn.Modifiers, spawn.Taunt);
-                    _tracker.MarkNemesis(spawn.Slot, spawn.NemesisId);
+                    e.MakeDeviant(spawn.DeviantId, spawn.Modifiers, spawn.Taunt);
+                    _tracker.MarkDeviant(spawn.Slot, spawn.DeviantId);
                     _hud.Toast(spawn.Taunt is null ? $"{e.Stats.Name} is here." : $"{e.Stats.Name}: \"{spawn.Taunt}\"");
                 }
                 break;
-            case NemesisHunts h:
+            case DeviantHunts h:
             {
                 // Out of sight behind the player, then it comes for them.
                 var behind = _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 25;
                 var hunter = Enemy.Create(Bestiary.Get(h.BaseForm), behind with { Y = City.FloorAt(behind) + 0.5f }, WorldGen.Danger(behind.X, behind.Z));
                 AddEnemy(hunter);
-                hunter.MakeNemesis(h.NemesisId, h.Modifiers, h.Taunt);
+                hunter.MakeDeviant(h.DeviantId, h.Modifiers, h.Taunt);
                 hunter.Provoke(_player);
-                _tracker.Engaged(hunter.Id, hunter.Kind.Id, hunter.Kind.Name, hunter.Stats.MaxHealth, ToNumerics(hunter.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, h.NemesisId);
+                _tracker.Engaged(hunter.Id, hunter.Kind.Id, hunter.Kind.Name, hunter.Stats.MaxHealth, ToNumerics(hunter.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, h.DeviantId);
                 _hud.Toast($"{hunter.Stats.Name} has found you.");
                 break;
             }
@@ -580,13 +580,13 @@ public partial class Main : Node3D
             case Board b: _hud.ShowBoard(b.Contracts); break;
             case CitySnapshot c: TakeCity(c); break;
             case Roster r: _hud.ShowCompanies(r.Groups); break;
-            case NemesisSnapshot s: _hud.ShowNemeses(s.WorldJson); _nemesisJson = s.WorldJson; break;
-            case NemesisEvents e:
+            case DeviantSnapshot s: _hud.ShowDeviants(s.WorldJson); _deviantJson = s.WorldJson; break;
+            case DeviantEvents e:
                 foreach (var ev in e.Events)
                 {
                     _hud.Log(ev.Text);
-                    if (ev.Kind == WorldEventKind.Born && _nemesisJson is { } json && NemesisWorld.FromJson(json).Find(ev.NemesisId) is { } born) _roamers.Named(born);
-                    if (ev.Kind == WorldEventKind.CheatedDeath) _roamers.CheatedDeath(ev.NemesisId);
+                    if (ev.Kind == WorldEventKind.Born && _deviantJson is { } json && DeviantWorld.FromJson(json).Find(ev.DeviantId) is { } born) _roamers.Named(born);
+                    if (ev.Kind == WorldEventKind.CheatedDeath) _roamers.CheatedDeath(ev.DeviantId);
                 }
                 break;
             case Drops d: foreach (var note in d.Notes) _hud.Toast($"A hidden note from {note.From}: \"{note.Text}\""); break;
@@ -598,14 +598,14 @@ public partial class Main : Node3D
 
     /// <summary>
     /// The music and the sound of the place, for where the hero is and what's happening: a boss (a named foe, a
-    /// nemesis, a grown dragon, a raid) or a fight, a tavern, the Bards' College, the city, or the open wilds; the
+    /// deviant, a grown dragon, a raid) or a fight, a tavern, the Bards' College, the city, or the open wilds; the
     /// fire in a tavern, the city's bustle, gulls on the docks, a cave's drip, wind up high or in the snow, the
     /// wilds by day or (by this device's clock) by night.
     /// </summary>
     void Score(Vector3 pos)
     {
         if (Sound.Current is not { } sound) return;
-        var boss = Enemies().Any(e => e.FightingCompany && (e.Named || e.NemesisId is not null || e.IsDragon && !e.Young) && e.GlobalPosition.DistanceTo(pos) < 60)
+        var boss = Enemies().Any(e => e.FightingCompany && (e.Named || e.DeviantId is not null || e.IsDragon && !e.Young) && e.GlobalPosition.DistanceTo(pos) < 60)
                    || _raidLairs.Any(l => l.Fighting);
         if (_player.InFight || boss) _fightMusicUntil = _clock + (boss ? 8 : 5); // let the fight music ring on a moment after
         var college = Guilds.Of(Calling.Bard);
@@ -645,7 +645,7 @@ public partial class Main : Node3D
         }
 
         foreach (var e in Enemies().Where(e => e.FightingCompany && !e.Sparring && !e.Yielded))
-            _tracker.Engaged(e.Id, e.Kind.Id, e.Kind.Name, e.Stats.MaxHealth, ToNumerics(e.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, e.NemesisId);
+            _tracker.Engaged(e.Id, e.Kind.Id, e.Kind.Name, e.Stats.MaxHealth, ToNumerics(e.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, e.DeviantId);
         _tracker.Tick(_clock, ToNumerics(_player.GlobalPosition),
             id => FindEnemy(id) is { FightingCompany: true } e && e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 40,
             id => FindEnemy(id) is { } e ? ToNumerics(e.GlobalPosition) : null);
@@ -685,7 +685,7 @@ public partial class Main : Node3D
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
         _hud.Update(_player, _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills   I: pack   H: heal   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(Dragon is { Rideable: true } ? "   V: ride" : "")}");
         var saga = _saga.Objective(Dragon) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
-        // The nearest lair that suits the hero, and the nearest nemesis out roaming.
+        // The nearest lair that suits the hero, and the nearest deviant out roaming.
         if (Raids.For(_player.Hero.Level, pos.X, pos.Z).FirstOrDefault() is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
         saga = [.. saga, .. TownLines(pos), .. PursuitLines(pos)];

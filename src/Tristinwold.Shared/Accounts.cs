@@ -65,7 +65,7 @@ public sealed partial class AccountStore
         _path = path;
         _clock = clock ?? (() => DateTime.UtcNow);
         if (path is not null && File.Exists(path) && File.ReadAllText(path).Trim().Length > 0)
-            foreach (var a in JsonSerializer.Deserialize<List<Account>>(Nemesis.SaveUpgrade.Upgrade(File.ReadAllText(path)), Wire.Options) ?? [])
+            foreach (var a in JsonSerializer.Deserialize<List<Account>>(Deviant.SaveUpgrade.Upgrade(File.ReadAllText(path)), Wire.Options) ?? [])
                 _accounts[a.Name] = a;
     }
 

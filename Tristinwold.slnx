@@ -1,18 +1,18 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Tristinwold.Gameplay/Tristinwold.Gameplay.csproj" />
-    <Project Path="src/Tristinwold.Nemesis/Tristinwold.Nemesis.csproj" />
+    <Project Path="src/Tristinwold.Deviant/Tristinwold.Deviant.csproj" />
     <Project Path="src/Tristinwold.Shared/Tristinwold.Shared.csproj" />
     <Project Path="src/Tristinwold.World/Tristinwold.World.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Tristinwold.Gameplay.Tests/Tristinwold.Gameplay.Tests.csproj" />
-    <Project Path="tests/Tristinwold.Nemesis.Tests/Tristinwold.Nemesis.Tests.csproj" />
+    <Project Path="tests/Tristinwold.Deviant.Tests/Tristinwold.Deviant.Tests.csproj" />
     <Project Path="tests/Tristinwold.Shared.Tests/Tristinwold.Shared.Tests.csproj" />
     <Project Path="tests/Tristinwold.World.Tests/Tristinwold.World.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
-    <Project Path="tools/Tristinwold.NemesisSim/Tristinwold.NemesisSim.csproj" />
+    <Project Path="tools/Tristinwold.DeviantSim/Tristinwold.DeviantSim.csproj" />
     <Project Path="tools/Tristinwold.Server/Tristinwold.Server.csproj" />
   </Folder>
 </Solution>

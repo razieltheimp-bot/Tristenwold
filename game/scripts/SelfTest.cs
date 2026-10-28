@@ -1,6 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.Shared;
 using Tristinwold.World;
 
@@ -12,18 +12,18 @@ namespace Tristinwold.Game;
 ///   godot --headless --path game -- --selftest [--server 127.0.0.1:7777 --company Joe]
 /// Alone it checks a fight is fought and reported, then explores the world: the map fills in,
 /// a village is found, its people talk, and one quest of each kind is done for its reward.
-/// With a server it also loses a fight, waits for that enemy to come back as a nemesis, and kills it.
+/// With a server it also loses a fight, waits for that enemy to come back as a deviant, and kills it.
 /// </summary>
 public partial class SelfTest(Main main) : Node
 {
     readonly List<string> _log = [];
     readonly List<BattleReport> _reports = [];
-    readonly List<NemesisAppears> _appearances = [];
+    readonly List<DeviantAppears> _appearances = [];
 
     public override async void _Ready()
     {
         main.FightEnded += _reports.Add;
-        main.Received += m => { if (m is NemesisAppears a) _appearances.Add(a); };
+        main.Received += m => { if (m is DeviantAppears a) _appearances.Add(a); };
         try
         {
             await Frames(10);
@@ -47,7 +47,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -80,7 +80,7 @@ public partial class SelfTest(Main main) : Node
             await GuildTest();
             await RaidTest();
             await LairTest();
-            await NemesisLairTest();
+            await DeviantLairTest();
             await StrangeWildsTest();
             await TradeTest();
             if (main.Choice.Account is { } account) await Account(account);
@@ -94,7 +94,7 @@ public partial class SelfTest(Main main) : Node
 
                 await SharedCityTest();
 
-                // 3. Lose a fight: that kind of enemy becomes a nemesis on the server.
+                // 3. Lose a fight: that kind of enemy becomes a deviant on the server.
                 var killer = Spawn("dock_thug", p.GlobalPosition + new Vector3(0, 0, -2.5f));
                 killer.Provoke(p);
                 await Frames(10);
@@ -107,31 +107,31 @@ public partial class SelfTest(Main main) : Node
                 await Frames(30);
 
                 // 4. Fight dock thugs until it comes back, then kill it.
-                Enemy? nemesis = null;
-                for (var fight = 0; fight < 10 && nemesis is null; fight++)
+                Enemy? deviant = null;
+                for (var fight = 0; fight < 10 && deviant is null; fight++)
                 {
                     var t = Spawn("dock_thug", p.GlobalPosition + new Vector3(0, 0, -3));
                     t.Provoke(p);
-                    await Until(() => _appearances.Count > 0 || t.NemesisId is not null, 4);
-                    if (t.NemesisId is not null) { nemesis = t; break; }
+                    await Until(() => _appearances.Count > 0 || t.DeviantId is not null, 4);
+                    if (t.DeviantId is not null) { deviant = t; break; }
                     t.Stats.TakeHit(10_000, DamageKind.Physical, AttackKind.Weapon); // not him: end it quickly
                     main.Tracker.Died(t.Id, p.Company, main.Clock);
                     await Until(() => !main.Tracker.InFight, 15);
                 }
-                Check(nemesis is not null, "the nemesis came back in a later fight");
-                Check(nemesis!.Stats.MaxHealth > Bestiary.Get("dock_thug").Health, $"{nemesis.Stats.Name} is stronger ({nemesis.Stats.MaxHealth} health)");
-                Check(nemesis.Stats.Name != "Dock Thug", $"it has a name: {nemesis.Stats.Name}");
-                _log.Add($"Nemesis returned: {nemesis.Stats.Name}, {nemesis.Stats.MaxHealth:0} health, taunt: {nemesis.Taunt}");
+                Check(deviant is not null, "the deviant came back in a later fight");
+                Check(deviant!.Stats.MaxHealth > Bestiary.Get("dock_thug").Health, $"{deviant.Stats.Name} is stronger ({deviant.Stats.MaxHealth} health)");
+                Check(deviant.Stats.Name != "Dock Thug", $"it has a name: {deviant.Stats.Name}");
+                _log.Add($"Deviant returned: {deviant.Stats.Name}, {deviant.Stats.MaxHealth:0} health, taunt: {deviant.Taunt}");
 
                 p.Stats.Heal(10_000);
                 p.Element = DamageKind.Frost;
-                await FightUntilDead(nemesis, 60, spells: true);
-                Check(nemesis.State == EnemyState.Dead, "the nemesis died");
+                await FightUntilDead(deviant, 60, spells: true);
+                Check(deviant.State == EnemyState.Dead, "the deviant died");
                 var reportsBefore = _reports.Count;
                 await Until(() => _reports.Count > reportsBefore || !main.Tracker.InFight, 15);
                 var last = _reports.Last();
-                var line = last.Enemies.FirstOrDefault(e => e.NemesisId == nemesis.NemesisId);
-                Check(line is { Killed: true }, "the nemesis kill was reported with its id");
+                var line = last.Enemies.FirstOrDefault(e => e.DeviantId == deviant.DeviantId);
+                Check(line is { Killed: true }, "the deviant kill was reported with its id");
             }
 
             Finish(0);
@@ -322,7 +322,7 @@ public partial class SelfTest(Main main) : Node
         await DragonsTest();
     }
 
-    /// <summary>An ancient in its lair, a dragon nemesis growing with its wins, and two flights at war.</summary>
+    /// <summary>An ancient in its lair, a dragon deviant growing with its wins, and two flights at war.</summary>
     async Task DragonsTest()
     {
         var (p, w) = (main.PlayerNode, main.World);
@@ -333,10 +333,10 @@ public partial class SelfTest(Main main) : Node
         Check(ancient is not null && ancient.Stats.Name == lord.FullName && ancient.Figure.Scale.X > 3,
             $"{lord.FullName}, {lord.What}, waits in its lair ({ancient?.Stats.MaxHealth:0} hp, {ancient?.Figure.Scale.X:0.0}x size)");
 
-        // A dragon nemesis that has beaten the company twice is a giant now.
+        // A dragon deviant that has beaten the company twice is a giant now.
         var red = Spawn("dragon_red", p.GlobalPosition + new Vector3(0, 0, 60));
         var before = red.Stats.MaxHealth;
-        red.MakeNemesis(Guid.NewGuid(), new BattleModifiers("Ashjaw", new Dictionary<Stat, double>(), new Dictionary<DamageKind, Affinity>(), [], Rank.Grunt, Victories: 2), null);
+        red.MakeDeviant(Guid.NewGuid(), new BattleModifiers("Ashjaw", new Dictionary<Stat, double>(), new Dictionary<DamageKind, Affinity>(), [], Rank.Grunt, Victories: 2), null);
         Check(red.Size == DragonSize.Giant && red.Stats.MaxHealth > before * 4 && red.Figure.Scale.X > 2,
             $"a red dragon that beat the company twice grew to a giant ({before:0} to {red.Stats.MaxHealth:0} hp)");
         red.QueueFree();
@@ -968,7 +968,7 @@ public partial class SelfTest(Main main) : Node
     /// empty until its timer runs out, and then a new nameless one is there. The roamer wanders, comes for the hero
     /// when it finds them, and when it's killed it's gone for good, and its bounty paid.
     /// </summary>
-    async Task NemesisLairTest()
+    async Task DeviantLairTest()
     {
         var (p, raid) = (main.PlayerNode, Raids.GoblinWarren);
         var lair = main.LairOf(raid);

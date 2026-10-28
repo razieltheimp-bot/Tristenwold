@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.Shared;
 
 namespace Tristinwold.World;
@@ -213,7 +213,7 @@ public sealed class WorldGen
         return best;
     }
 
-    /// <summary>A name for wherever this is, for the screen and for the nemesis records.</summary>
+    /// <summary>A name for wherever this is, for the screen and for the deviant records.</summary>
     public string AreaAt(double x, double z)
     {
         if (SettlementAt(x, z) is { } s) return s.Name;

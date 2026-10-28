@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.World;
 
@@ -277,7 +277,7 @@ public sealed class RaidBook
     public const double MoveInSeconds = 90;
 
     /// <summary>
-    /// The boss beat the company: it takes a name, grows stronger and leaves its lair to roam the world, a nemesis
+    /// The boss beat the company: it takes a name, grows stronger and leaves its lair to roam the world, a deviant
     /// of its own from then on. The lair doesn't stay empty: a moment later another moves in, nameless and no
     /// stronger than its kind, as they all start.
     /// </summary>
@@ -295,7 +295,7 @@ public sealed class RaidBook
 
 /// <summary>
 /// A lair boss that beat a company and walked out into the world: named, stronger, wandering the wilds, and
-/// stronger again every time it beats someone. In the shared world it is also a nemesis on the roster.
+/// stronger again every time it beats someone. In the shared world it is also a deviant on the roster.
 /// </summary>
 public sealed class Roamer
 {
@@ -309,7 +309,7 @@ public sealed class Roamer
     public double Since { get; set; }
     public ulong Seed { get; set; }
     /// <summary>Its id on the shared world's roster, when there is a shared world.</summary>
-    public Guid? NemesisId { get; set; }
+    public Guid? DeviantId { get; set; }
 
     [JsonIgnore]
     public Raid Raid => Raids.Get(RaidId) ?? Raids.AshenCrypt;
@@ -369,7 +369,7 @@ public static class Roaming
     public const double Pace = 1.1, RestSeconds = 90;
     public const double NearestToCity = 240, FarthestOut = 1400;
 
-    /// <summary>A name in the nemesis roster's own style: "Mokak the Grinning".</summary>
+    /// <summary>A name in the deviant roster's own style: "Mokak the Grinning".</summary>
     public static string NameFor(ulong seed)
     {
         var rng = new Rng(seed);

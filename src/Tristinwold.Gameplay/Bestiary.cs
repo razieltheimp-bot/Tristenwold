@@ -1,4 +1,4 @@
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.Gameplay;
 
@@ -39,7 +39,7 @@ public static class Bestiary
 {
     public static IReadOnlyList<EnemyKind> All { get; } =
     [
-        new("giant_rat", "Giant Giant Rat", 40, 6, 5.5, 0, 1.4, 1.0, DamageKind.Physical, "#6b5a4a", 0.6),
+        new("giant_rat", "Giant Rat", 40, 6, 5.5, 0, 1.4, 1.0, DamageKind.Physical, "#6b5a4a", 0.6),
         new("dock_thug", "Dock Thug", 110, 12, 4.2, 60, 1.8, 1.4, DamageKind.Physical, "#7a4e34", 1.8),
         new("lantern_boy", "Lantern Boy Cutpurse", 70, 9, 5.0, 20, 1.6, 1.0, DamageKind.Physical, "#b8402c", 1.6),
         new("drowned_hand", "Drowned Hand Smuggler", 140, 14, 4.0, 120, 1.9, 1.5, DamageKind.Physical, "#3a6a8a", 1.85),
@@ -79,7 +79,7 @@ public static class Bestiary
         new("ghost_captain", "Hollow Captain", 700, 22, 4.6, 160, 2.4, 1.4, DamageKind.Frost, "#a8e0f0", 2.3),
         new("hollow_soldier", "Hollow Soldier", 60, 8, 4.2, 80, 1.9, 1.3, DamageKind.Frost, "#9ad0e0", 1.8),
         new("crystal_basilisk", "Crystal Basilisk", 800, 24, 4.2, 200, 3.2, 1.7, DamageKind.Shock, "#5a3a7a", 2.4),
-        new("crystal_rat", "Crystal Giant Rat", 40, 6, 5.5, 60, 1.4, 1.0, DamageKind.Shock, "#7a5aa8", 0.7),
+        new("crystal_rat", "Crystal Rat", 40, 6, 5.5, 60, 1.4, 1.0, DamageKind.Shock, "#7a5aa8", 0.7),
         new("forge_golem", "Forge Golem", 900, 26, 3.6, 260, 3.0, 2.0, DamageKind.Fire, "#3a3a40", 3.4),
         new("goblin_tinker", "Goblin Tinker", 70, 9, 5.2, 40, 1.6, 1.0, DamageKind.Physical, "#4a5a3a", 1.25),
         new("duskprowler", "Duskprowler", 700, 26, 7.0, 80, 2.6, 1.1, DamageKind.Poison, "#1a1424", 2.0),

@@ -1,6 +1,6 @@
 using System.Numerics;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.Gameplay.Tests;
 
@@ -39,7 +39,7 @@ public class CombatTests
     [Fact]
     public void A_fire_eater_heals_from_fire_and_a_frost_weak_one_takes_extra()
     {
-        var n = new Combatant("Nemesis", 100);
+        var n = new Combatant("Deviant", 100);
         n.Apply(Mods(aff: new() { [DamageKind.Fire] = Affinity.Absorb, [DamageKind.Frost] = Affinity.Weak }));
         n.TakeHit(40, DamageKind.Physical, AttackKind.Weapon);
         var fire = n.TakeHit(30, DamageKind.Fire, AttackKind.Spell);
@@ -49,7 +49,7 @@ public class CombatTests
     }
 
     [Fact]
-    public void Nemesis_modifiers_raise_its_pools_and_name()
+    public void Deviant_modifiers_raise_its_pools_and_name()
     {
         var c = Bestiary.Get("dock_thug").NewCombatant();
         c.Apply(Mods(stats: new() { [Stat.Health] = 1.6, [Stat.Damage] = 1.35, [Stat.Speed] = 1.25 }, statuses: [AutoStatus.Haste]));
@@ -102,8 +102,8 @@ public class EncounterTests
         t.Tick(1.1, Vector3.Zero, _ => true, _ => null);
         Assert.Equal([0, 1], starts.Single().Select(s => s.Slot));
 
-        var nemesis = Guid.NewGuid();
-        t.MarkNemesis(1, nemesis);
+        var deviant = Guid.NewGuid();
+        t.MarkDeviant(1, deviant);
         t.Hit(11, DamageKind.Fire, "Joe", 2);
         t.Died(10, "Joe", 2);
         t.Died(11, null, 2.1);
@@ -112,7 +112,7 @@ public class EncounterTests
         var report = ends.Single();
         Assert.Equal(BattleResult.Victory, report.Result);
         Assert.Equal("The Docks", report.AreaId);
-        Assert.Equal(nemesis, report.Enemies[1].NemesisId);
+        Assert.Equal(deviant, report.Enemies[1].DeviantId);
         Assert.Equal(DamageKind.Fire, report.Enemies[1].KillingBlow);
         Assert.Equal("Joe", report.Enemies[1].KilledBy);
         Assert.Equal("dock_thug", report.Enemies[1].BaseForm); // so Vann can send one hunting

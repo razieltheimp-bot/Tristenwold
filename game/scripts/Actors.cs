@@ -1,6 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.World;
 using Side = Tristinwold.World.Side;
 
@@ -115,7 +115,7 @@ public partial class Enemy : Fighter
     public EnemyKind Kind { get; private set; } = Bestiary.All[0];
     public Vector3 Home { get; private set; }
     public EnemyState State { get; private set; } = EnemyState.Idle;
-    public Guid? NemesisId { get; private set; }
+    public Guid? DeviantId { get; private set; }
     public string? Taunt { get; private set; }
 
     /// <summary>The camp, barrow or den this one guards, if it came from one.</summary>
@@ -303,7 +303,7 @@ public partial class Enemy : Fighter
     }
 
     /// <summary>
-    /// A dragon nemesis grows with every win: a size for each time it has beaten a party and each
+    /// A dragon deviant grows with every win: a size for each time it has beaten a party and each
     /// rank it has risen to, from normal to large to giant to ancient.
     /// </summary>
     public void Grow(DragonSize size)
@@ -328,10 +328,10 @@ public partial class Enemy : Fighter
         RefreshPlate();
     }
 
-    /// <summary>The server says this one is a nemesis: rename, strengthen, and let it speak.</summary>
-    public void MakeNemesis(Guid id, BattleModifiers mods, string? taunt)
+    /// <summary>The server says this one is a deviant: rename, strengthen, and let it speak.</summary>
+    public void MakeDeviant(Guid id, BattleModifiers mods, string? taunt)
     {
-        NemesisId = id;
+        DeviantId = id;
         Taunt = taunt;
         Stats.Apply(mods);
         if (IsDragon) Grow((DragonSize)Math.Min(3, Math.Max((int)mods.Rank, mods.Victories)));
@@ -343,10 +343,10 @@ public partial class Enemy : Fighter
     /// <summary>A lair boss that beat a company and took a name: it shows the name, stands taller and burns red.</summary>
     public bool Named { get; private set; }
 
-    public void Crown(string title, Guid? nemesisId = null)
+    public void Crown(string title, Guid? deviantId = null)
     {
         Stats.Name = title;
-        if (nemesisId is not null) NemesisId = nemesisId;
+        if (deviantId is not null) DeviantId = deviantId;
         if (!Named)
         {
             Named = true;
@@ -368,7 +368,7 @@ public partial class Enemy : Fighter
             : $"{Stats.Name}\n{bar}";
         if (State != EnemyState.Dead && Frenzy > 0) Plate.Text = $"FRENZIED\n{Plate.Text}";
         else if (State != EnemyState.Dead && Infection > 0.05 && !Corrupted) Plate.Text += $"\nRift {Infection:P0}";
-        Plate.Modulate = Frenzy > 0 ? new Color("#d890ff") : Leader is not null ? new Color("#a8e0a0") : Friendly ? new Color("#a8c8f0") : NemesisId is null && !Named ? new Color("#e8dcc4") : new Color("#ff7a5a");
+        Plate.Modulate = Frenzy > 0 ? new Color("#d890ff") : Leader is not null ? new Color("#a8e0a0") : Friendly ? new Color("#a8c8f0") : DeviantId is null && !Named ? new Color("#e8dcc4") : new Color("#ff7a5a");
     }
 
     public void Provoke(Player by)
@@ -582,7 +582,7 @@ public partial class Enemy : Fighter
                     break;
                 }
                 // The weak and cowardly run when it goes badly.
-                if (Stats.Health < Stats.MaxHealth * 0.2 && Kind.Id is "giant_rat" or "lantern_boy" && NemesisId is null)
+                if (Stats.Health < Stats.MaxHealth * 0.2 && Kind.Id is "giant_rat" or "lantern_boy" && DeviantId is null)
                 {
                     State = EnemyState.Fleeing;
                     break;
@@ -827,7 +827,7 @@ public partial class Enemy : Fighter
         var colour = Dragons.ColourOf(Kind.Id)!.Value;
         Carrying?.Dismount();
         if (Leader is not null) (Master, Leader) = (Leader, null);
-        var named = Bond is not null || NemesisId is not null || Size == DragonSize.Ancient;
+        var named = Bond is not null || DeviantId is not null || Size == DragonSize.Ancient;
         Kind = Bestiary.Get(Dragons.CorruptedKindFor(colour));
         (Allied, Rider, Faction, Foe) = (false, false, Dragons.Rift, null);
         Stats.Grow(1.3);

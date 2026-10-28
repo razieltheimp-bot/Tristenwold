@@ -12,7 +12,7 @@ public partial class Hud : CanvasLayer
     ProgressBar _health = new(), _mana = new(), _stamina = new(), _limit = new();
     Label _area = new(), _toastLabel = new(), _status = new(), _crowns = new(), _center = new(), _party = new();
     PanelContainer _window = new();
-    VBoxContainer _board = new(), _companies = new(), _nemeses = new(), _journal = new();
+    VBoxContainer _board = new(), _companies = new(), _deviants = new(), _journal = new();
     Control _root = new();
     TabContainer _tabs = new();
     MapView? _mini, _full;
@@ -64,7 +64,7 @@ public partial class Hud : CanvasLayer
         windowBox.AddChild(tabs);
         tabs.AddChild(Scroll("Board", _board));
         tabs.AddChild(Scroll("Companies", _companies));
-        tabs.AddChild(Scroll("Nemeses", _nemeses));
+        tabs.AddChild(Scroll("Deviants", _deviants));
         var chronicle = new VBoxContainer { Name = "Chronicle" };
         var logScroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         logScroll.AddChild(_log = new Label { AutowrapMode = TextServer.AutowrapMode.Word, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
@@ -344,14 +344,14 @@ public partial class Hud : CanvasLayer
             _companies.AddChild(new Label { Text = $"{g.Player}'s company {(g.Online ? "- " + (g.Area.Length > 0 ? g.Area : "somewhere") : "(resting)")}\n   {string.Join(", ", g.Party)}" });
     }
 
-    public void ShowNemeses(string worldJson)
+    public void ShowDeviants(string worldJson)
     {
-        Clear(_nemeses);
+        Clear(_deviants);
         try
         {
-            var world = Nemesis.NemesisWorld.FromJson(worldJson);
+            var world = Deviant.DeviantWorld.FromJson(worldJson);
             foreach (var n in world.All.OrderByDescending(n => n.Alive).ThenByDescending(n => n.Rank))
-                _nemeses.AddChild(new Label
+                _deviants.AddChild(new Label
                 {
                     Text = $"{n.Rank.ToString().ToUpperInvariant()}  {n.FullName}{(n.Alive ? "" : " (fallen)")}\n   {n.Species}, level {n.Level}, from {n.HomeArea}\n   {string.Join("; ", n.Traits.Select(t => t.Label))}",
                     AutowrapMode = TextServer.AutowrapMode.Word,

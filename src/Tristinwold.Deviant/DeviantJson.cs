@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Tristinwold.Nemesis;
+namespace Tristinwold.Deviant;
 
-public static class NemesisJson
+public static class DeviantJson
 {
     public static JsonSerializerOptions Options { get; } = new()
     {
@@ -17,5 +17,5 @@ public static class NemesisJson
     public static string Serialize<T>(T value) => JsonSerializer.Serialize(value, Options);
 
     public static T Deserialize<T>(string json) =>
-        JsonSerializer.Deserialize<T>(SaveUpgrade.Upgrade(json), Options) ?? throw new InvalidDataException("Empty nemesis data.");
+        JsonSerializer.Deserialize<T>(SaveUpgrade.Upgrade(json), Options) ?? throw new InvalidDataException("Empty deviant data.");
 }

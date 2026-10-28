@@ -1,4 +1,4 @@
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.Shared;
 
 namespace Tristinwold.Shared.Tests;
@@ -113,9 +113,9 @@ public class VannTests
         Assert.True(schemes.Count >= 20, $"only {schemes.Count} messages in four hours");
         Assert.Contains("steer", tricks);
         Assert.Contains("slander", tricks);
-        Assert.Contains("set_nemesis", tricks);
+        Assert.Contains("set_deviant", tricks);
         Assert.Contains("omen", tricks);
-        // Setting a nemesis on Joe makes it stronger in the shared world.
+        // Setting a deviant on Joe makes it stronger in the shared world.
         Assert.True(server.World.Living.Single().Power > 40);
         Assert.NotEmpty(server.State.VannMemory);
     }
@@ -134,51 +134,51 @@ public class VannTests
 public class EncounterTests
 {
     [Fact]
-    public void A_reported_fight_can_turn_out_to_be_against_a_nemesis()
+    public void A_reported_fight_can_turn_out_to_be_against_a_deviant()
     {
         var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannEnabled = false }, seed: 8);
         server.Connect(new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]));
-        // Joe dies to a bandit: it becomes a nemesis, remembering how to spawn it.
-        server.Handle("Joe", new ReportBattle(new BattleReport("Riverwood", BattleResult.Defeat,
+        // Joe dies to a bandit: it becomes a deviant, remembering how to spawn it.
+        server.Handle("Joe", new ReportBattle(new BattleReport("The Warrens", BattleResult.Defeat,
             [new EnemyReport(0, "Bandit Marauder", "Bandit Marauder", 300, false, false, BaseForm: "bandit")], ["Joe"])));
         Assert.Equal("bandit", server.World.Living.Single().BaseForm);
 
         // The next fights with bandit marauders: sooner or later, that's him.
-        NemesisAppears? appears = null;
+        DeviantAppears? appears = null;
         for (var i = 0; i < 20 && appears is null; i++)
-            appears = server.Handle("Joe", new EncounterStarted("Riverwood",
+            appears = server.Handle("Joe", new EncounterStarted("The Warrens",
                 [new FormationSlot(4, "Bandit Marauder", "Bandit Marauder"), new FormationSlot(5, "Wolf", "Wolf")]))
-                .Select(o => o.Message).OfType<NemesisAppears>().SingleOrDefault();
+                .Select(o => o.Message).OfType<DeviantAppears>().SingleOrDefault();
         var spawn = Assert.Single(appears!.Spawns);
         Assert.Equal(4, spawn.Slot);
-        Assert.True(spawn.Modifiers.StatMultipliers[Nemesis.Stat.Health] > 1);
+        Assert.True(spawn.Modifiers.StatMultipliers[Deviant.Stat.Health] > 1);
 
         // Messages survive the trip to the game and back.
         var json = Wire.Encode(appears);
-        Assert.Contains("\"type\":\"nemesis_appears\"", json);
+        Assert.Contains("\"type\":\"deviant_appears\"", json);
         Assert.Contains("\"Health\":", json);
-        Assert.IsType<NemesisAppears>(Wire.Decode(json));
+        Assert.IsType<DeviantAppears>(Wire.Decode(json));
     }
 
     [Fact]
-    public void Vann_sends_a_nemesis_that_knows_how_to_spawn_after_its_company()
+    public void Vann_sends_a_deviant_that_knows_how_to_spawn_after_its_company()
     {
         var now = new DateTime(2026, 10, 25, 20, 0, 0, DateTimeKind.Utc);
         var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannMinutesBetweenSchemes = 1 }, seed: 9, clock: () => now);
         server.Connect(new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]));
-        server.Handle("Joe", new ReportBattle(new BattleReport("Riverwood", BattleResult.Defeat,
+        server.Handle("Joe", new ReportBattle(new BattleReport("The Warrens", BattleResult.Defeat,
             [new EnemyReport(0, "Draugr", "Draugr Wight", 300, false, false, BaseForm: "draugr")], ["Joe"])));
 
-        var hunts = new List<NemesisHunts>();
+        var hunts = new List<DeviantHunts>();
         server.Tick();
         for (var minute = 0; minute < 120 && hunts.Count == 0; minute++)
         {
             now = now.AddMinutes(1);
-            hunts.AddRange(server.Tick().Where(o => o.To == "Joe").Select(o => o.Message).OfType<NemesisHunts>());
+            hunts.AddRange(server.Tick().Where(o => o.To == "Joe").Select(o => o.Message).OfType<DeviantHunts>());
         }
         var hunt = Assert.Single(hunts);
         Assert.Equal("draugr", hunt.BaseForm);
-        Assert.Equal(server.World.Living.Single().Id, hunt.NemesisId);
+        Assert.Equal(server.World.Living.Single().Id, hunt.DeviantId);
     }
 }
 
@@ -220,9 +220,9 @@ public class WorldTests
         server.Handle("Joe", new Presence("A Nameless Barrow", []));
         Assert.Equal("A Nameless Barrow", server.State.Groups["Joe"].Area);
 
-        // Nemeses get homes in this world, and each city posts its own contracts.
-        server.Handle("Joe", new ReportBattle(new BattleReport("the needle", Nemesis.BattleResult.Defeat,
-            [new Nemesis.EnemyReport(0, "Bandit", "Bandit", 100, false, false)], ["Joe"])));
+        // Deviants get homes in this world, and each city posts its own contracts.
+        server.Handle("Joe", new ReportBattle(new BattleReport("the needle", Deviant.BattleResult.Defeat,
+            [new Deviant.EnemyReport(0, "Bandit", "Bandit", 100, false, false)], ["Joe"])));
         Assert.Equal("The Needle", server.World.Living.Single().HomeArea);
         Assert.Contains(server.State.Contracts, c => c.Id == "cinderhelm-killer" && c.Where!.StartsWith("Cinderhelm"));
     }

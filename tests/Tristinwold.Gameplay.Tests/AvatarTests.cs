@@ -69,14 +69,14 @@ public class AvatarTests
 
         var c = new Combatant("Ysolde", 100);
         Races.Apply(c, half.People, half.Blood, half.PureDragon);
-        Assert.Equal(50 + 15 / 2.0, c.Resist[Tristinwold.Nemesis.DamageKind.Frost]); // white dragons breathe frost; half an elf's resistance too
-        Assert.True(c.Resist[Tristinwold.Nemesis.DamageKind.Fire] < 0);              // and can't stand fire
+        Assert.Equal(50 + 15 / 2.0, c.Resist[Tristinwold.Deviant.DamageKind.Frost]); // white dragons breathe frost; half an elf's resistance too
+        Assert.True(c.Resist[Tristinwold.Deviant.DamageKind.Fire] < 0);              // and can't stand fire
         Races.Apply(c, half.People, half.Blood, half.PureDragon);                    // again, as when gear changes
-        Assert.Equal(57.5, c.Resist[Tristinwold.Nemesis.DamageKind.Frost]);          // not piled up
+        Assert.Equal(57.5, c.Resist[Tristinwold.Deviant.DamageKind.Frost]);          // not piled up
 
         var pure = new Combatant("Vyr", 100);
         Races.Apply(pure, Races.Get("dragonkind"), Races.Dragon("Red"), pure: true);
-        Assert.Equal(75, pure.Resist[Tristinwold.Nemesis.DamageKind.Fire]);
+        Assert.Equal(75, pure.Resist[Tristinwold.Deviant.DamageKind.Fire]);
         Assert.True(Races.Prices(Races.Get("human")) < 1 && Races.Prices(Races.Get("dragonkind")) > 1.1);
     }
 }

@@ -1,4 +1,4 @@
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.Gameplay;
 

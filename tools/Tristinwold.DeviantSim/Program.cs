@@ -1,8 +1,8 @@
-// Plays a fake campaign against the nemesis rules and prints what happens, so the
+// Plays a fake campaign against the deviant rules and prints what happens, so the
 // balance can be tuned without launching the game.
 //
-//   dotnet run --project tools/Tristinwold.NemesisSim -- [battles] [seed] [namepack.json]
-using Tristinwold.Nemesis;
+//   dotnet run --project tools/Tristinwold.DeviantSim -- [battles] [seed] [namepack.json]
+using Tristinwold.Deviant;
 
 var battles = args.Length > 0 ? int.Parse(args[0]) : 60;
 var seed = args.Length > 1 ? ulong.Parse(args[1]) : 42UL;
@@ -12,11 +12,11 @@ string[] players = ["Joe", "Mira", "Dax"];
 string[] areas = ["Outer Ring", "The Docks", "The Needle", "Drowned Chapel", "The Exchange"];
 (string Id, string Name, int Hp)[] species =
 [
-    ("Giant Rat", "Giant Giant Rat", 60), ("Bandit", "Dock Thug", 150), ("Draugr", "Draugr Wight", 300),
+    ("Giant Rat", "Plague Rat", 60), ("Bandit", "Dock Thug", 150), ("Draugr", "Draugr Wight", 300),
     ("Spriggan", "Spriggan", 450), ("Troll", "Frost Troll", 800),
 ];
 
-var world = new NemesisWorld(seed, names: names);
+var world = new DeviantWorld(seed, names: names);
 var dice = new Rng(seed ^ 0xDEADBEEF);
 
 for (var b = 1; b <= battles; b++)
@@ -36,7 +36,7 @@ for (var b = 1; b <= battles; b++)
         f.Slot, f.Kind, f.Species, species.First(s => s.Id == f.Kind).Hp,
         Killed: result == BattleResult.Victory,
         Escaped: result == BattleResult.EnemiesEscaped,
-        NemesisId: spawns.TryGetValue(f.Slot, out var sp) ? sp.NemesisId : null,
+        DeviantId: spawns.TryGetValue(f.Slot, out var sp) ? sp.DeviantId : null,
         KillingBlow: (DamageKind)dice.Next(6),
         KilledBy: dice.Pick(party))).ToList();
 
@@ -59,7 +59,7 @@ foreach (var c in world.UnassignedCaptains) Console.WriteLine($"CAPTAIN   {Descr
 foreach (var g in world.Grunts) Console.WriteLine($"grunt     {Describe(g)}");
 Console.WriteLine($"Fallen: {world.All.Count(n => !n.Alive)}");
 
-string Describe(Nemesis n) =>
+string Describe(Deviant n) =>
     $"{n.FullName} ({n.Species}, Lv {n.Level}, power {n.Power}) " +
     $"[{string.Join("; ", n.Traits.Select(t => t.Label.Split(':')[0]))}]" +
     (n.Scars.Count > 0 ? $" scars:{n.Scars.Count}" : "");

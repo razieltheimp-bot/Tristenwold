@@ -1,4 +1,4 @@
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.Shared;
 
@@ -91,7 +91,7 @@ public sealed partial class ServerCore
         var schemes = new List<(Func<IReadOnlyList<Outgoing>> Run, double Weight)>
         {
             (() => Omen(_rng.Pick(groups)), 1.0),
-            (() => SetANemesisOn(_rng.Pick(groups)), 1.0),
+            (() => SetADeviantOn(_rng.Pick(groups)), 1.0),
         };
         if (groups.Count >= 2)
         {
@@ -143,8 +143,8 @@ public sealed partial class ServerCore
         return [Whisper(g, "steer", facts, fallback)];
     }
 
-    /// <summary>He points a nemesis that already hates this company straight at them.</summary>
-    IReadOnlyList<Outgoing> SetANemesisOn(Group g)
+    /// <summary>He points a deviant that already hates this company straight at them.</summary>
+    IReadOnlyList<Outgoing> SetADeviantOn(Group g)
     {
         var hunter = World.Living
             .Where(n => n.Players.TryGetValue(g.Player, out var r) && (r.TimesKilledThem > 0 || r.TimesTheyFled > 0 || r.TimesTheyBeatMe > 0))
@@ -155,7 +155,7 @@ public sealed partial class ServerCore
         var events = World.Empower(hunter.Id, 20, $"A grey-robed man whispered to it where {g.Player}'s company would be.");
         var outgoing = new List<Outgoing>
         {
-            Whisper(g, "set_nemesis",
+            Whisper(g, "set_deviant",
                 g.VannRevealed
                     ? $"Vann tells {g.Player}'s company that he has sent {hunter.FullName}, a {hunter.Species} that already has a grudge against them, to find them, stronger than before."
                     : $"Vann, posing as {g.SavedMan}, 'warns' {g.Player}'s company that {hunter.FullName}, a {hunter.Species} with a grudge against them, has been seen asking about them. He is the one who told it where they are.",
@@ -165,7 +165,7 @@ public sealed partial class ServerCore
         };
         // If the game knows how to spawn its kind, it comes looking right now.
         if (hunter.BaseForm is { } baseForm)
-            outgoing.Add(new(g.Player, new NemesisHunts(hunter.Id, hunter.Kind, hunter.Species, baseForm, World.ModifiersFor(hunter), null)));
+            outgoing.Add(new(g.Player, new DeviantHunts(hunter.Id, hunter.Kind, hunter.Species, baseForm, World.ModifiersFor(hunter), null)));
         outgoing.AddRange(WorldChanged(events));
         return outgoing;
     }

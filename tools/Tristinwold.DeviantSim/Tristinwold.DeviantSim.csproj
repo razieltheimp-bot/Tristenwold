@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Tristinwold.Nemesis\Tristinwold.Nemesis.csproj" />
+    <ProjectReference Include="..\..\src\Tristinwold.Deviant\Tristinwold.Deviant.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

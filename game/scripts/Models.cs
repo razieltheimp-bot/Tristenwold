@@ -206,7 +206,7 @@ public abstract partial class Body : Node3D
     /// <summary>Sits down (in a saddle) or gets up.</summary>
     public virtual void Seat(bool seated) { }
 
-    /// <summary>A red glow for a nemesis.</summary>
+    /// <summary>A red glow for a deviant.</summary>
     public abstract void Mark(Color colour);
 
     /// <summary>Each dragon's wings: the membrane, and the bones that hold it (a green dragon's are amber on green).</summary>

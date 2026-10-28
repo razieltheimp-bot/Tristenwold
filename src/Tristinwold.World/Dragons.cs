@@ -1,11 +1,11 @@
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.World;
 
 /// <summary>The dragon colours: five chromatic (cruel, they hunt people) and five metallic (proud, they leave you be unless you strike first).</summary>
 public enum DragonColour { Red, Blue, Green, Black, White, Gold, Silver, Bronze, Copper, Brass }
 
-/// <summary>How big a dragon has grown. A nemesis dragon that keeps winning grows a size at each promotion.</summary>
+/// <summary>How big a dragon has grown. A deviant dragon that keeps winning grows a size at each promotion.</summary>
 public enum DragonSize { Normal = 0, Large = 1, Giant = 2, Ancient = 3 }
 
 /// <summary>

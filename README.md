@@ -6,10 +6,10 @@ perks.
 
 | Part | Status |
 |---|---|
-| **The game** (`game/`, Godot 4 .NET) | Playable: the three-ring city of Tristinwold and an endless world around it. Buildings are generated in code (timber-framed and stone houses, taverns, churches, keeps, walls); the ground, buildings, trees, rocks and props are photo-textured from Poly Haven scans; characters come from the KayKit packs. Sword, spells, limit break, Tong lairs, nemeses that come back, a fog-of-war map, villages and camps, people to talk to and quests to do, the shared-world board. A scripted headless test plays it against the real server. Open/CC0 art to come. |
+| **The game** (`game/`, Godot 4 .NET) | Playable: the three-ring city of Tristinwold and an endless world around it. Buildings are generated in code (timber-framed and stone houses, taverns, churches, keeps, walls); the ground, buildings, trees, rocks and props are photo-textured from Poly Haven scans; characters come from the KayKit packs. Sword, spells, limit break, Tong lairs, deviants that come back, a fog-of-war map, villages and camps, people to talk to and quests to do, the shared-world board. A scripted headless test plays it against the real server. Open/CC0 art to come. |
 | **The open world** (`src/Tristinwold.World`) | Built and tested. Grows the land, the cities, the villages, the people and their quests from one seed, with no edge. |
 | **Combat rules** (`src/Tristinwold.Gameplay`) | Built and tested: health/mana/stamina, armour, resistances, auto-statuses, the limit gauge, the bestiary, fight tracking. |
-| **Nemesis rules** (`src/Tristinwold.Nemesis`) | Built and tested: named enemies that remember, return and rise, with their own strengths, weaknesses and damage types. |
+| **Deviant rules** (`src/Tristinwold.Deviant`) | Built and tested: named enemies that remember, return and rise, with their own strengths, weaknesses and damage types. |
 | **Shared world server + Vann** (`src/Tristinwold.Shared`, `tools/Tristinwold.Server`) | Built and tested end to end. Game-agnostic. |
 | **The world** (`world/world.json`) | Nine cities with their own names, places, stories and contracts, and the characters written by hand. |
 | **Story, character creator, summons, co-op inside a company** | Planned. |
@@ -154,14 +154,14 @@ and an Apple developer account).
 | M | the map (scroll to zoom, drag to pan) |
 | J | your journal of quests |
 | T | rest (the world moves on, companions mend, and a dragon egg warms) |
-| F10 | the shared world: contract board, companies, nemeses, chronicle and chat |
+| F10 | the shared world: contract board, companies, deviants, chronicle and chat |
 
 ### Sound and music
 
 The game has sound (`game/scripts/Sound.cs`). The music follows what's happening: a grand theme on the start
 screen, wandering tunes in the wilds, market tunes in the city, an inn tune in the Gallows Perch and the Salt
 Barrel, the Bard's Tale at the Bards' College, battle music when something comes for you (it rings on a few
-seconds after), and a boss theme for named foes, nemeses, grown dragons and raids. Tunes cross-fade into each other.
+seconds after), and a boss theme for named foes, deviants, grown dragons and raids. Tunes cross-fade into each other.
 Under it, the sound of the place: birds and breeze in the wilds by day, crickets, frogs and an owl at night (by
 your device's clock), the city's murmur, hoofbeats and a distant forge, waves and gulls on the docks, wind up high
 and on dragonback, drips in caves, a crackling fire in the taverns.
@@ -297,7 +297,7 @@ creatures come from the *Aerois: Year One* bestiary sheet, built on the game's o
 | The Rock Bear's Den (cave) | north-west | 4-9 | wolves | the Rock Bear: stone grown over its back | ground slam, hurled boulder, rage |
 | The Briar Ruin (ruin) | south | 5-10 | spriggans | the Briar Mother: walking briar in red bloom | spore burst, thorn volleys, spawns spriggans |
 | The Hollow Bastion (fort) | east road | 7-12 | ghost soldiers | the Hollow Captain: a knight of moonlight | shield charge, spear volleys, calls the legion |
-| The Amethyst Hollow (cave) | far north-east | 8-13 | crystal giant rats | the Crystal Basilisk: amethyst grown through it | crystal spikes from marked ground, shard bolts, more giant rats |
+| The Amethyst Hollow (cave) | far north-east | 8-13 | crystal rats | the Crystal Basilisk: amethyst grown through it | crystal spikes from marked ground, shard bolts, more giant rats |
 | The Sunken Forge (dungeon) | far west | 9-14 | goblin tinkers | the Forge Golem: furnace chest, chimney head, hammer | hammer quake, slag, molten drops, overheats |
 | The Gloaming Ruin (ruin) | far south-east | 10-15 | shadow wolves | the Duskprowler: a shadow-cat veined with violet | vanishes and pounces from behind, more shadows, rage |
 | The Storm Eyrie (crag) | far north-west, high | 12-17 | stormwings | the Thunderhawk: storm-blue, lightning in its feathers | lightning on marked ground, thunderclap, dive, calls stormwings |
@@ -312,17 +312,17 @@ creatures come from the *Aerois: Year One* bestiary sheet, built on the game's o
   `--shots ./shots --raid` photographs the crypt; `--shots ./shots --lairs` (or `--lairs goblin_warren,storm_eyrie`)
   tours the others.
 
-#### When a boss beats you: a nemesis is born
+#### When a boss beats you: a deviant is born
 
-Every lair boss starts out a nameless one of its kind. **If it beats you, it takes a name** (in the nemesis roster's
+Every lair boss starts out a nameless one of its kind. **If it beats you, it takes a name** (in the deviant roster's
 style: "Mokak the Grinning, the Goblin King"), grows stronger, and **leaves its lair to roam the world**
 (`game/scripts/Roamers.cs`). It wanders the wilds on its own path, resting and moving on, never into a town. Come
 within sight of it and it's there, and it knows you, and it comes for you. Every time it beats you again it grows
 stronger still. Kill it and it's gone for good, and the price on its head is yours: more than its hoard, and more
 for every time it beat you.
 
-The lair doesn't stay empty: within a minute and a half **a new nameless boss has moved in**, no stronger than its kind (the one that beat you is out roaming, a nemesis of its own, wherever its road takes it). Roamers are saved with
-your company. In the shared world the server names it (the boss that beat you is the one the nemesis system
+The lair doesn't stay empty: within a minute and a half **a new nameless boss has moved in**, no stronger than its kind (the one that beat you is out roaming, a deviant of its own, wherever its road takes it). Roamers are saved with
+your company. In the shared world the server names it (the boss that beat you is the one the deviant system
 promotes), so it's on everyone's roster under the same name, its fights count there, and if it cheats death there
 it comes back roaming, scarred and angrier.
 
@@ -356,7 +356,7 @@ Kipines and both kinds of ape sometimes have young with them: find one alone and
   the shiny things they hoarded. **Dragons** leave an armful of their scales (in their colour), dragon bone, often
   their heart, and a pile of gold. A **lair's hoard** adds its boss's trophy and, the first time (and now and then
   after), a piece of gear you can't get anywhere else: the Goblin King's crown, the Warden's cinder axe, the
-  Hollow Legion's shield, the Duskprowler's mantle, an amethyst staff, a stormcaller's staff. A roaming nemesis
+  Hollow Legion's shield, the Duskprowler's mantle, an amethyst staff, a stormcaller's staff. A roaming deviant
   carries the best of its lair.
 - **The pack (I).** See what you carry, wear gear and drink potions; **H** drinks your best healing potion.
 - **Gear you can see.** Weapons, shields, helms and hats, body armour and cloaks. Every adventurer shares one
@@ -548,7 +548,7 @@ keeps making new cities as far as you care to walk, each with its own name, epit
   into one's land, and villagers gossip about the nearest. Every three hours (real time, the same for every
   company) neighbouring ancients may go to war, chromatic against metallic most often, and their dragons fight at
   the border like warring tribes, sometimes led by the ancients themselves. Dragons come in four sizes (normal,
-  large, giant, ancient), and a dragon nemesis grows a size each time it beats a party or rises a rank. All but the
+  large, giant, ancient), and a dragon deviant grows a size each time it beats a party or rises a rank. All but the
   white (frost) dragon have great wings (`DragonWings.cs`): folded along the back on the ground, beating in flight.
   They circle over their land, fly in to a distant fight and land to finish it, and take to the air to flee. The
   frost dragon is wingless and fights on foot, with a ridge of translucent ice spikes grown down its back and
@@ -598,16 +598,16 @@ Self-test (headless, exits 0 on success; `--company-only` runs just the classes,
 
 ```
 godot --headless --path game -- --selftest --server off                       # combat, exploring and one quest of each kind
-godot --headless --path game -- --selftest --server 127.0.0.1:7777 --company Joe   # plus a nemesis returning
+godot --headless --path game -- --selftest --server 127.0.0.1:7777 --company Joe   # plus a deviant returning
 godot --path game -- --shots ./shots --server off    # a screenshot tour of the world (needs a display; add --touch for the phone layout)
 godot --headless --path game -- --selftest --server https://….trycloudflare.com --company Joe --password secret   # through a tunnel
 ```
 
-## The Nemesis system
+## The Deviant system
 
 - An enemy that **kills you** becomes a named **Captain**. One you **run from**, or one that **flees from
   you**, becomes a named **Grunt**.
-- Each nemesis gets strengths and weaknesses: health, armour, damage, speed, spell power, crit chance,
+- Each deviant gets strengths and weaknesses: health, armour, damage, speed, spell power, crit chance,
   fire/frost/shock/poison/sun resistances (or absorbing them), plus auto-statuses (Haste, Protect, Shell,
   Regen, Reflect).
 - It **remembers** who it killed, who ran and who beat it, per player, and taunts you by name.
@@ -616,12 +616,12 @@ godot --headless --path game -- --selftest --server https://….trycloudflare.co
 - **Killing it isn't always final.** It can cheat death, come back scarred and resist whatever killed it.
 - **Hierarchy**: Overlord → Warchiefs → Captains → Grunts, with promotions, feuds, duels and blood oaths.
 
-Names, epithets and taunts are data (`NamePack` in `src/Tristinwold.Nemesis/Content.cs`).
+Names, epithets and taunts are data (`NamePack` in `src/Tristinwold.Deviant/Content.cs`).
 
 ### Try the rules without the game
 
 ```
-dotnet run --project tools/Tristinwold.NemesisSim -- 80 7
+dotnet run --project tools/Tristinwold.DeviantSim -- 80 7
 ```
 
 ## The world: nine cities
@@ -659,7 +659,7 @@ the characters. Edit it and restart the server; the game reads the same file.
 This is "The Scattered Key" from *The Rings of Tristinwold*. Each friend plays their own game, with their
 own company, at their own pace. One server, usually run by the DM, holds the city they all share:
 
-- **One nemesis world.** A monster that wipes Joe's party in his game can turn up in Mira's game and taunt
+- **One deviant world.** A monster that wipes Joe's party in his game can turn up in Mira's game and taunt
   her about it ("I killed Joe. You're next.").
 - **One city economy.** Tristinwold's market is the server's, not each game's own: when Joe sells sixty herring,
   fish is cheap for Mira too. Stock and prices, the day, what's happening (a storm, the herring run, a caravan),
@@ -696,7 +696,7 @@ never attacks a meeting directly; he nudges:
 - **Bad information.** Some dead drops arrive rewritten, still signed with your friend's name.
 - **Reputations.** Rumours spread about a company's crimes, all of them lies.
 - **Strange time.** A clock strikes thirteen; you find a note in your own handwriting.
-- **Sending nemeses.** He tells a nemesis that already hates you where to find you, and it gets stronger.
+- **Sending deviants.** He tells a deviant that already hates you where to find you, and it gets stronger.
 - **The one thing he can't stop:** two Keystones meeting.
 
 **Claude voices him** if the server machine has an Anthropic API key. Set `ANTHROPIC_API_KEY` before
@@ -741,7 +741,7 @@ flag <name> | unflag <name>   world consequences shared by every table
 drops                      list dead drops (* = intercepted, ~ = forged by Vann)
 release <n>                let intercepted drop n reach its area
 day                        advance the world one day
-nemeses                    living nemeses
+deviants                    living deviants
 save                       save now
 ```
 
@@ -755,7 +755,7 @@ company name and a password, and create an account the first time.
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download). Works on Windows or Linux:
 
 ```
-dotnet test                              # combat, open world, nemesis rules, server, HTTP gateway
+dotnet test                              # combat, open world, deviant rules, server, HTTP gateway
 cd game && dotnet build && godot --headless --path . -- --selftest --server off   # the Godot game, played by a script
 ```
 
@@ -787,7 +787,7 @@ Dungeon Remastered and Halloween Bits. They are CC0 (free for any use) and live 
 Creatures (`game/assets/creatures`, see its CREDITS.md): wolves, ice wolves, foxes, brown and black bears, wild
 boars and hawks come from 0 A.D. by Wildfire Games (art CC-BY-SA 3.0, so the converted models carry the same
 licence), each with its own idle, walk, run, attack and death; `tools/creatures/zero_ad.py` converts them from a
-checkout of github.com/0ad/0ad. Giant rats (giant rats), goblins, forest monsters (spriggans), trolls and the frost dragon
+checkout of github.com/0ad/0ad. Giant rats, goblins, forest monsters (spriggans), trolls and the frost dragon
 come from OpenGameArt: CDmir's rat, goblin and forest monster and Drummyfish/Cethiel's dragon are CC0, and
 piacenti's Troll Mauler is CC-BY 3.0 (`tools/creatures/oga.py` converts them). The deer is Polygonal Mind's (CC0),
 its legs walked in code. Mud crabs are still built from shapes. The KayKit characters are re-proportioned as

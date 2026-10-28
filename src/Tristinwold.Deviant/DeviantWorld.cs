@@ -1,7 +1,7 @@
-namespace Tristinwold.Nemesis;
+namespace Tristinwold.Deviant;
 
-/// <summary>Tuning knobs. Defaults aim for "a nemesis shows up every few battles".</summary>
-public sealed class NemesisRules
+/// <summary>Tuning knobs. Defaults aim for "a deviant shows up every few battles".</summary>
+public sealed class DeviantRules
 {
     public int MaxWarchiefs { get; init; } = 5;
     public int MaxCaptainsPerWarchief { get; init; } = 4;
@@ -13,7 +13,7 @@ public sealed class NemesisRules
 
     public double AppearanceChance { get; init; } = 0.35;
     public double HomeAreaAppearanceChance { get; init; } = 0.6;
-    public int MaxNemesesPerBattle { get; init; } = 2;
+    public int MaxDeviantsPerBattle { get; init; } = 2;
 
     public int MaxLevel { get; init; } = 20;
     public int MaxDisplayNameLength { get; init; } = 40;
@@ -24,77 +24,77 @@ public sealed class NemesisRules
 }
 
 /// <summary>
-/// The whole nemesis simulation. The game layer feeds it battle reports and asks it
-/// which nemeses to put into each new battle; everything else happens in here.
+/// The whole deviant simulation. The game layer feeds it battle reports and asks it
+/// which deviants to put into each new battle; everything else happens in here.
 /// Not thread-safe: call it from the game thread (or under one lock).
 /// </summary>
-public sealed class NemesisWorld
+public sealed class DeviantWorld
 {
     public const int SaveVersion = 1;
 
-    readonly List<Nemesis> _nemeses;
+    readonly List<Deviant> _deviants;
     readonly Rng _rng;
 
-    public NemesisRules Rules { get; }
+    public DeviantRules Rules { get; }
     public NamePack Names { get; }
     public int Day { get; private set; }
-    public IReadOnlyList<Nemesis> All => _nemeses;
-    public IEnumerable<Nemesis> Living => _nemeses.Where(n => n.Alive);
+    public IReadOnlyList<Deviant> All => _deviants;
+    public IEnumerable<Deviant> Living => _deviants.Where(n => n.Alive);
 
-    public NemesisWorld(ulong seed, NemesisRules? rules = null, NamePack? names = null)
+    public DeviantWorld(ulong seed, DeviantRules? rules = null, NamePack? names = null)
         : this(new Rng(seed), [], 0, rules, names) { }
 
-    NemesisWorld(Rng rng, List<Nemesis> nemeses, int day, NemesisRules? rules, NamePack? names)
+    DeviantWorld(Rng rng, List<Deviant> deviants, int day, DeviantRules? rules, NamePack? names)
     {
         _rng = rng;
-        _nemeses = nemeses;
+        _deviants = deviants;
         Day = day;
-        Rules = rules ?? new NemesisRules();
+        Rules = rules ?? new DeviantRules();
         Names = names ?? NamePack.Default;
     }
 
-    public Nemesis? Find(Guid id) => _nemeses.FirstOrDefault(n => n.Id == id);
+    public Deviant? Find(Guid id) => _deviants.FirstOrDefault(n => n.Id == id);
 
     // ---- Hierarchy -------------------------------------------------------------------------
 
-    public Nemesis? Overlord => Living.FirstOrDefault(n => n.Rank == Rank.Overlord);
-    public IEnumerable<Nemesis> Warchiefs => Living.Where(n => n.Rank == Rank.Warchief).OrderByDescending(n => n.Power);
-    public IEnumerable<Nemesis> CaptainsUnder(Guid warchiefId) =>
+    public Deviant? Overlord => Living.FirstOrDefault(n => n.Rank == Rank.Overlord);
+    public IEnumerable<Deviant> Warchiefs => Living.Where(n => n.Rank == Rank.Warchief).OrderByDescending(n => n.Power);
+    public IEnumerable<Deviant> CaptainsUnder(Guid warchiefId) =>
         Living.Where(n => n.Rank == Rank.Captain && n.ServesUnder == warchiefId).OrderByDescending(n => n.Power);
-    public IEnumerable<Nemesis> UnassignedCaptains =>
+    public IEnumerable<Deviant> UnassignedCaptains =>
         Living.Where(n => n.Rank == Rank.Captain && (n.ServesUnder is null || Find(n.ServesUnder.Value)?.Alive != true));
-    public IEnumerable<Nemesis> Grunts => Living.Where(n => n.Rank == Rank.Grunt).OrderByDescending(n => n.Power);
+    public IEnumerable<Deviant> Grunts => Living.Where(n => n.Rank == Rank.Grunt).OrderByDescending(n => n.Power);
 
     // ---- Battle setup ----------------------------------------------------------------------
 
     /// <summary>
-    /// Decides which enemies in this fight become nemeses. A nemesis only takes the place of
+    /// Decides which enemies in this fight become deviants. A deviant only takes the place of
     /// an enemy of its own kind, so it looks and fights the way players remember it.
     /// </summary>
-    public IReadOnlyList<NemesisSpawn> PlanEncounter(string areaId, IReadOnlyList<FormationSlot> formation, IReadOnlyList<string> players)
+    public IReadOnlyList<DeviantSpawn> PlanEncounter(string areaId, IReadOnlyList<FormationSlot> formation, IReadOnlyList<string> players)
     {
-        var spawns = new List<NemesisSpawn>();
+        var spawns = new List<DeviantSpawn>();
         var freeSlots = formation.ToList();
         var candidates = Living
             .Where(n => freeSlots.Any(s => s.Kind == n.Kind))
-            .Select(n => (Nemesis: n, Weight: AppearanceWeight(n, areaId, players)))
+            .Select(n => (Deviant: n, Weight: AppearanceWeight(n, areaId, players)))
             .OrderByDescending(c => c.Weight)
             .ToList();
 
-        foreach (var (nemesis, weight) in candidates)
+        foreach (var (deviant, weight) in candidates)
         {
-            if (spawns.Count >= Rules.MaxNemesesPerBattle) break;
-            var chance = Math.Min(0.95, (nemesis.HomeArea == areaId ? Rules.HomeAreaAppearanceChance : Rules.AppearanceChance) * weight);
+            if (spawns.Count >= Rules.MaxDeviantsPerBattle) break;
+            var chance = Math.Min(0.95, (deviant.HomeArea == areaId ? Rules.HomeAreaAppearanceChance : Rules.AppearanceChance) * weight);
             if (!_rng.Chance(chance)) continue;
-            var slot = freeSlots.FirstOrDefault(s => s.Kind == nemesis.Kind);
+            var slot = freeSlots.FirstOrDefault(s => s.Kind == deviant.Kind);
             if (slot is null) continue;
             freeSlots.Remove(slot);
-            spawns.Add(new NemesisSpawn(slot.Slot, nemesis.Id, ModifiersFor(nemesis), Taunt(nemesis, players)));
+            spawns.Add(new DeviantSpawn(slot.Slot, deviant.Id, ModifiersFor(deviant), Taunt(deviant, players)));
         }
         return spawns;
     }
 
-    double AppearanceWeight(Nemesis n, string areaId, IReadOnlyList<string> players)
+    double AppearanceWeight(Deviant n, string areaId, IReadOnlyList<string> players)
     {
         var weight = 1.0 + 0.25 * (int)n.Rank;
         foreach (var p in players)
@@ -109,7 +109,7 @@ public sealed class NemesisWorld
     }
 
     /// <summary>Rank, level and traits folded into one set of numbers for the game layer.</summary>
-    public BattleModifiers ModifiersFor(Nemesis n)
+    public BattleModifiers ModifiersFor(Deviant n)
     {
         var rank = (int)n.Rank;
         var level = Math.Min(n.Level, Rules.MaxLevel);
@@ -137,13 +137,13 @@ public sealed class NemesisWorld
 
     static Affinity Stronger(Affinity a, Affinity b) => (Affinity)Math.Max((int)a, (int)b);
 
-    public string DisplayName(Nemesis n)
+    public string DisplayName(Deviant n)
     {
         var full = n.FullName;
         return full.Length <= Rules.MaxDisplayNameLength ? full : n.Name[..Math.Min(n.Name.Length, Rules.MaxDisplayNameLength)];
     }
 
-    string? Taunt(Nemesis n, IReadOnlyList<string> players)
+    string? Taunt(Deviant n, IReadOnlyList<string> players)
     {
         string? target = null;
         string key = n.Encounters == 0 ? "first" : "generic";
@@ -175,13 +175,13 @@ public sealed class NemesisWorld
     public IReadOnlyList<WorldEvent> RecordBattle(BattleReport report)
     {
         var events = new List<WorldEvent>();
-        var nemesesInBattle = report.Enemies
-            .Where(e => e.NemesisId is not null)
-            .Select(e => (Enemy: e, Nemesis: Find(e.NemesisId!.Value)))
-            .Where(x => x.Nemesis is { Alive: true })
+        var deviantsInBattle = report.Enemies
+            .Where(e => e.DeviantId is not null)
+            .Select(e => (Enemy: e, Deviant: Find(e.DeviantId!.Value)))
+            .Where(x => x.Deviant is { Alive: true })
             .ToList();
 
-        foreach (var (enemy, n) in nemesesInBattle)
+        foreach (var (enemy, n) in deviantsInBattle)
         {
             n!.Encounters++;
             n.Memory |= Memory.MetPlayer;
@@ -199,7 +199,7 @@ public sealed class NemesisWorld
 
         // A plain monster that wipes the party, or that the party runs from or that runs
         // away itself, gets a name. This is how the roster fills up.
-        if (nemesesInBattle.Count == 0)
+        if (deviantsInBattle.Count == 0)
         {
             var survivor = report.Enemies.Where(e => !e.Killed).OrderByDescending(e => e.MaxHealth).FirstOrDefault();
             if (survivor is not null)
@@ -219,7 +219,7 @@ public sealed class NemesisWorld
         return events;
     }
 
-    void Triumph(Nemesis n, BattleReport report, List<WorldEvent> events)
+    void Triumph(Deviant n, BattleReport report, List<WorldEvent> events)
     {
         n.Wins++;
         n.Memory |= Memory.KilledPlayer;
@@ -234,7 +234,7 @@ public sealed class NemesisWorld
         events.Add(new(WorldEventKind.Triumph, n.Id, $"{n.FullName} defeated {Party(report)} and grows stronger."));
     }
 
-    void PlayerFled(Nemesis n, BattleReport report, List<WorldEvent> events)
+    void PlayerFled(Deviant n, BattleReport report, List<WorldEvent> events)
     {
         n.Memory |= Memory.PlayerFled;
         GainPower(n, 15, levels: 1);
@@ -248,7 +248,7 @@ public sealed class NemesisWorld
         events.Add(new(WorldEventKind.Triumph, n.Id, $"{n.FullName} laughs as {Party(report)} flee."));
     }
 
-    void Escaped(Nemesis n, BattleReport report, List<WorldEvent> events)
+    void Escaped(Deviant n, BattleReport report, List<WorldEvent> events)
     {
         n.Memory |= Memory.FledFromPlayer;
         GainPower(n, 10, levels: 0);
@@ -256,7 +256,7 @@ public sealed class NemesisWorld
         events.Add(new(WorldEventKind.Escaped, n.Id, $"{n.FullName} escaped. It will be back."));
     }
 
-    void Defeated(Nemesis n, EnemyReport enemy, BattleReport report, List<WorldEvent> events)
+    void Defeated(Deviant n, EnemyReport enemy, BattleReport report, List<WorldEvent> events)
     {
         n.Losses++;
         var killer = enemy.KilledBy ?? report.Players.FirstOrDefault();
@@ -300,7 +300,7 @@ public sealed class NemesisWorld
             Log(weakest, "Was pushed out of the ranks by a newcomer.");
         }
 
-        var n = new Nemesis
+        var n = new Deviant
         {
             Id = _rng.NextGuid(),
             Name = MakeName(),
@@ -326,7 +326,7 @@ public sealed class NemesisWorld
         AddTrait(n, TraitKind.Weakness);
         if (rank >= Rank.Captain) AddTrait(n, TraitKind.Strength);
         n.Epithet = n.Traits.Select(t => t.Epithet).FirstOrDefault(e => e is not null) ?? _rng.Pick(Names.Epithets);
-        _nemeses.Add(n);
+        _deviants.Add(n);
 
         var why = memory.HasFlag(Memory.KilledPlayer) ? $"after defeating {Party(report)}"
             : memory.HasFlag(Memory.PlayerFled) ? $"after {Party(report)} fled from it"
@@ -337,7 +337,7 @@ public sealed class NemesisWorld
 
     // ---- Traits, scars, names ---------------------------------------------------------------
 
-    void AddTrait(Nemesis n, TraitKind kind)
+    void AddTrait(Deviant n, TraitKind kind)
     {
         var pool = (kind == TraitKind.Strength ? TraitCatalog.Strengths : TraitCatalog.Weaknesses)
             .Where(t => n.Traits.All(o => o.Id != t.Id) && !Conflicts(n, t))
@@ -345,11 +345,11 @@ public sealed class NemesisWorld
         if (pool.Count > 0) n.Traits.Add(_rng.Pick(pool));
     }
 
-    /// <summary>A nemesis can't both absorb fire and be weak to it.</summary>
-    static bool Conflicts(Nemesis n, Trait t) =>
+    /// <summary>A deviant can't both absorb fire and be weak to it.</summary>
+    static bool Conflicts(Deviant n, Trait t) =>
         t.Affinities is not null && n.Traits.Any(o => o.Affinities is not null && o.Affinities.Keys.Intersect(t.Affinities.Keys).Any());
 
-    void AddScar(Nemesis n, DamageKind cause)
+    void AddScar(Deviant n, DamageKind cause)
     {
         var descriptions = Names.ScarDescriptions.GetValueOrDefault(cause) ?? ["An ugly scar."];
         n.Scars.Add(new Scar(cause, _rng.Pick(descriptions), Day));
@@ -377,7 +377,7 @@ public sealed class NemesisWorld
 
     // ---- Power and promotion ----------------------------------------------------------------
 
-    void GainPower(Nemesis n, int power, int levels)
+    void GainPower(Deviant n, int power, int levels)
     {
         n.Power += power;
         n.Level = Math.Min(Rules.MaxLevel, n.Level + levels);
@@ -435,7 +435,7 @@ public sealed class NemesisWorld
     bool HasCaptainVacancy() =>
         Warchiefs.Any(w => CaptainsUnder(w.Id).Count() < Rules.MaxCaptainsPerWarchief);
 
-    void Promote(Nemesis n, Rank rank, List<WorldEvent> events)
+    void Promote(Deviant n, Rank rank, List<WorldEvent> events)
     {
         var from = n.Rank;
         n.Rank = rank;
@@ -446,7 +446,7 @@ public sealed class NemesisWorld
     }
 
     /// <summary>
-    /// Outside meddling (Vann whispering to a nemesis): grants power and levels and lets the
+    /// Outside meddling (Vann whispering to a deviant): grants power and levels and lets the
     /// hierarchy react. Returns the resulting events.
     /// </summary>
     public IReadOnlyList<WorldEvent> Empower(Guid id, int power, string why)
@@ -511,9 +511,9 @@ public sealed class NemesisWorld
         return events;
     }
 
-    void Duel(Nemesis a, Nemesis b, List<WorldEvent> events)
+    void Duel(Deviant a, Deviant b, List<WorldEvent> events)
     {
-        double Score(Nemesis n) => n.Power + n.Level * 5 + (int)n.Rank * 30 + _rng.Next(60);
+        double Score(Deviant n) => n.Power + n.Level * 5 + (int)n.Rank * 30 + _rng.Next(60);
         var (winner, loser) = Score(a) >= Score(b) ? (a, b) : (b, a);
         winner.Rivals.Remove(loser.Id);
         loser.Rivals.Remove(winner.Id);
@@ -549,7 +549,7 @@ public sealed class NemesisWorld
 
     // ---- Helpers and persistence --------------------------------------------------------------
 
-    void Log(Nemesis n, string text) => n.History.Add(new HistoryEntry(Day, text));
+    void Log(Deviant n, string text) => n.History.Add(new HistoryEntry(Day, text));
 
     static string Party(BattleReport r) => r.Players.Count switch
     {
@@ -558,19 +558,19 @@ public sealed class NemesisWorld
         _ => string.Join(", ", r.Players.Take(r.Players.Count - 1)) + " and " + r.Players[^1],
     };
 
-    public sealed record State(int Version, int Day, ulong RngState, List<Nemesis> Nemeses);
+    public sealed record State(int Version, int Day, ulong RngState, List<Deviant> Deviants);
 
-    public State Snapshot() => new(SaveVersion, Day, _rng.State, _nemeses);
+    public State Snapshot() => new(SaveVersion, Day, _rng.State, _deviants);
 
-    public static NemesisWorld Restore(State state, NemesisRules? rules = null, NamePack? names = null)
+    public static DeviantWorld Restore(State state, DeviantRules? rules = null, NamePack? names = null)
     {
         if (state.Version > SaveVersion)
-            throw new InvalidDataException($"Nemesis save version {state.Version} is newer than this mod ({SaveVersion}).");
-        return new NemesisWorld(new Rng(state.RngState), state.Nemeses, state.Day, rules, names);
+            throw new InvalidDataException($"Deviant save version {state.Version} is newer than this mod ({SaveVersion}).");
+        return new DeviantWorld(new Rng(state.RngState), state.Deviants, state.Day, rules, names);
     }
 
-    public string ToJson() => NemesisJson.Serialize(Snapshot());
+    public string ToJson() => DeviantJson.Serialize(Snapshot());
 
-    public static NemesisWorld FromJson(string json, NemesisRules? rules = null, NamePack? names = null) =>
-        Restore(NemesisJson.Deserialize<State>(json), rules, names);
+    public static DeviantWorld FromJson(string json, DeviantRules? rules = null, NamePack? names = null) =>
+        Restore(DeviantJson.Deserialize<State>(json), rules, names);
 }

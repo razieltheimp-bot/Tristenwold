@@ -1,6 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.World;
 
 namespace Tristinwold.Game;
@@ -196,7 +196,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         await Frames(50);
         Look(centre + new Vector3(3, 3, 12.5f), centre + new Vector3(0, 0.8f, 0));
         await Shot("raid-1-thralls");
-        foreach (var t in main.CryptNode.Thralls.ToList()) t.TakeHit(1e6, Tristinwold.Nemesis.DamageKind.Fire, AttackKind.Spell, false, p);
+        foreach (var t in main.CryptNode.Thralls.ToList()) t.TakeHit(1e6, Tristinwold.Deviant.DamageKind.Fire, AttackKind.Spell, false, p);
         p.Frozen = true;
         for (var i = 0; i < 200; i++) { p.Stats.Heal(1e6); await Frames(1); }
         if (main.CryptNode.Boss is { } w)
@@ -240,7 +240,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             await Frames(40);
             Look(centre + toward * 16 + side * 5 + Vector3.Up * 3.5f, centre + Vector3.Up * 1);
             await Shot($"lair-{id}-1-thralls");
-            foreach (var t in lair.Thralls.ToList()) t.TakeHit(1e7, Tristinwold.Nemesis.DamageKind.Sun, AttackKind.Spell, false, p);
+            foreach (var t in lair.Thralls.ToList()) t.TakeHit(1e7, Tristinwold.Deviant.DamageKind.Sun, AttackKind.Spell, false, p);
             // Stand our ground in the lair; the boss comes to us.
             var stand = centre + toward * 7;
             p.GlobalPosition = stand with { Y = City.FloorAt(stand) + 1 };
@@ -266,13 +266,13 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                 if (r == Raids.GoblinWarren || pick.Length > 0)
                 {
                     // Let it beat us: it takes a name and goes roaming.
-                    p.TakeHit(1e7, Tristinwold.Nemesis.DamageKind.Fire, AttackKind.Weapon, false, boss);
+                    p.TakeHit(1e7, Tristinwold.Deviant.DamageKind.Fire, AttackKind.Weapon, false, boss);
                     await Frames(3);
                     Portrait(boss, 0.6f);
                     await Shot($"lair-{id}-4-named");
                     await Frames(300);
                 }
-                if (IsInstanceValid(boss)) boss.TakeHit(1e8, Tristinwold.Nemesis.DamageKind.Sun, AttackKind.Spell, false, p);
+                if (IsInstanceValid(boss)) boss.TakeHit(1e8, Tristinwold.Deviant.DamageKind.Sun, AttackKind.Spell, false, p);
             }
             p.Frozen = false;
             main.PlayerNode.Camera.MakeCurrent();
@@ -582,7 +582,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         var p = main.PlayerNode;
         p.GlobalPosition = new Vector3(-150, 1, -120);
         await Frames(30);
-        for (var i = 0; i < 60 && !p.Stats.LimitReady; i++) { p.Stats.TakeHit(12, Tristinwold.Nemesis.DamageKind.Physical, AttackKind.Weapon); p.Stats.Heal(12); }
+        for (var i = 0; i < 60 && !p.Stats.LimitReady; i++) { p.Stats.TakeHit(12, Tristinwold.Deviant.DamageKind.Physical, AttackKind.Weapon); p.Stats.Heal(12); }
         p.LimitBreak();
         for (var i = 0; i < 4; i++)
         {

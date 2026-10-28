@@ -1,5 +1,5 @@
 using Godot;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.World;
 
 namespace Tristinwold.Game;

@@ -1,5 +1,5 @@
 using System.Text;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.Shared;
 
@@ -47,7 +47,7 @@ public sealed partial class ServerCore
     readonly Dictionary<string, (string Area, DateTime Left)> _lastLeft = new(StringComparer.OrdinalIgnoreCase);
 
     public CampaignState State { get; }
-    public NemesisWorld World { get; private set; }
+    public DeviantWorld World { get; private set; }
     /// <summary>Set whenever something worth saving changed.</summary>
     public bool Dirty { get; set; }
 
@@ -57,7 +57,7 @@ public sealed partial class ServerCore
         _options = options ?? new ServerOptions();
         _clock = clock ?? (() => DateTime.UtcNow);
         _rng = new Rng(seed == 0 ? (ulong)DateTime.UtcNow.Ticks : seed);
-        World = state.NemesisWorldJson is { } json ? NemesisWorld.FromJson(json) : new NemesisWorld(_rng.NextULong());
+        World = state.DeviantWorldJson is { } json ? DeviantWorld.FromJson(json) : new DeviantWorld(_rng.NextULong());
     }
 
     public IEnumerable<string> Online => _online;
@@ -93,7 +93,7 @@ public sealed partial class ServerCore
         return
         [
             new(name, new Welcome(name, State.Campaign, [.. State.Flags])),
-            new(name, new NemesisSnapshot(World.ToJson())),
+            new(name, new DeviantSnapshot(World.ToJson())),
             new(name, new Board(PublicBoard())),
             new(name, CityMessage()),
             new(null, RosterMessage()),
@@ -195,7 +195,7 @@ public sealed partial class ServerCore
         var spawns = World.PlanEncounter(State.Place(Clip(e.Area, 80)), e.Enemies.Take(32).ToList(), [player]);
         if (spawns.Count == 0) return [];
         Dirty = true; // the plan used the world's dice
-        return [new(player, new NemesisAppears(spawns))];
+        return [new(player, new DeviantAppears(spawns))];
     }
 
     public IReadOnlyList<Outgoing> AdvanceDay(string announcement)
@@ -208,10 +208,10 @@ public sealed partial class ServerCore
 
     IReadOnlyList<Outgoing> WorldChanged(IReadOnlyList<WorldEvent> events)
     {
-        State.NemesisWorldJson = World.ToJson();
+        State.DeviantWorldJson = World.ToJson();
         Dirty = true;
-        var outgoing = new List<Outgoing> { new(null, new NemesisSnapshot(State.NemesisWorldJson)) };
-        if (events.Count > 0) outgoing.Add(new(null, new NemesisEvents(events)));
+        var outgoing = new List<Outgoing> { new(null, new DeviantSnapshot(State.DeviantWorldJson)) };
+        if (events.Count > 0) outgoing.Add(new(null, new DeviantEvents(events)));
         return outgoing;
     }
 
@@ -324,7 +324,7 @@ public sealed partial class ServerCore
         drops                      list dead drops (* = intercepted by Vann, ~ = forged)
         release <n>                let intercepted drop n reach its area
         day                        advance the world one day
-        nemeses                    living nemeses
+        deviants                    living deviants
         save                       save now
         """;
 
@@ -414,7 +414,7 @@ public sealed partial class ServerCore
             }
             case "day":
                 return ($"Day {World.Day + 1}.", AdvanceDay("A day passes in Tristinwold."));
-            case "nemeses":
+            case "deviants":
                 return (string.Join('\n', World.Living.OrderByDescending(n => n.Rank)
                     .Select(n => $"{n.Rank,-8} {n.FullName} ({n.Species}, Lv {n.Level}, power {n.Power}) home {Or(n.HomeArea, "?")}")), []);
             default:

@@ -1,6 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.Game;
 

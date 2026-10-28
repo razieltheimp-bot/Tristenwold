@@ -1,6 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.World;
 
 namespace Tristinwold.Game;
@@ -117,8 +117,8 @@ public partial class RaidLair(Main main, Raid raid) : Node3D
         _boss = null;
         _phase = Phase.Waiting;
         main.RoamersNode.Adopt(roamer, boss);
-        main.HudNode.Toast($"{raid.BossCap} stands over you, and takes a name for itself: {roamer.Name}. It leaves {raid.Name} to roam the wilds, stronger for beating you. (A new nemesis.) Another, nameless and no stronger than its kind, is already moving into the lair.", 12);
-        main.HudNode.Log($"Nemesis: {roamer.Title} beat you at {raid.Name}, took a name and went roaming.");
+        main.HudNode.Toast($"{raid.BossCap} stands over you, and takes a name for itself: {roamer.Name}. It leaves {raid.Name} to roam the wilds, stronger for beating you. (A new deviant.) Another, nameless and no stronger than its kind, is already moving into the lair.", 12);
+        main.HudNode.Log($"Deviant: {roamer.Title} beat you at {raid.Name}, took a name and went roaming.");
     }
 
     void Fallen()

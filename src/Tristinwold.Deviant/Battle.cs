@@ -1,4 +1,4 @@
-namespace Tristinwold.Nemesis;
+namespace Tristinwold.Deviant;
 
 /// <summary>
 /// How a fight ended. There's no battle screen, so the game layer decides: the player died
@@ -15,13 +15,13 @@ public sealed record EnemyReport(
     int MaxHealth,
     bool Killed,
     bool Escaped,
-    Guid? NemesisId = null,
+    Guid? DeviantId = null,
     DamageKind? KillingBlow = null,
     string? KilledBy = null,
     /// <summary>The actor base the game can spawn this kind from (its kind in the bestiary, say "bandit").</summary>
     string? BaseForm = null);
 
-/// <summary>What the game layer hands the nemesis world after every battle.</summary>
+/// <summary>What the game layer hands the deviant world after every battle.</summary>
 public sealed record BattleReport(
     string AreaId,
     BattleResult Result,
@@ -29,11 +29,11 @@ public sealed record BattleReport(
     IReadOnlyList<string> Players,
     int PartyLevel = 1);
 
-/// <summary>An enemy about to fight the player, before any nemesis takes its place.</summary>
+/// <summary>An enemy about to fight the player, before any deviant takes its place.</summary>
 public sealed record FormationSlot(int Slot, string Kind, string Species, string? BaseForm = null);
 
-/// <summary>Everything the game layer needs to turn an ordinary enemy into a nemesis.</summary>
-/// <param name="Rank">The nemesis's place in the hierarchy, so the game can show it (a dragon grows a size with each rank).</param>
+/// <summary>Everything the game layer needs to turn an ordinary enemy into a deviant.</summary>
+/// <param name="Rank">The deviant's place in the hierarchy, so the game can show it (a dragon grows a size with each rank).</param>
 /// <param name="Victories">How many times it has beaten a party (a dragon grows a size each time, too).</param>
 public sealed record BattleModifiers(
     string DisplayName,
@@ -59,7 +59,7 @@ public sealed record BattleModifiers(
     }
 }
 
-public sealed record NemesisSpawn(int Slot, Guid NemesisId, BattleModifiers Modifiers, string? Taunt);
+public sealed record DeviantSpawn(int Slot, Guid DeviantId, BattleModifiers Modifiers, string? Taunt);
 
 public enum WorldEventKind
 {
@@ -68,4 +68,4 @@ public enum WorldEventKind
 }
 
 /// <summary>Something worth telling the players about ("Grask Gutter-Fang is now a Warchief").</summary>
-public sealed record WorldEvent(WorldEventKind Kind, Guid NemesisId, string Text, Guid? OtherId = null);
+public sealed record WorldEvent(WorldEventKind Kind, Guid DeviantId, string Text, Guid? OtherId = null);

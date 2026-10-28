@@ -1,4 +1,4 @@
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.Gameplay;
 
@@ -9,7 +9,7 @@ public sealed record HitResult(double Dealt, double Healed, double Reflected, bo
 
 /// <summary>
 /// Health, mana, stamina, armor and the auto-statuses (Haste, Protect, Shell, Regen, Reflect) for anything that fights:
-/// the player, companions, enemies and nemeses. Real-time numbers; no engine code,
+/// the player, companions, enemies and deviants. Real-time numbers; no engine code,
 /// so the same rules run in the game and in tests.
 /// </summary>
 public sealed class Combatant
@@ -160,7 +160,7 @@ public sealed class Combatant
     }
 
     /// <summary>
-    /// Turns this into a nemesis: the server's modifiers raise its pools and stats, set its
+    /// Turns this into a deviant: the server's modifiers raise its pools and stats, set its
     /// elemental affinities and give it its statuses. It starts the fight at full strength.
     /// </summary>
     public void Apply(BattleModifiers mods)

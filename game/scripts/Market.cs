@@ -160,7 +160,7 @@ public partial class HerbPatch(Main main) : Node3D
     public void Picked(Plant p)
     {
         if (!_shown.Remove(p.Id, out var v)) return;
-        Effects.Burst(main, v.Body.GlobalPosition + Vector3.Up * 0.3f, Tristinwold.Nemesis.DamageKind.Poison, 0.6f);
+        Effects.Burst(main, v.Body.GlobalPosition + Vector3.Up * 0.3f, Tristinwold.Deviant.DamageKind.Poison, 0.6f);
         v.Body.QueueFree();
     }
 

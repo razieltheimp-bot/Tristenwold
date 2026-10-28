@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.Gameplay;
 

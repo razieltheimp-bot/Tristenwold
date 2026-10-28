@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tristinwold.Gameplay", "..\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tristinwold.Shared", "..\src\Tristinwold.Shared\Tristinwold.Shared.csproj", "{D462D22A-8E45-46E0-9534-E151897B2F68}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tristinwold.Nemesis", "..\src\Tristinwold.Nemesis\Tristinwold.Nemesis.csproj", "{67D764FA-01BE-4683-983A-8CC752A398DE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tristinwold.Deviant", "..\src\Tristinwold.Deviant\Tristinwold.Deviant.csproj", "{67D764FA-01BE-4683-983A-8CC752A398DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

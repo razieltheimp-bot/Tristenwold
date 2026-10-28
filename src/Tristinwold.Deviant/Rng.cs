@@ -1,8 +1,8 @@
-namespace Tristinwold.Nemesis;
+namespace Tristinwold.Deviant;
 
 /// <summary>
 /// SplitMix64. Its whole state is one number that is saved with the world, so a
-/// host and its clients that replay the same reports get the same nemeses.
+/// host and its clients that replay the same reports get the same deviants.
 /// </summary>
 public sealed class Rng(ulong state)
 {

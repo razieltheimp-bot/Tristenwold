@@ -100,7 +100,7 @@ public partial class Terrain(WorldGen world) : Node3D
     /// <summary>Clouds drifting overhead, kept in a wide ring around the player.</summary>
     void Clouds()
     {
-        var rng = new Tristinwold.Nemesis.Rng(world.Seed);
+        var rng = new Tristinwold.Deviant.Rng(world.Seed);
         var white = new StandardMaterial3D { AlbedoColor = new Color(1, 1, 1), DisableFog = true, Roughness = 1, EmissionEnabled = true, Emission = new Color("#c8d8e8"), EmissionEnergyMultiplier = 0.35f };
         for (var i = 0; i < 16; i++)
         {
@@ -131,7 +131,7 @@ public partial class Terrain(WorldGen world) : Node3D
     {
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
-        var rng = new Tristinwold.Nemesis.Rng(7);
+        var rng = new Tristinwold.Deviant.Rng(7);
         for (var i = 0; i < 7; i++)
         {
             var a = (float)(rng.NextDouble() * Mathf.Tau);

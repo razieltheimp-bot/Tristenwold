@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.Shared;
 
 namespace Tristinwold.Shared.Tests;
@@ -25,7 +25,7 @@ public class SharedWorldTests
         var server = NewServer();
         var outs = server.Connect(Hi("Joe"));
         Assert.Single(To<Welcome>(outs, "Joe"));
-        Assert.Single(To<NemesisSnapshot>(outs, "Joe"));
+        Assert.Single(To<DeviantSnapshot>(outs, "Joe"));
         var board = Assert.Single(To<Board>(outs, "Joe"));
         Assert.Equal(6 + Atlas.Default.Cities.Sum(c => c.Contracts.Count), board.Contracts.Count);
 
@@ -113,7 +113,7 @@ public class SharedWorldTests
     }
 
     [Fact]
-    public void Each_table_fights_in_its_own_game_but_shares_one_nemesis_world()
+    public void Each_table_fights_in_its_own_game_but_shares_one_deviant_world()
     {
         var server = NewServer();
         server.Connect(Hi("Joe"));
@@ -124,15 +124,15 @@ public class SharedWorldTests
             [new EnemyReport(0, "Draugr", "Draugr Wight", 900, Killed: false, Escaped: false)], Players: ["Mira"]);
         var outs = server.Handle("Joe", new ReportBattle(report));
 
-        Assert.Single(To<NemesisEvents>(outs, "Mira"));
-        var snapshot = To<NemesisSnapshot>(outs, "Mira").Single();
-        var miraWorld = NemesisWorld.FromJson(snapshot.WorldJson);
-        var nemesis = Assert.Single(miraWorld.Living);
-        Assert.True(nemesis.Players.ContainsKey("Joe"));
-        Assert.False(nemesis.Players.ContainsKey("Mira"));
+        Assert.Single(To<DeviantEvents>(outs, "Mira"));
+        var snapshot = To<DeviantSnapshot>(outs, "Mira").Single();
+        var miraWorld = DeviantWorld.FromJson(snapshot.WorldJson);
+        var deviant = Assert.Single(miraWorld.Living);
+        Assert.True(deviant.Players.ContainsKey("Joe"));
+        Assert.False(deviant.Players.ContainsKey("Mira"));
 
-        // And in Mira's game, that nemesis can show up and taunt her about Joe.
-        var spawns = NemesisWorld.FromJson(snapshot.WorldJson, new NemesisRules { AppearanceChance = 1, HomeAreaAppearanceChance = 1 })
+        // And in Mira's game, that deviant can show up and taunt her about Joe.
+        var spawns = DeviantWorld.FromJson(snapshot.WorldJson, new DeviantRules { AppearanceChance = 1, HomeAreaAppearanceChance = 1 })
             .PlanEncounter("The Docks", [new FormationSlot(1, "Draugr", "Draugr Wight")], ["Mira"]);
         Assert.Contains("Joe", Assert.Single(spawns).Taunt);
     }
@@ -155,7 +155,7 @@ public class SharedWorldTests
         server.Connect(Hi("Joe"));
         server.Handle("Joe", new ClaimContract("rats"));
         server.Handle("Joe", new ReportBattle(new BattleReport("Sewers", BattleResult.PartyEscaped,
-            [new EnemyReport(0, "Giant Rat", "Giant Giant Rat", 200, false, false)], ["Joe"])));
+            [new EnemyReport(0, "Giant Rat", "Giant Rat", 200, false, false)], ["Joe"])));
         var path = Path.GetTempFileName();
         server.State.Save(path);
 

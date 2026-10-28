@@ -1,6 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.World;
 
 namespace Tristinwold.Game;
@@ -9,7 +9,7 @@ namespace Tristinwold.Game;
 /// The lair bosses that beat the company and walked out into the world with a name (see <see cref="Roamer"/>). Each
 /// wanders the wilds on its own path, whether anyone is near or not; come within sight of where it is and it's there,
 /// walking. It knows you, and comes for you. Every time it beats you again it grows stronger; kill it and it's gone
-/// for good, and the price on its head is yours. In the shared world it is the nemesis the server named, on the
+/// for good, and the price on its head is yours. In the shared world it is the deviant the server named, on the
 /// roster with the rest.
 /// </summary>
 public partial class Roamers(Main main) : Node
@@ -131,7 +131,7 @@ public partial class Roamers(Main main) : Node
     {
         var (health, damage) = Roaming.Numbers(o.Roamer, main.PlayerNode.Hero.Level);
         o.Body.Tune(health, damage);
-        o.Body.Crown(o.Roamer.Title, o.Roamer.NemesisId);
+        o.Body.Crown(o.Roamer.Title, o.Roamer.DeviantId);
         o.Brain.Name = o.Roamer.Name;
     }
 
@@ -166,39 +166,39 @@ public partial class Roamers(Main main) : Node
         }
         var (xp, crowns) = Roaming.Bounty(r, main.PlayerNode.Hero.Level);
         main.PlayerNode.Crowns += crowns;
-        var spoils = Loot.Hoard(r.RaidId, new Tristinwold.Nemesis.Rng((ulong)GD.Randi()), first: true); // it carried the best of its lair
+        var spoils = Loot.Hoard(r.RaidId, new Tristinwold.Deviant.Rng((ulong)GD.Randi()), first: true); // it carried the best of its lair
         main.Take(spoils);
         main.HudNode.Log($"From {r.Title}: {Loot.Describe(spoils)}");
         main.GainXp(xp);
         _fallen.Add(r);
         main.HudNode.Toast($"{r.Title} is dead, for good. The price on its head: {crowns} crowns. (+{xp} experience)", 12);
-        main.HudNode.Log($"Nemesis slain: {r.Title}.");
+        main.HudNode.Log($"Deviant slain: {r.Title}.");
     }
 
     // ---- the shared world -----------------------------------------------------------------------
 
     /// <summary>
-    /// The shared world named a nemesis: if it's a lair boss that just beat us and walked off, that's ours, and from
+    /// The shared world named a deviant: if it's a lair boss that just beat us and walked off, that's ours, and from
     /// now on it goes by the server's name and the fights with it count on the roster.
     /// </summary>
-    public void Named(Tristinwold.Nemesis.Nemesis n)
+    public void Named(Tristinwold.Deviant.Deviant n)
     {
-        var r = main.RaidLog.Roamers.Where(r => r.NemesisId is null && r.Raid.BossKind == n.Kind && main.GuildBook.PlaySeconds - r.Since < 180)
+        var r = main.RaidLog.Roamers.Where(r => r.DeviantId is null && r.Raid.BossKind == n.Kind && main.GuildBook.PlaySeconds - r.Since < 180)
             .OrderByDescending(r => r.Since).FirstOrDefault();
         if (r is null) return;
         var was = r.Title;
-        (r.NemesisId, r.Name) = (n.Id, n.FullName);
+        (r.DeviantId, r.Name) = (n.Id, n.FullName);
         if (_out.FirstOrDefault(o => o.Roamer == r) is { } o) Strengthen(o);
         main.HudNode.Log($"{was} is known across the shared world as {r.Title}.");
     }
 
     /// <summary>The shared world says one we killed wasn't as dead as it looked: it's out there again.</summary>
-    public void CheatedDeath(Guid nemesisId)
+    public void CheatedDeath(Guid deviantId)
     {
-        if (_fallen.FirstOrDefault(r => r.NemesisId == nemesisId) is not { } r) return;
+        if (_fallen.FirstOrDefault(r => r.DeviantId == deviantId) is not { } r) return;
         _fallen.Remove(r);
         // Back from the dead at its old lair, and off again on a new path.
-        r = new Roamer { Id = r.Id, RaidId = r.RaidId, Name = r.Name, Wins = r.Wins + 1, Seed = r.Seed + 1, Since = main.GuildBook.PlaySeconds, NemesisId = r.NemesisId };
+        r = new Roamer { Id = r.Id, RaidId = r.RaidId, Name = r.Name, Wins = r.Wins + 1, Seed = r.Seed + 1, Since = main.GuildBook.PlaySeconds, DeviantId = r.DeviantId };
         main.RaidLog.Roamers.Add(r);
         main.HudNode.Toast($"{r.Title} wasn't as dead as it looked. It's out there again, scarred and angrier.", 10);
     }
@@ -208,7 +208,7 @@ public partial class Roamers(Main main) : Node
     {
         var near = main.RaidLog.Roamers.Select(r => (Roamer: r, At: Where(r))).OrderBy(x => Flat(x.At, from)).FirstOrDefault();
         if (near.Roamer is null || Flat(near.At, from) > 900) return null;
-        return $"Nemesis: {near.Roamer.Title} ({direction(from, (near.At.X, near.At.Z))})";
+        return $"Deviant: {near.Roamer.Title} ({direction(from, (near.At.X, near.At.Z))})";
     }
 
     /// <summary>Where each roamer is now, for the map.</summary>

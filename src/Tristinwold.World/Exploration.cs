@@ -169,5 +169,5 @@ public sealed class CompanySave
 
     public string ToJson() => JsonSerializer.Serialize(this, Options);
 
-    public static CompanySave FromJson(string json) => JsonSerializer.Deserialize<CompanySave>(Tristinwold.Nemesis.SaveUpgrade.Upgrade(json), Options) ?? new CompanySave();
+    public static CompanySave FromJson(string json) => JsonSerializer.Deserialize<CompanySave>(Tristinwold.Deviant.SaveUpgrade.Upgrade(json), Options) ?? new CompanySave();
 }

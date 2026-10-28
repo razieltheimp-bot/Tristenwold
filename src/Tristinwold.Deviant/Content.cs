@@ -1,10 +1,10 @@
 using System.Text.Json;
 
-namespace Tristinwold.Nemesis;
+namespace Tristinwold.Deviant;
 
 /// <summary>
 /// Names, epithets and taunts. Ships with a default set; load your own JSON to
-/// give the nemeses your setting's flavour (Tong crews, Sin-touched, and so on).
+/// give the deviants your setting's flavour (Tong crews, Sin-touched, and so on).
 /// </summary>
 public sealed class NamePack
 {
@@ -18,7 +18,7 @@ public sealed class NamePack
     public Dictionary<string, List<string>> Taunts { get; init; } = [];
 
     public static NamePack Load(string path) =>
-        JsonSerializer.Deserialize<NamePack>(File.ReadAllText(path), NemesisJson.Options)
+        JsonSerializer.Deserialize<NamePack>(File.ReadAllText(path), DeviantJson.Options)
         ?? throw new InvalidDataException($"Empty name pack: {path}");
 
     public static NamePack Default { get; } = new()
@@ -118,7 +118,7 @@ public static class TraitCatalog
         StatTrait("winded", TraitKind.Weakness, "Winded: tires quickly", Stat.Stamina, 0.6),
     ];
 
-    /// <summary>The resistance a nemesis learns from surviving a kind of death.</summary>
+    /// <summary>The resistance a deviant learns from surviving a kind of death.</summary>
     public static Trait ScarResistance(DamageKind cause, Affinity affinity) => cause == DamageKind.Physical
         ? new($"scar_{cause}".ToLowerInvariant(), TraitKind.Strength, "Scar Tissue: tougher hide",
             StatMultipliers: new() { [Stat.Armor] = affinity == Affinity.Immune ? 1.6 : 1.3 })

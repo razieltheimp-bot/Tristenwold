@@ -511,7 +511,7 @@ public partial class StartScreen : CanvasLayer
         try
         {
             return Godot.FileAccess.FileExists(LocalCharactersPath)
-                ? JsonSerializer.Deserialize<List<CharacterSheet>>(Tristinwold.Nemesis.SaveUpgrade.Upgrade(Godot.FileAccess.GetFileAsString(LocalCharactersPath)), Wire.Options) ?? []
+                ? JsonSerializer.Deserialize<List<CharacterSheet>>(Tristinwold.Deviant.SaveUpgrade.Upgrade(Godot.FileAccess.GetFileAsString(LocalCharactersPath)), Wire.Options) ?? []
                 : [];
         }
         catch (JsonException) { return []; }

@@ -1,6 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.World;
 
 namespace Tristinwold.Game;
@@ -173,7 +173,7 @@ public partial class Main
         if (victim.Leader is not null || victim.Friendly) return;
         _player.Killed(victim);
         Spoils(victim);
-        var xp = Math.Max(3, (int)Math.Round(victim.Stats.MaxHealth / 6 * (victim.NemesisId is null ? 1 : 2)));
+        var xp = Math.Max(3, (int)Math.Round(victim.Stats.MaxHealth / 6 * (victim.DeviantId is null ? 1 : 2)));
         GainXp(xp);
         var meat = victim.Kind.Id switch
         {

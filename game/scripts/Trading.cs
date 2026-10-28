@@ -1,6 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Tristinwold.World;
 
 namespace Tristinwold.Game;
@@ -15,7 +15,7 @@ public partial class Main
 {
     HerbBook _herbs = new();
     HerbPatch _herbPatch = null!;
-    readonly Tristinwold.Nemesis.Rng _lootRng = new((ulong)DateTime.UtcNow.Ticks);
+    readonly Tristinwold.Deviant.Rng _lootRng = new((ulong)DateTime.UtcNow.Ticks);
 
     public Pack PackOf => _player.Pack;
     public HerbBook HerbLog => _herbs;

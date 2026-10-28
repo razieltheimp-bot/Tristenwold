@@ -1,5 +1,5 @@
 using Tristinwold.Gameplay;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 using Xunit;
 
 namespace Tristinwold.Gameplay.Tests;

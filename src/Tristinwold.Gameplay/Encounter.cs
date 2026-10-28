@@ -1,5 +1,5 @@
 using System.Numerics;
-using Tristinwold.Nemesis;
+using Tristinwold.Deviant;
 
 namespace Tristinwold.Gameplay;
 
@@ -23,7 +23,7 @@ public sealed class EncounterTracker(
         public required double MaxHealth;
         public required Vector3 Start;
         public Vector3 Last;
-        public Guid? NemesisId;
+        public Guid? DeviantId;
         public bool Killed;
         public string? KilledBy;
         public DamageKind? Blow;
@@ -43,10 +43,10 @@ public sealed class EncounterTracker(
 
     public long? ActorForSlot(int slot) => _bySlot.TryGetValue(slot, out var t) ? t.Id : null;
 
-    public bool IsNemesis(long id) => _byId.TryGetValue(id, out var t) && t.NemesisId is not null;
+    public bool IsDeviant(long id) => _byId.TryGetValue(id, out var t) && t.DeviantId is not null;
 
-    /// <summary>An enemy is fighting the company. Pass the nemesis id when it came hunting.</summary>
-    public void Engaged(long id, string kind, string species, double maxHealth, Vector3 pos, string area, Vector3 player, double now, Guid? nemesisId = null)
+    /// <summary>An enemy is fighting the company. Pass the deviant id when it came hunting.</summary>
+    public void Engaged(long id, string kind, string species, double maxHealth, Vector3 pos, string area, Vector3 player, double now, Guid? deviantId = null)
     {
         if (!_active)
         {
@@ -63,15 +63,15 @@ public sealed class EncounterTracker(
             known.Last = pos;
             return;
         }
-        var t = new Tracked { Slot = _nextSlot++, Id = id, Kind = kind, Species = species, MaxHealth = maxHealth, Start = pos, Last = pos, NemesisId = nemesisId, LastFight = now };
+        var t = new Tracked { Slot = _nextSlot++, Id = id, Kind = kind, Species = species, MaxHealth = maxHealth, Start = pos, Last = pos, DeviantId = deviantId, LastFight = now };
         _byId[id] = t;
         _bySlot[t.Slot] = t;
-        if (nemesisId is null) _unannounced.Add(id);
+        if (deviantId is null) _unannounced.Add(id);
     }
 
-    public void MarkNemesis(int slot, Guid nemesisId)
+    public void MarkDeviant(int slot, Guid deviantId)
     {
-        if (_bySlot.TryGetValue(slot, out var t)) t.NemesisId = nemesisId;
+        if (_bySlot.TryGetValue(slot, out var t)) t.DeviantId = deviantId;
     }
 
     public void Hit(long id, DamageKind kind, string? byCompany, double now)
@@ -136,7 +136,7 @@ public sealed class EncounterTracker(
             t.Slot, t.Kind, t.Species, (int)Math.Round(t.MaxHealth),
             Killed: t.Killed,
             Escaped: !t.Killed && result == BattleResult.EnemiesEscaped,
-            NemesisId: t.NemesisId,
+            DeviantId: t.DeviantId,
             KillingBlow: t.Killed ? t.Blow ?? DamageKind.Physical : null,
             KilledBy: t.Killed ? t.KilledBy : null,
             BaseForm: t.Kind)).ToList(), [company], PartyLevel: 5));

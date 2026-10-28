@@ -146,7 +146,7 @@ public partial class Hawk : Node3D
 
     public static Hawk Create(Vector3 ground, long seed)
     {
-        var rng = new Tristinwold.Nemesis.Rng((ulong)seed);
+        var rng = new Tristinwold.Deviant.Rng((ulong)seed);
         var h = new Hawk
         {
             _centre = ground + new Vector3(0, 22 + (float)rng.NextDouble() * 14, 0),

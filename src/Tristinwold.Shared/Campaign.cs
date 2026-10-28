@@ -64,7 +64,7 @@ public sealed class CampaignState
     public Dictionary<string, Group> Groups { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Consequences that carry over between tables ("warehouse_burned", "silt_spared").</summary>
     public HashSet<string> Flags { get; set; } = [];
-    public string? NemesisWorldJson { get; set; }
+    public string? DeviantWorldJson { get; set; }
 
     /// <summary>Tristinwold's economy, shared by every company (see <see cref="ServerCore.City"/>), and how long it's run.</summary>
     public Gameplay.CityEconomy? City { get; set; }
@@ -83,7 +83,7 @@ public sealed class CampaignState
 
     public static CampaignState Load(string path)
     {
-        var state = JsonSerializer.Deserialize<CampaignState>(Nemesis.SaveUpgrade.Upgrade(File.ReadAllText(path)), Wire.Options)
+        var state = JsonSerializer.Deserialize<CampaignState>(Deviant.SaveUpgrade.Upgrade(File.ReadAllText(path)), Wire.Options)
             ?? throw new InvalidDataException($"Empty campaign file: {path}");
         if (state.Stage.Count == 0) state.Stage = Atlas.Default.AllPlaces(); // a campaign saved before the stage was kept
         return state;
