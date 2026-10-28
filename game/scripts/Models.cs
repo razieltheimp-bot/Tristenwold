@@ -331,6 +331,8 @@ public partial class Figure : Body
         ["warmaster"] = new("Barbarian", ["2H_Axe"], 0.8f),
         ["velvet"] = new("Rogue_Hooded", ["Knife"], 0.74f, new Color("#c07a98")),
         ["youth"] = new("Rogue", [], 0.6f, Unarmed: true),
+        ["child"] = new("Rogue", [], 0.45f, Unarmed: true),
+        ["elder"] = new("Rogue", [], 0.92f, new Color("#c8c4bc"), Unarmed: true),
         ["squire"] = new("Knight", ["1H_Sword", "Round_Shield"], 0.62f),
         ["apprentice"] = new("Mage", ["1H_Wand"], 0.6f),
         ["protege"] = new("Rogue", ["Knife"], 0.6f),

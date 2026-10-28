@@ -17,7 +17,8 @@ public sealed record Npc(
     string Greeting,
     double X,
     double Z,
-    bool Ashborn = false)
+    bool Ashborn = false,
+    string Race = "human")
 {
     public string First => Name.Split(' ')[0];
     public string They => Sex switch { Sex.Female => "she", Sex.Male => "he", _ => "they" };
@@ -31,7 +32,7 @@ public sealed record Npc(
 /// <summary>Makes the people of a settlement. The same seed always makes the same people.</summary>
 public static class People
 {
-    static readonly Dictionary<SettlementKind, string[]> Jobs = new()
+    internal static readonly Dictionary<SettlementKind, string[]> Jobs = new()
     {
         [SettlementKind.City] = ["guard", "smith", "merchant", "priest", "scholar", "beggar", "bard", "innkeeper", "fishwife", "courier", "alchemist", "sellsword", "dockhand", "scribe"],
         [SettlementKind.Town] = ["guard", "smith", "trader", "priest", "innkeeper", "hunter", "farmer", "carpenter", "gravedigger", "herbalist"],
@@ -178,7 +179,10 @@ public static class People
         return people;
     }
 
-    static readonly string[] YouthJobs = ["page", "stable hand", "apprentice smith", "temple novice", "errand runner", "goatherd", "scullion", "fletcher's apprentice"];
+    /// <summary>A grown person's work in a place of this kind.</summary>
+    internal static string JobFor(Settlement s, Rng rng) => rng.Pick(Jobs.GetValueOrDefault(s.Kind) ?? Jobs[SettlementKind.Hamlet]);
+
+    internal static readonly string[] YouthJobs = ["page", "stable hand", "apprentice smith", "temple novice", "errand runner", "goatherd", "scullion", "fletcher's apprentice"];
 
     static readonly string[] Dreams =
     [
@@ -218,7 +222,8 @@ public static class People
         "I could carry your things! I'm stronger than I look.", "Is that a real sword? Can I hold it?",
     ];
 
-    public static bool IsYouth(Npc npc) => npc.Age is > 0 and < 17;
+    /// <summary>Still growing up: young, or an adolescent, by their own people's years.</summary>
+    public static bool IsYouth(Npc npc) => npc.Age > 0 && Ageing.Growing(npc.Race, npc.Age);
 
     static string Backstory(Rng rng, Npc npc, Settlement home, WorldGen world)
     {

@@ -22,7 +22,8 @@ public partial class Person : StaticBody3D
     {
         if (captive) return "captive";
         if (npc.Ashborn) return "ashborn";
-        if (People.IsYouth(npc)) return "youth";
+        if (npc.Age > 0 && Ageing.Stage(npc.Race, npc.Age) is var stage && stage != LifeStage.Adult && stage != LifeStage.Seasoned)
+            return stage switch { LifeStage.Young => "child", LifeStage.Adolescent => "youth", _ => "elder" };
         var job = npc.Occupation.ToLowerInvariant();
         bool Any(params string[] words) => words.Any(job.Contains);
         return Any("iron circle") ? "warmaster" : Any("velvet knives") ? "velvet" : Any("order of the eyrie") ? "aldric"
@@ -225,10 +226,9 @@ public partial class Places(Main main, WorldGen world) : Node3D
             Label(root, Ground(s.X, s.Z) + new Vector3(0, s.IsCity ? 40 : 12, 0), s.Name, s.IsCity ? 0.08f : 0.04f);
         }
 
-        foreach (var npc in world.PeopleOf(s))
-            b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z) }));
-        // The young, unless one has already left home to follow the company.
-        foreach (var npc in world.YouthsOf(s).Where(y => Gone?.Invoke(y.Id) != true))
+        // Its people as they are this year: aged, the old gone, the children born since (see Ageing). Anyone who has
+        // left home to follow the company isn't here.
+        foreach (var npc in Ageing.Villagers(world, s, Calendar.Years(main.Economy.Day)).Where(n => Gone?.Invoke(n.Id) != true))
             b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z) }));
 
         // The animals people keep, near the people who keep them (in the open, where people stand).

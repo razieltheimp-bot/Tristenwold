@@ -29,6 +29,7 @@ public partial class Main
     void BeginStory()
     {
         _player.Woke += OnWoke;
+        Ageing.Wake(_player.Hero, _player.Race.Id, _city.Day); // they woke at about twenty, in their people's years
         if (_story.Begin()) _hud.Toast(ImmortalSaga.Opening, 16);
     }
 

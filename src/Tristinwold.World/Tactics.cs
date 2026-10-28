@@ -185,7 +185,7 @@ public static class TownDefence
 
     public static Defender Role(Npc npc, bool captive = false)
     {
-        if (captive || People.IsYouth(npc) || npc.Age >= 70) return Defender.Cowers;
+        if (captive || People.IsYouth(npc) || npc.Age > 0 && Ageing.Stage(npc.Race, npc.Age) == LifeStage.Elder) return Defender.Cowers;
         var job = npc.Occupation.ToLowerInvariant();
         bool Any(params string[] words) => words.Any(job.Contains);
         if (Any("priest", "healer", "midwife", "shrine", "apothecary", "herbalist")) return Defender.Heals;

@@ -472,6 +472,37 @@ Kipines and both kinds of ape sometimes have young with them: find one alone and
   beasts, cloth, leather, coal, a kit), the Anvil Gate (Hulda's smithy: ingots and iron gear), and Saffron's
   Remedies (potions, herbs, wands and staves). Every shopkeeper buys at half today's price (see the economy below).
 
+### The years go by: growing up and growing old
+
+**The calendar:** a day passes every ten minutes of play, a week is seven days (a little over an hour), a month four
+weeks, and a year twelve months: 336 days, about 56 hours of play. The months run Thawmoon, Seedmoon, Bloommoon,
+Highsun, Goldmoon, Haymoon, Harvestmoon, Fallmoon, Mistmoon, Frostmoon, Deepwinter and Longnight. The skills window (K)
+says the date.
+
+**Everyone ages, every people its own way**, through five stages: **young, adolescent, adult, seasoned, elder**.
+
+| People | Adolescent | Adult | Seasoned | Elder | Lives to about |
+|---|---|---|---|---|---|
+| Goblin | 6 | 9 | 20 | 30 | 40 |
+| Orc | 10 | 14 | 30 | 45 | 60 |
+| Human | 13 | 18 | 40 | 60 | 80 |
+| Half-giant | 14 | 20 | 45 | 70 | 95 |
+| Dwarf | 20 | 40 | 120 | 200 | 260 |
+| Dragonkind | 25 | 60 | 200 | 400 | 600 |
+| Elf | 40 | 100 | 300 | 500 | 700 |
+
+The villages aren't all human: dwarves dig the mines and the crags, elves keep to the old woods, goblins and orcs
+come out of the marsh and the hills, and now and then there's a half-giant. Each villager's age is in their own
+people's years, and ask anyone and they'll say it ("Finn Saltbrand, scullion (16, adolescent human)"). Children are
+small, adolescents a little bigger, elders grey. **The villages age with the calendar**: children grow into
+adolescents and adults and take up grown work; **every time one of the young comes of age, a new child is born into
+the family**; and the old pass on when their people's years are done. Every company sees the same people at the same
+ages.
+
+**An Immortal ages too, but never dies of it.** You woke at about twenty (in your people's years) and grow older
+with every year that passes, through all five stages, and on, long past what any of your people live to: "143, an
+elder human, 63 years past the oldest any human lives to. Immortals age; they don't die of it."
+
 ### Barbarian raiders on the frontier
 
 Out past Tristinwold's fields (more than a kilometre from the walls), **barbarian clans** roam the frontier: "the Red

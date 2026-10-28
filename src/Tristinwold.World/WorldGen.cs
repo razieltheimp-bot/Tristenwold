@@ -230,10 +230,14 @@ public sealed class WorldGen
     }
 
     /// <summary>The people of a settlement: always the same people, for every company.</summary>
-    public IReadOnlyList<Npc> PeopleOf(Settlement s) => _people.GetOrAdd(s.Id, _ => World.People.Generate(this, s));
+    public IReadOnlyList<Npc> PeopleOf(Settlement s) => _people.GetOrAdd(s.Id, _ => Born(World.People.Generate(this, s), s));
 
     /// <summary>The young people of a settlement (not counted in <see cref="Settlement.People"/>).</summary>
-    public IReadOnlyList<Npc> YouthsOf(Settlement s) => _youths.GetOrAdd(s.Id, _ => World.People.Youths(this, s));
+    public IReadOnlyList<Npc> YouthsOf(Settlement s) => _youths.GetOrAdd(s.Id, _ => Born(World.People.Youths(this, s), s));
+
+    /// <summary>Each one's people (see <see cref="Ageing.RaceFor"/>), and their age as it is in that people's years.</summary>
+    static IReadOnlyList<Npc> Born(IReadOnlyList<Npc> people, Settlement s) =>
+        [.. people.Select(n => Ageing.RaceFor(n.Id, s) is var race && race == "human" ? n : n with { Race = race, Age = Ageing.InYearsOf(race, n.Age) })];
 
     /// <summary>The work this person has to offer, if any.</summary>
     public Quest? QuestOf(Npc npc) => _quests.GetOrAdd(npc.Id, _ => Quests.For(this, npc));

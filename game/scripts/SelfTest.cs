@@ -35,6 +35,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--story-only")) { await StoryTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--caravan-only")) { await CaravanTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--ageing-only")) { await AgeingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sound-only"))
@@ -55,7 +56,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1598,6 +1599,50 @@ public partial class SelfTest(Main main) : Node
         Check(hud.Choose("The dragon is dead") && story.Chapter == Chapter.Done && hud.TalkText.Contains(ImmortalSaga.Title),
             $"Mother Corva writes you into her ledger: {ImmortalSaga.Title}");
         hud.EndTalk();
+    }
+
+    /// <summary>The years go by: the young grow up, a child is born for each who comes of age, the old pass on; the hero ages and doesn't die.</summary>
+    async Task AgeingTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        var world = main.World;
+        var place = world.SettlementsNear(0, 0, 3000).Where(s => !s.Hostile && s.Id != "city:tristinwold" && world.YouthsOf(s).Any(y => y.Race == "human"))
+            .OrderBy(s => s.DistanceTo(0, 0)).First();
+        var youth = world.YouthsOf(place).First(y => y.Race == "human");
+        var at = new Vector3((float)place.X + 8, 0, (float)place.Z + 8);
+        await Teleport(at);
+        await Frames(60);
+        Person? Find(string id) => main.PlacesNode.People.FirstOrDefault(x => x.Npc.Id == id);
+        var kid = Find(youth.Id);
+        Check(kid is not null && People.IsYouth(kid.Npc) && Person.LookFor(kid.Npc) is "child" or "youth", $"in {place.Name}: {kid?.Npc.Name}, {kid?.Npc.Age}, {Ageing.Word(Ageing.Stage(youth.Race, youth.Age))}");
+        main.Talk(kid!);
+        Check(hud.TalkText.Length > 0 && hud.TalkTitle.Contains($"({youth.Age}, {Ageing.Word(Ageing.Stage(youth.Race, youth.Age))} human)"), $"they say their age and stage: {hud.TalkTitle}");
+        hud.EndTalk();
+        var heroAge = Ageing.AgeOf(p.Hero, main.Economy.Day);
+
+        // Years go by: as many as it takes the youth to come of age, and then some.
+        var years = Ageing.Of("human").Adult - youth.Age + 1;
+        main.Economy.Day += years * Calendar.DaysPerYear;
+        await Teleport(new Vector3((float)place.X + 2000, 0, (float)place.Z)); // away, so the place is let go of
+        await Frames(30);
+        await Teleport(at);
+        await Frames(60);
+        var grown = Find(youth.Id);
+        var child = Find($"{youth.Id}/g1");
+        Check(grown is not null && !People.IsYouth(grown.Npc) && grown.Npc.Occupation != youth.Occupation,
+            $"{years} years on, {youth.Name} has grown up: {grown?.Npc.Age}, {grown?.Npc.Occupation}");
+        Check(child is not null && People.IsYouth(child.Npc), $"and a child has been born into the family: {child?.Npc.Name}, {child?.Npc.Age}");
+        Check(Ageing.AgeOf(p.Hero, main.Economy.Day) >= heroAge + years - 0.01, $"you've aged too: {Ageing.Describe(p.Hero, p.Race.Id, p.Race.Name, main.Economy.Day)}");
+        main.ShowSkills();
+        Check(hud.TalkText.StartsWith("Today is the") && hud.TalkText.Contains("You are "), $"the skills window says the date and your age: {hud.TalkText[..Math.Min(120, hud.TalkText.Length)]}");
+        hud.EndTalk();
+
+        // Long past their people's years, an Immortal is still standing.
+        main.Economy.Day += 120 * Calendar.DaysPerYear;
+        Check(!p.Stats.Dead && Ageing.Describe(p.Hero, p.Race.Id, p.Race.Name, main.Economy.Day).Contains("Immortals age; they don't die of it"),
+            $"a hundred and twenty years on: {Ageing.Describe(p.Hero, p.Race.Id, p.Race.Name, main.Economy.Day)}");
+        main.Economy.Day -= (120 + years) * Calendar.DaysPerYear;
     }
 
     /// <summary>Barbarian clans raiding the frontier's small places, and the couple of guards each place has.</summary>

@@ -807,7 +807,7 @@ public partial class Main : Node3D
         _hud.Talk(Who(npc), text, [.. options]);
     }
 
-    static string Who(Npc npc) => $"{npc.Name}, {npc.Occupation}{(npc.Age > 0 ? $" ({npc.Age})" : "")}";
+    static string Who(Npc npc) => $"{npc.Name}, {npc.Occupation}{(npc.Age > 0 ? $" ({npc.Age}, {Ageing.Word(Ageing.Stage(npc.Race, npc.Age))} {Races.Get(npc.Race).Name.ToLowerInvariant()})" : "")}";
 
     /// <summary>People know what's near them. Asking puts a place on your map with a "?".</summary>
     string Rumour(Npc npc)

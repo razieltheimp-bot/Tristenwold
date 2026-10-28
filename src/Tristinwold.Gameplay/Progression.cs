@@ -12,6 +12,9 @@ public sealed class Hero
     public const int MaxRank = 5;
 
     public string Discipline { get; set; } = "Paladin";
+    /// <summary>How old they were when they first woke at the Gallows Perch (0 until they have), and the day they did.</summary>
+    public int StartAge { get; set; }
+    public int BornDay { get; set; }
     public int Level { get; set; } = 1;
     public int Xp { get; set; }
     public int Points { get; set; }

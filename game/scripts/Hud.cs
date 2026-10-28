@@ -155,6 +155,9 @@ public partial class Hud : CanvasLayer
     public bool Talking => _talk.Visible;
     public string TalkText => _talkText.Text;
 
+    /// <summary>Who is talking (for the self-test).</summary>
+    public string TalkTitle => _talkWho.Text;
+
     public void Talk(string who, string text, params (string Label, Action Then)[] options)
     {
         _talk.Visible = true;
