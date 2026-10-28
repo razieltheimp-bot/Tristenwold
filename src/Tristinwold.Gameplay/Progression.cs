@@ -261,11 +261,30 @@ public static class Taming
     /// never fails.
     /// </summary>
     /// <param name="tamingLevel">The hero's beast taming (a trade, like herbalism): 3% better for each level past the first.</param>
-    public static double Chance(bool kinNearby, bool offeringMeat, bool beastmaster, int heroLevel, int tamingLevel = 1)
+    public static double Chance(bool kinNearby, bool offeringMeat, bool beastmaster, int heroLevel, int tamingLevel = 1, bool dragon = false)
     {
         if (kinNearby) return 0;
+        if (dragon) return DragonChance(offeringMeat, beastmaster, heroLevel, tamingLevel);
         if (beastmaster) return 1;
         return Math.Min(0.95, 0.45 + (offeringMeat ? 0.3 : 0) + 0.02 * heroLevel + 0.03 * (tamingLevel - 1));
+    }
+
+    /// <summary>A wyrmling won't so much as look at a hero below this level.</summary>
+    public const int DragonLevel = 8;
+
+    /// <summary>How long a wyrmling that turned you down won't let you try again (seconds of play).</summary>
+    public const double DragonSpurns = 600;
+
+    /// <summary>
+    /// A wyrmling is no fox kit: it's clever, and proud, and it knows what you are. It won't look at a hero below level
+    /// 8; after that it weighs you: your years in the wilds (your level) and your way with beasts (beast taming) count
+    /// for most; meat counts for little; a ranger's knack helps, but doesn't decide it. It never goes better than an
+    /// even chance.
+    /// </summary>
+    public static double DragonChance(bool offeringMeat, bool beastmaster, int heroLevel, int tamingLevel = 1)
+    {
+        if (heroLevel < DragonLevel) return 0;
+        return Math.Min(0.5, 0.05 + 0.015 * heroLevel + 0.025 * (tamingLevel - 1) + (offeringMeat ? 0.05 : 0) + (beastmaster ? 0.12 : 0));
     }
 
     /// <summary>How much faster a tamer's beasts learn: 5% for each level of beast taming past the first.</summary>

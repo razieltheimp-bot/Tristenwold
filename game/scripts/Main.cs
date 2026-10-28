@@ -765,7 +765,7 @@ public partial class Main : Node3D
         var item = _places.Pickups.Append(_nest).Concat(_raidLairs.Select(l => l.Hoard)).OfType<Pickup>().Where(p => IsInstanceValid(p) && p.GlobalPosition.DistanceTo(pos) < 3).FirstOrDefault();
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
-        if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(_player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
+        if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
         return TownAction(pos) ?? CaravanAction(pos) ?? PursuitAction(pos);
     }
 

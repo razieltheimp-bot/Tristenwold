@@ -128,7 +128,11 @@ public sealed class DragonSaga
         Warmth = 0;
     }
 
-    public bool ReadyToKnight(Bond? dragon) => Stage == SagaStage.Raising && dragon is { Role: BondRole.Dragon, Level: >= 10 };
+    /// <summary>
+    /// Ready to be knighted: a dragon of level 10 raised at the hero's side, from Ser Aldric's egg or from a wyrmling
+    /// they won over in the wilds themselves (that's earned it twice over).
+    /// </summary>
+    public bool ReadyToKnight(Bond? dragon) => Stage != SagaStage.Knighted && dragon is { Role: BondRole.Dragon, Level: >= 10 };
 
     public bool Knighted(Bond? dragon)
     {

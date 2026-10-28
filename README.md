@@ -694,6 +694,13 @@ beside it until level 10 (it learns Claw Rake, then its colour's Breath), bring 
 then on it carries you (V): on the ground, and in the air (Space climbs, C dives, the attack button is its
 breath). It keeps growing: large at level 20, giant at 30.
 
+**Or win a wyrmling over in the wilds.** Dragon flights out in the wilds often have a wyrmling with them (about one
+in three). Like any youngling it can't be taken while its kin are close, but a wyrmling is no fox kit: it's clever and
+proud, and **it weighs you**. It won't so much as look at a hero below level 8. After that your years in the wilds
+(level) and your way with beasts (beast taming) count for most, meat for little, and a ranger's knack helps but
+doesn't decide it; the odds never go better than even. Turn one down and it remembers you for ten minutes, and screams
+for its kin. Win one over and raise it to level 10, and Ser Aldric will knight you for it all the same, no egg needed.
+
 ### Corrupted dragons, pacts and the Dragonwatch
 
 - **Corrupted dragons.** The Rift has twisted some dragons of every colour. A corrupted dragon keeps its own

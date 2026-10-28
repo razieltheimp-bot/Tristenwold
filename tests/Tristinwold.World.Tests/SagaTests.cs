@@ -128,4 +128,17 @@ public class SagaTests
         Assert.Equal(0.4, back.Saga!.Warmth);
         Assert.Equal(3, back.Meat);
     }
+
+    [Fact]
+    public void A_dragon_won_over_in_the_wilds_and_raised_can_be_knighted_too()
+    {
+        var saga = new DragonSaga(); // never asked Ser Aldric for anything
+        var wyrmling = new Bond { KindId = "dragon_red", Role = BondRole.Dragon, Name = "Ash" };
+        Assert.False(saga.ReadyToKnight(wyrmling));
+        while (wyrmling.Level < 10) wyrmling.Gain(Bond.XpToNext(wyrmling.Level));
+        Assert.True(saga.ReadyToKnight(wyrmling));
+        Assert.True(saga.Knighted(wyrmling));
+        Assert.Equal(SagaStage.Knighted, saga.Stage);
+        Assert.False(saga.Knighted(wyrmling)); // once
+    }
 }

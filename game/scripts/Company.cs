@@ -245,18 +245,40 @@ public partial class Main
     /// Tries to win a youngling over. Its kin won't allow it while one of them is close by (they come for you); a
     /// little meat helps; a ranger never fails. Won over, it follows you, and grows up at your side.
     /// </summary>
+    readonly Dictionary<ulong, double> _spurned = [];
+
+    /// <summary>For the self-test: a companion let go, as if it had never been.</summary>
+    public void ForgetForTest(Bond bond)
+    {
+        if (BodyOf(bond) is { } body) { _companions.Remove(body); body.QueueFree(); }
+        _bonds.Remove(bond);
+    }
+
     public bool Tame(Enemy young)
     {
         var kin = Enemies().Where(o => o != young && !o.Young && o.Kind.Id == young.Kind.Id && o.State != EnemyState.Dead
             && o.GlobalPosition.DistanceTo(young.GlobalPosition) < 25).ToList();
-        var chance = Taming.Chance(kin.Count > 0, _player.Meat > 0, _player.Class.Id == "Ranger", _player.Hero.Level, _player.Pack.Level(Job.Taming));
+        var chance = Taming.Chance(kin.Count > 0, _player.Meat > 0, _player.Class.Id == "Ranger", _player.Hero.Level, _player.Pack.Level(Job.Taming), young.IsDragon);
         if (kin.Count > 0)
         {
             _hud.Toast($"The {young.Stats.Name}'s kin are close, and they won't let you near it.");
             foreach (var k in kin) k.Provoke(_player);
             return false;
         }
-        if (!_companyRng.Chance(chance))
+        if (young.IsDragon)
+        {
+            // A wyrmling is clever: it weighs you, and if it finds you wanting it remembers, and screams for its kin.
+            if (_spurned.GetValueOrDefault(young.GetInstanceId()) > _clock) { _hud.Toast($"The {young.Stats.Name} remembers you, and turns its back.", 5); return false; }
+            if (_player.Hero.Level < Taming.DragonLevel) { _hud.Toast($"The {young.Stats.Name} looks through you as if you weren't there. It won't so much as look at someone so green (level {Taming.DragonLevel}).", 7); return false; }
+            if (!_companyRng.Chance(chance))
+            {
+                _spurned[young.GetInstanceId()] = _clock + Taming.DragonSpurns;
+                foreach (var k in Enemies().Where(o => o.IsDragon && !o.Young && o.Kind.Id == young.Kind.Id && o.State != EnemyState.Dead && o.GlobalPosition.DistanceTo(young.GlobalPosition) < 250)) k.Provoke(_player);
+                _hud.Toast($"The {young.Stats.Name} looks at you a long moment, and doesn't like what it sees. It screams for its kin. ({chance:P0} it would have taken you)", 8);
+                return false;
+            }
+        }
+        else if (!_companyRng.Chance(chance))
         {
             _hud.Toast($"The {young.Stats.Name} bolts.");
             young.Provoke(_player);
@@ -268,7 +290,7 @@ public partial class Main
         var bond = Adopt(young.Kind.Id, young.IsDragon, at);
         var up = _player.Pack.Practise(Job.Taming, 40);
         _hud.Toast((bond.Following
-            ? $"The {young.Stats.Name} sniffs your hand and decides you'll do. You call it {bond.Name}."
+            ? young.IsDragon ? $"The {young.Stats.Name} looks at you a long moment, and lowers its head to your hand. It has chosen you. You call it {bond.Name}." : $"The {young.Stats.Name} sniffs your hand and decides you'll do. You call it {bond.Name}."
             : $"The {young.Stats.Name} is yours: you call it {bond.Name}. With {MaxFollowing} already at your heels, it goes to wait at the Gallows Perch.")
             + (up is { } level ? $" Beast taming rises to {level}!" : ""), 9);
         Save();
@@ -393,6 +415,18 @@ public partial class Main
         var dragon = Dragon;
         switch (_saga.Stage)
         {
+            case not SagaStage.Knighted when _saga.ReadyToKnight(dragon):
+                var wild = _saga.Stage != SagaStage.Raising;
+                yield return ($"I've raised {dragon!.Name}{(wild ? ", from a wyrmling I won over in the wilds" : "")}.", () => _hud.Talk(Who(person.Npc),
+                    wild ? $"From the wilds? Nobody wins a wyrmling over. Nobody but you, it seems. Look at {dragon.Name}: grown, and yours. Kneel." : $"So you have. Look at {dragon.Name}. Kneel.",
+                    ("(Kneel.)", () =>
+                    {
+                        _saga.Knighted(dragon);
+                        _hud.Toast($"You rise a Dragon Knight of the Eyrie. Stand by {dragon.Name} and press V to ride: Space climbs, C dives.", 14);
+                        Save();
+                        Say(person, $"Rise, knight. {dragon.Name} will carry you anywhere. Don't make me regret this.");
+                    })));
+                break;
             case SagaStage.NotStarted:
                 yield return ("How do I become a Dragon Knight?", () =>
                 {
@@ -440,16 +474,6 @@ public partial class Main
                 break;
             case SagaStage.CarryEgg:
                 yield return ("About the egg...", () => Say(person, $"Keep it warm and keep it close. Rest when you can: it hatches fastest by a fire. ({_saga.Warmth:P0} warm.)"));
-                break;
-            case SagaStage.Raising when _saga.ReadyToKnight(dragon):
-                yield return ($"I've raised {dragon!.Name}.", () => _hud.Talk(Who(person.Npc), $"So you have. Look at {dragon.Name}. Kneel.",
-                    ("(Kneel.)", () =>
-                    {
-                        _saga.Knighted(dragon);
-                        _hud.Toast($"You rise a Dragon Knight of the Eyrie. Stand by {dragon.Name} and press V to ride: Space climbs, C dives.", 14);
-                        Save();
-                        Say(person, $"Rise, knight. {dragon.Name} will carry you anywhere. Don't make me regret this.");
-                    })));
                 break;
             case SagaStage.Raising:
                 yield return ("How is my dragon?", () => Say(person, dragon is null ? "Where is it? Go and find it." :

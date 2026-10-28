@@ -185,7 +185,7 @@ public static class Dragons
         if (!rng.Chance(0.15 + 0.35 * closeness)) return null;
         var large = rng.Chance(0.25 + 0.3 * closeness);
         var count = large ? 1 : 1 + rng.Next(2);
-        var young = rng.Chance(0.15) ? 1 : 0; // a wyrmling, now and then
+        var young = rng.Chance(0.3) ? 1 : 0; // a wyrmling, often enough to be seen
         // Some of a lord's kin have fallen to the Rift: they hunt everything, their own colour included.
         if (!lord.Corrupted && rng.Chance(0.08))
             return new Herd($"flight_{cx}_{cz}", CorruptedKindFor(lord.Colour), x, z, count, 30, large ? DragonSize.Large : DragonSize.Normal, Rift);

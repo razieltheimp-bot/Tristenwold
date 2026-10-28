@@ -123,4 +123,20 @@ public class CorruptionTests
         Assert.True(Corruption.Turns(c));
         Assert.Equal(1, c); // never more than full
     }
+
+    [Fact]
+    public void A_wyrmling_is_far_harder_to_win_over_than_any_beast()
+    {
+        // It won't look at a green hero at all, and a ranger's knack doesn't decide it.
+        Assert.Equal(0, Taming.Chance(false, true, true, Taming.DragonLevel - 1, 10, dragon: true));
+        Assert.True(Taming.Chance(false, false, true, Taming.DragonLevel, dragon: true) < 1);
+        // Far worse odds than a wolf pup's, for the same hero.
+        Assert.True(Taming.Chance(false, true, false, 10, 3, dragon: true) < Taming.Chance(false, true, false, 10, 3) / 2);
+        // Years and a way with beasts count for most; meat for little; never better than even.
+        Assert.True(Taming.Chance(false, false, false, 20, 8, dragon: true) > Taming.Chance(false, false, false, 10, 1, dragon: true));
+        Assert.True(Taming.Chance(false, true, false, 10, dragon: true) - Taming.Chance(false, false, false, 10, dragon: true) <= 0.05 + 1e-9);
+        Assert.Equal(0.5, Taming.Chance(false, true, true, 60, 10, dragon: true));
+        Assert.Equal(0, Taming.Chance(true, true, true, 60, 10, dragon: true)); // and never with its kin close
+        Assert.True(Taming.Tameable("dragon_red") && Taming.Tameable("dragon_gold") && !Taming.Tameable("dragon_red_corrupt"));
+    }
 }

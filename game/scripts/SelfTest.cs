@@ -678,6 +678,34 @@ public partial class SelfTest(Main main) : Node
         await Frames(10);
         var wolf = main.CompanionBodies.FirstOrDefault(e => e.Kind.Id == "wolf" && e.Bond is not null);
         Check(wolf is not null && wolf.Leader == p, $"{wolf?.Bond?.Name} follows you");
+
+        // A wyrmling is another matter: it won't look at a green hero, it weighs a seasoned one, and it remembers a refusal.
+        var levelBefore = p.Hero.Level;
+        p.Hero.Level = 3;
+        var wyrm = Enemy.Create(Bestiary.Get("dragon_red"), p.GlobalPosition + new Vector3(3, 0, 0), young: true);
+        main.AddEnemy(wyrm);
+        await Frames(5);
+        Check(!main.Tame(wyrm) && main.HudNode.LastLine.Contains("won't so much as look"), $"a {wyrm.Stats.Name} won't look at a level-3 hero");
+        p.Hero.Level = 40;
+        var tamed = false;
+        var tries = 0;
+        for (; tries < 14 && !tamed; tries++)
+        {
+            if (tries > 0)
+            {
+                Check(tries > 1 || !main.Tame(wyrm) && main.HudNode.LastLine.Contains("remembers you"), "one that turned you down remembers you");
+                foreach (var d in main.Enemies().Where(e => e.IsDragon && e.State != EnemyState.Dead && e.Bond is null).ToList()) d.QueueFree(); // its screaming kin, and it
+                await Frames(5);
+                wyrm = Enemy.Create(Bestiary.Get("dragon_red"), p.GlobalPosition + new Vector3(3, 0, 0), young: true);
+                main.AddEnemy(wyrm);
+                await Frames(5);
+            }
+            p.Meat = 3;
+            tamed = main.Tame(wyrm);
+        }
+        Check(tamed && main.Bonds.Any(b => b.Role == BondRole.Dragon), $"a seasoned ranger wins one over in the end ({tries} tries): {main.Bonds.FirstOrDefault(b => b.Role == BondRole.Dragon)?.Name}");
+        p.Hero.Level = levelBefore;
+        foreach (var b in main.Bonds.Where(b => b.Role == BondRole.Dragon).ToList()) main.ForgetForTest(b); // the egg's road comes next
         var xp = wolf!.Bond!.Xp + wolf.Bond.Level * 1000;
         var prey = Spawn("giant_rat", p.GlobalPosition + new Vector3(-3, 0, -3));
         prey.Provoke(p);
