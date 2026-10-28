@@ -111,17 +111,20 @@ public partial class StartScreen : CanvasLayer
         _newOnly.AddThemeConstantOverride("separation", 10);
         _newOnly.AddChild(new Label { Text = "A new character", Modulate = new Color("#ffd27a") });
         _newOnly.AddChild(_newName);
-        // Pick a class: four callings, three classes each, a portrait for each.
+        // Pick a class: four callings side by side, so all twelve classes are in view at once, a portrait for each.
         var picks = new List<Button>();
+        var columns = new HBoxContainer();
+        columns.AddThemeConstantOverride("separation", 8);
+        _swatches.AddChild(columns);
         foreach (var calling in Enum.GetValues<Calling>())
         {
-            var row = new HBoxContainer();
-            row.AddChild(new Label { Text = calling + "s", CustomMinimumSize = new Vector2(96, 0), Modulate = new Color("#ffd27a"), VerticalAlignment = VerticalAlignment.Center });
+            var row = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            row.AddChild(new Label { Text = calling + "s", Modulate = new Color("#ffd27a"), HorizontalAlignment = HorizontalAlignment.Center });
             foreach (var d in Classes.Of(calling))
             {
                 var pick = new Button
                 {
-                    CustomMinimumSize = new Vector2(176, 150), ToggleMode = true, ButtonPressed = d.Look == _look, Text = d.Name,
+                    CustomMinimumSize = new Vector2(150, 118), ToggleMode = true, ButtonPressed = d.Look == _look, Text = d.Name,
                     Icon = Portrait(d.Look), IconAlignment = HorizontalAlignment.Center, VerticalIconAlignment = VerticalAlignment.Top, ExpandIcon = true,
                 };
                 pick.AddThemeStyleboxOverride("pressed", new StyleBoxFlat { BgColor = new Color("#3a3226"), BorderColor = new Color("#ffd27a"), BorderWidthBottom = 3, BorderWidthTop = 3, BorderWidthLeft = 3, BorderWidthRight = 3 });
@@ -129,7 +132,7 @@ public partial class StartScreen : CanvasLayer
                 picks.Add(pick);
                 row.AddChild(pick);
             }
-            _swatches.AddChild(row);
+            columns.AddChild(row);
         }
         _newOnly.AddChild(_swatches);
         _newOnly.AddChild(_about);
