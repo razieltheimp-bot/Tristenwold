@@ -14,7 +14,7 @@ public sealed record GuildMember(Npc Npc, GuildRole Role, string Look, string? T
 }
 
 /// <summary>
-/// A guild in Tristinwold: the warriors' Iron Circle, the rogues' Velvet Knives, the mages of the Magi. Each has a
+/// A guild in Tristinwold: the warriors' Iron Circle, the rogues' Velvet Knives, the mages of the Magi, the Bards' College. Each has a
 /// hall outside the walls, a leader, a teacher for each of its three classes, a few members with their own stories,
 /// and a rival who wants everything you want.
 /// </summary>
@@ -152,6 +152,38 @@ public static class Guilds
             new(Person("isadora", "Isadora Crane", Sex.Female, 23, "the Magi's prodigy",
                 "Isadora read the whole open Archive by fifteen and the locked shelves by seventeen, and has never forgiven anyone for being slower.",
                 "Oh. You're the one they let in. How generous of them.", 38, -140, "proud", "the Magi", "maps"), GuildRole.Rival, "Wizard", "Wizard")),
+
+        new(Calling.Bard, "bards_college", "the Bards' College", "the Lyre Hall",
+            "A timbered hall on a green south-east of the walls, with a stage at one end, a library at the other, and a song going somewhere in it at every hour of the day and night.",
+            90, 110,
+            new(Person("odalys", "Laureate Odalys Wren", Sex.Female, 63, "Laureate of the Bards' College",
+                "Odalys sang for three kings and outlived them all. She says the trick is never to rhyme anything with their names.",
+                "Sit. Listen first. Everyone wants to sing before they've heard a single song.", 90, 110, "warm", "songs", "old battles"), GuildRole.Leader, "laureate"),
+            [
+                new(Person("cassian", "Cassian Vell", Sex.Male, 39, "teacher of verse",
+                    "Cassian once ended a duel by reciting a sonnet so cruel his opponent wept and went home. He regrets it, he says, every day but the good ones.",
+                    "Say it again. But mean it this time.", 84, 104, "dry", "letters", "songs"), GuildRole.Teacher, "Poet", "Poet"),
+                new(Person("hollis", "Mother Hollis Quell", Sex.Female, 58, "teacher of the written word",
+                    "Hollis has had ink under her nails for thirty years. She writes the city's laws, its contracts and, quietly, its curses.",
+                    "Spell your name. Properly. Names matter more than you'd think.", 96, 104, "gruff", "letters", "the Magi"), GuildRole.Teacher, "Scribe", "Scribe"),
+                new(Person("bram", "Bram Tolliver", Sex.Male, 46, "teacher of music",
+                    "Bram has played every tavern from here to the Greywood, and been thrown out of most of them for playing too well.",
+                    "Can you keep a beat? Then you can keep a company alive.", 90, 118, "cheerful", "songs", "brewing"), GuildRole.Teacher, "Musician", "Musician"),
+            ],
+            [
+                new(Person("tobin", "Tobin Marrow", Sex.Male, 15, "the College's drummer boy",
+                    "Tobin ran away from a Tong ship to join the College, and drums on every surface he passes.",
+                    "Want to hear a rhythm? Too late, you're hearing it.", 82, 114, "cheerful", "songs", "the sea"), GuildRole.Member, "youth"),
+                new(Person("elowen", "Elowen Sark", Sex.Female, 34, "keeper of the College library",
+                    "Elowen catalogues every song ever sung in Tristinwold, and a few that never should have been.",
+                    "Quietly, please. Some of these books are asleep.", 98, 116, "nervous", "letters", "dreams"), GuildRole.Member, "scholar"),
+                new(Person("hal", "Hal Brandish", Sex.Male, 52, "a retired herald",
+                    "Hal cried the fall of the Bell Keep to the whole city, and has never quite stopped crying things.",
+                    "HEAR YE! Oh. Sorry. Habit.", 86, 120, "cheerful", "old battles", "gossip"), GuildRole.Member, "townsfolk"),
+            ],
+            new(Person("fennick", "Fennick Lark", Sex.Male, 24, "the College's golden voice",
+                "Fennick has a voice like honey and a heart like a locked box. He wants the Laureate's chair, the crowd's love, and you a little quieter.",
+                "Oh, you sing? How brave.", 94, 122, "proud", "songs", "cards"), GuildRole.Rival, "Musician", "Musician")),
     ];
 
     public static Guild Of(Calling c) => All.First(g => g.Calling == c);
@@ -245,6 +277,34 @@ public static class Guilds
                 new("\"Keep her secret.\"", "You leave the shelf locked. Ilse thanks you without saying for what, and some nights you wonder about the saved man, and the name he took.", 25, Flag: "kept_ilse_secret"),
                 new("\"Read it.\"", "The page is in Ilse's hand: a man pulled from the harbor, who should have died, and who took the name Vann. You put it back. You don't sleep well.", 20, Flag: "read_vann"),
             ]),
+
+        new("stolen_song", Calling.Bard, GuildRank.Initiate, "guild/elowen", "The Stolen Song",
+            "A song is going round the taverns that Tobin wrote, and it's a good one. Fennick is singing it as his own, and the crowds love him for it. Tobin says nothing, but he's stopped drumming.",
+            [
+                new("\"Call Fennick out in front of the crowd.\"", "You stand up in the Salt Barrel and sing Tobin's second verse, the one Fennick never heard. The crowd turns on him. Tobin drums all the way home.", 10, 2, Flag: "exposed_fennick"),
+                new("\"Help Tobin write a better one.\"", "You and Tobin write a song so good nobody remembers the first. Fennick can't sing this one: it's about him.", 15, 1, Flag: "pips_song"),
+                new("\"Let it go. Songs belong to everyone.\"", "Tobin nods, and goes quiet. Fennick buys you a drink that tastes of something you can't name.", -5, -1, Flag: "let_song_go"),
+            ]),
+        new("the_pamphlet", Calling.Bard, GuildRank.Member, "guild/hollis", "The Pamphlet",
+            "A Tong boss wants a pamphlet written: lies about a magistrate who won't take his bribes. He's offered the College a fat purse to print it. The roof leaks, Odalys hasn't said no, and Hollis has asked you.",
+            [
+                new("\"Write it. The College needs the money.\"", "The pamphlet goes out and the magistrate is ruined. The roof is mended. Hollis won't look at it.", -10, 0, 60, "wrote_libel"),
+                new("\"Write the truth about the Tong instead.\"", "You write the truth, about the Tong boss, and the whole city reads it. The Watch pays him a visit. Hollis frames a copy.", 15, Flag: "wrote_truth"),
+                new("\"Write it, with his name in the acrostic.\"", "The pamphlet goes out. Read the first letter of every line and it spells the Tong boss's name, and LIAR. The magistrate laughs; the boss can't prove a thing.", 10, 0, 30, "acrostic"),
+            ]),
+        new("midwinter_contest", Calling.Bard, GuildRank.Adept, "guild/bram", "The Midwinter Contest",
+            "The Midwinter Contest: the College's best before the whole city, and the winner sings at the Crown. It's you or Fennick, and Bram wants it settled the old way, on the green.",
+            [
+                new("\"Then let's play.\"", "Fennick's last note cracks and the green goes silent; yours rings to the walls. You'll sing at the Crown. He shakes your hand, and his is cold.", 25, 2, Flag: "midwinter", Duel: true,
+                    Loss: "Fennick's song lifts the whole green, and yours is lost under it. He'll sing at the Crown. \"Next winter,\" he says, kindly, which is worse."),
+                new("\"Let Fennick sing. He needs it more.\"", "Fennick stares at you, then sings the best he ever has, and finds you after to say so. Something between you is a little less of a contest.", 5, -3, Flag: "gave_midwinter"),
+            ]),
+        new("last_verse", Calling.Bard, GuildRank.Veteran, "guild/odalys", "The Last Verse",
+            "Odalys is dying, slowly and with great style. She has one song unfinished: the history of Tristinwold, every verse but the last. She wants you to write the ending, and to choose what it says.",
+            [
+                new("\"An ending with hope in it.\"", "You write the city a hopeful last verse. Odalys hears it, closes her eyes, and says it's a lie worth telling. She names you Laureate after her.", 30, Flag: "hopeful_verse"),
+                new("\"The truth, however it ends.\"", "You write the truth: the Rift, the Tongs, the corrupted dragons. Odalys laughs until she coughs, and names you Laureate after her. \"Somebody had to,\" she says.", 30, 0, 100, "true_verse"),
+            ]),
     ];
 
     /// <summary>The next piece of drama waiting for a hero in their guild, if any (it has to be time, and they have to have risen far enough).</summary>
@@ -292,6 +352,10 @@ public static class Guilds
         (Calling.Rogue, 1) => "Sable Rue has been whispering to the Lantern Boys. Jory doesn't like it.",
         (Calling.Rogue, 2) => "Sable Rue says you couldn't steal a cold from a beggar.",
         (Calling.Rogue, _) => "Sable Rue's been seen at Vesper's door at midnight. Nobody knows why.",
+        (Calling.Bard, 0) => "Fennick Lark sang at the Watch House last night, and three hard men wept into their ale.",
+        (Calling.Bard, 1) => "Fennick Lark has been seen drinking with Tong captains. The College is muttering.",
+        (Calling.Bard, 2) => "Fennick Lark says your voice could curdle milk at forty paces.",
+        (Calling.Bard, _) => "Fennick Lark has written a song about you. It's catchy. That's the worst part.",
         (_, 0) => "Isadora Crane burned a new door into the Archive Garden wall. On purpose, she says.",
         (_, 1) => "Isadora Crane has been reading in the locked stacks again, with nobody's leave.",
         (_, 2) => "Isadora Crane says your spells have all the subtlety of a dropped kettle.",

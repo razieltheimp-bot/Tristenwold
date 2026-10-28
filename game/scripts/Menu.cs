@@ -83,11 +83,19 @@ public partial class Main
             options.Add(("Log out", () => _ = Leave("Log out", () => Restart(forget: true))));
         }
         else options.Add(("Back to the start screen", () => _ = Leave("Leave", () => Restart(forget: false))));
+        options.Add(("Sound and music", SoundMenu));
         if (RemotePlay.Current is null) options.Add(("Quit the game", () => _ = Leave("Quit", Quit))); // on a phone, the PC's game must stay open
         options.Add(("Back to the game", _hud.EndTalk));
         _hud.Talk("Tristinwold", $"{_player.Company}, {_player.Class.Name}, level {_player.Hero.Level}. " +
             $"Saved {(ago < 60 ? $"{ago} second{(ago == 1 ? "" : "s")}" : $"{ago / 60} minute{(ago < 120 ? "" : "s")}")} ago. " +
             "The game saves by itself as you play, and before you log out or quit.", [.. options]);
+    }
+
+    /// <summary>The volume sliders (all sound, music, ambience, effects), kept on this device.</summary>
+    void SoundMenu()
+    {
+        _hud.Talk("Sound and music", "Slide to set each volume; it's kept on this device.", ("Back to the menu", GameMenu), ("Back to the game", _hud.EndTalk));
+        _hud.AddToTalk(Sound.Sliders());
     }
 
     /// <summary>Saves, then does <paramref name="then"/>; if the server didn't take the save, asks first.</summary>

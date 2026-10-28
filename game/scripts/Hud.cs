@@ -138,6 +138,7 @@ public partial class Hud : CanvasLayer
         if (_full is null) return;
         _full.Visible = !_full.Visible;
         _full.Recentre();
+        Sound.Ui(_full.Visible ? "open" : "close", -4);
         UpdateMouse();
     }
 
@@ -161,6 +162,13 @@ public partial class Hud : CanvasLayer
             _talkOptions.AddChild(b);
         }
         UpdateMouse();
+    }
+
+    /// <summary>Puts a control (the volume sliders) among the replies, above them.</summary>
+    public void AddToTalk(Control c)
+    {
+        _talkOptions.AddChild(c);
+        _talkOptions.MoveChild(c, 0);
     }
 
     public void EndTalk()
@@ -229,6 +237,7 @@ public partial class Hud : CanvasLayer
     {
         _window.Visible = !_window.Visible;
         UpdateMouse();
+        Sound.Ui(_window.Visible ? "open" : "close", -4);
     }
 
     public void Toast(string text, double seconds = 7)

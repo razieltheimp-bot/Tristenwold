@@ -89,6 +89,7 @@ public partial class StartScreen : CanvasLayer
         _quality.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         quality.AddChild(_quality);
         _login.AddChild(quality);
+        _login.AddChild(Sound.Sliders());
         _login.AddChild(new Label
         {
             Text = "The server's host gives you its address. A server started with --tunnel prints an https:// address that works from anywhere, phones included. "
@@ -110,7 +111,7 @@ public partial class StartScreen : CanvasLayer
         _newOnly.AddThemeConstantOverride("separation", 10);
         _newOnly.AddChild(new Label { Text = "A new character", Modulate = new Color("#ffd27a") });
         _newOnly.AddChild(_newName);
-        // Pick a class: three callings, three classes each, a portrait for each.
+        // Pick a class: four callings, three classes each, a portrait for each.
         var picks = new List<Button>();
         foreach (var calling in Enum.GetValues<Calling>())
         {

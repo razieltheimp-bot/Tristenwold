@@ -72,7 +72,9 @@ public partial class Player : Fighter
     SpringArm3D _arm = new();
     double _actingUntil, _downTimer, _rage, _poison;
     bool _smoke;
-    int _combo;
+    int _combo, _notes;
+    double _stride, _airborne, _wingbeat;
+    Enemy? _noted;
 
     public Camera3D Camera { get; private set; } = null!;
 
@@ -117,7 +119,7 @@ public partial class Player : Fighter
         var magicka = (c.Magicka + m) * (c.Id == "Wizard" ? 1 + 0.25 * passive : 1) * race.Magicka;
         Stats.SetPools(health, magicka, (c.Stamina + s) * race.Stamina);
         Stats.Armor = c.Armor + (Hero.Level - 1) * 3;
-        Stats.SpellPower = 1 + (Hero.Level - 1) * 0.04 + (c.Id == "Wizard" ? c.Passive.Power * passive : 0);
+        Stats.SpellPower = (1 + (Hero.Level - 1) * 0.04 + (c.Id == "Wizard" ? c.Passive.Power * passive : 0)) * (c.Id == "Poet" ? 1 + c.Passive.Power * passive : 1);
         Stats.DamageMult = 1 + (Hero.Level - 1) * 0.04;
         Stats.CritChance = c.Id == "Assassin" ? 25 + 5 * (Hero.Rank("backstab") - 1) : c.Calling == Calling.Rogue ? 10 : 5;
         Stats.SpeedMult = c.Id == "MartialArtist" ? 1.15 : 1;
@@ -207,6 +209,7 @@ public partial class Player : Fighter
         // Passives that work over time: a barbarian's hide closes wounds; a sorcerer's well refills fast.
         if (Class.Id == "Barbarian" && InFight) Stats.Heal(Stats.MaxHealth * Class.Passive.Power * Hero.Power("thick_hide") * delta);
         if (Class.Id == "Sorcerer") Stats.Restore(Stats.MaxMagicka * 0.02 * delta);
+        if (Class.Id == "Musician") Stats.Restore(Stats.MaxMagicka * Class.Passive.Power * Hero.Power("perfect_pitch") * delta, Stats.MaxStamina * Class.Passive.Power * Hero.Power("perfect_pitch") * delta);
         if (Frozen)
         {
             if (Mount is null) FallAndSlide(delta, Vector3.Zero);
@@ -228,9 +231,10 @@ public partial class Player : Fighter
             if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming))
             {
                 Velocity = Velocity with { Y = JumpSpeed };
-                if (!Swimming) Figure.Perform("Jump_Start", 0.22, 1.5f); // a crouch and a spring
+                if (!Swimming) { Figure.Perform("Jump_Start", 0.22, 1.5f); Sound.At("move/jump", GlobalPosition, -6); } // a crouch and a spring
             }
             FallAndSlide(delta, dir * speed);
+            Steps(delta);
 
             // The body turns to run the way you're going; it faces forward to strike or cast.
             var acting = Now < _actingUntil;
@@ -288,6 +292,9 @@ public partial class Player : Fighter
         "Wizard" => new Color("#ff8a2a"),
         "Warlock" => new Color("#9a5aff"),
         "Sorcerer" => new Color("#ff5a1a"),
+        "Poet" => new Color("#ffd86a"),
+        "Scribe" => new Color("#7ad8ff"),
+        "Musician" => new Color("#ff9ad0"),
         _ => Effects.Of(Class.Limit.Kind),
     };
 
@@ -329,6 +336,9 @@ public partial class Player : Fighter
         var power = Hero.Power(a.Id);
         var dmg = a.Power * power;
         var near = InFront(a.Range > 0 ? a.Range : 2.4, a.Range > 6 ? 30 : 70).FirstOrDefault();
+        if (a.Pays == AttackKind.Weapon && a.Range < 6 && a.Power > 1 && Class.Id != "Ranger") // a blade, an axe, a fist through the air
+            Sound.At(Class.Id == "MartialArtist" ? "melee/punch" : "melee/swing", GlobalPosition + Vector3.Up, -6);
+        if (Class.Calling == Calling.Bard) Play(a);
         switch (a.Id)
         {
             // ---- the martial artist ----
@@ -569,6 +579,109 @@ public partial class Player : Fighter
                 Effects.Cone(GetParent(), Hand, -GlobalTransform.Basis.Z, DamageKind.Fire, (float)a.Range);
                 foreach (var e in InFront(a.Range, 40).ToList()) Strike(e, dmg, a.Kind, AttackKind.Spell);
                 break;
+
+            // ---- the poet ----
+            case "barbed_verse":
+                Figure.Perform("Spellcast_Shoot", 0.5, 1.6f);
+                if (near is not null) Spell(near, dmg, a.Kind, 0.2f);
+                break;
+            case "rousing_ode":
+                Figure.Perform("Cheer", 0.9);
+                Effects.Song(GetParent(), GlobalPosition, Effects.Of(DamageKind.Sun), 6, 10);
+                Heal(a.Power * power);
+                For(a.Seconds * power, AutoStatus.Haste);
+                foreach (var c in Companions()) c.Empower(a.Seconds * power, a.Power * power);
+                Said?.Invoke("Rousing Ode: the company takes heart.");
+                break;
+            case "mocking_couplet":
+                Figure.Perform("Spellcast_Raise", 0.7, 1.4f);
+                Effects.Song(GetParent(), GlobalPosition, LimitColour, (float)a.Range, 6);
+                foreach (var e in Around(a.Range).ToList()) e.LoseTrack(a.Seconds * power);
+                Said?.Invoke("Your couplet leaves them speechless.");
+                break;
+            case "epic_of_ages":
+                Figure.Perform("Spellcast_Long", 1.2, 1.1f);
+                Said?.Invoke("LIMIT BREAK: Epic of Ages!");
+                Effects.Song(GetParent(), GlobalPosition, LimitColour, (float)a.Range, 16);
+                Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Sun, (float)a.Range);
+                foreach (var e in Around(a.Range).ToList()) Strike(e, dmg, a.Kind, AttackKind.Spell);
+                Heal(0.4);
+                foreach (var c in Companions()) { c.Revive(); c.Stats.Heal(1e9); c.RefreshPlate(); }
+                break;
+
+            // ---- the scribe ----
+            case "inkbolt":
+                Figure.Perform("Spellcast_Shoot", 0.45, 1.8f);
+                if (near is not null) Spell(near, dmg, a.Kind, 0.16f);
+                break;
+            case "glyph":
+            {
+                if (near is null) { Refund(a); return false; }
+                Figure.Perform("Spellcast_Shoot", 0.7, 1.2f);
+                var spot = near.GlobalPosition;
+                Effects.Glyph(GetParent(), spot, Effects.Of(a.Kind), 4, 0.8, a.Kind);
+                GetTree().CreateTimer(0.8).Timeout += () =>
+                {
+                    if (!IsInstanceValid(this)) return;
+                    foreach (var e in Around(4.5, spot).ToList()) Strike(e, dmg, a.Kind, AttackKind.Spell);
+                };
+                break;
+            }
+            case "scroll":
+                Figure.Perform("Use_Item", 0.8, 1.2f);
+                Effects.Rise(this, DamageKind.Shock, 2);
+                For(a.Seconds * power, AutoStatus.Protect, AutoStatus.Shell, AutoStatus.Regen);
+                Said?.Invoke("Scroll of Protection: Protect, Shell and Regen.");
+                break;
+            case "unmaking":
+            {
+                Figure.Perform("Spellcast_Long", 1.2, 1.1f);
+                Said?.Invoke("LIMIT BREAK: Words of Unmaking!");
+                var spot = GlobalPosition;
+                Effects.Glyph(GetParent(), spot, LimitColour, (float)a.Range, 0.5, a.Kind);
+                GetTree().CreateTimer(0.5).Timeout += () =>
+                {
+                    if (!IsInstanceValid(this)) return;
+                    foreach (var e in Around(a.Range, spot).ToList()) { Strike(e, dmg, a.Kind, AttackKind.Spell); e.LoseTrack(3); }
+                };
+                break;
+            }
+
+            // ---- the musician ----
+            case "discord":
+            {
+                var strong = ++_combo % 4 == 0;
+                Figure.Perform(strong ? "Spellcast_Raise" : "Spellcast_Shoot", 0.4, 2);
+                if (near is not null) Spell(near, strong ? dmg * 2 : dmg, a.Kind, strong ? 0.26f : 0.16f, look: DamageKind.Sun);
+                if (strong) Effects.Song(GetParent(), GlobalPosition, LimitColour, 2, 3);
+                break;
+            }
+            case "thunder_chord":
+                Figure.Perform("Spellcast_Shoot", 0.6, 1.3f);
+                Effects.Wave(GetParent(), Hand, -GlobalTransform.Basis.Z, LimitColour, (float)a.Range);
+                foreach (var e in InFront(a.Range, 45).ToList()) { Strike(e, dmg, a.Kind, AttackKind.Spell); Push(e, 3.5f); }
+                break;
+            case "battle_hymn":
+                Figure.Perform("Cheer", 0.9);
+                Effects.Song(GetParent(), GlobalPosition, LimitColour, 6, 12);
+                For(a.Seconds * power, AutoStatus.Haste, AutoStatus.Regen);
+                foreach (var c in Companions()) c.Empower(a.Seconds * power, 0.2 * power);
+                Said?.Invoke("Battle Hymn: the company fights to your song.");
+                break;
+            case "crescendo":
+                Figure.Perform("Spellcast_Long", 1.4, 1);
+                Said?.Invoke("LIMIT BREAK: Crescendo!");
+                for (var beat = 0; beat < 3; beat++)
+                {
+                    var b = beat;
+                    GetTree().CreateTimer(b * 0.45).Timeout += () =>
+                    {
+                        if (!IsInstanceValid(this)) return;
+                        Effects.Song(GetParent(), GlobalPosition, LimitColour, (float)a.Range * (0.5f + b * 0.25f), 6 + b * 4);
+                        foreach (var e in Around(a.Range).ToList()) Strike(e, dmg * (1 + b * 0.25), a.Kind, AttackKind.Spell);
+                    };
+                }
+                break;
         }
         // A sorcerer's magic sometimes surges and the spell goes off twice.
         if (Class.Id == "Sorcerer" && a.Pays == AttackKind.Spell && a.Power > 1 && !limit && _rng.Chance(Class.Passive.Power * Hero.Power("wild_surge")))
@@ -579,6 +692,27 @@ public partial class Player : Fighter
             GetTree().CreateTimer(0.25).Timeout += () => { if (IsInstanceValid(this)) Use(a); };
         }
         return true;
+    }
+
+    /// <summary>What a bard's moves sound like: a strummed lute, a harp, a drum, a horn, a chant, a quill, a turned page.</summary>
+    void Play(Ability a)
+    {
+        var at = GlobalPosition + Vector3.Up;
+        switch (a.Id)
+        {
+            case "barbed_verse": Sound.At("bard/chant", at, -10, 1.4f); break;
+            case "rousing_ode": Sound.At("bard/harp", at, -2); Sound.At("bard/chant", at, -6); break;
+            case "mocking_couplet": Sound.At("bard/lute", at, -4, 1.2f); break;
+            case "epic_of_ages": Sound.At("bard/horn", at, 0, range: 60); Sound.At("bard/harp", at, -2); break;
+            case "inkbolt": Sound.At("bard/quill", at, -6); break;
+            case "glyph": Sound.At("bard/quill", at, -2, 0.8f); break;
+            case "scroll": Sound.At("bard/page", at, 0); break;
+            case "unmaking": Sound.At("bard/page", at, 0, 0.7f); Sound.At("bard/chant", at, -2, 0.8f); break;
+            case "discord": Sound.At("bard/lute", at, -6, 0.9f + 0.1f * (_combo % 4)); break;
+            case "thunder_chord": Sound.At("bard/drum", at, 0, 0.8f); Sound.At("bard/lute", at, -2, 0.7f); break;
+            case "battle_hymn": Sound.At("bard/drum", at, -2); Sound.At("bard/lute", at, -2); break;
+            case "crescendo": Sound.At("bard/horn", at, 0, range: 60); Sound.At("bard/drum", at, 0, 0.9f); break;
+        }
     }
 
     void Refund(Ability a)
@@ -624,6 +758,18 @@ public partial class Player : Fighter
         tween.TweenProperty(this, "global_position", end, seconds / 2);
     }
 
+    /// <summary>Throws a foe back from the hero (a musician's wall of sound).</summary>
+    void Push(Enemy e, float distance)
+    {
+        if (e.Kind.Height > 3 || e.State == EnemyState.Dead) return; // dragons and the great bosses stand their ground
+        var away = e.GlobalPosition - GlobalPosition;
+        away.Y = 0;
+        if (away.LengthSquared() < 0.01f) return;
+        var end = e.GlobalPosition + away.Normalized() * distance;
+        end.Y = Math.Max(e.GlobalPosition.Y, City.FloorAt(end));
+        e.CreateTween().TweenProperty(e, "global_position", end, 0.25).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+    }
+
     void Steal(Enemy e, double power)
     {
         if (e.Friendly) return;
@@ -645,6 +791,11 @@ public partial class Player : Fighter
         _smoke = false;
         if (Class.Id == "Assassin" && !target.FightingCompany) damage *= 1 + Class.Passive.Power * Hero.Power("backstab");
         if (_rage > 0) damage *= 1 + 0.6 * Hero.Power("rage");
+        if (Class.Id == "Scribe") // every weakness noted: each blow on the same foe hits harder
+        {
+            if (_noted != target) (_noted, _notes) = (target, 0);
+            damage *= 1 + Math.Min(_notes++, 5) * Class.Passive.Power * Hero.Power("marginalia");
+        }
         if (kind == DamageKind.Sun && Class.Id == "Paladin" && (target.Undead || target.Side == Tristinwold.World.Side.Corrupted))
             damage *= 1.3 + Class.Passive.Power * Hero.Power("devotion");
         var result = Hit(target, damage, kind, attack, crit);
@@ -677,6 +828,7 @@ public partial class Player : Fighter
         if (_rage > 0) damage *= 1.2;
         if (Class.Id == "Paladin") damage *= 1 - Class.Passive.Power * Hero.Power("devotion");
         Stats.TakeHit(damage, kind, attack, crit, from.Stats);
+        if (_rng.Chance(0.35) || crit) Sound.At("creature/hurt_hero", GlobalPosition + Vector3.Up, -4, Appearance?.Size > 1.15 ? 0.8f : Appearance?.Size < 0.85 ? 1.25f : 1);
         if (attack == AttackKind.Weapon && GetParent() is { } world) Effects.Impact(world, GlobalPosition + Vector3.Up * 1.1f, GlobalPosition - from.GlobalPosition, DamageKind.Physical, crit);
         if (!Stats.Dead && Mount is null) Figure.Hurt();
         if (Stats.Dead) GoDown();
@@ -692,6 +844,11 @@ public partial class Player : Fighter
             Stats.Restore(Stats.MaxMagicka * pact);
         }
         if (_rage > 0) Stats.Heal(Stats.MaxHealth * 0.1);
+        if (Class.Id == "Poet") // the muse rewards a fall well sung
+        {
+            var muse = 0.5 * Class.Passive.Power * Hero.Power("muse");
+            Stats.Restore(Stats.MaxMagicka * muse, Stats.MaxStamina * muse);
+        }
     }
 
     void GoDown()
@@ -700,6 +857,7 @@ public partial class Player : Fighter
         Downed = true;
         _downTimer = 4;
         Figure.Die();
+        Sound.At("creature/die_hero", GlobalPosition + Vector3.Up, 0);
         WentDown?.Invoke();
     }
 
@@ -739,6 +897,27 @@ public partial class Player : Fighter
         Figure.Rotation = Vector3.Zero;
     }
 
+    /// <summary>Footsteps on what's underfoot (stone in the city, boards on the docks, grass in the wilds, snow up high), and the thump of landing.</summary>
+    void Steps(double delta)
+    {
+        if (!IsOnFloor() || Swimming)
+        {
+            if (!Swimming) _airborne += delta;
+            return;
+        }
+        if (_airborne > 0.45) Sound.At("move/land", GlobalPosition, -4);
+        _airborne = 0;
+        _stride += GroundSpeed * delta;
+        var length = GroundSpeed > WalkSpeed * 1.15f ? 2.3f : 1.6f; // longer strides at a run
+        if (_stride < length) return;
+        _stride = 0;
+        var area = City.AreaAt(GlobalPosition);
+        var ground = area is "The Docks" or "The Harbor" ? "wood"
+            : area is not ("The Crown" or "The Exchange" or "Tristinwold") && Tristinwold.World.WorldGen.Default.BiomeAt(GlobalPosition.X, GlobalPosition.Z) is Tristinwold.World.Biome.Snowfield or Tristinwold.World.Biome.Tundra ? "snow"
+            : area is "The Crown" or "The Exchange" or "Tristinwold" ? "stone" : "grass";
+        Sound.At("foot/" + ground, GlobalPosition, GroundSpeed > WalkSpeed * 1.15f ? -8 : -12, range: 18);
+    }
+
     void Ride(Vector3 dir, bool fast)
     {
         var climb = Input.IsActionPressed("jump") ? 1 : Input.IsActionPressed("descend") ? -1 : 0;
@@ -747,6 +926,11 @@ public partial class Player : Fighter
         // Sit in the saddle, facing the way the dragon faces; the camera is yours to turn.
         GlobalPosition = Mount!.SaddleGlobal;
         Velocity = Vector3.Zero;
+        if (Mount.Airborne && (_wingbeat -= GetPhysicsProcessDeltaTime()) <= 0) // the great wings beating
+        {
+            _wingbeat = fast ? 0.7 : 1.1;
+            Sound.At("move/wings", GlobalPosition, -4, 0.9f);
+        }
         Figure.GlobalRotation = new Vector3(0, Mount.GlobalRotation.Y, 0);
     }
 

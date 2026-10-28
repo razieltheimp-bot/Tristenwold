@@ -29,9 +29,11 @@ public partial class SelfTest(Main main) : Node
             await Frames(10);
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--sound-only")) { await SoundTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--classes-only")) { await Teleport(new Vector3(-150, 0, -120)); await ClassesTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -352,21 +354,61 @@ public partial class SelfTest(Main main) : Node
         main.WildsNode.Now = () => DateTime.UtcNow;
     }
 
-    /// <summary>
-    /// Every class fights with its own moves; kills bring levels; a youngling is tamed and fights beside you;
-    /// a youth becomes an apprentice; the road to Dragon Knight is walked from the egg to the saddle; and a
-    /// dragon knight of the alliance fights a corrupted dragon on sight.
-    /// </summary>
-    async Task CompanyTest()
+    /// <summary>Every sound the game plays is there, the volumes are kept, and the music follows the hero: the wilds,
+    /// the city, the Bards' College, a fight.</summary>
+    async Task SoundTest()
     {
-        var (p, w) = (main.PlayerNode, main.World);
-        var field = new Vector3(-150, 0, -120);
-        await Teleport(field);
-        var level = p.Hero.Level;
-        static int Earned(Hero h) => Enumerable.Range(1, h.Level - 1).Sum(Hero.XpToNext) + h.Xp;
-        var earned = Earned(p.Hero);
+        var p = main.PlayerNode;
+        Check(Sound.Current is not null, "the sound is up");
+        string[] names =
+        [
+            "foot/grass", "foot/stone", "foot/wood", "foot/snow", "move/jump", "move/land", "move/wings",
+            "melee/swing", "melee/hit", "melee/hit_metal", "melee/crit", "melee/punch", "melee/bow", "melee/arrow_hit",
+            "magic/cast", "magic/fire_cast", "magic/fire_boom", "magic/frost_cast", "magic/frost_shatter", "magic/shock", "magic/thunder",
+            "magic/poison", "magic/heal", "magic/holy", "magic/limit",
+            "creature/growl_small", "creature/growl_big", "creature/roar_dragon", "creature/howl", "creature/shriek", "creature/die",
+            "creature/hurt_hero", "creature/die_hero",
+            "ui/click", "ui/open", "ui/close", "ui/coin", "ui/pickup", "ui/equip", "ui/potion", "ui/herb", "ui/anvil", "ui/levelup", "ui/quest", "ui/error",
+            "bard/lute", "bard/harp", "bard/drum", "bard/horn", "bard/page", "bard/quill", "bard/chant",
+        ];
+        var missing = names.Where(n => !Sound.Has(n)).ToList();
+        Check(missing.Count == 0, missing.Count == 0 ? $"all {names.Length} kinds of sound are there" : $"sounds missing: {string.Join(", ", missing)}");
+        var before = Sound.Volume(Sound.Music);
+        Sound.SetVolume(Sound.Music, 0.3f);
+        var bus = AudioServer.GetBusIndex(Sound.Music);
+        Check(bus >= 0 && Mathf.Abs(AudioServer.GetBusVolumeDb(bus) - Mathf.LinearToDb(0.3f)) < 0.1f, $"the music slider sets the music bus ({AudioServer.GetBusVolumeDb(bus):0.0} dB)");
+        Sound.SetVolume(Sound.Music, before);
 
-        // Each of the nine classes, against a dock thug.
+        async Task<string> MoodAt(Vector3 at)
+        {
+            await Teleport(at);
+            // Earlier tests leave the countryside busy; listen with nothing hostile about.
+            foreach (var e in GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => !e.Friendly && e.GlobalPosition.DistanceTo(at) < 90).ToList()) e.QueueFree();
+            await Until(() => !main.Tracker.InFight && !p.Attackers().Any(), 30);
+            await Frames(90);
+            return Sound.Current!.Mood;
+        }
+        var wild = await MoodAt(new Vector3(-150, 0, -120));
+        Check(wild == "explore", $"out in the wilds the music is {wild}, and the place sounds of {Sound.Current!.Place}");
+        var town = await MoodAt(new Vector3(20, 0, 20));
+        Check(town == "town", $"in the city the music is {town}, and the place sounds of {Sound.Current!.Place}");
+        var college = Guilds.Of(Calling.Bard);
+        var bards = await MoodAt(new Vector3((float)college.X + 3, 0, (float)college.Z + 3));
+        Check(bards == "bard", $"at the Bards' College the music is {bards}");
+        await Teleport(new Vector3(-150, 0, -120));
+        var foe = Spawn("dock_thug", p.GlobalPosition + new Vector3(0, 0, -3));
+        foe.Provoke(p);
+        await Until(() => Sound.Current!.Mood == "battle", 10);
+        Check(Sound.Current!.Mood == "battle", $"a fight brings the battle music ({Sound.Current.Mood})");
+        await FightUntilDead(foe, 30);
+        await Until(() => Sound.Current!.Mood == "explore", 20);
+        Check(Sound.Current!.Mood == "explore", $"and after it, the wilds' music again ({Sound.Current.Mood})");
+    }
+
+    /// <summary>Each of the twelve classes, against a dock thug: its moves fell it, and its limit break goes off.</summary>
+    async Task ClassesTest()
+    {
+        var p = main.PlayerNode;
         foreach (var d in Classes.All)
         {
             p.Join(d.Id);
@@ -397,6 +439,23 @@ public partial class SelfTest(Main main) : Node
             if (d.Id == "Warlock") Check(GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Any(e => e.Kind.Id == "familiar" && e.Leader == p), "the warlock's familiar answers");
             await Until(() => !main.Tracker.InFight, 10);
         }
+    }
+
+    /// <summary>
+    /// Every class fights with its own moves; kills bring levels; a youngling is tamed and fights beside you;
+    /// a youth becomes an apprentice; the road to Dragon Knight is walked from the egg to the saddle; and a
+    /// dragon knight of the alliance fights a corrupted dragon on sight.
+    /// </summary>
+    async Task CompanyTest()
+    {
+        var (p, w) = (main.PlayerNode, main.World);
+        var field = new Vector3(-150, 0, -120);
+        await Teleport(field);
+        var level = p.Hero.Level;
+        static int Earned(Hero h) => Enumerable.Range(1, h.Level - 1).Sum(Hero.XpToNext) + h.Xp;
+        var earned = Earned(p.Hero);
+
+        await ClassesTest();
         Check(Earned(p.Hero) > earned, $"kills bring experience: {earned} to {Earned(p.Hero)} (level {level} to {p.Hero.Level})");
         var before = p.Hero.Level;
         main.GainXp((int)Math.Ceiling(Hero.XpToNext(before) / p.Race.Xp));

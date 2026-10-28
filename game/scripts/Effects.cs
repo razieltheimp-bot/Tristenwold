@@ -218,6 +218,19 @@ public static class Effects
         var ground = Holder(world, at with { Y = at.Y - 0.9f }, 1.2);
         Ring(ground, c, radius * 1.5f, 0.55);
         Flash(n, c, 4, radius * 4 + 3, 0.5);
+        var loud = Mathf.Clamp(-10 + radius * 2.5f, -10, 4);
+        switch (kind)
+        {
+            case DamageKind.Fire: Sound.At("magic/fire_boom", at, loud, range: 40 + radius * 6); break;
+            case DamageKind.Frost: Sound.At("magic/frost_shatter", at, loud); break;
+            case DamageKind.Shock: Sound.At(radius >= 4 ? "magic/thunder" : "magic/shock", at, loud, range: radius >= 4 ? 80 : 35); break;
+            case DamageKind.Poison: Sound.At("magic/poison", at, loud); break;
+            case DamageKind.Sun: Sound.At("magic/holy", at, loud); break;
+            default:
+                if (radius < 1) Sound.At("melee/arrow_hit", at, -4); // a crossbow bolt landing
+                else Sound.At("magic/fire_boom", at, loud - 4, 0.6f); // the ground struck: a deep thud
+                break;
+        }
         switch (kind)
         {
             case DamageKind.Fire:
@@ -282,6 +295,14 @@ public static class Effects
             Burst(world, to, kind, 1);
             return;
         }
+        switch (kind) // the sound of it leaving the hand
+        {
+            case DamageKind.Fire: Sound.At("magic/fire_cast", from, -4); break;
+            case DamageKind.Frost: Sound.At("magic/frost_cast", from, -4); break;
+            case DamageKind.Poison: Sound.At("magic/poison", from, -8, 1.3f); break;
+            case DamageKind.Physical: Sound.At("melee/bow", from, -2); break;
+            default: Sound.At("magic/cast", from, -6); break;
+        }
         var seconds = Math.Clamp(from.DistanceTo(to) / (kind == DamageKind.Physical ? 70 : 40), 0.08, 0.6);
         var n = Holder(world, from, seconds + 0.05);
         var heading = to - from;
@@ -330,6 +351,7 @@ public static class Effects
     {
         var c = Of(kind);
         var n = Holder(world, from, 3);
+        Sound.At(kind switch { DamageKind.Fire => "magic/fire_cast", DamageKind.Frost => "magic/frost_cast", DamageKind.Shock => "magic/thunder", DamageKind.Poison => "magic/poison", _ => "magic/cast" }, from, 2, 0.8f, 60);
         var p = Sparks(c, 90, 0.5f + length * 0.04f, 0.6);
         p.Explosiveness = 0.2f;
         p.Direction = dir.Normalized();
@@ -376,6 +398,7 @@ public static class Effects
         var n = new Node3D();
         who.AddChild(n);
         who.GetTree().CreateTimer(2.2).Timeout += n.QueueFree;
+        Sound.At(kind == DamageKind.Sun ? "magic/heal" : "magic/cast", who.GlobalPosition, -4);
         var p = Sparks(c, 40, 0.15f, 1.4);
         p.Explosiveness = 0.3f;
         p.EmissionShape = CpuParticles3D.EmissionShapeEnum.Ring;
@@ -407,6 +430,7 @@ public static class Effects
     {
         var c = kind == DamageKind.Physical ? new Color(crit ? "#ffd27a" : "#fff4e0") : Of(kind);
         var n = Holder(world, at, 1);
+        Sound.At(crit ? "melee/crit" : "melee/hit", at, crit ? 0 : -3);
         along.Y = 0;
         if (along.LengthSquared() < 0.01f) along = Vector3.Forward;
         n.LookAt(at + along.Normalized(), Vector3.Up);
@@ -445,6 +469,7 @@ public static class Effects
     public static void Limit(Node world, Vector3 at, Color c)
     {
         var n = Holder(world, at, 3);
+        Sound.At("magic/limit", at, 2, range: 80);
         var glow = Glow(c);
         glow.BillboardMode = BaseMaterial3D.BillboardModeEnum.Disabled;
         glow.AlbedoTexture = null;
@@ -490,10 +515,140 @@ public static class Effects
     public static void Smoke(Node world, Vector3 at, float radius)
     {
         var n = Holder(world, at, 4);
+        Sound.At("magic/cast", at, -2, 0.55f);
         var c = new Color(0.62f, 0.62f, 0.65f, 0.75f);
         var puffs = Puffs(c, 40, radius * 0.9f, 3);
         (puffs.Explosiveness, puffs.Direction, puffs.Spread, puffs.InitialVelocityMin, puffs.InitialVelocityMax) = (0.8f, Vector3.Up, 180, radius * 0.4f, radius);
         (puffs.DampingMin, puffs.DampingMax, puffs.Gravity, puffs.ScaleAmountMin, puffs.ScaleAmountMax) = (radius * 0.5f, radius * 0.8f, new Vector3(0, 0.3f, 0), 1, 2.2f);
         n.AddChild(puffs);
+    }
+
+    // ---- the bards ---------------------------------------------------------------------------------------------
+
+    /// <summary>A glowing note of music: a round head and a stem with a flag, made of light.</summary>
+    static Node3D Note(Color c, float size)
+    {
+        var mat = new StandardMaterial3D
+        {
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, AlbedoColor = new Color(c, 0.95f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            BlendMode = BaseMaterial3D.BlendModeEnum.Add, EmissionEnabled = true, Emission = c, EmissionEnergyMultiplier = 2.5f,
+            BillboardMode = BaseMaterial3D.BillboardModeEnum.Disabled,
+        };
+        var note = new Node3D();
+        note.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = size * 0.32f, Height = size * 0.5f, RadialSegments = 10, Rings = 5 }, MaterialOverride = mat, RotationDegrees = new Vector3(0, 0, 25), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        note.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(size * 0.07f, size * 1.1f, size * 0.07f) }, MaterialOverride = mat, Position = new Vector3(size * 0.27f, size * 0.55f, 0), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        note.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(size * 0.32f, size * 0.08f, size * 0.07f) }, MaterialOverride = mat, Position = new Vector3(size * 0.42f, size * 1.0f, 0), RotationDegrees = new Vector3(0, 0, -30), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        return note;
+    }
+
+    /// <summary>
+    /// A bard's song going out: notes of light drifting up and away from them, swaying as they go, and rings of
+    /// sound pulsing out along the ground one after another.
+    /// </summary>
+    public static void Song(Node world, Vector3 at, Color c, float radius = 4, int notes = 8)
+    {
+        var n = Holder(world, at, 2.6);
+        for (var i = 0; i < notes; i++)
+        {
+            var note = Note(c, 0.35f + (float)GD.RandRange(0, 0.15));
+            n.AddChild(note);
+            var angle = (float)GD.RandRange(0, Mathf.Tau);
+            var start = new Vector3(Mathf.Cos(angle) * 0.6f, 1.2f + (float)GD.RandRange(0, 0.6), Mathf.Sin(angle) * 0.6f);
+            note.Position = start;
+            note.Scale = Vector3.One * 0.01f;
+            var end = start + new Vector3(Mathf.Cos(angle) * radius * 0.5f, 1.6f + (float)GD.RandRange(0, 1.2), Mathf.Sin(angle) * radius * 0.5f);
+            var t = note.CreateTween().SetParallel();
+            var delay = i * 0.08;
+            t.TweenProperty(note, "scale", Vector3.One, 0.25).SetDelay(delay);
+            t.TweenProperty(note, "position", end, 1.6).SetDelay(delay).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+            t.TweenProperty(note, "rotation_degrees", new Vector3(0, (float)GD.RandRange(-90, 90), (float)GD.RandRange(-30, 30)), 1.6).SetDelay(delay);
+            t.TweenProperty(note, "scale", Vector3.One * 0.01f, 0.4).SetDelay(delay + 1.3);
+        }
+        for (var k = 0; k < 3; k++)
+        {
+            var wave = k;
+            n.GetTree().CreateTimer(wave * 0.22).Timeout += () => { if (GodotObject.IsInstanceValid(n)) Ring(n, c, radius, 0.7, 0.1f + wave * 0.05f); };
+        }
+        Flash(n, c, 2.5f, radius + 3, 0.9);
+    }
+
+    /// <summary>A wave of sound before a bard: arcs of light racing out and widening, and notes thrown along it.</summary>
+    public static void Wave(Node world, Vector3 from, Vector3 dir, Color c, float length)
+    {
+        dir.Y = 0;
+        if (dir.LengthSquared() < 0.01f) dir = Vector3.Forward;
+        dir = dir.Normalized();
+        var n = Holder(world, from, 1.6);
+        n.LookAt(from + dir, Vector3.Up);
+        for (var k = 0; k < 4; k++)
+        {
+            var mat = new StandardMaterial3D
+            {
+                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, AlbedoColor = new Color(c, 0.75f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+                BlendMode = BaseMaterial3D.BlendModeEnum.Add, CullMode = BaseMaterial3D.CullModeEnum.Disabled, EmissionEnabled = true, Emission = c, EmissionEnergyMultiplier = 2,
+            };
+            // A ring standing up across the way the sound goes, so it reads as a pulse travelling forward.
+            var ring = new MeshInstance3D
+            {
+                Mesh = new TorusMesh { InnerRadius = 0.88f, OuterRadius = 1, Rings = 36, RingSegments = 6 }, MaterialOverride = mat,
+                RotationDegrees = new Vector3(90, 0, 0), Scale = Vector3.One * 0.3f, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            };
+            n.AddChild(ring);
+            var t = ring.CreateTween().SetParallel();
+            var delay = k * 0.12;
+            t.TweenProperty(ring, "position", new Vector3(0, 0, -length), 0.6).SetDelay(delay).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+            t.TweenProperty(ring, "scale", Vector3.One * (length * 0.35f), 0.6).SetDelay(delay);
+            t.TweenProperty(mat, "albedo_color", new Color(c, 0), 0.6).SetDelay(delay);
+        }
+        for (var i = 0; i < 5; i++)
+        {
+            var note = Note(c, 0.4f);
+            n.AddChild(note);
+            note.Position = new Vector3((float)GD.RandRange(-0.6, 0.6), (float)GD.RandRange(-0.2, 0.5), -0.5f);
+            var t = note.CreateTween().SetParallel();
+            t.TweenProperty(note, "position", new Vector3((float)GD.RandRange(-length * 0.3, length * 0.3), (float)GD.RandRange(0, 1.5), -length * 0.9f), 0.8).SetDelay(i * 0.06);
+            t.TweenProperty(note, "scale", Vector3.One * 0.01f, 0.3).SetDelay(0.6 + i * 0.06);
+        }
+        Flash(n, c, 2, length, 0.5);
+    }
+
+    /// <summary>
+    /// A scribe's glyph: a circle of runes written in light on the ground under a foe, turning as it charges, that
+    /// bursts after <paramref name="delay"/> seconds.
+    /// </summary>
+    public static void Glyph(Node world, Vector3 at, Color c, float radius, double delay, DamageKind burst)
+    {
+        var n = Holder(world, at, delay + 1.5);
+        var mat = new StandardMaterial3D
+        {
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, AlbedoColor = new Color(c, 0.9f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            BlendMode = BaseMaterial3D.BlendModeEnum.Add, EmissionEnabled = true, Emission = c, EmissionEnergyMultiplier = 2.2f,
+        };
+        var circle = new Node3D { Position = new Vector3(0, 0.12f, 0) };
+        n.AddChild(circle);
+        foreach (var r in new[] { radius, radius * 0.72f })
+            circle.AddChild(new MeshInstance3D { Mesh = new TorusMesh { InnerRadius = r * 0.95f, OuterRadius = r, Rings = 48, RingSegments = 4 }, MaterialOverride = mat, Scale = new Vector3(1, 0.2f, 1), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        // The runes: strokes between the rings, each its own little shape.
+        var rng = new RandomNumberGenerator();
+        for (var i = 0; i < 12; i++)
+        {
+            var a = i / 12f * Mathf.Tau;
+            var mid = (radius + radius * 0.72f) / 2;
+            var rune = new Node3D { Position = new Vector3(Mathf.Cos(a) * mid, 0, Mathf.Sin(a) * mid), RotationDegrees = new Vector3(0, -Mathf.RadToDeg(a), 0) };
+            circle.AddChild(rune);
+            for (var s = 0; s < 2; s++)
+                rune.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(radius * 0.03f, 0.02f, radius * rng.RandfRange(0.1f, 0.2f)) }, MaterialOverride = mat, RotationDegrees = new Vector3(0, rng.RandfRange(-50, 50), 0), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        }
+        circle.Scale = Vector3.One * 0.2f;
+        var t = circle.CreateTween().SetParallel();
+        t.TweenProperty(circle, "scale", Vector3.One, 0.25).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+        t.TweenProperty(circle, "rotation_degrees", new Vector3(0, 220, 0), delay + 0.2);
+        Flash(n, c, 1.5f, radius + 2, delay + 0.3);
+        n.GetTree().CreateTimer(delay).Timeout += () =>
+        {
+            if (!GodotObject.IsInstanceValid(n)) return;
+            n.CreateTween().TweenProperty(mat, "albedo_color", new Color(c, 0), 0.3);
+            Burst(world, n.GlobalPosition + Vector3.Up * 0.6f, burst, radius);
+        };
     }
 }

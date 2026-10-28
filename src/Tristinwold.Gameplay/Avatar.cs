@@ -102,7 +102,7 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
             "Paladin" or "Knight" => ("Knight", "Knight_Helmet"),
             "Ranger" or "Assassin" or "Rogue_Hooded" => ("Rogue_Hooded", "none"),
             "Wizard" or "Mage" => ("Mage", "Mage_Hat"),
-            "Warlock" or "Sorcerer" => ("Mage", "none"),
+            "Warlock" or "Sorcerer" or "Poet" or "Scribe" => ("Mage", "none"),
             _ => ("Rogue", "none"),
         };
         return new(figure, figure, figure, figure, hat, "Natural", "Natural", "Average");

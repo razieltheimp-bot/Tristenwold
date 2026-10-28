@@ -2,8 +2,8 @@ using Tristinwold.Nemesis;
 
 namespace Tristinwold.Gameplay;
 
-/// <summary>The three callings a character can follow: the way of the blade, of the shadow, or of magic.</summary>
-public enum Calling { Warrior, Rogue, Mage }
+/// <summary>The four callings a character can follow: the way of the blade, of the shadow, of magic, or of the word and the song.</summary>
+public enum Calling { Warrior, Rogue, Mage, Bard }
 
 /// <summary>
 /// One of a class's moves. <paramref name="Power"/> is base damage (or, for a heal, the share of health
@@ -52,7 +52,7 @@ public sealed record Discipline(
 }
 
 /// <summary>
-/// The nine classes, three to each calling, each fighting its own way:
+/// The twelve classes, three to each calling, each fighting its own way:
 /// <list type="bullet">
 /// <item>Warriors: the Martial Artist (fists, feet and speed), the Barbarian (a great axe and rage), the
 /// Paladin (sword, shield and holy light).</item>
@@ -60,6 +60,8 @@ public sealed record Discipline(
 /// Assassin (poison, shadows and one perfect strike).</item>
 /// <item>Mages: the Wizard (studied elements), the Warlock or Witch (pacts, curses and stolen life), the
 /// Sorcerer (raw, wild magic in the blood).</item>
+/// <item>Bards: the Poet (verse that cuts and verse that rouses), the Scribe (glyphs, seals and scrolls), the
+/// Musician (a lute, a drum and a song that shakes the ground).</item>
 /// </list>
 /// </summary>
 public static class Classes
@@ -145,11 +147,37 @@ public static class Classes
             Attune,
             new("dragonfire", "Dragonfire", "The dragon in your blood wakes: fire pours from your hands over everything in front of you.", AttackKind.Spell, 0, 0, 85, 12, DamageKind.Fire),
             new("wild_surge", "Wild Surge", "Spells sometimes surge and strike twice; magicka returns quickly.", AttackKind.Spell, 0, 0, 0.15, 0)),
+
+        // ---- bards ----
+        new("Poet", "Poet", Calling.Bard,
+            "Words are weapons. Cuts foes with barbed verse, rouses the company with an ode, and leaves enemies too stung to fight.",
+            125, 150, 115, 40,
+            new("barbed_verse", "Barbed Verse", "A line so sharp it cuts: golden words at the foe you face, up to 22 m.", AttackKind.Spell, 9, 0.6, 18, 22, DamageKind.Sun),
+            new("rousing_ode", "Rousing Ode", "You and your companions are healed, quickened and fight harder for a while.", AttackKind.Spell, 35, 14, 0.2, 0, Seconds: 10),
+            new("mocking_couplet", "Mocking Couplet", "Foes within 10 m are left speechless and forget you for a few seconds.", AttackKind.Spell, 25, 16, 0, 10, Seconds: 4),
+            new("epic_of_ages", "Epic of Ages", "The song of your deeds: golden words sear every foe around you, and every companion is healed whole.", AttackKind.Spell, 0, 0, 75, 10, DamageKind.Sun),
+            new("muse", "The Muse", "Stronger spells, and every foe that falls gives back magicka and stamina.", AttackKind.Spell, 0, 0, 0.15, 0)),
+        new("Scribe", "Scribe", Calling.Bard,
+            "A quill, a book and the old words of power. Darts of enchanted ink, glyphs that burst where foes stand, and scrolls that ward.",
+            115, 165, 100, 40,
+            new("inkbolt", "Inkbolt", "A dart of crackling enchanted ink at the foe you face, up to 24 m.", AttackKind.Spell, 8, 0.55, 15, 24, DamageKind.Shock),
+            new("glyph", "Glyph of Warding", "Write a glyph under the foe you face; a heartbeat later it bursts, hurting everything near it.", AttackKind.Spell, 35, 6, 34, 26, DamageKind.Shock),
+            new("scroll", "Scroll of Protection", "Read a scroll: Protect, Shell and Regen for a while.", AttackKind.Spell, 30, 22, 0, 0, Seconds: 8),
+            new("unmaking", "Words of Unmaking", "Read a word from the first book: every foe within 12 m is struck hard and loses its way.", AttackKind.Spell, 0, 0, 90, 12, DamageKind.Shock),
+            new("marginalia", "Marginalia", "You note every weakness: each blow on the same foe hits harder than the last, up to a third more.", AttackKind.Spell, 0, 0, 0.07, 0)),
+        new("Musician", "Musician", Calling.Bard,
+            "A lute on the back and a drum at the belt. Jarring chords, a wall of sound that throws foes back, and a hymn the company fights to.",
+            135, 140, 125, 45,
+            new("discord", "Discord", "A jarring chord at the foe you face, up to 18 m; every fourth note lands twice as hard.", AttackKind.Spell, 7, 0.45, 13, 18),
+            new("thunder_chord", "Thunderous Chord", "A wave of sound before you that hurts and throws back every foe in it.", AttackKind.Spell, 30, 6, 28, 10),
+            new("battle_hymn", "Battle Hymn", "Play: you and your companions are quickened and heal for a while.", AttackKind.Spell, 30, 20, 0, 0, Seconds: 10),
+            new("crescendo", "Crescendo", "A song that builds until the ground shakes: every foe within 14 m is struck three times.", AttackKind.Spell, 0, 0, 40, 14),
+            new("perfect_pitch", "Perfect Pitch", "Magicka and stamina come back quickly while you play.", AttackKind.Spell, 0, 0, 0.015, 0)),
     ];
 
     public static Discipline Get(string id) => All.FirstOrDefault(d => d.Id.Equals(id, StringComparison.OrdinalIgnoreCase)) ?? For(id);
 
-    /// <summary>The class for a character's look. Characters made before there were nine classes keep the nearest.</summary>
+    /// <summary>The class for a character's look. Characters made before there were twelve classes keep the nearest.</summary>
     public static Discipline For(string look) => look switch
     {
         "Knight" => Get("Paladin"),
@@ -166,6 +194,7 @@ public static class Classes
     {
         Calling.Warrior => "the Iron Circle",
         Calling.Rogue => "the Velvet Knives",
+        Calling.Bard => "the Bards' College",
         _ => "the Magi Archive",
     };
 }

@@ -36,7 +36,7 @@ public partial class Main : Node3D
     string _area = "", _sentArea = "", _savePath = "";
     string? _nemesisJson;
     bool _limitWasReady;
-    double _clock, _lastRespawnCheck, _lastReveal, _lastPlaces, _lastSave;
+    double _clock, _lastScore, _fightMusicUntil, _lastRespawnCheck, _lastReveal, _lastPlaces, _lastSave;
     readonly Dictionary<Lair, List<Enemy>> _lairs = [];
     readonly List<Person> _townsfolk = [];
 
@@ -60,6 +60,7 @@ public partial class Main : Node3D
             RemotePlay.Current = new RemotePlay(this, port, _args.ContainsKey("tunnel"), _args.GetValueOrDefault("cloudflared", "cloudflared"), _args.ContainsKey("remote-lan"));
             GetTree().Root.CallDeferred(Node.MethodName.AddChild, RemotePlay.Current);
         }
+        if (Sound.Current is null) GetTree().Root.CallDeferred(Node.MethodName.AddChild, new Sound()); // kept across logging out, like remote play
         if (Mobile) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.SensorLandscape); // landscape from the first frame
         if (_args.TryGetValue("races", out var racesShot)) { _ = RaceLineup(racesShot); return; }
         if (_args.TryGetValue("portraits", out var folder)) { _ = Portraits(folder); return; }
@@ -74,6 +75,7 @@ public partial class Main : Node3D
         var start = new StartScreen { DefaultServer = _args.GetValueOrDefault("login-server") };
         start.Play += Begin;
         AddChild(start);
+        Callable.From(() => { Sound.Current?.SetMood("title"); Sound.Current?.SetPlace(""); }).CallDeferred();
         if (LeftToStart && _args.ContainsKey("selftest")) ReportBackAtStart();
         if (_args.TryGetValue("snap", out var snap)) _ = Snap(start, snap);
     }
@@ -589,6 +591,35 @@ public partial class Main : Node3D
         }
     }
 
+    // ---- music and ambience ---------------------------------------------------------------------
+
+    /// <summary>
+    /// The music and the sound of the place, for where the hero is and what's happening: a boss (a named foe, a
+    /// nemesis, a grown dragon, a raid) or a fight, a tavern, the Bards' College, the city, or the open wilds; the
+    /// fire in a tavern, the city's bustle, gulls on the docks, a cave's drip, wind up high or in the snow, the
+    /// wilds by day or (by this device's clock) by night.
+    /// </summary>
+    void Score(Vector3 pos)
+    {
+        if (Sound.Current is not { } sound) return;
+        var boss = Enemies().Any(e => e.FightingCompany && (e.Named || e.NemesisId is not null || e.IsDragon && !e.Young) && e.GlobalPosition.DistanceTo(pos) < 60)
+                   || _raidLairs.Any(l => l.Fighting);
+        if (_player.InFight || boss) _fightMusicUntil = _clock + (boss ? 8 : 5); // let the fight music ring on a moment after
+        var college = Guilds.Of(Calling.Bard);
+        var atCollege = new Vector2((float)college.X - pos.X, (float)college.Z - pos.Z).Length() < 26;
+        var tavern = _area is "The Gallows Perch" or "The Salt Barrel";
+        var town = new Vector2(pos.X, pos.Z).Length() < City.OuterRadius + 15 || _area is "The Docks";
+        sound.SetMood(boss ? "boss" : _clock < _fightMusicUntil ? "battle" : tavern ? "tavern" : atCollege ? "bard" : town ? "town" : "explore");
+        var high = _player.Mount is { Airborne: true } || _world.BiomeAt(pos.X, pos.Z) is Biome.Snowfield or Biome.Tundra or Biome.Crags || pos.Y > 45;
+        var hour = DateTime.Now.Hour;
+        sound.SetPlace(tavern ? "fire"
+            : _area is "The Docks" or "The Harbor" or "The Tong Sea-Caves" && !_area.Contains("Cave") ? "docks"
+            : _area.Contains("Cave") || _area.Contains("Crypt") || _area is "The Warrens" ? "cave"
+            : town ? "city"
+            : high ? "wind"
+            : hour >= 20 || hour < 6 ? "wilds_night" : "wilds_day");
+    }
+
     // ---- every frame --------------------------------------------------------------------------
 
     public override void _Process(double delta)
@@ -603,6 +634,7 @@ public partial class Main : Node3D
         if (_clock - _lastReveal > 0.2) { _lastReveal = _clock; Explore(pos); }
 
         _area = City.AreaAt(pos);
+        if (_clock - _lastScore > 0.5) { _lastScore = _clock; Score(pos); }
         if (_client?.Status == ClientStatus.Connected && _area != _sentArea)
         {
             _sentArea = _area;
@@ -776,6 +808,7 @@ public partial class Main : Node3D
         if (!_explored.Discovered.Contains(quest.TargetId) && _world.Find(quest.TargetId) is not null) _explored.Rumored.Add(quest.TargetId);
         if (quest.Kind is QuestKind.Slay or QuestKind.Fetch) _places.Restock(quest.TargetId);
         _hud.Toast($"New quest: {quest.Title}.");
+        Sound.Ui("quest", -3);
         _hud.ShowJournal(_journal);
         Save();
     }
@@ -786,7 +819,7 @@ public partial class Main : Node3D
         if (u.Reward > 0) _player.Septims += _player.Class.Id == "Thief" ? (int)Math.Round(u.Reward * (1 + _player.Class.Passive.Power * _player.Hero.Power("light_fingers"))) : u.Reward;
         if (u.Stage == QuestStage.Done) GainXp(40 + u.Quest.Reward / 2);
         if (u.Stage == QuestStage.Done && ClassQuests.IsClassQuest(u.Quest.Id, out var discipline, out var step)) ClassTrialDone(discipline, step);
-        if (u.Stage == QuestStage.Done) _hud.Toast($"Quest complete: {u.Quest.Title}.");
+        if (u.Stage == QuestStage.Done) { _hud.Toast($"Quest complete: {u.Quest.Title}."); Sound.Ui("quest"); }
         _hud.ShowJournal(_journal);
         Save();
     }

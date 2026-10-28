@@ -29,6 +29,7 @@ public partial class Main
         if (drop.Items.Count == 0 && drop.Septims == 0) return;
         Take(drop.Items);
         _player.Septims += drop.Septims;
+        Sound.Ui(drop.Septims > 0 ? "coin" : "pickup", -4);
         var what = Loot.Describe(drop.Items) + (drop.Septims > 0 ? $"{(drop.Items.Count > 0 ? ", " : "")}{drop.Septims} septims" : "");
         _hud.Log($"Looted: {what}");
         if (victim.IsDragon) _hud.Toast($"The dragon's hoard and body: {what}.", 9);
@@ -61,6 +62,7 @@ public partial class Main
         _herbs.Picked(plant, _guilds.PlaySeconds);
         _herbPatch.Picked(plant);
         var up = pack.Practise(Job.Herbalism, 5);
+        Sound.Ui("herb");
         _hud.Toast($"Picked {Items.Count(plant.HerbId, n).ToLowerInvariant()}.{(up is { } level ? $" Herbalism rises to {level}!" : "")}", 3);
     }
 
@@ -80,7 +82,7 @@ public partial class Main
             if (pack.WornIn(slot) is { } on) options.Add(($"Take off {on.Name}", () => { pack.Unequip(slot); Redress(); ShowPack(); }));
         foreach (var (item, n) in pack.Contents)
         {
-            if (item.Wearable) options.Add(($"Wear {item.Name} ({item.Text})", () => { pack.Equip(item.Id); Redress(); ShowPack(); }));
+            if (item.Wearable) options.Add(($"Wear {item.Name} ({item.Text})", () => { pack.Equip(item.Id); Sound.Ui("equip"); Redress(); ShowPack(); }));
             else if (item.Usable) options.Add(($"{(item.Kind == ItemKind.Food ? "Eat" : "Drink")} {item.Name} ({n}): {item.Text}", () => { Consume(item); ShowPack(); }));
         }
         if (pack.Count("alchemist_kit") > 0) options.Add(("Brew potions (alchemist's kit)", () => ShowCraft(Job.Herbalism, ShowPack)));
@@ -98,6 +100,7 @@ public partial class Main
     {
         if (item.Use is null || !_player.Pack.Take(item.Id)) return;
         _player.Consume(item.Use);
+        Sound.Ui(item.Kind == ItemKind.Food ? "pickup" : "potion");
         _hud.Toast($"You {(item.Kind == ItemKind.Food ? "eat" : "drink")} the {item.Name.ToLowerInvariant()}.", 3);
     }
 
@@ -128,7 +131,8 @@ public partial class Main
             return (label, (Action)(() =>
             {
                 var before = pack.Level(job);
-                if (!pack.Make(r)) { _hud.Toast(r.Level > level ? $"You need {job.ToString().ToLowerInvariant()} {r.Level} for that." : "You don't have everything for that.", 3); return; }
+                if (!pack.Make(r)) { Sound.Ui("error"); _hud.Toast(r.Level > level ? $"You need {job.ToString().ToLowerInvariant()} {r.Level} for that." : "You don't have everything for that.", 3); return; }
+                Sound.Ui(job == Job.Smithing ? "anvil" : "potion");
                 _hud.Toast($"You make {Items.Count(r.Makes, r.Count).ToLowerInvariant()}.{(pack.Level(job) > before ? $" {job} rises to {pack.Level(job)}!" : "")}", 4);
                 Save();
                 ShowCraft(job, back);
@@ -172,7 +176,8 @@ public partial class Main
             return ($"{name}, {price} septims: {text}", (Action)(() =>
             {
                 var (septims, meat) = (_player.Septims, _player.Meat);
-                if (!Shops.Buy(shop, id, _player.Pack, ref septims, ref meat, _player.Markup)) { _hud.Toast("You can't afford that.", 3); return; }
+                if (!Shops.Buy(shop, id, _player.Pack, ref septims, ref meat, _player.Markup)) { Sound.Ui("error"); _hud.Toast("You can't afford that.", 3); return; }
+                Sound.Ui("coin");
                 (_player.Septims, _player.Meat) = (septims, meat);
                 _hud.Toast($"Bought {name.ToLowerInvariant()}. ({_player.Septims} septims left)", 3);
                 Save();
@@ -213,6 +218,7 @@ public partial class Main
                 foreach (var (item, n) in _player.Pack.Contents.Where(c => c.Item.Kind is ItemKind.Material or ItemKind.Trophy).ToList())
                     for (var i = 0; i < n; i++) Shops.Sell(item.Id, _player.Pack, ref septims);
                 _hud.Toast($"Sold for {septims - _player.Septims} septims.", 4);
+                Sound.Ui("coin");
                 _player.Septims = septims;
                 Save();
                 Sell(person, shop);

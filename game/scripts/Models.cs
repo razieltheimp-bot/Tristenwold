@@ -292,7 +292,7 @@ public partial class Figure : Body
 
     public static readonly Dictionary<string, Look> Looks = new()
     {
-        // Playable classes: three warriors, three rogues, three mages.
+        // Playable classes: three warriors, three rogues, three mages, three bards.
         ["MartialArtist"] = new("Rogue", [], 0.74f, new Color("#f2c27a"), Unarmed: true),
         ["Barbarian"] = new("Barbarian", ["2H_Axe", "Barbarian_Hat"]),
         ["Paladin"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"], 0.75f, new Color("#fff0d0"), 0.06f),
@@ -302,6 +302,9 @@ public partial class Figure : Body
         ["Wizard"] = new("Mage", ["2H_Staff", "Mage_Hat"]),
         ["Warlock"] = new("Mage", ["1H_Wand", "Spellbook_open"], 0.74f, new Color("#b49ad8")),
         ["Sorcerer"] = new("Mage", [], 0.74f, new Color("#f2a888")),
+        ["Poet"] = new("Mage", ["Spellbook_open"], 0.74f, new Color("#f4dca0"), LeftHand: "@laurel"),
+        ["Scribe"] = new("Mage", ["Spellbook"], 0.74f, new Color("#c8c0e0"), RightHand: "@quill"),
+        ["Musician"] = new("Rogue", [], 0.74f, new Color("#f0c890"), LeftHand: "@lute", Unarmed: true),
         // Characters made before there were nine classes.
         ["Knight"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"]),
         ["Mage"] = new("Mage", ["2H_Staff", "Mage_Hat"]),
@@ -316,6 +319,8 @@ public partial class Figure : Body
         ["squire"] = new("Knight", ["1H_Sword", "Round_Shield"], 0.62f),
         ["apprentice"] = new("Mage", ["1H_Wand"], 0.6f),
         ["protege"] = new("Rogue", ["Knife"], 0.6f),
+        ["understudy"] = new("Rogue", [], 0.6f, new Color("#f0d8a0"), LeftHand: "@lute", Unarmed: true),
+        ["laureate"] = new("Mage", ["Spellbook_open"], 0.76f, new Color("#ffe4a8"), 0.05f, LeftHand: "@laurel", Unarmed: true),
         ["familiar"] = new("Skeleton_Minion", [], 0.62f, new Color("#b080ff"), 0.7f),
         // The Ashen Crypt.
         ["cinder_warden"] = new("Skeleton_Warrior", [], 1.3f, new Color("#4a3a30")),
@@ -635,10 +640,70 @@ public partial class Figure : Body
 
     static void Hold(Skeleton3D skeleton, string bone, string? item)
     {
+        if (item is not null && item.StartsWith('@')) { Craft(skeleton, bone, item[1..]); return; }
         if (item is null || skeleton.FindBone(bone) < 0 || Models.Scene($"weapons/{item}.gltf")?.Instantiate() is not Node3D weapon) return;
         var slot = new BoneAttachment3D { BoneName = bone };
         skeleton.AddChild(slot);
         slot.AddChild(weapon);
+    }
+
+    /// <summary>
+    /// What KayKit doesn't make, built from simple shapes: a musician's lute (held by the neck), a scribe's quill, and a
+    /// poet's laurel (worn round the head, whatever <paramref name="bone"/> says). Sizes are in the hand slot's units,
+    /// where a KayKit blade is about one and a half long.
+    /// </summary>
+    static void Craft(Skeleton3D skeleton, string bone, string item)
+    {
+        var thing = new Node3D { Name = $"Craft_{item}" };
+        StandardMaterial3D Paint(string hex, float rough = 0.65f) => new() { AlbedoColor = new Color(hex), Roughness = rough, RimEnabled = true, Rim = 0.25f };
+        void Part(Mesh mesh, Material paint, Vector3 at, Vector3 turn = default, Vector3? scale = null) =>
+            thing.AddChild(new MeshInstance3D { Mesh = mesh, MaterialOverride = paint, Position = at, RotationDegrees = turn, Scale = scale ?? Vector3.One });
+        switch (item)
+        {
+            case "lute":
+            {
+                var wood = Paint("#b0703a");
+                var dark = Paint("#4a2c16");
+                Part(new SphereMesh { Radius = 0.3f, Height = 0.6f }, wood, new Vector3(0, -0.5f, 0), scale: new Vector3(1, 1.2f, 0.55f)); // the bowl
+                Part(new CylinderMesh { TopRadius = 0.09f, BottomRadius = 0.09f, Height = 0.02f }, dark, new Vector3(0, -0.42f, 0.16f), new Vector3(90, 0, 0)); // the rose
+                Part(new BoxMesh { Size = new Vector3(0.09f, 0.62f, 0.06f) }, dark, new Vector3(0, 0, 0.06f)); // the neck
+                Part(new BoxMesh { Size = new Vector3(0.11f, 0.18f, 0.05f) }, wood, new Vector3(0, 0.36f, 0.02f), new Vector3(-35, 0, 0)); // the pegbox
+                for (var i = -1; i <= 1; i++) // strings, catching the light
+                    Part(new BoxMesh { Size = new Vector3(0.006f, 0.95f, 0.006f) }, Paint("#f4ecd8", 0.3f), new Vector3(i * 0.025f, -0.2f, 0.1f));
+                break;
+            }
+            case "quill":
+                Part(new CylinderMesh { TopRadius = 0.012f, BottomRadius = 0.006f, Height = 0.5f }, Paint("#e8e0d0"), new Vector3(0, 0.15f, 0));
+                Part(new SphereMesh { Radius = 0.08f, Height = 0.4f }, Paint("#f6f2ea", 0.9f), new Vector3(0.03f, 0.28f, 0), new Vector3(0, 0, -10), new Vector3(0.6f, 1, 0.12f)); // the vane
+                Part(new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.001f, Height = 0.06f }, Paint("#1a1a2a", 0.3f), new Vector3(0, -0.13f, 0)); // the inked nib
+                break;
+            case "laurel":
+            {
+                // Round the head, from the head's own size, like the beards and horns.
+                bone = "head";
+                var head = skeleton.GetChildren().OfType<MeshInstance3D>().Where(m => m.Skin is not null && Parts["head"].Any(end => m.Name.ToString().EndsWith(end)) && !m.Name.ToString().EndsWith("_Eyes"))
+                    .Select(m => m.Transform * m.GetAabb()).Aggregate((Aabb?)null, (x, b) => x is { } y ? y.Merge(b) : b);
+                var i = skeleton.FindBone(bone);
+                if (head is not { } box || i < 0) return;
+                thing.Transform = skeleton.GetBoneGlobalRest(i).AffineInverse();
+                var (c, sz) = (box.GetCenter(), box.Size);
+                var leaf = Paint("#6f9a34", 0.8f);
+                var ring = c + new Vector3(0, sz.Y * 0.12f, 0);
+                var r = sz.X * 0.52f;
+                for (var k = 0; k < 18; k++)
+                {
+                    var t = k / 18f * Mathf.Tau;
+                    var at = ring + new Vector3(Mathf.Cos(t) * r, 0, Mathf.Sin(t) * r * (sz.Z / sz.X));
+                    Part(new SphereMesh { Radius = sz.X * 0.07f, Height = sz.X * 0.14f }, leaf, at, new Vector3(0, -Mathf.RadToDeg(t), 35), new Vector3(1.6f, 0.5f, 0.7f));
+                }
+                break;
+            }
+            default: return;
+        }
+        if (skeleton.FindBone(bone) < 0) return;
+        var slot = new BoneAttachment3D { BoneName = bone };
+        skeleton.AddChild(slot);
+        slot.AddChild(thing);
     }
 
     public override void _Ready() => Play(_look.Unarmed ? "Unarmed_Idle" : "Idle");

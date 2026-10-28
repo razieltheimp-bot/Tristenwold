@@ -201,6 +201,7 @@ public partial class Main
         {
             _player.Fit();
             _player.Stats.Heal(_player.Stats.MaxHealth);
+            Sound.Ui("levelup");
             _hud.Toast($"Level {hero.Level}! You have {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend (K).", 8);
         }
         var beastmaster = _player.Class.Id == "Ranger" ? 1 + _player.Class.Passive.Power * _player.Hero.Power("beastmaster") : 1;
@@ -291,11 +292,12 @@ public partial class Main
         return bond;
     }
 
-    /// <summary>What a youth would be to this hero: a warrior's squire, a mage's apprentice, a rogue's protege.</summary>
+    /// <summary>What a youth would be to this hero: a warrior's squire, a mage's apprentice, a rogue's protege, a bard's understudy.</summary>
     (BondRole Role, string Kind, string Word) Follower => _player.Class.Calling switch
     {
         Calling.Warrior => (BondRole.Squire, "squire", "squire"),
         Calling.Mage => (BondRole.Apprentice, "apprentice", "apprentice"),
+        Calling.Bard => (BondRole.Apprentice, "understudy", "understudy"),
         _ => (BondRole.Apprentice, "protege", "apprentice"),
     };
 
@@ -357,6 +359,7 @@ public partial class Main
             {
                 Calling.Warrior => "Good. Now hit me. Harder than that.",
                 Calling.Rogue => "Welcome to the Knives. You never met me.",
+                Calling.Bard => "Welcome to the College. Now: from the top, and this time, louder.",
                 _ => "Then read. And when you've read everything, read it again.",
             });
         }))).ToList();

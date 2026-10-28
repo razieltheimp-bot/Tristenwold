@@ -67,6 +67,7 @@ public static class Bestiary
         new("squire", "Squire", 120, 11, 5.0, 80, 1.9, 1.2, DamageKind.Physical, "#b0b8c8", 1.6),
         new("apprentice", "Apprentice", 90, 13, 5.0, 30, 12, 1.6, DamageKind.Fire, "#7a5aa8", 1.55),
         new("protege", "Protege", 100, 12, 5.6, 40, 1.8, 0.9, DamageKind.Physical, "#5a4a3a", 1.55),
+        new("understudy", "Understudy", 95, 12, 5.2, 35, 10, 1.4, DamageKind.Physical, "#c8a040", 1.55),
         new("familiar", "Familiar", 110, 14, 5.5, 40, 1.8, 1.1, DamageKind.Poison, "#8a5ad0", 1.4),
         // The Ashen Crypt: the burned warden and the thralls he raises (their numbers are set by the raid).
         new("cinder_warden", "Cinder Warden", 600, 18, 4.2, 120, 2.6, 1.6, DamageKind.Fire, "#2e241c", 2.6),

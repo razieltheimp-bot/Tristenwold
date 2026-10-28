@@ -161,9 +161,31 @@ and an Apple developer account).
 | T | rest (the world moves on, companions mend, and a dragon egg warms) |
 | F10 | the shared world: contract board, companies, nemeses, chronicle and chat |
 
+### Sound and music
+
+The game has sound (`game/scripts/Sound.cs`). The music follows what's happening: a grand theme on the start
+screen, wandering tunes in the wilds, market tunes in the city, an inn tune in the Gallows Perch and the Salt
+Barrel, the Bard's Tale at the Bards' College, battle music when something comes for you (it rings on a few
+seconds after), and a boss theme for named foes, nemeses, grown dragons and raids. Tunes cross-fade into each other.
+Under it, the sound of the place: birds and breeze in the wilds by day, crickets, frogs and an owl at night (by
+your device's clock), the city's murmur, hoofbeats and a distant forge, waves and gulls on the docks, wind up high
+and on dragonback, drips in caves, a crackling fire in the taverns.
+
+Effects come from where they happen, louder near and on the side they're on: footsteps on stone, boards, grass
+or snow, a jump and a landing; blades whooshing and landing (harder for a critical), punches, crossbow bolts
+loosing and striking; fire whooshing and booming, frost freezing and shattering, lightning crackling (thunder
+for the big ones), venom bubbling, holy light chiming, a heal, the rising roar of a limit break; growls big and
+small, howls, shrieks, dragons roaring, creatures dying, and the hero grunting when hurt. Bards strum, pluck,
+drum, sound a horn, chant, turn pages and scratch with a quill. Menus click; coins clink; herbs rustle; the
+anvil rings; potions pour; a level up and a quest have their own fanfares.
+
+Volumes (all sound, music, ambience, effects) are on the login page and in the game menu (Esc, then "Sound and
+music"), kept on the device. Phone remote play sends the picture only, so on an iPhone you hear nothing yet; the
+PC running the game plays the sound.
+
 ### Classes
 
-Nine classes, three to each calling, each fighting its own way (`src/Tristinwold.Gameplay/Classes.cs`). Pick
+Twelve classes, three to each of four callings (warriors, rogues, mages and bards), each fighting its own way (`src/Tristinwold.Gameplay/Classes.cs`). Pick
 one when you make a character; learn another later from its teacher at the guilds outside Tristinwold.
 
 | Class | Left | Right | Q | R (limit) | Always |
@@ -177,6 +199,9 @@ one when you make a character; learn another later from its teacher at the guild
 | Wizard | Elemental Bolt | Elemental Blast | Attune: fire, frost, shock | Meteor | Arcane Mastery: stronger spells |
 | Warlock or Witch | Eldritch Blast | Drain Life | Summon Familiar | Soul Harvest | Dark Pact: kills restore you |
 | Sorcerer | Arcane Missiles | Chain Lightning | Attune | Dragonfire | Wild Surge: spells sometimes go off twice |
+| Poet | Barbed Verse: golden words that cut, 22 m | Rousing Ode: the company healed, quickened, fiercer | Mocking Couplet: foes nearby forget you | Epic of Ages | The Muse: stronger spells; kills give back magicka and stamina |
+| Scribe | Inkbolt: crackling ink, 24 m | Glyph of Warding: a rune circle that bursts under a foe | Scroll of Protection: Protect, Shell, Regen | Words of Unmaking | Marginalia: each blow on the same foe hits harder |
+| Musician | Discord: a jarring chord, every fourth twice as hard | Thunderous Chord: a wave of sound that throws foes back | Battle Hymn: the company quickened and healing | Crescendo | Perfect Pitch: magicka and stamina come back quickly |
 
 Kills and jobs bring experience. Each level adds health, magicka and stamina and a skill point; spend points (K)
 to rank a move up to 5, each rank 15% stronger. Joining another class gives the points back.
@@ -199,7 +224,14 @@ you, hard; Divine Judgement, sunfire on every foe around you and every companion
 a storm of bolts on your target and everything near it; Grand Heist, a strike on every foe around you and
 their purses emptied; Death Mark, one foe, one blow of terrible force; Meteor, a falling star on your target
 and all around it; Soul Harvest, every foe around you drained at once; Dragonfire, fire poured over
-everything in front of you.
+everything in front of you; Epic of Ages, golden words searing every foe around you and every companion healed
+whole; Words of Unmaking, a great rune circle under you that strikes every foe in it and leaves them lost;
+Crescendo, a song in three swelling beats, every foe around you struck by each.
+
+**Bards** carry what KayKit doesn't make, built from simple shapes: the Poet wears a laurel wreath and reads
+from an open book, the Scribe a quill and a closed one, the Musician a lute. Their songs are notes of light
+drifting up and rings of sound pulsing out along the ground; a Thunderous Chord is rings of sound racing
+forward; a Scribe's glyph is a turning circle of runes written in light that bursts.
 
 **Peoples.** A hero is born to one of seven peoples, each with a gift and a cost (shown on the character page):
 humans learn 15% faster and pay 10% less in shops; orcs (green, tusked) have more health and hit harder with
@@ -223,7 +255,7 @@ a Look button. Gear worn over it (a helm, armour) still shows.
 
 ### The guilds
 
-Three guilds keep yards just outside Tristinwold's walls (`src/Tristinwold.World/Guilds.cs`), each with a
+Four guilds keep yards just outside Tristinwold's walls (`src/Tristinwold.World/Guilds.cs`), each with a
 leader, a teacher for each of its three classes, members with their own stories, and a rival:
 
 | Guild | Where | Leader | Teachers | Members | Rival |
@@ -231,24 +263,27 @@ leader, a teacher for each of its three classes, members with their own stories,
 | The Iron Circle (warriors) | a yard outside the west gate | Marshal Brannoc Steelhand | Master Yun Tsavo (Martial Artist), Hrothga Ironmane (Barbarian), Ser Edwyn Halloran (Paladin) | Sergeant Tamsin Brack, Odo Fennick, Greta Vosk | Corin Vale |
 | The Velvet Knives (rogues) | the old tannery south of the walls | Vesper Quill | Wren Ashcombe (Ranger), Pip Marlowe (Thief), Silas Morrow (Assassin) | Nell Cutwater, Jory Ash, Mags Dunmore | Sable Rue |
 | The Magi (mages) | the Archive Garden north-east of the walls | Archmage Selwyn Tarrow | Magister Orla Penhallow (Wizard), Morwen Hesk (Warlock or Witch), Daro Vey (Sorcerer) | Brother Anselm, Liesl Varro, Teodric Gale | Isadora Crane |
+| The Bards' College (bards) | the Lyre Hall on a green south-east of the walls | Laureate Odalys Wren | Cassian Vell (Poet), Mother Hollis Quell (Scribe), Bram Tolliver (Musician) | Tobin Marrow, Elowen Sark, Hal Brandish | Fennick Lark |
 
 - **Your guild** is your class's: you start as an Initiate and rise to Member, Adept, Veteran and Master by what
   you do for it (shown beside your level). The leader tells you where you stand.
 - **Teachers.** Your class's teacher gives a lesson once a level (a skill point, for a fee) and sets your
   class's trials. Any other teacher will teach you their class instead.
-- **Class trials.** Each of the nine classes has its own three trials (`src/Tristinwold.World/ClassQuests.cs`): clear
+- **Class trials.** Each of the twelve classes has its own three trials (`src/Tristinwold.World/ClassQuests.cs`): clear
   a lair the way your class would, bring back the relic of your art from where it was lost (the Scroll of the Open
   Hand, the Bloodhorn of the Old Clans, the Reliquary of Saint Aubrel, the Greywood Bow, the Lockbreaker's Picks,
-  the Black Mercy, the Tome of the Three Fires, the Hollow Candle, the Dragonblood Pearl), and beat your guild's
-  rival in a duel. Pass all three for the class's title (Oathsworn of the Tide, Prince of Pockets, Dragonblood...)
+  the Black Mercy, the Tome of the Three Fires, the Hollow Candle, the Dragonblood Pearl, the Laurel of Maren Ashe,
+  the Unwritten Codex, the Lute of the Long Night), and beat your guild's
+  rival in a duel. Pass all three for the class's title (Oathsworn of the Tide, Prince of Pockets, Dragonblood, Laureate of Tristinwold...)
   and two skill points.
-- **Rivals.** Corin, Sable and Isadora want everything you want. Spar with them whenever you like: duels are to
+- **Rivals.** Corin, Sable, Isadora and Fennick want everything you want. Spar with them whenever you like: duels are to
   the yield, and nobody dies. They fight as their class, as strong as you are, and stronger the hotter the rivalry
   runs; what they say to you depends on how it's been going. Every so often you hear what they've been up to.
 - **Drama.** As time passes and you rise, trouble comes to you: someone in your guild wants a word. A snapped
   sword and an accused recruit, a Tong bribe, a fight for First Blade; a skimmed take, a war with the Lantern
   Boys, a betrayal, the Velvet Crown; a missing book about the Rift, a vial of corrupted dragon's blood, a wager
-  for a council seat, and what Sister Ilse keeps on a shelf that isn't on any list. Each choice changes how the
+  for a council seat, and what Sister Ilse keeps on a shelf that isn't on any list; a stolen song, a Tong
+  pamphlet full of lies, the Midwinter Contest, and the last verse of the Laureate's history of the city. Each choice changes how the
   guild sees you, how your rival burns, and what people say about you after; some are settled with a duel.
 
 ### Lairs and raids: mini bosses in the wilds
@@ -354,7 +389,7 @@ Kipines and both kinds of ape sometimes have young with them: find one alone and
   them from the party menu (P). One that starves weakens and collapses.
 - **Squires and apprentices.** Every town has young people (11 to 16) who dream of adventure. Once you've made a
   name (level 3), ask one to follow you, with 25 septims to their family: a warrior's squire, a mage's
-  apprentice, a rogue's protege. They grow up at your side and learn Shield Bash and Battle Cry, or Firebolt,
+  apprentice, a rogue's protege, a bard's understudy (with a lute of their own). They grow up at your side and learn Shield Bash and Battle Cry, or Firebolt,
   Mend and Ward.
 - **Wren's Menagerie.** At the end of the market row by the Gallows Perch, Wren Halloway sells young beasts
   she raised by hand, tame already: a fox kit or fawn (25 septims) up to a troll whelp (1155), with skeever
@@ -463,7 +498,7 @@ character's save lives on the server; logging out, changing character and quitti
 say it has the save, and ask before going on if it doesn't answer. During remote play the menu has no Quit
 (the phone would close the game on the PC), and logging out keeps the phone's link.
 
-`--lineup ./shots` photographs the nine classes; add `--creatures`, `--young` (younglings and companions),
+`--lineup ./shots` photographs the twelve classes; add `--creatures`, `--young` (younglings and companions),
 `--dragons` (all ten colours), `--dragons --corrupt`, `--dragons --riders` or `--dragons --frost`. `--shots ./shots --skirmish`
 photographs a dragon knight and a corrupted dragon fighting over the meadows by a village.
 
@@ -712,6 +747,11 @@ of clay tile, slate, shingle or thatch. They use the photographs above, or shade
 the photographs are missing. Taverns, longhalls, barns, smithies,
 market halls, towers, churches, castle keeps, windmills, wells, city walls, gatehouses, piers, lanterns, a
 lighthouse and ruins come in seeded variants. `godot --path game -- --showroom ./shots` photographs every kind.
+
+Sound: every piece of music, ambience and sound effect is CC0, from OpenGameArt, in `game/assets/audio`; its
+`CREDITS.md` names each track and sound, its author and its page. A few were made for this game and are CC0 too:
+the city and docks ambience are mixed from several recordings, and some bard instruments (a plucked lute phrase
+and strum, a harp glissando, two drums, a horn call and a sung chord) are synthesised.
 
 Other 3D models: the KayKit packs by Kay Lousberg (www.kaylousberg.com): Adventurers, Skeletons, Medieval Hexagon,
 Dungeon Remastered and Halloween Bits. They are CC0 (free for any use) and live in `game/assets/kaykit`.

@@ -2,13 +2,13 @@ using Tristinwold.Gameplay;
 
 namespace Tristinwold.Gameplay.Tests;
 
-/// <summary>The nine classes, levels and skill ranks, companions growing up, and taming the young.</summary>
+/// <summary>The twelve classes, levels and skill ranks, companions growing up, and taming the young.</summary>
 public class ProgressionTests
 {
     [Fact]
-    public void Nine_classes_three_to_a_calling_each_with_its_own_moves()
+    public void Twelve_classes_three_to_a_calling_each_with_its_own_moves()
     {
-        Assert.Equal(9, Classes.All.Count);
+        Assert.Equal(12, Classes.All.Count);
         foreach (var calling in Enum.GetValues<Calling>()) Assert.Equal(3, Classes.Of(calling).Count());
         // No two classes share a move (bar the mages' element switch).
         var moves = Classes.All.SelectMany(d => d.Skills).Where(a => a.Id != "attune").Select(a => a.Id).ToList();
@@ -18,6 +18,9 @@ public class ProgressionTests
         Assert.Equal("Paladin", Classes.For("Knight").Id);
         Assert.Equal("Assassin", Classes.For("Rogue_Hooded").Id);
         Assert.Equal("Barbarian", Classes.Get("barbarian").Id);
+        // The bards: a poet, a scribe and a musician, taught at the Bards' College.
+        Assert.Equal(["Poet", "Scribe", "Musician"], Classes.Of(Calling.Bard).Select(d => d.Id));
+        Assert.Equal("the Bards' College", Classes.GuildOf(Calling.Bard));
     }
 
     [Fact]

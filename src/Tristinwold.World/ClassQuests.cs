@@ -33,6 +33,12 @@ public static class ClassQuests
             "The Hollow Candle burns with a patron's attention. Light it and something old looks your way."),
         ["Sorcerer"] = ("and let the blood in you run wild", "the Dragonblood Pearl", "Dragonblood",
             "The pearl formed in a dragon's heart. Hold it and your own blood remembers what it was."),
+        ["Poet"] = ("and compose a verse for every one that falls", "the Laurel of Maren Ashe", "Laureate of Tristinwold",
+            "Maren Ashe was the first Laureate. Her laurel was buried with her, and her barrow was robbed the same winter."),
+        ["Scribe"] = ("and write down how each of them fell", "the Unwritten Codex", "Keeper of the Codex",
+            "The Codex has every word of power in it but one, left blank. A thief took it, hoping to fill the page."),
+        ["Musician"] = ("and keep the beat the whole way through", "the Lute of the Long Night", "Master of the Long Night",
+            "The lute was played through the longest night the city ever had, and kept the dark out. Then its player went wandering."),
     };
 
     public static string MasteryTitle(string discipline) => Arts[discipline].Mastery;

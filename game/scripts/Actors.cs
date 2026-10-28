@@ -376,7 +376,29 @@ public partial class Enemy : Fighter
         if (State is EnemyState.Dead or EnemyState.Fleeing || Friendly) return;
         if (Kind.Timid || Young) { _target = by; State = EnemyState.Fleeing; return; } // quarry and the young run
         _target = by;
+        if (State != EnemyState.Fighting) Cry();
         State = EnemyState.Fighting;
+    }
+
+    double _criedAt = -10;
+
+    /// <summary>
+    /// The noise a creature makes coming for you, or falling: a dragon roars, a wolf howls, a spriggan or a hawk
+    /// shrieks, the rest growl, big or small. People and the dead (figures) don't.
+    /// </summary>
+    void Cry(bool dying = false)
+    {
+        if (Figure is Figure || Friendly && !dying) return;
+        var now = Time.GetTicksMsec() / 1000.0;
+        if (!dying && now - _criedAt < 6) return;
+        _criedAt = now;
+        var name = IsDragon ? "creature/roar_dragon"
+            : dying ? "creature/die"
+            : Kind.Id.Contains("wolf") ? "creature/howl"
+            : Kind.Id is "spriggan" or "hawk" ? "creature/shriek"
+            : Kind.Height > 1.4 ? "creature/growl_big" : "creature/growl_small";
+        var pitch = Young ? 1.5f : IsDragon ? (float)Math.Clamp(1.2 - Bulk * 0.12, 0.7, 1.1) * (dying ? 0.85f : 1) : 1;
+        Sound.At(name, GlobalPosition + Vector3.Up, IsDragon ? 2 : -2, pitch, IsDragon ? 90 : 35);
     }
 
     /// <summary>A companion draws this foe off its hero and onto itself.</summary>
@@ -507,7 +529,7 @@ public partial class Enemy : Fighter
             // In a frenzy it goes for whatever's nearest, people included.
             if (Frenzy > 0 && player is { Downed: false } && player.GlobalPosition.DistanceTo(GlobalPosition) is var pd and < 35
                 && (_rival is null || pd < _rival.GlobalPosition.DistanceTo(GlobalPosition))) { _rival = null; Provoke(player); }
-            if (_rival is not null) State = EnemyState.Fighting;
+            if (_rival is not null && State != EnemyState.Fighting) { Cry(); State = EnemyState.Fighting; }
             else if (State == EnemyState.Fighting) State = EnemyState.Idle;
         }
 
@@ -774,6 +796,7 @@ public partial class Enemy : Fighter
 
     void Die(Enemy? killer = null, bool byCompany = false)
     {
+        if (State != EnemyState.Dead) Cry(dying: true);
         State = EnemyState.Dead;
         _altitude = 0;
         Airborne = false;

@@ -41,6 +41,7 @@ public partial class Main
             {
                 Calling.Warrior => new[] { ("medieval/props/weaponrack.gltf", -8, 4), ("medieval/props/target.gltf", 6, 9), ("medieval/props/target.gltf", 9, 5), ("medieval/props/flag_red.gltf", 0, -9), ("medieval/props/weaponrack.gltf", -4, -8) },
                 Calling.Rogue => [("medieval/props/crate_A_big.gltf", 8, -4), ("medieval/props/crate_long_B.gltf", 6, 8), ("medieval/props/barrel.gltf", -9, 3), ("medieval/props/sack.gltf", -7, -6), ("medieval/props/tent.gltf", 12, 2)],
+                Calling.Bard => [("medieval/props/tent.gltf", 0, -10), ("medieval/props/flag_yellow.gltf", -6, -9), ("medieval/props/barrel.gltf", 9, 3), ("medieval/props/crate_open.gltf", -9, 4), ("medieval/props/bucket_water.gltf", 7, -6)],
                 _ => [("medieval/props/flag_blue.gltf", 0, -10), ("medieval/props/bucket_water.gltf", 7, 6), ("medieval/props/resource_stone.gltf", -9, 5), ("medieval/props/crate_open.gltf", 8, -7)],
             };
             foreach (var (path, dx, dz) in props)
@@ -167,6 +168,14 @@ public partial class Main
                 if (f.Contains("parley")) lines.Add("The Gutter Prince sends his regards. Nobody can quite believe it.");
                 if (f.Contains("burned_den")) lines.Add("The Lantern Boys cross the street when they see a Knife now.");
                 if (f.Contains("found_informant")) lines.Add("Coyle won't be selling anything to anyone again.");
+                break;
+            case Calling.Bard:
+                if (f.Contains("exposed_fennick")) lines.Add("They still sing Tobin's song in the Salt Barrel, and boo when Fennick walks in.");
+                if (f.Contains("pips_song")) lines.Add("Tobin's drumming again. On everything. Thank you, I suppose.");
+                if (f.Contains("let_song_go")) lines.Add("Tobin doesn't drum much any more. Fennick's song is still everywhere.");
+                if (f.Contains("wrote_libel")) lines.Add("Nice new roof. Hollis won't sit under it.");
+                if (f.Contains("acrostic")) lines.Add("Somebody's pinned your pamphlet up in the Watch House, with the first letters circled.");
+                if (f.Contains("midwinter")) lines.Add("You sang at the Crown! Hal cried it through every street for a week.");
                 break;
             default:
                 if (f.Contains("liesl_book")) lines.Add("Liesl says you're the only one who doesn't look at her like she's a crack in a wall.");
