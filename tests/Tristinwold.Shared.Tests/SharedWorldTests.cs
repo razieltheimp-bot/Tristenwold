@@ -230,6 +230,19 @@ public class SharedWorldTests
         Board board;
         do board = await Next<Board>(joe); while (board.Contracts.Single(c => c.Id == "chapel").Status != ContractStatus.Claimed);
         Assert.Equal("Mira", board.Contracts.Single(c => c.Id == "chapel").ClaimedBy);
+
+        // One city for both: cargo Joe lands is in Mira's market on the server's next tick.
+        double fish;
+        lock (gate) fish = core.City.Stock[Gameplay.Good.Fish];
+        joe.Send(new CityTrade(Gameplay.CityAction.Cargo(Gameplay.Good.Fish, 10)));
+        CitySnapshot? city = null;
+        while (city is null || city.City.Stock[Gameplay.Good.Fish] < fish + 9.9)
+        {
+            await Task.Delay(20, cts.Token);
+            lock (gate) Deliver(core.Tick());
+            while (mira.TryReceive(out var m)) if (m is CitySnapshot c) city = c;
+        }
+        Assert.Equal(fish + 10, city.City.Stock[Gameplay.Good.Fish], 3);
         cts.Cancel();
         listener.Stop();
     }

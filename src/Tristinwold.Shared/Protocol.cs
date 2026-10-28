@@ -23,6 +23,7 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(LeaveDrop), "leave_drop")]
 [JsonDerivedType(typeof(Say), "say")]
 [JsonDerivedType(typeof(EncounterStarted), "encounter_started")]
+[JsonDerivedType(typeof(CityTrade), "city_trade")]
 // server -> client
 [JsonDerivedType(typeof(Welcome), "welcome")]
 [JsonDerivedType(typeof(Rejected), "rejected")]
@@ -36,6 +37,7 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(KeystoneRevealed), "keystone_revealed")]
 [JsonDerivedType(typeof(NemesisAppears), "nemesis_appears")]
 [JsonDerivedType(typeof(NemesisHunts), "nemesis_hunts")]
+[JsonDerivedType(typeof(CitySnapshot), "city_snapshot")]
 public abstract record Message;
 
 // ---- client -> server ----------------------------------------------------------------------
@@ -63,6 +65,9 @@ public sealed record Say(string Text) : Message;
 
 /// <summary>A fight just started in this company's game. The server says which enemies are nemeses.</summary>
 public sealed record EncounterStarted(string Area, IReadOnlyList<FormationSlot> Enemies) : Message;
+
+/// <summary>Something this company did to Tristinwold's economy (sold, bought, delivered, gave): the server does it to the shared city.</summary>
+public sealed record CityTrade(Gameplay.CityAction Action) : Message;
 
 // ---- server -> client ----------------------------------------------------------------------
 
@@ -94,6 +99,13 @@ public sealed record NemesisAppears(IReadOnlyList<NemesisSpawn> Spawns) : Messag
 /// <summary>Vann sent a nemesis after this company: spawn it nearby and let it find them.</summary>
 public sealed record NemesisHunts(Guid NemesisId, string Kind, string Species, string BaseForm, BattleModifiers Modifiers, string? Taunt) : Message;
 
+/// <summary>
+/// Tristinwold's economy as everyone on the server shares it: stock, prices, the day, events, contracts, the works.
+/// Clients replace their copy with it, keeping their own name at the Exchange (renown is each hero's own).
+/// <paramref name="Seconds"/> is the city's own clock, so a game can tell how long until the next day.
+/// </summary>
+public sealed record CitySnapshot(Gameplay.CityEconomy City, double Seconds) : Message;
+
 // ---- views (what players may see) ------------------------------------------------------------
 
 public enum ContractStatus { Open, Claimed, Done }
@@ -107,7 +119,7 @@ public sealed record GroupView(string Player, string Area, IReadOnlyList<string>
 
 public static class Wire
 {
-    public const int ProtocolVersion = 1;
+    public const int ProtocolVersion = 2; // 2: the shared city
     public const int DefaultPort = 7777;
     public const int MaxLineBytes = 4 * 1024 * 1024; // a big nemesis world is still well under this
 

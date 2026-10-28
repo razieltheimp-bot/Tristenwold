@@ -2,6 +2,7 @@ using Godot;
 using Tristinwold.Gameplay;
 using Tristinwold.Nemesis;
 using Tristinwold.World;
+using Tristinwold.Shared;
 
 namespace Tristinwold.Game;
 
@@ -26,6 +27,26 @@ public partial class Main
     bool _working;
 
     public CityEconomy Economy => _city;
+
+    /// <summary>On a server, the city is everybody's: the server's copy, as it last sent it.</summary>
+    bool _sharedCity;
+    public bool SharedCity => _sharedCity;
+
+    /// <summary>The server's city, in place of ours: all but our own name at the Exchange, and the day's timing kept to our clock.</summary>
+    void TakeCity(CitySnapshot s)
+    {
+        var renown = _city.Renown;
+        _city = s.City;
+        _city.Renown = renown;
+        _city.NextDayAt = _guilds.PlaySeconds + Math.Max(0, s.City.NextDayAt - s.Seconds);
+        _sharedCity = true;
+    }
+
+    /// <summary>What we just did to our copy of the city, done to the server's too (on a server).</summary>
+    void Share(CityAction a)
+    {
+        if (_sharedCity && _client?.Status == ClientStatus.Connected) _client.Send(new CityTrade(a));
+    }
     public Workings WorkingsNode => _workings;
 
     public static readonly Vector3 QuarryAt = new(-112, 0, 100), WoodlotAt = new(-92, 0, -118);
@@ -138,6 +159,8 @@ public partial class Main
     {
         if ((_cityTick -= delta) > 0) return;
         _cityTick = 1;
+        if (_sharedCity && _client?.Status != ClientStatus.Connected) _sharedCity = false; // off the server: the city goes on here
+        if (_sharedCity) return; // the server runs the days, and says what happened
         foreach (var news in _city.Advance(_guilds.PlaySeconds))
         {
             _hud.Log($"Tristinwold: {news}");
@@ -411,6 +434,7 @@ public partial class Main
         // Whatever was in it is in the city's stores now.
         var cargo = _lootRng.Pick(new[] { Good.Fish, Good.Timber, Good.Iron, Good.Leather, Good.Ale, Good.Bread, Good.Herbs });
         _city.Stock[cargo] = _city.Stock.GetValueOrDefault(cargo) + 2;
+        Share(CityAction.Cargo(cargo, 2));
         _city.Renown += 1;
         s = (s.Left - 1, s.Done + 1);
         Did("crates");
@@ -520,6 +544,7 @@ public partial class Main
         _player.Crowns -= cost;
         _player.Pack.Add(id);
         _city.Bought(id, cost);
+        Share(CityAction.Bought(id, cost));
         Sound.Ui("coin");
         Say(person, "There you go.");
     }
@@ -538,6 +563,7 @@ public partial class Main
                     if (ids.Count == 0) { Sound.Ui("error"); Say(factor, $"You've no {CityEconomy.Info(c.Good).Name} on you."); return; }
                     var finishing = ids.Count >= c.Left;
                     var paid = _city.Deliver(c, ids);
+                    Share(CityAction.Deliver(c.Id, ids));
                     foreach (var id in ids) _player.Pack.Take(id);
                     _player.Crowns += paid;
                     Sound.Ui("coin");
@@ -573,6 +599,7 @@ public partial class Main
             {
                 var ids = have.OrderBy(x => x.Item.Value).SelectMany(x => Enumerable.Repeat(x.Item.Id, x.N)).Take(n).ToList();
                 var taken = _city.Donate(ids, out var done);
+                Share(CityAction.Donate(ids.Take(taken).ToList()));
                 foreach (var id in ids.Take(taken)) _player.Pack.Take(id);
                 if (taken > 0) Did("donations");
                 Sound.Ui("pickup");
@@ -585,6 +612,7 @@ public partial class Main
             options.Add(($"Give {Math.Min(gift, coin)} crowns", () =>
             {
                 var taken = _city.DonateCrowns(Math.Min(gift, coin), out var done);
+                Share(CityAction.DonateCrowns(taken));
                 _player.Crowns -= taken;
                 if (taken > 0) Did("donations");
                 Sound.Ui("coin");
@@ -603,6 +631,7 @@ public partial class Main
     public void SetDownForTest() => SetCrateDown();
     public void CastForTest((Vector3 At, Water Kind) w) => Cast(w.At, w.Kind);
     public void StrikeForTest() => Strike();
+    public void CityForTest(CityAction a) { _city.Apply(a); Share(a); }
     public void WorkForTest(WorkSpot spot) => Work(spot, spot.IsTree ? Job.Woodcutting : Job.Mining, spot.IsTree ? "woodcutters_axe" : "pickaxe");
     public void ErrandForTest(Person factor) => OfferErrand(factor);
     public bool DeliverForTest(Person to) => DeliverErrand(to);

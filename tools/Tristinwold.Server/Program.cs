@@ -162,12 +162,12 @@ if (cloudflare is not null && cloudflare.Start(url =>
     }))
     Log("Opening a Cloudflare tunnel...");
 
-// Vann's own clock: his schemes come when they come.
+// The server's clock: the shared city's days, and Vann's schemes (they come when they come).
 _ = Task.Run(async () =>
 {
     while (!shutdown.IsCancellationRequested)
     {
-        try { await Task.Delay(TimeSpan.FromSeconds(15), shutdown.Token); } catch (OperationCanceledException) { break; }
+        try { await Task.Delay(TimeSpan.FromSeconds(1), shutdown.Token); } catch (OperationCanceledException) { break; }
         host.Tick();
     }
 });

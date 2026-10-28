@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Tristinwold.Gameplay\Tristinwold.Gameplay.csproj" />
+    <ProjectReference Include="..\Tristinwold.Shared\Tristinwold.Shared.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

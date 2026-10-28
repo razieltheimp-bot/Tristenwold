@@ -95,6 +95,7 @@ public sealed partial class ServerCore
             new(name, new Welcome(name, State.Campaign, [.. State.Flags])),
             new(name, new NemesisSnapshot(World.ToJson())),
             new(name, new Board(PublicBoard())),
+            new(name, CityMessage()),
             new(null, RosterMessage()),
             new(null, new Notice(NoticeKind.World, $"{name}'s company has arrived in Tristinwold."), Except: name),
         ];
@@ -125,6 +126,7 @@ public sealed partial class ServerCore
             LeaveDrop d => OnDrop(group, d),
             Say s when !string.IsNullOrWhiteSpace(s.Text) => [new(null, new Notice(NoticeKind.Chat, Clip(s.Text, 400), player))],
             EncounterStarted e => OnEncounter(player, e),
+            CityTrade t => OnCityTrade(player, t),
             _ => [],
         };
     }

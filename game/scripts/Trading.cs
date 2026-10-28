@@ -210,6 +210,7 @@ public partial class Main
                 if (id == "meat") _player.Meat++;
                 else _player.Pack.Add(id);
                 _city.Bought(id, price);
+                Share(CityAction.Bought(id, price));
                 Sound.Ui("coin");
                 _hud.Toast($"Bought {name.ToLowerInvariant()}. ({_player.Crowns} crowns left)", 3);
                 Save();
@@ -240,6 +241,7 @@ public partial class Main
         var offer = _city.Offer(item);
         _player.Crowns += offer;
         _city.Sold(id, offer);
+        Share(CityAction.Sold(id, offer));
         return offer;
     }
 

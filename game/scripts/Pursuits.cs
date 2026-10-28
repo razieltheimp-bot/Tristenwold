@@ -582,6 +582,7 @@ public partial class Main
         _player.Crowns -= Housing.PlotPrice;
         _pursuits.House.Owned = true;
         _city.Treasury += Housing.PlotPrice;
+        Share(CityAction.Treasury(Housing.PlotPrice));
         Sound.Ui("coin");
         Did("plots");
         Save();
@@ -626,6 +627,7 @@ public partial class Main
         var stage = Housing.Stages.Contains(s);
         if (stage) _pursuits.House.Built++;
         else _pursuits.House.Furniture.Add(s.Id);
+        ShowHouse(); // it goes up as you build it
         var up = pack.Practise(Job.Building, s.Xp);
         Hands()?.Perform("2H_Melee_Attack_Chop", 0.7, 1.1f);
         Sound.Ui("anvil", -2);

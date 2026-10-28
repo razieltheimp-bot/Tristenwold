@@ -37,6 +37,14 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--classes-only")) { await Teleport(new Vector3(-150, 0, -120)); await ClassesTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--town-only")) { await TownWorkTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pursuits-only")) { await PursuitsTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--city-only") && main.Client is { } c0)
+            {
+                await Until(() => c0.Status == ClientStatus.Connected, 20);
+                Check(c0.Status == ClientStatus.Connected, $"connected to the shared world{(c0.LastError is { } e0 ? $" ({e0})" : "")}");
+                await SharedCityTest();
+                Finish(0);
+                return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
             if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await NemesisLairTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
@@ -83,6 +91,8 @@ public partial class SelfTest(Main main) : Node
             {
                 await Until(() => client.Status == ClientStatus.Connected, 10);
                 Check(client.Status == ClientStatus.Connected, client.LastError is { } err ? $"connected to the shared world ({err})" : "connected to the shared world");
+
+                await SharedCityTest();
 
                 // 3. Lose a fight: that kind of enemy becomes a nemesis on the server.
                 var killer = Spawn("dock_thug", p.GlobalPosition + new Vector3(0, 0, -2.5f));
@@ -1252,6 +1262,25 @@ public partial class SelfTest(Main main) : Node
             $"the house, the chest and {book.Feats.Count} feats ({book.Points} points) are saved: {string.Join(", ", book.Feats)}");
 
         void TradeFeatsCheck() => Check(book.Points > 0, $"{book.Points} feat points");
+    }
+
+    /// <summary>On a server, Tristinwold's economy is the server's: one city for every company, and each keeps their own renown.</summary>
+    async Task SharedCityTest()
+    {
+        // The city is the server's, shared by every company; what you do to it goes to the server and comes back.
+        await Until(() => main.SharedCity, 10);
+        Check(main.SharedCity, $"Tristinwold's economy is the server's now (day {main.Economy.Day})");
+        main.Economy.Renown = 77;
+        CitySnapshot? back = null;
+        void Watch(Message m) { if (m is CitySnapshot s) back = s; }
+        main.Received += Watch;
+        var landed = main.Economy.Stock[Good.Fish];
+        main.CityForTest(CityAction.Cargo(Good.Fish, 10));
+        await Until(() => back is not null && back.City.Stock[Good.Fish] >= landed + 9.9, 10);
+        main.Received -= Watch;
+        Check(back is not null && back.City.Stock[Good.Fish] >= landed + 9.9, $"cargo landed in this game reaches the server's city ({landed:0} fish, then {back?.City.Stock[Good.Fish]:0})");
+        await Frames(5);
+        Check(main.Economy.Renown == 77, "and your own name at the Exchange stays yours");
     }
 
     async Task Teleport(Vector3 at)

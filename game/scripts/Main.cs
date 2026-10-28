@@ -578,6 +578,7 @@ public partial class Main : Node3D
             }
             case Reward r: _player.Crowns += r.Coppers / 100; _hud.Toast($"Contract paid: {r.Coppers / 100} crowns."); break;
             case Board b: _hud.ShowBoard(b.Contracts); break;
+            case CitySnapshot c: TakeCity(c); break;
             case Roster r: _hud.ShowCompanies(r.Groups); break;
             case NemesisSnapshot s: _hud.ShowNemeses(s.WorldJson); _nemesisJson = s.WorldJson; break;
             case NemesisEvents e:

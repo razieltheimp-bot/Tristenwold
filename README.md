@@ -418,7 +418,8 @@ Exchange, a shipyard. The city puts its taxes and spare stock into them each day
 along, and each one finished makes a trade better for good (more fish, ore, bread; more taxes; better dock pay).
 Everything you do for the city (contracts, works, letters, dock work) builds your name at the Exchange, from a
 stranger to a known trader, a trusted supplier, a pillar of Tristinwold and the Exchange's favourite: shopkeepers
-take up to 8% off and pay a little more. The city is saved with your company. `--selftest --town-only` walks
+take up to 8% off and pay a little more. The city is saved with your company (on a server, everyone shares one city: see
+[Shared world](#shared-world-everyone-runs-their-own-party-of-three)). `--selftest --town-only` walks
 through all of it; `--shots DIR --town` photographs the new places.
 
 ### Life beyond the sword
@@ -660,6 +661,12 @@ own company, at their own pace. One server, usually run by the DM, holds the cit
 
 - **One nemesis world.** A monster that wipes Joe's party in his game can turn up in Mira's game and taunt
   her about it ("I killed Joe. You're next.").
+- **One city economy.** Tristinwold's market is the server's, not each game's own: when Joe sells sixty herring,
+  fish is cheap for Mira too. Stock and prices, the day, what's happening (a storm, the herring run, a caravan),
+  the Exchange's contracts and the city's works are all shared, so companies can fill a contract or build the
+  harbour wall together, and everyone hears when it's done. The city's days run on the server's clock while
+  anyone is playing (ten minutes a day). Each hero keeps their own name at the Exchange, and the discounts that
+  come with it. Play alone, or away from the server, and your game runs its own copy of the city as before.
 - **One contract board.** The day-one board from Campaign 1 is preloaded: rats, spice wagon, the missing
   brother, the gambler's debt, the drowned chapel, the Gutter Prince. When one company takes a job,
   it's gone for everyone. Contract secrets stay on the DM's screen.

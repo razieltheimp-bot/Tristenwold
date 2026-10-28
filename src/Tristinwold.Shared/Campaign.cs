@@ -66,6 +66,10 @@ public sealed class CampaignState
     public HashSet<string> Flags { get; set; } = [];
     public string? NemesisWorldJson { get; set; }
 
+    /// <summary>Tristinwold's economy, shared by every company (see <see cref="ServerCore.City"/>), and how long it's run.</summary>
+    public Gameplay.CityEconomy? City { get; set; }
+    public double CitySeconds { get; set; }
+
     /// <summary>Where the story is staged: the places Vann sends people to and drops are left in. Edit freely in the campaign file.</summary>
     public List<string> Stage { get; set; } = [];
 

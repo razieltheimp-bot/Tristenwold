@@ -32,6 +32,22 @@ public sealed class Contract
     public int Left => Wanted - Delivered;
 }
 
+/// <summary>
+/// Something a hero did to the city: sold or bought something, delivered to a contract, gave to the works, landed
+/// cargo on the docks, paid the Crown for land. The game does it to its own copy of the city at once; on a server,
+/// it's sent on and done to the one city everybody shares (see <see cref="CityEconomy.Apply"/>).
+/// </summary>
+public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0, string? Contract = null, IReadOnlyList<string>? Items = null, Good? Good = null, int N = 0)
+{
+    public static CityAction Sold(string item, int crowns) => new("sold", item, crowns);
+    public static CityAction Bought(string item, int crowns) => new("bought", item, crowns);
+    public static CityAction Deliver(string contract, IReadOnlyList<string> items) => new("deliver", Contract: contract, Items: items);
+    public static CityAction Donate(IReadOnlyList<string> items) => new("donate", Items: items);
+    public static CityAction DonateCrowns(int crowns) => new("donate_crowns", Crowns: crowns);
+    public static CityAction Cargo(Good good, int n) => new("cargo", Good: good, N: n);
+    public static CityAction Treasury(int crowns) => new("treasury", Crowns: crowns);
+}
+
 /// <summary>An event running now, and the days it has left.</summary>
 public sealed class RunningEvent
 {
@@ -127,6 +143,7 @@ public sealed class CityEconomy
     public int WorkCrowns { get; set; }
     public List<string> WorksDone { get; set; } = [];
     public List<Contract> Contracts { get; set; } = [];
+    /// <summary>The hero's own name at the Exchange. On a server, where the rest of the city is shared, each hero keeps their own.</summary>
     public int Renown { get; set; }
     public List<string> News { get; set; } = [];
     public int NextContract { get; set; }
@@ -353,6 +370,26 @@ public sealed class CityEconomy
         Renown += take / 10;
         finished = Finish();
         return take;
+    }
+
+    /// <summary>
+    /// Does what a hero did (see <see cref="CityAction"/>). A server does this for every player's game, so nothing a
+    /// game sends can do more than a hero could: a cartload of goods at most, a few thousand crowns.
+    /// </summary>
+    public void Apply(CityAction a)
+    {
+        var items = (a.Items ?? []).Take(200).ToList();
+        var crowns = Math.Clamp(a.Crowns, 0, 5000);
+        switch (a.Kind)
+        {
+            case "sold" when a.Item is not null: Sold(a.Item, crowns); break;
+            case "bought" when a.Item is not null: Bought(a.Item, crowns); break;
+            case "deliver" when Contracts.FirstOrDefault(c => c.Id == a.Contract) is { } c: Deliver(c, items); break;
+            case "donate": Donate(items, out _); break;
+            case "donate_crowns": DonateCrowns(crowns, out _); break;
+            case "cargo" when a.Good is { } g && Enum.IsDefined(g): Stock[g] = Stock.GetValueOrDefault(g) + Math.Clamp(a.N, 0, 10); break;
+            case "treasury": Treasury += crowns; break;
+        }
     }
 
     /// <summary>What the works still need (goods, then crowns).</summary>

@@ -74,7 +74,10 @@ public sealed partial class ServerCore
 
     // ---- Unprompted schemes, called every few seconds by the server ----------------------------------
 
-    public IReadOnlyList<Outgoing> Tick()
+    /// <summary>The server's clock: the shared city's day, and Vann's schemes. Call it every second or so.</summary>
+    public IReadOnlyList<Outgoing> Tick() => [.. TickCity(), .. TickVann()];
+
+    IReadOnlyList<Outgoing> TickVann()
     {
         if (!_options.VannEnabled) return [];
         var now = _clock();
