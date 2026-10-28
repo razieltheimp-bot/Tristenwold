@@ -31,6 +31,13 @@ public partial class Main
     const string Master = "tristinwold/caravans";
     public const string Cargo = "res://assets/props/caravan/";
 
+    /// <summary>Tristinwold's old routes are open from the start, and on the map (heard of, until you've been).</summary>
+    void BeginTrade()
+    {
+        foreach (var s in _trade.OpenOldRoutes(_world, _city.Day))
+            if (!_explored.Discovered.Contains(s.Id)) _explored.Rumored.Add(s.Id);
+    }
+
     void AddCaravanYard()
     {
         Townsfolk(new Npc(Master, "Garrick Wain", Sex.Male, 52, "master of the caravan yard", "city:tristinwold", "Tristinwold",
@@ -265,6 +272,14 @@ public partial class Main
     /// <summary>The yard's caravans along its routes, each wanting a guard: pick one, and see it through.</summary>
     void OfferGuardWork(Person master)
     {
+        if (!_trade.Seasoned && _trade.FirstRoad() is { } first)
+        {
+            _hud.Talk(Who(master.Npc),
+                $"New, are you? Everyone starts somewhere. The city's wagon for {first.ToName} goes out today, and it's a short road: a couple of bandits at most, if they bother. Walk beside it, keep them off the load, and the {first.Pay} crowns are yours. Do that, and I'll trust you with the long roads once you've made a name.",
+                ("I'll guard it.", () => StartGuarding(master, first)),
+                ("Not today.", () => Say(master, "It'll go without you, then.")));
+            return;
+        }
         if (_player.Hero.Level < TradeBook.GuardLevel) { Say(master, $"I pay guards to fight bandits, not to feed them. Come back when you've some steel in you (level {TradeBook.GuardLevel})."); return; }
         var jobs = _trade.Escorts(_player.Hero.Level).ToList();
         if (jobs.Count == 0) { Say(master, "We only run to places somebody's found. Find a village out there, and there'll be a caravan to guard."); return; }
@@ -540,6 +555,9 @@ public partial class Main
 
     IEnumerable<string> CaravanLines(Vector3 pos)
     {
+        // A starter's work, on the tracker until it's done: the caravan yard needs a guard.
+        if (!_trade.Seasoned && _trade.Guarding is null)
+            yield return $"Starter work: the caravan yard by the west gate is hiring guards for the city's caravans. Ask Garrick Wain ({Direction(pos, (YardAt.X, YardAt.Z))})";
         if (_trade.Guarding is { } g && _guarded is not null)
             yield return $"Caravan guard: see the wagon safe to {g.ToName} ({Direction(pos, (g.X, g.Z))}), {g.Wagon:0}% of the load, {g.Pay} crowns";
         if (_loading is { } l)

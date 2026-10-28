@@ -1615,14 +1615,15 @@ public partial class SelfTest(Main main) : Node
         Check(trade.Rank == CaravanRank.Driver && p.Crowns == purse + TradeBook.LoadWage * TradeBook.LoadsToDrive,
             $"ten loads onto the wagon (+{p.Crowns - purse} crowns), and he makes you a driver");
 
-        // The yard only runs to places someone has found.
-        main.Talk(Who("tristinwold/caravans"));
-        Check(hud.Choose("Give me a wagon to drive") && trade.Run is null && hud.TalkText.Contains("nobody's found"), "with no village found yet, there's no route to drive");
-        hud.EndTalk();
-        var village = main.World.SettlementsNear(0, 0, 2500).Where(TownMarket.Trades).OrderBy(s => s.DistanceTo(0, 0)).First();
+        // Tristinwold has always traded with its nearest market towns; everything else is for the hero to find.
+        var old = trade.Routes.Select(m => m.Name).ToList();
+        Check(old.Count == 2 && trade.Routes.All(m => main.Explored.Rumored.Contains(m.Id) || main.Explored.Discovered.Contains(m.Id)),
+            $"Tristinwold's old trade routes are open from the start: {string.Join(" and ", old)} (on the map)");
+        Check(hud.Tracked.Any(t => t.StartsWith("Starter work: the caravan yard")), "and a starter's job on the tracker: the caravan yard is hiring guards");
+        var village = main.World.SettlementsNear(0, 0, 2500).Where(s => TownMarket.Trades(s) && !trade.Towns.ContainsKey(s.Id)).OrderBy(s => s.DistanceTo(0, 0)).First();
         await Teleport(new Vector3((float)village.X + 5, 0, (float)village.Z + 5));
         await Frames(30);
-        Check(trade.Routes.Any(m => m.Id == village.Id), $"finding {village.Name} opens a trade route to it");
+        Check(trade.Routes.Any(m => m.Id == village.Id) && trade.Routes.Count() == 3, $"finding {village.Name} opens a third trade route");
         for (var run = 1; run <= TradeBook.RunsToOwn; run++)
         {
             await Teleport(Main.YardAt + new Vector3(0, 0, 4));
@@ -1710,16 +1711,11 @@ public partial class SelfTest(Main main) : Node
         hud.Choose("Put my wagon away");
         hud.EndTalk();
 
-        // Guarding one of the city's caravans, for an adventurer who's made a name.
+        // A starter's job: guarding the city's caravan along the nearest route, open to a green hero.
         p.Hero.Level = 2;
         main.Talk(Who("tristinwold/caravans"));
-        Check(hud.Choose("Any caravans that need a guard") && trade.Guarding is null && hud.TalkText.Contains("steel"), "Garrick won't hire a green guard");
-        hud.EndTalk();
-        p.Hero.Level = 8;
-        main.Talk(Who("tristinwold/caravans"));
-        hud.Choose("Any caravans that need a guard");
-        var job = hud.Options.FirstOrDefault(o => o.StartsWith("To "));
-        Check(job is not null && hud.Choose(job) && trade.Guarding is not null && main.GuardedWagon is not null, $"but a seasoned one, he will: {job}");
+        Check(hud.Choose("Any caravans that need a guard") && hud.TalkText.StartsWith("New, are you") && hud.Choose("I'll guard it")
+              && trade.Guarding is { Bandits: 2 } && main.GuardedWagon is not null, $"a green hero's first job: guard the city's caravan to {trade.Guarding?.ToName} (short road, two bandits)");
         hud.EndTalk();
         if (trade.Guarding is { } g && main.GuardedWagon is { } cart)
         {
@@ -1744,6 +1740,18 @@ public partial class SelfTest(Main main) : Node
             await Until(() => trade.Guarding is null, 6);
             Check(trade.Guarded == 1 && p.Crowns > purse0 && hud.Heard("The caravan you guarded"), $"you see it through to {g.ToName}: +{p.Crowns - purse0} crowns, and a big load each way for Tristinwold");
         }
+        Check(!hud.Tracked.Any(t => t.StartsWith("Starter work")), "the starter's job is done");
+        // After that, the long roads are for those who've made a name.
+        await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Any caravans that need a guard") && trade.Guarding is null && hud.TalkText.Contains("steel"), "then Garrick won't send a green guard down the long roads");
+        hud.EndTalk();
+        p.Hero.Level = 8;
+        main.Talk(Who("tristinwold/caravans"));
+        hud.Choose("Any caravans that need a guard");
+        var roads = hud.Options.Where(o => o.StartsWith("To ")).ToList();
+        Check(roads.Count >= 3, $"but a seasoned one, he will, along every route: {string.Join("; ", roads)}");
+        hud.EndTalk();
 
         // A glut: someone sells the village a hundred fish, and the price there falls through the floor.
         var glutted = trade.Towns[village.Id];

@@ -200,4 +200,25 @@ public class CaravanTests
         city.Stock[Good.Timber] = CityEconomy.Info(Good.Timber).Target * 3;
         Assert.Contains(book.Gluts(city), j => j.From == TradeBook.CityId && j.Good == Good.Timber);
     }
+
+    [Fact]
+    public void Tristinwold_starts_with_its_old_routes_and_a_starter_guard_job()
+    {
+        var w = WorldGen.Default;
+        var book = new TradeBook();
+        var old = book.OpenOldRoutes(w, 1);
+        Assert.Equal(2, old.Count);
+        Assert.Equal(2, book.Routes.Count());
+        Assert.Empty(book.OpenOldRoutes(w, 1)); // only once
+        Assert.Equal(old.Select(s => s.Id), TradeBook.OldRoutes(w).Select(s => s.Id)); // the same for every hero
+
+        Assert.False(book.Seasoned);
+        var first = Assert.IsType<Escort>(book.FirstRoad());
+        Assert.Equal(2, first.Bandits);
+        Assert.Single(first.Ambushes);
+        Assert.Equal(book.Routes.First().Id, first.To);
+        book.Guarding = first;
+        book.Delivered(CityEconomy.Start(1), 2, new Rng(1));
+        Assert.True(book.Seasoned);
+    }
 }

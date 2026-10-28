@@ -341,6 +341,7 @@ public partial class Main : Node3D
 
         Load();
         BeginStory();
+        BeginTrade();
         AddPeople();
         foreach (var lair in City.Lairs) _lairs[lair] = SpawnLair(lair);
         _places = new Places(this, _world);

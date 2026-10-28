@@ -225,6 +225,23 @@ public sealed class TradeBook
     /// </summary>
     public IEnumerable<TownMarket> Routes => Towns.Values.Where(m => m.DistanceTo(0, 0) < Reach).OrderBy(m => m.DistanceTo(0, 0));
 
+    /// <summary>
+    /// The routes Tristinwold has always run: its nearest market towns and villages, two of them, known to every hero
+    /// from the start. Everything further out is for the hero to find.
+    /// </summary>
+    public static IEnumerable<Settlement> OldRoutes(WorldGen world) =>
+        world.SettlementsNear(0, 0, 2500).Where(s => TownMarket.Trades(s) && s.Kind is SettlementKind.Town or SettlementKind.Hamlet or SettlementKind.Farmstead or SettlementKind.Inn)
+            .OrderBy(s => s.DistanceTo(0, 0)).Take(2);
+
+    /// <summary>Opens Tristinwold's old routes, if the book has none yet. Returns the places.</summary>
+    public List<Settlement> OpenOldRoutes(WorldGen world, int day)
+    {
+        if (Towns.Count > 0) return [];
+        var old = OldRoutes(world).ToList();
+        foreach (var s in old) Market(s, day);
+        return old;
+    }
+
     /// <summary>A run for the yard along one of the routes (one of the nearest few). Null if no place is known yet.</summary>
     public CaravanRun? Plan(WorldGen world, int day, Rng rng)
     {
@@ -314,6 +331,19 @@ public sealed class TradeBook
     /// <summary>How many caravans they've brought through, and lost.</summary>
     public int Guarded { get; set; }
     public int Lost { get; set; }
+
+    /// <summary>Whether the hero has guarded a caravan before (the first is a starter's job, open to anyone).</summary>
+    public bool Seasoned => Guarded + Lost > 0;
+
+    /// <summary>
+    /// A new hero's first guard job, open whatever their level: the city's caravan along the nearest route, one ambush
+    /// of two bandits on the way.
+    /// </summary>
+    public Escort? FirstRoad() => Routes.Select(m => new Escort
+    {
+        To = m.Id, ToName = m.Name, X = m.X, Z = m.Z, Bandits = 2, Ambushes = [0.5],
+        Pay = 30 + (int)Math.Round(m.DistanceTo(0, 0) / 30),
+    }).FirstOrDefault();
 
     /// <summary>
     /// The guard work the yard has going: a caravan along each route, the further and the more seasoned the guard, the
