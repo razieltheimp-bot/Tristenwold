@@ -486,13 +486,22 @@ with it.
 
 1. **Loader.** Lift goods from the stack onto the yard's wagon (E, then E at the wagon), four crowns a load. Ten
    loads and he makes you a driver.
-2. **Driver.** He gives you a wagon and a horse and a run: Tristinwold's goods out to a town, the town's goods home.
+2. **Driver.** He gives you a wagon and a horse and a run along one of the routes: Tristinwold's goods out to a town you've found, the town's goods home.
    The wagon follows you; half the pay when you get there, half when you're back. A loaded wagon on the road draws
    bandits.
 3. **Entrepreneur.** After three runs he'll sell you **a wagon of your own** (300 crowns). Hitch your own grown
    horses to it, or buy a draught horse from him (140): each horse is room for a dozen loads, two at most. Buy goods at
    the Exchange, take them where they're wanted, buy what that place makes cheap, and bring it home to sell. The
    tracker keeps count of what's aboard, and Garrick of what you've made on the road.
+
+**Guarding the city's caravans.** Tristinwold's caravans run along every trade route, and **the trade routes are the
+places you've found, and only those**: each village, farmstead, mine or town you discover adds one. Garrick hires
+adventurers (level 3 and up) to guard them. He offers a caravan along each route, paying by the road: the further, the
+more, and more again the more of a name you've made, with more bandits waiting on the longer roads (one ambush on a
+short road, up to three on a long one). The carter drives herself at a walk, round water; she pulls up when there's
+trouble or when you fall behind. Bandits at the wagon break into the load, and if it's all gone the caravan is lost.
+Bring it through and you're paid (a quarter more if it's hardly scratched), and a big load goes each way between the
+place and Tristinwold.
 
 **Riding horses.** A horse that's grown (level 6, so a wild foal you've tamed and raised, or a draught horse from the
 yard) can be ridden: stand by it and press V. Shift gallops. Horses stay on the ground; only dragons fly.

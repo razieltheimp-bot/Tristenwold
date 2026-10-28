@@ -522,6 +522,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         if (OS.GetCmdlineUserArgs().Contains("--caravans"))
         {
             // The caravan yard; a wagon following the hero out on the road; the hero on a horse; the Host's breach.
+            if (OS.GetCmdlineUserArgs().Contains("--breach")) goto breach;
             await From("caravan-yard", Main.YardAt + new Vector3(12, 7, 14), Main.YardAt + new Vector3(0, 1, -1));
             p.GlobalPosition = new Vector3(-215, 1, 40);
             main.WagonForShot();
@@ -536,6 +537,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.LookAt(p.GlobalPosition, Vector3.Up);
             cam.MakeCurrent();
             await Shot("caravan-riding");
+            breach:
             main.Story.Chapter = Chapter.Breach;
             await Frames(200);
             if (main.BreachNode is { } b)

@@ -1602,6 +1602,14 @@ public partial class SelfTest(Main main) : Node
         Check(trade.Rank == CaravanRank.Driver && p.Crowns == purse + TradeBook.LoadWage * TradeBook.LoadsToDrive,
             $"ten loads onto the wagon (+{p.Crowns - purse} crowns), and he makes you a driver");
 
+        // The yard only runs to places someone has found.
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Give me a wagon to drive") && trade.Run is null && hud.TalkText.Contains("nobody's found"), "with no village found yet, there's no route to drive");
+        hud.EndTalk();
+        var village = main.World.SettlementsNear(0, 0, 2500).Where(TownMarket.Trades).OrderBy(s => s.DistanceTo(0, 0)).First();
+        await Teleport(new Vector3((float)village.X + 5, 0, (float)village.Z + 5));
+        await Frames(30);
+        Check(trade.Routes.Any(m => m.Id == village.Id), $"finding {village.Name} opens a trade route to it");
         for (var run = 1; run <= TradeBook.RunsToOwn; run++)
         {
             await Teleport(Main.YardAt + new Vector3(0, 0, 4));
@@ -1688,6 +1696,41 @@ public partial class SelfTest(Main main) : Node
         main.Talk(Who("tristinwold/caravans"));
         hud.Choose("Put my wagon away");
         hud.EndTalk();
+
+        // Guarding one of the city's caravans, for an adventurer who's made a name.
+        p.Hero.Level = 2;
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Any caravans that need a guard") && trade.Guarding is null && hud.TalkText.Contains("steel"), "Garrick won't hire a green guard");
+        hud.EndTalk();
+        p.Hero.Level = 8;
+        main.Talk(Who("tristinwold/caravans"));
+        hud.Choose("Any caravans that need a guard");
+        var job = hud.Options.FirstOrDefault(o => o.StartsWith("To "));
+        Check(job is not null && hud.Choose(job) && trade.Guarding is not null && main.GuardedWagon is not null, $"but a seasoned one, he will: {job}");
+        hud.EndTalk();
+        if (trade.Guarding is { } g && main.GuardedWagon is { } cart)
+        {
+            var start = cart.GlobalPosition;
+            await Frames(120);
+            Check(cart.GlobalPosition.DistanceTo(start) > 2, $"the carter drives off with you beside her ({cart.GlobalPosition.DistanceTo(start):0} m)");
+            // Further along the road: the ambush.
+            var target = new Vector3((float)g.X, 0, (float)g.Z);
+            var mid = start.Lerp(target, (float)g.Ambushes[0] + 0.05f);
+            cart.GlobalPosition = mid with { Y = City.FloorAt(mid) };
+            await Teleport(mid + new Vector3(3, 0, 3));
+            await Until(() => g.Sprung > 0, 4);
+            await Frames(30);
+            var bandits = GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e.Kind.Id is "bandit" or "bandit_chief" && e.State != EnemyState.Dead && e.GlobalPosition.DistanceTo(mid) < 60).ToList();
+            Check(g.Sprung == 1 && bandits.Count >= g.Bandits, $"ambush on the road: {bandits.Count} bandits (the wagon pulls up)");
+            foreach (var b in bandits) b.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+            await Frames(30);
+            var purse0 = p.Crowns;
+            var near = target + (start - target).Normalized() * 8;
+            cart.GlobalPosition = near with { Y = City.FloorAt(near) };
+            await Teleport(near + new Vector3(3, 0, 3));
+            await Until(() => trade.Guarding is null, 6);
+            Check(trade.Guarded == 1 && p.Crowns > purse0 && hud.Heard("The caravan you guarded"), $"you see it through to {g.ToName}: +{p.Crowns - purse0} crowns, and a big load each way for Tristinwold");
+        }
 
         // And Tristinwold's own caravans trade with the places it knows, a day at a time.
         main.Economy.NextDayAt = main.GuildBook.PlaySeconds;

@@ -60,9 +60,11 @@ public class CaravanTests
         Assert.False(book.BuyWagon());
 
         var rng = new Rng(3);
+        Assert.Null(book.Plan(w, 1, rng)); // no place known yet: no route to drive
+        book.Market(Village(w), 1); // found one
         for (var run = 1; run <= TradeBook.RunsToOwn; run++)
         {
-            book.Run = book.Plan(w, [], run, rng);
+            book.Run = book.Plan(w, run, rng);
             var r = Assert.IsType<CaravanRun>(book.Run);
             Assert.True(r.Pay > 20);
             var town = book.Towns[r.To];
@@ -99,5 +101,63 @@ public class CaravanTests
         var news = book.TradeDay(city, 2, new Rng(1));
         Assert.Contains($"A caravan from {s.Name}", Assert.Single(news));
         Assert.Contains(m.Makes, g => city.Stock[g] > made[g]);
+    }
+
+    [Fact]
+    public void Only_the_places_you_have_found_are_trade_routes_and_each_one_found_adds_one()
+    {
+        var w = WorldGen.Default;
+        var book = new TradeBook();
+        Assert.Empty(book.Routes);
+        var places = w.SettlementsNear(0, 0, 2500).Where(TownMarket.Trades).OrderBy(s => s.DistanceTo(0, 0)).Take(5).ToList();
+        foreach (var (s, i) in places.Select((s, i) => (s, i)))
+        {
+            book.Market(s, 1);
+            Assert.Equal(i + 1, book.Routes.Count());
+        }
+        Assert.Equal(places.Select(s => s.Id).Order(), book.Routes.Select(m => m.Id).Order());
+        // Day by day, every route gets its turn.
+        var city = CityEconomy.Start(1);
+        var rng = new Rng(2);
+        for (var day = 2; day < 6; day++) book.TradeDay(city, day, rng);
+        Assert.All(book.Routes, m => Assert.True(m.LastTrade > 1, $"{m.Name} never traded"));
+    }
+
+    [Fact]
+    public void Guarding_a_caravan_pays_more_the_further_and_the_more_seasoned_the_guard_and_draws_more_bandits()
+    {
+        var w = WorldGen.Default;
+        var book = new TradeBook();
+        Assert.Empty(book.Escorts(5)); // nowhere known, no caravans to guard
+        foreach (var s in w.SettlementsNear(0, 0, 3500).Where(TownMarket.Trades).Take(8)) book.Market(s, 1);
+        var low = book.Escorts(3).ToList();
+        var high = book.Escorts(12).ToList();
+        Assert.NotEmpty(low);
+        Assert.All(low.Zip(high), x => Assert.True(x.Second.Pay > x.First.Pay && x.Second.Bandits >= x.First.Bandits));
+        var near = low.First();
+        var far = low.Last();
+        Assert.True(far.Pay > near.Pay && far.Ambushes.Count >= near.Ambushes.Count);
+        Assert.All(low, e => Assert.All(e.Ambushes, a => Assert.InRange(a, 0.1, 0.9)));
+
+        // On the road: the ambushes come as the wagon gets far enough along.
+        var e = book.Guarding = low.First();
+        Assert.False(e.AmbushDue(0.1));
+        Assert.True(e.AmbushDue(e.Ambushes[0] + 0.01));
+        e.Sprung++;
+        Assert.False(e.AmbushDue(e.Ambushes[0] + 0.01));
+
+        // Brought through: a big load each way.
+        var city = CityEconomy.Start(1);
+        var town = book.Towns[e.To];
+        var before = town.Makes.Sum(g => city.Stock[g]);
+        Assert.Contains(e.ToName, book.Delivered(city, 2, new Rng(1)));
+        Assert.True(town.Makes.Sum(g => city.Stock[g]) > before);
+        Assert.Equal(1, book.Guarded);
+        Assert.Null(book.Guarding);
+
+        book.Guarding = low.Last();
+        book.Overrun();
+        Assert.Equal(1, book.Lost);
+        Assert.Null(book.Guarding);
     }
 }

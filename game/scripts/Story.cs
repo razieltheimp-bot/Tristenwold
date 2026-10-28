@@ -110,7 +110,8 @@ public partial class HostBreach(Main main, Vector3 at) : Node3D
     readonly List<Enemy> _host = [];
     double _next;
 
-    public Vector3 At => at;
+    /// <summary>Where it stands, on the ground.</summary>
+    public Vector3 At => IsInsideTree() ? GlobalPosition : at;
     public IReadOnlyList<Enemy> Host => _host;
 
     public override void _Ready()
