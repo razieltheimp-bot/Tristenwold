@@ -110,13 +110,14 @@ public partial class HostBreach(Main main, Vector3 at) : Node3D
     readonly List<Enemy> _host = [];
     double _next;
 
-    /// <summary>Where it stands, on the ground.</summary>
-    public Vector3 At => IsInsideTree() ? GlobalPosition : at;
+    /// <summary>Where it stands, on the ground (still known once it's closed).</summary>
+    public Vector3 At => _ground;
+    Vector3 _ground = at;
     public IReadOnlyList<Enemy> Host => _host;
 
     public override void _Ready()
     {
-        Position = at with { Y = City.FloorAt(at) };
+        Position = _ground = at with { Y = City.FloorAt(at) };
         var violet = new Color("#a050ff");
         var wound = new MeshInstance3D
         {
