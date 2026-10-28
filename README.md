@@ -506,8 +506,9 @@ just buy up a glut where it lies (any glutted good is for sale, not only what th
 **two nearest market towns**, which are on the routes (and on your map) from the start; beyond them, **the trade
 routes are the places you've found, and only those**: each village, farmstead, mine or town you discover adds one.
 **Guarding a caravan is one of the starter jobs**: it's on your tracker from the first day, and Garrick gives a new
-hero, whatever their level, the city's wagon along the nearest route (a short road, one ambush of two bandits).
-After that he hires adventurers of level 3 and up for the longer roads. He offers a caravan along each route, paying by the road: the further, the
+hero, whatever their level, the city's wagon along the nearest route (the short road, one ambush of two bandits).
+**The short road is repeatable**: it's on his list every day, for anyone. The longer roads are for adventurers of level
+3 and up. He offers a caravan along each route, paying by the road: the further, the
 more, and more again the more of a name you've made, with more bandits waiting on the longer roads (one ambush on a
 short road, up to three on a long one). The carter drives herself at a walk, round water; she pulls up when there's
 trouble or when you fall behind. Bandits at the wagon break into the load, and if it's all gone the caravan is lost.

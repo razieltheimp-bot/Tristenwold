@@ -213,7 +213,7 @@ public class CaravanTests
         Assert.Equal(old.Select(s => s.Id), TradeBook.OldRoutes(w).Select(s => s.Id)); // the same for every hero
 
         Assert.False(book.Seasoned);
-        var first = Assert.IsType<Escort>(book.FirstRoad());
+        var first = Assert.IsType<Escort>(book.ShortRoad());
         Assert.Equal(2, first.Bandits);
         Assert.Single(first.Ambushes);
         Assert.Equal(book.Routes.First().Id, first.To);

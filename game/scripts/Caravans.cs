@@ -272,7 +272,7 @@ public partial class Main
     /// <summary>The yard's caravans along its routes, each wanting a guard: pick one, and see it through.</summary>
     void OfferGuardWork(Person master)
     {
-        if (!_trade.Seasoned && _trade.FirstRoad() is { } first)
+        if (!_trade.Seasoned && _trade.ShortRoad() is { } first)
         {
             _hud.Talk(Who(master.Npc),
                 $"New, are you? Everyone starts somewhere. The city's wagon for {first.ToName} goes out today, and it's a short road: a couple of bandits at most, if they bother. Walk beside it, keep them off the load, and the {first.Pay} crowns are yours. Do that, and I'll trust you with the long roads once you've made a name.",
@@ -280,12 +280,17 @@ public partial class Main
                 ("Not today.", () => Say(master, "It'll go without you, then.")));
             return;
         }
-        if (_player.Hero.Level < TradeBook.GuardLevel) { Say(master, $"I pay guards to fight bandits, not to feed them. Come back when you've some steel in you (level {TradeBook.GuardLevel})."); return; }
-        var jobs = _trade.Escorts(_player.Hero.Level).ToList();
-        if (jobs.Count == 0) { Say(master, "We only run to places somebody's found. Find a village out there, and there'll be a caravan to guard."); return; }
-        var options = jobs.Select(e => ($"To {e.ToName}, {Direction(YardAt, (e.X, e.Z))}: {e.Pay} crowns ({e.Danger})", (Action)(() => StartGuarding(master, e)))).ToList();
+        // The short road goes out every day, for anyone; the long roads are for those who've made a name.
+        var options = new List<(string, Action)>();
+        if (_trade.ShortRoad() is { } shortRoad)
+            options.Add(($"The short road to {shortRoad.ToName}: {shortRoad.Pay} crowns ({shortRoad.Danger})", () => StartGuarding(master, shortRoad)));
+        var seasoned = _player.Hero.Level >= TradeBook.GuardLevel;
+        if (seasoned)
+            options.AddRange(_trade.Escorts(_player.Hero.Level).Select(e => ($"To {e.ToName}, {Direction(YardAt, (e.X, e.Z))}: {e.Pay} crowns ({e.Danger})", (Action)(() => StartGuarding(master, e)))));
         options.Add(("Not today.", () => Say(master, "The roads will still be there.")));
-        _hud.Talk(Who(master.Npc), "The city's caravans go out along every road to every place we know, and the bandits know it. I pay guards by the road: the further, the more, and more again for someone who's made a name.", [.. options]);
+        _hud.Talk(Who(master.Npc), seasoned
+            ? "The city's caravans go out along every road to every place we know, and the bandits know it. I pay guards by the road: the further, the more, and more again for someone who's made a name."
+            : $"The short road's yours any day you want it. The long roads I don't give to anyone without some steel in them: come back at level {TradeBook.GuardLevel}.", [.. options]);
     }
 
     void StartGuarding(Person master, Escort e)

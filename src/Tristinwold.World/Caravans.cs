@@ -336,10 +336,10 @@ public sealed class TradeBook
     public bool Seasoned => Guarded + Lost > 0;
 
     /// <summary>
-    /// A new hero's first guard job, open whatever their level: the city's caravan along the nearest route, one ambush
-    /// of two bandits on the way.
+    /// The short road: the city's caravan along the nearest route, one ambush of two bandits on the way. A new hero's
+    /// first guard job, and there every day after for anyone, whatever their level.
     /// </summary>
-    public Escort? FirstRoad() => Routes.Select(m => new Escort
+    public Escort? ShortRoad() => Routes.Select(m => new Escort
     {
         To = m.Id, ToName = m.Name, X = m.X, Z = m.Z, Bandits = 2, Ambushes = [0.5],
         Pay = 30 + (int)Math.Round(m.DistanceTo(0, 0) / 30),

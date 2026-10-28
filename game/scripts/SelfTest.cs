@@ -1744,13 +1744,16 @@ public partial class SelfTest(Main main) : Node
         // After that, the long roads are for those who've made a name.
         await Teleport(Main.YardAt + new Vector3(0, 0, 4));
         main.Talk(Who("tristinwold/caravans"));
-        Check(hud.Choose("Any caravans that need a guard") && trade.Guarding is null && hud.TalkText.Contains("steel"), "then Garrick won't send a green guard down the long roads");
+        Check(hud.Choose("Any caravans that need a guard") && hud.TalkText.Contains("steel") && hud.Options.Any(o => o.StartsWith("The short road"))
+              && !hud.Options.Any(o => o.StartsWith("To ")), "after that the short road is there any day, but Garrick won't send a green guard down the long roads");
+        Check(hud.Choose("The short road") && trade.Guarding is { Bandits: 2 }, "and you can take the short road again");
+        trade.Guarding = null; // (not today, after all: the next job's wagon replaces it)
         hud.EndTalk();
         p.Hero.Level = 8;
         main.Talk(Who("tristinwold/caravans"));
         hud.Choose("Any caravans that need a guard");
         var roads = hud.Options.Where(o => o.StartsWith("To ")).ToList();
-        Check(roads.Count >= 3, $"but a seasoned one, he will, along every route: {string.Join("; ", roads)}");
+        Check(roads.Count >= 3 && hud.Options.Any(o => o.StartsWith("The short road")), $"but a seasoned one, he will, along every route: {string.Join("; ", roads)}");
         hud.EndTalk();
 
         // A glut: someone sells the village a hundred fish, and the price there falls through the floor.
