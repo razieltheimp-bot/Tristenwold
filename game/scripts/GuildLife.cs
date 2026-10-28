@@ -98,7 +98,7 @@ public partial class Main
                     break;
                 }
                 var cost = LessonCost;
-                yield return (_guilds.LessonLevel >= _player.Hero.Level ? "Teach me. (You've had this level's lesson.)" : $"Teach me. ({cost} septims for a skill point)", () => Lesson(person));
+                yield return (_guilds.LessonLevel >= _player.Hero.Level ? "Teach me. (You've had this level's lesson.)" : $"Teach me. ({cost} crowns for a skill point)", () => Lesson(person));
                 var step = _guilds.Step(d.Id);
                 if (ClassQuests.For(_world, d, step) is { } trial)
                 {
@@ -130,8 +130,8 @@ public partial class Main
     void Lesson(Person person)
     {
         if (_guilds.LessonLevel >= _player.Hero.Level) { Say(person, $"We've done what we can at this level. Come back when you've grown (level {_player.Hero.Level + 1})."); return; }
-        if (_player.Septims < LessonCost) { Say(person, $"Lessons cost {LessonCost} septims. I have a roof to fix."); return; }
-        _player.Septims -= LessonCost;
+        if (_player.Crowns < LessonCost) { Say(person, $"Lessons cost {LessonCost} crowns. I have a roof to fix."); return; }
+        _player.Crowns -= LessonCost;
         _guilds.LessonLevel = _player.Hero.Level;
         _player.Hero.Points++;
         Raise(_player.Class.Calling, 3);
@@ -217,7 +217,7 @@ public partial class Main
     {
         var before = _guilds.Rank(story.Guild);
         Guilds.Choose(_guilds, story, c, won);
-        if (c.Septims != 0 && (won || !c.Duel)) _player.Septims = Math.Max(0, _player.Septims + c.Septims);
+        if (c.Crowns != 0 && (won || !c.Duel)) _player.Crowns = Math.Max(0, _player.Crowns + c.Crowns);
         _hud.Talk(story.Title, won || c.Loss is null ? c.Outcome : c.Loss, ("...", _hud.EndTalk));
         RankedUp(story.Guild, before);
         Save();

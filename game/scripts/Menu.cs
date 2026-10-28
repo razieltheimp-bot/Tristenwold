@@ -56,7 +56,7 @@ public partial class Main
         }
         using var wait = new CancellationTokenSource(TimeSpan.FromSeconds(8));
         var reply = await AccountClient.AskAsync(Choice.Server, new AccountRequest("save", Choice.Account, Token: Choice.Token,
-            ServerPassword: Choice.ServerPassword, Character: Choice.Character, Progress: new SaveProgress(json, _player.Septims, _area)), wait.Token);
+            ServerPassword: Choice.ServerPassword, Character: Choice.Character, Progress: new SaveProgress(json, _player.Crowns, _area)), wait.Token);
         if (reply.Ok) _lastSent = json;
         if (!reply.Ok) _hud.Toast($"The server didn't take the save: {reply.Error}", 8);
         else if (announce) _hud.Toast("Saved, on the server too.", 3);

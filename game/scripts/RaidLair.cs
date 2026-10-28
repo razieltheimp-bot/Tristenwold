@@ -117,7 +117,7 @@ public partial class RaidLair(Main main, Raid raid) : Node3D
         _boss = null;
         _phase = Phase.Waiting;
         main.RoamersNode.Adopt(roamer, boss);
-        main.HudNode.Toast($"{raid.BossCap} stands over you, and takes a name for itself: {roamer.Name}. It leaves {raid.Name} to roam the wilds, stronger for beating you. (A new nemesis.) In {raid.CooldownSeconds / 60:0} minutes another will have moved in.", 12);
+        main.HudNode.Toast($"{raid.BossCap} stands over you, and takes a name for itself: {roamer.Name}. It leaves {raid.Name} to roam the wilds, stronger for beating you. (A new nemesis.) Another, nameless and no stronger than its kind, is already moving into the lair.", 12);
         main.HudNode.Log($"Nemesis: {roamer.Title} beat you at {raid.Name}, took a name and went roaming.");
     }
 
@@ -132,7 +132,7 @@ public partial class RaidLair(Main main, Raid raid) : Node3D
     }
 
     /// <summary>The hoard taken: the reward, and the lair falls quiet until it wakes again.</summary>
-    public (int Xp, int Septims, bool First) Loot()
+    public (int Xp, int Crowns, bool First) Loot()
     {
         var first = main.RaidLog.ClearsOf(raid) == 0;
         var reward = Raids.Reward(raid, main.PlayerNode.Hero.Level, first);
@@ -142,7 +142,7 @@ public partial class RaidLair(Main main, Raid raid) : Node3D
         _phase = Phase.Waiting;
         _thralls.Clear();
         _boss = null;
-        return (reward.Xp, reward.Septims, first);
+        return (reward.Xp, reward.Crowns, first);
     }
 
     void Reset(string why)

@@ -151,10 +151,10 @@ public static class Raids
         "(the crystals ring, a sound like a thousand glasses)",
         340, -589, MaxLevel: 13, CooldownSeconds: 30 * 60, Thralls: 5)
     {
-        MinLevel = 8, Site = LairSite.Cave, BossKind = "crystal_basilisk", ThrallKind = "crystal_skeever", Might = 1.25, Element = DamageKind.Shock,
+        MinLevel = 8, Site = LairSite.Cave, BossKind = "crystal_basilisk", ThrallKind = "crystal_rat", Might = 1.25, Element = DamageKind.Shock,
         Moves = [BossMove.Marks, BossMove.Bolt, BossMove.Summon],
-        Waking = "The crystal walls begin to hum. Skeevers grown with violet shards pour out of the cracks...",
-        Calling = "The basilisk's crystals ring, and more skeevers come scrabbling!",
+        Waking = "The crystal walls begin to hum. Giant rats grown with violet shards pour out of the cracks...",
+        Calling = "The basilisk's crystals ring, and more giant rats come scrabbling!",
         Falling = "The Crystal Basilisk shudders and is still. The singing stops. Among the shards, the miners' last haul.",
         Hoard = "the miners' last haul", HoardHolds = "raw amethyst, and the picks of men who never came out",
         Title = "Shardbreaker",
@@ -230,15 +230,15 @@ public static class Raids
     }
 
     /// <summary>
-    /// What the hoard holds: experience and septims, double the first time. A hero far past the raid's level finds
+    /// What the hoard holds: experience and crowns, double the first time. A hero far past the raid's level finds
     /// it hardly worth the walk.
     /// </summary>
-    public static (int Xp, int Septims) Reward(Raid r, int heroLevel, bool firstTime)
+    public static (int Xp, int Crowns) Reward(Raid r, int heroLevel, bool firstTime)
     {
         var s = Strength(r, heroLevel);
-        var (xp, septims) = ((int)Math.Round((150 + 45 * s) * r.Might), (int)Math.Round((40 + 12 * s) * r.Might));
-        if (Outgrown(r, heroLevel)) (xp, septims) = (xp / 4, septims / 2);
-        return firstTime ? (xp * 2, septims * 2) : (xp, septims);
+        var (xp, crowns) = ((int)Math.Round((150 + 45 * s) * r.Might), (int)Math.Round((40 + 12 * s) * r.Might));
+        if (Outgrown(r, heroLevel)) (xp, crowns) = (xp / 4, crowns / 2);
+        return firstTime ? (xp * 2, crowns * 2) : (xp, crowns);
     }
 
     /// <summary>Too strong for it: there's little here for this hero now.</summary>
@@ -273,13 +273,17 @@ public sealed class RaidBook
         ReadyAt[r.Id] = playSeconds + r.CooldownSeconds;
     }
 
+    /// <summary>How long a lair stands empty after its boss walks out, before the next one moves in.</summary>
+    public const double MoveInSeconds = 90;
+
     /// <summary>
-    /// The boss beat the company: it takes a name, grows stronger and leaves its lair to roam the world. The lair
-    /// stands empty until its timer runs out and a new one (nameless, like they all start) moves in.
+    /// The boss beat the company: it takes a name, grows stronger and leaves its lair to roam the world, a nemesis
+    /// of its own from then on. The lair doesn't stay empty: a moment later another moves in, nameless and no
+    /// stronger than its kind, as they all start.
     /// </summary>
     public Roamer Escaped(Raid r, double playSeconds, ulong seed)
     {
-        ReadyAt[r.Id] = playSeconds + r.CooldownSeconds;
+        ReadyAt[r.Id] = playSeconds + MoveInSeconds;
         var roamer = new Roamer { Id = $"roamer:{seed:x}", RaidId = r.Id, Name = Roaming.NameFor(seed), Seed = seed, Since = playSeconds, Wins = 1 };
         Roamers.Add(roamer);
         return roamer;
@@ -383,10 +387,10 @@ public static class Roaming
     }
 
     /// <summary>The price on its head, paid to whoever kills it: its lair's hoard, and more for every company it beat.</summary>
-    public static (int Xp, int Septims) Bounty(Roamer r, int heroLevel)
+    public static (int Xp, int Crowns) Bounty(Roamer r, int heroLevel)
     {
-        var (xp, septims) = Raids.Reward(r.Raid, heroLevel, firstTime: true);
+        var (xp, crowns) = Raids.Reward(r.Raid, heroLevel, firstTime: true);
         var more = 1 + 0.25 * r.Wins;
-        return ((int)Math.Round(xp * more), (int)Math.Round(septims * more));
+        return ((int)Math.Round(xp * more), (int)Math.Round(crowns * more));
     }
 }

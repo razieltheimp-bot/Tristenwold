@@ -54,7 +54,7 @@ public sealed class QuestEntry
     public (double X, double Z) Goal => Stage == QuestStage.Return ? (Quest.GiverX, Quest.GiverZ) : (Quest.TargetX, Quest.TargetZ);
 }
 
-/// <summary>What changed in the journal, and any septims it earned.</summary>
+/// <summary>What changed in the journal, and any crowns it earned.</summary>
 public sealed record QuestUpdate(Quest Quest, QuestStage Stage, string Text, int Reward = 0);
 
 /// <summary>A company's quests. Saved with the company.</summary>
@@ -114,7 +114,7 @@ public sealed class QuestLog
             if (q.Kind == QuestKind.Deliver && q.PersonId == npcId)
             {
                 e.Stage = QuestStage.Done;
-                yield return new QuestUpdate(q, e.Stage, $"{q.PersonName} takes the {q.Item} and pays you {q.Reward} septims.", q.Reward);
+                yield return new QuestUpdate(q, e.Stage, $"{q.PersonName} takes the {q.Item} and pays you {q.Reward} crowns.", q.Reward);
             }
             else if (q.Kind == QuestKind.Rescue && q.PersonId == npcId && e.Stage == QuestStage.Active)
             {
@@ -124,7 +124,7 @@ public sealed class QuestLog
             else if (q.GiverId == npcId && e.Stage == QuestStage.Return)
             {
                 e.Stage = QuestStage.Done;
-                yield return new QuestUpdate(q, e.Stage, $"{q.GiverName} pays you {q.Reward} septims.", q.Reward);
+                yield return new QuestUpdate(q, e.Stage, $"{q.GiverName} pays you {q.Reward} crowns.", q.Reward);
             }
         }
     }
@@ -169,7 +169,7 @@ public static class Quests
                 "Don't open it. I mean that.", "It's owed, and I'd rather it got there before the Tongs hear of it.",
             ]);
             return new Quest(id, kind, $"A {item} for {target.Name}",
-                $"Take this {item} to {recipient.Name} at {target.Name}. {why} {recipient.First} will pay you {reward} septims when it arrives.",
+                $"Take this {item} to {recipient.Name} at {target.Name}. {why} {recipient.First} will pay you {reward} crowns when it arrives.",
                 npc.Id, npc.Name, home.Id, home.Name, npc.X, npc.Z, target.Id, target.Name, recipient.X, recipient.Z, reward,
                 Item: item, PersonId: recipient.Id, PersonName: recipient.Name);
         }
@@ -182,13 +182,13 @@ public static class Quests
         {
             case QuestKind.Slay:
                 return new Quest(id, kind, $"Clear out {lair.Name}",
-                    $"{lair.Name} is crawling with {foes}. They took two sheep last week and a man the week before. Clear them out and I'll pay {bounty} septims.",
+                    $"{lair.Name} is crawling with {foes}. They took two sheep last week and a man the week before. Clear them out and I'll pay {bounty} crowns.",
                     npc.Id, npc.Name, home.Id, home.Name, npc.X, npc.Z, lair.Id, lair.Name, lair.X, lair.Z, bounty, Count: lair.Lair.Total);
             case QuestKind.Fetch:
             {
                 var item = FetchItem(rng, npc, lair);
                 return new Quest(id, kind, $"{Cap(item)} from {lair.Name}",
-                    $"{Cap(item)} is somewhere in {lair.Name}, and the {foes} there won't give it up. Bring it to me and {bounty} septims are yours.",
+                    $"{Cap(item)} is somewhere in {lair.Name}, and the {foes} there won't give it up. Bring it to me and {bounty} crowns are yours.",
                     npc.Id, npc.Name, home.Id, home.Name, npc.X, npc.Z, lair.Id, lair.Name, lair.X, lair.Z, bounty, Item: item);
             }
             default:
@@ -199,7 +199,7 @@ public static class Quests
                 var lost = $"{Names.Given(rng, kinSex ?? (rng.Chance(0.5) ? Sex.Female : Sex.Male))} {family}";
                 var reward = bounty + 25;
                 return new Quest(id, kind, $"Find {lost.Split(' ')[0]}",
-                    $"My {kin}, {lost}, went out past {lair.Name} three days ago and never came back. The {foes} there... please. I'll give you everything I have: {reward} septims.",
+                    $"My {kin}, {lost}, went out past {lair.Name} three days ago and never came back. The {foes} there... please. I'll give you everything I have: {reward} crowns.",
                     npc.Id, npc.Name, home.Id, home.Name, npc.X, npc.Z, lair.Id, lair.Name, lair.X, lair.Z, reward,
                     PersonId: id + "/captive", PersonName: lost);
             }
@@ -223,7 +223,7 @@ public static class Quests
     static string Plural(string kindId) => kindId switch
     {
         "bandit" => "bandits", "draugr" => "draugr", "wolf" => "wolves", "ice_wolf" => "ice wolves", "bear" => "bears",
-        "frost_troll" => "trolls", "boar" => "boars", "goblin" => "goblins", "skeever" => "skeevers", "mudcrab" => "mudcrabs", "spriggan" => "spriggans",
+        "frost_troll" => "trolls", "boar" => "boars", "goblin" => "goblins", "giant_rat" => "giant rats", "mud_crab" => "mud crabs", "spriggan" => "spriggans",
         _ => Bestiary.Get(kindId).Name.ToLowerInvariant() + "s",
     };
 

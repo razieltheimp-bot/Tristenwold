@@ -26,11 +26,11 @@ public partial class Main
     void Spoils(Enemy victim)
     {
         var drop = Loot.Roll(victim.Kind.Id, _lootRng, victim.Young);
-        if (drop.Items.Count == 0 && drop.Septims == 0) return;
+        if (drop.Items.Count == 0 && drop.Crowns == 0) return;
         Take(drop.Items);
-        _player.Septims += drop.Septims;
-        Sound.Ui(drop.Septims > 0 ? "coin" : "pickup", -4);
-        var what = Loot.Describe(drop.Items) + (drop.Septims > 0 ? $"{(drop.Items.Count > 0 ? ", " : "")}{drop.Septims} septims" : "");
+        _player.Crowns += drop.Crowns;
+        Sound.Ui(drop.Crowns > 0 ? "coin" : "pickup", -4);
+        var what = Loot.Describe(drop.Items) + (drop.Crowns > 0 ? $"{(drop.Items.Count > 0 ? ", " : "")}{drop.Crowns} crowns" : "");
         _hud.Log($"Looted: {what}");
         if (victim.IsDragon) _hud.Toast($"The dragon's hoard and body: {what}.", 9);
     }
@@ -73,7 +73,7 @@ public partial class Main
         var pack = _player.Pack;
         var worn = string.Join(", ", new[] { Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body, Slot.Cloak }
             .Select(s => pack.WornIn(s) is { } i ? i.Name : null).Where(n => n is not null));
-        var text = $"{_player.Septims} septims, {_player.Meat} meat. Wearing: {(worn.Length > 0 ? worn : "nothing extra")} " +
+        var text = $"{_player.Crowns} crowns, {_player.Meat} meat. Wearing: {(worn.Length > 0 ? worn : "nothing extra")} " +
                    $"(+{pack.Armor:0} armour, +{pack.Damage:P0} damage).\n" +
                    $"Herbalism {pack.Level(Job.Herbalism)}, smithing {pack.Level(Job.Smithing)}, beast taming {pack.Level(Job.Taming)}.{(_player.Buffs is { } b ? $" Now: {b}." : "")}\n" +
                    (pack.Items.Count == 0 ? "Your pack is empty." : string.Join(", ", pack.Contents.Select(c => Items.Count(c.Item.Id, c.N))));
@@ -194,32 +194,32 @@ public partial class Main
             var (name, price, text) = id == "meat" ? ("Meat", Shops.MeatPrice, "for your beasts") : (item!.Name, _city.Price(item), item.Text);
             price = Shops.Charge(price, ShopMarkup);
             var sold = item is not null && !_city.InStock(item);
-            return (sold ? $"{name}: sold out" : $"{name}, {price} septims{Dearness(id)}: {text}", (Action)(() =>
+            return (sold ? $"{name}: sold out" : $"{name}, {price} crowns{Dearness(id)}: {text}", (Action)(() =>
             {
                 if (sold) { Sound.Ui("error"); Say(person, $"None left. {CityEconomy.Info(CityEconomy.GoodOf(id)!.Value).Makers} haven't brought any in."); return; }
-                if (_player.Septims < price) { Sound.Ui("error"); _hud.Toast("You can't afford that.", 3); return; }
-                _player.Septims -= price;
+                if (_player.Crowns < price) { Sound.Ui("error"); _hud.Toast("You can't afford that.", 3); return; }
+                _player.Crowns -= price;
                 if (id == "meat") _player.Meat++;
                 else _player.Pack.Add(id);
                 _city.Bought(id, price);
                 Sound.Ui("coin");
-                _hud.Toast($"Bought {name.ToLowerInvariant()}. ({_player.Septims} septims left)", 3);
+                _hud.Toast($"Bought {name.ToLowerInvariant()}. ({_player.Crowns} crowns left)", 3);
                 Save();
                 Buy(person, shop);
             }));
         }).ToList();
         options.Add(("That's all.", () => Say(person, "Come back when your purse is heavier.")));
-        _hud.Talk($"{shop.Name} ({_player.Septims} septims)", shop.Greeting, [.. options]);
+        _hud.Talk($"{shop.Name} ({_player.Crowns} crowns)", shop.Greeting, [.. options]);
     }
 
     /// <summary>Wren's young beasts: what each will grow into, how hard it is to raise, and the price.</summary>
     void ShowMenagerie(Person person)
     {
         var level = _player.Pack.Level(Job.Taming);
-        var options = Menagerie.Stock.Select(o => ($"{o.Name}, {Menagerie.Price(o, level, _player.Markup)} septims. Danger {Menagerie.Stars(o.Danger)}, training {Menagerie.Stars(o.Training)}. {o.Text}",
+        var options = Menagerie.Stock.Select(o => ($"{o.Name}, {Menagerie.Price(o, level, _player.Markup)} crowns. Danger {Menagerie.Stars(o.Danger)}, training {Menagerie.Stars(o.Training)}. {o.Text}",
             (Action)(() => { if (BuyPet(o) is not null) Say(person, "Feed it, and don't let it chew the rope."); }))).ToList();
         options.Add(("Not today.", () => Say(person, "They'll be here. Most of them.")));
-        _hud.Talk($"Wren's Menagerie ({_player.Septims} septims)",
+        _hud.Talk($"Wren's Menagerie ({_player.Crowns} crowns)",
             $"Danger is what it grows into; training is how much patience it takes. Your beast taming: {level}" +
             $"{(level > 1 ? $", so {3 * (level - 1)}% off" : "")}. They follow you (up to {MaxFollowing} at a time; the rest wait at the Gallows Perch) " +
             "and grow up at your side. Dragons aren't for sale: no one sells a dragon.", [.. options]);
@@ -230,14 +230,14 @@ public partial class Main
     {
         if (Items.Get(id) is not { } item || !_player.Pack.Take(id)) return 0;
         var offer = _city.Offer(item);
-        _player.Septims += offer;
+        _player.Crowns += offer;
         _city.Sold(id, offer);
         return offer;
     }
 
     void Sell(Person person, Shop shop)
     {
-        var options = _player.Pack.Contents.Where(c => c.Item.Id != "alchemist_kit" || c.N > 1).Select(c => ($"{c.Item.Name} ({c.N}): {_city.Offer(c.Item)} septims each{Dearness(c.Item.Id)}",
+        var options = _player.Pack.Contents.Where(c => c.Item.Id != "alchemist_kit" || c.N > 1).Select(c => ($"{c.Item.Name} ({c.N}): {_city.Offer(c.Item)} crowns each{Dearness(c.Item.Id)}",
             (Action)(() =>
             {
                 SellOne(c.Item.Id);
@@ -251,13 +251,13 @@ public partial class Main
                 var got = 0;
                 foreach (var (item, n) in _player.Pack.Contents.Where(c => c.Item.Kind is ItemKind.Material or ItemKind.Trophy).ToList())
                     for (var i = 0; i < n; i++) got += SellOne(item.Id);
-                _hud.Toast($"Sold for {got} septims. (Selling a lot at once brings the price down: the market's only so hungry.)", 5);
+                _hud.Toast($"Sold for {got} crowns. (Selling a lot at once brings the price down: the market's only so hungry.)", 5);
                 Sound.Ui("coin");
                 Save();
                 Sell(person, shop);
             }));
         options.Add(("That's all.", () => Say(person, "Pleasure.")));
-        _hud.Talk($"{shop.Name}: selling ({_player.Septims} septims)",
+        _hud.Talk($"{shop.Name}: selling ({_player.Crowns} crowns)",
             $"{shop.Keeper} pays half today's price{(_city.Discount > 0 ? ", and a little more to someone the Exchange speaks well of" : "")}. Worn gear isn't for sale; take it off first.", [.. options]);
     }
 

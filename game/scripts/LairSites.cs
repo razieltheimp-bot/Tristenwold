@@ -349,7 +349,7 @@ public static class LairSites
                 if (rng.Randf() < 0.5f) Prop(root, "dungeon/rubble_large.glb", p.Lerp(q, 0.5f) - (p.Lerp(q, 0.5f) - c).Normalized() * 1.4f, 0.3f, rng.RandfRange(0, 6));
             }
         }
-        // An arch still standing at the back, and the altar (or hearthstone) under it.
+        // An arch still standing at the back, and the altar (or hearth) under it.
         Prop(root, "halloween/arch.gltf", c + back * 7, 1.5f, Mathf.Atan2(side.X, side.Z), solid: false);
         Block(root, Floor(c + back * 6) + Vector3.Up * 0.45f, new Vector3(3, 0.9f, 1.6f), Mathf.Atan2(side.X, side.Z), wall);
         // Columns, standing and fallen.

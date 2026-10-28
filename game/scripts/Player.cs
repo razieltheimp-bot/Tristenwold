@@ -17,7 +17,7 @@ public partial class Player : Fighter
     public string Company { get; set; } = "Adventurer";
     public bool Downed { get; private set; }
     public DamageKind Element { get; set; } = DamageKind.Fire;
-    public int Septims { get; set; }
+    public int Crowns { get; set; }
 
     /// <summary>Meat in the packs, for feeding beasts and dragons (and tempting a youngling).</summary>
     public int Meat { get; set; }
@@ -108,7 +108,7 @@ public partial class Player : Fighter
         if (DisplayServer.GetName() != "headless") Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
-    /// <summary>Sets health, magicka, stamina and the rest from the class, its passive, and the hero's level.</summary>
+    /// <summary>Sets health, mana, stamina and the rest from the class, its passive, and the hero's level.</summary>
     public void Fit()
     {
         var c = Class;
@@ -116,8 +116,8 @@ public partial class Player : Fighter
         var passive = Hero.Power(c.Passive.Id);
         var race = Race;
         var health = (c.Health + h) * (c.Id == "Barbarian" ? 1.2 * passive : 1) * race.Health;
-        var magicka = (c.Magicka + m) * (c.Id == "Wizard" ? 1 + 0.25 * passive : 1) * race.Magicka;
-        Stats.SetPools(health, magicka, (c.Stamina + s) * race.Stamina);
+        var mana = (c.Mana + m) * (c.Id == "Wizard" ? 1 + 0.25 * passive : 1) * race.Mana;
+        Stats.SetPools(health, mana, (c.Stamina + s) * race.Stamina);
         Stats.Armor = c.Armor + (Hero.Level - 1) * 3;
         Stats.SpellPower = (1 + (Hero.Level - 1) * 0.04 + (c.Id == "Wizard" ? c.Passive.Power * passive : 0)) * (c.Id == "Poet" ? 1 + c.Passive.Power * passive : 1);
         Stats.DamageMult = 1 + (Hero.Level - 1) * 0.04;
@@ -149,7 +149,7 @@ public partial class Player : Fighter
     public void Consume(Effect e)
     {
         Stats.Heal(Stats.MaxHealth * e.Health);
-        Stats.Restore(Stats.MaxMagicka * e.Magicka, Stats.MaxStamina * e.Stamina);
+        Stats.Restore(Stats.MaxMana * e.Mana, Stats.MaxStamina * e.Stamina);
         if (e.Might > 0) (_might, _mightLeft) = (e.Might, e.Seconds);
         if (e.Ward > 0) (_ward, _wardLeft) = (e.Ward, e.Seconds);
         if (e.Might > 0 || e.Ward > 0) Fit();
@@ -208,8 +208,8 @@ public partial class Player : Fighter
         _poison -= delta;
         // Passives that work over time: a barbarian's hide closes wounds; a sorcerer's well refills fast.
         if (Class.Id == "Barbarian" && InFight) Stats.Heal(Stats.MaxHealth * Class.Passive.Power * Hero.Power("thick_hide") * delta);
-        if (Class.Id == "Sorcerer") Stats.Restore(Stats.MaxMagicka * 0.02 * delta);
-        if (Class.Id == "Musician") Stats.Restore(Stats.MaxMagicka * Class.Passive.Power * Hero.Power("perfect_pitch") * delta, Stats.MaxStamina * Class.Passive.Power * Hero.Power("perfect_pitch") * delta);
+        if (Class.Id == "Sorcerer") Stats.Restore(Stats.MaxMana * 0.02 * delta);
+        if (Class.Id == "Musician") Stats.Restore(Stats.MaxMana * Class.Passive.Power * Hero.Power("perfect_pitch") * delta, Stats.MaxStamina * Class.Passive.Power * Hero.Power("perfect_pitch") * delta);
         if (Frozen)
         {
             if (Mount is null) FallAndSlide(delta, Vector3.Zero);
@@ -324,7 +324,7 @@ public partial class Player : Fighter
     /// <summary>How long until a move can be used again (0: ready).</summary>
     public double Cooldown(string id) => Math.Max(0, _ready.GetValueOrDefault(id) - Now);
 
-    /// <summary>Uses one of the class's moves, if it's ready and there's the stamina or magicka for it.</summary>
+    /// <summary>Uses one of the class's moves, if it's ready and there's the stamina or mana for it.</summary>
     public bool Use(Ability a)
     {
         if (Downed) return false;
@@ -777,8 +777,8 @@ public partial class Player : Fighter
     {
         if (e.Friendly) return;
         var take = (int)Math.Round((1 + _rng.Next(5)) * power);
-        Septims += take;
-        Said?.Invoke($"You lift {take} septims from {e.Stats.Name}.");
+        Crowns += take;
+        Said?.Invoke($"You lift {take} crowns from {e.Stats.Name}.");
     }
 
     /// <summary>
@@ -844,13 +844,13 @@ public partial class Player : Fighter
         {
             var pact = Class.Passive.Power * Hero.Power("dark_pact");
             Stats.Heal(Stats.MaxHealth * pact);
-            Stats.Restore(Stats.MaxMagicka * pact);
+            Stats.Restore(Stats.MaxMana * pact);
         }
         if (_rage > 0) Stats.Heal(Stats.MaxHealth * 0.1);
         if (Class.Id == "Poet") // the muse rewards a fall well sung
         {
             var muse = 0.5 * Class.Passive.Power * Hero.Power("muse");
-            Stats.Restore(Stats.MaxMagicka * muse, Stats.MaxStamina * muse);
+            Stats.Restore(Stats.MaxMana * muse, Stats.MaxStamina * muse);
         }
     }
 

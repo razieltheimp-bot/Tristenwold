@@ -6,7 +6,7 @@ using Tristinwold.Shared;
 
 namespace Tristinwold.Shared.Tests;
 
-/// <summary>The HTTP path the SkyrimPlatform add-on uses: join once, then sync every second.</summary>
+/// <summary>The HTTP path browser clients use: join once, then sync every second.</summary>
 public class HttpGatewayTests
 {
     static int FreePort()

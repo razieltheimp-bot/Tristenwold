@@ -3,9 +3,7 @@ using Godot;
 namespace Tristinwold.Game;
 
 /// <summary>
-/// Graphics settings, from phones to big PCs. The ideas come from the Skyrim and Oblivion graphics
-/// projects (Community Shaders' lighting, OptiScaler's upscaling, the water and wind overhauls),
-/// done with Godot's own renderer: ambient occlusion and indirect light, volumetric fog,
+/// Graphics settings, from phones to big PCs, done with Godot's own renderer: ambient occlusion and indirect light, volumetric fog,
 /// AMD FSR 2 upscaling, water with waves, depth-tinting and shoreline foam, and wind in the trees
 /// and grass.
 /// </summary>

@@ -61,7 +61,7 @@ public class SharedWorldTests
         Assert.Single(To<Notice>(server.Handle("Joe", new FinishContract("brother")), "Joe"), n => n.Kind == NoticeKind.Error);
 
         var (outs, note) = server.Dm("done brother") is var r ? (r.Outgoing, r.Reply) : default;
-        Assert.Equal(1500, To<Reward>(outs, "Joe").Single().Gil);
+        Assert.Equal(1500, To<Reward>(outs, "Joe").Single().Coppers);
         Assert.Empty(To<Reward>(outs, "Mira"));
         Assert.Equal("the fisherman's brother", server.State.Groups["Joe"].SavedMan);
         Assert.Contains("their Vann", note);
@@ -155,7 +155,7 @@ public class SharedWorldTests
         server.Connect(Hi("Joe"));
         server.Handle("Joe", new ClaimContract("rats"));
         server.Handle("Joe", new ReportBattle(new BattleReport("Sewers", BattleResult.PartyEscaped,
-            [new EnemyReport(0, "Skeever", "Giant Skeever", 200, false, false)], ["Joe"])));
+            [new EnemyReport(0, "Giant Rat", "Giant Giant Rat", 200, false, false)], ["Joe"])));
         var path = Path.GetTempFileName();
         server.State.Save(path);
 

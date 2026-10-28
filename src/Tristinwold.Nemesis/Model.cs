@@ -19,19 +19,19 @@ public enum Memory
     Avenger = 1 << 6,          // swore revenge for a slain blood-brother
 }
 
-/// <summary>Skyrim's damage families, which leave scars and teach resistances (Sun is Dawnguard's anti-undead magic).</summary>
+/// <summary>The damage families, which leave scars and teach resistances (Sun is holy light, the bane of the undead).</summary>
 public enum DamageKind { Physical, Fire, Frost, Shock, Poison, Sun, Unknown }
 
 /// <summary>
-/// Multipliers the game layer applies to Skyrim actor values: Health/Magicka/Stamina pools,
+/// Multipliers the game layer applies to a fighter's numbers: Health/Mana/Stamina pools,
 /// AttackDamageMult (Damage), DamageResist (Armor), MagicResist, SpeedMult (Speed), spell
 /// magnitude (SpellPower) and CritChance.
 /// </summary>
-public enum Stat { Health, Magicka, Stamina, Damage, Armor, MagicResist, Speed, SpellPower, CritChance }
+public enum Stat { Health, Mana, Stamina, Damage, Armor, MagicResist, Speed, SpellPower, CritChance }
 
 public enum Affinity { Weak, Normal, Resist, Immune, Absorb }
 
-/// <summary>Final Fantasy-style statuses a nemesis starts each fight with, applied as Skyrim magic effects.</summary>
+/// <summary>Statuses a nemesis starts each fight with.</summary>
 public enum AutoStatus { Haste, Protect, Shell, Regen, Reflect }
 
 public enum TraitKind { Strength, Weakness }
@@ -69,14 +69,14 @@ public sealed class Nemesis
     public string? Epithet { get; set; }
 
     /// <summary>
-    /// What kind of Skyrim actor this is, as the game layer identifies it (an actor base or
+    /// What kind of fighter this is, as the game layer identifies it (an actor base or
     /// leveled-list editor ID such as "LvlBanditMelee1H"). A nemesis only takes the place of
     /// the same kind, or is spawned as one.
     /// </summary>
     public required string Kind { get; init; }
     /// <summary>What players see: "Bandit Chief", "Draugr Deathlord".</summary>
     public required string Species { get; init; }
-    /// <summary>An actor base to spawn it from when it comes hunting ("Skyrim.esm|0x0003DF08").</summary>
+    /// <summary>An actor base to spawn it from when it comes hunting (its kind in the bestiary, say "bandit").</summary>
     public string? BaseForm { get; set; }
 
     public Rank Rank { get; set; } = Rank.Captain;

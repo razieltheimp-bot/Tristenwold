@@ -254,7 +254,7 @@ public sealed class WorldGen
         var (x, z) = city.Position;
         var radius = CitySizes.GetValueOrDefault(city.Id, 60);
         var floor = city.Id == "tristinwold" ? 0 : Math.Max(RawHeight(x, z), WaterLevel + 2);
-        var places = city.Places.Values.Where(p => p != city.Name).Distinct().ToList();
+        var places = city.Places.Where(p => p != city.Name).Distinct().ToList();
         return new Settlement($"city:{city.Id}", radius >= 70 ? SettlementKind.City : SettlementKind.Town, city.Name, city.Epithet,
             city.Story, x, z, radius, floor, BiomeAt(x, z, floor), places, null, city.Id == "tristinwold" ? 10 : 8,
             Authored: true, StartsKnown: Math.Sqrt(x * x + z * z) <= StartingRadius);

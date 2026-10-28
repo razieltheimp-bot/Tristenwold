@@ -33,8 +33,8 @@ public sealed class WildBrain(Main main, IReadOnlyList<Trick> tricks)
             paid = (victim, _, _) =>
             {
                 if (victim != e || brain._stolen == 0) return;
-                main.PlayerNode.Septims += brain._stolen;
-                main.HudNode.Toast($"You get back the {brain._stolen} septims the {e.Kind.Name.ToLowerInvariant()} took.", 5);
+                main.PlayerNode.Crowns += brain._stolen;
+                main.HudNode.Toast($"You get back the {brain._stolen} crowns the {e.Kind.Name.ToLowerInvariant()} took.", 5);
                 brain._stolen = 0;
             };
             Enemy.Slain += paid;
@@ -95,13 +95,13 @@ public sealed class WildBrain(Main main, IReadOnlyList<Trick> tricks)
             Vanish(e, foe, damage);
             return;
         }
-        if (Has(Trick.Steal) && _steal <= 0 && d < 3.2f && foe is Player hero && e.Leader is null && hero.Septims > 0)
+        if (Has(Trick.Steal) && _steal <= 0 && d < 3.2f && foe is Player hero && e.Leader is null && hero.Crowns > 0)
         {
             _steal = 14;
-            var take = Math.Min(hero.Septims, 3 + (int)(GD.Randi() % 9));
-            hero.Septims -= take;
+            var take = Math.Min(hero.Crowns, 3 + (int)(GD.Randi() % 9));
+            hero.Crowns -= take;
             _stolen += take;
-            main.HudNode.Toast($"The {e.Kind.Name.ToLowerInvariant()} snatches {take} septims and tucks them away!", 4);
+            main.HudNode.Toast($"The {e.Kind.Name.ToLowerInvariant()} snatches {take} crowns and tucks them away!", 4);
         }
     }
 

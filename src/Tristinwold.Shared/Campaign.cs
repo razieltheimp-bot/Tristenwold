@@ -66,32 +66,24 @@ public sealed class CampaignState
     public HashSet<string> Flags { get; set; } = [];
     public string? NemesisWorldJson { get; set; }
 
-    /// <summary>
-    /// Where the story is staged: Skyrim location name -> Tristinwold place. Areas reported by the
-    /// game are renamed through this, so dead drops, near misses and Vann all speak Tristinwold.
-    /// Names not listed pass through unchanged. Edit freely in the campaign file.
-    /// </summary>
-    public Dictionary<string, string> Places { get; set; } = [];
+    /// <summary>Where the story is staged: the places Vann sends people to and drops are left in. Edit freely in the campaign file.</summary>
+    public List<string> Stage { get; set; } = [];
 
-    /// <summary>The Tristinwold name for a place the game reported.</summary>
-    public string Place(string skyrimArea)
-    {
-        foreach (var (skyrim, tristinwold) in Places)
-        {
-            // With Tristinwold.esp the game already says "The Gallows Perch"; use our spelling.
-            if (skyrim.Equals(skyrimArea, StringComparison.OrdinalIgnoreCase)
-                || tristinwold.Equals(skyrimArea, StringComparison.OrdinalIgnoreCase)) return tristinwold;
-        }
-        return skyrimArea;
-    }
+    /// <summary>A place the game reported, in the campaign's own spelling if it knows the place.</summary>
+    public string Place(string area) =>
+        Stage.FirstOrDefault(p => p.Equals(area, StringComparison.OrdinalIgnoreCase)) ?? area;
 
 
     /// <summary>Things Vann has said lately, so he doesn't repeat himself (and so a voice model has memory).</summary>
     public List<string> VannMemory { get; set; } = [];
 
-    public static CampaignState Load(string path) =>
-        JsonSerializer.Deserialize<CampaignState>(File.ReadAllText(path), Wire.Options)
-        ?? throw new InvalidDataException($"Empty campaign file: {path}");
+    public static CampaignState Load(string path)
+    {
+        var state = JsonSerializer.Deserialize<CampaignState>(Nemesis.SaveUpgrade.Upgrade(File.ReadAllText(path)), Wire.Options)
+            ?? throw new InvalidDataException($"Empty campaign file: {path}");
+        if (state.Stage.Count == 0) state.Stage = Atlas.Default.AllPlaces(); // a campaign saved before the stage was kept
+        return state;
+    }
 
     public void Save(string path)
     {
@@ -112,7 +104,7 @@ public sealed class CampaignState
     public static CampaignState SavedMan() => new CampaignState()
     {
         Campaign = "The Saved Man",
-        Places = Atlas.Default.AllPlaces(),
+        Stage = Atlas.Default.AllPlaces(),
         Contracts =
         [
             new() { Id = "rats", Title = "Rats in the cellar of the Salt Barrel tavern", PostedBy = "Tavern owner", Pay = 10,

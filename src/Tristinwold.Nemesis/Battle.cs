@@ -1,7 +1,7 @@
 namespace Tristinwold.Nemesis;
 
 /// <summary>
-/// How a fight ended. Skyrim has no battle screen, so the game layer decides: the player died
+/// How a fight ended. There's no battle screen, so the game layer decides: the player died
 /// (Defeat), every enemy died or fled (Victory / EnemiesEscaped), or the player got away with
 /// enemies still alive (PartyEscaped).
 /// </summary>
@@ -18,7 +18,7 @@ public sealed record EnemyReport(
     Guid? NemesisId = null,
     DamageKind? KillingBlow = null,
     string? KilledBy = null,
-    /// <summary>The actor base the game can spawn this kind from ("Skyrim.esm|0x0003DF08").</summary>
+    /// <summary>The actor base the game can spawn this kind from (its kind in the bestiary, say "bandit").</summary>
     string? BaseForm = null);
 
 /// <summary>What the game layer hands the nemesis world after every battle.</summary>
@@ -43,13 +43,13 @@ public sealed record BattleModifiers(
     Rank Rank = Rank.Grunt,
     int Victories = 0)
 {
-    /// <summary>Applies a multiplier to an actor value, kept inside what Skyrim plays well with.</summary>
+    /// <summary>Applies a multiplier to an actor value, kept inside what the game plays well with.</summary>
     public double Apply(Stat stat, double baseValue)
     {
         var value = baseValue * (StatMultipliers.TryGetValue(stat, out var m) ? m : 1.0);
         return stat switch
         {
-            Stat.Health or Stat.Magicka or Stat.Stamina => Math.Clamp(Math.Round(value), 1, 100_000),
+            Stat.Health or Stat.Mana or Stat.Stamina => Math.Clamp(Math.Round(value), 1, 100_000),
             Stat.Speed => Math.Clamp(value, 50, 250),          // SpeedMult: 100 is normal
             Stat.Armor => Math.Clamp(value, 0, 1000),          // armor rating; 567 is the vanilla cap
             Stat.MagicResist => Math.Clamp(value, -100, 85),   // percent; 85 is the vanilla cap

@@ -69,7 +69,7 @@ public sealed class NamePack
 }
 
 /// <summary>
-/// The default strengths and weaknesses, in Skyrim terms: actor-value multipliers, elemental
+/// The default strengths and weaknesses, as multipliers on what a fighter has, elemental
 /// resistances (Weak = -50%, Resist = +50%, Immune = 100%, Absorb heals) and Final
 /// Fantasy-style statuses the game layer applies as magic effects.
 /// </summary>

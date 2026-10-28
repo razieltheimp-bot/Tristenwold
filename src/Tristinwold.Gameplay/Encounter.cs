@@ -6,7 +6,6 @@ namespace Tristinwold.Gameplay;
 /// <summary>
 /// Decides what counts as one fight in a real-time game and how it ended, then reports it in
 /// the shared world's terms. The game feeds it facts each frame; it never touches the engine.
-/// (Same rules as the Skyrim add-on's encounter tracker.)
 /// </summary>
 public sealed class EncounterTracker(
     Action<string, IReadOnlyList<FormationSlot>> onStart,

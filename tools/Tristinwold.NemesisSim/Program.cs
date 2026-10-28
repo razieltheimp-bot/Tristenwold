@@ -1,5 +1,5 @@
 // Plays a fake campaign against the nemesis rules and prints what happens, so the
-// balance can be tuned without launching FFX.
+// balance can be tuned without launching the game.
 //
 //   dotnet run --project tools/Tristinwold.NemesisSim -- [battles] [seed] [namepack.json]
 using Tristinwold.Nemesis;
@@ -12,7 +12,7 @@ string[] players = ["Joe", "Mira", "Dax"];
 string[] areas = ["Outer Ring", "The Docks", "The Needle", "Drowned Chapel", "The Exchange"];
 (string Id, string Name, int Hp)[] species =
 [
-    ("Skeever", "Giant Skeever", 60), ("Bandit", "Dock Thug", 150), ("Draugr", "Draugr Wight", 300),
+    ("Giant Rat", "Giant Giant Rat", 60), ("Bandit", "Dock Thug", 150), ("Draugr", "Draugr Wight", 300),
     ("Spriggan", "Spriggan", 450), ("Troll", "Frost Troll", 800),
 ];
 

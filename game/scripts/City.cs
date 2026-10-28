@@ -44,7 +44,7 @@ public static class City
 
     public static List<Lair> Lairs { get; } =
     [
-        new("skeever", 3, new(-20, 0, -82), 6),
+        new("giant_rat", 3, new(-20, 0, -82), 6),
         new("dock_thug", 2, new(130, 0, 30), 2), // the far end of the south pier, away from the honest work on the middle one
         new("lantern_boy", 2, new(-50, 0, 72), 4),
         new("draugr", 1, new(-80, 0, -40), 3),

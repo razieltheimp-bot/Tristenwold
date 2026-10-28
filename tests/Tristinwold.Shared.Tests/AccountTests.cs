@@ -53,10 +53,10 @@ public class AccountTests
         store.Handle(new AccountRequest("create", "Joe", Token: joe.Token, Character: Sheet("Bram")));
         var mira = store.Handle(new AccountRequest("register", "Mira", Secret: "pinewood"));
 
-        var saved = store.Handle(new AccountRequest("save", "Joe", Token: joe.Token, Character: Sheet("Bram"), Progress: new SaveProgress("{\"septims\":12}", 12, "the wilds")));
+        var saved = store.Handle(new AccountRequest("save", "Joe", Token: joe.Token, Character: Sheet("Bram"), Progress: new SaveProgress("{\"crowns\":12}", 12, "the wilds")));
         Assert.True(saved.Ok, saved.Error);
-        Assert.Equal(12, saved.Characters.Single().Septims);
-        Assert.Equal("{\"septims\":12}", store.Handle(new AccountRequest("load", "Joe", Token: joe.Token, Character: Sheet("Bram"))).Save);
+        Assert.Equal(12, saved.Characters.Single().Crowns);
+        Assert.Equal("{\"crowns\":12}", store.Handle(new AccountRequest("load", "Joe", Token: joe.Token, Character: Sheet("Bram"))).Save);
 
         Assert.False(store.Handle(new AccountRequest("save", "Mira", Token: mira.Token, Character: Sheet("Bram"), Progress: new SaveProgress("{}", 0, ""))).Ok);
         Assert.False(store.Handle(new AccountRequest("save", "Joe", Token: "forged", Character: Sheet("Bram"), Progress: new SaveProgress("{}", 0, ""))).Ok);
@@ -135,7 +135,7 @@ public class AccountTests
         {
             phone.Start();
             await Next<Welcome>(phone);
-            phone.Send(new SaveProgress("{\"septims\":88}", 88, "Hawkwake Mine"));
+            phone.Send(new SaveProgress("{\"crowns\":88}", 88, "Hawkwake Mine"));
             for (var i = 0; i < 100; i++)
             {
                 var check = await AccountClient.AskAsync(pcAddress, new AccountRequest("load", "Joe", Token: login.Token, ServerPassword: "table", Character: Sheet("Bram")));
@@ -148,9 +148,9 @@ public class AccountTests
         var pc = await AccountClient.AskAsync(pcAddress, new AccountRequest("login", "Joe", Secret: "hunter22", ServerPassword: "table"));
         Assert.True(pc.Ok, pc.Error);
         var bram = pc.Characters.Single();
-        Assert.Equal((88, "Hawkwake Mine"), (bram.Septims, bram.Where));
+        Assert.Equal((88, "Hawkwake Mine"), (bram.Crowns, bram.Where));
         var loaded = await AccountClient.AskAsync(pcAddress, new AccountRequest("load", "Joe", Token: pc.Token, ServerPassword: "table", Character: bram));
-        Assert.Equal("{\"septims\":88}", loaded.Save);
+        Assert.Equal("{\"crowns\":88}", loaded.Save);
         server.Stop();
     }
 

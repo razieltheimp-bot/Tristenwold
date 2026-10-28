@@ -46,6 +46,6 @@ public class HerbTests
     {
         var save = CompanySave.FromJson(CompanySave.Capture(1, 0, new ExploredMap(), new QuestLog(), where: new Spot(-300.5f, 12.25f, 80f, 1.5f)).ToJson());
         Assert.Equal(new Spot(-300.5f, 12.25f, 80f, 1.5f), save.Where);
-        Assert.Null(CompanySave.FromJson("""{"seed":1,"septims":5}""").Where);
+        Assert.Null(CompanySave.FromJson("""{"seed":1,"crowns":5}""").Where);
     }
 }

@@ -410,7 +410,7 @@ public partial class StartScreen : CanvasLayer
             row.AddChild(new TextureRect { Texture = Portrait(sheet.Look) ?? Portrait("Knight"), CustomMinimumSize = new Vector2(56, 56), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered });
             row.AddChild(new Label
             {
-                Text = $"{sheet.Name}\n   {(Avatar.Parse(sheet.Avatar, sheet.Look) is { } who ? who.Kind + " " : "")}{ClassName(sheet.Look)}, {sheet.Element}, {sheet.Septims} septims{(sheet.Where.Length > 0 ? $", last seen at {sheet.Where}" : "")}",
+                Text = $"{sheet.Name}\n   {(Avatar.Parse(sheet.Avatar, sheet.Look) is { } who ? who.Kind + " " : "")}{ClassName(sheet.Look)}, {sheet.Element}, {sheet.Crowns} crowns{(sheet.Where.Length > 0 ? $", last seen at {sheet.Where}" : "")}",
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             });
             row.AddChild(MakeButton("Play", () => _ = Choose(sheet)));
@@ -508,7 +508,7 @@ public partial class StartScreen : CanvasLayer
         try
         {
             return Godot.FileAccess.FileExists(LocalCharactersPath)
-                ? JsonSerializer.Deserialize<List<CharacterSheet>>(Godot.FileAccess.GetFileAsString(LocalCharactersPath), Wire.Options) ?? []
+                ? JsonSerializer.Deserialize<List<CharacterSheet>>(Tristinwold.Nemesis.SaveUpgrade.Upgrade(Godot.FileAccess.GetFileAsString(LocalCharactersPath)), Wire.Options) ?? []
                 : [];
         }
         catch (JsonException) { return []; }

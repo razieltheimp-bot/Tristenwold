@@ -33,7 +33,7 @@ public class WildlifeTests
     public void Home_is_safe_and_the_far_wilds_are_not()
     {
         var home = Wildlife.Near(World, 0, 0, Wildlife.SafeRadius - 20).ToList();
-        Assert.All(home, h => Assert.Contains(h.KindId, new[] { "deer", "fox", "skeever", "mudcrab" }));
+        Assert.All(home, h => Assert.Contains(h.KindId, new[] { "deer", "fox", "giant_rat", "mud_crab" }));
         var far = Wildlife.Near(World, 0, -6000, 1500).ToList();
         Assert.Contains(far, h => !Wildlife.Timid.Contains(h.KindId));
         Assert.Contains(Wildlife.Near(World, 0, -2000, 2000), h => Wildlife.Timid.Contains(h.KindId));

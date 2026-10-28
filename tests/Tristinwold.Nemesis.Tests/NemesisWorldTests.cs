@@ -206,11 +206,11 @@ public class NemesisWorldTests
     }
 
     [Fact]
-    public void Modifiers_stay_inside_what_skyrim_plays_well_with()
+    public void Modifiers_stay_inside_what_the_game_plays_well_with()
     {
         var mods = new BattleModifiers("X", new Dictionary<Stat, double> { [Stat.MagicResist] = 10, [Stat.Health] = 0, [Stat.Speed] = 9 },
             new Dictionary<DamageKind, Affinity>(), []);
-        Assert.Equal(85, mods.Apply(Stat.MagicResist, 30));   // Skyrim's resistance cap
+        Assert.Equal(85, mods.Apply(Stat.MagicResist, 30));   // the resistance cap
         Assert.Equal(1, mods.Apply(Stat.Health, 5000));       // never kill it outright
         Assert.Equal(250, mods.Apply(Stat.Speed, 100));
         Assert.Equal(40, mods.Apply(Stat.SpellPower, 40));

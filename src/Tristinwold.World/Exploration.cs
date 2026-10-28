@@ -105,7 +105,7 @@ public sealed class CompanySave
 {
     public int Version { get; set; } = 1;
     public ulong Seed { get; set; }
-    public int Septims { get; set; }
+    public int Crowns { get; set; }
     public Dictionary<string, string> Explored { get; set; } = [];
     public List<string> Discovered { get; set; } = [];
     public List<string> Rumored { get; set; } = [];
@@ -131,7 +131,7 @@ public sealed class CompanySave
         Converters = { new JsonStringEnumConverter() },
     };
 
-    public static CompanySave Capture(ulong seed, int septims, ExploredMap map, QuestLog log,
+    public static CompanySave Capture(ulong seed, int crowns, ExploredMap map, QuestLog log,
         Hero? hero = null, IEnumerable<Bond>? companions = null, DragonSaga? saga = null, int meat = 0, GuildBook? guilds = null, RaidBook? raids = null,
         Pack? pack = null, HerbBook? herbs = null, Spot? where = null, CityEconomy? city = null) => new()
     {
@@ -146,7 +146,7 @@ public sealed class CompanySave
         Saga = saga,
         Meat = meat,
         Seed = seed,
-        Septims = septims,
+        Crowns = crowns,
         Explored = map.TilesToSave(),
         Discovered = [.. map.Discovered],
         Rumored = [.. map.Rumored],
@@ -166,5 +166,5 @@ public sealed class CompanySave
 
     public string ToJson() => JsonSerializer.Serialize(this, Options);
 
-    public static CompanySave FromJson(string json) => JsonSerializer.Deserialize<CompanySave>(json, Options) ?? new CompanySave();
+    public static CompanySave FromJson(string json) => JsonSerializer.Deserialize<CompanySave>(Tristinwold.Nemesis.SaveUpgrade.Upgrade(json), Options) ?? new CompanySave();
 }

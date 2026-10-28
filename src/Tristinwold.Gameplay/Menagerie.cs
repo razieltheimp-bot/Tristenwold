@@ -22,9 +22,9 @@ public static class Menagerie
     [
         new("fox", 1, 1, "Quick and clever; it'll find every rabbit for a mile."),
         new("deer", 1, 1, "Gentle, and it'll carry your herbs. It won't fight much."),
-        new("skeever", 1, 2, "Filthy, loyal, and it bites above its size."),
+        new("giant_rat", 1, 2, "Filthy, loyal, and it bites above its size."),
         new("hawk", 1, 3, "Falconry takes patience. It'll be your eyes in the sky, and its talons sting."),
-        new("mudcrab", 2, 1, "A shell like a shield. Feed it and it's happy; it isn't clever."),
+        new("mud_crab", 2, 1, "A shell like a shield. Feed it and it's happy; it isn't clever."),
         new("wolf", 2, 2, "The road's oldest companion. A wolf grown at your side is worth two swords."),
         new("boar", 2, 3, "Stubborn as a mule and twice as tough. It charges first and thinks never."),
         new("goblin", 2, 4, "Cunning, and it steals. Raised right, it steals for you."),

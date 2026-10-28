@@ -17,5 +17,5 @@ public static class NemesisJson
     public static string Serialize<T>(T value) => JsonSerializer.Serialize(value, Options);
 
     public static T Deserialize<T>(string json) =>
-        JsonSerializer.Deserialize<T>(json, Options) ?? throw new InvalidDataException("Empty nemesis data.");
+        JsonSerializer.Deserialize<T>(SaveUpgrade.Upgrade(json), Options) ?? throw new InvalidDataException("Empty nemesis data.");
 }

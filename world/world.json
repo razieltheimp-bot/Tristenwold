@@ -1,187 +1,263 @@
 {
-  "about": "The cities of The Rings of Tristinwold, built from Skyrim's holds. Every Skyrim name on the left of a 'places' entry is renamed in game (by Tristinwold.esp) and on the server. Edit freely; rebuild the plugin and restart the server after changes. 'at' places each city on the map in metres (x east, z south, so north is negative z). 'seed' grows everything between and beyond them: wilderness, villages, people, quests and endless new cities.",
+  "about": "The cities of The Rings of Tristinwold: each with its name, epithet, story, places and the contracts it posts on the shared board. 'at' places each city on the map in metres (x east, z south, so north is negative z). 'seed' grows everything between and beyond them: wilderness, villages, people, quests and endless new cities. 'characters' are the people written by hand, and where they live. Edit freely; restart the server after changes.",
   "seed": 1777,
   "cities": [
     {
       "id": "tristinwold",
-      "at": [0, 0],
+      "at": [
+        0,
+        0
+      ],
       "name": "Tristinwold",
-      "builtFrom": "Riften",
       "epithet": "the City of Rings",
       "story": "A walled port of three rings, run from below by the Tongs. The first person each company saves here is Vann. (The main saga: see The Rings of Tristinwold.)",
-      "places": {
-        "Riften": "Tristinwold",
-        "The Ragged Flagon": "The Gallows Perch",
-        "The Ratway": "The Warrens",
-        "The Ratway Warrens": "The Warrens",
-        "Ratway Vaults": "The Tong Sea-Caves",
-        "The Bee and Barb": "The Salt Barrel",
-        "Riften Fishery": "The Docks",
-        "Lake Honrich": "The Harbor",
-        "Goldenglow Estate": "The Needle",
-        "Temple of Mara": "The Drowned Chapel",
-        "Honorhall Orphanage": "The Lantern Boys' Den",
-        "Black-Briar Meadery": "The Exchange",
-        "Riften Hall of the Dead": "The Magi Archive",
-        "Mistveil Keep": "The Crown",
-        "Riften Jail": "The Watch House"
-      },
+      "places": [
+        "The Gallows Perch",
+        "The Warrens",
+        "The Tong Sea-Caves",
+        "The Salt Barrel",
+        "The Docks",
+        "The Harbor",
+        "The Needle",
+        "The Drowned Chapel",
+        "The Lantern Boys' Den",
+        "The Exchange",
+        "The Magi Archive",
+        "The Crown",
+        "The Watch House"
+      ],
       "contracts": []
     },
     {
       "id": "galeholt",
-      "at": [-1900, -1050],
+      "at": [
+        -1900,
+        -1050
+      ],
       "name": "Galeholt",
-      "builtFrom": "Whiterun",
       "epithet": "the Wind-Fort on the Plain",
       "story": "Horse-lords on an open plain, ruled from the Eyrie. Two clans, the Ashmanes and the Ironsworn, feud over whether to ride to Tristinwold's aid or bar the gates. The Warden-Thane's new court adviser knows too much about the coming war.",
-      "places": {
-        "Whiterun": "Galeholt",
-        "Dragonsreach": "The Eyrie",
-        "The Bannered Mare": "The Spur and Saddle",
-        "The Drunken Huntsman": "The Fletcher's Rest",
-        "Jorrvaskr": "The Long Hall",
-        "Temple of Kynareth": "The Shrine of the Four Winds",
-        "Warmaiden's": "The Ironsworn Forge",
-        "Belethor's General Goods": "The Ash-Market Stall"
-      },
+      "places": [
+        "The Eyrie",
+        "The Spur and Saddle",
+        "The Fletcher's Rest",
+        "The Long Hall",
+        "The Shrine of the Four Winds",
+        "The Ironsworn Forge",
+        "The Ash-Market Stall"
+      ],
       "contracts": [
-        { "id": "galeholt-feud", "title": "Carry a blood-price between the Ashmanes and the Ironsworn before the feud turns to murder", "postedBy": "The Warden-Thane's steward", "pay": 35, "inDanger": "the Ashmane heir", "secret": "The new court adviser is paying both clans to keep fighting." }
+        {
+          "id": "galeholt-feud",
+          "title": "Carry a blood-price between the Ashmanes and the Ironsworn before the feud turns to murder",
+          "postedBy": "The Warden-Thane's steward",
+          "pay": 35,
+          "inDanger": "the Ashmane heir",
+          "secret": "The new court adviser is paying both clans to keep fighting."
+        }
       ]
     },
     {
       "id": "vespergate",
-      "at": [-3600, -4300],
+      "at": [
+        -3600,
+        -4300
+      ],
       "name": "Vespergate",
-      "builtFrom": "Solitude",
       "epithet": "the City on the Arch",
       "story": "A widowed queen rules from the Sapphire Court above a sea-arch. Once a year, on Bell Night, the headsman frees one condemned prisoner and nobody knows how he chooses. This year he chose someone who should not exist yet.",
-      "places": {
-        "Solitude": "Vespergate",
-        "Blue Palace": "The Sapphire Court",
-        "The Winking Skeever": "The Hanged Lark",
-        "Bards College": "The Choir of Lanterns",
-        "Castle Dour": "The Bell Keep",
-        "Temple of the Divines": "The Temple of the Seven Lights",
-        "Radiant Raiment": "The Silk Arcade"
-      },
+      "places": [
+        "The Sapphire Court",
+        "The Hanged Lark",
+        "The Choir of Lanterns",
+        "The Bell Keep",
+        "The Temple of the Seven Lights",
+        "The Silk Arcade"
+      ],
       "contracts": [
-        { "id": "vespergate-bell", "title": "Find the prisoner freed on Bell Night before the Crown's agents do", "postedBy": "The headsman, anonymously", "pay": 45, "inDanger": "the freed prisoner", "secret": "The prisoner is a Keystone from another company, pulled out of time." }
+        {
+          "id": "vespergate-bell",
+          "title": "Find the prisoner freed on Bell Night before the Crown's agents do",
+          "postedBy": "The headsman, anonymously",
+          "pay": 45,
+          "inDanger": "the freed prisoner",
+          "secret": "The prisoner is a Keystone from another company, pulled out of time."
+        }
       ]
     },
     {
       "id": "cinderhelm",
-      "at": [250, -1750],
+      "at": [
+        250,
+        -1750
+      ],
       "name": "Cinderhelm",
-      "builtFrom": "Windhelm",
       "epithet": "the Hall of Cold Crowns",
       "story": "An old, proud city that walls its refugees into the Cinder Quarter. Since the Rift opened the refugees are Ashborn, half-demon children, and someone is killing them one by one while zealots call it holy work.",
-      "places": {
-        "Windhelm": "Cinderhelm",
-        "Palace of the Kings": "The Hall of Cold Crowns",
-        "Candlehearth Hall": "The Candle-and-Coal",
-        "The Gray Quarter": "The Cinder Quarter",
-        "New Gnisis Cornerclub": "The Ember Cornerclub",
-        "Temple of Talos": "The Temple of the Watchful Sun",
-        "Windhelm Hall of the Dead": "The Frost Crypt"
-      },
+      "places": [
+        "The Hall of Cold Crowns",
+        "The Candle-and-Coal",
+        "The Cinder Quarter",
+        "The Ember Cornerclub",
+        "The Temple of the Watchful Sun",
+        "The Frost Crypt"
+      ],
       "contracts": [
-        { "id": "cinderhelm-killer", "title": "Catch whoever is killing Ashborn in the Cinder Quarter", "postedBy": "A refugee elder", "pay": 40, "inDanger": "the next Ashborn child marked for death", "secret": "The killer believes an angel speaks to him. One does." }
+        {
+          "id": "cinderhelm-killer",
+          "title": "Catch whoever is killing Ashborn in the Cinder Quarter",
+          "postedBy": "A refugee elder",
+          "pay": 40,
+          "inDanger": "the next Ashborn child marked for death",
+          "secret": "The killer believes an angel speaks to him. One does."
+        }
       ]
     },
     {
       "id": "argentdeep",
-      "at": [-5100, -900],
+      "at": [
+        -5100,
+        -900
+      ],
       "name": "Argentdeep",
-      "builtFrom": "Markarth",
       "epithet": "the City Carved in Silver",
       "story": "A stone city cut into a cliff, owned by the Argent family's silver. The silver has started to rot into rust in the miners' hands, and the Argents are blaming the miners.",
-      "places": {
-        "Markarth": "Argentdeep",
-        "Understone Keep": "The Undervault",
-        "Silver-Blood Inn": "The Argent Arms",
-        "Cidhna Mine": "The Hollow Pit",
-        "Temple of Dibella": "The Temple of the Veiled Lady",
-        "The Treasury House": "The Argent Counting-House"
-      },
+      "places": [
+        "The Undervault",
+        "The Argent Arms",
+        "The Hollow Pit",
+        "The Temple of the Veiled Lady",
+        "The Argent Counting-House"
+      ],
       "contracts": [
-        { "id": "argentdeep-rust", "title": "Find out why the Argent silver turns to rust", "postedBy": "The miners' guild", "pay": 50, "inDanger": "a miner accused of theft", "secret": "A fragment of Greed is buried in the deepest seam." }
+        {
+          "id": "argentdeep-rust",
+          "title": "Find out why the Argent silver turns to rust",
+          "postedBy": "The miners' guild",
+          "pay": 50,
+          "inDanger": "a miner accused of theft",
+          "secret": "A fragment of Greed is buried in the deepest seam."
+        }
       ]
     },
     {
       "id": "gravenmoor",
-      "at": [-2050, 550],
+      "at": [
+        -2050,
+        550
+      ],
       "name": "Gravenmoor",
-      "builtFrom": "Falkreath",
       "epithet": "the Town of Graves",
       "story": "A logging town with more dead than living. Lately the dead aren't staying buried, and the gravekeeper has started bargaining with a voice in the pines.",
-      "places": {
-        "Falkreath": "Gravenmoor",
-        "Dead Man's Drink": "The Last Toast",
-        "Falkreath Hall of the Dead": "The Gravekeeper's Hall",
-        "Falkreath Jail": "The Stump"
-      },
+      "places": [
+        "The Last Toast",
+        "The Gravekeeper's Hall",
+        "The Stump"
+      ],
       "contracts": [
-        { "id": "gravenmoor-dead", "title": "Put Gravenmoor's restless dead back in their graves", "postedBy": "The gravekeeper", "pay": 30, "inDanger": "a mourner who went into the pines", "secret": "The voice in the pines is a demon lord's herald, early." }
+        {
+          "id": "gravenmoor-dead",
+          "title": "Put Gravenmoor's restless dead back in their graves",
+          "postedBy": "The gravekeeper",
+          "pay": 30,
+          "inDanger": "a mourner who went into the pines",
+          "secret": "The voice in the pines is a demon lord's herald, early."
+        }
       ]
     },
     {
       "id": "mirewatch",
-      "at": [-1450, -2450],
+      "at": [
+        -1450,
+        -2450
+      ],
       "name": "Mirewatch",
-      "builtFrom": "Morthal",
       "epithet": "the Town in the Fog",
       "story": "Stilt houses in a marsh where time runs thin. Children walk into the fog and come back years older, or not at all. The Jarl's seer says it is a crack between eras.",
-      "places": {
-        "Morthal": "Mirewatch",
-        "Moorside Inn": "The Drowned Lantern",
-        "Highmoon Hall": "The Seer's Hall",
-        "Morthal Guardhouse": "The Fog Watch"
-      },
+      "places": [
+        "The Drowned Lantern",
+        "The Seer's Hall",
+        "The Fog Watch"
+      ],
       "contracts": [
-        { "id": "mirewatch-fog", "title": "Bring back the children who walked into the fog", "postedBy": "Mirewatch's mothers", "pay": 40, "inDanger": "a lost girl who came back old", "secret": "The fog is one of Vann's cracks: the children are glimpsing the Last Ring." }
+        {
+          "id": "mirewatch-fog",
+          "title": "Bring back the children who walked into the fog",
+          "postedBy": "Mirewatch's mothers",
+          "pay": 40,
+          "inDanger": "a lost girl who came back old",
+          "secret": "The fog is one of Vann's cracks: the children are glimpsing the Last Ring."
+        }
       ]
     },
     {
       "id": "duskwake",
-      "at": [-1300, -4900],
+      "at": [
+        -1300,
+        -4900
+      ],
       "name": "Duskwake",
-      "builtFrom": "Dawnstar",
       "epithet": "the Sleepless Port",
       "story": "A cold harbor where the whole town dreams the same dream every night: a door, and faces they have never met. Nobody sleeps well, and the sleepless are starting to do terrible things.",
-      "places": {
-        "Dawnstar": "Duskwake",
-        "Windpeak Inn": "The Sleepless Gull",
-        "The White Hall": "The Long Night Hall",
-        "Nightcaller Temple": "The Temple of the Door"
-      },
+      "places": [
+        "The Sleepless Gull",
+        "The Long Night Hall",
+        "The Temple of the Door"
+      ],
       "contracts": [
-        { "id": "duskwake-door", "title": "Find what opens the door in Duskwake's shared dream", "postedBy": "The innkeeper of the Sleepless Gull", "pay": 35, "inDanger": "a dreamer who stopped waking", "secret": "It is the Keystones' dream. Duskwake is dreaming it for them." }
+        {
+          "id": "duskwake-door",
+          "title": "Find what opens the door in Duskwake's shared dream",
+          "postedBy": "The innkeeper of the Sleepless Gull",
+          "pay": 35,
+          "inDanger": "a dreamer who stopped waking",
+          "secret": "It is the Keystones' dream. Duskwake is dreaming it for them."
+        }
       ]
     },
     {
       "id": "hollowreach",
-      "at": [1000, -5400],
+      "at": [
+        1000,
+        -5400
+      ],
       "name": "Hollowreach",
-      "builtFrom": "Winterhold",
       "epithet": "the Edge of the North",
       "story": "Half the town fell into the sea long ago. What stands is the Temple of the Loom, where the grey-robed Magi guard the device that can send people back in time. They say the town fell when someone used it carelessly.",
-      "places": {
-        "Winterhold": "Hollowreach",
-        "College of Winterhold": "The Temple of the Loom",
-        "The Frozen Hearth": "The Cliff's End",
-        "The Arcanaeum": "The Archive of Hours",
-        "The Hall of the Elements": "The Hall of the Loom",
-        "The Midden": "The Undercroft"
-      },
+      "places": [
+        "The Temple of the Loom",
+        "The Cliff's End",
+        "The Archive of Hours",
+        "The Hall of the Loom",
+        "The Undercroft"
+      ],
       "contracts": [
-        { "id": "hollowreach-loom", "title": "Escort a grey-robed archivist to the Temple of the Loom", "postedBy": "Sister Ilse Varrow", "pay": 60, "inDanger": "the archivist", "secret": "Something is hunting the Magi, and it already knows the way." }
+        {
+          "id": "hollowreach-loom",
+          "title": "Escort a grey-robed archivist to the Temple of the Loom",
+          "postedBy": "Sister Ilse Varrow",
+          "pay": 60,
+          "inDanger": "the archivist",
+          "secret": "Something is hunting the Magi, and it already knows the way."
+        }
       ]
     }
   ],
-  "moves": [
-    { "npc": "Ghorza gra-Bagol", "to": "The Ragged Flagon", "rename": "Mother Corva", "why": "The Ravenscrew Tong's barkeep at the Gallows Perch, brought from Argentdeep's forges." },
-    { "npc": "Colette Marence", "to": "Riften Hall of the Dead", "rename": "Sister Ilse Varrow", "why": "Head archivist of the Magi's quiet embassy in Tristinwold, brought from the Temple of the Loom." },
-    { "npc": "Nazeem", "to": "Dead Man's Drink", "why": "Galeholt threw him out. Gravenmoor took him in, against its better judgement." }
+  "characters": [
+    {
+      "name": "Mother Corva",
+      "home": "The Gallows Perch",
+      "story": "The Ravenscrew Tong's barkeep at the Gallows Perch, brought from Argentdeep's forges."
+    },
+    {
+      "name": "Sister Ilse Varrow",
+      "home": "The Magi Archive",
+      "story": "Head archivist of the Magi's quiet embassy in Tristinwold, brought from the Temple of the Loom."
+    },
+    {
+      "name": "Perrin Velk",
+      "home": "The Last Toast",
+      "story": "Galeholt threw him out. Gravenmoor took him in, against its better judgement."
+    }
   ]
 }

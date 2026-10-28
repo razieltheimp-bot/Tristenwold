@@ -1,7 +1,0 @@
-{
-  "server": "http://127.0.0.1:7778",
-  "company": "Adventurer",
-  "password": "",
-  "connect": true,
-  "menuKey": 68
-}

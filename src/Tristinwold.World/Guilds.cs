@@ -32,7 +32,7 @@ public enum GuildRank { Initiate, Member, Adept, Veteran, Master }
 /// <param name="Standing">How the guild thinks of you after.</param>
 /// <param name="Rivalry">How much hotter (or cooler) your rival burns.</param>
 /// <param name="Duel">This choice is settled with a duel against your rival: <paramref name="Outcome"/> is told if you win, <paramref name="Loss"/> if you lose.</param>
-public sealed record StoryChoice(string Label, string Outcome, int Standing = 0, int Rivalry = 0, int Septims = 0, string? Flag = null,
+public sealed record StoryChoice(string Label, string Outcome, int Standing = 0, int Rivalry = 0, int Crowns = 0, string? Flag = null,
     bool Duel = false, string? Loss = null);
 
 /// <summary>
@@ -223,9 +223,9 @@ public static class Guilds
             ]),
 
         new("skimming", Calling.Rogue, GuildRank.Initiate, "guild/nell", "Skimming",
-            "The take's forty septims light this month. The ledger's been doctored: Mags's hand, Nell's sure of it. Sable is saying it was Jory. Vesper hasn't said anything, which is worse.",
+            "The take's forty crowns light this month. The ledger's been doctored: Mags's hand, Nell's sure of it. Sable is saying it was Jory. Vesper hasn't said anything, which is worse.",
             [
-                new("\"Cover for Mags.\"", "Mags is skimming for her sister's medicine. You quietly put forty of your own septims in the box. Vesper notices, of course, and says nothing: loyalty's worth forty septims to her.", 10, 0, -40, "covered_mags"),
+                new("\"Cover for Mags.\"", "Mags is skimming for her sister's medicine. You quietly put forty of your own crowns in the box. Vesper notices, of course, and says nothing: loyalty's worth forty crowns to her.", 10, 0, -40, "covered_mags"),
                 new("\"Tell Vesper the truth.\"", "Vesper hears it, sends Mags's sister a healer, and docks Mags a month. The Knives respect the truth, mostly. Sable is furious her story fell apart.", 10, 1, Flag: "told_vesper"),
                 new("\"Let Sable have Jory.\"", "Jory takes the blame and a beating. Sable owes you one now. The rooftops go quiet when you pass.", -10, -2, Flag: "sold_jory"),
             ]),

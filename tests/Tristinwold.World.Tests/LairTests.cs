@@ -59,9 +59,10 @@ public class LairTests
         Assert.False(string.IsNullOrWhiteSpace(roamer.Name));
         Assert.Contains(r.Boss, roamer.Title);
         Assert.Equal(Roaming.NameFor(42), roamer.Name); // the same seed, the same name
-        // The lair stands empty until the timer runs out; then a new one is there.
-        Assert.False(book.Ready(r, 1000 + r.CooldownSeconds - 1));
-        Assert.True(book.Ready(r, 1000 + r.CooldownSeconds));
+        // A moment later a new one has moved in (long before the lair's usual cooldown).
+        Assert.False(book.Ready(r, 1000 + RaidBook.MoveInSeconds - 1));
+        Assert.True(book.Ready(r, 1000 + RaidBook.MoveInSeconds));
+        Assert.True(RaidBook.MoveInSeconds < r.CooldownSeconds / 4);
         Assert.Equal(0, book.ClearsOf(r));
 
         // Powered up past its lair, and more with every company it beats.

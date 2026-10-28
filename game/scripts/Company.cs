@@ -179,7 +179,7 @@ public partial class Main
         {
             "deer" or "boar" or "frost_troll" => 2,
             "bear" => 3,
-            "wolf" or "ice_wolf" or "fox" or "skeever" or "mudcrab" or "goblin" => 1,
+            "wolf" or "ice_wolf" or "fox" or "giant_rat" or "mud_crab" or "goblin" => 1,
             _ when victim.IsDragon => 4,
             _ => 0,
         };
@@ -188,8 +188,8 @@ public partial class Main
         if (_player.Class.Id == "Thief" && victim.Kind.Height > 1.2)
         {
             var coin = (int)Math.Round((1 + _companyRng.Next(4)) * _player.Hero.Power("light_fingers"));
-            _player.Septims += coin;
-            _hud.Log($"+{coin} septims, lifted from the body");
+            _player.Crowns += coin;
+            _hud.Log($"+{coin} crowns, lifted from the body");
         }
     }
 
@@ -280,8 +280,8 @@ public partial class Main
     public Bond? BuyPet(PetOffer offer)
     {
         var price = Menagerie.Price(offer, _player.Pack.Level(Job.Taming), _player.Markup);
-        if (_player.Septims < price) { _hud.Toast($"The {offer.Name.ToLowerInvariant()} costs {price} septims; you have {_player.Septims}.", 4); return null; }
-        _player.Septims -= price;
+        if (_player.Crowns < price) { _hud.Toast($"The {offer.Name.ToLowerInvariant()} costs {price} crowns; you have {_player.Crowns}.", 4); return null; }
+        _player.Crowns -= price;
         var bond = Adopt(offer.KindId, dragon: false, _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 2);
         var up = _player.Pack.Practise(Job.Taming, 15);
         _hud.Toast((bond.Following
@@ -309,8 +309,8 @@ public partial class Main
         var npc = person.Npc;
         var (role, kind, word) = Follower;
         if (_player.Hero.Level < RecruitLevel) { Say(person, $"You? You're nobody yet. Come back when you've made a name (level {RecruitLevel})."); return false; }
-        if (_player.Septims < RecruitFee) { Say(person, $"My family can't spare me for nothing. {RecruitFee} septims, for their trouble."); return false; }
-        _player.Septims -= RecruitFee;
+        if (_player.Crowns < RecruitFee) { Say(person, $"My family can't spare me for nothing. {RecruitFee} crowns, for their trouble."); return false; }
+        _player.Crowns -= RecruitFee;
         var bond = new Bond { Id = npc.Id, KindId = kind, Role = role, Name = npc.First };
         _bonds.Add(bond);
         bond.Following = _bonds.Count(b => b.Following) <= MaxFollowing;
@@ -318,7 +318,7 @@ public partial class Main
         person.QueueFree();
         if (bond.Following) BringCompanion(bond, at);
         _hud.EndTalk();
-        _hud.Toast($"{npc.Name} becomes your {word}. {RecruitFee} septims go to {npc.Their} family.", 8);
+        _hud.Toast($"{npc.Name} becomes your {word}. {RecruitFee} crowns go to {npc.Their} family.", 8);
         Save();
         return true;
     }
@@ -340,7 +340,7 @@ public partial class Main
         if (People.IsYouth(npc))
         {
             var word = Follower.Word;
-            yield return ($"Would you become my {word}? ({RecruitFee} septims to your family)", () => Recruit(person));
+            yield return ($"Would you become my {word}? ({RecruitFee} crowns to your family)", () => Recruit(person));
         }
         if (npc.Id == "eyrie/aldric") foreach (var o in Aldric(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;

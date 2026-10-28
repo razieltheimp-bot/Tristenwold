@@ -9,8 +9,8 @@ public partial class Hud : CanvasLayer
 {
     readonly List<(string Text, double Until)> _toasts = [];
     readonly List<string> _chronicle = [];
-    ProgressBar _health = new(), _magicka = new(), _stamina = new(), _limit = new();
-    Label _area = new(), _toastLabel = new(), _status = new(), _septims = new(), _center = new(), _party = new();
+    ProgressBar _health = new(), _mana = new(), _stamina = new(), _limit = new();
+    Label _area = new(), _toastLabel = new(), _status = new(), _crowns = new(), _center = new(), _party = new();
     PanelContainer _window = new();
     VBoxContainer _board = new(), _companies = new(), _nemeses = new(), _journal = new();
     Control _root = new();
@@ -42,10 +42,10 @@ public partial class Hud : CanvasLayer
         var bars = new VBoxContainer { Position = new Vector2(24, 24), CustomMinimumSize = new Vector2(260, 0) };
         root.AddChild(bars);
         _health = Bar(bars, "#b03a2e");
-        _magicka = Bar(bars, "#2e5cb0");
+        _mana = Bar(bars, "#2e5cb0");
         _stamina = Bar(bars, "#3e9a4a");
         _limit = Bar(bars, "#d8b25a");
-        bars.AddChild(_septims);
+        bars.AddChild(_crowns);
         root.AddChild(_area = new Label { Position = new Vector2(24, 140) });
         root.AddChild(_status = new Label { Position = new Vector2(24, 166), Modulate = new Color(1, 1, 1, 0.6f) });
         root.AddChild(_toastLabel = new Label { AnchorLeft = 1, AnchorRight = 1, OffsetLeft = -520, OffsetTop = 300, OffsetRight = -24, AutowrapMode = TextServer.AutowrapMode.Word, HorizontalAlignment = HorizontalAlignment.Right });
@@ -198,7 +198,7 @@ public partial class Hud : CanvasLayer
         foreach (var e in log.Entries.OrderBy(e => e.Stage == QuestStage.Done))
             _journal.AddChild(new Label
             {
-                Text = $"{e.Quest.Title}{(e.Stage == QuestStage.Done ? "  (done)" : "")}\n   From {e.Quest.GiverName} of {e.Quest.GiverHomeName}. {e.Objective}. Reward: {e.Quest.Reward} septims.",
+                Text = $"{e.Quest.Title}{(e.Stage == QuestStage.Done ? "  (done)" : "")}\n   From {e.Quest.GiverName} of {e.Quest.GiverHomeName}. {e.Objective}. Reward: {e.Quest.Reward} crowns.",
                 AutowrapMode = TextServer.AutowrapMode.Word,
                 Modulate = e.Stage == QuestStage.Done ? new Color(1, 1, 1, 0.45f) : Colors.White,
             });
@@ -307,10 +307,10 @@ public partial class Hud : CanvasLayer
     public void Update(Player p, string area, string status)
     {
         _health.Value = p.Stats.Health / p.Stats.MaxHealth * 100;
-        _magicka.Value = p.Stats.Magicka / p.Stats.MaxMagicka * 100;
+        _mana.Value = p.Stats.Mana / p.Stats.MaxMana * 100;
         _stamina.Value = p.Stats.Stamina / p.Stats.MaxStamina * 100;
         _limit.Value = p.Stats.Limit;
-        _septims.Text = $"Level {p.Hero.Level} {p.Class.Name}{(p.GuildTitle.Length > 0 ? $", {p.GuildTitle}" : "")}{(p.Hero.Points > 0 ? $" ({p.Hero.Points} to spend, K)" : "")}    {p.Septims} septims    {p.Meat} meat"
+        _crowns.Text = $"Level {p.Hero.Level} {p.Class.Name}{(p.GuildTitle.Length > 0 ? $", {p.GuildTitle}" : "")}{(p.Hero.Points > 0 ? $" ({p.Hero.Points} to spend, K)" : "")}    {p.Crowns} crowns    {p.Meat} meat"
             + (p.Class.Elemental ? $"    {p.Element}" : "") + (p.Stats.LimitReady ? "    LIMIT READY (R)" : "");
         _area.Text = area;
         _status.Text = status;

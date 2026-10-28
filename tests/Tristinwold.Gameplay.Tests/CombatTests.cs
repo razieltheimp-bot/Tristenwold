@@ -10,7 +10,7 @@ public class CombatTests
         new("Grask the Brutal", stats ?? [], aff ?? [], statuses ?? []);
 
     [Fact]
-    public void Armor_softens_blows_like_skyrim_and_never_stops_them_all()
+    public void Armor_softens_blows_and_never_stops_them_all()
     {
         var bare = new Combatant("Bandit", 100);
         var plated = new Combatant("Bandit", 100, armor: 5000);
@@ -74,9 +74,9 @@ public class CombatTests
     }
 
     [Fact]
-    public void Swings_cost_stamina_and_spells_cost_magicka()
+    public void Swings_cost_stamina_and_spells_cost_mana()
     {
-        var joe = new Combatant("Joe", 100, magicka: 30, stamina: 20);
+        var joe = new Combatant("Joe", 100, mana: 30, stamina: 20);
         Assert.True(joe.Spend(AttackKind.Weapon, 15));
         Assert.False(joe.Spend(AttackKind.Weapon, 15));
         Assert.True(joe.Spend(AttackKind.Spell, 30));

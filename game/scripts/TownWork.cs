@@ -150,10 +150,10 @@ public partial class Main
     {
         if (_shift is { } s)
             yield return _holding
-                ? $"Dock work: carry the crate to the warehouse by the east gate ({Direction(pos, (Warehouse.X, Warehouse.Z))}). {s.Left} to go, {_city.DockWage} septims each."
-                : $"Dock work: lift a crate at the end of the middle pier ({Direction(pos, (CrateStack.X, CrateStack.Z))}). {s.Left} to go, {_city.DockWage} septims each.";
+                ? $"Dock work: carry the crate to the warehouse by the east gate ({Direction(pos, (Warehouse.X, Warehouse.Z))}). {s.Left} to go, {_city.DockWage} crowns each."
+                : $"Dock work: lift a crate at the end of the middle pier ({Direction(pos, (CrateStack.X, CrateStack.Z))}). {s.Left} to go, {_city.DockWage} crowns each.";
         if (_errand is { } e && IsInstanceValid(e.To))
-            yield return $"Errand: take the Exchange's letter to {e.To.Npc.Name} ({Direction(pos, (e.To.GlobalPosition.X, e.To.GlobalPosition.Z))}), {e.Pay} septims.";
+            yield return $"Errand: take the Exchange's letter to {e.To.Npc.Name} ({Direction(pos, (e.To.GlobalPosition.X, e.To.GlobalPosition.Z))}), {e.Pay} crowns.";
     }
 
     /// <summary>What there is to do here with E, besides talking and taking: fish, mine, fell, lift and set down cargo.</summary>
@@ -282,7 +282,7 @@ public partial class Main
         Sound.Ui("pickup");
         Ripple(_bobberAt);
         var item = Items.Get(id)!;
-        EndLine(id == "old_boot" ? "You haul in... an old boot." : $"You land {(item.Name.StartsWith('A') ? "an" : "a")} {item.Name.ToLowerInvariant()}! ({_city.Offer(item)} septims at market today.)" +
+        EndLine(id == "old_boot" ? "You haul in... an old boot." : $"You land {(item.Name.StartsWith('A') ? "an" : "a")} {item.Name.ToLowerInvariant()}! ({_city.Offer(item)} crowns at market today.)" +
             (up is { } l ? $" Fishing rises to {l}!" : ""));
         Save();
     }
@@ -379,7 +379,7 @@ public partial class Main
     {
         if (_shift is not null) { Say(foreman, $"You've {_shift.Value.Left} crates still to shift. Get on with it."); return; }
         _shift = (6, 0);
-        Say(foreman, $"Six crates off the end of the middle pier, into the warehouse by the gate. {_city.DockWage} septims a crate, and five more when you're done. Lift with your legs.");
+        Say(foreman, $"Six crates off the end of the middle pier, into the warehouse by the gate. {_city.DockWage} crowns a crate, and five more when you're done. Lift with your legs.");
     }
 
     void LiftCrate()
@@ -404,19 +404,19 @@ public partial class Main
         _crate?.QueueFree();
         _crate = null;
         var wage = _city.DockWage;
-        _player.Septims += wage;
+        _player.Crowns += wage;
         // Whatever was in it is in the city's stores now.
         var cargo = _lootRng.Pick(new[] { Good.Fish, Good.Timber, Good.Iron, Good.Leather, Good.Ale, Good.Bread, Good.Herbs });
         _city.Stock[cargo] = _city.Stock.GetValueOrDefault(cargo) + 2;
         _city.Renown += 1;
         s = (s.Left - 1, s.Done + 1);
         Sound.Ui("coin", -2);
-        if (s.Left > 0) { _shift = s; _hud.Toast($"+{wage} septims ({CityEconomy.Info(cargo).Name}). {s.Left} to go.", 3); }
+        if (s.Left > 0) { _shift = s; _hud.Toast($"+{wage} crowns ({CityEconomy.Info(cargo).Name}). {s.Left} to go.", 3); }
         else
         {
             _shift = null;
-            _player.Septims += 5;
-            _hud.Toast($"+{wage} septims, and Haskel's five for a full shift. Good work.", 5);
+            _player.Crowns += 5;
+            _hud.Toast($"+{wage} crowns, and Haskel's five for a full shift. Good work.", 5);
         }
         Save();
     }
@@ -434,7 +434,7 @@ public partial class Main
         var to = within[_lootRng.Next(within.Count)];
         var pay = 6 + (int)(to.GlobalPosition.DistanceTo(factor.GlobalPosition) / 10);
         _errand = (to, pay);
-        Say(factor, $"A sealed letter for {to.Npc.Name}, {to.Npc.Occupation}. Don't open it. {pay} septims when it's delivered.");
+        Say(factor, $"A sealed letter for {to.Npc.Name}, {to.Npc.Occupation}. Don't open it. {pay} crowns when it's delivered.");
     }
 
     /// <summary>Talking to the one an errand's for: the letter's delivered and paid for.</summary>
@@ -442,10 +442,10 @@ public partial class Main
     {
         if (_errand is not { } e || e.To != person) return false;
         _errand = null;
-        _player.Septims += e.Pay;
+        _player.Crowns += e.Pay;
         _city.Renown += 2;
         Sound.Ui("coin");
-        _hud.Toast($"Letter delivered: +{e.Pay} septims.", 4);
+        _hud.Toast($"Letter delivered: +{e.Pay} crowns.", 4);
         Save();
         return true;
     }
@@ -468,12 +468,12 @@ public partial class Main
                     (_city.Discount > 0 ? $"Shopkeepers know it: {_city.Discount:P0} off, and a better price for what you sell." : "Do the city some good, and the shopkeepers will hear of it.")));
                 break;
             case "tristinwold/foreman":
-                yield return (_shift is null ? $"Any work on the docks? ({_city.DockWage} septims a crate)" : "About the cargo...", () => StartShift(person));
+                yield return (_shift is null ? $"Any work on the docks? ({_city.DockWage} crowns a crate)" : "About the cargo...", () => StartShift(person));
                 yield return ("How's the harbour?", () => Say(person, Harbour()));
                 break;
             case "tristinwold/corva":
                 yield return ("Can I use your kitchen?", () => ShowCraft(Job.Cooking, () => Say(person, "Mind the good knife.")));
-                yield return ("An ale, please. (4 septims)", () => BuyOne(person, "ale", 4));
+                yield return ("An ale, please. (4 crowns)", () => BuyOne(person, "ale", 4));
                 break;
         }
         if (Shops.All.FirstOrDefault(s => s.Id == npc.Id) is { Trade: { } trade } && trade != Job.Cooking)
@@ -504,8 +504,8 @@ public partial class Main
     void BuyOne(Person person, string id, int price)
     {
         var cost = Shops.Charge(price, ShopMarkup);
-        if (_player.Septims < cost) { Sound.Ui("error"); Say(person, "Coin first, love."); return; }
-        _player.Septims -= cost;
+        if (_player.Crowns < cost) { Sound.Ui("error"); Say(person, "Coin first, love."); return; }
+        _player.Crowns -= cost;
         _player.Pack.Add(id);
         _city.Bought(id, cost);
         Sound.Ui("coin");
@@ -527,10 +527,10 @@ public partial class Main
                     var finishing = ids.Count >= c.Left;
                     var paid = _city.Deliver(c, ids);
                     foreach (var id in ids) _player.Pack.Take(id);
-                    _player.Septims += paid;
+                    _player.Crowns += paid;
                     Sound.Ui("coin");
                     Save();
-                    _hud.Toast($"Delivered {ids.Count}: +{paid} septims.{(finishing ? " Contract filled!" : "")}", 5);
+                    _hud.Toast($"Delivered {ids.Count}: +{paid} crowns.{(finishing ? " Contract filled!" : "")}", 5);
                     ShowContracts(factor);
                 }));
         }).ToList();
@@ -547,9 +547,9 @@ public partial class Main
             return;
         }
         var needs = _city.WorkNeeds.ToList();
-        var coin = work.Septims - _city.WorkSeptims;
+        var coin = work.Crowns - _city.WorkCrowns;
         var text = $"{work.Title}. Still wanted: {(needs.Count == 0 ? "no more goods" : string.Join(", ", needs.Select(n => $"{n.N} {CityEconomy.Info(n.Good).Name}")))}" +
-                   $"{(coin > 0 ? $", and {coin} septims" : "")}. The city puts in its spare stock and coin each day; anything you give speeds it along, and the city remembers. " +
+                   $"{(coin > 0 ? $", and {coin} crowns" : "")}. The city puts in its spare stock and coin each day; anything you give speeds it along, and the city remembers. " +
                    (_city.WorksDone.Count > 0 ? $"Already built: {string.Join(", ", _city.WorksDone.Select(id => CityEconomy.Works.First(w => w.Id == id).Title.ToLowerInvariant()))}." : "");
         var options = new List<(string, Action)>();
         foreach (var (good, n) in needs)
@@ -567,11 +567,11 @@ public partial class Main
                 ShowWorks(factor);
             }));
         }
-        foreach (var gift in new[] { 25, 100 }.Where(g => coin > 0 && _player.Septims >= g))
-            options.Add(($"Give {Math.Min(gift, coin)} septims", () =>
+        foreach (var gift in new[] { 25, 100 }.Where(g => coin > 0 && _player.Crowns >= g))
+            options.Add(($"Give {Math.Min(gift, coin)} crowns", () =>
             {
-                var taken = _city.DonateSeptims(Math.Min(gift, coin), out var done);
-                _player.Septims -= taken;
+                var taken = _city.DonateCrowns(Math.Min(gift, coin), out var done);
+                _player.Crowns -= taken;
                 Sound.Ui("coin");
                 if (done is not null) _hud.Toast(done, 8);
                 Save();

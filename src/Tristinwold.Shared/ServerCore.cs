@@ -14,7 +14,7 @@ public sealed class ServerOptions
     public TimeSpan NearMissWindow { get; init; } = TimeSpan.FromMinutes(3);
     /// <summary>Chance that two groups in the same place get pulled apart by a time-skip.</summary>
     public double RewindChance { get; init; } = 0.35;
-    public int GilPerGold { get; init; } = 100;
+    public int CoppersPerCrown { get; init; } = 100;
 
     /// <summary>Vann plays himself: forges notes, posts rival jobs, spreads rumours, steers each company.</summary>
     public bool VannEnabled { get; init; } = true;
@@ -269,7 +269,7 @@ public sealed partial class ServerCore
         if (player is not null && State.Groups.TryGetValue(player, out var group))
         {
             group.ContractsDone++;
-            outgoing.Add(new(player, new Reward(contract.Id, contract.Pay * _options.GilPerGold)));
+            outgoing.Add(new(player, new Reward(contract.Id, contract.Pay * _options.CoppersPerCrown)));
             // Vann's rule: the first person a table saves is Vann, whoever it was.
             var firstRescue = group.SavedMan is null && contract.InDanger is not null;
             if (firstRescue)

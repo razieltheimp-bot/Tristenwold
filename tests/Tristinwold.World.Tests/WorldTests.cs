@@ -168,7 +168,7 @@ public class WorldTests(ITestOutputHelper output)
         Assert.Equal(map.Count, map2.Count);
         Assert.True(map2.IsRevealed(0, -2990));
         Assert.Contains("city:cinderhelm", map2.Discovered);
-        Assert.Equal(42, save.Septims);
+        Assert.Equal(42, save.Crowns);
         Assert.Equal(QuestKind.Slay, log2.Entries.Single().Quest.Kind);
     }
 

@@ -126,8 +126,8 @@ public class EconomyTests
         Assert.NotNull(timber);
         Assert.True(timber.PricePer > Items.Get("pine_log")!.Value, "over the odds");
         Assert.True(city.Contracts.Count <= 4);
-        var septims = city.Deliver(timber, Enumerable.Repeat("pine_log", timber.Wanted).Append("herring"));
-        Assert.Equal(timber.Wanted * timber.PricePer + timber.Bonus, septims);
+        var crowns = city.Deliver(timber, Enumerable.Repeat("pine_log", timber.Wanted).Append("herring"));
+        Assert.Equal(timber.Wanted * timber.PricePer + timber.Bonus, crowns);
         Assert.DoesNotContain(timber, city.Contracts); // done
         Assert.True(city.Renown > 0);
         Assert.Equal(0, city.Deliver(new Contract { Good = Good.Iron, Wanted = 5 }, ["herring"])); // the wrong goods
@@ -143,7 +143,7 @@ public class EconomyTests
         var taken = city.Donate(Enumerable.Repeat("stone_block", 100).Concat(Enumerable.Repeat("oak_log", 100)), out var done);
         Assert.Equal(90, taken); // 60 stone and 30 timber, no more
         Assert.Null(done);       // still the coin to find
-        Assert.Equal(200, city.DonateSeptims(1000, out done));
+        Assert.Equal(200, city.DonateCrowns(1000, out done));
         Assert.NotNull(done);
         Assert.Contains("harbour_wall", city.WorksDone);
         Assert.Equal("shore_mine", city.Work!.Id);

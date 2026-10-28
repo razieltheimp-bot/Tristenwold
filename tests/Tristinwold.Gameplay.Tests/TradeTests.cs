@@ -32,7 +32,7 @@ public class TradeTests
         var dragon = Loot.Roll("dragon_red", rng);
         Assert.Contains(dragon.Items, i => i.Id == "dragon_scale_red" && i.N >= 4);
         Assert.Contains(dragon.Items, i => i.Id == "dragon_bone");
-        Assert.True(dragon.Septims >= 150);
+        Assert.True(dragon.Crowns >= 150);
         Assert.Contains(Loot.Roll("dragon_black_corrupt", rng).Items, i => i.Id == "rift_crystal");
         // A lair's hoard: its trophy, and the first time its own piece of gear.
         var hoard = Loot.Hoard("raid:goblin_warren", rng, first: true);
@@ -83,15 +83,15 @@ public class TradeTests
     public void Shops_sell_what_they_stock_and_buy_anything_for_half()
     {
         var pack = new Pack();
-        var (septims, meat) = (100, 0);
-        Assert.True(Shops.Buy(Shops.Smithy, "iron_sword", pack, ref septims, ref meat));
-        Assert.Equal(60, septims);
-        Assert.False(Shops.Buy(Shops.Smithy, "dragon_heart", pack, ref septims, ref meat));
-        Assert.True(Shops.Buy(Shops.Provisions, "meat", pack, ref septims, ref meat));
+        var (crowns, meat) = (100, 0);
+        Assert.True(Shops.Buy(Shops.Smithy, "iron_sword", pack, ref crowns, ref meat));
+        Assert.Equal(60, crowns);
+        Assert.False(Shops.Buy(Shops.Smithy, "dragon_heart", pack, ref crowns, ref meat));
+        Assert.True(Shops.Buy(Shops.Provisions, "meat", pack, ref crowns, ref meat));
         Assert.Equal(1, meat);
-        Assert.True(Shops.Sell("iron_sword", pack, ref septims));
-        Assert.Equal(60 - Shops.MeatPrice + 20, septims);
-        Assert.False(Shops.Sell("iron_sword", pack, ref septims));
+        Assert.True(Shops.Sell("iron_sword", pack, ref crowns));
+        Assert.Equal(60 - Shops.MeatPrice + 20, crowns);
+        Assert.False(Shops.Sell("iron_sword", pack, ref crowns));
         Assert.Equal("3 Wolf Pelts", Items.Count("wolf_pelt", 3));
         Assert.Equal("2 Travel Rations", Items.Count("travel_rations", 2));
     }

@@ -89,7 +89,7 @@ public static class Lairfolk
         "briar_mother" => BriarMother(),
         "ghost_captain" or "hollow_soldier" => Ghost(look),
         "crystal_basilisk" => Basilisk(),
-        "crystal_skeever" => CrystalSkeever(),
+        "crystal_rat" => CrystalRat(),
         "forge_golem" => ForgeGolem(),
         "duskprowler" => Shadow("ice_wolf", 2.0f, boss: true),
         "shadow_wolf" => Shadow("wolf", 1.0f, boss: false),
@@ -362,7 +362,7 @@ public static class Lairfolk
         return c;
     }
 
-    static Body? CrystalSkeever()
+    static Body? CrystalRat()
     {
         if (Creature.Create("giant_rat.glb", 0.7f, new Color("#a888d8")) is not { } c || Graft.On(c) is not { } g) return null;
         foreach (var (bone, lean) in new[] { ("Backbone", -0.3f), ("Backbone.001", 0f), ("Backbone.002", 0.3f) }.Where(b => g.Has(b.Item1)))

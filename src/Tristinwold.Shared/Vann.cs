@@ -28,8 +28,8 @@ public sealed partial class ServerCore
         ["the Gallows Perch", "the Docks", "the Needle", "the drowned chapel", "the Exchange", "the Salt Barrel", "the Warrens", "the Tong sea-caves"];
 
     /// <summary>Somewhere in the city Vann can send people: the campaign's own places.</summary>
-    IReadOnlyList<string> Places => State.Places.Count > 0
-        ? State.Places.Values.Where(p => Atlas.Default.Cities.All(c => c.Name != p)).Distinct().ToList()
+    IReadOnlyList<string> Places => State.Stage.Count > 0
+        ? State.Stage.Where(p => Atlas.Default.Cities.All(c => c.Name != p)).Distinct().ToList()
         : FallbackPlaces;
 
     static readonly string[] Misdeeds =

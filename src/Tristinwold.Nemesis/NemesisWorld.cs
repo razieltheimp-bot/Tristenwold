@@ -116,7 +116,7 @@ public sealed class NemesisWorld
         var stats = Enum.GetValues<Stat>().ToDictionary(s => s, s => s switch
         {
             Stat.Health => (1.0 + 0.6 * rank) * (1.0 + 0.08 * (level - 1)),
-            Stat.Magicka or Stat.Stamina => 1.0 + 0.3 * rank,
+            Stat.Mana or Stat.Stamina => 1.0 + 0.3 * rank,
             _ => (1.0 + 0.1 * rank) * (1.0 + 0.03 * (level - 1)),
         });
         var affinities = new Dictionary<DamageKind, Affinity>();

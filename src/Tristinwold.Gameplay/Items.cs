@@ -9,9 +9,9 @@ public enum Slot { None, Weapon, Offhand, Head, Body, Cloak }
 /// <summary>How a weapon is held, which decides how its wielder swings it.</summary>
 public enum Grip { None, OneHand, TwoHand, Ranged, Caster }
 
-/// <summary>What eating or drinking something does: health, magicka and stamina back (as shares of the whole), and
+/// <summary>What eating or drinking something does: health, mana and stamina back (as shares of the whole), and
 /// for a while, more might (a share more damage) or a ward (more armour).</summary>
-public sealed record Effect(double Health = 0, double Magicka = 0, double Stamina = 0, double Might = 0, double Ward = 0, double Seconds = 0);
+public sealed record Effect(double Health = 0, double Mana = 0, double Stamina = 0, double Might = 0, double Ward = 0, double Seconds = 0);
 
 /// <summary>
 /// Something a hero can carry: a pelt, a herb, a potion, a sword. Gear is worn in a slot, makes the hero stronger,
@@ -65,8 +65,8 @@ public static class Items
         Mat("deer_hide", "Deer Hide", 6, "Soft hide. Good leather."),
         Mat("antler", "Antler", 9, "A good spread of tines."),
         Mat("fox_pelt", "Fox Pelt", 11, "Red fur, prized for trim."),
-        Mat("skeever_tail", "Skeever Tail", 1, "Nobody wants this."),
-        Mat("crab_chitin", "Mudcrab Chitin", 4, "A plate of shell."),
+        Mat("rat_tail", "Giant Rat Tail", 1, "Nobody wants this."),
+        Mat("crab_chitin", "Mud Crab Chitin", 4, "A plate of shell."),
         Mat("goblin_trinket", "Goblin Trinket", 6, "Bits of string, bone and stolen silver."),
         Mat("scrap_iron", "Scrap Iron", 3, "Rusty bits. A smith can smelt three into an ingot."),
         Mat("bone_dust", "Bone Dust", 3, "Ground from the walking dead."),
@@ -101,7 +101,7 @@ public static class Items
         Herb("emberleaf", "Emberleaf", 4, "Red leaves that tingle on the tongue. The heart of a healing draught."),
         Herb("ladys_mantle", "Lady's Mantle", 5, "Soft green leaves that close wounds."),
         Herb("bloodcap", "Bloodcap", 6, "A red mushroom. Strengthens, in small doses."),
-        Herb("bluebell", "Bluebell", 4, "Blue flowers that clear the head. Restores magicka."),
+        Herb("bluebell", "Bluebell", 4, "Blue flowers that clear the head. Restores mana."),
         Herb("ghostcap", "Ghostcap", 8, "A pale mushroom that glows faintly at night."),
         Herb("marsh_reed", "Marsh Reed", 3, "Hollow reeds, sweet inside. Restores stamina."),
         Herb("nightshade", "Nightshade", 7, "Dark berries. Poison, unless you know what you're doing."),
@@ -112,7 +112,7 @@ public static class Items
         // ---- potions and food --------------------------------------------------------------------------
         new("healing_draught", "Healing Draught", ItemKind.Potion, 30, "Heals half your wounds.") { Use = new Effect(Health: 0.5) },
         new("greater_healing", "Greater Healing", ItemKind.Potion, 70, "Heals you completely.") { Use = new Effect(Health: 1) },
-        new("magicka_tonic", "Magicka Tonic", ItemKind.Potion, 30, "Restores half your magicka.") { Use = new Effect(Magicka: 0.5) },
+        new("mana_tonic", "Mana Tonic", ItemKind.Potion, 30, "Restores half your mana.") { Use = new Effect(Mana: 0.5) },
         new("stamina_brew", "Stamina Brew", ItemKind.Potion, 25, "Restores all your stamina.") { Use = new Effect(Stamina: 1) },
         new("elixir_of_might", "Elixir of Might", ItemKind.Potion, 80, "A quarter more damage for two minutes.") { Use = new Effect(Might: 0.25, Seconds: 120) },
         new("warding_draught", "Warding Draught", ItemKind.Potion, 70, "Armour like plate for two minutes.") { Use = new Effect(Ward: 60, Seconds: 120) },
@@ -160,8 +160,8 @@ public static class Items
         new("fish_stew", "Fish Stew", ItemKind.Food, 18, "A thick harbour stew. Heals well, and you're harder to hurt for two minutes.") { Use = new Effect(Health: 0.4, Stamina: 0.3, Ward: 12, Seconds: 120) },
         new("roast_venison", "Roast Venison", ItemKind.Food, 14, "Rich and filling. Heals well, and your blows land harder for two minutes.") { Use = new Effect(Health: 0.35, Stamina: 0.3, Might: 0.08, Seconds: 120) },
         new("hunters_pie", "Hunter's Pie", ItemKind.Food, 24, "Venison and gravy under a crust. Heals most of your wounds.") { Use = new Effect(Health: 0.6, Stamina: 0.6) },
-        new("seafood_platter", "Seafood Platter", ItemKind.Food, 45, "Lobster, salmon and eel, fit for the Crown. Heals you fully and fires you up.") { Use = new Effect(Health: 1, Stamina: 1, Magicka: 0.5, Might: 0.12, Seconds: 180) },
-        new("smoked_eel", "Smoked Eel", ItemKind.Food, 15, "Keeps for weeks. Heals and restores magicka.") { Use = new Effect(Health: 0.3, Magicka: 0.4) },
+        new("seafood_platter", "Seafood Platter", ItemKind.Food, 45, "Lobster, salmon and eel, fit for the Crown. Heals you fully and fires you up.") { Use = new Effect(Health: 1, Stamina: 1, Mana: 0.5, Might: 0.12, Seconds: 180) },
+        new("smoked_eel", "Smoked Eel", ItemKind.Food, 15, "Keeps for weeks. Heals and restores mana.") { Use = new Effect(Health: 0.3, Mana: 0.4) },
         // ---- weapons ----------------------------------------------------------------------------------
         Gear("iron_sword", "Iron Sword", 40, Slot.Weapon, Grip.OneHand, "Knight/1H_Sword", damage: 0.1),
         Gear("steel_sword", "Steel Sword", 110, Slot.Weapon, Grip.OneHand, "Knight/1H_Sword", damage: 0.2, tint: "#e4ecf4", metal: true),

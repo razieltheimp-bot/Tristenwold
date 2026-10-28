@@ -102,7 +102,7 @@ public abstract partial class Fighter : CharacterBody3D
 public enum EnemyState { Idle, Fighting, Fleeing, Dead }
 
 /// <summary>
-/// Anything in the world that fights besides the player: a Tong thug, a skeever, a draugr, a dragon. Wanders its
+/// Anything in the world that fights besides the player: a Tong thug, a giant rat, a draugr, a dragon. Wanders its
 /// lair and fights the company, sometimes runs. The same body serves the company's own: a beast raised from a
 /// youngling, a squire or an apprentice, a warlock's familiar, the dragon a knight rides. And the dragon knights
 /// of the alliance and their pact dragons, who fend off chromatic and corrupted dragons on sight.
@@ -173,7 +173,7 @@ public partial class Enemy : Fighter
     /// <summary>Sets a raid creature's numbers: how much it takes, how hard it hits.</summary>
     public void Tune(double health, double damage)
     {
-        Stats.SetPools(health, Stats.MaxMagicka, Stats.MaxStamina);
+        Stats.SetPools(health, Stats.MaxMana, Stats.MaxStamina);
         Stats.Heal(health);
         Stats.DamageMult = damage / Kind.Damage;
         RefreshPlate();
@@ -197,7 +197,7 @@ public partial class Enemy : Fighter
     public void Spar(string name, double health, double damage)
     {
         Sparring = true;
-        Stats.SetPools(health, Stats.MaxMagicka, Stats.MaxStamina);
+        Stats.SetPools(health, Stats.MaxMana, Stats.MaxStamina);
         Stats.Heal(health);
         Stats.DamageMult = damage / Kind.Damage;
         Stats.Name = name;
@@ -322,7 +322,7 @@ public partial class Enemy : Fighter
     {
         if (Bond is null) return;
         var fresh = Kind.NewCombatant(1, Bond.Strength * (Bond.Size > 1 ? Bond.Size * Bond.Size : 1), Bond.Strength * Math.Max(1, Bond.Size));
-        Stats.SetPools(fresh.MaxHealth, fresh.MaxMagicka, fresh.MaxStamina);
+        Stats.SetPools(fresh.MaxHealth, fresh.MaxMana, fresh.MaxStamina);
         Stats.DamageMult = fresh.DamageMult;
         Shape();
         RefreshPlate();
@@ -582,7 +582,7 @@ public partial class Enemy : Fighter
                     break;
                 }
                 // The weak and cowardly run when it goes badly.
-                if (Stats.Health < Stats.MaxHealth * 0.2 && Kind.Id is "skeever" or "lantern_boy" && NemesisId is null)
+                if (Stats.Health < Stats.MaxHealth * 0.2 && Kind.Id is "giant_rat" or "lantern_boy" && NemesisId is null)
                 {
                     State = EnemyState.Fleeing;
                     break;

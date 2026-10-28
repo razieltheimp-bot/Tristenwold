@@ -26,7 +26,7 @@ public sealed record Herd(string Id, string KindId, double X, double Z, int Coun
 /// hold something. Deer and foxes graze everywhere and run from you; the further from Tristinwold
 /// (the higher the danger), the more of the land belongs to wolves, boars, goblins, bears and trolls;
 /// and in an ancient dragon's territory, to its dragons (see <see cref="Dragons"/>). Near home
-/// only the harmless and the merely annoying (skeevers, mudcrabs) are about.
+/// only the harmless and the merely annoying (giant rats, mud crabs) are about.
 /// <para>
 /// Stranger things too, further out: the kipine, a winged owlbear with antlers, alone in the woods; packs of
 /// deathcrest apes in the marsh and the crags, who eat the dead that walk; dire imps with their bands of lesser
@@ -103,12 +103,12 @@ public static class Wildlife
         {
             Biome.AutumnForest => [("deer", 4), ("fox", 2), ("wolf", 0.8 * d), ("bear", 0.3 * d), ("spriggan", 0.25 * d), ("boar", 0.7 * d), ("goblin", 0.4 * d), ("kipine", 0.18 * d), ("imp", 0.12 * d)],
             Biome.PineForest => [("deer", 3.5), ("fox", 1.5), ("wolf", 1.1 * d), ("bear", 0.6 * d), ("boar", 0.5 * d), ("goblin", 0.4 * d), ("kipine", 0.25 * d), ("deathcrest_ape", 0.15 * d), ("winged_ape", 0.12 * d)],
-            Biome.Marsh => [("goblin", 0.3 * d), ("skeever", 3), ("mudcrab", near ? 3 : 0.5), ("deer", 1), ("wolf", 0.5 * d), ("deathcrest_ape", 0.35 * d), ("dire_imp", 0.2 * d)],
+            Biome.Marsh => [("goblin", 0.3 * d), ("giant_rat", 3), ("mud_crab", near ? 3 : 0.5), ("deer", 1), ("wolf", 0.5 * d), ("deathcrest_ape", 0.35 * d), ("dire_imp", 0.2 * d)],
             Biome.Tundra => [("deer", 2), ("fox", 1), ("wolf", 2 * d), ("ice_wolf", 1 * d), ("bear", 0.5 * d), ("winged_ape", 0.2 * d)],
             Biome.Snowfield => [("ice_wolf", 1.4 * Math.Max(d, 0.1)), ("frost_troll", 0.5 * d), ("deer", 0.8), ("fox", 0.8)],
             _ => [("bear", 1.5 * Math.Max(d, 0.1)), ("frost_troll", 1 * d), ("wolf", 1.5 * d), ("deer", 0.6), ("goblin", 0.6 * d), ("deathcrest_ape", 0.4 * d), ("dire_imp", 0.3 * d), ("winged_ape", 0.4 * d)],
         };
-        if (near && biome != Biome.Snowfield) choices = [.. choices, ("mudcrab", 1.5)];
+        if (near && biome != Biome.Snowfield) choices = [.. choices, ("mud_crab", 1.5)];
         choices = [.. choices.Where(c => c.Item2 > 0)];
         if (choices.Length == 0) return null;
         var kind = rng.PickWeighted(choices);
@@ -119,8 +119,8 @@ public static class Wildlife
             "fox" => 1 + rng.Next(2),
             "wolf" => 2 + rng.Next(2) + extra,
             "ice_wolf" => 2 + rng.Next(2) + extra,
-            "skeever" => 3 + rng.Next(3),
-            "mudcrab" => 2 + rng.Next(3),
+            "giant_rat" => 3 + rng.Next(3),
+            "mud_crab" => 2 + rng.Next(3),
             "spriggan" => 1 + rng.Next(2),
             "boar" => 1 + rng.Next(3),
             "goblin" => 2 + rng.Next(3) + extra,
@@ -129,7 +129,7 @@ public static class Wildlife
             "winged_ape" => 2 + rng.Next(2),
             _ => 1, // bears, trolls, kipines and dire imps keep to themselves (a dire imp has its band)
         };
-        var roam = kind switch { "deer" => 22, "fox" => 18, "wolf" or "ice_wolf" or "deathcrest_ape" => 16, "kipine" => 24, "mudcrab" => 6, _ => 10 };
+        var roam = kind switch { "deer" => 22, "fox" => 18, "wolf" or "ice_wolf" or "deathcrest_ape" => 16, "kipine" => 24, "mud_crab" => 6, _ => 10 };
         // About a third of herds have young with them; a lone bear or troll sometimes has a cub. Fiends don't.
         var fiend = kind is "imp" or "dire_imp";
         var young = !fiend && rng.Chance(count > 1 ? 0.4 : 0.25) ? 1 + (count > 3 && rng.Chance(0.3) ? 1 : 0) : 0;

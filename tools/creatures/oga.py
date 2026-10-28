@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Converts creatures from OpenGameArt.org into the game's .glb models: a giant rat (skeevers), a goblin,
+Converts creatures from OpenGameArt.org into the game's .glb models: a giant rat, a goblin,
 a forest monster (spriggans), a troll (frost trolls) and a dragon.
 
 These were made in Blender 2.7x, whose materials newer Blender shows as plain white, so each material is

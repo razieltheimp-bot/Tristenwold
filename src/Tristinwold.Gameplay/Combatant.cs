@@ -8,21 +8,21 @@ public enum AttackKind { Weapon, Spell }
 public sealed record HitResult(double Dealt, double Healed, double Reflected, bool Killed, bool Critical, bool LimitReady);
 
 /// <summary>
-/// Health, magicka, stamina, armor and the Final Fantasy statuses for anything that fights:
-/// the player, companions, enemies and nemeses. Real-time, Skyrim-style numbers; no engine code,
+/// Health, mana, stamina, armor and the auto-statuses (Haste, Protect, Shell, Regen, Reflect) for anything that fights:
+/// the player, companions, enemies and nemeses. Real-time numbers; no engine code,
 /// so the same rules run in the game and in tests.
 /// </summary>
 public sealed class Combatant
 {
     public const double ArmorCap = 0.80;          // armor never stops more than 80% of a blow
-    public const double ArmorPerPercent = 1 / 0.12; // 8.33 armor rating per percent, as in Skyrim
+    public const double ArmorPerPercent = 1 / 0.12; // 8.33 armor rating per percent of harm turned aside
     public const double ResistCap = 85;
 
     public string Name { get; set; }
     public double MaxHealth { get; private set; }
     public double Health { get; private set; }
-    public double MaxMagicka { get; private set; }
-    public double Magicka { get; private set; }
+    public double MaxMana { get; private set; }
+    public double Mana { get; private set; }
     public double MaxStamina { get; private set; }
     public double Stamina { get; private set; }
 
@@ -37,26 +37,26 @@ public sealed class Combatant
     public HashSet<DamageKind> Absorbs { get; } = [];
     public HashSet<AutoStatus> Statuses { get; } = [];
 
-    /// <summary>The overdrive gauge, 0-100. Fills when hurt (fast) and when hurting (slowly).</summary>
+    /// <summary>The limit gauge, 0-100. Fills when hurt (fast) and when hurting (slowly).</summary>
     public double Limit { get; private set; }
     public bool LimitReady => Limit >= 100;
 
     public bool Dead => Health <= 0;
 
-    public Combatant(string name, double health, double magicka = 50, double stamina = 100, double armor = 0)
+    public Combatant(string name, double health, double mana = 50, double stamina = 100, double armor = 0)
     {
         Name = name;
         MaxHealth = Health = health;
-        MaxMagicka = Magicka = magicka;
+        MaxMana = Mana = mana;
         MaxStamina = Stamina = stamina;
         Armor = armor;
     }
 
-    /// <summary>Swings and spells cost stamina or magicka; returns false if there isn't enough.</summary>
+    /// <summary>Swings and spells cost stamina or mana; returns false if there isn't enough.</summary>
     public bool Spend(AttackKind kind, double cost)
     {
         if (kind == AttackKind.Weapon) { if (Stamina < cost) return false; Stamina -= cost; }
-        else { if (Magicka < cost) return false; Magicka -= cost; }
+        else { if (Mana < cost) return false; Mana -= cost; }
         return true;
     }
 
@@ -123,20 +123,20 @@ public sealed class Combatant
 
     public void Heal(double amount) => Health = Math.Min(MaxHealth, Health + amount);
 
-    /// <summary>Gives back magicka and stamina (a warlock's kill, a sorcerer's surge).</summary>
-    public void Restore(double magicka, double stamina = 0)
+    /// <summary>Gives back mana and stamina (a warlock's kill, a sorcerer's surge).</summary>
+    public void Restore(double mana, double stamina = 0)
     {
-        Magicka = Math.Min(MaxMagicka, Magicka + magicka);
+        Mana = Math.Min(MaxMana, Mana + mana);
         Stamina = Math.Min(MaxStamina, Stamina + stamina);
     }
 
     /// <summary>New maximums (a level gained, a class joined), keeping the same share of each pool.</summary>
-    public void SetPools(double health, double magicka, double stamina)
+    public void SetPools(double health, double mana, double stamina)
     {
         Health = health * (MaxHealth > 0 ? Health / MaxHealth : 1);
-        Magicka = magicka * (MaxMagicka > 0 ? Magicka / MaxMagicka : 1);
+        Mana = mana * (MaxMana > 0 ? Mana / MaxMana : 1);
         Stamina = stamina * (MaxStamina > 0 ? Stamina / MaxStamina : 1);
-        (MaxHealth, MaxMagicka, MaxStamina) = (health, magicka, stamina);
+        (MaxHealth, MaxMana, MaxStamina) = (health, mana, stamina);
     }
 
     /// <summary>Takes harm that nothing resists (starving, a fall).</summary>
@@ -149,12 +149,12 @@ public sealed class Combatant
         Health = Math.Min(MaxHealth, Math.Round(Health * factor));
     }
 
-    /// <summary>Per-frame regeneration: stamina fast, magicka slower, health only with Regen.</summary>
+    /// <summary>Per-frame regeneration: stamina fast, mana slower, health only with Regen.</summary>
     public void Tick(double seconds, bool inCombat)
     {
         if (Dead) return;
         Stamina = Math.Min(MaxStamina, Stamina + MaxStamina * 0.10 * seconds);
-        Magicka = Math.Min(MaxMagicka, Magicka + MaxMagicka * (inCombat ? 0.01 : 0.03) * seconds);
+        Mana = Math.Min(MaxMana, Mana + MaxMana * (inCombat ? 0.01 : 0.03) * seconds);
         var regen = Statuses.Contains(AutoStatus.Regen) ? 0.03 : inCombat ? 0 : 0.007;
         Health = Math.Min(MaxHealth, Health + MaxHealth * regen * seconds);
     }
@@ -167,7 +167,7 @@ public sealed class Combatant
     {
         Name = mods.DisplayName;
         MaxHealth = Health = mods.Apply(Stat.Health, MaxHealth);
-        MaxMagicka = Magicka = mods.Apply(Stat.Magicka, MaxMagicka);
+        MaxMana = Mana = mods.Apply(Stat.Mana, MaxMana);
         MaxStamina = Stamina = mods.Apply(Stat.Stamina, MaxStamina);
         Armor = mods.Apply(Stat.Armor, Armor == 0 && Mult(mods, Stat.Armor) > 1 ? 50 : Armor);
         MagicResist = mods.Apply(Stat.MagicResist, MagicResist == 0 && Mult(mods, Stat.MagicResist) > 1 ? 20 : MagicResist);

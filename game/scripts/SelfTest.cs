@@ -54,14 +54,14 @@ public partial class SelfTest(Main main) : Node
             Check(_reports[0].Enemies.Single().KilledBy == p.Company, "the kill is credited to the company");
 
             // 2. The limit break fills from a beating and hits everything nearby.
-            var a = Spawn("skeever", p.GlobalPosition + new Vector3(2, 0, -2));
-            var b = Spawn("skeever", p.GlobalPosition + new Vector3(-2, 0, -2));
+            var a = Spawn("giant_rat", p.GlobalPosition + new Vector3(2, 0, -2));
+            var b = Spawn("giant_rat", p.GlobalPosition + new Vector3(-2, 0, -2));
             await Frames(5);
             for (var i = 0; i < 12 && !p.Stats.LimitReady; i++) p.Stats.TakeHit(12, DamageKind.Physical, AttackKind.Weapon);
             Check(p.Stats.LimitReady, "the limit gauge filled");
             p.LimitBreak();
             await Frames(5);
-            Check(a.State == EnemyState.Dead && b.State == EnemyState.Dead, "the limit break felled both skeevers");
+            Check(a.State == EnemyState.Dead && b.State == EnemyState.Dead, "the limit break felled both giant rats");
             p.Stats.Heal(1000);
             await Until(() => !main.Tracker.InFight, 15);
 
@@ -168,13 +168,13 @@ public partial class SelfTest(Main main) : Node
         Check(Math.Abs(Mathf.AngleDifference(yaw, p.Rotation.Y)) > 0.3f, "dragging on the right turns the view");
 
         // 11. The Strike button swings the sword.
-        var skeever = Spawn("skeever", p.GlobalPosition - p.GlobalTransform.Basis.Z * 1.8f);
+        var rat = Spawn("giant_rat", p.GlobalPosition - p.GlobalTransform.Basis.Z * 1.8f);
         await Frames(5);
-        p.Face(skeever.GlobalPosition);
+        p.Face(rat.GlobalPosition);
         await Tap(Screen(touch.CentreOf("attack")));
-        Check(skeever.Stats.Health < skeever.Stats.MaxHealth, $"the Strike button hits ({skeever.Stats.Health:0}/{skeever.Stats.MaxHealth:0})");
-        skeever.Stats.TakeHit(10_000, DamageKind.Physical, AttackKind.Weapon);
-        main.Tracker.Died(skeever.Id, p.Company, main.Clock);
+        Check(rat.Stats.Health < rat.Stats.MaxHealth, $"the Strike button hits ({rat.Stats.Health:0}/{rat.Stats.MaxHealth:0})");
+        rat.Stats.TakeHit(10_000, DamageKind.Physical, AttackKind.Weapon);
+        main.Tracker.Died(rat.Id, p.Company, main.Clock);
 
         // 12. The Map button opens the map, and the controls step aside for it.
         await Tap(Screen(touch.CentreOf("map")));
@@ -269,9 +269,9 @@ public partial class SelfTest(Main main) : Node
         Check(foes.Count == lair.Lair!.Total, $"{lair.Name} holds {foes.Count} ({string.Join(", ", foes.Select(f => $"{f.Stats.Name} {f.Stats.MaxHealth:0}hp"))})");
         foreach (var foe in foes) await FightUntilDead(foe, 60, chase: true);
         Check(journal.Get(slay.Id) is { Stage: QuestStage.Return }, $"{lair.Name} is clear: {journal.Get(slay.Id)!.Objective}");
-        var purse = p.Septims;
+        var purse = p.Crowns;
         main.Talk(await Visit(home, giver));
-        Check(journal.Get(slay.Id) is { Stage: QuestStage.Done } && p.Septims == purse + slay.Reward, $"paid {slay.Reward} septims");
+        Check(journal.Get(slay.Id) is { Stage: QuestStage.Done } && p.Crowns == purse + slay.Reward, $"paid {slay.Reward} crowns");
         hud.EndTalk();
 
         // 6. A letter to carry, a thing to fetch, a person to find.
@@ -298,7 +298,7 @@ public partial class SelfTest(Main main) : Node
         // 7. The map and quests are saved.
         main.Save();
         var save = CompanySave.FromJson(Godot.FileAccess.GetFileAsString(main.SavePath));
-        Check(save.Quests.Count == 4 && save.Explored.Count > 0 && save.Discovered.Contains(home.Id) && save.Septims == p.Septims, $"saved to {main.SavePath}");
+        Check(save.Quests.Count == 4 && save.Explored.Count > 0 && save.Discovered.Contains(home.Id) && save.Crowns == p.Crowns, $"saved to {main.SavePath}");
 
         // 8. Far past the first five cities, the world is still making new ones.
         var far = w.NearestCity(0, -12_000);
@@ -373,7 +373,7 @@ public partial class SelfTest(Main main) : Node
         var hud = main.HudNode;
         Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
         foreach (var c in p.Companions().ToList()) c.QueueFree();
-        p.Septims = 600;
+        p.Crowns = 600;
         int FishCount() => pack.Contents.Where(c => CityEconomy.GoodOf(c.Item.Id) == Good.Fish || c.Item.Id is "old_boot" or "pearl").Sum(c => c.N);
 
         // Fishing: a rod from Bryn, then a line off the middle pier.
@@ -452,9 +452,9 @@ public partial class SelfTest(Main main) : Node
         await Teleport(new Vector3(68, 0, -9));
         main.Talk(Who(Shops.Fishmonger.Id));
         hud.Choose("I've things to sell");
-        var septims = p.Septims;
+        var crowns = p.Crowns;
         Check(hud.Choose("Sell every"), "Bryn buys the lot");
-        Check(p.Septims > septims && city.Factor(Good.Fish) < factor * 0.85, $"for {p.Septims - septims} septims, and fish is cheaper now ({factor:0.00}x to {city.Factor(Good.Fish):0.00}x; herring {offer} to {city.Offer(herring)})");
+        Check(p.Crowns > crowns && city.Factor(Good.Fish) < factor * 0.85, $"for {p.Crowns - crowns} crowns, and fish is cheaper now ({factor:0.00}x to {city.Factor(Good.Fish):0.00}x; herring {offer} to {city.Offer(herring)})");
         hud.EndTalk();
 
         // A contract for what's short, filled at the Exchange.
@@ -468,11 +468,11 @@ public partial class SelfTest(Main main) : Node
         if (contract is not null)
         {
             pack.Add("pine_log", contract.Left);
-            septims = p.Septims;
+            crowns = p.Crowns;
             main.Talk(factorPerson);
             Check(hud.Choose("What's wanted"), "Ottilie shows the contracts");
             Check(hud.Choose(char.ToUpperInvariant(contract.Buyer[0]) + contract.Buyer[1..]), "you deliver the timber");
-            Check(p.Septims >= septims + contract.Wanted * contract.PricePer && !city.Contracts.Contains(contract), $"and it's filled: +{p.Septims - septims} septims");
+            Check(p.Crowns >= crowns + contract.Wanted * contract.PricePer && !city.Contracts.Contains(contract), $"and it's filled: +{p.Crowns - crowns} crowns");
             hud.EndTalk();
         }
         // The city's works.
@@ -491,8 +491,8 @@ public partial class SelfTest(Main main) : Node
         hud.Choose("Any errands");
         var to = main.ErrandTo;
         Check(to is not null, $"Ottilie gives you a letter for {to?.Npc.Name}");
-        septims = p.Septims;
-        if (to is not null) Check(main.DeliverForTest(to) && p.Septims > septims && main.ErrandTo is null, $"and it's delivered for {p.Septims - septims} septims");
+        crowns = p.Crowns;
+        if (to is not null) Check(main.DeliverForTest(to) && p.Crowns > crowns && main.ErrandTo is null, $"and it's delivered for {p.Crowns - crowns} crowns");
         hud.EndTalk();
 
         // A shift on the docks.
@@ -504,10 +504,10 @@ public partial class SelfTest(Main main) : Node
         main.LiftForTest();
         Check(main.Holding && p.Burdened, "you lift a crate, and walk slower with it");
         await Teleport(Main.Warehouse + new Vector3(0, 0, 1.5f));
-        septims = p.Septims;
+        crowns = p.Crowns;
         var wage = city.DockWage;
         main.SetDownForTest();
-        Check(!main.Holding && !p.Burdened && p.Septims == septims + wage, $"and set it down in the warehouse: +{wage} septims");
+        Check(!main.Holding && !p.Burdened && p.Crowns == crowns + wage, $"and set it down in the warehouse: +{wage} crowns");
 
         // The days turn over by themselves as you play.
         var day = city.Day;
@@ -605,7 +605,7 @@ public partial class SelfTest(Main main) : Node
             }
             Check(foe.State == EnemyState.Dead, $"the {d.Name} fells a thug with {string.Join(", ", used)}");
             for (var i = 0; i < 60 && !p.Stats.LimitReady; i++) { p.Stats.TakeHit(12, DamageKind.Physical, AttackKind.Weapon); p.Stats.Heal(12); }
-            var target = Spawn("skeever", p.GlobalPosition - p.GlobalTransform.Basis.Z * 2.5f);
+            var target = Spawn("giant_rat", p.GlobalPosition - p.GlobalTransform.Basis.Z * 2.5f);
             await Frames(3);
             p.Face(target.GlobalPosition);
             Check(p.LimitBreak(), $"the {d.Name}'s limit break: {d.Limit.Name}");
@@ -659,7 +659,7 @@ public partial class SelfTest(Main main) : Node
         var wolf = main.CompanionBodies.FirstOrDefault(e => e.Kind.Id == "wolf" && e.Bond is not null);
         Check(wolf is not null && wolf.Leader == p, $"{wolf?.Bond?.Name} follows you");
         var xp = wolf!.Bond!.Xp + wolf.Bond.Level * 1000;
-        var prey = Spawn("skeever", p.GlobalPosition + new Vector3(-3, 0, -3));
+        var prey = Spawn("giant_rat", p.GlobalPosition + new Vector3(-3, 0, -3));
         prey.Provoke(p);
         await Until(() => prey.State == EnemyState.Dead || prey.Stats.Health < prey.Stats.MaxHealth, 10);
         Check(prey.Stats.Health < prey.Stats.MaxHealth, $"{wolf.Bond.Name} fights what's attacking you");
@@ -677,7 +677,7 @@ public partial class SelfTest(Main main) : Node
         var youth = main.PlacesNode.People.FirstOrDefault(x => x.Npc.Id == youthNpc.Id);
         Check(youth is not null && youth.Figure.Scale.X <= 1, $"{youthNpc.Name}, {youthNpc.Age}, {youthNpc.Occupation} in Tristinwold");
         p.Hero.Level = Math.Max(p.Hero.Level, Main.RecruitLevel);
-        p.Septims += Main.RecruitFee;
+        p.Crowns += Main.RecruitFee;
         main.Talk(youth!);
         Check(main.HudNode.Choose("Would you become my"), $"you can ask {youthNpc.First} to follow you");
         await Frames(10);
@@ -799,7 +799,7 @@ public partial class SelfTest(Main main) : Node
         Check(main.Area == "The Iron Circle's yard", $"the Iron Circle's yard, outside the west gate: {main.Area}");
 
         // A lesson.
-        p.Septims += 1000;
+        p.Crowns += 1000;
         var points = p.Hero.Points;
         main.Talk(teacher);
         Check(hud.Choose("Teach me"), "Ser Edwyn offers a lesson");
@@ -893,9 +893,9 @@ public partial class SelfTest(Main main) : Node
         warden.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
         await Until(() => crypt.Hoard is not null, 5);
         Check(crypt.Hoard is not null, "he crumbles; his hoard lies open");
-        var (septims, xp, level) = (p.Septims, p.Hero.Xp, p.Hero.Level);
+        var (crowns, xp, level) = (p.Crowns, p.Hero.Xp, p.Hero.Level);
         main.PickUp(crypt.Hoard!);
-        Check(p.Septims > septims && (p.Hero.Level > level || p.Hero.Xp != xp), $"the hoard pays: {p.Septims - septims} septims");
+        Check(p.Crowns > crowns && (p.Hero.Level > level || p.Hero.Xp != xp), $"the hoard pays: {p.Crowns - crowns} crowns");
         Check(main.RaidLog.ClearsOf(raid) == 1 && !main.RaidLog.Ready(raid, main.GuildBook.PlaySeconds) && main.GuildBook.Titles.Contains("Warden-Breaker"),
             $"the crypt falls quiet for {raid.CooldownSeconds / 60:0} minutes; you are Warden-Breaker");
         await Frames(30);
@@ -944,10 +944,10 @@ public partial class SelfTest(Main main) : Node
             p.Stats.Heal(1e6);
             boss.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
             await Until(() => lair.Hoard is not null, 5);
-            var septims = p.Septims;
+            var crowns = p.Crowns;
             if (lair.Hoard is { } hoard) main.PickUp(hoard);
-            Check(p.Septims > septims && main.GuildBook.Titles.Contains(raid.Title) && !main.RaidLog.Ready(raid, main.GuildBook.PlaySeconds),
-                $"{raid.Hoard} pays {p.Septims - septims} septims; you are {raid.Title}");
+            Check(p.Crowns > crowns && main.GuildBook.Titles.Contains(raid.Title) && !main.RaidLog.Ready(raid, main.GuildBook.PlaySeconds),
+                $"{raid.Hoard} pays {p.Crowns - crowns} crowns; you are {raid.Title}");
             await Until(() => !main.Tracker.InFight, 10);
         }
     }
@@ -977,7 +977,8 @@ public partial class SelfTest(Main main) : Node
         var roamer = main.RaidLog.Roamers.SingleOrDefault();
         Check(roamer is not null && boss.Named && boss.Stats.Name == roamer.Title && boss.Stats.MaxHealth > plain,
             $"beaten: the goblin king takes a name, {roamer?.Title}, and grows ({plain:0} -> {boss.Stats.MaxHealth:0} hp)");
-        Check(!lair.Fighting && lair.Boss is null && !main.RaidLog.Ready(raid, main.GuildBook.PlaySeconds), "it leaves its lair, which stands empty for now");
+        Check(!lair.Fighting && lair.Boss is null && main.RaidLog.SecondsLeft(raid, main.GuildBook.PlaySeconds) <= RaidBook.MoveInSeconds,
+            "it leaves its lair, and another is already moving in");
         await Until(() => !p.Downed, 8);
         await Frames(90);
         Check(!main.RoamersNode.Near.Any(), "while you're back in town, it's out of sight, roaming");
@@ -997,20 +998,22 @@ public partial class SelfTest(Main main) : Node
         await Teleport(new Vector3((float)x + 25, 0, (float)z));
         await Until(() => main.RoamersNode.Near.Any(n => n.Body.FightingCompany), 10);
         var found = main.RoamersNode.Near.FirstOrDefault();
+        var roamerHealth = found.Body?.Stats.MaxHealth ?? 0;
         Check(found.Body is { Named: true } && found.Body.FightingCompany, $"found, {found.Roamer?.Title} comes for you");
 
-        // A new nameless boss has moved into the lair once its timer ran out.
-        main.GuildBook.PlaySeconds += raid.CooldownSeconds;
-        var (septims, xp) = (p.Septims, p.Hero.Xp);
+        // A new nameless boss has moved into the lair, no stronger than its kind.
+        main.GuildBook.PlaySeconds += RaidBook.MoveInSeconds;
+        var (crowns, xp) = (p.Crowns, p.Hero.Xp);
         found.Body!.TakeHit(1e8, DamageKind.Sun, AttackKind.Spell, false, p);
         await Until(() => main.RaidLog.Roamers.Count == 0, 5);
-        Check(main.RaidLog.Roamers.Count == 0 && p.Septims > septims, $"killed, it's gone for good: a bounty of {p.Septims - septims} septims");
+        Check(main.RaidLog.Roamers.Count == 0 && p.Crowns > crowns, $"killed, it's gone for good: a bounty of {p.Crowns - crowns} crowns");
         await Until(() => !main.Tracker.InFight, 10);
         await Approach(raid);
         await Until(() => lair.Fighting, 10);
         foreach (var t in lair.Thralls.ToList()) t.TakeHit(1e6, DamageKind.Sun, AttackKind.Spell, false, p);
         await Until(() => lair.Boss is not null, 5);
-        Check(lair.Boss is { Named: false } fresh && fresh.Kind.Id == raid.BossKind, "back at the warren, a new goblin king, nameless, has moved in");
+        Check(lair.Boss is { Named: false } fresh && fresh.Kind.Id == raid.BossKind && fresh.Stats.MaxHealth < roamerHealth,
+            $"back at the warren, a new goblin king, nameless and weaker ({lair.Boss?.Stats.MaxHealth:0} hp, against the roamer's {roamerHealth:0}), has moved in");
         lair.Boss?.TakeHit(1e8, DamageKind.Sun, AttackKind.Spell, false, p);
         await Until(() => lair.Hoard is not null, 5);
         if (lair.Hoard is { } hoard) main.PickUp(hoard);
@@ -1031,9 +1034,9 @@ public partial class SelfTest(Main main) : Node
             if (loaded.Save is null) await Frames(15);
         }
         var save = loaded?.Save is { } json ? CompanySave.FromJson(json) : null;
-        Check(save is { Quests.Count: 4 } && save.Septims == main.PlayerNode.Septims, $"{c.Character.Name}'s progress is on the server under {account}'s account");
+        Check(save is { Quests.Count: 4 } && save.Crowns == main.PlayerNode.Crowns, $"{c.Character.Name}'s progress is on the server under {account}'s account");
         var sheet = loaded!.Characters.Single(x => x.Name == c.Character.Name);
-        Check(sheet.Septims == main.PlayerNode.Septims, $"the login screen will show {sheet.Septims} septims at {sheet.Where}");
+        Check(sheet.Crowns == main.PlayerNode.Crowns, $"the login screen will show {sheet.Crowns} crowns at {sheet.Where}");
     }
 
     (double X, double Z) FindDeepWater(double x, double z)
@@ -1123,15 +1126,15 @@ public partial class SelfTest(Main main) : Node
         var flew = false;
         var lost = await Hurt(() => flew |= kipine.GlobalPosition.Y > City.FloorAt(kipine.GlobalPosition) + 4, 20);
         Check(flew && lost > 0, $"it beats up into the air and comes down on you ({lost:0} harm)");
-        p.Septims = 100;
+        p.Crowns = 100;
         p.GlobalPosition = kipine.GlobalPosition + new Vector3(0, 0.5f, 2);
-        await Until(() => p.Septims < 100, 25);
-        var taken = 100 - p.Septims;
-        Check(taken > 0, $"it snatches {taken} septims");
-        var purse = p.Septims;
+        await Until(() => p.Crowns < 100, 25);
+        var taken = 100 - p.Crowns;
+        Check(taken > 0, $"it snatches {taken} crowns");
+        var purse = p.Crowns;
         kipine.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
         await Frames(5);
-        Check(p.Septims >= purse + taken, $"killed, it gives them back ({purse} -> {p.Septims}, and it may drop a few coins of its own)");
+        Check(p.Crowns >= purse + taken, $"killed, it gives them back ({purse} -> {p.Crowns}, and it may drop a few coins of its own)");
         await Until(() => !main.Tracker.InFight, 10);
 
         // Deathcrest apes: they hunt the walking dead, and blink through shadow to your flank.
@@ -1248,12 +1251,12 @@ public partial class SelfTest(Main main) : Node
         await Teleport(new Vector3(80, 0, 8));
         var smith = main.GetChildren().OfType<Person>().FirstOrDefault(x => x.Npc.Id == Shops.Smithy.Id);
         Check(smith is not null && main.GetChildren().OfType<Person>().Count(x => Shops.All.Any(s => s.Id == x.Npc.Id)) == Shops.All.Count, $"all {Shops.All.Count} shopkeepers are at their stalls, yards and kitchens");
-        p.Septims = 200;
+        p.Crowns = 200;
         main.Talk(smith!);
         Check(main.HudNode.Choose("Let me see"), "the smith shows her wares");
         Check(main.HudNode.Choose("Iron Sword"), "and sells you an iron sword");
         var sword = Shops.Charge(Items.Get("iron_sword")!.Value, p.Markup); // a human pays a little less
-        Check(pack.Count("iron_sword") == 1 && p.Septims == 200 - sword, $"for {sword} septims");
+        Check(pack.Count("iron_sword") == 1 && p.Crowns == 200 - sword, $"for {sword} crowns");
         main.HudNode.EndTalk();
 
         // Worn, it shows in your hand and makes you hit harder.
@@ -1279,16 +1282,16 @@ public partial class SelfTest(Main main) : Node
         main.HudNode.EndTalk();
 
         // Sell what you don't need.
-        var before = p.Septims;
+        var before = p.Crowns;
         main.Talk(smith!);
         main.HudNode.Choose("I've things to sell");
         Check(main.HudNode.Choose("Sell every"), "she buys your pelts");
-        Check(p.Septims > before && pack.Count("wolf_pelt") == 0, $"for {p.Septims - before} septims");
+        Check(p.Crowns > before && pack.Count("wolf_pelt") == 0, $"for {p.Crowns - before} crowns");
         main.HudNode.EndTalk();
 
         // Wren's Menagerie: a wolf pup, already tame, for a price; and never a dragon.
         var wren = main.GetChildren().OfType<Person>().First(x => x.Npc.Id == Shops.Menagerie.Id);
-        p.Septims = 1000;
+        p.Crowns = 1000;
         var bonds = main.Bonds.Count;
         main.Talk(wren);
         Check(main.HudNode.Choose("Show me your animals"), "the beastkeeper shows her animals");
@@ -1296,8 +1299,8 @@ public partial class SelfTest(Main main) : Node
             $"{Menagerie.Stock.Count} young beasts, and no dragon among them");
         var pup = Menagerie.Stock.Single(o => o.KindId == "wolf");
         var paid = Menagerie.Price(pup, pack.Level(Job.Taming), p.Markup);
-        Check(main.HudNode.Choose("Wolf Pup") && main.Bonds.Count == bonds + 1 && main.Bonds[^1].KindId == "wolf" && p.Septims == 1000 - paid,
-            $"a wolf pup joins you for {paid} septims");
+        Check(main.HudNode.Choose("Wolf Pup") && main.Bonds.Count == bonds + 1 && main.Bonds[^1].KindId == "wolf" && p.Crowns == 1000 - paid,
+            $"a wolf pup joins you for {paid} crowns");
         Check(pack.JobXp.GetValueOrDefault(Job.Taming) > 0, "and you learn a little beast taming");
         main.HudNode.EndTalk();
 

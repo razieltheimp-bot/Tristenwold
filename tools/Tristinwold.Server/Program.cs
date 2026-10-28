@@ -6,7 +6,7 @@
 //       [--vann-minutes 6] [--voice claude|off] [--spoilers] [--tunnel [--cloudflared path]]
 //
 // --port       TCP (JSON lines) for tools and bots
-// --http-port  HTTP for phones, tunnels and the Skyrim add-on (SkyrimPlatform can only make HTTP requests)
+// --http-port  HTTP for phones, browsers and tunnels
 // --dm         a human DM closes contracts from this window (players can't close their own)
 // --no-vann    Vann doesn't scheme on his own
 // --voice      claude: Claude voices Vann (needs ANTHROPIC_API_KEY); off: written lines only.
@@ -112,7 +112,7 @@ async Task ServeTcpAsync(TcpClient tcp)
 var listener = new TcpListener(IPAddress.Any, port);
 listener.Start();
 
-// ---- HTTP (the Skyrim add-on) --------------------------------------------------------------------
+// ---- HTTP (phones and browsers) --------------------------------------------------------------------
 
 using var gateway = new HttpGateway(host, $"http://+:{httpPort}/", Log);
 try
@@ -124,7 +124,7 @@ catch (SocketException ex)
     Log($"Could not listen for HTTP on port {httpPort} ({ex.Message}): is another server already running? PC games can still join on TCP {port}.");
 }
 
-Log($"Tristinwold server: campaign \"{state.Campaign}\". PC games connect on TCP {port}; phones, tunnels and the Skyrim add-on on HTTP {httpPort}.");
+Log($"Tristinwold server: campaign \"{state.Campaign}\". PC games connect on TCP {port}; phones and tunnels on HTTP {httpPort}.");
 Log($"Saving to {Path.GetFullPath(campaignPath)}.");
 // What to type into the game's Server box, so nobody has to go looking for this computer's address.
 var lan = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()

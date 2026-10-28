@@ -134,14 +134,14 @@ public class VannTests
 public class EncounterTests
 {
     [Fact]
-    public void A_fight_in_skyrim_can_turn_out_to_be_against_a_nemesis()
+    public void A_reported_fight_can_turn_out_to_be_against_a_nemesis()
     {
         var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannEnabled = false }, seed: 8);
         server.Connect(new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]));
         // Joe dies to a bandit: it becomes a nemesis, remembering how to spawn it.
         server.Handle("Joe", new ReportBattle(new BattleReport("Riverwood", BattleResult.Defeat,
-            [new EnemyReport(0, "Bandit Marauder", "Bandit Marauder", 300, false, false, BaseForm: "Skyrim.esm|0x0003DF08")], ["Joe"])));
-        Assert.Equal("Skyrim.esm|0x0003DF08", server.World.Living.Single().BaseForm);
+            [new EnemyReport(0, "Bandit Marauder", "Bandit Marauder", 300, false, false, BaseForm: "bandit")], ["Joe"])));
+        Assert.Equal("bandit", server.World.Living.Single().BaseForm);
 
         // The next fights with bandit marauders: sooner or later, that's him.
         NemesisAppears? appears = null;
@@ -167,7 +167,7 @@ public class EncounterTests
         var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannMinutesBetweenSchemes = 1 }, seed: 9, clock: () => now);
         server.Connect(new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]));
         server.Handle("Joe", new ReportBattle(new BattleReport("Riverwood", BattleResult.Defeat,
-            [new EnemyReport(0, "Draugr", "Draugr Wight", 300, false, false, BaseForm: "Skyrim.esm|0x0002D1E9")], ["Joe"])));
+            [new EnemyReport(0, "Draugr", "Draugr Wight", 300, false, false, BaseForm: "draugr")], ["Joe"])));
 
         var hunts = new List<NemesisHunts>();
         server.Tick();
@@ -177,7 +177,7 @@ public class EncounterTests
             hunts.AddRange(server.Tick().Where(o => o.To == "Joe").Select(o => o.Message).OfType<NemesisHunts>());
         }
         var hunt = Assert.Single(hunts);
-        Assert.Equal("Skyrim.esm|0x0002D1E9", hunt.BaseForm);
+        Assert.Equal("draugr", hunt.BaseForm);
         Assert.Equal(server.World.Living.Single().Id, hunt.NemesisId);
     }
 }
@@ -192,40 +192,36 @@ public class WorldTests
         Assert.Equal(atlas.Cities.Count, atlas.Cities.Select(c => c.Name).Distinct().Count());
         foreach (var city in atlas.Cities)
         {
-            Assert.NotEqual(city.BuiltFrom, city.Name);
             Assert.False(string.IsNullOrWhiteSpace(city.Story));
-            Assert.Equal(city.Name, city.Places[city.BuiltFrom]); // the city itself is renamed
+            Assert.NotEmpty(city.Places);
+            Assert.DoesNotContain(city.Name, city.Places);
         }
-        // A Skyrim place belongs to one city only.
-        var all = atlas.Cities.SelectMany(c => c.Places.Keys).ToList();
+        // A place belongs to one city only.
+        var all = atlas.Cities.SelectMany(c => c.Places).ToList();
         Assert.Equal(all.Count, all.Distinct(StringComparer.OrdinalIgnoreCase).Count());
-        // Every character move goes somewhere the world knows.
-        Assert.All(atlas.Moves, m => Assert.Contains(m.To, atlas.AllPlaces().Keys, StringComparer.OrdinalIgnoreCase));
+        // Every hand-written character lives somewhere the world knows.
+        Assert.All(atlas.Characters, c => Assert.Contains(c.Home, atlas.AllPlaces(), StringComparer.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public void Skyrim_places_become_their_cities_places()
+    public void Places_keep_the_campaigns_spelling_and_cities_post_their_contracts()
     {
         var server = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannEnabled = false, RewindChance = 0, KeystoneMeetChance = 0 }, seed: 10);
         server.Connect(new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]));
         server.Connect(new Hello("Mira", "", Wire.ProtocolVersion, ["Mira"]));
 
-        server.Handle("Joe", new Presence("The Ragged Flagon", []));
-        var outs = server.Handle("Mira", new Presence("the ragged flagon", []));
+        server.Handle("Joe", new Presence("The Gallows Perch", []));
+        var outs = server.Handle("Mira", new Presence("the gallows perch", []));
         Assert.Equal("The Gallows Perch", server.State.Groups["Joe"].Area);
         Assert.Contains(outs.Select(o => o.Message).OfType<Notice>(), n => n.Text.Contains("The Gallows Perch"));
-
-        // With Tristinwold.esp installed the game already reports the new name.
-        server.Handle("Joe", new Presence("The Spur and Saddle", []));
+        server.Handle("Joe", new Presence("the spur and saddle", []));
         Assert.Equal("The Spur and Saddle", server.State.Groups["Joe"].Area);
-        server.Handle("Joe", new Presence("Whiterun", []));
-        Assert.Equal("Galeholt", server.State.Groups["Joe"].Area);
-        // Places in no city keep their Skyrim names.
-        server.Handle("Joe", new Presence("Bleak Falls Barrow", []));
-        Assert.Equal("Bleak Falls Barrow", server.State.Groups["Joe"].Area);
+        // Places the campaign doesn't know keep the name they came with.
+        server.Handle("Joe", new Presence("A Nameless Barrow", []));
+        Assert.Equal("A Nameless Barrow", server.State.Groups["Joe"].Area);
 
         // Nemeses get homes in this world, and each city posts its own contracts.
-        server.Handle("Joe", new ReportBattle(new BattleReport("Goldenglow Estate", Nemesis.BattleResult.Defeat,
+        server.Handle("Joe", new ReportBattle(new BattleReport("the needle", Nemesis.BattleResult.Defeat,
             [new Nemesis.EnemyReport(0, "Bandit", "Bandit", 100, false, false)], ["Joe"])));
         Assert.Equal("The Needle", server.World.Living.Single().HomeArea);
         Assert.Contains(server.State.Contracts, c => c.Id == "cinderhelm-killer" && c.Where!.StartsWith("Cinderhelm"));

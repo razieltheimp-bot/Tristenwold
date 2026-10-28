@@ -13,7 +13,7 @@ public sealed record SyncResponse(string? Session, List<Message> Messages, strin
 
 /// <summary>
 /// The shared world over plain HTTP, for game clients that can only make GET/POST requests
-/// (SkyrimPlatform's HttpClient, the phone game). A client joins once, then calls sync about once a
+/// (browsers, the phone game). A client joins once, then calls sync about once a
 /// second: it posts whatever it has to say and gets back whatever is waiting for it.
 ///
 ///   POST /v1/join   body: a Hello message     -> SyncResponse (Session set)

@@ -4,14 +4,13 @@ namespace Tristinwold.Shared;
 
 public sealed record CityContract(string Id, string Title, string PostedBy, int Pay, string? InDanger = null, string? Secret = null);
 
-/// <summary>One of Skyrim's cities, reworked: a new name, its own places and its own story.</summary>
+/// <summary>One of the world's cities: its name, its own places and its own story.</summary>
 public sealed record City(
     string Id,
     string Name,
-    string BuiltFrom,
     string Epithet,
     string Story,
-    Dictionary<string, string> Places,
+    List<string> Places,
     List<CityContract> Contracts,
     double[]? At = null)
 {
@@ -19,14 +18,14 @@ public sealed record City(
     public (double X, double Z) Position => At is [var x, var z] ? (x, z) : (0, 0);
 }
 
-/// <summary>A character taken from one city and set down in another, perhaps under a new name.</summary>
-public sealed record NpcMove(string Npc, string To, string? Rename = null, string? Why = null);
+/// <summary>A character written by hand: who they are, the place they call home, and their story.</summary>
+public sealed record Character(string Name, string Home, string Story = "");
 
 /// <summary>
-/// The world of Tristinwold built from Skyrim: world/world.json. The server reads it for place
-/// names and city contracts; the plugin builder reads it to rename places and move characters.
+/// The world of Tristinwold: world/world.json. The game grows its cities from it; the server reads it for
+/// place names and city contracts.
 /// </summary>
-public sealed record Atlas(List<City> Cities, List<NpcMove> Moves, ulong Seed = 0)
+public sealed record Atlas(List<City> Cities, List<Character> Characters, ulong Seed = 0)
 {
     public static Atlas Default { get; } = LoadEmbedded();
 
@@ -43,14 +42,8 @@ public sealed record Atlas(List<City> Cities, List<NpcMove> Moves, ulong Seed = 
         return Parse(reader.ReadToEnd());
     }
 
-    /// <summary>Every Skyrim place name -> its name in this world, across all cities.</summary>
-    public Dictionary<string, string> AllPlaces()
-    {
-        var all = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var city in Cities)
-            foreach (var (skyrim, name) in city.Places) all[skyrim] = name;
-        return all;
-    }
+    /// <summary>Every named place in every city.</summary>
+    public List<string> AllPlaces() => Cities.SelectMany(c => c.Places).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
     /// <summary>The contracts each city posts on the shared board, tagged with where they are.</summary>
     public IEnumerable<Contract> CityContracts() =>

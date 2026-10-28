@@ -58,13 +58,13 @@ public class AvatarTests
         Assert.True(Races.Get("half_giant").Size > Races.Get("human").Size && Races.Get("goblin").Size < Races.Get("dwarf").Size);
 
         var orc = new Combatant("Grak", 100);
-        var (health, magicka, _) = Races.Apply(orc, Races.Get("orc"), null);
-        Assert.True(health > 1 && magicka < 1 && orc.DamageMult > 1 && orc.SpellPower < 1);
+        var (health, mana, _) = Races.Apply(orc, Races.Get("orc"), null);
+        Assert.True(health > 1 && mana < 1 && orc.DamageMult > 1 && orc.SpellPower < 1);
 
         // A half-dragon elf: half the elf's magic, half the dragon's toughness, the elf's ears.
         var half = (Avatar.For("Wizard") with { Race = "dragonkind", Dragon = "White", Half = "elf" });
         Assert.Equal("elf", half.People.Ears);
-        Assert.True(half.People.Magicka > 1 && half.People.Magicka < Races.Get("elf").Magicka);
+        Assert.True(half.People.Mana > 1 && half.People.Mana < Races.Get("elf").Mana);
         Assert.True(half.People.Health > Races.Get("elf").Health && half.People.Health < Races.Get("dragonkind").Health);
 
         var c = new Combatant("Ysolde", 100);

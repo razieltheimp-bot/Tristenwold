@@ -189,7 +189,7 @@ public partial class Main : Node3D
         if (_args.ContainsKey("corrupt")) dragons = ["dragon_red_corrupt", "dragon_gold_corrupt", "dragon_green_corrupt", "dragon_white_corrupt"];
         if (_args.ContainsKey("riders")) dragons = ["rider:dragon_gold", "rider:dragon_silver", "dragon_red_corrupt", "rider:dragon_bronze"];
         string[] looks = _args.ContainsKey("dragons") ? dragons : _args.ContainsKey("creatures")
-            ? ["Paladin", "skeever", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
+            ? ["Paladin", "giant_rat", "goblin", "spriggan", "frost_troll", "dragon", "wolf", "bear"]
             : _args.ContainsKey("young") ? ["Paladin", "wolf", "bear", "deer", "fox", "boar", "dragon_gold", "squire", "apprentice", "youth"]
             : _args.ContainsKey("crypt") ? ["cinder_thrall", "cinder_warden", "Paladin"]
             : [.. Classes.All.Select(d => d.Look)];
@@ -575,7 +575,7 @@ public partial class Main : Node3D
                 _hud.Toast($"{hunter.Stats.Name} has found you.");
                 break;
             }
-            case Reward r: _player.Septims += r.Gil / 100; _hud.Toast($"Contract paid: {r.Gil / 100} septims."); break;
+            case Reward r: _player.Crowns += r.Coppers / 100; _hud.Toast($"Contract paid: {r.Coppers / 100} crowns."); break;
             case Board b: _hud.ShowBoard(b.Contracts); break;
             case Roster r: _hud.ShowCompanies(r.Groups); break;
             case NemesisSnapshot s: _hud.ShowNemeses(s.WorldJson); _nemesisJson = s.WorldJson; break;
@@ -823,7 +823,7 @@ public partial class Main : Node3D
     void Apply(QuestUpdate u)
     {
         _hud.Toast(u.Text);
-        if (u.Reward > 0) _player.Septims += _player.Class.Id == "Thief" ? (int)Math.Round(u.Reward * (1 + _player.Class.Passive.Power * _player.Hero.Power("light_fingers"))) : u.Reward;
+        if (u.Reward > 0) _player.Crowns += _player.Class.Id == "Thief" ? (int)Math.Round(u.Reward * (1 + _player.Class.Passive.Power * _player.Hero.Power("light_fingers"))) : u.Reward;
         if (u.Stage == QuestStage.Done) GainXp(40 + u.Quest.Reward / 2);
         if (u.Stage == QuestStage.Done && ClassQuests.IsClassQuest(u.Quest.Id, out var discipline, out var step)) ClassTrialDone(discipline, step);
         if (u.Stage == QuestStage.Done) { _hud.Toast($"Quest complete: {u.Quest.Title}."); Sound.Ui("quest"); }
@@ -836,12 +836,12 @@ public partial class Main : Node3D
         if (_raidLairs.FirstOrDefault(l => l.Hoard == item) is { } lair)
         {
             var raid = lair.Raid;
-            var (xp, septims, first) = lair.Loot();
-            _player.Septims += septims;
+            var (xp, crowns, first) = lair.Loot();
+            _player.Crowns += crowns;
             var spoils = Loot.Hoard(raid.Id, _lootRng, first);
             Take(spoils);
             _hud.Log($"From {raid.Hoard}: {Loot.Describe(spoils)}");
-            _hud.Toast($"{char.ToUpperInvariant(raid.Hoard[0])}{raid.Hoard[1..]}: {septims} septims, {raid.HoardHolds}. (+{xp} experience{(first ? ", double for the first time" : "")}) In your pack: {Loot.Describe(spoils)}. {char.ToUpperInvariant(raid.Name[0])}{raid.Name[1..]} will wake again in {raid.CooldownSeconds / 60:0} minutes.", 12);
+            _hud.Toast($"{char.ToUpperInvariant(raid.Hoard[0])}{raid.Hoard[1..]}: {crowns} crowns, {raid.HoardHolds}. (+{xp} experience{(first ? ", double for the first time" : "")}) In your pack: {Loot.Describe(spoils)}. {char.ToUpperInvariant(raid.Name[0])}{raid.Name[1..]} will wake again in {raid.CooldownSeconds / 60:0} minutes.", 12);
             GainXp(xp);
             if (first && !_guilds.Titles.Contains(raid.Title)) { _guilds.Titles.Add(raid.Title); _hud.Toast($"You are {raid.Title}.", 8); }
             Save();
@@ -882,7 +882,7 @@ public partial class Main : Node3D
             if (save.Seed == _world.Seed)
             {
                 save.Restore(_explored, _journal);
-                _player.Septims = save.Septims;
+                _player.Crowns = save.Crowns;
                 _player.Meat = save.Meat;
                 _player.Pack = save.Pack ?? new Pack();
                 _herbs = save.Herbs ?? new HerbBook();
@@ -906,12 +906,12 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Septims, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)
         {
-            _client.Send(new SaveProgress(json, _player.Septims, _area));
+            _client.Send(new SaveProgress(json, _player.Crowns, _area));
             _lastSent = json;
         }
         return json;

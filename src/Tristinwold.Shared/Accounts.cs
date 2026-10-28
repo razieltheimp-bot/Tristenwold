@@ -8,7 +8,7 @@ namespace Tristinwold.Shared;
 /// <summary>One of an account's characters, as the login screen lists it.</summary>
 /// <param name="Look">The character's class.</param>
 /// <param name="Avatar">How they look, apart from their class (see Tristinwold.Gameplay.Avatar); null for their class's own look.</param>
-public sealed record CharacterSheet(string Name, string Look, string Element, DateTime Created, int Septims = 0, string Where = "", string? Avatar = null);
+public sealed record CharacterSheet(string Name, string Look, string Element, DateTime Created, int Crowns = 0, string Where = "", string? Avatar = null);
 
 /// <summary>
 /// Sent before joining: register, log in, or manage characters. Answered with one
@@ -30,7 +30,7 @@ public sealed record AccountRequest(
 public sealed record AccountReply(bool Ok, string? Error, string? Token, IReadOnlyList<CharacterSheet> Characters, string? Save = null) : Message;
 
 /// <summary>A logged-in character's progress (map, quests, purse), kept on the server so it follows them between devices.</summary>
-public sealed record SaveProgress(string Save, int Septims, string Where) : Message;
+public sealed record SaveProgress(string Save, int Crowns, string Where) : Message;
 
 /// <summary>
 /// Accounts and the characters they own, kept in a JSON file next to the campaign. Passwords are
@@ -65,7 +65,7 @@ public sealed partial class AccountStore
         _path = path;
         _clock = clock ?? (() => DateTime.UtcNow);
         if (path is not null && File.Exists(path) && File.ReadAllText(path).Trim().Length > 0)
-            foreach (var a in JsonSerializer.Deserialize<List<Account>>(File.ReadAllText(path), Wire.Options) ?? [])
+            foreach (var a in JsonSerializer.Deserialize<List<Account>>(Nemesis.SaveUpgrade.Upgrade(File.ReadAllText(path)), Wire.Options) ?? [])
                 _accounts[a.Name] = a;
     }
 
@@ -130,7 +130,7 @@ public sealed partial class AccountStore
                     if (a.Characters.Count >= MaxCharacters) return Fail($"An account holds at most {MaxCharacters} characters.");
                     if (_accounts.Values.Any(x => x.Characters.Any(y => Same(y.Name, cname))) || (taken?.Invoke(cname) ?? false))
                         return Fail($"Someone already plays as {cname}.");
-                    a.Characters.Add(c with { Name = cname, Created = _clock(), Septims = 0, Where = "" });
+                    a.Characters.Add(c with { Name = cname, Created = _clock(), Crowns = 0, Where = "" });
                     return Ok(a, token);
                 }
                 case "delete":
@@ -174,7 +174,7 @@ public sealed partial class AccountStore
             var i = a.Characters.FindIndex(c => Same(c.Name, character));
             if (i < 0) return false;
             a.Saves[a.Characters[i].Name] = save.Save;
-            a.Characters[i] = a.Characters[i] with { Septims = save.Septims, Where = save.Where };
+            a.Characters[i] = a.Characters[i] with { Crowns = save.Crowns, Where = save.Where };
             Persist();
             return true;
         }

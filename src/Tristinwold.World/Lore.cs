@@ -130,7 +130,7 @@ static class Lore
                 var (beast, count) = biome switch
                 {
                     Biome.Snowfield or Biome.Tundra => rng.Chance(0.4) ? ("frost_troll", 1) : ("ice_wolf", 3),
-                    Biome.Marsh => rng.Chance(0.5) ? ("mudcrab", 3) : ("skeever", 4),
+                    Biome.Marsh => rng.Chance(0.5) ? ("mud_crab", 3) : ("giant_rat", 4),
                     Biome.Crags => rng.Chance(0.5) ? ("bear", 1) : ("frost_troll", 1),
                     Biome.AutumnForest => rng.Chance(0.4) ? ("spriggan", 1) : ("wolf", 3),
                     _ => rng.Chance(0.4) ? ("bear", 1) : ("wolf", 3),

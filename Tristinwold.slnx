@@ -1,11 +1,4 @@
 <Solution>
-  <Folder Name="/skyrim/" />
-  <Folder Name="/skyrim/esp-builder.Tests/">
-    <Project Path="skyrim/esp-builder.Tests/Tristinwold.EspBuilder.Tests.csproj" />
-  </Folder>
-  <Folder Name="/skyrim/esp-builder/">
-    <Project Path="skyrim/esp-builder/Tristinwold.EspBuilder.csproj" />
-  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Tristinwold.Gameplay/Tristinwold.Gameplay.csproj" />
     <Project Path="src/Tristinwold.Nemesis/Tristinwold.Nemesis.csproj" />

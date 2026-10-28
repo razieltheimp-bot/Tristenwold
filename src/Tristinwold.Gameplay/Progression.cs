@@ -59,9 +59,9 @@ public sealed class Hero
         Discipline = discipline;
     }
 
-    /// <summary>Health, magicka and stamina a level brings on top of the class's own.</summary>
+    /// <summary>Health, mana and stamina a level brings on top of the class's own.</summary>
     [JsonIgnore]
-    public (double Health, double Magicka, double Stamina) Growth => ((Level - 1) * 12, (Level - 1) * 6, (Level - 1) * 5);
+    public (double Health, double Mana, double Stamina) Growth => ((Level - 1) * 12, (Level - 1) * 6, (Level - 1) * 5);
 
     /// <summary>Experience for a kill: tougher foes and the far wilds teach more.</summary>
     public static int XpForKill(EnemyKind kind, double danger = 1, double toughness = 1) =>
@@ -210,8 +210,8 @@ public sealed class Bond
         "boar" or "deer" => "Gore",
         "frost_troll" or "goblin" => "Club Smash",
         "spriggan" => "Thorn Lash",
-        "skeever" => "Gnaw",
-        "mudcrab" => "Pincer Crush",
+        "giant_rat" => "Gnaw",
+        "mud_crab" => "Pincer Crush",
         _ => "Savage Strike",
     };
 }
@@ -220,7 +220,7 @@ public sealed class Bond
 public static class Taming
 {
     /// <summary>The young of these can be raised: beasts and monsters (not people, and not the dead).</summary>
-    public static bool Tameable(string kindId) => kindId is "skeever" or "wolf" or "ice_wolf" or "bear" or "frost_troll" or "mudcrab"
+    public static bool Tameable(string kindId) => kindId is "giant_rat" or "wolf" or "ice_wolf" or "bear" or "frost_troll" or "mud_crab"
         or "spriggan" or "goblin" or "boar" or "deer" or "fox" or "kipine" or "deathcrest_ape" or "winged_ape" or "hawk"
         || (kindId.StartsWith("dragon_") && !kindId.EndsWith("_corrupt"));
 
@@ -237,8 +237,8 @@ public static class Taming
         "winged_ape" => "Winged Ape Infant",
         "deer" => "Fawn",
         "boar" => "Boarlet",
-        "skeever" => "Skeever Kit",
-        "mudcrab" => "Mudcrab Hatchling",
+        "giant_rat" => "Giant Rat Kit",
+        "mud_crab" => "Mud Crab Hatchling",
         "spriggan" => "Spriggan Sapling",
         "goblin" => "Goblin Whelp",
         "frost_troll" => "Troll Whelp",

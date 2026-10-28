@@ -1,23 +1,20 @@
 # Tristinwold
 
-A multiplayer game for *The Rings of Tristinwold*. It runs on its own, as a **standalone Godot 4 game**
-that needs no copy of Skyrim. A Skyrim add-on is the second way to play. Final Fantasy-style mechanics
-come along: Haste, Protect, Shell, Regen, Reflect and limit breaks today, with summons planned. Leveling
-works like Skyrim's: skills and perk trees, no sphere grid.
+A multiplayer game for *The Rings of Tristinwold*: a **standalone Godot 4 game**, with auto-statuses (Haste,
+Protect, Shell, Regen, Reflect) and limit breaks in its fights, and summons planned. Leveling is skills and
+perks.
 
 | Part | Status |
 |---|---|
 | **The game** (`game/`, Godot 4 .NET) | Playable: the three-ring city of Tristinwold and an endless world around it. Buildings are generated in code (timber-framed and stone houses, taverns, churches, keeps, walls); the ground, buildings, trees, rocks and props are photo-textured from Poly Haven scans; characters come from the KayKit packs. Sword, spells, limit break, Tong lairs, nemeses that come back, a fog-of-war map, villages and camps, people to talk to and quests to do, the shared-world board. A scripted headless test plays it against the real server. Open/CC0 art to come. |
 | **The open world** (`src/Tristinwold.World`) | Built and tested. Grows the land, the cities, the villages, the people and their quests from one seed, with no edge. |
-| **Combat rules** (`src/Tristinwold.Gameplay`) | Built and tested: health/magicka/stamina, Skyrim-style armor, resistances, auto-statuses, the limit gauge, the bestiary, fight tracking. |
-| **Nemesis rules** (`src/Tristinwold.Nemesis`) | Built and tested. Uses Skyrim actor kinds, actor values and damage types. |
+| **Combat rules** (`src/Tristinwold.Gameplay`) | Built and tested: health/mana/stamina, armour, resistances, auto-statuses, the limit gauge, the bestiary, fight tracking. |
+| **Nemesis rules** (`src/Tristinwold.Nemesis`) | Built and tested: named enemies that remember, return and rise, with their own strengths, weaknesses and damage types. |
 | **Shared world server + Vann** (`src/Tristinwold.Shared`, `tools/Tristinwold.Server`) | Built and tested end to end. Game-agnostic. |
-| **The world** (`world/world.json`) | Nine reworked cities with their own names, places, stories and contracts; characters moved between them. |
-| **Tristinwold.esp builder** (`skyrim/esp-builder`) | Built and tested against a stand-in Skyrim.esm. Renames every city's places in game and moves characters. |
-| **Skyrim add-on** (`skyrim/plugin`, a SkyrimPlatform plugin) | Built: fights, nemeses, Vann's hunts, contract board, dead drops, F10 window. Tested against the real server in a simulated game; not yet run in Skyrim. |
+| **The world** (`world/world.json`) | Nine cities with their own names, places, stories and contracts, and the characters written by hand. |
 | **Story, character creator, summons, co-op inside a company** | Planned. |
 
-## Play without Skyrim (the Godot game)
+## Play
 
 You need [Godot 4.7 .NET](https://godotengine.org/download) and the .NET 10 SDK. Start the server
 (see *Shared world* below), then each company runs:
@@ -29,7 +26,7 @@ godot --path game -- --server 192.168.1.20:7777 --company Joe --password secret
 Without `--server`, the game opens on a login page: the server's address and password, then your account
 name and password (**Create account** the first time). Then pick one of your characters or make a new one:
 a name, a colour and a starting spell. On a server, your characters and their progress (map, quests,
-septims) belong to your account, so you can play the same character from your phone and your PC. Nobody
+crowns) belong to your account, so you can play the same character from your phone and your PC. Nobody
 else can join as your character. The game stays logged in on that device (it keeps a login token, not
 your password). **Play alone** keeps characters on the device instead. You can also open `game/project.godot`
 in the Godot editor and press Play.
@@ -38,9 +35,7 @@ From the command line, `--account Joe --secret yourpassword --company "Bram Ashm
 account and character if they're new, and plays. The server keeps accounts in `<campaign>.accounts.json`,
 next to the campaign file, with passwords stored only as salted PBKDF2 hashes.
 
-**Graphics** (on the login page, or `--graphics low|medium|high|ultra`). The ideas come from the Skyrim and
-Oblivion graphics projects (Community Shaders' lighting, OptiScaler's upscaling, the water and vegetation
-overhauls), done with Godot's renderer, since those mods only run inside those games:
+**Graphics** (on the login page, or `--graphics low|medium|high|ultra`), done with Godot's own renderer:
 
 | | Low | Medium | High | Ultra |
 |---|---|---|---|---|
@@ -196,16 +191,16 @@ one when you make a character; learn another later from its teacher at the guild
 | Barbarian | Cleave: all in front | Leap Slam | Rage | Whirlwind | Thick Hide: more health, wounds close |
 | Paladin | Smite: sunlit sword | Holy Light: heal all, sear foes | Shield Wall: Protect and Shell | Divine Judgement | Devotion: harder to hurt, light burns the dead and corrupted |
 | Ranger | Shoot: crossbow, 35 m | Volley: four foes | Call of the Wild: beasts healed and fierce | Rain of Bolts | Beastmaster: always tames, beasts grow faster |
-| Thief | Quick Stab | Pilfer: steal as you strike | Smoke Bomb: foes lose you, next strike critical | Grand Heist | Light Fingers: more septims, free running |
+| Thief | Quick Stab | Pilfer: steal as you strike | Smoke Bomb: foes lose you, next strike critical | Grand Heist | Light Fingers: more crowns, free running |
 | Assassin | Stab: often critical | Shadowstep behind a foe | Poisoned Blades | Death Mark | Backstab: huge harm to foes not fighting you |
 | Wizard | Elemental Bolt | Elemental Blast | Attune: fire, frost, shock | Meteor | Arcane Mastery: stronger spells |
 | Warlock or Witch | Eldritch Blast | Drain Life | Summon Familiar | Soul Harvest | Dark Pact: kills restore you |
 | Sorcerer | Arcane Missiles | Chain Lightning | Attune | Dragonfire | Wild Surge: spells sometimes go off twice |
-| Poet | Barbed Verse: golden words that cut, 22 m | Rousing Ode: the company healed, quickened, fiercer | Mocking Couplet: foes nearby forget you | Epic of Ages | The Muse: stronger spells; kills give back magicka and stamina |
+| Poet | Barbed Verse: golden words that cut, 22 m | Rousing Ode: the company healed, quickened, fiercer | Mocking Couplet: foes nearby forget you | Epic of Ages | The Muse: stronger spells; kills give back mana and stamina |
 | Scribe | Inkbolt: crackling ink, 24 m | Glyph of Warding: a rune circle that bursts under a foe | Scroll of Protection: Protect, Shell, Regen | Words of Unmaking | Marginalia: each blow on the same foe hits harder |
-| Musician | Discord: a jarring chord, every fourth twice as hard | Thunderous Chord: a wave of sound that throws foes back | Battle Hymn: the company quickened and healing | Crescendo | Perfect Pitch: magicka and stamina come back quickly |
+| Musician | Discord: a jarring chord, every fourth twice as hard | Thunderous Chord: a wave of sound that throws foes back | Battle Hymn: the company quickened and healing | Crescendo | Perfect Pitch: mana and stamina come back quickly |
 
-Kills and jobs bring experience. Each level adds health, magicka and stamina and a skill point; spend points (K)
+Kills and jobs bring experience. Each level adds health, mana and stamina and a skill point; spend points (K)
 to rank a move up to 5, each rank 15% stronger. Joining another class gives the points back.
 
 **What spells and blows look like** (`game/scripts/Effects.cs`). Fireballs trail flame and grey smoke and burst
@@ -237,8 +232,8 @@ forward; a Scribe's glyph is a turning circle of runes written in light that bur
 
 **Peoples.** A hero is born to one of seven peoples, each with a gift and a cost (shown on the character page):
 humans learn 15% faster and pay 10% less in shops; orcs (green, tusked) have more health and hit harder with
-weapons but less magicka, and townsfolk charge them more; goblins (small, big-eared) are quick and strike true
-more often but are frail; elves (pointed ears) have deep magicka and stronger spells but less health and armour;
+weapons but less mana, and townsfolk charge them more; goblins (small, big-eared) are quick and strike true
+more often but are frail; elves (pointed ears) have deep mana and stronger spells but less health and armour;
 dwarves (short and broad) are armoured and tireless and shrug off fire and poison but are slower; half-giants are
 huge, tough and hard-hitting but slow and poor at magic. Dragonkind are scaled, horned and tailed in the colour
 of their dragon (red, blue, green, black, white, gold, silver, bronze, copper or brass): its breath hardly hurts
@@ -302,7 +297,7 @@ creatures come from the *Aerois: Year One* bestiary sheet, built on the game's o
 | The Rock Bear's Den (cave) | north-west | 4-9 | wolves | the Rock Bear: stone grown over its back | ground slam, hurled boulder, rage |
 | The Briar Ruin (ruin) | south | 5-10 | spriggans | the Briar Mother: walking briar in red bloom | spore burst, thorn volleys, spawns spriggans |
 | The Hollow Bastion (fort) | east road | 7-12 | ghost soldiers | the Hollow Captain: a knight of moonlight | shield charge, spear volleys, calls the legion |
-| The Amethyst Hollow (cave) | far north-east | 8-13 | crystal skeevers | the Crystal Basilisk: amethyst grown through it | crystal spikes from marked ground, shard bolts, more skeevers |
+| The Amethyst Hollow (cave) | far north-east | 8-13 | crystal giant rats | the Crystal Basilisk: amethyst grown through it | crystal spikes from marked ground, shard bolts, more giant rats |
 | The Sunken Forge (dungeon) | far west | 9-14 | goblin tinkers | the Forge Golem: furnace chest, chimney head, hammer | hammer quake, slag, molten drops, overheats |
 | The Gloaming Ruin (ruin) | far south-east | 10-15 | shadow wolves | the Duskprowler: a shadow-cat veined with violet | vanishes and pounces from behind, more shadows, rage |
 | The Storm Eyrie (crag) | far north-west, high | 12-17 | stormwings | the Thunderhawk: storm-blue, lightning in its feathers | lightning on marked ground, thunderclap, dive, calls stormwings |
@@ -310,7 +305,7 @@ creatures come from the *Aerois: Year One* bestiary sheet, built on the game's o
 - Come close while a lair is awake and its own come out; put them down and the boss comes. Every big blow is shown
   before it lands: the boss gathers itself, or the ground it's about to strike glows. Watch, and move.
 - The boss grows with you within its levels. Below them, it meets you at its own level anyway. Its hoard pays
-  experience and septims, double the first time, along with a title (Warden-Breaker, Kingtoppler, Stonebreaker,
+  experience and crowns, double the first time, along with a title (Warden-Breaker, Kingtoppler, Stonebreaker,
   Thornbane, Gatebreaker, Shardbreaker, Furnace-Quencher, Dawnbringer, Stormcaller). Then the lair falls quiet and
   wakes again 20-40 minutes (of play) later. Walk away mid-fight and everything goes back to waiting.
 - The tracker shows the nearest lair that suits your level; the map marks every one that's awake.
@@ -326,7 +321,7 @@ within sight of it and it's there, and it knows you, and it comes for you. Every
 stronger still. Kill it and it's gone for good, and the price on its head is yours: more than its hoard, and more
 for every time it beat you.
 
-The lair doesn't stay empty: when its timer runs out, **a new nameless boss has moved in**. Roamers are saved with
+The lair doesn't stay empty: within a minute and a half **a new nameless boss has moved in**, no stronger than its kind (the one that beat you is out roaming, a nemesis of its own, wherever its road takes it). Roamers are saved with
 your company. In the shared world the server names it (the boss that beat you is the one the nemesis system
 promotes), so it's on everyone's roster under the same name, its fights count there, and if it cheats death there
 it comes back roaming, scarred and angrier.
@@ -371,7 +366,7 @@ Kipines and both kinds of ape sometimes have young with them: find one alone and
 - **Herbalism.** Herbs grow wild by the kind of land (emberleaf and lady's mantle in the autumn woods, bluebells
   and ghostcap under the pines, reeds and nightshade in the marsh, snowberry and frostbloom in the north, thistle
   and silverthorn on the crags); pick them (E) and they grow back in twelve minutes of play. Brew healing,
-  magicka, stamina, might and warding potions with an alchemist's kit or at Old Saffron's bench. The better you
+  mana, stamina, might and warding potions with an alchemist's kit or at Old Saffron's bench. The better you
   get, the more you pick and the more you can brew.
 - **Smithing.** At Hulda Ironhand's forge: smelt scrap into iron and iron with coal into steel, tan hides into
   leather, and forge iron, steel and in the end dragonbone weapons and dragonscale armour, and cloaks and armour
@@ -399,7 +394,7 @@ the game `TownWork.cs`.) Four more trades, each levelling from 1 to 10 like herb
   level 2; yew from level 4) with a woodcutter's axe. They fall, leave a stump, and grow back.
 - **Cooking.** In the Salt Barrel's kitchen (Fenna Rook) or the Gallows Perch's (Mother Corva): grill any fish,
   roast venison (deer and boar now leave it), and as you improve, fish stew (harder to hurt for two minutes),
-  smoked eel (magicka), hunter's pie and a seafood platter fit for the Crown (heals fully, hits harder).
+  smoked eel (mana), hunter's pie and a seafood platter fit for the Crown (heals fully, hits harder).
 - **Day work.** Haskel Brine, the dock foreman by the east gate, pays by the crate: lift one at the end of the
   middle pier and carry it (slowly; no running) to the warehouse by the gate, six to a shift. Factor Ottilie
   Marsh at the Exchange has sealed letters to carry to people around town.
@@ -429,19 +424,19 @@ through all of it; `--shots DIR --town` photographs the new places.
 ### Companions
 
 - **Younglings.** About a third of the herds and packs in the wilds have young with them: wolf pups, bear cubs,
-  fawns, fox kits, boarlets, troll whelps, goblin whelps, spriggan saplings, mudcrab hatchlings, and now and
+  fawns, fox kits, boarlets, troll whelps, goblin whelps, spriggan saplings, mud crab hatchlings, and now and
   then a dragon wyrmling. They're small and they run. Find one with none of its grown kin close by (they won't
   let you near it, and they'll come for you) and press E: a little meat helps, and a ranger never fails. It
   follows you from then on, levels up from the fights it shares, grows to full size, and learns moves
   (guarding you, a savage strike, a rally that heals you). Beasts get hungry: hunting gives meat, and you feed
   them from the party menu (P). One that starves weakens and collapses.
 - **Squires and apprentices.** Every town has young people (11 to 16) who dream of adventure. Once you've made a
-  name (level 3), ask one to follow you, with 25 septims to their family: a warrior's squire, a mage's
+  name (level 3), ask one to follow you, with 25 crowns to their family: a warrior's squire, a mage's
   apprentice, a rogue's protege, a bard's understudy (with a lute of their own). They grow up at your side and learn Shield Bash and Battle Cry, or Firebolt,
   Mend and Ward.
 - **Wren's Menagerie.** At the end of the market row by the Gallows Perch, Wren Halloway sells young beasts
-  she raised by hand, tame already: a fox kit or fawn (25 septims) up to a troll whelp (1155), with skeever
-  kits, hawk chicks, mudcrab hatchlings, wolf and ice wolf pups, boarlets, goblin and deathcrest whelps,
+  she raised by hand, tame already: a fox kit or fawn (25 crowns) up to a troll whelp (1155), with giant rat
+  kits, hawk chicks, mud crab hatchlings, wolf and ice wolf pups, boarlets, goblin and deathcrest whelps,
   winged ape infants, spriggan saplings, bear cubs and kipine chicks between. The price goes by how
   dangerous it grows up (danger, 1 to 5) and how hard it is to train (training, 1 to 5). Never a dragon: a
   dragon has to be found as an egg and hatched. She sells meat too, and tells you how taming works.
@@ -484,7 +479,7 @@ breath). It keeps growing: large at level 20, giant at 30.
 - **Raids.** Some seasons (every three hours, real time) a band of chromatic or corrupted dragons raids a pact
   town, and its knights fly out to meet them. Ser Aldric hears of it.
 
-You start outside the Gallows Perch, in the outer ring. Thugs work the docks, skeevers infest the Warrens,
+You start outside the Gallows Perch, in the outer ring. Thugs work the docks, giant rats infest the Warrens,
 the Lantern Boys keep their den, a draugr and a sea-wraith haunt the Drowned Chapel, and the Drowned Hand
 hold the Tong sea-caves. A thug who kills you remembers it. Next time it comes back
 named, stronger and taunting, and Vann may send it hunting for you. Fall, and you wake at the Gallows Perch.
@@ -520,7 +515,7 @@ keeps making new cities as far as you care to walk, each with its own name, epit
 - **Wildlife.** The land between them is lived in. Deer herds graze and foxes prowl almost everywhere,
   and they bolt when you get close; hawks wheel overhead. Away from home, wolf packs and wild boars roam the
   woods, goblin bands the woods and crags, bears and trolls the crags,
-  ice wolves the snow, skeevers the marshes and mudcrabs the shores. Packs grow larger the further north
+  ice wolves the snow, giant rats the marshes and mud crabs the shores. Packs grow larger the further north
   you go; far in the north a frost dragon is sometimes seen. Within about 450 m of Tristinwold nothing hunts
   people. Wipe out a herd or a pack and that stretch
   stays quiet for ten minutes. Every company meets the same animals in the same places.
@@ -534,7 +529,7 @@ keeps making new cities as far as you care to walk, each with its own name, epit
   tracker on screen tell you how far and which way.
 
 Every company sees the same world, because it all grows from the `seed` in `world/world.json`. Change the
-seed for a different world. Each company's map, quests and septims are saved on its own computer, in
+seed for a different world. Each company's map, quests and crowns are saved on its own computer, in
 Godot's user folder under `saves/`.
 
 **Saving, logging out and quitting.** The game saves by itself every 20 seconds, after anything that
@@ -566,51 +561,13 @@ godot --path game -- --shots ./shots --server off    # a screenshot tour of the 
 godot --headless --path game -- --selftest --server https://….trycloudflare.com --company Joe --password secret   # through a tunnel
 ```
 
-## Play in Skyrim (optional)
-
-You need your own copy of Skyrim Special Edition on PC. Co-op runs on
-[Skyrim Together Reborn](https://www.nexusmods.com/skyrimspecialedition/mods/69993); a solo player
-with followers is a company too.
-
-## Install in Skyrim (each company)
-
-1. Skyrim SE/AE **1.6.1170**, with [SKSE](https://skse.silverlock.org/) and
-   [SkyrimPlatform](https://www.nexusmods.com/skyrimspecialedition/mods/54909). For co-op, add
-   Skyrim Together Reborn.
-2. Build the add-on (or take a built copy): `cd skyrim/plugin && npm install && npm run build`.
-3. Copy `skyrim/plugin/dist/Platform` into Skyrim's `Data` folder, and build and enable
-   `Tristinwold.esp` (see "Build Tristinwold.esp").
-4. Edit `Data/Platform/Plugins/tristinwold-settings.txt` (plain JSON):
-
-   | Setting | Meaning |
-   |---|---|
-   | `server` | the Tristinwold server's HTTP address, e.g. `http://192.168.1.20:7778` |
-   | `company` | your company's name, shown to everyone |
-   | `password` | the server password, if it has one |
-   | `connect` | `true` on one game per company. In a Skyrim Together party, only the leader connects; set `false` on the others |
-   | `menuKey` | key that opens the Tristinwold window, as a DirectInput scan code (68 = F10) |
-
-5. In game, **F10** opens the board, companies, nemesis roster, dead drops and chronicle. Sleeping
-   advances the shared calendar.
-
-What happens in a fight: when enemies turn on you, the add-on asks the server whether one of them is
-a nemesis. If so, it's renamed, strengthened (Skyrim actor values: health, armor, damage, speed,
-resistances) and given its Final Fantasy statuses (Haste, Protect, Shell, Regen, Reflect), and it
-taunts you. When the fight ends (you go down, they all die, or someone runs), the result goes back
-to the server. Vann can also send a nemesis to hunt you; it spawns out of sight behind you.
-
-**Not yet tested in Skyrim itself**, only against the real server with a simulated game
-(`npm run e2e` in `skyrim/plugin`, with a server running). Things to check on first launch: the
-F10 window opens, a lost fight creates a nemesis, and the same enemy type later shows up renamed.
-SkyrimPlatform and Skyrim Together haven't been confirmed to run together; if they conflict, the
-add-on still works solo.
-
 ## The Nemesis system
 
 - An enemy that **kills you** becomes a named **Captain**. One you **run from**, or one that **flees from
   you**, becomes a named **Grunt**.
-- Each nemesis gets strengths and weaknesses in Skyrim terms: health, armor, damage, speed, spell power,
-  crit chance, fire/frost/shock/poison/sun resistances (or absorbing them), plus Final Fantasy statuses.
+- Each nemesis gets strengths and weaknesses: health, armour, damage, speed, spell power, crit chance,
+  fire/frost/shock/poison/sun resistances (or absorbing them), plus auto-statuses (Haste, Protect, Shell,
+  Regen, Reflect).
 - It **remembers** who it killed, who ran and who beat it, per player, and taunts you by name.
 - It **comes back**: the next time you fight its kind, especially on its home ground, it can take one of
   those enemies' place, renamed and stronger.
@@ -625,59 +582,35 @@ Names, epithets and taunts are data (`NamePack` in `src/Tristinwold.Nemesis/Cont
 dotnet run --project tools/Tristinwold.NemesisSim -- 80 7
 ```
 
-## The world: every city reworked
+## The world: nine cities
 
-Every Skyrim city is reworked into a city of this world, with its own name, its own renamed
-places and its own story. In the Godot game each one stands at its `at` position in `world/world.json`
-(metres; x east, z south), laid out roughly as Skyrim's holds lie around Riften. Tristinwold (built from Riften) is where the main saga happens, in
-every campaign; the other cities have stories of their own, with threads back to it.
+Each city has its own name, places, story and contracts. In the game each one stands at its `at` position
+in `world/world.json` (metres; x east, z south). Tristinwold is where the main saga happens, in every
+campaign; the other cities have stories of their own, with threads back to it.
 
-| City | Built from | Its story |
-|---|---|---|
-| **Tristinwold**, the City of Rings | Riften | A walled port of three rings, run from below by the Tongs. The first person each company saves here is Vann. (The main saga: see The Rings of Tristinwold.) |
-| **Galeholt**, the Wind-Fort on the Plain | Whiterun | Horse-lords on an open plain, ruled from the Eyrie. Two clans, the Ashmanes and the Ironsworn, feud over whether to ride to Tristinwold's aid or bar the gates. The Warden-Thane's new court adviser knows too much about the coming war. |
-| **Vespergate**, the City on the Arch | Solitude | A widowed queen rules from the Sapphire Court above a sea-arch. Once a year, on Bell Night, the headsman frees one condemned prisoner and nobody knows how he chooses. This year he chose someone who should not exist yet. |
-| **Cinderhelm**, the Hall of Cold Crowns | Windhelm | An old, proud city that walls its refugees into the Cinder Quarter. Since the Rift opened the refugees are Ashborn, half-demon children, and someone is killing them one by one while zealots call it holy work. |
-| **Argentdeep**, the City Carved in Silver | Markarth | A stone city cut into a cliff, owned by the Argent family's silver. The silver has started to rot into rust in the miners' hands, and the Argents are blaming the miners. |
-| **Gravenmoor**, the Town of Graves | Falkreath | A logging town with more dead than living. Lately the dead aren't staying buried, and the gravekeeper has started bargaining with a voice in the pines. |
-| **Mirewatch**, the Town in the Fog | Morthal | Stilt houses in a marsh where time runs thin. Children walk into the fog and come back years older, or not at all. The Jarl's seer says it is a crack between eras. |
-| **Duskwake**, the Sleepless Port | Dawnstar | A cold harbor where the whole town dreams the same dream every night: a door, and faces they have never met. Nobody sleeps well, and the sleepless are starting to do terrible things. |
-| **Hollowreach**, the Edge of the North | Winterhold | Half the town fell into the sea long ago. What stands is the Temple of the Loom, where the grey-robed Magi guard the device that can send people back in time. They say the town fell when someone used it carelessly. |
+| City | Its story |
+|---|---|
+| **Tristinwold**, the City of Rings | A walled port of three rings, run from below by the Tongs. The first person each company saves here is Vann. (The main saga: see The Rings of Tristinwold.) |
+| **Galeholt**, the Wind-Fort on the Plain | Horse-lords on an open plain, ruled from the Eyrie. Two clans, the Ashmanes and the Ironsworn, feud over whether to ride to Tristinwold's aid or bar the gates. The Warden-Thane's new court adviser knows too much about the coming war. |
+| **Vespergate**, the City on the Arch | A widowed queen rules from the Sapphire Court above a sea-arch. Once a year, on Bell Night, the headsman frees one condemned prisoner and nobody knows how he chooses. This year he chose someone who should not exist yet. |
+| **Cinderhelm**, the Hall of Cold Crowns | An old, proud city that walls its refugees into the Cinder Quarter. Since the Rift opened the refugees are Ashborn, half-demon children, and someone is killing them one by one while zealots call it holy work. |
+| **Argentdeep**, the City Carved in Silver | A stone city cut into a cliff, owned by the Argent family's silver. The silver has started to rot into rust in the miners' hands, and the Argents are blaming the miners. |
+| **Gravenmoor**, the Town of Graves | A logging town with more dead than living. Lately the dead aren't staying buried, and the gravekeeper has started bargaining with a voice in the pines. |
+| **Mirewatch**, the Town in the Fog | Stilt houses in a marsh where time runs thin. Children walk into the fog and come back years older, or not at all. The Jarl's seer says it is a crack between eras. |
+| **Duskwake**, the Sleepless Port | A cold harbor where the whole town dreams the same dream every night: a door, and faces they have never met. Nobody sleeps well, and the sleepless are starting to do terrible things. |
+| **Hollowreach**, the Edge of the North | Half the town fell into the sea long ago. What stands is the Temple of the Loom, where the grey-robed Magi guard the device that can send people back in time. They say the town fell when someone used it carelessly. |
 
-Each city's own contracts go on the shared board next to Tristinwold's. Campaign 3, The Last
-Ring, is Tristinwold 300 years on, ruined down to the Crown; that's planned as later changes to
-Tristinwold.esp.
+Each city's own contracts go on the shared board next to Tristinwold's. Campaign 3, The Last Ring, is
+Tristinwold 300 years on, ruined down to the Crown.
 
-**Characters move between cities.** Any named Skyrim character can be taken from their city
-and set down in another, under a new name if you like:
+Characters written by hand:
 
-- **Ghorza gra-Bagol** goes to The Ragged Flagon as **Mother Corva**. The Ravenscrew Tong's barkeep at the Gallows Perch, brought from Argentdeep's forges.
-- **Colette Marence** goes to Riften Hall of the Dead as **Sister Ilse Varrow**. Head archivist of the Magi's quiet embassy in Tristinwold, brought from the Temple of the Loom.
-- **Nazeem** goes to Dead Man's Drink. Galeholt threw him out. Gravenmoor took him in, against its better judgement.
+- **Mother Corva**, of The Gallows Perch. The Ravenscrew Tong's barkeep at the Gallows Perch, brought from Argentdeep's forges.
+- **Sister Ilse Varrow**, of The Magi Archive. Head archivist of the Magi's quiet embassy in Tristinwold, brought from the Temple of the Loom.
+- **Perrin Velk**, of The Last Toast. Galeholt threw him out. Gravenmoor took him in, against its better judgement.
 
-A moved character's original placement is disabled, a new one is made in the destination
-interior beside something already standing there, and their daily routine becomes "wander
-around where you stand", so they don't walk home. The builder warns when a character is
-essential to a quest, since moving them may break it.
-
-**Everything is in [`world/world.json`](world/world.json)**: cities, places (Skyrim name -> new
-name), stories, contracts and moves. Edit it, then rebuild Tristinwold.esp and restart the
-server. Both read the same file, so a company without the plugin still sees the new names in
-the shared world.
-
-What it doesn't change: NPCs still say Skyrim names in recorded dialogue, and a few signs are
-painted textures. If a place doesn't rename in game, its in-game name differs from the file;
-the builder lists everything it renamed and the server window shows the names the game reports.
-
-### Build Tristinwold.esp (once, on your PC)
-
-```
-dotnet run --project skyrim/esp-builder -- "C:\Program Files (x86)\Steam\steamapps\common\Skyrim Special Edition\Data"
-```
-
-It reads your own `Skyrim.esm`, writes `Tristinwold.esp` (light, ESL-flagged) into that Data
-folder and lists every rename and move, with any it had to skip. Enable it in your mod manager.
-Everyone in the game needs the same file.
+**Everything is in [`world/world.json`](world/world.json)**: cities, their places, stories and contracts, and
+the characters. Edit it and restart the server; the game reads the same file.
 
 ## Shared world: everyone runs their own party of three
 
@@ -697,7 +630,7 @@ own company, at their own pace. One server, usually run by the DM, holds the cit
   skips and they're streets away. Arrive just after they left and you find fresh tracks.
 - **Dead drops.** Hide a note in your current area for the next company. Some never arrive: Vann reads
   them. The DM can `release` an intercepted note.
-- **Contract pay** arrives as gil (1 gp = 100 gil) when you mark a contract done. **Resting** (saving)
+- **Contract pay** arrives in crowns when you mark a contract done. **Resting** (saving)
   advances the shared calendar.
 
 ### Vann plays himself
@@ -719,7 +652,7 @@ never attacks a meeting directly; he nudges:
 - **The one thing he can't stop:** two Keystones meeting.
 
 **Claude voices him** if the server machine has an Anthropic API key. Set `ANTHROPIC_API_KEY` before
-starting it and every line is written fresh, in character, by Claude (`claude-opus-5-5`, low effort, a
+starting it and every line is written fresh, in character, by Claude (low effort, a
 couple of sentences per line; a few cents per hour of play). If a line is ever declined, a fallback
 model voices it. Without a key, or if the call fails, he uses his written lines, so he always talks.
 
@@ -733,7 +666,7 @@ set ANTHROPIC_API_KEY=sk-ant-...        (optional: Claude voices Vann; PowerShel
 dotnet run -c Release --project tools/Tristinwold.Server -- --password <something> --campaign tristinwold.json
 ```
 
-The Skyrim add-on connects over HTTP **7778** (TCP 7777 is for tools). It saves everything to `tristinwold.json` after every change, so stopping and
+Games connect over TCP **7777**; phones and browsers over HTTP **7778**. It saves everything to `tristinwold.json` after every change, so stopping and
 starting it loses nothing. For friends outside your house, forward port 7778 on your router to this PC,
 or put everyone on a free [Tailscale](https://tailscale.com) network and use its address.
 
@@ -766,7 +699,8 @@ save                       save now
 
 ### Join (each company)
 
-See "Install in Skyrim" above. The add-on talks to the server's HTTP port (7778 by default).
+On the game's login page, type the server's address (`192.168.1.20:7777`, or a Tailscale address), a
+company name and a password, and create an account the first time.
 
 ## Build and test
 
@@ -775,7 +709,6 @@ Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download). Works on Wind
 ```
 dotnet test                              # combat, open world, nemesis rules, server, HTTP gateway
 cd game && dotnet build && godot --headless --path . -- --selftest --server off   # the Godot game, played by a script
-cd skyrim/plugin && npm install && npm test && npx tsc --noEmit   # add-on logic and types
 ```
 
 ## Credits
@@ -806,13 +739,10 @@ Dungeon Remastered and Halloween Bits. They are CC0 (free for any use) and live 
 Creatures (`game/assets/creatures`, see its CREDITS.md): wolves, ice wolves, foxes, brown and black bears, wild
 boars and hawks come from 0 A.D. by Wildfire Games (art CC-BY-SA 3.0, so the converted models carry the same
 licence), each with its own idle, walk, run, attack and death; `tools/creatures/zero_ad.py` converts them from a
-checkout of github.com/0ad/0ad. Giant rats (skeevers), goblins, forest monsters (spriggans), trolls and the frost dragon
+checkout of github.com/0ad/0ad. Giant rats (giant rats), goblins, forest monsters (spriggans), trolls and the frost dragon
 come from OpenGameArt: CDmir's rat, goblin and forest monster and Drummyfish/Cethiel's dragon are CC0, and
 piacenti's Troll Mauler is CC-BY 3.0 (`tools/creatures/oga.py` converts them). The deer is Polygonal Mind's (CC0),
-its legs walked in code. Mudcrabs are still built from shapes. The KayKit characters are re-proportioned as
+its legs walked in code. Mud crabs are still built from shapes. The KayKit characters are re-proportioned as
 they move (`Proportions` in `Models.cs`): a smaller head, a slimmer, taller trunk and longer arms and legs, so they
 stand like people (and their stiff capes are left off). `godot --path game -- --lineup ./shots` photographs them
 (add `--plain` for the originals).
-
-Earlier FFX prototypes drew on Fahrenheit, the FFX-AP Archipelago client, FFX_TAS_Python, Farplane,
-UnX, VBFExtract and FFXView. None of that code ships here any more.

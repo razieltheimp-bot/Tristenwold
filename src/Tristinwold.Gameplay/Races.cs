@@ -8,7 +8,7 @@ namespace Tristinwold.Gameplay;
 /// </summary>
 public sealed record Race(
     string Id, string Name, string Text, string Good, string Bad,
-    double Health = 1, double Magicka = 1, double Stamina = 1, double Damage = 1, double SpellPower = 1, double Speed = 1,
+    double Health = 1, double Mana = 1, double Stamina = 1, double Damage = 1, double SpellPower = 1, double Speed = 1,
     double Armor = 0, double Crit = 0, double Xp = 1, double Prices = 1,
     (DamageKind Kind, double Amount)[]? Resists = null,
     double Size = 1, double Width = 1, string Skin = "#ffffff", string Ears = "", bool Tusks = false);
@@ -36,21 +36,21 @@ public static class Races
             "Learns 15% faster; 10% cheaper in shops", "No gift of the blood: no resistances",
             Xp: 1.15, Prices: 0.9),
         new("orc", "Orc", "Tusked and green, from the hill clans. Strong, and proud of it.",
-            "20% more health, 12% more harm with weapons, 10% more stamina", "25% less magicka, spells 10% weaker; townsfolk charge 15% more",
-            Health: 1.2, Damage: 1.12, Stamina: 1.1, Magicka: 0.75, SpellPower: 0.9, Prices: 1.15, Size: 1.06, Width: 1.12, Skin: "#a4c88c", Ears: "orc", Tusks: true),
+            "20% more health, 12% more harm with weapons, 10% more stamina", "25% less mana, spells 10% weaker; townsfolk charge 15% more",
+            Health: 1.2, Damage: 1.12, Stamina: 1.1, Mana: 0.75, SpellPower: 0.9, Prices: 1.15, Size: 1.06, Width: 1.12, Skin: "#a4c88c", Ears: "orc", Tusks: true),
         new("goblin", "Goblin", "Small, quick and sly, with ears for every whisper.",
             "15% faster, 12% more likely to strike true (critical), poison hurts a third less", "20% less health, 10% less harm",
             Speed: 1.15, Crit: 12, Health: 0.8, Damage: 0.9, Resists: [(DamageKind.Poison, 33)], Size: 0.74, Width: 0.95, Skin: "#c4dc84", Ears: "goblin"),
         new("elf", "Elf", "Long-lived, light-footed, at home with magic.",
-            "25% more magicka, spells 12% stronger, magic hurts 15% less", "12% less health, 5 less armour",
-            Magicka: 1.25, SpellPower: 1.12, Health: 0.88, Armor: -5, Resists: [(DamageKind.Shock, 15), (DamageKind.Frost, 15), (DamageKind.Fire, 15)],
+            "25% more mana, spells 12% stronger, magic hurts 15% less", "12% less health, 5 less armour",
+            Mana: 1.25, SpellPower: 1.12, Health: 0.88, Armor: -5, Resists: [(DamageKind.Shock, 15), (DamageKind.Frost, 15), (DamageKind.Fire, 15)],
             Size: 1.04, Width: 0.92, Ears: "elf"),
         new("dwarf", "Dwarf", "Short, broad and stubborn as stone, from the deep forges.",
-            "25 more armour, 20% more stamina, fire and poison hurt a quarter less", "10% slower, 10% less magicka",
-            Armor: 25, Stamina: 1.2, Speed: 0.9, Magicka: 0.9, Resists: [(DamageKind.Fire, 25), (DamageKind.Poison, 25)], Size: 0.8, Width: 1.2),
+            "25 more armour, 20% more stamina, fire and poison hurt a quarter less", "10% slower, 10% less mana",
+            Armor: 25, Stamina: 1.2, Speed: 0.9, Mana: 0.9, Resists: [(DamageKind.Fire, 25), (DamageKind.Poison, 25)], Size: 0.8, Width: 1.2),
         new("half_giant", "Half-giant", "Giant's blood: head and shoulders over everyone, and hard to stop.",
-            "35% more health, 20% more harm, 10 more armour", "12% slower, 30% less magicka, 10% less stamina",
-            Health: 1.35, Damage: 1.2, Armor: 10, Speed: 0.88, Magicka: 0.7, Stamina: 0.9, Size: 1.3, Width: 1.15),
+            "35% more health, 20% more harm, 10 more armour", "12% slower, 30% less mana, 10% less stamina",
+            Health: 1.35, Damage: 1.2, Armor: 10, Speed: 0.88, Mana: 0.7, Stamina: 0.9, Size: 1.3, Width: 1.15),
         new(Dragonkind, "Dragonkind", "Dragon blood made flesh: scaled, horned and tailed, their dragon's breath in their veins. Pure, or half of another people.",
             "10% more health, 12% more harm; their dragon's breath hardly hurts them (three-quarters less)", "Their dragon's bane hurts 40% more; people fear them (20% dearer in shops)",
             Health: 1.1, Damage: 1.12, Prices: 1.2, Size: 1.08, Width: 1.06),
@@ -75,7 +75,7 @@ public static class Races
         return new($"{Dragonkind}+{other.Id}", $"Half-dragon {other.Name.ToLowerInvariant()}", $"Half dragonkind, half {other.Name.ToLowerInvariant()}.",
             $"Half of each: {other.Good.ToLowerInvariant()}; their dragon's breath hurts half as much",
             $"Half of each: {other.Bad.ToLowerInvariant()}; their dragon's bane hurts a third more",
-            Health: Mid(d.Health, other.Health), Magicka: Mid(d.Magicka, other.Magicka), Stamina: Mid(d.Stamina, other.Stamina),
+            Health: Mid(d.Health, other.Health), Mana: Mid(d.Mana, other.Mana), Stamina: Mid(d.Stamina, other.Stamina),
             Damage: Mid(d.Damage, other.Damage), SpellPower: Mid(d.SpellPower, other.SpellPower), Speed: Mid(d.Speed, other.Speed),
             Armor: other.Armor / 2, Crit: other.Crit / 2, Xp: Mid(1, other.Xp), Prices: Mid(d.Prices, other.Prices),
             Resists: other.Resists?.Select(r => (r.Kind, r.Amount / 2)).ToArray(),
@@ -98,7 +98,7 @@ public static class Races
     /// resistances. Pools are set by the caller; this gives their multipliers back for it to use.
     /// </summary>
     /// <param name="pure">Pure dragonkind (the blood at full strength), not half.</param>
-    public static (double Health, double Magicka, double Stamina) Apply(Combatant c, Race race, DragonBlood? dragon, bool pure = false)
+    public static (double Health, double Mana, double Stamina) Apply(Combatant c, Race race, DragonBlood? dragon, bool pure = false)
     {
         c.DamageMult *= race.Damage;
         c.SpellPower *= race.SpellPower;
@@ -113,7 +113,7 @@ public static class Races
             c.Resist[dragon.Breath] = c.Resist.GetValueOrDefault(dragon.Breath) + (pure ? 75 : 50);
             c.Resist[dragon.Bane] = c.Resist.GetValueOrDefault(dragon.Bane) - (pure ? 40 : 33);
         }
-        return (race.Health, race.Magicka, race.Stamina);
+        return (race.Health, race.Mana, race.Stamina);
     }
 
     /// <summary>What shops ask of this hero, as a share of the usual price.</summary>

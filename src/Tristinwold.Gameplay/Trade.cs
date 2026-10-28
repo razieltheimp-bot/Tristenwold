@@ -165,7 +165,7 @@ public static class Recipes
         .. Items.DragonColours.Select(c => Forge(7, $"dragonscale_helm_{c.Id}", ($"dragon_scale_{c.Id}", 3), ("leather", 1))),
         // Potions.
         Brew(1, "healing_draught", ("emberleaf", 2), ("ladys_mantle", 1)),
-        Brew(1, "magicka_tonic", ("bluebell", 2), ("ghostcap", 1)),
+        Brew(1, "mana_tonic", ("bluebell", 2), ("ghostcap", 1)),
         Brew(1, "stamina_brew", ("marsh_reed", 2), ("thistle", 1)),
         Brew(2, "stamina_brew", ("snowberry", 2), ("thistle", 1)),
         Brew(4, "greater_healing", ("healing_draught", 1), ("bloodcap", 1), ("troll_fat", 1)),
@@ -188,7 +188,7 @@ public static class Recipes
 /// from anything that carries it. Dragons leave a great deal; the bosses of the lairs, their trophies and gear.</summary>
 public static class Loot
 {
-    public sealed record Drop(List<(string Id, int N)> Items, int Septims);
+    public sealed record Drop(List<(string Id, int N)> Items, int Crowns);
 
     /// <summary>(item, chance, how many from, how many to).</summary>
     static (string Id, double Chance, int Min, int Max)[] Table(string kind) => kind switch
@@ -199,9 +199,9 @@ public static class Loot
         "boar" => [("boar_hide", 0.9, 1, 1), ("boar_tusk", 0.7, 1, 2), ("venison", 0.8, 1, 2)],
         "deer" => [("deer_hide", 0.9, 1, 1), ("antler", 0.5, 1, 1), ("venison", 0.9, 1, 2)],
         "fox" => [("fox_pelt", 0.9, 1, 1)],
-        "skeever" => [("skeever_tail", 0.8, 1, 1)],
-        "crystal_skeever" => [("amethyst_shard", 0.6, 1, 1), ("skeever_tail", 0.5, 1, 1)],
-        "mudcrab" => [("crab_chitin", 0.9, 1, 2)],
+        "giant_rat" => [("rat_tail", 0.8, 1, 1)],
+        "crystal_rat" => [("amethyst_shard", 0.6, 1, 1), ("rat_tail", 0.5, 1, 1)],
+        "mud_crab" => [("crab_chitin", 0.9, 1, 2)],
         "goblin" or "goblin_tinker" => [("goblin_trinket", 0.6, 1, 1), ("scrap_iron", 0.7, 1, 2), ("bread", 0.2, 1, 1)],
         "spriggan" => [("heartwood", 0.8, 1, 1), ("ladys_mantle", 0.4, 1, 2)],
         "frost_troll" => [("troll_fat", 0.9, 1, 2), ("troll_hide", 0.7, 1, 1)],
@@ -226,7 +226,7 @@ public static class Loot
         if (young) return new(items, 0);
         foreach (var (id, chance, min, max) in Table(kind))
             if (rng.Chance(chance)) items.Add((id, min + rng.Next(max - min + 1)));
-        var septims = kind switch
+        var crowns = kind switch
         {
             "goblin" or "goblin_tinker" => rng.Next(6),
             "dock_thug" or "lantern_boy" or "drowned_hand" or "bandit" => 3 + rng.Next(10),
@@ -234,8 +234,8 @@ public static class Loot
             "draugr" or "sea_wraith" => rng.Next(8),
             _ => 0,
         };
-        if (DragonColour(kind) is { } colour) (items, septims) = Dragon(kind, colour, rng);
-        return new(Merge(items), septims);
+        if (DragonColour(kind) is { } colour) (items, crowns) = Dragon(kind, colour, rng);
+        return new(Merge(items), crowns);
     }
 
     static string? DragonColour(string kind) =>
@@ -304,7 +304,7 @@ public static class Shops
 
     public static readonly Shop Apothecary = new("shop:apothecary", "Saffron's Remedies", "Old Saffron",
         "Herbs, tinctures, wands for the learned. Bring me what you pick in the wild, and I'll pay for it.",
-        ["healing_draught", "magicka_tonic", "stamina_brew", "alchemist_kit", "emberleaf", "ladys_mantle", "bluebell",
+        ["healing_draught", "mana_tonic", "stamina_brew", "alchemist_kit", "emberleaf", "ladys_mantle", "bluebell",
          "oak_wand", "apprentice_staff", "spellbook", "wizard_hat"],
         Bench: true);
 
@@ -315,7 +315,7 @@ public static class Shops
 
     /// <summary>Bryn's stall by the east gate: rods, and the morning's catch. Bryn buys any fish.</summary>
     public static readonly Shop Fishmonger = new("shop:fishmonger", "Bryn's Fish Stall", "Bryn Saltmarsh",
-        "Herring, mackerel, cod, whatever the boats brought. Or catch your own: rods are twelve septims, and the sea's free.",
+        "Herring, mackerel, cod, whatever the boats brought. Or catch your own: rods are twelve crowns, and the sea's free.",
         ["fishing_rod", "herring", "mackerel", "cod", "grilled_fish", "smoked_eel"], Trade: Job.Fishing);
 
     /// <summary>The Greyhollow quarry and mine, west of the walls: picks, stone and ore.</summary>
@@ -335,17 +335,17 @@ public static class Shops
 
     public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie, Fishmonger, Quarry, Woodlot, SaltBarrel];
 
-    /// <summary>A price with a buyer's markup (never less than 1 septim).</summary>
+    /// <summary>A price with a buyer's markup (never less than 1 crown).</summary>
     public static int Charge(int price, double markup) => price < 0 ? price : Math.Max(1, (int)Math.Round(price * markup));
 
-    /// <summary>Buys one of something: the septims go, the item comes. Meat goes to the beasts' store, not the pack.</summary>
+    /// <summary>Buys one of something: the crowns go, the item comes. Meat goes to the beasts' store, not the pack.</summary>
     /// <param name="markup">What this buyer pays, as a share of the price (their people and blood: see <see cref="Races.Prices"/>).</param>
-    public static bool Buy(Shop shop, string id, Pack pack, ref int septims, ref int meat, double markup = 1)
+    public static bool Buy(Shop shop, string id, Pack pack, ref int crowns, ref int meat, double markup = 1)
     {
         if (!shop.Sells.Contains(id)) return false;
         var price = Charge(id == "meat" ? MeatPrice : Items.Get(id) is { } item ? Shop.Price(item) : -1, markup);
-        if (price < 0 || septims < price) return false;
-        septims -= price;
+        if (price < 0 || crowns < price) return false;
+        crowns -= price;
         if (id == "meat") meat++;
         else pack.Add(id);
         return true;
@@ -354,10 +354,10 @@ public static class Shops
     public const int MeatPrice = 4;
 
     /// <summary>Sells one of something from the pack.</summary>
-    public static bool Sell(string id, Pack pack, ref int septims)
+    public static bool Sell(string id, Pack pack, ref int crowns)
     {
         if (Items.Get(id) is not { } item || !pack.Take(id)) return false;
-        septims += Shop.Offer(item);
+        crowns += Shop.Offer(item);
         return true;
     }
 }

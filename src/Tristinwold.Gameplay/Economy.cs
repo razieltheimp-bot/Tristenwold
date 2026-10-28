@@ -16,7 +16,7 @@ public sealed record CityEvent(string Id, string Title, string News, int Days,
     (Good Good, double By)[]? Made = null, (Good Good, double By)[]? Used = null, (Good Good, double Share)[]? Arrives = null);
 
 /// <summary>Works the city builds when it has the goods and the coin: each makes some trade better for good.</summary>
-public sealed record CityWork(string Id, string Title, string Done, (Good Good, int N)[] Needs, int Septims, (Good Good, double By)[] Better, int DockWage = 0, double Tax = 0);
+public sealed record CityWork(string Id, string Title, string Done, (Good Good, int N)[] Needs, int Crowns, (Good Good, double By)[] Better, int DockWage = 0, double Tax = 0);
 
 /// <summary>A business wanting a good the city's short of, and paying over the odds for it, delivered at the Exchange.</summary>
 public sealed class Contract
@@ -124,7 +124,7 @@ public sealed class CityEconomy
     public List<RunningEvent> Running { get; set; } = [];
     public int WorkIndex { get; set; }
     public Dictionary<Good, int> WorkGoods { get; set; } = [];
-    public int WorkSeptims { get; set; }
+    public int WorkCrowns { get; set; }
     public List<string> WorksDone { get; set; } = [];
     public List<Contract> Contracts { get; set; } = [];
     public int Renown { get; set; }
@@ -183,17 +183,17 @@ public sealed class CityEconomy
     public string RenownTitle => RenownTitles[RenownTier];
 
     /// <summary>A hero sold the city something: its stock grows, and the city takes its tax.</summary>
-    public void Sold(string itemId, int septims)
+    public void Sold(string itemId, int crowns)
     {
         if (GoodOf(itemId) is { } g) Stock[g] = Stock.GetValueOrDefault(g) + 1;
-        Taxes += septims * 0.05;
+        Taxes += crowns * 0.05;
     }
 
     /// <summary>A hero bought something from a shop: its stock shrinks, and the city takes its tax.</summary>
-    public void Bought(string itemId, int septims)
+    public void Bought(string itemId, int crowns)
     {
         if (GoodOf(itemId) is { } g) Stock[g] = Math.Max(0, Stock.GetValueOrDefault(g) - 1);
-        Taxes += septims * 0.05;
+        Taxes += crowns * 0.05;
     }
 
     // ---- days -------------------------------------------------------------------------------------------------
@@ -273,9 +273,9 @@ public sealed class CityEconomy
                 Stock[g] -= give;
                 WorkGoods[g] = WorkGoods.GetValueOrDefault(g) + give;
             }
-            var coin = Math.Min(Math.Max(0, (Treasury - 150) / 4), work.Septims - WorkSeptims);
+            var coin = Math.Min(Math.Max(0, (Treasury - 150) / 4), work.Crowns - WorkCrowns);
             Treasury -= coin;
-            WorkSeptims += coin;
+            WorkCrowns += coin;
             if (Finish() is { } done) told.Add(done);
         }
 
@@ -311,7 +311,7 @@ public sealed class CityEconomy
 
     /// <summary>
     /// Delivers some of a contract's good (the items' ids). Pays for each, and the bonus on finishing; the goods go
-    /// into the city's stock. Returns the septims earned.
+    /// into the city's stock. Returns the crowns earned.
     /// </summary>
     public int Deliver(Contract c, IEnumerable<string> itemIds)
     {
@@ -343,28 +343,28 @@ public sealed class CityEconomy
         return taken;
     }
 
-    /// <summary>Gives septims to the works. Returns how many it took.</summary>
-    public int DonateSeptims(int septims, out string? finished)
+    /// <summary>Gives crowns to the works. Returns how many it took.</summary>
+    public int DonateCrowns(int crowns, out string? finished)
     {
         finished = null;
         if (Work is not { } work) return 0;
-        var take = Math.Clamp(septims, 0, work.Septims - WorkSeptims);
-        WorkSeptims += take;
+        var take = Math.Clamp(crowns, 0, work.Crowns - WorkCrowns);
+        WorkCrowns += take;
         Renown += take / 10;
         finished = Finish();
         return take;
     }
 
-    /// <summary>What the works still need (goods, then septims).</summary>
+    /// <summary>What the works still need (goods, then crowns).</summary>
     public IEnumerable<(Good Good, int N)> WorkNeeds => Work is { } w ? w.Needs.Select(x => (x.Good, x.N - WorkGoods.GetValueOrDefault(x.Good))).Where(x => x.Item2 > 0) : [];
 
     string? Finish()
     {
-        if (Work is not { } work || WorkNeeds.Any() || WorkSeptims < work.Septims) return null;
+        if (Work is not { } work || WorkNeeds.Any() || WorkCrowns < work.Crowns) return null;
         WorksDone.Add(work.Id);
         WorkIndex++;
         WorkGoods.Clear();
-        WorkSeptims = 0;
+        WorkCrowns = 0;
         var told = $"{work.Title}: done! {work.Done}";
         News.Add(told);
         return told;
@@ -395,7 +395,7 @@ public sealed class CityEconomy
             return $"{Cap(g.Name)}: {word}, {f:0.00}x ({arrow})";
         });
         var happening = Running.Count == 0 ? "Nothing out of the ordinary." : string.Join(" ", Running.Select(r => $"{Event(r.Id).Title} ({r.DaysLeft} day{(r.DaysLeft == 1 ? "" : "s")} more)."));
-        return $"Day {Day}. The city is {Mood}; the treasury holds {Treasury} septims.\n{string.Join("\n", lines)}\nNews: {happening}";
+        return $"Day {Day}. The city is {Mood}; the treasury holds {Treasury} crowns.\n{string.Join("\n", lines)}\nNews: {happening}";
     }
 
     static string Cap(string s) => char.ToUpperInvariant(s[0]) + s[1..];

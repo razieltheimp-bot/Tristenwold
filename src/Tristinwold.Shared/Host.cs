@@ -10,7 +10,7 @@ public interface IClientSink
 /// <summary>
 /// Runs a <see cref="ServerCore"/> for real connections: one lock around the rules, delivery to
 /// every connected player, Vann's voice, and saving. The TCP listener and the HTTP gateway (which
-/// SkyrimPlatform plugins use) both go through it.
+/// browsers and phones use) both go through it.
 /// </summary>
 public sealed class SharedWorldHost(
     ServerCore core,

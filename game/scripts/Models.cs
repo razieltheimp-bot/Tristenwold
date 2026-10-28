@@ -257,7 +257,7 @@ public abstract partial class Body : Node3D
 
     public static Body For(string look) => look switch
     {
-        "skeever" => (Body?)Creature.Create("giant_rat.glb", 0.6f) ?? Beast.Rat(),
+        "giant_rat" => (Body?)Creature.Create("giant_rat.glb", 0.6f) ?? Beast.Rat(),
         "spriggan" => (Body?)Creature.Create("forest_monster.glb", 2.3f) ?? Figure.Create(look),
         "frost_troll" => (Body?)Wildfolk.Troll(2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
         "goblin" => (Body?)Creature.Create("goblin.glb", 1.3f) ?? Figure.Create(look),
@@ -274,7 +274,7 @@ public abstract partial class Body : Node3D
         "boar" => (Body?)Creature.Create("boar.glb", 0.95f) ?? Beast.Wolf(new Color("#4a3a2e")),
         "hawk" => (Body?)Creature.Create("hawk.glb", 0.35f) ?? Beast.Rat(),
         "bear" => (Body?)Creature.Create(GD.Randf() < 0.3f ? "bear_black.glb" : "bear.glb", 1.5f) ?? Beast.Bear(),
-        "mudcrab" => Beast.Crab(),
+        "mud_crab" => Beast.Crab(),
         _ when Lairfolk.For(look) is { } lairfolk => lairfolk,
         _ when Wildfolk.For(look) is { } wildfolk => wildfolk,
         _ => Figure.Create(look),
@@ -913,7 +913,7 @@ public partial class Proportions : SkeletonModifier3D
     }
 }
 
-/// <summary>A four-legged animal built from shapes, with a trotting gait: skeevers, wolves, bears, mudcrabs.</summary>
+/// <summary>A four-legged animal built from shapes, with a trotting gait: giant rats, wolves, bears, mud crabs.</summary>
 public partial class Beast : Body
 {
     readonly List<Node3D> _legs = [];
