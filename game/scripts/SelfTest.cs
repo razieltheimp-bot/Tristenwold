@@ -2257,7 +2257,9 @@ public partial class SelfTest(Main main) : Node
         Check(herMesh.Mesh.SurfaceGetMaterial(0) is ShaderMaterial herSkin && (herSkin.GetShaderParameter("skin").AsGodotObject() as Texture2D)?.ResourcePath.Contains("african_female") == true, "the face she chose, on a woman's body");
         Check(herSkeleton.GetChildren().OfType<MeshInstance3D>().Any(m => m.Name.ToString().StartsWith("BorrowedHair")) || Humans.HairOf("elf", Sex.Female, LifeStage.Adult) == "Ponytail01", "and the hair style she chose, borrowed from a body made with it");
         Check(hero.GetChildren().OfType<Node3D>().First().Scale.Y > 1.05f && hero.GetChildren().OfType<Node3D>().First().Scale.X < 0.95f, "tall and slim, as she chose");
-        Check(herSkeleton.GetChildren().OfType<BoneAttachment3D>().Any(b => b.BoneName == "RightHand"), "the ranger's crossbow in a real hand");
+        Check(hero.HeldIn("RightHand") is BoneAttachment3D { BoneName: "RightHand" } hand && hand.FindChildren("Hold_2H_Crossbow", "", true, false).Count == 1, "the ranger's crossbow, forged to real size, in a real hand");
+        Check(herSkeleton.GetChildren().OfType<HumanGaze>().Any(), "and a head that turns to whoever comes near");
+        Check(Armoury.Make("1H_Sword") is { } sword && sword.FindChildren("Blade", "", true, false).Count == 1 && Armoury.Make("Round_Shield") is not null && Armoury.Make("2H_Staff") is not null, "the armoury forges swords, shields and staffs to real proportions");
         hero.QueueFree();
         // Dragonkind grow horns from a real head; a hooded class starts hooded.
         var scaled = Figure.Create("Paladin", Avatar.For("Paladin") with { Race = Races.Dragonkind, Dragon = "Gold", Horns = "Ram" });
@@ -2281,7 +2283,7 @@ public partial class SelfTest(Main main) : Node
         await Frames(2);
         var armedMesh = armed.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().First().GetChildren().OfType<MeshInstance3D>().First(m => m.Skin is not null);
         Check(armedMesh.Mesh.SurfaceGetMaterial(0) is ShaderMaterial m2 && m2.GetShaderParameter("metal").AsSingle() > 0.5f, "a mail shirt makes the painted tunic metal");
-        Check(armed.Held == Grip.OneHand, "and the steel sword is held one-handed in a real hand");
+        Check(armed.Held == Grip.OneHand && armed.HeldIn("RightHand")?.FindChildren("Hold_1H_Sword", "", true, false).Count == 1, "and the steel sword, forged in steel, is held one-handed in a real hand");
         armed.QueueFree();
         Humans.Enabled = was;
     }

@@ -52,6 +52,97 @@ public partial class Person : StaticBody3D
     /// <summary>A gold "!" over anyone with work to give.</summary>
     public void Mark(bool hasWork) => _plate.Text = $"{(hasWork ? "! " : "")}{Npc.Name}\n{Npc.Occupation}";
 
+    // ---- alive: nobody stands like a post -------------------------------------------------------------------
+
+    double _next = 2 + GD.Randf() * 6, _busy;
+    Vector3 _home, _goal;
+    float _homeYaw;
+    bool _strolling, _homing;
+
+    /// <summary>
+    /// Life in the standing about: every few seconds they shift their weight and turn a little, look about, make a
+    /// small gesture, or take a few steps (a short stroll from where they stand and back, where the way is clear), and
+    /// their head follows whoever comes near. Talking to someone holds them still and facing you.
+    /// </summary>
+    public override void _Process(double delta)
+    {
+        if (_strolling) { Stroll(delta); return; }
+        _next -= delta;
+        if (_busy > 0) { _busy -= delta; return; }
+        if (_next > 0) return;
+        _next = 4 + GD.Randf() * 8;
+        if (_home == Vector3.Zero) { _home = GlobalPosition; _homeYaw = Rotation.Y; }
+        var roll = GD.Randf();
+        if (roll < 0.45f) Shift();
+        else if (roll < 0.65f) Gesture();
+        else if (roll < 0.9f) BeginStroll();
+    }
+
+    /// <summary>A shift of the weight: a small turn, eased, as someone does when they've stood a while.</summary>
+    void Shift()
+    {
+        var yaw = _homeYaw + (GD.Randf() - 0.5f) * Mathf.DegToRad(70);
+        CreateTween().TweenProperty(this, "rotation:y", yaw, 0.9 + GD.Randf() * 0.6).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+        _busy = 1.5;
+    }
+
+    /// <summary>Something to do with the hands: a look at the work, a stretch, a scratch.</summary>
+    void Gesture()
+    {
+        if (Figure is Figure f) f.Perform(GD.Randf() < 0.5f ? "Use_Item" : GD.Randf() < 0.5f ? "Interact" : "PickUp", 1.1, 0.9f);
+        _busy = 1.6;
+    }
+
+    /// <summary>A few steps away, if the way is clear of walls and stalls, and in a while a few steps back.</summary>
+    void BeginStroll()
+    {
+        var dir = Vector3.Forward.Rotated(Vector3.Up, GD.Randf() * Mathf.Tau);
+        var to = _home + dir * (1.2f + GD.Randf() * 1.6f);
+        var space = GetWorld3D().DirectSpaceState;
+        var ahead = PhysicsRayQueryParameters3D.Create(GlobalPosition + Vector3.Up * 0.9f, to + Vector3.Up * 0.9f);
+        ahead.Exclude = [GetRid()];
+        if (space.IntersectRay(ahead).Count > 0) return; // something in the way
+        var down = PhysicsRayQueryParameters3D.Create(to + Vector3.Up * 1.5f, to - Vector3.Up * 1.5f);
+        down.Exclude = [GetRid()];
+        var ground = space.IntersectRay(down);
+        if (ground.Count > 0 && ground["position"].AsVector3() is { } hit && Mathf.Abs(hit.Y - _home.Y) < 0.5f) to.Y = hit.Y;
+        else if (ground.Count == 0) return; // off an edge
+        _goal = to;
+        _strolling = true;
+        _homing = false;
+        Face(to);
+    }
+
+    void Stroll(double delta)
+    {
+        var to = _goal - GlobalPosition;
+        to.Y = 0;
+        var step = (float)delta * 0.9f;
+        if (to.Length() <= step)
+        {
+            GlobalPosition = _goal;
+            Figure.Move(0, true, false);
+            if (_homing)
+            {
+                _strolling = false;
+                CreateTween().TweenProperty(this, "rotation:y", _homeYaw, 0.8).SetTrans(Tween.TransitionType.Sine);
+                _busy = 2;
+                return;
+            }
+            // Stand there a moment, then back.
+            _homing = true;
+            _goal = _home;
+            var wait = CreateTween();
+            wait.TweenInterval(1.5 + GD.Randf() * 3);
+            wait.TweenCallback(Callable.From(() => Face(_home)));
+            _strolling = false;
+            wait.TweenCallback(Callable.From(() => _strolling = true));
+            return;
+        }
+        GlobalPosition += to.Normalized() * step;
+        Figure.Move(0.9f, true, false);
+    }
+
     /// <summary>Turns to face something (a deviant in the street, the hero they're patching up).</summary>
     public void Face(Vector3 at)
     {
@@ -65,6 +156,8 @@ public partial class Person : StaticBody3D
     {
         var to = who - GlobalPosition;
         to.Y = 0;
+        if (_strolling) { _strolling = false; Figure.Move(0, true, false); }
+        _busy = 12; // held in talk
         if (to.LengthSquared() > 0.01f) LookAt(GlobalPosition + to, Vector3.Up);
         Figure.Talk();
     }

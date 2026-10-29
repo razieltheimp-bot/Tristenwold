@@ -64,6 +64,7 @@ public partial class Main : Node3D
         if (Mobile) DisplayServer.ScreenSetOrientation(DisplayServer.ScreenOrientation.SensorLandscape); // landscape from the first frame
         if (_args.TryGetValue("races", out var racesShot)) { _ = RaceLineup(racesShot); return; }
         if (_args.TryGetValue("portraits", out var folder)) { _ = Portraits(folder); return; }
+        if (_args.ContainsKey("probe-hands")) { ProbeHands(); return; }
         if (_args.TryGetValue("showroom", out var room)) { _ = Showroom(room); return; }
         if (_args.TryGetValue("lineup", out var line)) { Proportions.Enabled = !_args.ContainsKey("plain"); _ = Lineup(line); return; }
         var scripted = _args.ContainsKey("selftest") || _args.ContainsKey("shots");
@@ -147,6 +148,29 @@ public partial class Main : Node3D
         camera.LookAt(new Vector3(-3.5f, 1.1f, 0), Vector3.Up);
         for (var i = 0; i < 10; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         GetViewport().GetTexture().GetImage().SavePng(path.Replace(".png", "-side.png"));
+        GetTree().Quit();
+    }
+
+    /// <summary>Prints the rest frames of a real body's hands and head (headless; to orient what they hold): --probe-hands</summary>
+    void ProbeHands()
+    {
+        foreach (var file in new[] { "res://assets/humans/human_male_adult.glb", "res://assets/humans/dwarf_female_adult.glb" })
+        {
+            if (GD.Load<PackedScene>(file)?.Instantiate() is not Node3D model) { GD.Print($"no {file}"); continue; }
+            var sk = model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().First();
+            GD.Print($"== {file}: {sk.GetBoneCount()} bones; root {model.Name}");
+            foreach (var bone in new[] { "Hips", "Spine", "Chest", "Neck", "Head", "RightShoulder", "RightUpperArm", "RightLowerArm", "RightHand", "RightThumbProximal", "RightIndexProximal", "RightMiddleProximal", "RightMiddleDistal", "RightLittleProximal", "LeftHand", "LeftMiddleProximal", "LeftThumbProximal", "LeftIndexProximal" })
+            {
+                var i = sk.FindBone(bone);
+                if (i < 0) { GD.Print($"  {bone}: none"); continue; }
+                var t = sk.GetBoneGlobalRest(i);
+                GD.Print($"  {bone}: origin {t.Origin.X:0.000},{t.Origin.Y:0.000},{t.Origin.Z:0.000}  X {t.Basis.X.X:0.00},{t.Basis.X.Y:0.00},{t.Basis.X.Z:0.00}  Y {t.Basis.Y.X:0.00},{t.Basis.Y.Y:0.00},{t.Basis.Y.Z:0.00}  Z {t.Basis.Z.X:0.00},{t.Basis.Z.Y:0.00},{t.Basis.Z.Z:0.00}");
+            }
+            var mesh = model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().First();
+            var verts = (mesh.Mesh as ArrayMesh)!.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+            GD.Print($"  body: {verts.Length} verts, top {verts.Max(v => v.Y):0.000}, front (max z) {verts.Max(v => v.Z):0.000}, back {verts.Min(v => v.Z):0.000}; surfaces {string.Join(", ", Enumerable.Range(0, mesh.Mesh.GetSurfaceCount()).Select(k => mesh.Mesh.SurfaceGetMaterial(k)?.ResourceName ?? "-"))}");
+            model.Free();
+        }
         GetTree().Quit();
     }
 

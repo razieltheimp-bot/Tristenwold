@@ -394,30 +394,27 @@ public partial class Figure
             if (Looping.Contains(name)) moves.GetAnimation(name).LoopMode = Animation.LoopModeEnum.Linear;
         // What they carry, in real hands (KayKit's weapons are sized for its small figures).
         foreach (var (bone, item) in new[] { ("RightHand", l.RightHand ?? l.Show.FirstOrDefault(Weapons.Contains)), ("LeftHand", l.LeftHand ?? l.Show.FirstOrDefault(s => s.Contains("Shield") || s == "Knife_Offhand" || s == "Spellbook_open")) })
-            if (HoldHuman(skeleton, bone, item) is { } held) f._held[bone] = held;
+            if (HoldHuman(skeleton, bone, item, glow: l.Glow > 0.2f && l.Tint is { } g ? g.ToHtml(false) is var hex ? "#" + hex : null : null) is { } held) f._held[bone] = held;
         if (a is not null) f.HornsHuman(a);
+        skeleton.AddChild(new HumanGaze()); // the head turns to whoever's near
         return f;
     }
 
+    /// <summary>What a real body holds in a hand (the self-test looks).</summary>
+    public Node? HeldIn(string bone) => _held.GetValueOrDefault(bone);
+
     static readonly string[] Weapons = ["1H_Sword", "2H_Sword", "1H_Axe", "2H_Axe", "Knife", "1H_Wand", "2H_Staff", "1H_Crossbow", "2H_Crossbow", "Mug", "Spellbook"];
 
-    static Node? HoldHuman(Skeleton3D skeleton, string bone, string? item)
+    /// <summary>What a look carries, forged to real size (see <see cref="Armoury"/>) and put in a real hand.</summary>
+    static Node? HoldHuman(Skeleton3D skeleton, string bone, string? item, Color? tint = null, string? glow = null)
     {
         if (item is null || skeleton.FindBone(bone) < 0) return null;
+        if (item.StartsWith('@')) { var crafted = Craft(skeleton, bone, item[1..]); return crafted?.GetParent(); }
+        if (Armoury.Make(item, tint, glow: glow) is not { } piece) return null;
         var slot = new BoneAttachment3D { BoneName = bone };
         skeleton.AddChild(slot);
-        if (item.StartsWith('@')) { var crafted = Craft(skeleton, bone, item[1..]); return crafted is null ? slot : (Node)slot; }
-        if (Models.Scene($"weapons/{item}.gltf")?.Instantiate() is not Node3D weapon) return slot;
-        slot.AddChild(Grip(bone, weapon));
+        slot.AddChild(Armoury.InHand(bone, piece));
         return slot;
-    }
-
-    /// <summary>A KayKit piece in a real hand: a third bigger, turned to lie along the palm.</summary>
-    static Node3D Grip(string bone, Node3D piece)
-    {
-        var grip = new Node3D { Scale = Vector3.One * 1.35f, Position = new Vector3(0, -0.02f, 0.06f), RotationDegrees = bone.StartsWith("Left") ? new Vector3(-90, 0, 90) : new Vector3(-90, 0, -90) };
-        grip.AddChild(piece);
-        return grip;
     }
 
     /// <summary>
@@ -430,11 +427,15 @@ public partial class Figure
         if (_skeleton is null || _garb is null) return;
         foreach (var (slot, bone) in new[] { (Tristinwold.Gameplay.Slot.Weapon, "RightHand"), (Tristinwold.Gameplay.Slot.Offhand, "LeftHand") })
         {
-            if (pack.WornIn(slot) is not { } item || piece(item) is not { } p) continue;
+            // The item names its KayKit piece ("Knight/1H_Sword"); the armoury forges the same thing to real size, in the item's metal.
+            if (pack.WornIn(slot) is not { } item || item.Look is null) continue;
+            var id = item.Look.Contains('/') ? item.Look.Split('/')[1] : item.Look;
+            var forged = Armoury.Make(id, item.Tint is { } t ? new Color(t) : null, item.Metal, item.Glow) ?? piece(item);
+            if (forged is null) continue;
             if (_held.Remove(bone, out var was)) was.QueueFree();
             var hold = new BoneAttachment3D { BoneName = bone };
             _skeleton.AddChild(hold);
-            hold.AddChild(Grip(bone, p));
+            hold.AddChild(Armoury.InHand(bone, forged));
             _held[bone] = hold;
             if (slot == Tristinwold.Gameplay.Slot.Weapon) Held = item.Grip;
         }
@@ -671,4 +672,57 @@ public partial class Figure
             RIM_TINT = 0.7;
         }
         """;
+}
+
+/// <summary>
+/// A real body's head turns to whoever is near (the hero, mostly): the head bone is swung toward them, no more than a
+/// fair turn of the neck, eased in and out, on top of whatever its clip is doing. Runs after the animation, as a
+/// skeleton modifier. The head faces +Z in its own frame (the bodies face +Z).
+/// </summary>
+public partial class HumanGaze : SkeletonModifier3D
+{
+    public Node3D? Watching { get; set; }
+    public float Range { get; set; } = 7;
+    int _head = -1;
+    Quaternion _turn = Quaternion.Identity;
+    float _gazing;
+    Node3D? _body;
+
+    public override void _Ready()
+    {
+        if (GetSkeleton() is { } sk) _head = sk.FindBone("Head");
+        _body = GetParent()?.GetParent() as Node3D;
+    }
+
+    public override void _ProcessModification()
+    {
+        if (_head < 0 || GetSkeleton() is not { } sk) return;
+        var who = Watching ?? Poise.Hero;
+        var want = 0f;
+        var goal = Quaternion.Identity;
+        var pose = sk.GetBoneGlobalPose(_head);
+        var toWorld = sk.GlobalTransform;
+        if (who is not null && IsInstanceValid(who) && _body is not null && who != _body)
+        {
+            var eye = toWorld * pose.Origin;
+            var to = who.GlobalPosition + Vector3.Up * 1.5f - eye;
+            var ahead = toWorld.Basis * (pose.Basis * Vector3.Back); // where the face points now
+            if (to.Length() < Range && to.Normalized().Dot(ahead.Normalized()) > -0.1f)
+            {
+                want = 1;
+                var local = (pose.Basis.Inverse() * (toWorld.Basis.Inverse() * to)).Normalized(); // into the head's own frame
+                var forward = Vector3.Back;
+                var angle = forward.AngleTo(local);
+                if (angle > 0.01f) goal = new Quaternion(forward.Cross(local).Normalized(), Mathf.Min(angle, Mathf.DegToRad(55)));
+            }
+        }
+        _gazing = Mathf.MoveToward(_gazing, want, 0.03f);
+        _turn = _turn.Slerp(goal, 0.1f);
+        var turn = Quaternion.Identity.Slerp(_turn, _gazing);
+        if (_gazing < 0.001f) return;
+        var parent = sk.GetBoneParent(_head);
+        var parentBasis = parent >= 0 ? sk.GetBoneGlobalPose(parent).Basis : Basis.Identity;
+        var turned = pose.Basis * new Basis(turn);
+        sk.SetBonePoseRotation(_head, (parentBasis.Inverse() * turned).GetRotationQuaternion());
+    }
 }
