@@ -39,6 +39,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--shadows-only")) { await ShadowsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--humans-only")) { await HumansTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--poise-only")) { await PoiseTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ageing-only")) { await AgeingTest(); Finish(0); return; }
@@ -62,7 +63,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await StandingTest(); await ArtificerTest(); await HumansTest(); await PoiseTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await StandingTest(); await ArtificerTest(); await ShadowsTest(); await HumansTest(); await PoiseTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -2013,6 +2014,127 @@ public partial class SelfTest(Main main) : Node
         p.Join("Paladin");
         await Until(() => Golem() is null, 6);
         Check(Golem() is null && hud.Heard("winds down"), "leave the calling, and the golem winds down in the Foundry yard");
+    }
+
+    /// <summary>
+    /// The wrong side of every honest job: the Tongs' thug and his round of the shops (and the Watch sent for when one
+    /// won't pay), the poacher's pelts for Nell, the smuggler's crate to a port, the highwayman's tip and ambush; the
+    /// Watch won't have a Tong.
+    /// </summary>
+    async Task ShadowsTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        var s = main.Standing;
+        var sh = s.Shadows;
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        p.Join("Paladin");
+        await Frames(5);
+
+        // The Tongs' man, a round of three shops, and the due collected.
+        await Teleport(Main.TongCorner + new Vector3(1, 0, 1));
+        main.Talk(Who(Main.TongMan));
+        Check(hud.Choose("I want to work for the Tongs") && sh.In(ShadowLine.Thug), "Corvin Rask of the Ravenscrew Tongs takes you on");
+        hud.EndTalk();
+        main.Talk(Who(Main.TongMan));
+        Check(hud.Choose("Give me a round") && sh.Round.Count == ShadowBook.RoundShops, $"a round to collect: {string.Join(", ", sh.Round)}");
+        hud.EndTalk();
+        await Until(() => hud.Tracked.Any(t => t.StartsWith("The Tongs: collect")), 3);
+        Check(hud.Tracked.Any(t => t.StartsWith("The Tongs: collect")), "the tracker shows who's still owed");
+        main.ShadowsSure = true;
+        var purse = p.Crowns;
+        foreach (var shop in sh.Round.ToList())
+        {
+            main.Talk(Who(shop));
+            Check(hud.Choose("The Tongs' due") && !sh.Owes(shop), $"{Shops.All.First(x => x.Id == shop).Name} pays the Tongs' due");
+            hud.EndTalk();
+        }
+        Check(sh.RoundDone && p.Crowns > purse && sh.For(ShadowLine.Thug).Done == 3, $"the round's done: +{p.Crowns - purse} crowns, infamy {s.Infamy}");
+        main.ShadowsSure = false;
+        Check(s.WhyNotWatch == "you run with the Tongs", "and the Watch won't have a Tong");
+        // One who won't pay: the Watch is sent for.
+        var bounty = s.Bounty;
+        sh.StartRound([.. Shops.All.Where(x => main.Locals.Any(l => l.Npc.Id == x.Id)).Select(x => x.Id)], new Tristinwold.Deviant.Rng(3));
+        var refused = false;
+        for (var i = 0; i < 12 && !refused; i++)
+        {
+            sh.Collected.Clear();
+            main.Talk(Who(sh.Round[0]));
+            hud.Choose("The Tongs' due");
+            refused = s.Bounty > bounty;
+            hud.EndTalk();
+        }
+        Check(refused && hud.Heard("won't pay, and the Watch is sent for"), $"a shopkeeper who won't pay sends for the Watch: {s.Bounty} crowns on your head");
+        s.Bounty = 0;
+        main.WatchNode.Hostile = false;
+
+        // The poacher: a farm's sheep is a pelt for Nell, not a fine.
+        await Teleport(Main.Smugglers + new Vector3(1, 0, 1));
+        main.Talk(Who("tristinwold/smuggler"));
+        Check(hud.Choose("What would the farms' animals fetch") && sh.In(ShadowLine.Poacher), "Nell Corran buys poached animals by the head");
+        hud.EndTalk();
+        var farm = main.World.SettlementsNear(0, 0, 5000).Where(x => x.Kind == SettlementKind.Farmstead).MinBy(x => x.DistanceTo(0, 0))!;
+        await Teleport(new Vector3((float)(farm.X + farm.Radius + 6), 0, (float)farm.Z));
+        await Until(() => main.PlacesNode.IsBuilt(farm.Id) && main.Enemies().Any(e => e.Owner == farm.Name && e.State != EnemyState.Dead), 10);
+        var beast = main.Enemies().First(e => e.Owner == farm.Name && e.State != EnemyState.Dead);
+        purse = p.Crowns;
+        beast.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, p);
+        await Until(() => sh.Pelts == 1, 5);
+        Check(sh.Pelts == 1 && p.Crowns >= purse, $"a farm's {beast.Kind.Name.ToLowerInvariant()} killed: a pelt for Nell, and no fine");
+        await Teleport(Main.Smugglers + new Vector3(1, 0, 1));
+        main.Talk(Who("tristinwold/smuggler"));
+        Check(hud.Choose("Here's what I took") && p.Crowns == purse + ShadowBook.PeltPrice && sh.Pelts == 0, $"Nell pays {ShadowBook.PeltPrice} a head");
+        hud.EndTalk();
+
+        // The smuggler: a crate for a port, delivered at the rail.
+        if (main.Sea.Rank == SeaRank.Landsman) main.Sea.SignOn();
+        main.Talk(Who("tristinwold/smuggler"));
+        Check(hud.Choose("Anything that needs carrying") && sh.In(ShadowLine.Smuggler), "Nell has crates for the ports");
+        hud.EndTalk();
+        main.Talk(Who("tristinwold/smuggler"));
+        Check(hud.Choose("A crate to run") && sh.CrateFor is not null, $"a crate for {Seas.Get(sh.CrateFor!)?.Name}");
+        hud.EndTalk();
+        main.SailForTest(sh.CrateFor!);
+        await Frames(30);
+        var v = main.Sea.Voyage;
+        if (main.AtSeaNode is null || v is null) { Check(false, "a voyage with the crate aboard"); return; }
+        (v.Out, v.Home) = ([], []);
+        main.AtSeaNode.Along = 0.999;
+        await Until(() => v.InPort && main.AtSeaNode.Agent is not null, 8);
+        purse = p.Crowns;
+        main.Talk(main.AtSeaNode.Agent!);
+        Check(hud.Choose("Nell Corran's crate") && sh.CrateFor is null && p.Crowns == purse + ShadowBook.CratePay, $"her man takes it at the rail: +{ShadowBook.CratePay} crowns");
+        Check(hud.Choose("Cast off for home"), "and home");
+        main.AtSeaNode.Along = 0.999;
+        await Until(() => main.Sea.Voyage is null, 8);
+        await Frames(20);
+
+        // The highwayman: a tip bought, a wagon waylaid.
+        await Teleport(Main.Smugglers + new Vector3(1, 0, 1));
+        main.Talk(Who("tristinwold/smuggler"));
+        Check(hud.Choose("Heard of a wagon worth waylaying") && sh.In(ShadowLine.Highwayman), "Nell sells tips on wagons");
+        hud.EndTalk();
+        p.Crowns = Math.Max(p.Crowns, 100);
+        main.Talk(Who("tristinwold/smuggler"));
+        Check(hud.Choose("A wagon worth waylaying") && s.Tracker is not null, $"a tip bought: a wagon for {s.Tracker?.TownName}");
+        hud.EndTalk();
+        var t = s.Tracker!;
+        t.PlantedAt -= t.Length / 2 / WagonTracker.Pace;
+        var (x, z) = t.Where(main.GuildBook.PlaySeconds);
+        await Teleport(new Vector3((float)x + 3, 0, (float)z + 3));
+        var act = main.ArtificerActionForTest(p.GlobalPosition);
+        Check(act?.Verb.StartsWith("spring the ambush") == true, $"a paladin gone to the bad, on the road: E to {act?.Verb}");
+        act?.Act();
+        await Frames(5);
+        var guards = main.Enemies().Where(e => e.Stats.Name == "Caravan guard").ToList();
+        purse = p.Crowns;
+        foreach (var e in guards) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => s.Tracker is null, 6);
+        Check(s.Tracker is null && p.Crowns > purse, $"the wagon's yours: +{p.Crowns - purse} crowns; you're {s.Name}");
+        s.Bounty = 0;
+        main.WatchNode.Hostile = false;
+        Check(sh.TitleOf(ShadowLine.Thug) == "a Tong knuckle" && ShadowBook.Title(ShadowLine.Thug, 3) == "a Tong captain", "the Tongs' ranks run from knuckle to captain");
     }
 
     /// <summary>Creatures stand on the ground under each foot, look at the hero, and swing their tails.</summary>

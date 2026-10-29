@@ -649,6 +649,24 @@ horn. Speak with the warchief (E, when he's about) to see how you stand, or to l
 badly. The pirates' path (above) works the same way: lose your ship and Black Ysolde offers you a place, and every
 prize is infamy. `--selftest --standing-only` walks through all of it.
 
+**The wrong side of every job.** Every honest trade in the city has its shadow, and the shadow pays better and
+costs your name. Where the Watch walks beats, **the Ravenscrew Tongs** have Corvin Rask, leaning on a wall in the
+Warrens: work for him and he gives you a **round**, three of the city's shops to collect the Tongs' due from (the
+tracker lists who's still owed; walk in and ask for it). Most pay, counting it out without looking at you; now and
+then one won't, and his boy is out of the back door and running for the Watch before you've answered, with fifteen
+crowns on your head for it. Three doors collected make you **a Tong enforcer**, eight **a lieutenant**,
+fifteen **a Tong captain**, and the Watch won't have a Tong on its rolls. Where the hunter sells the wilds' game,
+a **poacher** sells Nell Corran what the farms keep: ask her what the farms' animals fetch, and from then on
+somebody's cow or sheep you kill where nobody sees is a pelt for Nell rather than a fine, paid by the head, and
+better by the head as you rise from **a snarer** to **the warden's bane**. Where the sailor sails for the company,
+a **smuggler** runs Nell's crates to the ports aboard the company's own ships: she gives a runner a crate for
+Saltmere and a wrecker's friend one for the far ports, and in port her man in the tarred coat comes to the rail
+for it, seventy crowns and no questions. And where the carter drives the caravans, a **highwayman** buys Nell's
+tip (25 crowns) on a wagon leaving the yard, follows it on the tracker as it crawls down the road, and meets it
+there (E) for its guards and its strongbox, as the Saboteur does with a tracking device instead of a tip. Each
+line has four ranks, each pays, and each is infamy: a name the shops and the townsfolk read. `--selftest
+--shadows-only` walks through the lot.
+
 ### Realistic people
 
 On a PC at High graphics or better, Tristinwold's people have real bodies: baked from MakeHuman's base mesh (CC0)

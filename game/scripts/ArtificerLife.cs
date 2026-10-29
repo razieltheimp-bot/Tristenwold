@@ -116,11 +116,12 @@ public partial class Main
     /// <summary>A saboteur by a parked wagon plants a tracker; by the tracked wagon on the road, springs the ambush.</summary>
     (string Verb, Action Act)? ArtificerAction(Vector3 pos)
     {
-        if (_player.Class.Id != "Saboteur") return null;
+        var saboteur = _player.Class.Id == "Saboteur";
+        if (!saboteur && !Shadows.In(ShadowLine.Highwayman)) return null;
         var t = _standing.Tracker;
         if (t is null || t.Lost(_guilds.PlaySeconds))
         {
-            if (GetChildren().OfType<Wagon>().Any(w => w.Parked && w.GlobalPosition.DistanceTo(pos) < 5) && NextBound() is { } bound)
+            if (saboteur && GetChildren().OfType<Wagon>().Any(w => w.Parked && w.GlobalPosition.DistanceTo(pos) < 5) && NextBound() is { } bound)
                 return ($"plant a tracker on the wagon (bound for {bound.Name})", () => Plant(bound));
             return null;
         }

@@ -239,6 +239,7 @@ public partial class Main
     /// <summary>Somebody's cow, sheep or dog, killed where they could see: it's paid for, and Tristinwold hears of it.</summary>
     void Poached(Enemy victim, string owner)
     {
+        if (Poaching(victim)) return;
         var fine = Math.Min(_player.Crowns, Livestock.Fine(victim.Kind.Id));
         _player.Crowns -= fine;
         if (owner == "Tristinwold") _city.Renown = Math.Max(0, _city.Renown - 2);
@@ -460,6 +461,7 @@ public partial class Main
         foreach (var o in SeaTalk(person)) yield return o;
         foreach (var o in StandingTalk(person)) yield return o;
         foreach (var o in ArtificerTalk(person)) yield return o;
+        foreach (var o in ShadowTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;
         foreach (var o in PursuitTalk(person)) yield return o;

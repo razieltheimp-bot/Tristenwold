@@ -212,6 +212,119 @@ public sealed class ClanBook
     };
 }
 
+/// <summary>The wrong side of an honest trade: the Watch's thug, the hunter's poacher, the sailor's smuggler, the carter's highwayman.</summary>
+public enum ShadowLine { Thug, Poacher, Smuggler, Highwayman }
+
+public sealed class ShadowRecord
+{
+    public int Done { get; set; }
+    public int Earned { get; set; }
+}
+
+/// <summary>
+/// Careers on the wrong side of the law, saved with the company: a Tong thug collecting the Tongs' due from the
+/// shops; a poacher selling Nell Corran what the farms keep; a smuggler running her crates to the ports; a
+/// highwayman waylaying the wagons she tips him to. Each rises by what it's done, pays better as it rises, and costs
+/// a name in the city.
+/// </summary>
+public sealed class ShadowBook
+{
+    public Dictionary<string, ShadowRecord> Lines { get; set; } = [];
+    /// <summary>A thug's round: the shops to collect from, and which are done.</summary>
+    public List<string> Round { get; set; } = [];
+    public List<string> Collected { get; set; } = [];
+    /// <summary>What a poacher has taken off the farms and not yet sold to Nell.</summary>
+    public int Pelts { get; set; }
+    /// <summary>The port a smuggler's crate is for, if they carry one.</summary>
+    public string? CrateFor { get; set; }
+
+    public static readonly int[] Steps = [0, 3, 8, 15];
+    public const int RoundShops = 3, PeltPrice = 12, CratePay = 70, TipPrice = 25;
+    /// <summary>How often a shopkeeper won't pay, and someone runs for the Watch; what that costs.</summary>
+    public const double RefuseChance = 0.2;
+    public const int RefusedBounty = 15;
+
+    public bool In(ShadowLine line) => Lines.ContainsKey(line.ToString());
+    public ShadowRecord For(ShadowLine line) => Lines.TryGetValue(line.ToString(), out var r) ? r : Lines[line.ToString()] = new ShadowRecord();
+    public int Rank(ShadowLine line) => In(line) ? Enumerable.Range(0, Steps.Length).Last(i => For(line).Done >= Steps[i]) : -1;
+
+    public bool Join(ShadowLine line)
+    {
+        if (In(line)) return false;
+        For(line);
+        return true;
+    }
+
+    public static string Title(ShadowLine line, int rank) => (line, Math.Clamp(rank, 0, 3)) switch
+    {
+        (ShadowLine.Thug, 0) => "a Tong knuckle", (ShadowLine.Thug, 1) => "a Tong enforcer", (ShadowLine.Thug, 2) => "a Tong lieutenant", (ShadowLine.Thug, _) => "a Tong captain",
+        (ShadowLine.Poacher, 0) => "a snarer", (ShadowLine.Poacher, 1) => "a poacher", (ShadowLine.Poacher, 2) => "a night-hunter", (ShadowLine.Poacher, _) => "the warden's bane",
+        (ShadowLine.Smuggler, 0) => "a runner", (ShadowLine.Smuggler, 1) => "a smuggler", (ShadowLine.Smuggler, 2) => "a wrecker's friend", (ShadowLine.Smuggler, _) => "the Drowned Hand's own",
+        (ShadowLine.Highwayman, 0) => "a footpad", (ShadowLine.Highwayman, 1) => "a highwayman", (ShadowLine.Highwayman, 2) => "a road-wolf", (ShadowLine.Highwayman, _) => "king of the road",
+    };
+
+    public string TitleOf(ShadowLine line) => Title(line, Rank(line));
+
+    /// <summary>What it takes to rise next in a line.</summary>
+    public string NextStep(ShadowLine line)
+    {
+        var r = Rank(line);
+        return r < 0 ? "Not yours yet." : r >= 3 ? "There's nowhere higher to go but the gallows." : $"{Steps[r + 1]} and you're {Title(line, r + 1)} ({For(line).Done} so far).";
+    }
+
+    /// <summary>A thug's round: shops to collect from, picked from the city's.</summary>
+    public List<string> StartRound(IReadOnlyList<string> shops, Rng rng)
+    {
+        var pool = shops.ToList();
+        Round = [];
+        Collected = [];
+        for (var i = 0; i < RoundShops && pool.Count > 0; i++) { var pick = rng.Pick(pool); pool.Remove(pick); Round.Add(pick); }
+        return Round;
+    }
+
+    public bool RoundDone => Round.Count > 0 && Collected.Count >= Round.Count;
+    public bool Owes(string shop) => Round.Contains(shop) && !Collected.Contains(shop);
+
+    /// <summary>The Tongs' due, collected (or refused, with the Watch sent for): the crowns taken, or null.</summary>
+    public int? Collect(string shop, Rng rng, bool sure = false)
+    {
+        if (!Owes(shop)) return null;
+        Collected.Add(shop);
+        if (!sure && rng.Chance(RefuseChance)) return null;
+        var pay = 8 + 4 * Rank(ShadowLine.Thug) + rng.Next(6);
+        Did(ShadowLine.Thug, pay);
+        return pay;
+    }
+
+    /// <summary>Something done in a line: counted, and paid.</summary>
+    public void Did(ShadowLine line, int crowns)
+    {
+        var r = For(line);
+        r.Done++;
+        r.Earned += crowns;
+    }
+
+    /// <summary>Nell pays for the poacher's pelts: what she pays, and the tally cleared.</summary>
+    public int SellPelts()
+    {
+        if (Pelts == 0) return 0;
+        var pay = (int)Math.Round(Pelts * PeltPrice * (1 + 0.25 * Math.Max(0, Rank(ShadowLine.Poacher))));
+        Did(ShadowLine.Poacher, pay);
+        Pelts = 0;
+        return pay;
+    }
+
+    /// <summary>A crate delivered: what the port's man pays.</summary>
+    public int? Deliver(string port)
+    {
+        if (CrateFor != port) return null;
+        var pay = (int)Math.Round(CratePay * (1 + 0.25 * Math.Max(0, Rank(ShadowLine.Smuggler))));
+        Did(ShadowLine.Smuggler, pay);
+        CrateFor = null;
+        return pay;
+    }
+}
+
 /// <summary>
 /// A saboteur's tracker on a merchant wagon: where the wagon is bound, when it set out, and whether the ambush has
 /// been sprung. The wagon rolls from the caravan yard to the town at a steady pace; meet it on the road.
@@ -255,8 +368,10 @@ public sealed class Standing
     public List<string> Deeds { get; set; } = [];
     public WatchBook Watch { get; set; } = new();
     public ClanBook Clan { get; set; } = new();
-    /// <summary>A saboteur's tracker on a wagon, if one's planted.</summary>
+    /// <summary>A saboteur's or a highwayman's tracker on a wagon, if one's planted.</summary>
     public WagonTracker? Tracker { get; set; }
+    /// <summary>The wrong side of every honest job.</summary>
+    public ShadowBook Shadows { get; set; } = new();
 
     public const int KeepDeeds = 12;
     /// <summary>What goes on the head of whoever kills a watchman, or rides with a clan on a place.</summary>
@@ -334,6 +449,7 @@ public sealed class Standing
     public string? WhyNotWatch => Watch.In ? "you're already on the rolls"
         : Outlaw ? "there's a price on your head"
         : Clan.In ? "you ride with a barbarian clan"
+        : Shadows.In(ShadowLine.Thug) ? "you run with the Tongs"
         : Repute == Repute.Villain ? "the whole city knows what you are"
         : null;
 

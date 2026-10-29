@@ -357,6 +357,7 @@ public partial class Main : Node3D
         AddCaravanYard();
         AddShipyard();
         AddWatchHouse();
+        AddShadows();
         AddPursuits();
         _herbPatch = new HerbPatch(this);
         AddChild(_herbPatch);
@@ -716,7 +717,7 @@ public partial class Main : Node3D
         if (_suited is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
         if (_raiders.Tracker(pos, Direction) is { } clanLine) saga = [.. saga, clanLine];
-        saga = [.. saga, .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. StandingLines(pos), .. ArtificerLines(pos), .. PursuitLines(pos)];
+        saga = [.. saga, .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. StandingLines(pos), .. ArtificerLines(pos), .. ShadowLines(pos), .. PursuitLines(pos)];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
     }
