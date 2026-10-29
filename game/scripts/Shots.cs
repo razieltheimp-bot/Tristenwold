@@ -528,7 +528,8 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                     for (var a = 0f; a < Mathf.Tau; a += 0.4f)
                     {
                         var (x, z) = (Mathf.Cos(a) * r, Mathf.Sin(a) * r);
-                        if (main.World.BiomeAt(x, z) == b && main.World.SettlementAt(x, z) is null && main.World.Height(x, z) > WorldGen.WaterLevel + 2) return new Vector3(x, 0, z);
+                        var steep = b != Biome.Crags || Math.Abs(main.World.Height(x + 4, z) - main.World.Height(x - 4, z)) + Math.Abs(main.World.Height(x, z + 4) - main.World.Height(x, z - 4)) > 6;
+                        if (main.World.BiomeAt(x, z) == b && steep && main.World.SettlementAt(x, z) is null && main.World.Height(x, z) > WorldGen.WaterLevel + 2) return new Vector3(x, 0, z);
                     }
                 return null;
             }

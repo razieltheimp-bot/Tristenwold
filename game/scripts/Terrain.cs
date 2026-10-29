@@ -346,7 +346,11 @@ public partial class Terrain(WorldGen world) : Node3D
     /// A kind of tree or rock: its model (or a tree built in code), how big to draw it, and how its
     /// height is measured for the wind. Poly Haven models ("ph:") keep their own photo materials.
     /// </summary>
-    sealed record Plant(string Path, float MinScale, float MaxScale, float HeightScale, bool Sways = true, Foliage.Kind? Tree = null, int Variant = 0);
+    /// <param name="Part">Which of a scan set's meshes (a set lays its plants or rocks out side by side).</param>
+    /// <param name="Outcrop">A face of rock, scanned from the front only: set into a slope, facing downhill.</param>
+    /// <param name="StandIn">Too heavy to draw far off: drawn within <see cref="ScanReach"/>, this one beyond it.</param>
+    sealed record Plant(string Path, float MinScale, float MaxScale, float HeightScale, bool Sways = true, Foliage.Kind? Tree = null, int Variant = 0,
+        int Part = 0, bool Outcrop = false, Plant? StandIn = null);
 
     static readonly Plant PineA = new("medieval/nature/tree_single_A.gltf", 5.5f, 8.5f, 6.5f);
     static readonly Plant PineB = new("medieval/nature/tree_single_B.gltf", 5.5f, 8.5f, 6.5f);
@@ -374,15 +378,21 @@ public partial class Terrain(WorldGen world) : Node3D
     // Photo-scanned trees, rock faces, cliffs and undergrowth from Poly Haven, for the higher settings on a PC: real
     // bark, real needles, real lichen on real stone. Godot draws simpler stand-ins of each further off (Cinematic
     // keeps them at full detail); without the files, the woods are as they were.
-    static readonly Plant ScanFir = new("ph:fir_sapling.glb", 2.2f, 3.4f, 1, Sways: false); // a young fir, grown
-    static readonly Plant ScanPine = new("ph:small_tree.glb", 1.1f, 1.7f, 1, Sways: false); // a broadleaf
-    static readonly Plant Sapling = new("ph:fir_sapling.glb", 0.8f, 1.4f, 1, Sways: false);
-    static readonly Plant RockFace = new("ph:rock_face.glb", 0.8f, 1.6f, 1, Sways: false);
-    static readonly Plant RockFaceB = new("ph:rock_face_b.glb", 0.8f, 1.6f, 1, Sways: false);
-    static readonly Plant Cliff = new("ph:cliff.glb", 0.7f, 1.3f, 1, Sways: false);
-    static readonly Plant MossRocks = new("ph:moss_rocks.glb", 0.9f, 1.6f, 1, Sways: false);
-    static readonly Plant[] Shrubs = [new("ph:shrub.glb", 0.8f, 1.4f, 1, Sways: false), new("ph:shrub_b.glb", 0.8f, 1.4f, 1, Sways: false), new("ph:shrub_c.glb", 0.8f, 1.4f, 1, Sways: false)];
-    static readonly Plant Nettle = new("ph:nettle.glb", 0.9f, 1.3f, 1, Sways: false);
+    static Plant[] Set(string path, int parts, float min, float max, bool outcrop = false) =>
+        [.. Enumerable.Range(0, parts).Select(i => new Plant(path, min, max, 1, Sways: false, Part: i, Outcrop: outcrop))];
+
+    static readonly Plant[] ScanFirs = Set("ph:fir_sapling.glb", 3, 1.4f, 2.2f); // young firs (5 to 8 m), grown
+    static readonly Plant[] Saplings = Set("ph:fir_sapling.glb", 3, 0.5f, 1.0f);
+    static readonly Plant ScanPine = new("ph:small_tree.glb", 1.1f, 1.7f, 1, Sways: false, StandIn: Grown(Foliage.Kind.Green, 0.6f, 0.9f)[0]); // a broadleaf
+    static readonly Plant RockFace = new("ph:rock_face.glb", 0.9f, 1.6f, 1, Sways: false, Outcrop: true);
+    static readonly Plant RockFaceB = new("ph:rock_face_b.glb", 1f, 1.8f, 1, Sways: false, Outcrop: true);
+    static readonly Plant Cliff = new("ph:cliff.glb", 0.8f, 1.4f, 1, Sways: false, Outcrop: true);
+    static readonly Plant[] MossRocks = Set("ph:moss_rocks.glb", 6, 0.8f, 1.6f);
+    static readonly Plant[] Shrubs = [.. Set("ph:shrub.glb", 1, 0.8f, 1.4f), .. Set("ph:shrub_b.glb", 4, 0.8f, 1.4f), .. Set("ph:shrub_c.glb", 4, 2f, 3.5f)];
+    static readonly Plant[] Nettles = Set("ph:nettle.glb", 2, 4f, 7f); // the scans are of young ones, a hand high
+
+    /// <summary>How far off the heaviest scans are drawn before their stand-ins take over (see <see cref="Graphics"/>).</summary>
+    public float ScanReach { get; set; } = 160;
 
     /// <summary>Whether the photo-scanned trees and rocks are drawn (High and up, on a PC: see <see cref="Graphics"/>).</summary>
     public bool Scans { get; set; }
@@ -396,7 +406,7 @@ public partial class Terrain(WorldGen world) : Node3D
     {
         if (_plants.TryGetValue(p, out var known)) return known;
         if (p.Tree is { } kind) return _plants[p] = (Foliage.Tree(kind, p.Variant, Fancy), null);
-        if (Models.MeshOf(p.Path) is not { } mesh) return null;
+        if (Models.MeshOf(p.Path, p.Part) is not { } mesh) return null;
         if (p.Path.StartsWith("ph:")) return _plants[p] = (mesh, null);
         var texture = (mesh.SurfaceGetMaterial(0) as BaseMaterial3D)?.AlbedoTexture;
         Material? material = Fancy && p.Sways ? Graphics.Swaying(1, texture, p.HeightScale) : Fancy ? Graphics.Swaying(0, texture, p.HeightScale) : null;
@@ -408,12 +418,12 @@ public partial class Terrain(WorldGen world) : Node3D
     (Plant Plant, double Weight)[] Woods(Biome b) => Scans && Real
         ? b switch
         {
-            Biome.AutumnForest => [.. Each(Autumns, 5), .. Each(Greens, 1), (ScanPine, 1.5), (ScanFir, 0.5), (Sapling, 0.4), .. Each(Bares, 0.3)],
-            Biome.PineForest => [(ScanFir, 5), .. Each(Firs, 3), (Sapling, 1), (ScanPine, 0.3), .. Each(Bares, 0.3)],
-            Biome.Marsh => [.. Each(Bares, 3), .. Each(Greens, 1.5), (ScanPine, 1), (Sapling, 0.4)],
-            Biome.Tundra => [(ScanFir, 3), .. Each(Firs, 2), (Sapling, 1), .. Each(Bares, 1.5)],
-            Biome.Snowfield => [(ScanFir, 2), .. Each(Firs, 2), .. Each(Bares, 1)],
-            _ => [(ScanFir, 1.5), (ScanPine, 0.5), .. Each(Firs, 1), .. Each(Bares, 1)],
+            Biome.AutumnForest => [.. Each(Autumns, 5), .. Each(Greens, 1), (ScanPine, 1.5), .. Each(ScanFirs, 0.5), .. Each(Saplings, 0.4), .. Each(Bares, 0.3)],
+            Biome.PineForest => [.. Each(ScanFirs, 5), .. Each(Firs, 3), .. Each(Saplings, 1), (ScanPine, 0.3), .. Each(Bares, 0.3)],
+            Biome.Marsh => [.. Each(Bares, 3), .. Each(Greens, 1.5), (ScanPine, 1), .. Each(Saplings, 0.4)],
+            Biome.Tundra => [.. Each(ScanFirs, 3), .. Each(Firs, 2), .. Each(Saplings, 1), .. Each(Bares, 1.5)],
+            Biome.Snowfield => [.. Each(ScanFirs, 2), .. Each(Firs, 2), .. Each(Bares, 1)],
+            _ => [.. Each(ScanFirs, 1.5), (ScanPine, 0.5), .. Each(Firs, 1), .. Each(Bares, 1)],
         }
         : Plain(b);
 
@@ -439,10 +449,10 @@ public partial class Terrain(WorldGen world) : Node3D
     (Plant Plant, double Weight)[] Stones(Biome b) => Scans && Real
         ? b switch
         {
-            Biome.AutumnForest or Biome.PineForest => [(Boulder, 1.5), (MossRocks, 1.5), (Log, 2), (Stump, 1.5), .. Each(Shrubs, 3), (Nettle, 1)],
-            Biome.Marsh => [(MossRocks, 2), (Log, 2), (Stump, 1), .. Each(Shrubs, 2), (Nettle, 2)],
-            Biome.Crags => [(RockFace, 3), (RockFaceB, 3), (Cliff, 2), (Boulder, 2), (FlatBoulder, 1), (SmallBoulder, 1)],
-            _ => [(Boulder, 2), (FlatBoulder, 1), (SmallBoulder, 2), (RockFace, 1.5), (MossRocks, 1), .. Each(Shrubs, 1)],
+            Biome.AutumnForest or Biome.PineForest => [(Boulder, 1.5), .. Each(MossRocks, 1.5), (Log, 2), (Stump, 1.5), .. Each(Shrubs, 3), .. Each(Nettles, 1)],
+            Biome.Marsh => [.. Each(MossRocks, 2), (Log, 2), (Stump, 1), .. Each(Shrubs, 2), .. Each(Nettles, 2)],
+            Biome.Crags => [(RockFace, 3), (RockFaceB, 3), (Cliff, 2), (Boulder, 2), (FlatBoulder, 1), (SmallBoulder, 1), .. Each(MossRocks, 1.5)],
+            _ => [(Boulder, 2), (FlatBoulder, 1), (SmallBoulder, 2), (RockFace, 1.5), .. Each(MossRocks, 1), .. Each(Shrubs, 1)],
         }
         : PlainStones(b);
 
@@ -464,7 +474,9 @@ public partial class Terrain(WorldGen world) : Node3D
         var rocks = Scans && Real ? (mid == Biome.Crags ? 9 : mid is Biome.AutumnForest or Biome.PineForest or Biome.Marsh ? 7 : 3) : mid == Biome.Crags ? 6 : 2;
         var clear = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
         var lairs = LairsNear(x0, z0);
-        var groups = new Dictionary<Plant, List<(Transform3D, Color, float)>>();
+        var groups = new Dictionary<(Plant, Band), List<(Transform3D, Color, float)>>();
+        void Add(Plant plant, Band band, Transform3D t, Color c, float snow) =>
+            (groups.TryGetValue((plant, band), out var list) ? list : groups[(plant, band)] = []).Add((t, c, snow));
         for (var i = 0; i < count + rocks; i++)
         {
             var (lx, lz) = (rng.NextDouble() * (ChunkSize - 1), rng.NextDouble() * (ChunkSize - 1));
@@ -473,19 +485,49 @@ public partial class Terrain(WorldGen world) : Node3D
             if (clear.Any(s => s.DistanceTo(wx, wz) < s.Radius + (s.IsCity ? 30 : 8))) continue;
             if (lairs.Any(r => r.DistanceTo(wx, wz) < 26)) continue; // a lair stands in a clearing
             if (Clearings.Any(c => new Vector2((float)wx - c.At.X, (float)wz - c.At.Z).Length() < c.Radius)) continue;
-            var y = h[(int)Math.Round(lz / Step) * (Steps + 1) + (int)Math.Round(lx / Step)];
+            var (ix, iz) = ((int)Math.Round(lx / Step), (int)Math.Round(lz / Step));
+            float At(int x, int z) => h[Math.Clamp(z, 0, Steps) * (Steps + 1) + Math.Clamp(x, 0, Steps)];
+            var y = At(ix, iz);
             if (y < WorldGen.WaterLevel + 0.5) continue;
             var biome = world.BiomeAt(wx, wz, y);
             var plant = rng.PickWeighted(i >= count ? Stones(biome) : Woods(biome));
             var scale = plant.MinScale + (float)rng.NextDouble() * (plant.MaxScale - plant.MinScale);
-            var basis = Basis.Identity.Scaled(Vector3.One * scale).Rotated(Vector3.Up, (float)rng.NextDouble() * Mathf.Tau);
+            var yaw = (float)rng.NextDouble() * Mathf.Tau;
+            var sink = 0.1f;
+            if (plant.Outcrop)
+            {
+                // Its open back goes into the hillside and its face looks downhill, set well into the ground.
+                var downhill = new Vector2(At(ix - 1, iz) - At(ix + 1, iz), At(ix, iz - 1) - At(ix, iz + 1)) / (2 * Step);
+                if (downhill.Length() < 0.6f) plant = rng.Pick([Boulder, FlatBoulder, SmallBoulder, .. MossRocks]); // too gentle a slope to hold one
+                else
+                {
+                    yaw = Mathf.Atan2(downhill.X, downhill.Y);
+                    sink = scale * 0.5f;
+                }
+            }
+            var basis = Basis.Identity.Scaled(Vector3.One * scale).Rotated(Vector3.Up, yaw);
             var snow = biome switch { Biome.Snowfield => 0.95f, Biome.Tundra => 0.5f, Biome.Crags when y > 70 => 0.8f, _ => 0f };
             var shade = 0.9f + (float)rng.NextDouble() * 0.2f;
-            (groups.TryGetValue(plant, out var list) ? list : groups[plant] = []).Add((new Transform3D(basis, new Vector3((float)lx, y - 0.1f, (float)lz)), new Color(shade, shade, shade), snow));
+            var at = new Vector3((float)lx, y - sink, (float)lz);
+            Add(plant, plant.StandIn is null ? Band.All : Band.Near, new Transform3D(basis, at), new Color(shade, shade, shade), snow);
+            if (plant.StandIn is { } far)
+            {
+                var t = (scale - plant.MinScale) / Math.Max(0.01f, plant.MaxScale - plant.MinScale);
+                Add(far, Band.Far, new Transform3D(Basis.Identity.Scaled(Vector3.One * Mathf.Lerp(far.MinScale, far.MaxScale, t)).Rotated(Vector3.Up, yaw), at), new Color(shade, shade, shade), snow);
+            }
         }
-        foreach (var (plant, items) in groups)
-            if (Look(plant) is { } look) Multi(chunk, look.Mesh, items, look.Material);
+        foreach (var ((plant, band), items) in groups)
+            if (Look(plant) is { } look)
+            {
+                var drawn = Multi(chunk, look.Mesh, items, look.Material);
+                if (band == Band.Near) (drawn.VisibilityRangeEnd, drawn.VisibilityRangeEndMargin) = (ScanReach, 16);
+                if (band == Band.Far) (drawn.VisibilityRangeBegin, drawn.VisibilityRangeBeginMargin) = (ScanReach, 16);
+                if (band != Band.All) drawn.VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Self;
+            }
     }
+
+    /// <summary>Drawn at any distance, only near, or only far (where a stand-in takes over from a heavy scan).</summary>
+    enum Band { All, Near, Far }
 
     /// <summary>Places kept clear of wild trees and rocks: the quarry floor, and the woodlot (its own trees are planted).</summary>
     /// <summary>The lairs near a chunk, the nine near home and the far country's, for the trees and grass to keep clear of.</summary>
@@ -496,12 +538,13 @@ public partial class Terrain(WorldGen world) : Node3D
     public static readonly (Vector3 At, float Radius)[] Clearings =
         [(Main.QuarryAt, 24), (Main.WoodlotAt, 18), (Main.AllotmentsAt, 18), (Main.HousePlotAt, 16), (Main.CourseAt + new Vector3(-2, 0, -14), 24), (Main.YardAt, 26)];
 
-    static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C)> items, Material material) =>
-        Multi(parent, mesh, items.Select(i => (i.T, i.C, 0f)).ToList(), material);
-
-    static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C, float Snow)> items, Material? material)
+    static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C)> items, Material material)
     {
-        if (items.Count == 0) return;
+        if (items.Count > 0) Multi(parent, mesh, items.Select(i => (i.T, i.C, 0f)).ToList(), material);
+    }
+
+    static MultiMeshInstance3D Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C, float Snow)> items, Material? material)
+    {
         var mm = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, UseColors = true, UseCustomData = true, Mesh = mesh, InstanceCount = items.Count };
         for (var i = 0; i < items.Count; i++)
         {
@@ -509,6 +552,8 @@ public partial class Terrain(WorldGen world) : Node3D
             mm.SetInstanceColor(i, items[i].C);
             mm.SetInstanceCustomData(i, new Color(items[i].Snow, 0, 0, 0));
         }
-        parent.AddChild(new MultiMeshInstance3D { Multimesh = mm, MaterialOverride = material });
+        var drawn = new MultiMeshInstance3D { Multimesh = mm, MaterialOverride = material };
+        parent.AddChild(drawn);
+        return drawn;
     }
 }

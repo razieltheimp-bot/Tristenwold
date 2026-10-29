@@ -29,6 +29,7 @@ public static class Graphics
         terrain.GrassDensity = q switch { Quality.High => 2.5f, Quality.Ultra => 3.5f, Quality.Cinematic => 5, _ => 1 };
         terrain.Fancy = q >= Quality.Medium;
         terrain.Scans = q >= Quality.High && !mobile; // photo-scanned trees, rock faces and undergrowth
+        terrain.ScanReach = q switch { Quality.High => 140, Quality.Ultra => 200, _ => 320 };
 
         env.TonemapMode = q >= Quality.High ? Godot.Environment.ToneMapper.Agx : Godot.Environment.ToneMapper.Filmic;
         env.FogDensity = q switch { Quality.Low => 0.005f, Quality.Medium => 0.003f, Quality.High => 0.0022f, _ => 0.0017f };

@@ -115,16 +115,18 @@ public static class Models
     }
 
     /// <summary>The first mesh in a model, for drawing many copies at once (trees, rocks, grass).</summary>
-    public static Mesh? MeshOf(string path)
+    /// <param name="part">Which of the file's meshes (a scan set lays its plants or rocks out side by side).</param>
+    public static Mesh? MeshOf(string path, int part = 0)
     {
-        if (Meshes.TryGetValue(path, out var mesh)) return mesh;
+        var key = part == 0 ? path : $"{path}#{part}";
+        if (Meshes.TryGetValue(key, out var mesh)) return mesh;
         Mesh? found = null;
         if (Scene(path)?.Instantiate() is Node3D model)
         {
-            found = model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().FirstOrDefault()?.Mesh;
+            found = model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().ElementAtOrDefault(part)?.Mesh;
             model.Free();
         }
-        return Meshes[path] = found;
+        return Meshes[key] = found;
     }
 
     /// <summary>The bounding box of everything visible in a model, in the model's parent's space.</summary>
