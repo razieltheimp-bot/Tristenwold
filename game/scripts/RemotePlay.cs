@@ -58,7 +58,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
         _tunnel.Start(url =>
         {
             Link = _screen.LinkFor(url);
-            Say($"Play from your phone: {Link}");
+            GD.Print($"Play from your phone: {Link}"); // on screen it is the "Phone link" line already, and the QR code
             if (_telegram is null) Say("Telegram isn't set up, so the link wasn't sent there (set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID).");
             else _telegram.SendAsync($"Tristinwold is ready to play from your iPhone. Open this link in Safari and log in (hold the phone sideways for the full picture, or upright for a controller under it):\n{Link}\n\n(In Safari: Share, then Add to Home Screen, and it opens full screen. The link changes each time the game is started on the PC; the new one is always posted here.)")
                 .ContinueWith(sent => { if (sent.Result) Say("Sent the link to your Telegram group."); });

@@ -475,7 +475,7 @@ public partial class Main : Node3D
     public void RemoteNote(string text)
     {
         _remoteNotes.Add(text);
-        if (_remoteNotes.Count > 6) _remoteNotes.RemoveAt(0);
+        if (_remoteNotes.Count > 3) _remoteNotes.RemoveAt(0);
         RemoteLabel("RemoteNotes", 24).Text = string.Join("\n", _remoteNotes);
     }
 
@@ -487,16 +487,18 @@ public partial class Main : Node3D
         var box = layer.GetNodeOrNull<VBoxContainer>("RemoteLines");
         if (box is null)
         {
-            box = new VBoxContainer { Name = "RemoteLines", GrowVertical = Control.GrowDirection.Begin, GrowHorizontal = Control.GrowDirection.Both, MouseFilter = Control.MouseFilterEnum.Ignore };
-            box.SetAnchorsPreset(Control.LayoutPreset.CenterBottom);
-            (box.OffsetTop, box.OffsetBottom) = (-8, -8);
+            // Tucked into the bottom-right corner, small, so it never sits across the start screen's buttons.
+            box = new VBoxContainer { Name = "RemoteLines", GrowVertical = Control.GrowDirection.Begin, GrowHorizontal = Control.GrowDirection.Begin, MouseFilter = Control.MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.End };
+            box.SetAnchorsPreset(Control.LayoutPreset.BottomRight);
+            (box.OffsetTop, box.OffsetBottom, box.OffsetLeft, box.OffsetRight) = (-6, -6, -12, -12);
+            box.AddThemeConstantOverride("separation", 0);
             layer.AddChild(box);
         }
         if (box.GetNodeOrNull<Label>(name) is { } label) return label;
         label = new Label
         {
-            Name = name, Modulate = new Color(1, 1, 1, 0.8f), HorizontalAlignment = HorizontalAlignment.Center,
-            LabelSettings = new LabelSettings { FontSize = 13, OutlineSize = 4, OutlineColor = Colors.Black },
+            Name = name, Modulate = new Color(1, 1, 1, 0.7f), HorizontalAlignment = HorizontalAlignment.Right, SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd,
+            LabelSettings = new LabelSettings { FontSize = 11, OutlineSize = 3, OutlineColor = Colors.Black },
         };
         box.AddChild(label);
         if (name == "RemoteLink") box.MoveChild(label, -1); // the link last, at the very bottom
