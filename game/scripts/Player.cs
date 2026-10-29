@@ -972,7 +972,7 @@ public partial class Player : Fighter
 
     /// <summary>Foes: everything that fights, less the company's own and the alliance.</summary>
     IEnumerable<Enemy> Foes() =>
-        GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly);
+        GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly && !e.Kin);
 
     /// <summary>The company's companions that are with this hero and on their feet.</summary>
     public IEnumerable<Enemy> Companions() =>

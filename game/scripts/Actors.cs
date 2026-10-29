@@ -196,6 +196,9 @@ public partial class Enemy : Fighter
     /// <summary>One of a barbarian clan, raiding: every guard goes for it.</summary>
     public bool Raider { get; set; }
 
+    /// <summary>One of the hero's own clan: it won't fight the company, and the company can't strike it (the guards still can).</summary>
+    public bool Kin { get; set; }
+
     /// <summary>
     /// A blow from one of the townsfolk (a stone, a bottle, a smith's hammer): a share of its health. It hurts, but it
     /// never finishes it: that's for the hero, or the Watch.
@@ -411,12 +414,12 @@ public partial class Enemy : Fighter
             : $"{Stats.Name}\n{bar}";
         if (State != EnemyState.Dead && Frenzy > 0) Plate.Text = $"FRENZIED\n{Plate.Text}";
         else if (State != EnemyState.Dead && Infection > 0.05 && !Corrupted) Plate.Text += $"\nRift {Infection:P0}";
-        Plate.Modulate = Frenzy > 0 ? new Color("#d890ff") : Leader is not null ? new Color("#a8e0a0") : Friendly ? new Color("#a8c8f0") : DeviantId is null && !Named ? new Color("#e8dcc4") : new Color("#ff7a5a");
+        Plate.Modulate = Frenzy > 0 ? new Color("#d890ff") : Leader is not null ? new Color("#a8e0a0") : Friendly || Kin ? new Color("#a8c8f0") : DeviantId is null && !Named ? new Color("#e8dcc4") : new Color("#ff7a5a");
     }
 
     public void Provoke(Player by)
     {
-        if (State is EnemyState.Dead or EnemyState.Fleeing || Friendly) return;
+        if (State is EnemyState.Dead or EnemyState.Fleeing || Friendly || Kin) return;
         if (Kind.Timid || Young) { _target = by; State = EnemyState.Fleeing; return; } // quarry and the young run
         _target = by;
         if (State != EnemyState.Fighting) Cry();
@@ -561,7 +564,7 @@ public partial class Enemy : Fighter
 
         // Wary creatures (metallic dragons) leave people alone unless attacked; friends and the young never start it.
         var player = _target ?? Player.Local;
-        if (State == EnemyState.Idle && !Kind.Wary && !Friendly && !Young && _ignore <= 0 && player is not null && !player.Downed
+        if (State == EnemyState.Idle && !Kind.Wary && !Friendly && !Kin && !Young && _ignore <= 0 && player is not null && !player.Downed
             && player.GlobalPosition.DistanceTo(GlobalPosition) < (Kind.Timid ? 16 : 14) * MathF.Sqrt(bulk))
             Provoke(player);
 

@@ -102,6 +102,8 @@ public partial class Main
     {
         if (Guilds.Member(person.Npc.Id) is { Role: GuildRole.Rival } && Guilds.OfMember(person.Npc.Id) is { } g)
             return Guilds.RivalLine(g, _guilds.For(g.Calling));
+        // The townsfolk know who you are.
+        if (person.Npc.HomeId == "city:tristinwold" && _standing.Aside(_lootRng) is { } aside) return $"{aside} {person.Npc.Greeting}";
         return person.Npc.Greeting;
     }
 
@@ -259,7 +261,7 @@ public partial class Main
     void Resolve(Storylet story, StoryChoice c, bool won)
     {
         var before = _guilds.Rank(story.Guild);
-        Guilds.Choose(_guilds, story, c, won);
+        Guilds.Choose(_guilds, story, c, won, _standing);
         if (c.Crowns != 0 && (won || !c.Duel)) _player.Crowns = Math.Max(0, _player.Crowns + c.Crowns);
         _hud.Talk(story.Title, won || c.Loss is null ? c.Outcome : c.Loss, ("...", _hud.EndTalk));
         RankedUp(story.Guild, before);

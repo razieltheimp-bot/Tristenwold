@@ -32,8 +32,15 @@ public enum GuildRank { Initiate, Member, Adept, Veteran, Master }
 /// <param name="Standing">How the guild thinks of you after.</param>
 /// <param name="Rivalry">How much hotter (or cooler) your rival burns.</param>
 /// <param name="Duel">This choice is settled with a duel against your rival: <paramref name="Outcome"/> is told if you win, <paramref name="Loss"/> if you lose.</param>
+/// <param name="Honour">What the world makes of it: the good in it (see <see cref="Standing"/>)...</param>
+/// <param name="Infamy">...and the evil. Every story has a choice with some of each.</param>
+/// <param name="Deed">How people tell of it after ("sold a Knife to the Watch"); the story's title if null.</param>
 public sealed record StoryChoice(string Label, string Outcome, int Standing = 0, int Rivalry = 0, int Crowns = 0, string? Flag = null,
-    bool Duel = false, string? Loss = null);
+    bool Duel = false, string? Loss = null, int Honour = 0, int Infamy = 0, string? Deed = null)
+{
+    public bool Good => Honour > Infamy;
+    public bool Evil => Infamy > Honour;
+}
 
 /// <summary>
 /// A piece of guild drama. Each guild has its stories, told one after another as you rise and as time passes: a
@@ -197,113 +204,124 @@ public static class Guilds
         new("broken_blade", Calling.Warrior, GuildRank.Initiate, "guild/tamsin", "The Broken Blade",
             "Somebody snapped the Marshal's old sword in the night: the one he carried at the Bell Keep. Corin says he saw young Odo by the racks. Odo swears he never touched it, and he's near tears. Brannoc wants to know what you make of it.",
             [
-                new("\"Corin's lying to look good.\"", "You call Corin a liar in front of the whole yard. Then Greta finds frost in the break: the cold snapped it, not a hand. Odo is cleared, Brannoc grunts, and Corin will never forget it.", 10, 2, Flag: "defended_odo"),
-                new("\"Odo was there. Let him answer for it.\"", "Odo is set to scrub the barracks for a month. A week later Greta finds frost in the break: nobody broke it. Odo won't meet your eye, and Corin smiles at you like a friend.", -5, -1, Flag: "blamed_odo"),
-                new("\"Look at the steel before you look at anyone.\"", "Greta holds the halves to the light: frost in the grain. The cold snapped it. Nobody is to blame, and Brannoc looks at you like a man who's just found a sergeant.", 15, Flag: "wise"),
+                new("\"Corin's lying to look good.\"", "You call Corin a liar in front of the whole yard. Then Greta finds frost in the break: the cold snapped it, not a hand. Odo is cleared, Brannoc grunts, and Corin will never forget it.", 10, 2, Flag: "defended_odo", Honour: 3, Deed: "stood up for a farm boy in the Iron Circle's yard"),
+                new("\"Odo was there. Let him answer for it.\"", "Odo is set to scrub the barracks for a month. A week later Greta finds frost in the break: nobody broke it. Odo won't meet your eye, and Corin smiles at you like a friend.", -5, -1, Flag: "blamed_odo", Infamy: 3, Deed: "let a farm boy take the blame for a broken sword"),
+                new("\"Look at the steel before you look at anyone.\"", "Greta holds the halves to the light: frost in the grain. The cold snapped it. Nobody is to blame, and Brannoc looks at you like a man who's just found a sergeant.", 15, Flag: "wise", Honour: 2, Deed: "looked at the steel before the man"),
             ]),
         new("tong_purse", Calling.Warrior, GuildRank.Member, "guild/greta", "The Tong's Purse",
             "A Ravenscrew Tong boss has sent a purse to the yard: fat, heavy, and asking only that the Iron Circle look the other way when the Tongs do business at the docks. The roof leaks, Brannoc's tempted, and he's asked you.",
             [
-                new("\"Take it. Roofs don't mend themselves.\"", "The roof is mended. The docks get a little darker. Some of the yard look at you differently now.", -10, 0, 60, "tong_money"),
-                new("\"Send it back, with a message.\"", "The purse goes back with a dented helmet in it. The Tongs take the point, and the yard cheers you in the drills.", 15, Flag: "tong_refused"),
-                new("\"Take it, and use it against them.\"", "Half the purse mends the roof; the other half buys the names of the Tong's dock men, who find the Watch waiting for them. Brannoc laughs for the first time in a month.", 10, 0, 30, "double_game"),
+                new("\"Take it. Roofs don't mend themselves.\"", "The roof is mended. The docks get a little darker. Some of the yard look at you differently now.", -10, 0, 60, "tong_money", Infamy: 4, Deed: "took the Tongs' money for the Iron Circle"),
+                new("\"Send it back, with a message.\"", "The purse goes back with a dented helmet in it. The Tongs take the point, and the yard cheers you in the drills.", 15, Flag: "tong_refused", Honour: 4, Deed: "sent the Tongs' purse back in a dented helmet"),
+                new("\"Take it, and use it against them.\"", "Half the purse mends the roof; the other half buys the names of the Tong's dock men, who find the Watch waiting for them. Brannoc laughs for the first time in a month.", 10, 0, 30, "double_game", Honour: 2, Deed: "turned the Tongs' own silver against them"),
             ]),
         new("first_blade", Calling.Warrior, GuildRank.Adept, "guild/brannoc", "First Blade",
             "Brannoc is getting old, and the yard needs someone to lead the drills: the First Blade. It's you or Corin, and the yard wants it settled the old way.",
             [
-                new("\"I'll fight him for it.\"", "Corin goes down in the dust, and the yard roars. Brannoc hands you the drill-staff: First Blade of the Iron Circle. Corin gets up slowly, and says nothing at all.", 25, 2, Flag: "first_blade", Duel: true,
+                new("\"I'll fight him for it.\"", "Corin goes down in the dust, and the yard roars. Brannoc hands you the drill-staff: First Blade of the Iron Circle. Corin gets up slowly, and says nothing at all.", 25, 2, Flag: "first_blade", Honour: 2, Deed: "won First Blade of the Iron Circle fair", Duel: true,
                     Loss: "Corin's blade is at your throat, and the yard goes quiet. He's First Blade. \"Next time,\" he says, and for once he doesn't smirk."),
-                new("\"Let Corin have it. The yard needs him more.\"", "Corin stares at you, then nods, and something between you is a little less sharp. The yard thinks you're either very wise or very soft.", 5, -3, Flag: "gave_blade"),
+                new("\"Let Corin have it. The yard needs him more.\"", "Corin stares at you, then nods, and something between you is a little less sharp. The yard thinks you're either very wise or very soft.", 5, -3, Flag: "gave_blade", Honour: 2, Deed: "gave up First Blade for the yard's sake"),
+                new("\"Cut Corin's saddle-girth the night before.\"", "Corin's girth parts in the first pass and he goes down in the dust, white with rage. The yard cheers; Greta looks at the cut leather, then at you, and says nothing. First Blade, by a knife in the dark.", 15, 4, Flag: "cut_girth", Infamy: 5, Deed: "won First Blade by cutting a girth in the dark"),
             ]),
         new("marshals_last_fight", Calling.Warrior, GuildRank.Veteran, "guild/tamsin", "The Marshal's Last Fight",
             "Brannoc is going north. A frost troll's been seen at the old place where his brother died, and he means to finish it, alone if he must. He's asked you to keep the yard while he's gone.",
             [
-                new("\"I'm going with him.\"", "You go north together, and come back together, with a troll's tusk and Brannoc's brother's ring. He gives you the ring. The yard calls you Master of the Circle.", 30, 0, 100, "went_north"),
-                new("\"I'll keep the yard.\"", "The yard holds while he's gone; when he comes back, limping, with a troll's tusk, he finds the drills sharper than he left them. Master of the Circle, he calls you.", 30, Flag: "kept_yard"),
+                new("\"I'm going with him.\"", "You go north together, and come back together, with a troll's tusk and Brannoc's brother's ring. He gives you the ring. The yard calls you Master of the Circle.", 30, 0, 100, "went_north", Honour: 4, Deed: "went north after a troll with the Marshal"),
+                new("\"I'll keep the yard.\"", "The yard holds while he's gone; when he comes back, limping, with a troll's tusk, he finds the drills sharper than he left them. Master of the Circle, he calls you.", 30, Flag: "kept_yard", Honour: 2, Deed: "kept the Iron Circle's yard while the Marshal went north"),
+                new("\"Let him go alone, and take the yard while he's gone.\"", "He goes north alone. While he's gone you take the drill-staff, the ledger and the flag, and when he limps back with a troll's tusk the yard is yours and the men won't meet his eye. Master of the Circle, he calls you, and means something else.", 30, 1, 50, "took_yard", Infamy: 6, Deed: "took the Iron Circle's yard behind the Marshal's back"),
             ]),
 
         new("skimming", Calling.Rogue, GuildRank.Initiate, "guild/nell", "Skimming",
             "The take's forty crowns light this month. The ledger's been doctored: Mags's hand, Nell's sure of it. Sable is saying it was Jory. Vesper hasn't said anything, which is worse.",
             [
-                new("\"Cover for Mags.\"", "Mags is skimming for her sister's medicine. You quietly put forty of your own crowns in the box. Vesper notices, of course, and says nothing: loyalty's worth forty crowns to her.", 10, 0, -40, "covered_mags"),
-                new("\"Tell Vesper the truth.\"", "Vesper hears it, sends Mags's sister a healer, and docks Mags a month. The Knives respect the truth, mostly. Sable is furious her story fell apart.", 10, 1, Flag: "told_vesper"),
-                new("\"Let Sable have Jory.\"", "Jory takes the blame and a beating. Sable owes you one now. The rooftops go quiet when you pass.", -10, -2, Flag: "sold_jory"),
+                new("\"Cover for Mags.\"", "Mags is skimming for her sister's medicine. You quietly put forty of your own crowns in the box. Vesper notices, of course, and says nothing: loyalty's worth forty crowns to her.", 10, 0, -40, "covered_mags", Honour: 3, Deed: "paid a forger's debt for her sick sister"),
+                new("\"Tell Vesper the truth.\"", "Vesper hears it, sends Mags's sister a healer, and docks Mags a month. The Knives respect the truth, mostly. Sable is furious her story fell apart.", 10, 1, Flag: "told_vesper", Honour: 1, Deed: "told the Knives the truth about the skimming"),
+                new("\"Let Sable have Jory.\"", "Jory takes the blame and a beating. Sable owes you one now. The rooftops go quiet when you pass.", -10, -2, Flag: "sold_jory", Infamy: 4, Deed: "let a lookout take a beating for someone else's theft"),
             ]),
         new("lantern_boys", Calling.Rogue, GuildRank.Member, "guild/jory", "The Lantern Boys",
             "The Lantern Boys are working Knives streets, and the Gutter Prince is laughing about it. Vesper wants a message sent. She's left the kind of message up to you.",
             [
-                new("\"Rob their stash.\"", "You lift the Lantern Boys' whole stash from under the Prince's nose. They're a laughing-stock by morning, and you're richer.", 10, 0, 50, "robbed_lanterns"),
-                new("\"Parley with the Gutter Prince.\"", "You sit down with the Gutter Prince over bad wine, and come away with a border, a truce, and the beginning of a strange friendship.", 15, Flag: "parley"),
-                new("\"Burn their den.\"", "The Lantern Boys' den burns. Nobody dies, quite. Vesper looks at you for a long time, then pours you a drink.", 5, -1, Flag: "burned_den"),
+                new("\"Rob their stash.\"", "You lift the Lantern Boys' whole stash from under the Prince's nose. They're a laughing-stock by morning, and you're richer.", 10, 0, 50, "robbed_lanterns", Infamy: 2, Deed: "robbed the Lantern Boys blind"),
+                new("\"Parley with the Gutter Prince.\"", "You sit down with the Gutter Prince over bad wine, and come away with a border, a truce, and the beginning of a strange friendship.", 15, Flag: "parley", Honour: 3, Deed: "made peace with the Gutter Prince"),
+                new("\"Burn their den.\"", "The Lantern Boys' den burns. Nobody dies, quite. Vesper looks at you for a long time, then pours you a drink.", 5, -1, Flag: "burned_den", Infamy: 5, Deed: "burned the Lantern Boys' den"),
             ]),
         new("who_sold_us", Calling.Rogue, GuildRank.Adept, "guild/vesper", "Who Sold Us",
             "The Watch was waiting at the counting-house job. Someone sold out the crew. Sable says it was you, loudly, to anyone who'll listen.",
             [
-                new("\"Then Sable can prove it with a blade.\"", "Sable yields with your knife at her collar, and the yard believes you. The real informant is found a week later: a Watch spy among the fences.", 20, 2, Flag: "beat_sable", Duel: true,
+                new("\"Then Sable can prove it with a blade.\"", "Sable yields with your knife at her collar, and the yard believes you. The real informant is found a week later: a Watch spy among the fences.", 20, 2, Flag: "beat_sable", Honour: 1, Deed: "cleared your name with a blade", Duel: true,
                     Loss: "Sable's knife is at your collar. The yard doesn't believe her, quite, but they don't believe you either. The real informant turns up a week later, and nobody apologises."),
-                new("\"I'll find the real one.\"", "Three nights on the rooftops with Jory, and you find him: a fence called Coyle, selling to the Watch. Vesper deals with him. Sable doesn't apologise, but she stops talking.", 20, Flag: "found_informant"),
+                new("\"I'll find the real one.\"", "Three nights on the rooftops with Jory, and you find him: a fence called Coyle, selling to the Watch. Vesper deals with him. Sable doesn't apologise, but she stops talking.", 20, Flag: "found_informant", Honour: 2, Deed: "found the Watch's spy among the fences"),
+                new("\"Sell Coyle to the Watch yourself, first.\"", "You find the fence Coyle in three nights, and sell him to the Watch before Vesper can get to him: the reward is yours, and the Knives never learn who had their names. Jory looks at the coin and says nothing.", 10, 0, 80, "sold_coyle", Infamy: 4, Deed: "sold a fence to the Watch for the reward"),
             ]),
         new("velvet_crown", Calling.Rogue, GuildRank.Veteran, "guild/nell", "The Velvet Crown",
             "Vesper is tired. She wants to step back, and the Knives need someone with fingers in every pocket in the city. Nell says it's you. Sable says it's her.",
             [
-                new("\"I'll take it.\"", "Vesper gives you her ring, and her ledger, and her rooftop. The Knives are yours. Sable leaves the city for a while.", 30, 1, 150, "velvet_crown"),
-                new("\"Give it to Sable.\"", "You stand aside, and Sable takes the chair, astonished. She owes you everything, and she knows it. Vesper calls you the cleverest knife she ever sharpened.", 20, -5, Flag: "crowned_sable"),
+                new("\"I'll take it.\"", "Vesper gives you her ring, and her ledger, and her rooftop. The Knives are yours. Sable leaves the city for a while.", 30, 1, 150, "velvet_crown", Honour: 1, Deed: "took the Velvet Knives' chair"),
+                new("\"Give it to Sable.\"", "You stand aside, and Sable takes the chair, astonished. She owes you everything, and she knows it. Vesper calls you the cleverest knife she ever sharpened.", 20, -5, Flag: "crowned_sable", Honour: 3, Deed: "gave the Velvet Knives to your rival"),
+                new("\"Take it, and sell the ledger to the Tongs.\"", "You take the ring and the ledger, and sell the ledger's pages to the Tongs one at a time. The Knives are yours, and poorer, and the Tongs know every fence in the city. Vesper leaves for the coast without a word.", 20, 2, 250, "sold_ledger", Infamy: 7, Deed: "sold the Velvet Knives' ledger to the Tongs"),
             ]),
 
         new("missing_book", Calling.Mage, GuildRank.Initiate, "guild/anselm", "The Missing Book",
             "A book is missing from the locked shelves: \"On the Seams of the World\", about the Rift. Isadora was last in the stacks. Liesl has been dreaming of doors. Brother Anselm is beside himself.",
             [
-                new("\"Let me look in Liesl's room.\"", "The book is under Liesl's pillow. She's been reading it to make the dreams stop. They haven't. You take it back quietly, and Liesl starts trusting you.", 10, Flag: "liesl_book"),
-                new("\"Ask Isadora.\"", "Isadora is icily offended, didn't take it, and tells the whole Archive you suspected her. Anselm finds it under Liesl's pillow the next day.", 0, 2, Flag: "accused_isadora"),
-                new("\"Tell the Archmage.\"", "Selwyn finds the book and the girl, and sits with Liesl a long while. He thanks you for not making it a scandal.", 15, Flag: "told_selwyn"),
+                new("\"Let me look in Liesl's room.\"", "The book is under Liesl's pillow. She's been reading it to make the dreams stop. They haven't. You take it back quietly, and Liesl starts trusting you.", 10, Flag: "liesl_book", Honour: 2, Deed: "found a missing book without making a scandal"),
+                new("\"Ask Isadora.\"", "Isadora is icily offended, didn't take it, and tells the whole Archive you suspected her. Anselm finds it under Liesl's pillow the next day.", 0, 2, Flag: "accused_isadora", Infamy: 1, Deed: "accused a prodigy of theft in front of the whole Archive"),
+                new("\"Tell the Archmage.\"", "Selwyn finds the book and the girl, and sits with Liesl a long while. He thanks you for not making it a scandal.", 15, Flag: "told_selwyn", Honour: 2, Deed: "took a lost girl's trouble to the Archmage"),
+                new("\"Find it, and sell it.\"", "The book is under Liesl's pillow. You take it, and a collector in the Warrens pays well for a book from the locked stacks. Anselm reports it lost; Liesl stops sleeping again.", -5, 0, 90, "sold_book", Infamy: 4, Deed: "sold a book from the Archive's locked stacks"),
             ]),
         new("rift_light", Calling.Mage, GuildRank.Member, "guild/liesl", "Rift-Light",
             "Liesl has a vial of gold light, bled from the vein of a corrupted dragon. She thinks it can show her what's behind the door in her dreams. She's asking you to help her study it.",
             [
-                new("\"Destroy it. Now.\"", "The vial shatters on the flagstones and the light screams as it goes out. Liesl cries, then sleeps through the night for the first time in a year.", 10, Flag: "destroyed_vial"),
-                new("\"Let's study it, carefully.\"", "You learn how the Rift moves through a dragon's blood, and how it can be slowed. Liesl learns too much, and draws doors in the margins of everything.", 5, Flag: "rift_study"),
-                new("\"Take it to the Archmage.\"", "Selwyn locks the vial in the deepest vault, and tells the Magi to watch the corrupted dragons closely. He watches Liesl closely too.", 15, Flag: "vial_to_selwyn"),
+                new("\"Destroy it. Now.\"", "The vial shatters on the flagstones and the light screams as it goes out. Liesl cries, then sleeps through the night for the first time in a year.", 10, Flag: "destroyed_vial", Honour: 3, Deed: "smashed a vial of Rift-light"),
+                new("\"Let's study it, carefully.\"", "You learn how the Rift moves through a dragon's blood, and how it can be slowed. Liesl learns too much, and draws doors in the margins of everything.", 5, Flag: "rift_study", Infamy: 1, Deed: "studied the Rift in a dragon's blood"),
+                new("\"Take it to the Archmage.\"", "Selwyn locks the vial in the deepest vault, and tells the Magi to watch the corrupted dragons closely. He watches Liesl closely too.", 15, Flag: "vial_to_selwyn", Honour: 3, Deed: "locked a vial of Rift-light in the deepest vault"),
+                new("\"Sell it to the Tongs. They'll pay anything.\"", "A Tong captain pays a fortune for a vial of screaming light, and asks no questions. You don't ask what it's for. A month later a dock warehouse burns violet for a night.", -10, 0, 200, "sold_vial", Infamy: 7, Deed: "sold a vial of Rift-light to the Tongs"),
             ]),
         new("prodigys_wager", Calling.Mage, GuildRank.Adept, "guild/isadora", "The Prodigy's Wager",
             "There's a seat on the Archive council, and Isadora wants it. So, apparently, do you. She proposes a wager: a mage's duel in the garden, winner takes the seat.",
             [
-                new("\"Accept.\"", "Isadora's ward breaks and she lowers her hands, white-faced. The seat is yours. \"Again,\" she says, \"some day,\" and means it.", 25, 2, Flag: "council_seat", Duel: true,
+                new("\"Accept.\"", "Isadora's ward breaks and she lowers her hands, white-faced. The seat is yours. \"Again,\" she says, \"some day,\" and means it.", 25, 2, Flag: "council_seat", Honour: 1, Deed: "won a seat on the Magi's council", Duel: true,
                     Loss: "Your ward breaks first. Isadora takes the seat, and for a moment she almost looks sorry."),
-                new("\"Take the seat yourself, Isadora.\"", "Isadora stares at you, suspicious of kindness. Then she takes the seat, and votes your way on the first thing that matters.", 5, -3, Flag: "gave_seat"),
+                new("\"Take the seat yourself, Isadora.\"", "Isadora stares at you, suspicious of kindness. Then she takes the seat, and votes your way on the first thing that matters.", 5, -3, Flag: "gave_seat", Honour: 3, Deed: "gave a council seat to your rival"),
+                new("\"Accept, and dose her tea first.\"", "Isadora's hands shake before the first ward, and her ward breaks like glass. The seat is yours. She knows, later, from the taste she remembers, and never says a word to anyone, which is worse.", 20, 5, Flag: "dosed_isadora", Infamy: 5, Deed: "dosed a rival's tea before a duel"),
             ]),
         new("what_ilse_keeps", Calling.Mage, GuildRank.Veteran, "guild/selwyn", "What Ilse Keeps",
             "Sister Ilse at the Archive keeps a second key, to a shelf that isn't on any list. Selwyn has known for years. Now he's afraid of what's on it: a record, in Ilse's hand, of a man who was saved from drowning, and the name he took.",
             [
-                new("\"Keep her secret.\"", "You leave the shelf locked. Ilse thanks you without saying for what, and some nights you wonder about the saved man, and the name he took.", 25, Flag: "kept_ilse_secret"),
-                new("\"Read it.\"", "The page is in Ilse's hand: a man pulled from the harbor, who should have died, and who took the name Vann. You put it back. You don't sleep well.", 20, Flag: "read_vann"),
+                new("\"Keep her secret.\"", "You leave the shelf locked. Ilse thanks you without saying for what, and some nights you wonder about the saved man, and the name he took.", 25, Flag: "kept_ilse_secret", Honour: 2, Deed: "kept a librarian's secret"),
+                new("\"Read it.\"", "The page is in Ilse's hand: a man pulled from the harbor, who should have died, and who took the name Vann. You put it back. You don't sleep well.", 20, Flag: "read_vann", Deed: "read what Ilse keeps"),
+                new("\"Sell what Ilse keeps to the Tongs.\"", "The Tongs pay in gold for the name of the man pulled from the harbor. You don't see what they do with it. Ilse doesn't know it was you; Vann, somewhere, finds his door watched.", -15, 0, 150, "sold_vann", Infamy: 8, Deed: "sold a saved man's secret to the Tongs"),
             ]),
 
         new("stolen_song", Calling.Bard, GuildRank.Initiate, "guild/elowen", "The Stolen Song",
             "A song is going round the taverns that Tobin wrote, and it's a good one. Fennick is singing it as his own, and the crowds love him for it. Tobin says nothing, but he's stopped drumming.",
             [
-                new("\"Call Fennick out in front of the crowd.\"", "You stand up in the Salt Barrel and sing Tobin's second verse, the one Fennick never heard. The crowd turns on him. Tobin drums all the way home.", 10, 2, Flag: "exposed_fennick"),
-                new("\"Help Tobin write a better one.\"", "You and Tobin write a song so good nobody remembers the first. Fennick can't sing this one: it's about him.", 15, 1, Flag: "pips_song"),
-                new("\"Let it go. Songs belong to everyone.\"", "Tobin nods, and goes quiet. Fennick buys you a drink that tastes of something you can't name.", -5, -1, Flag: "let_song_go"),
+                new("\"Call Fennick out in front of the crowd.\"", "You stand up in the Salt Barrel and sing Tobin's second verse, the one Fennick never heard. The crowd turns on him. Tobin drums all the way home.", 10, 2, Flag: "exposed_fennick", Honour: 2, Deed: "shamed a song-thief in the Salt Barrel"),
+                new("\"Help Tobin write a better one.\"", "You and Tobin write a song so good nobody remembers the first. Fennick can't sing this one: it's about him.", 15, 1, Flag: "pips_song", Honour: 3, Deed: "helped a drummer write a better song"),
+                new("\"Let it go. Songs belong to everyone.\"", "Tobin nods, and goes quiet. Fennick buys you a drink that tastes of something you can't name.", -5, -1, Flag: "let_song_go", Infamy: 1, Deed: "let a song-thief keep what he stole"),
+                new("\"Sell Tobin the rest of his own song back.\"", "Tobin pays you half his winter's coin for the second verse he wrote himself, and thanks you. Fennick buys you a drink and asks how you did it.", -5, 0, 40, "sold_tobin", Infamy: 4, Deed: "sold a drummer his own song"),
             ]),
         new("the_pamphlet", Calling.Bard, GuildRank.Member, "guild/hollis", "The Pamphlet",
             "A Tong boss wants a pamphlet written: lies about a magistrate who won't take his bribes. He's offered the College a fat purse to print it. The roof leaks, Odalys hasn't said no, and Hollis has asked you.",
             [
-                new("\"Write it. The College needs the money.\"", "The pamphlet goes out and the magistrate is ruined. The roof is mended. Hollis won't look at it.", -10, 0, 60, "wrote_libel"),
-                new("\"Write the truth about the Tong instead.\"", "You write the truth, about the Tong boss, and the whole city reads it. The Watch pays him a visit. Hollis frames a copy.", 15, Flag: "wrote_truth"),
-                new("\"Write it, with his name in the acrostic.\"", "The pamphlet goes out. Read the first letter of every line and it spells the Tong boss's name, and LIAR. The magistrate laughs; the boss can't prove a thing.", 10, 0, 30, "acrostic"),
+                new("\"Write it. The College needs the money.\"", "The pamphlet goes out and the magistrate is ruined. The roof is mended. Hollis won't look at it.", -10, 0, 60, "wrote_libel", Infamy: 5, Deed: "ruined a magistrate with a pamphlet of lies"),
+                new("\"Write the truth about the Tong instead.\"", "You write the truth, about the Tong boss, and the whole city reads it. The Watch pays him a visit. Hollis frames a copy.", 15, Flag: "wrote_truth", Honour: 4, Deed: "wrote the truth about a Tong boss for all to read"),
+                new("\"Write it, with his name in the acrostic.\"", "The pamphlet goes out. Read the first letter of every line and it spells the Tong boss's name, and LIAR. The magistrate laughs; the boss can't prove a thing.", 10, 0, 30, "acrostic", Honour: 1, Deed: "spelled a Tong boss's name down the side of a pamphlet"),
             ]),
         new("midwinter_contest", Calling.Bard, GuildRank.Adept, "guild/bram", "The Midwinter Contest",
             "The Midwinter Contest: the College's best before the whole city, and the winner sings at the Crown. It's you or Fennick, and Bram wants it settled the old way, on the green.",
             [
-                new("\"Then let's play.\"", "Fennick's last note cracks and the green goes silent; yours rings to the walls. You'll sing at the Crown. He shakes your hand, and his is cold.", 25, 2, Flag: "midwinter", Duel: true,
+                new("\"Then let's play.\"", "Fennick's last note cracks and the green goes silent; yours rings to the walls. You'll sing at the Crown. He shakes your hand, and his is cold.", 25, 2, Flag: "midwinter", Honour: 1, Deed: "won the Midwinter contest", Duel: true,
                     Loss: "Fennick's song lifts the whole green, and yours is lost under it. He'll sing at the Crown. \"Next winter,\" he says, kindly, which is worse."),
-                new("\"Let Fennick sing. He needs it more.\"", "Fennick stares at you, then sings the best he ever has, and finds you after to say so. Something between you is a little less of a contest.", 5, -3, Flag: "gave_midwinter"),
+                new("\"Let Fennick sing. He needs it more.\"", "Fennick stares at you, then sings the best he ever has, and finds you after to say so. Something between you is a little less of a contest.", 5, -3, Flag: "gave_midwinter", Honour: 3, Deed: "gave the Midwinter song to your rival"),
+                new("\"Loosen Fennick's strings before he plays.\"", "Fennick's top string goes in the second verse, and the green laughs him off. You'll sing at the Crown. He finds the cut later, and finds you, and only looks.", 20, 5, Flag: "cut_strings", Infamy: 5, Deed: "cut a rival's strings before the Midwinter contest"),
             ]),
         new("last_verse", Calling.Bard, GuildRank.Veteran, "guild/odalys", "The Last Verse",
             "Odalys is dying, slowly and with great style. She has one song unfinished: the history of Tristinwold, every verse but the last. She wants you to write the ending, and to choose what it says.",
             [
-                new("\"An ending with hope in it.\"", "You write the city a hopeful last verse. Odalys hears it, closes her eyes, and says it's a lie worth telling. She names you Laureate after her.", 30, Flag: "hopeful_verse"),
-                new("\"The truth, however it ends.\"", "You write the truth: the Rift, the Tongs, the corrupted dragons. Odalys laughs until she coughs, and names you Laureate after her. \"Somebody had to,\" she says.", 30, 0, 100, "true_verse"),
+                new("\"An ending with hope in it.\"", "You write the city a hopeful last verse. Odalys hears it, closes her eyes, and says it's a lie worth telling. She names you Laureate after her.", 30, Flag: "hopeful_verse", Honour: 2, Deed: "wrote the city a hopeful last verse"),
+                new("\"The truth, however it ends.\"", "You write the truth: the Rift, the Tongs, the corrupted dragons. Odalys laughs until she coughs, and names you Laureate after her. \"Somebody had to,\" she says.", 30, 0, 100, "true_verse", Honour: 3, Deed: "wrote the truth into the city's last verse"),
+                new("\"Write yourself in, and Odalys out.\"", "The last verse of the history of Tristinwold is about you. Odalys hears it, and laughs, and laughs, and names you Laureate anyway: \"They always do,\" she says. Hollis never forgives it.", 25, 0, 100, "vain_verse", Infamy: 4, Deed: "wrote yourself into the city's last verse, and its Laureate out"),
             ]),
     ];
 
@@ -316,7 +334,7 @@ public static class Guilds
     }
 
     /// <summary>A choice made: the guild remembers, the rival burns, and the next story waits a while.</summary>
-    public static void Choose(GuildBook book, Storylet story, StoryChoice choice, bool wonDuel = true)
+    public static void Choose(GuildBook book, Storylet story, StoryChoice choice, bool wonDuel = true, Standing? standing = null)
     {
         var record = book.For(story.Guild);
         record.Done.Add(story.Id);
@@ -324,6 +342,13 @@ public static class Guilds
         record.Rivalry += choice.Rivalry;
         if (choice.Flag is { } flag) book.Flags.Add(choice.Duel && !wonDuel ? flag + "_lost" : flag);
         record.NextDramaAt = book.PlaySeconds + DramaGapSeconds;
+        // The world hears of it (a duel lost settles nothing).
+        if (standing is not null && (wonDuel || !choice.Duel))
+        {
+            var deed = choice.Deed ?? $"had a hand in {story.Title.ToLowerInvariant()}";
+            standing.Good(choice.Honour, deed);
+            standing.Evil(choice.Infamy, deed);
+        }
     }
 
     /// <summary>What a rival says when you meet them, by how hot the rivalry runs and who's been winning.</summary>

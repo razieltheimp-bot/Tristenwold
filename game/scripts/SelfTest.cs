@@ -36,6 +36,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--caravan-only")) { await CaravanTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--humans-only")) { await HumansTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--poise-only")) { await PoiseTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ageing-only")) { await AgeingTest(); Finish(0); return; }
@@ -59,7 +60,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await HumansTest(); await PoiseTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await StandingTest(); await HumansTest(); await PoiseTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1723,6 +1724,153 @@ public partial class SelfTest(Main main) : Node
 
 
 
+
+    /// <summary>
+    /// The Watch career (beats walked post to post, a footpad collared, the captain's pay and promotion), a clan's
+    /// offer at its camp and a raid ridden with it, the price on an outlaw's head and the Watch that stops them, the
+    /// smuggler who makes it go away, and a town that knows a hero when it sees one.
+    /// </summary>
+    async Task StandingTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        var s = main.Standing;
+        var raiders = main.RaidersNode;
+        var book = main.GuildBook;
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        var captainSpot = Main.WatchHouseAt + new Vector3(1.5f, 0, 1.5f);
+
+        // The Watch House: Captain Vale takes you on.
+        await Teleport(captainSpot);
+        main.Talk(Who(Main.WatchCaptain));
+        Check(hud.Choose("I want to join the Watch") && s.Watch.Rank == WatchRank.Recruit, "Captain Harlan Vale takes you on as a recruit of the Watch");
+        hud.EndTalk();
+
+        // A beat walked, post to post, with a footpad to collar on the way.
+        async Task WalkBeat()
+        {
+            await Teleport(captainSpot);
+            main.Talk(Who(Main.WatchCaptain));
+            Check(hud.Choose("Give me a beat") && s.Watch.Patrol is { } b && b.Posts.Count == s.Watch.BeatLength,
+                $"a beat to walk: {string.Join(", ", s.Watch.Patrol?.Posts ?? [])}{(s.Watch.Patrol?.TroubleAt >= 0 ? $" (trouble waits at {s.Watch.Patrol.Posts[s.Watch.Patrol.TroubleAt]})" : " (a quiet one)")}");
+            hud.EndTalk();
+            await Until(() => hud.Tracked.Any(t => t.StartsWith("The Watch: walk to")), 3);
+            Check(hud.Tracked.Any(t => t.StartsWith("The Watch: walk to")), "the tracker shows the next post");
+            var beat = s.Watch.Patrol!;
+            while (!beat.Walked)
+            {
+                var post = beat.NextPost!;
+                var next = beat.Next;
+                await Teleport(TownWatch.PostAt(post)!.Value + new Vector3(1, 0, 1));
+                await Until(() => beat.Next > next || main.Footpad is not null, 4);
+                if (main.Footpad is { } t)
+                {
+                    Check(t.Criminal && hud.Heard("A footpad at"), $"a footpad at {post} comes at you");
+                    var arrests = s.Watch.Arrests;
+                    t.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+                    await Until(() => main.Footpad is null && beat.TroubleMet, 4);
+                    Check(beat.TroubleMet && s.Watch.Arrests > arrests, "collared: an arrest to your name");
+                    await Until(() => beat.Next > next, 4);
+                }
+                Check(beat.Next > next, $"{post}: walked");
+            }
+            var purse = p.Crowns;
+            await Teleport(captainSpot);
+            main.Talk(Who(Main.WatchCaptain));
+            Check(hud.Choose("Reporting back") && s.Watch.Patrol is null && p.Crowns > purse, $"the beat reported to the captain: +{p.Crowns - purse} crowns ({s.Watch.Patrols} walked, {s.Watch.Arrests} arrests)");
+            hud.EndTalk();
+        }
+        await WalkBeat();
+        s.Watch.Patrols = WatchBook.ToWatchman - 1;
+        await WalkBeat();
+        Check(s.Watch.Rank == WatchRank.Watchman && hud.Heard("makes you a watchman of Tristinwold"), "three beats walked, and Captain Vale makes you a watchman");
+        Check(s.Honour > 0 && s.Repute >= Repute.Unknown, $"honour {s.Honour}: the town knows you as {s.Name}");
+
+        // The town knows a hero when it sees one.
+        s.Honour = 130;
+        var osric = Who("tristinwold/shipwright");
+        main.Talk(osric);
+        Check(hud.TalkText.StartsWith("\"") && hud.TalkText.EndsWith(osric.Npc.Greeting) && hud.TalkText.Length > osric.Npc.Greeting.Length, $"a hero of Tristinwold: {hud.TalkText[..Math.Min(70, hud.TalkText.Length)]}...");
+        hud.EndTalk();
+        Check(s.PriceFactor < 1, "and the shops knock a little off");
+
+        // A clan's camp, a raider beaten, and the warchief's offer.
+        if (raiders.NextCamp(p.GlobalPosition) is not { } camp) { Check(false, "a clan camped somewhere"); return; }
+        book.PlaySeconds = camp.At;
+        await Teleport(new Vector3((float)camp.X + 12, 0, (float)camp.Z + 12));
+        await Until(() => raiders.Out.Any(b => b.W.Id == camp.W.Id), 6);
+        var band = raiders.Out.FirstOrDefault(b => b.W.Id == camp.W.Id);
+        Check(band.Raiding is null && band.Bodies?.Count == camp.W.Raiders && hud.Heard("camped between raids"), $"{camp.W.Name} under {camp.W.Chief}, camped on the road: {band.Bodies?.Count} raiders");
+        band.Bodies![1].TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => hud.Talking, 4);
+        Check(hud.Talking && hud.TalkText.Contains("Ride with us"), $"you beat one of them, and {camp.W.Chief} calls a halt: \"Ride with us.\"");
+        Check(hud.Choose("I'll ride with you") && s.Clan.Rank == ClanRank.Spearman && s.Clan.ClanId == camp.W.Id, $"you're a spear of {camp.W.Name}");
+        Check(s.Watch.Rank == WatchRank.None && s.Infamy > 0 && hud.Heard("strikes you off"), "the Watch strikes you off its rolls, and the city hears of it");
+        await Frames(5);
+        var kin = band.Bodies.Where(e => IsInstanceValid(e) && e.State != EnemyState.Dead).ToList();
+        Check(kin.Count == camp.W.Raiders - 1 && kin.All(e => e.Kin && e.State != EnemyState.Fighting), "the clan is kin now: spears lowered");
+        if (raiders.Chief is not { } chief) { Check(false, "its warchief stands among them"); return; }
+        await Teleport(chief.GlobalPosition + new Vector3(2, 0, 0));
+        var act = main.ClanActionForTest(p.GlobalPosition);
+        Check(act?.Verb == $"speak with {camp.W.Chief}", $"by the warchief: E to {act?.Verb}");
+        act?.Act();
+        Check(hud.Choose("How do I stand") && hud.TalkText.Contains("spear of"), $"\"{hud.TalkText[..Math.Min(60, hud.TalkText.Length)]}...\"");
+        hud.EndTalk();
+
+        // Riding with the clan on a place.
+        var round = (int)Math.Floor(book.PlaySeconds / Warband.Round);
+        var start = (round + 1) * Warband.Round - Warband.RaidSeconds + 5;
+        var place = camp.W.Where(main.World, start).Raiding!;
+        await Teleport(new Vector3((float)place.X + 10, 0, (float)place.Z + 10));
+        await Frames(60);
+        book.PlaySeconds = start;
+        await Until(() => raiders.Mine is { Raiding: not null }, 8);
+        Check(raiders.Mine is { Raiding: { } r } && r.Id == place.Id && hud.Heard("Ride with them"), $"your clan falls on {place.Name}, {place.What}: ride with them");
+        var guards = main.PlacesNode.GuardsOf(place.Id).ToList();
+        Check(guards.Count > 0 && guards.All(g => !g.Allied), $"its {guards.Count} guard{(guards.Count == 1 ? "" : "s")} turn on you too");
+        var (purse2, bounty, infamy) = (p.Crowns, s.Bounty, s.Infamy);
+        foreach (var g in guards) g.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => s.Clan.Raids == 1, 6);
+        Check(s.Clan.Raids == 1 && p.Crowns > purse2 && s.Bounty == bounty + Standing.RaidBounty && s.Infamy > infamy,
+            $"the place is plundered: your share {p.Crowns - purse2} crowns, {Standing.RaidBounty} crowns on your head in Tristinwold, infamy {s.Infamy}");
+        await Until(() => hud.Tracked.Any(t => t.StartsWith("Outlaw:")), 3);
+        Check(hud.Tracked.Any(t => t.StartsWith("Outlaw:")), "the tracker says you're an outlaw");
+
+        // Home, an outlaw: the Watch stops you at sight.
+        await Teleport(new Vector3(88, 0, 5));
+        await Until(() => hud.Heard("Halt, in the name of the Watch"), 6);
+        var gate = main.WatchNode.Guards.MinBy(g => g.GlobalPosition.DistanceTo(p.GlobalPosition))!;
+        Check(hud.Heard("Halt, in the name of the Watch") && !gate.Allied, "\"Halt, in the name of the Watch!\": the gate's watchman turns on you");
+        await Until(() => gate.FightingCompany, 6);
+        Check(gate.FightingCompany, "and comes for you");
+        var owed = s.Bounty;
+        p.Crowns = Math.Max(p.Crowns, 500);
+        await Teleport(Main.Smugglers + new Vector3(1, 0, 1));
+        main.Talk(Who("tristinwold/smuggler"));
+        var purse3 = p.Crowns;
+        Check(hud.Choose("Make the Watch forget") && !s.Outlaw && purse3 - p.Crowns == (int)Math.Ceiling(owed * (1 + Standing.SmugglersCut)), $"Nell Corran makes the Watch forget your face, for {purse3 - p.Crowns} crowns");
+        hud.EndTalk();
+        await Frames(5);
+        Check(main.WatchNode.Guards.All(g => g.Allied), "the Watch stands down");
+        Check(s.WhyNotWatch == "you ride with a barbarian clan", "but the Watch won't have a clansman back");
+
+        // The guilds' stories have a good choice and a wicked one, and the town gossips about what you've done.
+        Check(Guilds.Drama.All(d => d.Choices.Any(c => c.Good) && d.Choices.Any(c => c.Evil)), $"every guild story ({Guilds.Drama.Count}) has a good choice and a wicked one");
+        var gossip = false;
+        for (var i = 0; i < 16 && !gossip; i++)
+        {
+            main.Talk(Who(Main.WatchCaptain));
+            hud.Choose("Heard any news");
+            gossip = hud.TalkText.StartsWith("Only that you");
+            hud.EndTalk();
+        }
+        Check(gossip, $"ask for news and you hear about yourself: {hud.TalkText}");
+
+        // And it's all kept with the company.
+        var saved = CompanySave.FromJson(main.Save()).Standing;
+        Check(saved is { } sv && sv.Clan.Raids == 1 && sv.Watch.Dismissals == 1 && sv.Honour == s.Honour && sv.Deeds.Count == s.Deeds.Count, "your name, your clan and your service are saved");
+    }
 
     /// <summary>Creatures stand on the ground under each foot, look at the hero, and swing their tails.</summary>
     async Task PoiseTest()

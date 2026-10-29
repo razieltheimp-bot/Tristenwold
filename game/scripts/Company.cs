@@ -168,6 +168,7 @@ public partial class Main
         var fine = Math.Min(_player.Crowns, Livestock.Fine(victim.Kind.Id));
         _player.Crowns -= fine;
         if (owner == "Tristinwold") _city.Renown = Math.Max(0, _city.Renown - 2);
+        _standing.Evil(1, $"killed somebody's {victim.Kind.Name.ToLowerInvariant()}");
         Sound.Ui("error");
         _hud.Toast($"That was somebody's {victim.Kind.Name.ToLowerInvariant()}. The folk of {owner} make you pay for it: {fine} crowns.", 5);
     }
@@ -182,6 +183,7 @@ public partial class Main
             _places.KilledAt(site);
         }
         if (victim.Leader is not null || victim.Friendly) return;
+        StandingSlain(victim);
         if (victim.Owner is { } owner) Poached(victim, owner);
         StorySlain(victim);
         _player.Killed(victim);
@@ -381,6 +383,7 @@ public partial class Main
         foreach (var o in StoryTalk(person)) yield return o;
         foreach (var o in CaravanTalk(person)) yield return o;
         foreach (var o in SeaTalk(person)) yield return o;
+        foreach (var o in StandingTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;
         foreach (var o in PursuitTalk(person)) yield return o;
@@ -590,7 +593,7 @@ public partial class Main
         var text = $"Today is {Calendar.Date(_city.Day)}. You are {Ageing.Describe(hero, _player.Race.Id, _player.Race.Name, _city.Day)}.\n" +
             $"{c.Name}, level {hero.Level} ({hero.Xp}/{Hero.XpToNext(hero.Level)} xp), {_player.GuildTitle}.{titles} {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend.\n" +
             string.Join("\n", c.Skills.Where(a => a.Id != "attune").Select(a => $"{Slot(a)} {a.Name} (rank {hero.Rank(a.Id)}/{Hero.MaxRank}): {a.Text}")) +
-            $"\nTrades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j)} {_player.Pack.Level(j)}"))}. The Exchange knows you as {_city.RenownTitle}. Feats: {_pursuits.Feats.Count} ({_pursuits.Points} points).";
+            $"\nTrades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j)} {_player.Pack.Level(j)}"))}. The Exchange knows you as {_city.RenownTitle}. Feats: {_pursuits.Feats.Count} ({_pursuits.Points} points).\n{_standing.Summary()}";
         var options = c.Skills.Where(a => a.Id != "attune" && hero.CanRaise(a.Id))
             .Select(a => ($"Raise {a.Name} to rank {hero.Rank(a.Id) + 1}", (Action)(() => { hero.Raise(a.Id); _player.Fit(); Save(); ShowSkills(); }))).ToList();
         options.Add(("Feats", ShowFeats));

@@ -582,6 +582,45 @@ Tooth: Nell Corran, the Drowned Hand's boatwoman by the south pier, rows you out
 make you **cutthroat**, **quartermaster**, and at last **pirate captain**. The company's pardon can be bought back
 from Marit Hale for 400 crowns, at the bottom of the ladder.
 
+### Good or evil: the Watch, the clans, and a name the world knows
+
+Everything you do makes a name for you, and the world reads it. The character sheet (K) says what the town knows
+you as: **nobody in particular**, **a decent sort**, **a name people trust**, **a hero of Tristinwold**; or, the
+other way, **a rough sort** and **a villain**. Honour comes from breaking raids, finishing quests, putting down
+cutthroats in the streets, serving the Watch, and the good choices in the guilds' stories; infamy from piracy,
+riding with a clan, being caught with a hand in someone's purse, killing somebody's animals, and the wicked choices.
+**Every guild story now has a good choice and a wicked one** (cut your rival's saddle-girth the night before the
+bout; sell the Archive's vial of Rift-light to the Tongs; write yourself into the city's last verse and the old
+Laureate out), and what you choose is what people tell of you after.
+
+- **The townsfolk know you.** Walk up to someone in Tristinwold and a hero hears "It's you! The one who broke the
+  raid on Larkmere"; a villain hears "Stay back. I'll call the Watch." Ask for news and you may hear about yourself.
+- **The shops know you.** A hero gets a little off; a rough sort pays more; an outlaw pays through the nose.
+- **A price on your head.** Ride with a clan on a place, or kill a watchman of Tristinwold, and there's a bounty
+  on you in the city. The Watch stops an outlaw at sight ("Halt, in the name of the Watch!"), and every watchman
+  turns on you until it's paid: to Captain Vale at the Watch House, if you can reach him, or to Nell Corran the
+  smuggler by the south pier, for a fifth on top. The tracker says what's on your head.
+
+**The Watch.** Captain Harlan Vale at the Watch House (Corin Vale's father) takes on anyone the town doesn't know
+too well: not outlaws, not villains, not clansmen. A **beat** is a walk from post to post about the city (the gates,
+the Exchange, the Salt Barrel, the Warrens, the docks, the caravan yard; the tracker shows the next post), and on
+most beats a **footpad** is at work at one of them, who sees the Watch's colours on you and comes at you: collar
+him for an arrest. Report back to the captain for your pay (more by rank, and a reward for every arrest). Three
+beats make you a **watchman**, eight beats and four arrests a **sergeant**, and fifteen beats, ten arrests and the
+years for it (level 8) **Captain of the Tristinwold Watch**. A watchman who gets a price on their head, or swears to
+a clan, is struck off the rolls.
+
+**The clans.** Beat one of a camped clan's raiders (not at a raid: at its camp on the road) and, if its warchief
+still stands, he calls a halt and makes you an offer. Take it and you're a **spear** of the clan: the clan is kin
+(it won't fight you, and you can't strike it; the places it raids still can), the city hears you've sworn to
+barbarians, and when your clan falls on a place the tracker says to ride with them. Its guards fight anyone with
+the clan, you included; when they're down, the place is plundered, you take **a share** (more for a bigger clan,
+and for your standing in it), and forty more crowns go on your head in Tristinwold. Two raids make you a
+**raider**, five the clan's **champion**, and nine, with the years for it, its **warchief**: the chief hands you the
+horn. Speak with the warchief (E, when he's about) to see how you stand, or to leave the clan, which it takes
+badly. The pirates' path (above) works the same way: lose your ship and Black Ysolde offers you a place, and every
+prize is infamy. `--selftest --standing-only` walks through all of it.
+
 ### Realistic people
 
 On a PC at High graphics or better, Tristinwold's people have real bodies: baked from MakeHuman's base mesh (CC0)

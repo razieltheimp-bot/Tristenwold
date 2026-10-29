@@ -356,6 +356,7 @@ public partial class Main : Node3D
         AddTownWork();
         AddCaravanYard();
         AddShipyard();
+        AddWatchHouse();
         AddPursuits();
         _herbPatch = new HerbPatch(this);
         AddChild(_herbPatch);
@@ -679,6 +680,7 @@ public partial class Main : Node3D
         TendStory();
         TendCaravans(delta);
         TendSea(delta);
+        TendStanding(delta);
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
 
         if (_player.Stats.LimitReady && !_limitWasReady)
@@ -713,7 +715,7 @@ public partial class Main : Node3D
         if (_suited is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
         if (_raiders.Tracker(pos, Direction) is { } clanLine) saga = [.. saga, clanLine];
-        saga = [.. saga, .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. PursuitLines(pos)];
+        saga = [.. saga, .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. StandingLines(pos), .. PursuitLines(pos)];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
     }
@@ -769,7 +771,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? PursuitAction(pos);
+        return SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>
@@ -817,6 +819,8 @@ public partial class Main : Node3D
     {
         // Townsfolk talk about the market too: what's dear, and what's happened.
         if (npc.HomeId == "city:tristinwold" && _city.News.Count > 0 && _lootRng.Chance(0.4)) return $"Have you heard? {_city.News[^1]}";
+        // And about you.
+        if (npc.HomeId == "city:tristinwold" && _standing.Gossip(_lootRng) is { } gossip) return gossip;
         var place = _world.SettlementsNear(npc.X, npc.Z, 3000)
             .Where(s => !_explored.Discovered.Contains(s.Id) && !_explored.Rumored.Contains(s.Id))
             .OrderBy(s => s.DistanceTo(npc.X, npc.Z) * (s.IsCity ? 0.5 : 1)).FirstOrDefault();
@@ -854,6 +858,7 @@ public partial class Main : Node3D
         _hud.Toast(u.Text);
         if (u.Reward > 0) _player.Crowns += _player.Class.Id == "Thief" ? (int)Math.Round(u.Reward * (1 + _player.Class.Passive.Power * _player.Hero.Power("light_fingers"))) : u.Reward;
         if (u.Stage == QuestStage.Done) GainXp(40 + u.Quest.Reward / 2);
+        if (u.Stage == QuestStage.Done) _standing.Good(1, $"saw to {u.Quest.Title.ToLowerInvariant()}");
         if (u.Stage == QuestStage.Done && ClassQuests.IsClassQuest(u.Quest.Id, out var discipline, out var step)) ClassTrialDone(discipline, step);
         if (u.Stage == QuestStage.Done) { _hud.Toast($"Quest complete: {u.Quest.Title}."); Sound.Ui("quest"); }
         _hud.ShowJournal(_journal);
@@ -923,6 +928,7 @@ public partial class Main : Node3D
                 _trade = save.Trade ?? new TradeBook();
                 _raidRecord = save.Warbands ?? new RaidRecord();
                 _sea = save.Sea ?? new SeaBook();
+                _standing = save.Standing ?? new Standing();
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
                 _city = save.City ?? CityEconomy.Start(_world.Seed);
@@ -941,7 +947,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade, _raiders?.Record ?? _raidRecord, _sea).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade, _raiders?.Record ?? _raidRecord, _sea, _standing).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)

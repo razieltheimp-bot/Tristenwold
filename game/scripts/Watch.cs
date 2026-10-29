@@ -17,6 +17,9 @@ public partial class TownWatch(Main main) : Node
 {
     public static IEnumerable<Vector3> PostSpots => Posts.Select(p => p.At);
 
+    /// <summary>Where a post is, by its name ("the east gate"), for a beat to walk (see <see cref="WatchBook.Beat"/>).</summary>
+    public static Vector3? PostAt(string post) => Posts.FirstOrDefault(p => p.Post == post) is { Post: not null } x ? x.At : null;
+
     static readonly (Vector3 At, string Post)[] Posts =
     [
         (new(64, 0, 48), "the Watch House"), (new(92, 0, 5), "the east gate"), (new(-92, 0, 2), "the west gate"),
@@ -33,7 +36,23 @@ public partial class TownWatch(Main main) : Node
     readonly Dictionary<string, double> _ready = [];
     readonly Tristinwold.Deviant.Rng _rng = new((ulong)GD.Randi() << 32 | GD.Randi());
     double _tick, _clock;
-    bool _alarm;
+    bool _alarm, _hostile;
+
+    /// <summary>The Watch is after the hero (a price on their head): every watchman turns on them at sight, until it's paid.</summary>
+    public bool Hostile
+    {
+        get => _hostile;
+        set
+        {
+            _hostile = value;
+            foreach (var g in Guards)
+            {
+                if (!value) g.LoseTrack(1);
+                g.Allied = !value;
+                g.RefreshPlate();
+            }
+        }
+    }
 
     /// <summary>The townsfolk's blows, throws and poultices so far (for the self-test).</summary>
     public int Helped { get; private set; }
@@ -55,7 +74,7 @@ public partial class TownWatch(Main main) : Node
     {
         var at = Posts[i].At with { Y = City.FloorAt(Posts[i].At) + 0.4f };
         var g = Enemy.Create(Bestiary.Get("watchman"), at, look: "guard");
-        g.Allied = true;
+        g.Allied = !_hostile;
         g.Watch = true;
         g.Roam = 7;
         g.Stats.Name = $"Watchman {Surnames[(i + (int)(GD.Randi() % 3)) % Surnames.Length]}";

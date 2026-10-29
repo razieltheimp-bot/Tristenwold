@@ -237,6 +237,7 @@ public partial class Main
             ("Join the pirates.", () =>
             {
                 _sea.JoinPirates();
+                _standing.Evil(5, "turned pirate aboard the Widow's Tooth");
                 Ashore(Smugglers + new Vector3(1, 0, -2));
                 _hud.Toast("You're a swab of the Widow's Tooth now. When you want to go out on the account, find Nell Corran by the south pier.", 10);
                 Save();
@@ -255,6 +256,7 @@ public partial class Main
         if (_sea.Voyage is { Raid: true, Homeward: false })
         {
             _sea.TakePrize();
+            _standing.Evil(4, $"took {_sea.Voyage!.PortName} as a prize for the Widow's Tooth");
             _hud.Toast($"She strikes her colours: {_sea.Voyage!.PortName.Replace("a ", "the ").Replace("an ", "the ")} is a prize. Hands to the plunder, then home to the Teeth.", 8);
         }
         else

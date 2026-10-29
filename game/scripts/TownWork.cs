@@ -55,7 +55,7 @@ public partial class Main
     public static readonly Vector3 FactorAt = new(25, 0, -25), ForemanAt = new(104, 0, 1.5f);
 
     /// <summary>What a shopkeeper charges this hero: their people's markup, less what the city's regard is worth.</summary>
-    double ShopMarkup => _player.Markup * (1 - _city.Discount);
+    double ShopMarkup => _player.Markup * (1 - _city.Discount) * _standing.PriceFactor;
 
     void AddTownWork()
     {
