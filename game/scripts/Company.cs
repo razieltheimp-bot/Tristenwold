@@ -175,24 +175,26 @@ public partial class Main
         _ => "Scrap",
     };
 
-    /// <summary>An ether-aeronaut climbs inside their golem and wears it: the golem is gone from the field for the while.</summary>
+    /// <summary>
+    /// An ether-aeronaut climbs inside their golem and drives it: for the while, the golem's body is the hero's own
+    /// (you walk, swing and cast as the machine, at its size), the hero's body is inside it, and the golem that
+    /// followed you is where you are. When the engine winds down you step out, and it stands beside you again.
+    /// </summary>
     void Merge(double seconds)
     {
         if (_bonds.FirstOrDefault(b => b.Role == BondRole.Golem) is not { } golem || BodyOf(golem) is not { } body) return;
         body.Visible = false;
-        body.ProcessMode = ProcessModeEnum.Disabled;
-        var figure = _player.Figure;
-        var scale = figure.Scale;
-        figure.Scale = scale * Math.Max(1.25f, body.Figure.Scale.X); // as big as the hull you're wearing
-        _hud.Toast($"You climb inside {golem.Name} and the plates close round you: its weight behind every blow, and its brass between you and theirs.", 7);
-        GetTree().CreateTimer(seconds).Timeout += () =>
+        body.ProcessMode = ProcessModeEnum.Disabled; // the machine is you now
+        var size = (float)Math.Max(1.25, body.Figure.Scale.X * 1.12);
+        _player.Possess(() => { var shell = Figure.Create("golem"); shell.Scale = Vector3.One * (float)golem.Size; return shell; }, size, seconds, () =>
         {
-            if (IsInstanceValid(figure)) figure.Scale = scale;
             if (!IsInstanceValid(body)) return;
             body.ProcessMode = ProcessModeEnum.Inherit;
             body.Visible = true;
             body.GlobalPosition = _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 1.5f;
-        };
+            _hud.Toast($"The engine winds down and the plates open: you step out of {golem.Name}, and it stands beside you again.", 5);
+        });
+        _hud.Toast($"You climb inside {golem.Name} and the plates close round you: you drive the machine now, its weight behind every blow and its brass between you and theirs.", 7);
     }
 
     /// <summary>The engine opened wide: the golem fights harder, and a ship under the hero surges ahead.</summary>
@@ -676,9 +678,12 @@ public partial class Main
             $"{c.Name}, level {hero.Level} ({hero.Xp}/{Hero.XpToNext(hero.Level)} xp), {_player.GuildTitle}.{titles} {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend.\n" +
             string.Join("\n", c.Skills.Where(a => a.Id != "attune").Select(a => $"{Slot(a)} {a.Name} (rank {hero.Rank(a.Id)}/{Hero.MaxRank}): {a.Text}")) +
             $"\nTrades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j)} {_player.Pack.Level(j)}"))}. The Exchange knows you as {_city.RenownTitle}. Feats: {_pursuits.Feats.Count} ({_pursuits.Points} points).\n" +
-            $"Your trade as a {c.Name}, {Perks.Of(c.Id).Name}: {Perks.Of(c.Id).Text}\n{_standing.Summary()}";
+            $"Your trade as a {c.Name}, {Perks.Of(c.Id).Name}: {Perks.Of(c.Id).Text}\n{_standing.Summary()}" +
+            (hero.Learned.Count > 0 ? $"\nWays you have learned (an immortal keeps them all): {string.Join(", ", hero.Classes.Select(id => Classes.Get(id).Name + (id == c.Id ? " (now)" : "")))}." : "");
         var options = c.Skills.Where(a => a.Id != "attune" && hero.CanRaise(a.Id))
             .Select(a => ($"Raise {a.Name} to rank {hero.Rank(a.Id) + 1}", (Action)(() => { hero.Raise(a.Id); _player.Fit(); Save(); ShowSkills(); }))).ToList();
+        foreach (var id in hero.Learned.Keys.Where(k => k != c.Id).ToList())
+            options.Add(($"Take up the way of the {Classes.Get(id).Name} again", () => { _player.Join(id); _hud.Toast($"You are a {Classes.Get(id).Name} again, with every rank you had in it.", 8); Save(); ShowSkills(); }));
         options.Add(("Feats", ShowFeats));
         options.Add(("Close", _hud.EndTalk));
         _hud.Talk("Skills", text, [.. options]);

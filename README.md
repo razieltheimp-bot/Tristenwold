@@ -298,8 +298,9 @@ herbs or two ores, through Garrick Wain at the caravan yard or the harbour maste
 the way back to the usual), and their preserving salts get a tenth more for every load traded away. The
 **Ether-Aeronaut**'s golem, Ballast, is built a good deal bigger than the others', a hull of brass with room inside
 for its maker (and the tougher for its size); the aeronaut harpoons foes to them and pins them, *merges* with the
-golem (climbs inside and wears it, standing as tall as it does: Protect, Shell, and its weight behind every blow,
-for a while), and at the shipyard fits ships with **modules** that sail with
+golem (climbs inside and drives it: for a while the machine's body is yours, you walk and swing and cast as the
+golem at its full size, with Protect, Shell and its weight behind every blow, and when the engine winds down you
+step out and it stands beside you again), and at the shipyard fits ships with **modules** that sail with
 them on any ship: an automated bilge pump (boarders hole her half as fast) and light sails (a quarter off every leg);
 their limit, *Overdrive*, puts a ship under them to four times her pace. The **Saboteur** stuns with a wrench, hobbles
 with smoke caltrops and bites with spring traps; breaks spare gear down into parts Nell Corran pays the black market's
@@ -355,6 +356,14 @@ a height. They turn on a little stage as you step through the choices; "Surprise
 a Look button. Gear worn over it (a helm, armour) still shows.
 
 ### The guilds
+
+**An immortal keeps every way they learn.** A hero isn't one class for good: any guild's teacher will teach you
+their way, and you keep what you were. Each class you've learned keeps its own skill ranks for the day you take it
+up again (at any teacher, or from the skills page, K); a way learned for the first time comes with half your levels
+in skill points to spend on it. The jobs were always open to all: a Paladin can fish, mine, drive caravans and sail,
+and now be a Wizard on Tuesdays. Careers that are rivals stay rivals (the Watch won't have a Tong, the company
+won't have a pirate), but nothing stops you leaving one for the other.
+
 
 Five guilds keep yards just outside Tristinwold's walls (`src/Tristinwold.World/Guilds.cs`), each with a
 leader, a teacher for each of its three classes, members with their own stories, and a rival:

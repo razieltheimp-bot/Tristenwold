@@ -2137,7 +2137,7 @@ public partial class SelfTest(Main main) : Node
         Check(s.Tracker is null && p.Crowns > purse, $"the wagon's yours: +{p.Crowns - purse} crowns; you're {s.Name}");
         s.Bounty = 0;
         main.WatchNode.Hostile = false;
-        Check(sh.TitleOf(ShadowLine.Thug) == "a Tong knuckle" && ShadowBook.Title(ShadowLine.Thug, 3) == "a Tong captain", "the Tongs' ranks run from knuckle to captain");
+        Check(sh.TitleOf(ShadowLine.Thug) == "a Tong enforcer" && ShadowBook.Title(ShadowLine.Thug, 0) == "a Tong knuckle" && ShadowBook.Title(ShadowLine.Thug, 3) == "a Tong captain", $"the Tongs' ranks run from knuckle to captain: three doors in, you're {sh.TitleOf(ShadowLine.Thug)}");
     }
 
     /// <summary>Creatures stand on the ground under each foot, look at the hero, and swing their tails.</summary>

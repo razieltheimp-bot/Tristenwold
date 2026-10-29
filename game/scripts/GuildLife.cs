@@ -132,13 +132,17 @@ public partial class Main
                 var d = Classes.Get(member.Teaches!);
                 if (_player.Class.Id != d.Id)
                 {
-                    yield return ($"Teach me the way of the {d.Name}.", () => _hud.Talk(Who(npc), $"{d.Text} Left: {d.Primary.Name}. Right: {d.Signature.Name}. Q: {d.Utility.Name}. R: {d.Limit.Name}.",
-                        ($"I'll learn it. (Become a {d.Name}.)", () =>
+                    var again = _player.Hero.Knows(d.Id);
+                    yield return (again ? $"I'll take up the way of the {d.Name} again." : $"Teach me the way of the {d.Name}.", () => _hud.Talk(Who(npc), $"{d.Text} Left: {d.Primary.Name}. Right: {d.Signature.Name}. Q: {d.Utility.Name}. R: {d.Limit.Name}.",
+                        (again ? $"I remember it. (Be a {d.Name} again.)" : $"I'll learn it. (Become a {d.Name}, and keep what you were.)", () =>
                         {
+                            var was = _player.Class.Name;
                             _player.Join(d.Id);
-                            _hud.Toast($"You are now a {d.Name}. Your skill points come back to you (K).", 9);
+                            _hud.Toast(again
+                                ? $"You are a {d.Name} again, with every rank you had in it. The {was}'s ranks keep for when you go back (any teacher, or the sheet, K)."
+                                : $"You are now a {d.Name}, and still a {was} underneath: an immortal keeps every way they've learned. {_player.Hero.Level / 2} skill points to spend on it (K); the {was}'s ranks keep for when you take it up again.", 11);
                             Save();
-                            Say(person, "Good. We start now. We always start now.");
+                            Say(person, again ? "Welcome back. The hands remember." : "Good. We start now. We always start now.");
                         }),
                         ("Not yet.", () => Say(person, "The door's open."))));
                     break;

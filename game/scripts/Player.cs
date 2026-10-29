@@ -190,6 +190,37 @@ public partial class Player : Fighter
         Stats.Heal(1e9);
     }
 
+    bool _possessing;
+
+    /// <summary>
+    /// Another body for a while (an aeronaut inside their golem): the hero's own figure is put away and this one worn
+    /// instead, at its size (the collision, the camera and the name plate fitted to it), moved by the hero's every
+    /// input; when the time is up the hero's own body is back, and <paramref name="then"/> runs.
+    /// </summary>
+    public void Possess(Func<Body> make, float size, double seconds, Action? then = null)
+    {
+        if (_possessing) return;
+        _possessing = true;
+        var own = Appearance?.Size ?? 1;
+        Restyle(Class.Look, make);
+        Resize(1.8f * own * size, 0.4f * Math.Max(1, size * 0.8f));
+        _pivot.Position = new Vector3(0, 1.6f * own * size, 0);
+        _arm.SpringLength = 5 * Math.Max(1, own * size * 0.9f);
+        GetTree().CreateTimer(seconds).Timeout += () =>
+        {
+            if (!IsInstanceValid(this)) return;
+            _possessing = false;
+            Dress();
+            Resize(1.8f * own, 0.4f);
+            _pivot.Position = new Vector3(0, 1.6f * own, 0);
+            _arm.SpringLength = 5 * Math.Max(1, own);
+            then?.Invoke();
+        };
+    }
+
+    /// <summary>Inside another body (the golem) for the while.</summary>
+    public bool Possessing => _possessing;
+
     public override void _UnhandledInput(InputEvent e)
     {
         if (e is InputEventMouseMotion motion && Input.MouseMode == Input.MouseModeEnum.Captured)

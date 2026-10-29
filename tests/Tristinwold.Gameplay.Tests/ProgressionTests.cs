@@ -37,10 +37,11 @@ public class ProgressionTests
         hero.Gain(100000);
         while (hero.Raise("cleave")) { }
         Assert.Equal(Hero.MaxRank, hero.Rank("cleave"));
-        // Joining another class gives the points back.
+        // Joining another class keeps the old one's ranks for later, and gives half the hero's levels in points for the new way.
         var points = hero.Points;
         hero.Join("Wizard");
-        Assert.Equal(points + Hero.MaxRank - 1, hero.Points);
+        Assert.Equal(points + hero.Level / 2, hero.Points);
+        Assert.Equal(Hero.MaxRank, hero.Learned["Barbarian"]["cleave"]);
         Assert.Equal(1, hero.Rank("cleave"));
     }
 
@@ -138,5 +139,29 @@ public class CorruptionTests
         Assert.Equal(0.5, Taming.Chance(false, true, true, 60, 10, dragon: true));
         Assert.Equal(0, Taming.Chance(true, true, true, 60, 10, dragon: true)); // and never with its kin close
         Assert.True(Taming.Tameable("dragon_red") && Taming.Tameable("dragon_gold") && !Taming.Tameable("dragon_red_corrupt"));
+    }
+
+    [Fact]
+    public void An_immortal_keeps_every_class_they_learn_with_its_ranks()
+    {
+        var hero = new Hero { Discipline = "Paladin", Level = 10, Points = 2 };
+        hero.Raise("holy_light");
+        hero.Raise("holy_light");
+        Assert.Equal(3, hero.Rank("holy_light"));
+        hero.Join("Wizard");
+        Assert.Equal("Wizard", hero.Discipline);
+        Assert.Equal(1, hero.Rank("holy_light")); // the wizard knows no holy light
+        Assert.Equal(5, hero.Points); // half their levels, to spend on the new way
+        Assert.True(hero.Knows("Paladin") && hero.Knows("Wizard") && !hero.Knows("Thief"));
+        Assert.Equal(["Wizard", "Paladin"], hero.Classes);
+        hero.Raise("fireball");
+        hero.Join("Paladin");
+        Assert.Equal(3, hero.Rank("holy_light")); // back, with every rank
+        Assert.Equal(4, hero.Points); // nothing given twice for a way learned already
+        hero.Join("Wizard");
+        Assert.Equal(2, hero.Rank("fireball"));
+        var back = System.Text.Json.JsonSerializer.Deserialize<Hero>(System.Text.Json.JsonSerializer.Serialize(hero))!;
+        Assert.Equal(["Wizard", "Paladin"], back.Classes);
+        Assert.Equal(3, back.Learned["Paladin"]["holy_light"]);
     }
 }

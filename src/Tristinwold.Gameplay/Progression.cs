@@ -54,12 +54,29 @@ public sealed class Hero
     }
 
     /// <summary>Joining another class: its moves start fresh, and the points spent come back.</summary>
+    /// <summary>The skill ranks of every class learned before, by class: an immortal keeps what they were.</summary>
+    public Dictionary<string, Dictionary<string, int>> Learned { get; set; } = [];
+
+    /// <summary>Every class this hero has learned, the present one first.</summary>
+    [JsonIgnore]
+    public IEnumerable<string> Classes => new[] { Discipline }.Concat(Learned.Keys.Where(k => k != Discipline));
+
+    public bool Knows(string discipline) => discipline == Discipline || Learned.ContainsKey(discipline);
+
+    /// <summary>
+    /// Takes up a class: a new one, or one learned before. The class left keeps its skill ranks for the day it's taken
+    /// up again; a class taken up for the first time gets half the hero's levels in skill points to spend on it, since
+    /// an immortal doesn't start from nothing twice.
+    /// </summary>
     public void Join(string discipline)
     {
         if (discipline == Discipline) return;
-        Points += Ranks.Values.Sum(r => r - 1);
-        Ranks.Clear();
+        Learned[Discipline] = new Dictionary<string, int>(Ranks);
+        var fresh = !Learned.ContainsKey(discipline);
+        Ranks = Learned.TryGetValue(discipline, out var kept) ? new Dictionary<string, int>(kept) : [];
+        Learned.Remove(discipline);
         Discipline = discipline;
+        if (fresh) Points += Level / 2;
     }
 
     /// <summary>Health, mana and stamina a level brings on top of the class's own.</summary>
