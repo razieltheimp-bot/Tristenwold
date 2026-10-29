@@ -165,7 +165,7 @@ public partial class Clockwork : Body
     /// <summary>The Saboteur's Scrap: mismatched plates, exposed gears, one great hammer arm and a lantern eye.</summary>
     public static Clockwork Scrap()
     {
-        var c = Frame(0.85f, 0.95f, 0.6f, 0.6f);
+        var c = Frame(0.85f, 0.7f, 0.6f, 0.6f);
         c.Design = "Scrap";
         var rust = Alloy("#7a4a30", 0.75f, 0.6f);
         var tin = Alloy("#8a8e8a", 0.55f);

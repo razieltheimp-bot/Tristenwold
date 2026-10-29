@@ -1817,7 +1817,7 @@ public partial class SelfTest(Main main) : Node
         await Until(() => hud.Talking, 4);
         Check(hud.Talking && hud.TalkText.Contains("Ride with us"), $"you beat one of them, and {camp.W.Chief} calls a halt: \"Ride with us.\"");
         Check(hud.Choose("I'll ride with you") && s.Clan.Rank == ClanRank.Spearman && s.Clan.ClanId == camp.W.Id, $"you're a spear of {camp.W.Name}");
-        Check(s.Watch.Rank == WatchRank.None && s.Infamy > 0 && hud.Heard("strikes you off"), "the Watch strikes you off its rolls, and the city hears of it");
+        Check(s.Watch.Rank != WatchRank.None && s.Infamy > 0 && hud.Heard("doesn't know yet"), "the Watch doesn't know yet (a double life), though the city hears you've sworn to barbarians");
         await Frames(5);
         var kin = band.Bodies.Where(e => IsInstanceValid(e) && e.State != EnemyState.Dead).ToList();
         Check(kin.Count == camp.W.Raiders - 1 && kin.All(e => e.Kin && e.State != EnemyState.Fighting), "the clan is kin now: spears lowered");

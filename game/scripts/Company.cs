@@ -148,8 +148,13 @@ public partial class Main
                     ? $"{golem.Name}, your golem, stamps out of the Foundry yard after you: a hull of brass with room inside for you, head and shoulders over the Foundry's other work. It fights beside you, and grows as you do."
                     : $"{golem.Name}, your golem, stamps out of the Foundry yard after you. It fights beside you, and grows as you do.", 10);
             }
-            else if (golem.Level != level || golem.Build != build)
+            else if (golem.Level != level || golem.Build != build || golem.Name != GolemName(_player.Class.Id))
             {
+                if (golem.Name != GolemName(_player.Class.Id)) // another artificer's way: the Foundry refits the machine to its design
+                {
+                    _hud.Toast($"The Foundry refits {golem.Name} to a {_player.Class.Name}'s design: it's {GolemName(_player.Class.Id)} now.", 8);
+                    golem.Name = GolemName(_player.Class.Id);
+                }
                 (golem.Level, golem.Build) = (level, build);
                 if (BodyOf(golem) is { } body && body.State != EnemyState.Dead && golem.Following)
                 {
