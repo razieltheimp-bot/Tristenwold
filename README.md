@@ -11,6 +11,10 @@ cd tristinwold-server
 sudo sh setup.sh --password <a password for your friends>
 ```
 
+The repository is private, so `git clone` asks for a username and password: give your GitHub username, and
+for the password a personal access token (GitHub, Settings, Developer settings, Fine-grained tokens: give it
+this repository only, with read access to Contents). Or skip git and copy the files up with `scp` instead.
+
 It prints the address for the game's Server box (`<address>:7777`) and for Android phones
 (`http://<address>:7778`). The server starts with the machine, restarts if it falls over, and saves the
 world when it's stopped. The world lives in `/opt/tristinwold/tristinwold.json`; settings (the password,
