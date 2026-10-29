@@ -46,6 +46,8 @@ public partial class Main
         Enemy.Turned += OnTurned;
         Enemy.SparEnded += OnSparEnded;
         _player.Summoned += Summon;
+        _player.Merged += Merge;
+        _player.Overdriven += Overdrive;
         foreach (var bond in _bonds.Where(b => b.Following)) BringCompanion(bond);
     }
 
@@ -126,9 +128,81 @@ public partial class Main
         Save();
     }
 
+    /// <summary>
+    /// An artificer's golem: built the day they join the Foundry, as grown as they are, and never fed. It isn't a
+    /// pet: it's a machine, it levels with its maker, and it stands down if they leave the calling.
+    /// </summary>
+    void TendGolem()
+    {
+        var golem = _bonds.FirstOrDefault(b => b.Role == BondRole.Golem);
+        if (_player.Class.Calling == Calling.Artificer)
+        {
+            var level = _player.Hero.Level + (_player.Class.Id == "EtherAeronaut" ? 2 : 0); // a tinker's golem is sturdier
+            if (golem is null)
+            {
+                golem = new Bond { KindId = "golem", Name = GolemName(_player.Class.Id), Role = BondRole.Golem, Level = level, Following = true };
+                _bonds.Add(golem);
+                BringCompanion(golem);
+                _hud.Toast($"{golem.Name}, your golem, stamps out of the Foundry yard after you. It fights beside you, and grows as you do.", 10);
+            }
+            else if (golem.Level != level)
+            {
+                golem.Level = level;
+                if (BodyOf(golem) is { } body && body.State != EnemyState.Dead && golem.Following)
+                {
+                    var at = body.GlobalPosition;
+                    _companions.Remove(body);
+                    body.QueueFree();
+                    BringCompanion(golem, at);
+                }
+            }
+        }
+        else if (golem is not null)
+        {
+            if (BodyOf(golem) is { } body) { _companions.Remove(body); body.QueueFree(); }
+            _bonds.Remove(golem);
+            _hud.Toast($"{golem.Name} winds down and stands in the Foundry yard: a golem follows an artificer.", 8);
+        }
+    }
+
+    static string GolemName(string discipline) => discipline switch
+    {
+        "Alchemist" => "Alembic",
+        "EtherAeronaut" => "Ballast",
+        _ => "Scrap",
+    };
+
+    /// <summary>An ether-aeronaut climbs inside their golem and wears it: the golem is gone from the field for the while.</summary>
+    void Merge(double seconds)
+    {
+        if (_bonds.FirstOrDefault(b => b.Role == BondRole.Golem) is not { } golem || BodyOf(golem) is not { } body) return;
+        body.Visible = false;
+        body.ProcessMode = ProcessModeEnum.Disabled;
+        var figure = _player.Figure;
+        var scale = figure.Scale;
+        figure.Scale = scale * 1.25f;
+        _hud.Toast($"You climb inside {golem.Name} and the plates close round you: its weight behind every blow, and its brass between you and theirs.", 7);
+        GetTree().CreateTimer(seconds).Timeout += () =>
+        {
+            if (IsInstanceValid(figure)) figure.Scale = scale;
+            if (!IsInstanceValid(body)) return;
+            body.ProcessMode = ProcessModeEnum.Inherit;
+            body.Visible = true;
+            body.GlobalPosition = _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 1.5f;
+        };
+    }
+
+    /// <summary>The engine opened wide: the golem fights harder, and a ship under the hero surges ahead.</summary>
+    void Overdrive(double seconds)
+    {
+        if (_bonds.FirstOrDefault(b => b.Role == BondRole.Golem) is { } golem && BodyOf(golem) is { } body) body.Empower(seconds, 0.3);
+        _atSea?.Surge(seconds);
+    }
+
     /// <summary>Time passes for the company: beasts and dragons get hungry, and starve if never fed.</summary>
     void TendCompany(double delta)
     {
+        TendGolem();
         foreach (var bond in _bonds.Where(b => b.Following && b.Eats))
         {
             var body = BodyOf(bond);
@@ -335,6 +409,7 @@ public partial class Main
         Calling.Warrior => (BondRole.Squire, "squire", "squire"),
         Calling.Mage => (BondRole.Apprentice, "apprentice", "apprentice"),
         Calling.Bard => (BondRole.Apprentice, "understudy", "understudy"),
+        Calling.Artificer => (BondRole.Apprentice, "apprentice", "apprentice"),
         _ => (BondRole.Apprentice, "protege", "apprentice"),
     };
 
@@ -384,6 +459,7 @@ public partial class Main
         foreach (var o in CaravanTalk(person)) yield return o;
         foreach (var o in SeaTalk(person)) yield return o;
         foreach (var o in StandingTalk(person)) yield return o;
+        foreach (var o in ArtificerTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;
         foreach (var o in PursuitTalk(person)) yield return o;
@@ -403,6 +479,7 @@ public partial class Main
                 Calling.Warrior => "Good. Now hit me. Harder than that.",
                 Calling.Rogue => "Welcome to the Knives. You never met me.",
                 Calling.Bard => "Welcome to the College. Now: from the top, and this time, louder.",
+                Calling.Artificer => "Mind the acid. Your golem's being wound in the yard; it'll follow you out.",
                 _ => "Then read. And when you've read everything, read it again.",
             });
         }))).ToList();
@@ -593,7 +670,8 @@ public partial class Main
         var text = $"Today is {Calendar.Date(_city.Day)}. You are {Ageing.Describe(hero, _player.Race.Id, _player.Race.Name, _city.Day)}.\n" +
             $"{c.Name}, level {hero.Level} ({hero.Xp}/{Hero.XpToNext(hero.Level)} xp), {_player.GuildTitle}.{titles} {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend.\n" +
             string.Join("\n", c.Skills.Where(a => a.Id != "attune").Select(a => $"{Slot(a)} {a.Name} (rank {hero.Rank(a.Id)}/{Hero.MaxRank}): {a.Text}")) +
-            $"\nTrades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j)} {_player.Pack.Level(j)}"))}. The Exchange knows you as {_city.RenownTitle}. Feats: {_pursuits.Feats.Count} ({_pursuits.Points} points).\n{_standing.Summary()}";
+            $"\nTrades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j)} {_player.Pack.Level(j)}"))}. The Exchange knows you as {_city.RenownTitle}. Feats: {_pursuits.Feats.Count} ({_pursuits.Points} points).\n" +
+            $"Your trade as a {c.Name}, {Perks.Of(c.Id).Name}: {Perks.Of(c.Id).Text}\n{_standing.Summary()}";
         var options = c.Skills.Where(a => a.Id != "attune" && hero.CanRaise(a.Id))
             .Select(a => ($"Raise {a.Name} to rank {hero.Rank(a.Id) + 1}", (Action)(() => { hero.Raise(a.Id); _player.Fit(); Save(); ShowSkills(); }))).ToList();
         options.Add(("Feats", ShowFeats));

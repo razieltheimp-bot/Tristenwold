@@ -77,8 +77,10 @@ public sealed class Voyage
 
     /// <summary>How far along this leg (0 to 1), kept with the save: a voyage is long.</summary>
     public double Along { get; set; }
+    /// <summary>How fast she sails against the usual: light sails make it 1.33.</summary>
+    public double Pace { get; set; } = 1;
     /// <summary>A leg takes a day of the city's clock for every day out: ten minutes a league.</summary>
-    public double LegSeconds => Leagues * CityEconomy.DaySeconds;
+    public double LegSeconds => Leagues * CityEconomy.DaySeconds / Math.Max(0.5, Pace);
 
     public List<double> Leg => Homeward ? Home : Out;
     public bool AttackDue(double along) => !InPort && Sprung < Leg.Count && along >= Leg[Sprung];
@@ -112,6 +114,8 @@ public sealed class SeaBook
     public string ShipName { get; set; } = "";
     /// <summary>The state of the hull the hero sails in, out of 100: pirates hole it, the shipyard mends it (the company keeps its own ships mended).</summary>
     public double Hull { get; set; } = 100;
+    /// <summary>What an ether-aeronaut has fitted at the shipyard (see <see cref="Modules"/>): it sails with them on every ship they're aboard.</summary>
+    public HashSet<string> Modules { get; set; } = [];
     public Dictionary<Good, int> Hold { get; set; } = [];
     public int Profit { get; set; }
     public Dictionary<string, TownMarket> Markets { get; set; } = [];
@@ -119,6 +123,27 @@ public sealed class SeaBook
     public const int ToBosun = 3, ToMate = 7, MateRepels = 2, ToCaptain = 12, CaptainRepels = 5, CaptainLevel = 8;
     public const int JourneymanAt = 3, MasterAt = 8, PlanksPerJob = 4, KeelJobs = 3, KeelPrice = 500, ShipPrice = 1500;
     public const double PlankMends = 9, Seaworthy = 40;
+
+    /// <summary>The modules an ether-aeronaut can fit, and what they cost: a bilge pump (boarders hole her half as fast) and light sails (a quarter off every leg).</summary>
+    public static readonly IReadOnlyDictionary<string, (string Name, int Price, string Text)> ModuleKinds = new Dictionary<string, (string, int, string)>
+    {
+        ["bilge_pump"] = ("an automated bilge pump", 180, "pumps as fast as boarders can hole her: the hull takes half the harm"),
+        ["light_sails"] = ("light sails", 260, "a third more way on her: a quarter off every leg, and pirates with less time to find her"),
+    };
+
+    public bool HasModule(string id) => Modules.Contains(id);
+
+    /// <summary>Fits a module, if it's one and it isn't fitted: the price paid, or null.</summary>
+    public int? Fit(string id, ref int crowns)
+    {
+        if (!ModuleKinds.TryGetValue(id, out var kind) || Modules.Contains(id) || crowns < kind.Price) return null;
+        crowns -= kind.Price;
+        Modules.Add(id);
+        return kind.Price;
+    }
+
+    /// <summary>How fast a ship sails with what's fitted.</summary>
+    public double Pace => HasModule("light_sails") ? 1.33 : 1;
     public const string CompanyShip = "the Gull", PirateShip = "the Widow's Tooth";
 
     // The other side of the law: a hero whose ship was taken may join the pirates who took it.
@@ -186,6 +211,7 @@ public sealed class SeaBook
         }
         return Voyage = new Voyage
         {
+            Pace = Pace,
             Port = port.Id, PortName = port.Name, Leagues = port.Leagues, Out = Leg(), Home = Leg(),
             Pirates = 2 + port.Leagues + rng.Next(2) + (Rank >= SeaRank.FirstMate ? 1 : 0),
             Pay = PayFor(port), Command = Rank == SeaRank.Captain,
@@ -220,7 +246,7 @@ public sealed class SeaBook
     }
 
     /// <summary>Pirates aboard hole the ship while they're on her.</summary>
-    public void Damage(double amount) => Hull = Math.Max(0, Hull - amount);
+    public void Damage(double amount) => Hull = Math.Max(0, Hull - amount * (HasModule("bilge_pump") ? 0.5 : 1));
 
     /// <summary>
     /// Home again, the voyage done: the wage (less if the deck work wasn't done), the count, and any promotion the
@@ -278,6 +304,7 @@ public sealed class SeaBook
         var port = Seas.Ports[Math.Min(Seas.Ports.Count - 1, (int)Pirate)];
         return Voyage = new Voyage
         {
+            Pace = Pace,
             Port = "raid", PortName = rng.Pick(Prey[..((int)Pirate + 1)]),
             Leagues = port.Leagues, Raid = true, Out = [0.5], Home = rng.Chance(0.35) ? [0.4 + 0.3 * rng.NextDouble()] : [],
             Pirates = 2 + port.Leagues + rng.Next(2), Pay = 40 + 30 * (int)Pirate, Command = Pirate == PirateRank.Captain,

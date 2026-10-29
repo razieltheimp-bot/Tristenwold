@@ -85,6 +85,7 @@ public partial class Main
                 Calling.Warrior => new[] { ("medieval/props/weaponrack.gltf", -8, 4), ("medieval/props/target.gltf", 6, 9), ("medieval/props/target.gltf", 9, 5), ("medieval/props/flag_red.gltf", 0, -9), ("medieval/props/weaponrack.gltf", -4, -8) },
                 Calling.Rogue => [("medieval/props/crate_A_big.gltf", 8, -4), ("medieval/props/crate_long_B.gltf", 6, 8), ("medieval/props/barrel.gltf", -9, 3), ("medieval/props/sack.gltf", -7, -6), ("medieval/props/tent.gltf", 12, 2)],
                 Calling.Bard => [("medieval/props/tent.gltf", 0, -10), ("medieval/props/flag_yellow.gltf", -6, -9), ("medieval/props/barrel.gltf", 9, 3), ("medieval/props/crate_open.gltf", -9, 4), ("medieval/props/bucket_water.gltf", 7, -6)],
+                Calling.Artificer => [("medieval/props/barrel.gltf", 8, -4), ("medieval/props/crate_A_big.gltf", -8, 6), ("medieval/props/bucket_water.gltf", 6, 8), ("medieval/props/resource_stone.gltf", -9, -6), ("medieval/props/flag_red.gltf", 0, -10)],
                 _ => [("medieval/props/flag_blue.gltf", 0, -10), ("medieval/props/bucket_water.gltf", 7, 6), ("medieval/props/resource_stone.gltf", -9, 5), ("medieval/props/crate_open.gltf", 8, -7)],
             };
             foreach (var (path, dx, dz) in props)

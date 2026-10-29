@@ -257,7 +257,7 @@ iPhone's silent switch silences it). The PC plays it as well.
 
 ### Classes
 
-Twelve classes, three to each of four callings (warriors, rogues, mages and bards), each fighting its own way (`src/Tristinwold.Gameplay/Classes.cs`). Pick
+Fifteen classes, three to each of five callings (warriors, rogues, mages, bards and artificers), each fighting its own way (`src/Tristinwold.Gameplay/Classes.cs`). Pick
 one when you make a character; learn another later from its teacher at the guilds outside Tristinwold.
 
 | Class | Left | Right | Q | R (limit) | Always |
@@ -274,9 +274,36 @@ one when you make a character; learn another later from its teacher at the guild
 | Poet | Barbed Verse: golden words that cut, 22 m | Rousing Ode: the company healed, quickened, fiercer | Mocking Couplet: foes nearby forget you | Epic of Ages | The Muse: stronger spells; kills give back mana and stamina |
 | Scribe | Inkbolt: crackling ink, 24 m | Glyph of Warding: a rune circle that bursts under a foe | Scroll of Protection: Protect, Shell, Regen | Words of Unmaking | Marginalia: each blow on the same foe hits harder |
 | Musician | Discord: a jarring chord, every fourth twice as hard | Thunderous Chord: a wave of sound that throws foes back | Battle Hymn: the company quickened and healing | Crescendo | Perfect Pitch: mana and stamina come back quickly |
+| Alchemist | Volatile Vial: your element, thrown | Hazard Flask: a pool of your element that burns for a while | Attune: fire, frost or shock | Reagent Storm | Refiner: more for what you gather and trade |
+| Ether-Aeronaut | Ether Harpoon: drags a foe to you | Anchor Shot: pins a foe | Merge: climb inside your golem and wear it (Protect, Shell, heavier blows) | Overdrive: you, the golem and your ship surge | Tinker: ship modules, a sturdier golem |
+| Saboteur | Wrench: every fourth blow stuns | Smoke Caltrops: foes hobbled and blind to you | Spring Trap: the first foe on it is bitten and held | Demolition: a blast that throws everything | Scrapper: parts for the black market, trackers on wagons |
 
 Kills and jobs bring experience. Each level adds health, mana and stamina and a skill point; spend points (K)
 to rank a move up to 5, each rank 15% stronger. Joining another class gives the points back.
+
+**Every class has a trade** (`src/Tristinwold.Gameplay/Perks.cs`, on the character sheet): a Martial Artist is charged
+a tenth less in every shop; a Barbarian hauls, cuts and digs like two and is paid for it; a Paladin's good name gets a
+better price and the temple's tithe off; a Ranger takes more from every kill and snare; a Thief knows who pays most
+for loot, and takes a thief's cut of every job; an Assassin gets the black market's rates; a Wizard appraises gems and
+metals; a Warlock bargains a fifth more on every load traded away from home; a Sorcerer's hoard-sense finds more in
+every lair; a Poet talks a tenth off every price; a Scribe is paid a fifth more for every job and contract; a Musician
+sells loads a tenth better in every town and port; and the artificers, below.
+
+**The artificers and their golems.** An artificer never fights alone: a **brass golem** stamps out of the Foundry yard
+after them the day they join (Alembic, Ballast or Scrap, by the class), fights beside them, and is as grown as its
+maker: it levels as the hero levels, it is never fed (a machine, not a pet), it gets up after every fight, and it
+winds down in the yard if they leave the calling. The **Alchemist** throws vials of their element and lays elemental
+hazards across a chokepoint; their *Market Transmutation* steadies a town's or a port's market once a day, for three
+herbs or two ores, through Garrick Wain at the caravan yard or the harbour masters (a glut or a crash eases most of
+the way back to the usual), and their preserving salts get a tenth more for every load traded away. The
+**Ether-Aeronaut** harpoons foes to them and pins them, *merges* with the golem (climbs inside and wears it: Protect,
+Shell, and its weight behind every blow, for a while), and at the shipyard fits ships with **modules** that sail with
+them on any ship: an automated bilge pump (boarders hole her half as fast) and light sails (a quarter off every leg);
+their limit, *Overdrive*, puts a ship under them to four times her pace. The **Saboteur** stuns with a wrench, hobbles
+with smoke caltrops and bites with spring traps; breaks spare gear down into parts Nell Corran pays the black market's
+price for; and plants a **tracker** on a parked wagon at the caravan yard (E), follows it up the road on the tracker,
+and springs an **ambush** on it: its guards come off the box, and the strongbox is yours, with a price on your head.
+`--selftest --artificer-only` walks through all of it.
 
 **What spells and blows look like** (`game/scripts/Effects.cs`). Fireballs trail flame and grey smoke and burst
 in embers; ice shards trail mist and shatter into splinters; lightning doesn't fly, it strikes, a jagged
@@ -327,7 +354,7 @@ a Look button. Gear worn over it (a helm, armour) still shows.
 
 ### The guilds
 
-Four guilds keep yards just outside Tristinwold's walls (`src/Tristinwold.World/Guilds.cs`), each with a
+Five guilds keep yards just outside Tristinwold's walls (`src/Tristinwold.World/Guilds.cs`), each with a
 leader, a teacher for each of its three classes, members with their own stories, and a rival:
 
 | Guild | Where | Leader | Teachers | Members | Rival |
@@ -336,12 +363,13 @@ leader, a teacher for each of its three classes, members with their own stories,
 | The Velvet Knives (rogues) | the old tannery south of the walls | Vesper Quill | Wren Ashcombe (Ranger), Pip Marlowe (Thief), Silas Morrow (Assassin) | Nell Cutwater, Jory Ash, Mags Dunmore | Sable Rue |
 | The Magi (mages) | the Archive Garden north-east of the walls | Archmage Selwyn Tarrow | Magister Orla Penhallow (Wizard), Morwen Hesk (Warlock or Witch), Daro Vey (Sorcerer) | Brother Anselm, Liesl Varro, Teodric Gale | Isadora Crane |
 | The Bards' College (bards) | the Lyre Hall on a green south-east of the walls | Laureate Odalys Wren | Cassian Vell (Poet), Mother Hollis Quell (Scribe), Bram Tolliver (Musician) | Tobin Marrow, Elowen Sark, Hal Brandish | Fennick Lark |
+| The Brass Foundry (artificers) | the Foundry yard south-west of the walls | Foundress Hesper Coil | Doctor Ambrose Vell (Alchemist), Captain-Engineer Thessaly Brand (Ether-Aeronaut), Wick Harrow (Saboteur) | Marigold Spanner, Osgood Flint, Tilda Rook | Jonquil Pike |
 
 - **Your guild** is your class's: you start as an Initiate and rise to Member, Adept, Veteran and Master by what
   you do for it (shown beside your level). The leader tells you where you stand.
 - **Teachers.** Your class's teacher gives a lesson once a level (a skill point, for a fee) and sets your
   class's trials. Any other teacher will teach you their class instead.
-- **Class trials.** Each of the twelve classes has its own three trials (`src/Tristinwold.World/ClassQuests.cs`): clear
+- **Class trials.** Each of the fifteen classes has its own three trials (`src/Tristinwold.World/ClassQuests.cs`): clear
   a lair the way your class would, bring back the relic of your art from where it was lost (the Scroll of the Open
   Hand, the Bloodhorn of the Old Clans, the Reliquary of Saint Aubrel, the Greywood Bow, the Lockbreaker's Picks,
   the Black Mercy, the Tome of the Three Fires, the Hollow Candle, the Dragonblood Pearl, the Laurel of Maren Ashe,
@@ -936,7 +964,7 @@ character's save lives on the server; logging out, changing character and quitti
 say it has the save, and ask before going on if it doesn't answer. During remote play the menu has no Quit
 (the phone would close the game on the PC), and logging out keeps the phone's link.
 
-`--lineup ./shots` photographs the twelve classes; add `--creatures`, `--young` (younglings and companions),
+`--lineup ./shots` photographs the fifteen classes; add `--creatures`, `--young` (younglings and companions),
 `--dragons` (all ten colours), `--dragons --corrupt`, `--dragons --riders` or `--dragons --frost`. `--shots ./shots --skirmish`
 photographs a dragon knight and a corrupted dragon fighting over the meadows by a village.
 

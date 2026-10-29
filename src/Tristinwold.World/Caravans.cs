@@ -28,6 +28,27 @@ public sealed class TownMarket
     /// <summary>The Tristinwold day a caravan last ran between here and the city.</summary>
     public int LastTrade { get; set; }
 
+    /// <summary>The Tristinwold day an alchemist last steadied this market (once a day).</summary>
+    public int Steadied { get; set; } = -1;
+
+    /// <summary>
+    /// An alchemist's transmutation: with the reagents to pay for it, every good's stock is brought most of the way
+    /// back to what the place usually keeps, so a glut or a crash eases and the prices with it. Once a day; whether
+    /// it was done.
+    /// </summary>
+    public bool Steady(int day)
+    {
+        if (Steadied == day) return false;
+        foreach (var g in Enum.GetValues<Good>())
+        {
+            var usual = Usual(g);
+            var stock = Stock.GetValueOrDefault(g, usual);
+            Stock[g] = stock + (usual - stock) * 0.7;
+        }
+        Steadied = day;
+        return true;
+    }
+
     /// <summary>What it usually keeps of a good: plenty of what it makes, little of what it wants.</summary>
     public double Usual(Good g) => Baseline(g) * (Makes.Contains(g) ? 2.6 : Wants.Contains(g) ? 0.3 : 1);
 

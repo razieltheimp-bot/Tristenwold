@@ -213,6 +213,33 @@ public sealed class ClanBook
 }
 
 /// <summary>
+/// A saboteur's tracker on a merchant wagon: where the wagon is bound, when it set out, and whether the ambush has
+/// been sprung. The wagon rolls from the caravan yard to the town at a steady pace; meet it on the road.
+/// </summary>
+public sealed class WagonTracker
+{
+    public string TownId { get; set; } = "";
+    public string TownName { get; set; } = "";
+    public double X { get; set; }
+    public double Z { get; set; }
+    public double FromX { get; set; }
+    public double FromZ { get; set; }
+    public double PlantedAt { get; set; }
+    public bool Sprung { get; set; }
+
+    /// <summary>Metres a wagon makes in a second of play, and how long it stands at market before the tracker's lost.</summary>
+    public const double Pace = 2.5, AtMarketSeconds = 120;
+
+    public double Length => Math.Sqrt((X - FromX) * (X - FromX) + (Z - FromZ) * (Z - FromZ));
+    /// <summary>How far along the road it is at a moment of play, 0 to 1.</summary>
+    public double Along(double playSeconds) => Math.Clamp((playSeconds - PlantedAt) * Pace / Math.Max(1, Length), 0, 1);
+    public (double X, double Z) Where(double playSeconds) => (FromX + (X - FromX) * Along(playSeconds), FromZ + (Z - FromZ) * Along(playSeconds));
+    public bool Arrived(double playSeconds) => Along(playSeconds) >= 1;
+    /// <summary>Sold up at market and gone: the tracker's lost.</summary>
+    public bool Lost(double playSeconds) => Sprung || playSeconds - PlantedAt > Length / Pace + AtMarketSeconds;
+}
+
+/// <summary>
 /// A hero's name in the world, saved with the company: the honour they've earned and the infamy, the deeds people
 /// tell of, the price on their head, and their careers in the Watch and in a clan. The world reads it: what the
 /// townsfolk say when you walk up, what the shops charge, whether the Watch will have you or hunt you, and who else
@@ -228,6 +255,8 @@ public sealed class Standing
     public List<string> Deeds { get; set; } = [];
     public WatchBook Watch { get; set; } = new();
     public ClanBook Clan { get; set; } = new();
+    /// <summary>A saboteur's tracker on a wagon, if one's planted.</summary>
+    public WagonTracker? Tracker { get; set; }
 
     public const int KeepDeeds = 12;
     /// <summary>What goes on the head of whoever kills a watchman, or rides with a clan on a place.</summary>

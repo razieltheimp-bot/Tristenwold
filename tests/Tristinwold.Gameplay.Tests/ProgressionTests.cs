@@ -8,7 +8,7 @@ public class ProgressionTests
     [Fact]
     public void Twelve_classes_three_to_a_calling_each_with_its_own_moves()
     {
-        Assert.Equal(12, Classes.All.Count);
+        Assert.Equal(15, Classes.All.Count);
         foreach (var calling in Enum.GetValues<Calling>()) Assert.Equal(3, Classes.Of(calling).Count());
         // No two classes share a move (bar the mages' element switch).
         var moves = Classes.All.SelectMany(d => d.Skills).Where(a => a.Id != "attune").Select(a => a.Id).ToList();

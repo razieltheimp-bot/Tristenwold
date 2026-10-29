@@ -199,6 +199,21 @@ public partial class Enemy : Fighter
     /// <summary>One of the hero's own clan: it won't fight the company, and the company can't strike it (the guards still can).</summary>
     public bool Kin { get; set; }
 
+    /// <summary>Seconds left pinned where it stands (an anchor shot, a sprung trap): it can still strike what's in reach.</summary>
+    public double Rooted { get; set; }
+    /// <summary>Seconds left hobbled (caltrops): a third of its pace.</summary>
+    public double Hobbled { get; set; }
+    /// <summary>Seconds left stunned (a wrench to the head): it neither moves nor strikes.</summary>
+    public double Stunned { get; set; }
+
+    /// <summary>Dragged to a spot (a harpoon), over a moment.</summary>
+    public void Pull(Vector3 to)
+    {
+        if (State == EnemyState.Dead) return;
+        to.Y = Math.Max(to.Y, City.FloorAt(to) + 0.2f);
+        CreateTween().TweenProperty(this, "global_position", to, 0.3).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+    }
+
     /// <summary>
     /// A blow from one of the townsfolk (a stone, a bottle, a smith's hammer): a share of its health. It hurts, but it
     /// never finishes it: that's for the hero, or the Watch.
@@ -551,6 +566,9 @@ public partial class Enemy : Fighter
         Stats.Tick(delta, State == EnemyState.Fighting);
         _attackCooldown -= delta;
         _ignore -= delta;
+        Rooted -= delta;
+        Hobbled -= delta;
+        Stunned -= delta;
         _empowered -= delta;
         if (Infection > 0 && !Corrupted && State != EnemyState.Fighting) Infection = Corruption.Ebb(Infection, delta); // once clear of the fight
         if (Frenzy > 0 && (Frenzy -= delta) <= 0) Calm();
@@ -558,7 +576,7 @@ public partial class Enemy : Fighter
         if (State == EnemyState.Fighting) Think?.Invoke(this, delta);
 
         var bulk = Bulk;
-        var speed = (float)(Kind.Speed * Stats.SpeedMult) * MathF.Pow(bulk, 0.35f);
+        var speed = (float)(Kind.Speed * Stats.SpeedMult) * MathF.Pow(bulk, 0.35f) * (Hobbled > 0 ? 0.35f : 1);
         var reach = (float)Kind.Reach * MathF.Pow(bulk, 0.8f);
         var move = Vector3.Zero;
 
@@ -609,7 +627,7 @@ public partial class Enemy : Fighter
                 if (Bond is not null) UseSkills(toRival.Length(), bulk);
                 var gap = toRival.Length() - (reach + (float)_rival.Kind.Reach * MathF.Pow(_rival.Bulk, 0.8f) * 0.5f);
                 if (gap > 0) move = toRival.Normalized() * speed;
-                else if (_attackCooldown <= 0)
+                else if (_attackCooldown <= 0 && Stunned <= 0)
                 {
                     _attackCooldown = Kind.AttackSeconds / (Frenzy > 0 ? 1.5 : 1);
                     var power = 1.0;
@@ -639,7 +657,7 @@ public partial class Enemy : Fighter
                 toTarget.Y = 0;
                 FaceAlong(toTarget, delta * 1.5); // turns to face it, rather than snapping round
                 if (toTarget.Length() > reach) move = toTarget.Normalized() * speed;
-                else if (_attackCooldown <= 0)
+                else if (_attackCooldown <= 0 && Stunned <= 0)
                 {
                     _attackCooldown = Kind.AttackSeconds / (Stats.Statuses.Contains(AutoStatus.Haste) ? 1.3 : 1) / (Frenzy > 0 ? 1.5 : 1);
                     Figure.Attack();
@@ -663,6 +681,7 @@ public partial class Enemy : Fighter
                 }
                 break;
         }
+        if (Rooted > 0 || Stunned > 0) move = Vector3.Zero; // pinned, or seeing stars
         if (CanFly && Leader is null) move = Fly(move, speed, bulk, delta);
         if (State != EnemyState.Fighting || Airborne) FaceAlong(move, delta);
         if (Airborne || _altitude > 0) Hover(delta, move);

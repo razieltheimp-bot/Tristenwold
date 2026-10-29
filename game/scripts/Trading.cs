@@ -30,6 +30,7 @@ public partial class Main
         if (victim.Kind.Id is "dock_thug" or "bandit" or "bandit_chief" or "lantern_boy" or "drowned_hand" or "goblin" or "goblin_tinker" && _lootRng.Chance(0.06))
             drop = drop with { Items = [.. drop.Items, ("torn_map", 1)] };
         if (drop.Items.Count == 0 && drop.Crowns == 0) return;
+        if (PerkGather > 1) drop = drop with { Items = drop.Items.Select(i => (i.Id, Gathered(i.N))).ToList() }; // a huntsman's eye for what's worth taking
         Take(drop.Items);
         _player.Crowns += drop.Crowns;
         Sound.Ui(drop.Crowns > 0 ? "coin" : "pickup", -4);
@@ -60,7 +61,7 @@ public partial class Main
     void Pick(Plant plant)
     {
         var pack = _player.Pack;
-        var n = Herbs.Yield(pack.Level(Job.Herbalism), _lootRng.NextDouble());
+        var n = Gathered(Herbs.Yield(pack.Level(Job.Herbalism), _lootRng.NextDouble()));
         pack.Add(plant.HerbId, n);
         _herbs.Picked(plant, _guilds.PlaySeconds);
         _herbPatch.Picked(plant);
@@ -246,7 +247,7 @@ public partial class Main
     int SellOne(string id)
     {
         if (Items.Get(id) is not { } item || !_player.Pack.Take(id)) return 0;
-        var offer = _city.Offer(item);
+        var offer = (int)Math.Round(_city.Offer(item) * PerkSell);
         _player.Crowns += offer;
         _city.Sold(id, offer);
         Share(CityAction.Sold(id, offer));
@@ -255,7 +256,7 @@ public partial class Main
 
     void Sell(Person person, Shop shop)
     {
-        var options = _player.Pack.Contents.Where(c => c.Item.Id != "alchemist_kit" || c.N > 1).Select(c => ($"{c.Item.Name} ({c.N}): {_city.Offer(c.Item)} crowns each{Dearness(c.Item.Id)}",
+        var options = _player.Pack.Contents.Where(c => c.Item.Id != "alchemist_kit" || c.N > 1).Select(c => ($"{c.Item.Name} ({c.N}): {(int)Math.Round(_city.Offer(c.Item) * PerkSell)} crowns each{Dearness(c.Item.Id)}",
             (Action)(() =>
             {
                 SellOne(c.Item.Id);

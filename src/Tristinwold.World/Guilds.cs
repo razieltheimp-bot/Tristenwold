@@ -191,6 +191,38 @@ public static class Guilds
             new(Person("fennick", "Fennick Lark", Sex.Male, 24, "the College's golden voice",
                 "Fennick has a voice like honey and a heart like a locked box. He wants the Laureate's chair, the crowd's love, and you a little quieter.",
                 "Oh, you sing? How brave.", 94, 122, "proud", "songs", "cards"), GuildRole.Rival, "Musician", "Musician")),
+
+        new(Calling.Artificer, "brass_foundry", "the Brass Foundry", "the Foundry yard",
+            "A yard of furnaces, gantries and half-built engines south-west of the walls, under a brass chimney that smokes at all hours. Something is always being tested, and something is always on fire.",
+            -110, 95,
+            new(Person("hesper", "Foundress Hesper Coil", Sex.Female, 61, "Foundress of the Brass Foundry",
+                "Hesper built the Foundry's first golem out of a shipwreck's fittings and a temple bell, and has been improving on it for thirty years. She has lost two fingers and gained a guild.",
+                "Mind the acid. And the gears. And Jonquil.", -110, 95, "dry", "engines", "the sea"), GuildRole.Leader, "scholar"),
+            [
+                new(Person("ambrose", "Doctor Ambrose Vell", Sex.Male, 48, "teacher of reagents",
+                    "Ambrose was the Exchange's assayer until he worked out he could make what he was assaying. He teaches alchemy, and the price of everything.",
+                    "Everything is a reagent. Even you. Especially the Exchange.", -118, 90, "warm", "money", "herbs"), GuildRole.Teacher, "Alchemist", "Alchemist"),
+                new(Person("thessaly", "Captain-Engineer Thessaly Brand", Sex.Female, 39, "teacher of ether and engines",
+                    "Thessaly flew the Foundry's one airship, and brought the compass down with her when it burned. She fits the Brine Company's ships now, and dreams of the sky.",
+                    "A ship's an engine with a hull on. So are you, with a golem on.", -102, 88, "brisk", "the sea", "engines"), GuildRole.Teacher, "EtherAeronaut", "EtherAeronaut"),
+                new(Person("wick", "Wick Harrow", Sex.Male, 44, "teacher of the wrench",
+                    "Wick learned his trade taking wagons apart that weren't his, and the Foundry took him on rather than keep buying its own gears back from him.",
+                    "Anything built can be unbuilt. Quicker, usually.", -114, 104, "dry", "cards", "the Tongs"), GuildRole.Teacher, "Saboteur", "Saboteur"),
+            ],
+            [
+                new(Person("marigold", "Marigold Spanner", Sex.Female, 23, "apprentice of the Foundry",
+                    "Marigold keeps the furnaces and the stills, and has blown up only one of each.",
+                    "If it's ticking, step back. If it's hissing, run.", -106, 100, "cheerful", "engines", "dreams"), GuildRole.Member, "worker"),
+                new(Person("osgood", "Osgood Flint", Sex.Male, 57, "the Foundry's quartermaster",
+                    "Osgood buys the Foundry's brass, coal and glass, and sells what it makes to the Exchange, the company and anyone else with coin.",
+                    "Brass is dear this week. Everything is dear this week.", -120, 98, "gruff", "money", "the Tongs"), GuildRole.Member, "traveller"),
+                new(Person("tilda", "Tilda Rook", Sex.Female, 31, "the Foundry's golem-wright",
+                    "Tilda tunes the golems' hearts, and talks to them more kindly than to anyone with a pulse.",
+                    "He likes you. The golem. He doesn't like many.", -100, 98, "warm", "engines", "wolves"), GuildRole.Member, "scholar"),
+            ],
+            new(Person("jonquil", "Jonquil Pike", Sex.Female, 27, "the Foundry's brightest spark",
+                "Jonquil builds faster than anyone in the yard, tests nothing, and has never once admitted an engine of hers failed on its own.",
+                "Still building the slow way? Sweet.", -108, 86, "proud", "engines", "money"), GuildRole.Rival, "EtherAeronaut", "EtherAeronaut")),
     ];
 
     public static Guild Of(Calling c) => All.First(g => g.Calling == c);
@@ -322,6 +354,37 @@ public static class Guilds
                 new("\"An ending with hope in it.\"", "You write the city a hopeful last verse. Odalys hears it, closes her eyes, and says it's a lie worth telling. She names you Laureate after her.", 30, Flag: "hopeful_verse", Honour: 2, Deed: "wrote the city a hopeful last verse"),
                 new("\"The truth, however it ends.\"", "You write the truth: the Rift, the Tongs, the corrupted dragons. Odalys laughs until she coughs, and names you Laureate after her. \"Somebody had to,\" she says.", 30, 0, 100, "true_verse", Honour: 3, Deed: "wrote the truth into the city's last verse"),
                 new("\"Write yourself in, and Odalys out.\"", "The last verse of the history of Tristinwold is about you. Odalys hears it, and laughs, and laughs, and names you Laureate anyway: \"They always do,\" she says. Hollis never forgives it.", 25, 0, 100, "vain_verse", Infamy: 4, Deed: "wrote yourself into the city's last verse, and its Laureate out"),
+            ]),
+
+        // ---- the Brass Foundry ----
+        new("leaking_still", Calling.Artificer, GuildRank.Initiate, "guild/marigold", "The Leaking Still",
+            "Marigold's still has been leaking spirit into the furnace room for a week, and last night it caught. Nobody was hurt; the Foundress wants to know how it leaked. Jonquil says Marigold never tightened it. Marigold says the still's seams were cut.",
+            [
+                new("\"Look at the seams.\"", "The seams are cut, clean, with a wrench. Not Marigold's: she can't reach that side of it. Hesper looks at Jonquil a long time, says nothing, and has Wick weld it shut. Marigold brings you a pie.", 15, 2, Flag: "cut_seams", Honour: 3, Deed: "cleared an apprentice of a fire that wasn't hers"),
+                new("\"Marigold's careless. Everyone knows it.\"", "Marigold scrubs furnaces for a month and stops talking at supper. The still leaks again a week later, from a cut seam, and Jonquil is somewhere else that night.", -5, -1, Flag: "blamed_marigold", Infamy: 3, Deed: "let an apprentice carry the blame for a cut still"),
+                new("\"Sell the Foundress the formula for a still that can't leak.\"", "You sell Hesper your own design, which is Marigold's with the seams moved. It works. Marigold recognises it, and says nothing, and that's worse.", 5, 0, 60, "sold_still", Infamy: 4, Deed: "sold the Foundry an apprentice's design as your own"),
+            ]),
+        new("harbour_contract", Calling.Artificer, GuildRank.Member, "guild/osgood", "The Harbour Contract",
+            "The Brine Company wants twelve bilge pumps for its ships, at the Foundry's price. The Ravenscrew Tongs want the same twelve, for boats that run things past the Watch at night, at twice the price, and they want the company's order lost. Osgood has both letters, and has asked you.",
+            [
+                new("\"The company's. It's honest work, and it's ours.\"", "Twelve pumps go to the company's ships, and Marit Hale shakes Osgood's hand on the pier. The Tongs send a man to say the Foundry will regret it. It doesn't, yet.", 15, Flag: "company_pumps", Honour: 4, Deed: "kept the Foundry's word to the Brine Company"),
+                new("\"The Tongs'. Twice the price is twice the price.\"", "Twelve pumps go out of the yard at night on a Tong cart. The Foundry's roof is mended and its furnaces fed for a year. Three smugglers' boats stop sinking, and the Watch stops catching them.", -5, 0, 120, "tong_pumps", Infamy: 5, Deed: "sold the Foundry's pumps to the Tongs' smugglers"),
+                new("\"Both. Build twenty-four, and fit the Tongs' with a flaw.\"", "The company's pumps pump. The Tongs' pumps pump for a month, then seize, one after another, a day out from the Teeth. The Tongs can't prove a thing. Osgood counts the money twice.", 10, 0, 60, "flawed_pumps", Honour: 1, Infamy: 2, Deed: "sold the Tongs pumps built to fail"),
+            ]),
+        new("rivals_engine", Calling.Artificer, GuildRank.Adept, "guild/hesper", "The Rival's Engine",
+            "The company will buy one engine for its new ship: Jonquil's, or yours. Hesper has set a trial for the morning: the two engines run until one gives out, in the yard, before the whole Foundry and Marit Hale.",
+            [
+                new("\"Let them run.\"", "Jonquil's engine runs hot, and fast, and dies at noon with a bang that takes the gantry roof. Yours is still running at supper. Marit Hale buys it. Jonquil doesn't come to supper.", 25, 2, Flag: "engine_won", Honour: 2, Deed: "won the Foundry's engine trial fair", Duel: true,
+                    Loss: "Yours seizes first, with a sound like a dropped bell. Jonquil's runs until dark. She pats it, and then you, on the shoulder. \"Next time,\" she says, and means it kindly, which is unbearable."),
+                new("\"Loosen a bolt in hers the night before.\"", "Jonquil's engine throws a rod in the first hour, and a piece of it through the tent where Marit Hale was sitting. Nobody is hurt. Yours wins. Wick finds the bolt, and looks at you, and pockets it.", 15, 5, Flag: "loosened_bolt", Infamy: 5, Deed: "wrecked a rival's engine in the night"),
+                new("\"Withdraw. Her engine's the better one.\"", "You tell Hesper so in front of the yard. Jonquil stares at you, suspicious of a trick, then shakes your hand very hard. The company buys hers; she asks you to fit it.", 5, -4, Flag: "yielded_engine", Honour: 3, Deed: "gave a rival the engine trial she deserved"),
+            ]),
+        new("golems_heart", Calling.Artificer, GuildRank.Veteran, "guild/tilda", "The Golem's Heart",
+            "Tilda has found what makes the Foundry's golems live: a sliver of the Rift, sealed in brass, in every heart. Hesper has always known. The Magi would shut the Foundry for it; the Tongs would pay a fortune for the way of it; and the golems, Tilda says, are the gentlest things she knows.",
+            [
+                new("\"Keep it. Seal the hearts better, and tell no one.\"", "You and Tilda rebuild every heart with a second seal, and the Rift stays where it's put. Hesper, when she hears, names you master of the Foundry, and gives you her own golem's old heart in a box.", 30, Flag: "sealed_hearts", Honour: 3, Deed: "kept the golems' secret, and made it safe"),
+                new("\"Tell the Archmage. It's the Rift.\"", "Selwyn comes himself, looks at a heart for a long while, and leaves it where it is: \"Sealed is sealed.\" The Magi keep a watch on the yard after. Hesper names you master, a little stiffly.", 20, Flag: "told_magi_hearts", Honour: 4, Deed: "took the golems' secret to the Magi"),
+                new("\"Sell the Tongs the way of it.\"", "A Tong captain pays in gold for the making of a heart. A month later there are golems on the docks at night, badly sealed, and one of them screams. Hesper names you master anyway, because the yard needs the money, and never looks at you the same.", 30, 0, 250, "sold_hearts", Infamy: 8, Deed: "sold the making of golem hearts to the Tongs"),
             ]),
     ];
 

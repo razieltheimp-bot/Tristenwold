@@ -55,7 +55,7 @@ public partial class Main
     public static readonly Vector3 FactorAt = new(25, 0, -25), ForemanAt = new(104, 0, 1.5f);
 
     /// <summary>What a shopkeeper charges this hero: their people's markup, less what the city's regard is worth.</summary>
-    double ShopMarkup => _player.Markup * (1 - _city.Discount) * _standing.PriceFactor;
+    double ShopMarkup => _player.Markup * (1 - _city.Discount) * _standing.PriceFactor * PerkShop;
 
     void AddTownWork()
     {
@@ -451,7 +451,7 @@ public partial class Main
         _player.Burdened = false;
         _crate?.QueueFree();
         _crate = null;
-        var wage = _city.DockWage;
+        var wage = (int)Math.Round(_city.DockWage * PerkPay);
         _player.Crowns += wage;
         // Whatever was in it is in the city's stores now.
         var cargo = _lootRng.Pick(new[] { Good.Fish, Good.Timber, Good.Iron, Good.Leather, Good.Ale, Good.Bread, Good.Herbs });
@@ -492,7 +492,7 @@ public partial class Main
     {
         if (_errand is not { } e || e.To != person) return false;
         _errand = null;
-        _player.Crowns += e.Pay;
+        _player.Crowns += (int)Math.Round(e.Pay * PerkPay);
         _city.Renown += 2;
         Sound.Ui("coin");
         _hud.Toast($"Letter delivered: +{e.Pay} crowns.", 4);
@@ -587,7 +587,7 @@ public partial class Main
                     var paid = _city.Deliver(c, ids);
                     Share(CityAction.Deliver(c.Id, ids));
                     foreach (var id in ids) _player.Pack.Take(id);
-                    _player.Crowns += paid;
+                    _player.Crowns += (int)Math.Round(paid * PerkPay);
                     Sound.Ui("coin");
                     Save();
                     _hud.Toast($"Delivered {ids.Count}: +{paid} crowns.{(finishing ? " Contract filled!" : "")}", 5);

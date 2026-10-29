@@ -301,7 +301,7 @@ public partial class Main
         foreach (var (g, n) in _sea.Hold.ToList())
             for (var i = 0; i < n; i++)
             {
-                crowns += ExchangePays(g);
+                crowns += (int)Math.Round(ExchangePays(g) * PerkTrade);
                 _city.Stock[g] = _city.Stock.GetValueOrDefault(g) + 1;
             }
         _sea.Hold.Clear();
@@ -318,7 +318,7 @@ public partial class Main
         foreach (var (g, n) in _sea.Hold.Where(c => c.Value > 0).ToList())
             options.Add(($"Sell {n} {CityEconomy.Info(g).Name} (they pay {m.Pays(g)} a load{(m.Wants.Contains(g) ? ", and they want it" : "")})", () =>
             {
-                var crowns = m.Sell(g, n);
+                var crowns = (int)Math.Round(m.Sell(g, n) * PerkTrade);
                 _sea.Hold.Remove(g);
                 _player.Crowns += crowns;
                 _sea.Profit += crowns;
@@ -549,6 +549,14 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
 
     public Person? Agent { get; private set; }
     public IReadOnlyList<Enemy> Boarders => _boarders;
+    double _surge;
+
+    /// <summary>An ether-aeronaut's overdrive: she surges ahead at four times her pace for a while (a pursuer's lost).</summary>
+    public void Surge(double seconds)
+    {
+        _surge = seconds;
+        main.HudNode.Toast("The engine screams and she leaps ahead, the sea white at her bow.", 5);
+    }
     public int Pending => _jobs.Count;
     /// <summary>How far along this leg (0 to 1, kept with the voyage); the self-test moves it on.</summary>
     public double Along { get => voyage.Along; set => voyage.Along = value; }
@@ -695,7 +703,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
                 Complete(watch);
         // Work left undone slows her: slack lines, a foul bottom, water in the well.
         var behind = _jobs.Count(j => _clock - j.Posted > 45);
-        var pace = behind >= 3 ? 0.4 : behind >= 2 ? 0.7 : 1;
+        var pace = (behind >= 3 ? 0.4 : behind >= 2 ? 0.7 : 1) * ((_surge -= delta) > 0 ? 4 : 1);
         if (behind >= 2 && (_nag -= delta) <= 0)
         {
             _nag = 40;

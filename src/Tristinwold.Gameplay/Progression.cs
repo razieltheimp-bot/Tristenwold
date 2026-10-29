@@ -72,7 +72,8 @@ public sealed class Hero
 }
 
 /// <summary>What a companion is to you: a tamed beast, a squire or apprentice from a town, or your own dragon.</summary>
-public enum BondRole { Pet, Squire, Apprentice, Dragon }
+/// <summary>What a companion is to its hero. A golem is an artificer's machine: it doesn't eat, and it's as grown as its maker is.</summary>
+public enum BondRole { Pet, Squire, Apprentice, Dragon, Golem }
 
 /// <summary>A move a companion learns as it grows: <paramref name="Level"/> is when.</summary>
 public sealed record BondSkill(string Id, string Name, int Level, string Text, double Cooldown, double Power);
@@ -129,7 +130,12 @@ public sealed class Bond
     [JsonIgnore]
     public double Growth => Role == BondRole.Dragon
         ? Math.Min(1, 0.12 + 0.88 * (Level - 1) / 9.0)
+        : Role == BondRole.Golem ? 1
         : Math.Min(1, 0.35 + 0.65 * (Level - 1) / 5.0);
+
+    /// <summary>An artificer's golem: built, not born; its level is its maker's.</summary>
+    [JsonIgnore]
+    public bool Machine => Role == BondRole.Golem;
 
     /// <summary>How its numbers compare to a grown one of its kind: smaller while young, stronger with every level.</summary>
     [JsonIgnore]

@@ -90,6 +90,7 @@ public static class Bestiary
         new("protege", "Protege", 100, 12, 5.6, 40, 1.8, 0.9, DamageKind.Physical, "#5a4a3a", 1.55),
         new("understudy", "Understudy", 95, 12, 5.2, 35, 10, 1.4, DamageKind.Physical, "#c8a040", 1.55),
         new("familiar", "Familiar", 110, 14, 5.5, 40, 1.8, 1.1, DamageKind.Poison, "#8a5ad0", 1.4),
+        new("golem", "Brass Golem", 240, 16, 4.4, 150, 2.0, 1.9, DamageKind.Physical, "#c8a048", 1.15), // an artificer's machine, at their side
         // The Ashen Crypt: the burned warden and the thralls he raises (their numbers are set by the raid).
         new("cinder_warden", "Cinder Warden", 600, 18, 4.2, 120, 2.6, 1.6, DamageKind.Fire, "#2e241c", 2.6),
         new("cinder_thrall", "Cinder Thrall", 45, 6, 4.0, 40, 1.7, 1.3, DamageKind.Fire, "#3a2e26", 1.5),

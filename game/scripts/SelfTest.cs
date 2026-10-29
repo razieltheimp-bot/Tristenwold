@@ -38,6 +38,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--humans-only")) { await HumansTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--poise-only")) { await PoiseTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ageing-only")) { await AgeingTest(); Finish(0); return; }
@@ -61,7 +62,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await StandingTest(); await HumansTest(); await PoiseTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await StandingTest(); await ArtificerTest(); await HumansTest(); await PoiseTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1876,6 +1877,142 @@ public partial class SelfTest(Main main) : Node
         // And it's all kept with the company.
         var saved = CompanySave.FromJson(main.Save()).Standing;
         Check(saved is { } sv && sv.Clan.Raids == 1 && sv.Watch.Dismissals == 1 && sv.Honour == s.Honour && sv.Deeds.Count == s.Deeds.Count, "your name, your clan and your service are saved");
+    }
+
+    /// <summary>
+    /// The fifth calling: the Foundry and its golem (built, not born; levels with its maker; stands down when they
+    /// leave), the alchemist's hazards and market transmutation, the ether-aeronaut's harpoon, anchor, merge and ship
+    /// modules, the saboteur's wrench, caltrops, trap, black-market scrapping, and a tracker on a wagon sprung into an
+    /// ambush; and a trade perk on every class's sheet.
+    /// </summary>
+    async Task ArtificerTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        var s = main.Standing;
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        await Teleport(new Vector3(-150, 0, -120));
+        Bond? Golem() => main.Bonds.FirstOrDefault(b => b.Role == BondRole.Golem);
+        Enemy? GolemBody() => main.CompanionBodies.FirstOrDefault(e => e.Bond?.Role == BondRole.Golem && e.State != EnemyState.Dead);
+
+        // The Foundry, and a golem that follows an artificer out of it.
+        var g = Guilds.Of(Calling.Artificer);
+        Check(main.Locals.Any(x => x.Npc.Id == g.Leader.Id) && g.Teachers.Count == 3, $"{g.Name} is in its yard: {g.Leader.Name} and three teachers");
+        p.Join("Alchemist");
+        await Until(() => GolemBody() is not null, 6);
+        var golem = GolemBody();
+        Check(golem is { Bond: { Name: "Alembic", Eats: false } } && golem.Leader == p, $"an alchemist's golem, {golem?.Bond?.Name}, stamps after you (level {golem?.Bond?.Level}): not a pet, never fed");
+        var level = p.Hero.Level;
+        main.GainXp(Hero.XpToNext(level) * 2);
+        await Until(() => Golem()?.Level == p.Hero.Level && GolemBody() is not null, 6);
+        Check(p.Hero.Level > level && Golem()?.Level == p.Hero.Level, $"it levels with you: level {p.Hero.Level}, both");
+
+        // Vials and a hazard on the ground.
+        var thug = Spawn("dock_thug", p.GlobalPosition - p.GlobalTransform.Basis.Z * 5);
+        await Frames(3);
+        p.Face(thug.GlobalPosition);
+        p.Stats.Restore(1e6, 1e6);
+        Check(p.Use(p.Class.Signature), "a hazard flask flung at a thug");
+        await Until(() => thug.Stats.Health < thug.Stats.MaxHealth * 0.9 || thug.State == EnemyState.Dead, 6);
+        Check(thug.Stats.Health < thug.Stats.MaxHealth * 0.9 || thug.State == EnemyState.Dead, $"the pool burns him as he stands in it ({thug.Stats.Health:0}/{thug.Stats.MaxHealth:0})");
+        thug.QueueFree();
+
+        // Market transmutation, through Garrick Wain, for a town the city trades with.
+        var town = main.World.SettlementsNear(0, 0, 5000).Where(x => x.Kind == SettlementKind.Town).OrderBy(x => x.DistanceTo(0, 0)).First();
+        var market = main.TradeLog.Market(town, main.Economy.Day);
+        var herb = Items.All.First(i => i.Kind == ItemKind.Herb).Id;
+        p.Pack.Add(herb, 3);
+        var good = market.Makes.First();
+        market.Stock[good] = 0.5;
+        var dear = market.Asks(good);
+        await Teleport(Main.YardAt + new Vector3(2, 0, 2));
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose($"Steady {town.Name}") && market.Steadied == main.Economy.Day && market.Asks(good) < dear && !p.Pack.Contents.Any(x => x.Item.Id == herb),
+            $"three herbs to Garrick Wain, and {town.Name}'s market steadies: {CityEconomy.Info(good).Name} from {dear} to {market.Asks(good)}");
+        hud.EndTalk();
+
+        // The ether-aeronaut: a harpoon that drags, an anchor that pins, the golem worn as armour.
+        p.Join("EtherAeronaut");
+        await Until(() => Golem()?.Level == p.Hero.Level + 2 && GolemBody() is not null, 6);
+        Check(Golem()?.Level == p.Hero.Level + 2, "a tinker's golem is sturdier: two levels up on you");
+        await Teleport(new Vector3(-150, 0, -120));
+        thug = Spawn("dock_thug", p.GlobalPosition - p.GlobalTransform.Basis.Z * 11);
+        await Frames(3);
+        p.Face(thug.GlobalPosition);
+        p.Stats.Restore(1e6, 1e6);
+        Check(p.Use(p.Class.Primary), "a harpoon at a thug 11 m off");
+        await Until(() => thug.GlobalPosition.DistanceTo(p.GlobalPosition) < 4, 3);
+        Check(thug.GlobalPosition.DistanceTo(p.GlobalPosition) < 4, $"and he's dragged to you ({thug.GlobalPosition.DistanceTo(p.GlobalPosition):0.0} m)");
+        Check(p.Use(p.Class.Signature) && thug.Rooted > 0, $"an anchor shot pins him ({thug.Rooted:0} s)");
+        thug.QueueFree();
+        var body = GolemBody()!;
+        Check(p.Use(p.Class.Utility) && !body.Visible && p.Stats.Statuses.Contains(AutoStatus.Protect), "you climb inside the golem: it's gone from the field, and you wear its plate (Protect, Shell)");
+        await Until(() => body.Visible, 20);
+        Check(body.Visible, "and it steps back out beside you after");
+        await Teleport(Main.ShipyardAt + new Vector3(0, 0, 1));
+        p.Crowns = Math.Max(p.Crowns, 600);
+        main.Talk(Who("tristinwold/shipwright"));
+        Check(hud.Choose("Fit light sails") && main.Sea.HasModule("light_sails") && main.Sea.Pace > 1, "Osric fits your light sails: a quarter off every leg");
+        hud.EndTalk();
+
+        // The saboteur: a wrench, caltrops, a trap; parts for Nell; a tracker and an ambush.
+        p.Join("Saboteur");
+        await Until(() => Golem()?.Level == p.Hero.Level && GolemBody() is not null, 6);
+        await Teleport(new Vector3(-150, 0, -120));
+        thug = Spawn("dock_thug", p.GlobalPosition - p.GlobalTransform.Basis.Z * 2);
+        await Frames(3);
+        p.Face(thug.GlobalPosition);
+        for (var i = 0; i < 4; i++) { p.Stats.Restore(1e6, 1e6); p.Use(p.Class.Primary); await Frames(35); }
+        Check(thug.Stunned > 0 || thug.State == EnemyState.Dead, "four blows of the wrench, and the fourth rings his head");
+        p.Stats.Restore(1e6, 1e6);
+        Check(p.Use(p.Class.Signature) && (thug.Hobbled > 0 || thug.State == EnemyState.Dead), $"caltrops hobble him ({thug.Hobbled:0} s)");
+        thug.QueueFree();
+        p.Stats.Restore(1e6, 1e6);
+        Check(p.Use(p.Class.Utility), "a trap set at your feet");
+        var walker = Spawn("giant_rat", p.GlobalPosition + new Vector3(6, 0, 0));
+        await Frames(3);
+        walker.GlobalPosition = p.GlobalPosition + new Vector3(0.8f, 0.3f, 0);
+        await Until(() => walker.Rooted > 0 || walker.State == EnemyState.Dead, 4);
+        Check(walker.Rooted > 0 || walker.State == EnemyState.Dead, "a rat steps on it: bitten and held");
+        walker.QueueFree();
+        p.Pack.Add("iron_sword", 2);
+        await Teleport(Main.Smugglers + new Vector3(1, 0, 1));
+        var purse = p.Crowns;
+        main.Talk(Who("tristinwold/smuggler"));
+        Check(hud.Choose("Break my spare gear") && p.Crowns > purse && !p.Pack.Contents.Any(x => x.Item.Id == "iron_sword"), $"Nell Corran buys two swords as parts: +{p.Crowns - purse} crowns");
+        hud.EndTalk();
+        await Teleport(Main.ParkedWagonAt + new Vector3(2, 0, 2));
+        var act = main.ArtificerActionForTest(p.GlobalPosition);
+        Check(act?.Verb.StartsWith("plant a tracker") == true, $"by a parked wagon at the yard: E to {act?.Verb}");
+        act?.Act();
+        var t = s.Tracker;
+        Check(t is not null && hud.Heard("A tracker under the wagon"), $"the tracker ticks: bound for {t?.TownName}");
+        if (t is null) return;
+        t.PlantedAt -= t.Length / 2 / WagonTracker.Pace; // half-way up the road already
+        var (x, z) = t.Where(main.GuildBook.PlaySeconds);
+        await Teleport(new Vector3((float)x + 3, 0, (float)z + 3));
+        await Until(() => hud.Tracked.Any(l => l.StartsWith("Tracker:")), 3);
+        Check(hud.Tracked.Any(l => l.StartsWith("Tracker:")), "the tracker shows where the wagon is on the road");
+        act = main.ArtificerActionForTest(p.GlobalPosition);
+        Check(act?.Verb.StartsWith("spring the ambush") == true, $"meet it there: E to {act?.Verb}");
+        act?.Act();
+        await Frames(5);
+        var guards = main.Enemies().Where(e => e.Stats.Name == "Caravan guard").ToList();
+        Check(guards.Count == 2 && t.Sprung, "the wagon pulls up and two guards come off the box");
+        var (purse2, infamy, bounty) = (p.Crowns, s.Infamy, s.Bounty);
+        foreach (var e in guards) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => s.Tracker is null, 6);
+        Check(s.Tracker is null && p.Crowns > purse2 && s.Infamy > infamy && s.Bounty == bounty + Standing.RaidBounty,
+            $"the guards down, the load is yours: +{p.Crowns - purse2} crowns, infamy {s.Infamy}, {Standing.RaidBounty} crowns on your head");
+        s.Bounty = 0;
+        main.WatchNode.Hostile = false;
+
+        // Every class has its trade, on the sheet; and a golem follows only an artificer.
+        Check(Classes.All.All(d => Perks.Of(d.Id).Name != "None"), $"every one of the {Classes.All.Count} classes has a trade perk");
+        p.Join("Paladin");
+        await Until(() => Golem() is null, 6);
+        Check(Golem() is null && hud.Heard("winds down"), "leave the calling, and the golem winds down in the Foundry yard");
     }
 
     /// <summary>Creatures stand on the ground under each foot, look at the hero, and swing their tails.</summary>

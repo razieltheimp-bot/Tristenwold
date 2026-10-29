@@ -322,6 +322,10 @@ public partial class Figure : Body
         ["Poet"] = new("Mage", ["Spellbook_open"], 0.74f, new Color("#f4dca0"), LeftHand: "@laurel"),
         ["Scribe"] = new("Mage", ["Spellbook"], 0.74f, new Color("#c8c0e0"), RightHand: "@quill"),
         ["Musician"] = new("Rogue", [], 0.74f, new Color("#f0c890"), LeftHand: "@lute", Unarmed: true),
+        ["Alchemist"] = new("Mage", ["Spellbook_open"], 0.74f, new Color("#b8e0a8")),
+        ["EtherAeronaut"] = new("Knight", ["2H_Crossbow", "Knight_Helmet"], 0.74f, new Color("#d8b870"), 0.05f),
+        ["Saboteur"] = new("Rogue_Hooded", ["Knife"], 0.74f, new Color("#9a9a70")),
+        ["golem"] = new("Knight", ["Knight_Helmet"], 1.12f, new Color("#c8a048"), 0.3f, Unarmed: true),
         // Characters made before there were nine classes.
         ["Knight"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"]),
         ["Mage"] = new("Mage", ["2H_Staff", "Mage_Hat"]),

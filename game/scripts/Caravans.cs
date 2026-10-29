@@ -453,7 +453,7 @@ public partial class Main
         {
             for (var i = 0; i < n; i++)
             {
-                crowns += ExchangePays(g);
+                crowns += (int)Math.Round(ExchangePays(g) * PerkTrade);
                 _city.Stock[g] = _city.Stock.GetValueOrDefault(g) + 1;
             }
             Share(CityAction.Cargo(g, Math.Min(10, n)));
@@ -474,7 +474,7 @@ public partial class Main
         foreach (var (g, n) in _trade.Cargo.Where(c => c.Value > 0).ToList())
             options.Add(($"Sell {n} {CityEconomy.Info(g).Name} (they pay {m.Pays(g)} a load{(m.Wants.Contains(g) ? ", and they want it" : "")})", () =>
             {
-                var crowns = m.Sell(g, n);
+                var crowns = (int)Math.Round(m.Sell(g, n) * PerkTrade);
                 _trade.Cargo.Remove(g);
                 _player.Crowns += crowns;
                 _trade.Profit += crowns;

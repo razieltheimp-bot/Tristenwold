@@ -63,6 +63,12 @@ public partial class Player : Fighter
 
     /// <summary>A warlock calls a familiar: the game brings it.</summary>
     public event Action<double>? Summoned;
+    /// <summary>An ether-aeronaut climbs into their golem for this long.</summary>
+    public event Action<double>? Merged;
+    /// <summary>An ether-aeronaut opens the engine wide for this long: the golem and any ship under them too.</summary>
+    public event Action<double>? Overdriven;
+    double _merged, _overdrive;
+    int _wrenched;
 
     const float WalkSpeed = 5, SprintSpeed = 9, JumpSpeed = 5;
 
@@ -361,6 +367,96 @@ public partial class Player : Fighter
         if (Class.Calling == Calling.Bard) Play(a);
         switch (a.Id)
         {
+            // ---- the alchemist ----
+            case "vial":
+                if (near is null) { Refund(a); return false; }
+                Figure.Perform("Throw", 0.5, 1.5f);
+                Spell(near, dmg, Element, 0.12f);
+                break;
+            case "hazard_flask":
+                if (near is null) { Refund(a); return false; }
+                Figure.Perform("Throw", 0.6, 1.2f);
+                Effects.Bolt(GetParent(), Hand, near.GlobalPosition + Vector3.Up * 0.5f, Element, 0.2f);
+                Hazard(near.GlobalPosition, 3.5, dmg, Element, a.Seconds * power);
+                break;
+            case "reagent_storm":
+                Figure.Perform("Spellcast_Raise", 1.0, 1);
+                Said?.Invoke("LIMIT BREAK: Reagent Storm!");
+                foreach (var e in Around(a.Range).ToList())
+                {
+                    Effects.Bolt(GetParent(), Hand, e.GlobalPosition + Vector3.Up, Element, 0.2f);
+                    Strike(e, dmg, Element, AttackKind.Spell);
+                }
+                Hazard(GlobalPosition, a.Range * 0.6, dmg * 0.2, Element, a.Seconds);
+                break;
+
+            // ---- the ether-aeronaut ----
+            case "harpoon":
+                if (near is null) { Refund(a); return false; }
+                Figure.Perform("2H_Ranged_Shoot", 0.6, 1.4f);
+                Effects.Bolt(GetParent(), Hand, near.GlobalPosition + Vector3.Up, DamageKind.Shock, 0.1f);
+                Strike(near, dmg, a.Kind, AttackKind.Weapon);
+                near.Pull(GlobalPosition - GlobalTransform.Basis.Z * (1.2f + near.Figure.Scale.X)); // dragged to you
+                break;
+            case "anchor":
+                if (near is null) { Refund(a); return false; }
+                Figure.Perform("2H_Ranged_Shoot", 0.7, 1.2f);
+                Effects.Bolt(GetParent(), Hand, near.GlobalPosition + Vector3.Up, DamageKind.Shock, 0.16f);
+                Strike(near, dmg, a.Kind, AttackKind.Weapon);
+                near.Rooted = a.Seconds * power;
+                Said?.Invoke("Pinned!");
+                break;
+            case "merge":
+                Figure.Perform("Spellcast_Raise", 0.8);
+                Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Shock, 2);
+                For(a.Seconds * power, AutoStatus.Protect, AutoStatus.Shell);
+                _merged = Now + a.Seconds * power;
+                Merged?.Invoke(a.Seconds * power);
+                break;
+            case "overdrive":
+                Figure.Perform("Spellcast_Raise", 0.8);
+                Said?.Invoke("LIMIT BREAK: Overdrive!");
+                Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Shock, 3);
+                For(a.Seconds, AutoStatus.Haste);
+                _overdrive = Now + a.Seconds;
+                Overdriven?.Invoke(a.Seconds);
+                break;
+
+            // ---- the saboteur ----
+            case "wrench":
+                Figure.Perform("1H_Melee_Attack_Chop", 0.45, 1.6f);
+                if (near is not null)
+                {
+                    Strike(near, dmg, a.Kind, AttackKind.Weapon);
+                    if (++_wrenched % 4 == 0 && near.State != EnemyState.Dead) { near.Stunned = 1.5; Said?.Invoke("Clang!"); }
+                }
+                break;
+            case "caltrops":
+                Figure.Perform("Throw", 0.5, 1.5f);
+                Effects.Burst(GetParent(), GlobalPosition + Vector3.Up * 0.3f, DamageKind.Physical, 3f);
+                foreach (var e in Around(a.Range).ToList())
+                {
+                    Strike(e, dmg, a.Kind, AttackKind.Weapon);
+                    e.Hobbled = a.Seconds * power;
+                    e.LoseTrack(a.Seconds * 0.5);
+                }
+                break;
+            case "trap":
+                Figure.Perform("Interact", 0.6, 1.2f);
+                Trap(GlobalPosition, dmg, a.Seconds * power);
+                Said?.Invoke("A trap, set.");
+                break;
+            case "demolition":
+                Figure.Perform("Spellcast_Long", 1.0, 1);
+                Said?.Invoke("LIMIT BREAK: Demolition!");
+                Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Fire, 4f);
+                foreach (var e in Around(a.Range).ToList())
+                {
+                    Strike(e, dmg, a.Kind, AttackKind.Weapon);
+                    Push(e, 5f);
+                }
+                break;
+
             // ---- the martial artist ----
             case "flurry":
                 var kick = ++_combo % 3 == 0;
@@ -735,6 +831,44 @@ public partial class Player : Fighter
         }
     }
 
+    /// <summary>A pool of an element on the ground for a while: everything in it is hurt, twice a second.</summary>
+    void Hazard(Vector3 at, double radius, double perSecond, DamageKind kind, double seconds)
+    {
+        var world = GetParent();
+        var ticks = (int)Math.Max(1, seconds * 2);
+        for (var i = 0; i < ticks; i++)
+        {
+            var tick = i;
+            GetTree().CreateTimer(tick * 0.5).Timeout += () =>
+            {
+                if (!IsInstanceValid(this) || Downed) return;
+                Effects.Burst(world, at + Vector3.Up * 0.2f, kind, (float)radius * 0.5f);
+                foreach (var e in Around(radius, at).ToList()) Strike(e, perSecond * 0.5, kind, AttackKind.Spell);
+            };
+        }
+    }
+
+    /// <summary>A trap at a spot: the first foe to step on it (within a minute) is bitten hard and held fast.</summary>
+    void Trap(Vector3 at, double damage, double hold)
+    {
+        var world = GetParent();
+        Effects.Burst(world, at + Vector3.Up * 0.1f, DamageKind.Physical, 0.6f);
+        var sprung = false;
+        for (var i = 1; i <= 400 && !sprung; i++)
+        {
+            GetTree().CreateTimer(i * 0.15).Timeout += () =>
+            {
+                if (sprung || !IsInstanceValid(this)) return;
+                if (Around(1.6, at).FirstOrDefault() is not { } e) return;
+                sprung = true;
+                Effects.Burst(world, e.GlobalPosition + Vector3.Up * 0.3f, DamageKind.Physical, 1.5f);
+                Strike(e, damage, DamageKind.Physical, AttackKind.Weapon, sureCrit: true);
+                e.Rooted = hold;
+                Said?.Invoke("Snap!");
+            };
+        }
+    }
+
     void Refund(Ability a)
     {
         _ready[a.Id] = 0;
@@ -811,6 +945,8 @@ public partial class Player : Fighter
         _smoke = false;
         if (Class.Id == "Assassin" && !target.FightingCompany) damage *= 1 + Class.Passive.Power * Hero.Power("backstab");
         if (_rage > 0) damage *= 1 + 0.6 * Hero.Power("rage");
+        if (_merged > Now) damage *= 1 + Class.Utility.Power * Hero.Power("merge"); // the golem's weight behind every blow
+        if (_overdrive > Now) damage *= 1 + Class.Limit.Power;
         if (Class.Id == "Scribe") // every weakness noted: each blow on the same foe hits harder
         {
             if (_noted != target) (_noted, _notes) = (target, 0);

@@ -39,6 +39,12 @@ public static class ClassQuests
             "The Codex has every word of power in it but one, left blank. A thief took it, hoping to fill the page."),
         ["Musician"] = ("and keep the beat the whole way through", "the Lute of the Long Night", "Master of the Long Night",
             "The lute was played through the longest night the city ever had, and kept the dark out. Then its player went wandering."),
+        ["Alchemist"] = ("and burn, freeze or shock every one of them, never a blade", "the Philosopher's Retort", "Grand Alchemist of the Foundry",
+            "The Retort turns any reagent into any other. The Foundress's own master lost it to a creditor, and the creditor to a lair."),
+        ["EtherAeronaut"] = ("with your golem on and your harpoon out", "the Ether Compass", "Aeronaut of the First Flight",
+            "The compass points along the ether's currents, over sea and sky both. It went down with the Foundry's first airship."),
+        ["Saboteur"] = ("without a fair fight in it: traps, smoke and a wrench from behind", "the Wrecker's Lantern", "Master Wrecker",
+            "The lantern's light shows what's weakest in any machine, wall or hull. The last wrecker to carry it wrecked himself."),
     };
 
     public static string MasteryTitle(string discipline) => Arts[discipline].Mastery;

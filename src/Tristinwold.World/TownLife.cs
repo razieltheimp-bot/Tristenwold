@@ -24,6 +24,7 @@ public static class Initiates
         Calling.Rogue => "lift three purses in the streets without the Watch laying a hand on them",
         Calling.Warrior => "go three bouts with another initiate where the whole town can see",
         Calling.Mage => "work the seven cantrips, one at each of the town's wells",
+        Calling.Artificer => "wind the clocks of three shops before they strike noon, and leave each running true",
         _ => "earn ten crowns busking before the lamps are lit",
     };
 

@@ -2,8 +2,8 @@ using Tristinwold.Deviant;
 
 namespace Tristinwold.Gameplay;
 
-/// <summary>The four callings a character can follow: the way of the blade, of the shadow, of magic, or of the word and the song.</summary>
-public enum Calling { Warrior, Rogue, Mage, Bard }
+/// <summary>The five callings a character can follow: the way of the blade, of the shadow, of magic, of the word and the song, or of the workshop.</summary>
+public enum Calling { Warrior, Rogue, Mage, Bard, Artificer }
 
 /// <summary>
 /// One of a class's moves. <paramref name="Power"/> is base damage (or, for a heal, the share of health
@@ -52,7 +52,7 @@ public sealed record Discipline(
 }
 
 /// <summary>
-/// The twelve classes, three to each calling, each fighting its own way:
+/// The fifteen classes, three to each calling, each fighting its own way:
 /// <list type="bullet">
 /// <item>Warriors: the Martial Artist (fists, feet and speed), the Barbarian (a great axe and rage), the
 /// Paladin (sword, shield and holy light).</item>
@@ -62,6 +62,10 @@ public sealed record Discipline(
 /// Sorcerer (raw, wild magic in the blood).</item>
 /// <item>Bards: the Poet (verse that cuts and verse that rouses), the Scribe (glyphs, seals and scrolls), the
 /// Musician (a lute, a drum and a song that shakes the ground).</item>
+/// <item>Artificers, each with a brass golem at their side that grows as they do: the Alchemist (volatile vials,
+/// elemental hazards, and reagents refined for the markets), the Ether-Aeronaut (a harpoon, ship modules, and a
+/// golem worn as armour), the Saboteur (a wrench, caltrops and traps, scrap for the black market, trackers on
+/// wagons).</item>
 /// </list>
 /// </summary>
 public static class Classes
@@ -173,11 +177,36 @@ public static class Classes
             new("battle_hymn", "Battle Hymn", "Play: you and your companions are quickened and heal for a while.", AttackKind.Spell, 30, 20, 0, 0, Seconds: 10),
             new("crescendo", "Crescendo", "A song that builds until the ground shakes: every foe within 14 m is struck three times.", AttackKind.Spell, 0, 0, 40, 14),
             new("perfect_pitch", "Perfect Pitch", "Mana and stamina come back quickly while you play.", AttackKind.Spell, 0, 0, 0.015, 0)),
+        // ---- artificers ----
+        new("Alchemist", "Alchemist", Calling.Artificer,
+            "A tinker of reagents and a trader in their fruits. Flings volatile vials, lays elemental hazards across a chokepoint, and refines what the land gives into goods the markets pay dearly for.",
+            130, 120, 110, 40,
+            new("vial", "Volatile Vial", "A vial of your element flung at the foe you face, up to 22 m.", AttackKind.Spell, 10, 0.7, 20, 22),
+            new("hazard_flask", "Hazard Flask", "A flask that bursts where the foe stands into a pool of your element, hurting everything in it for a while.", AttackKind.Spell, 35, 10, 14, 22, Seconds: 8),
+            Attune,
+            new("reagent_storm", "Reagent Storm", "Every vial on your belt at once: your element over everything around you, and a hazard left burning where you stand.", AttackKind.Spell, 0, 0, 70, 9, Seconds: 8),
+            new("refiner", "Refiner", "What you gather, fish and hunt sells for more, and your preserving salts keep goods on the road: more for every load you trade away from home.", AttackKind.Spell, 0, 0, 0.2, 0)),
+        new("EtherAeronaut", "Ether-Aeronaut", Calling.Artificer,
+            "An engineer of ships and ether. Harpoons foes to the deck, pins them where they stand, climbs inside the golem and wears it as armour, and fits ships with modules that outrun pirates.",
+            150, 90, 130, 55,
+            new("harpoon", "Ether Harpoon", "A harpoon at the foe you face, up to 18 m, that drags them to you.", AttackKind.Weapon, 12, 0.8, 18, 18, DamageKind.Shock),
+            new("anchor", "Anchor Shot", "A charged harpoon that pins a foe where it stands for a while.", AttackKind.Weapon, 25, 8, 22, 18, DamageKind.Shock, 5),
+            new("merge", "Merge", "Climb inside your golem and wear it: Protect and Shell, and your blows carry its weight, for a while.", AttackKind.Spell, 40, 30, 0.5, 0, Seconds: 14),
+            new("overdrive", "Overdrive", "The engine opened wide: you and your golem move and strike like lightning for a while, and a ship under you surges ahead.", AttackKind.Spell, 0, 0, 0.6, 0, Seconds: 12),
+            new("tinker", "Tinker", "You fit ships with modules at the shipyard (a bilge pump that halves what boarders hole; light sails that cut a quarter off every leg), and your golem is sturdier.", AttackKind.Spell, 0, 0, 0.25, 0)),
+        new("Saboteur", "Saboteur", Calling.Artificer,
+            "The wrong kind of artificer. A wrench that stuns, smoke caltrops, spring traps, and a nose for parts: breaks gear and wrecks down for the black market, and plants trackers on wagons for an ambush.",
+            135, 70, 150, 40,
+            new("wrench", "Wrench", "A heavy wrench; every fourth blow rings a foe's head and stuns them a moment.", AttackKind.Weapon, 7, 0.45, 15, 2.2),
+            new("caltrops", "Smoke Caltrops", "Caltrops and smoke at your feet: foes near you are hobbled, and lose sight of you.", AttackKind.Weapon, 25, 12, 8, 5, Seconds: 6),
+            new("trap", "Spring Trap", "A trap set at your feet: the first foe to step on it is bitten hard and held fast.", AttackKind.Weapon, 30, 15, 45, 1.5, Seconds: 4),
+            new("demolition", "Demolition", "Every charge in your pack at once: a blast that throws everything around you.", AttackKind.Weapon, 0, 0, 95, 8, DamageKind.Fire),
+            new("scrapper", "Scrapper", "Break gear and wreckage down into parts the black market pays well for; a tracker planted on a wagon shows where it goes.", AttackKind.Weapon, 0, 0, 0.25, 0)),
     ];
 
     public static Discipline Get(string id) => All.FirstOrDefault(d => d.Id.Equals(id, StringComparison.OrdinalIgnoreCase)) ?? For(id);
 
-    /// <summary>The class for a character's look. Characters made before there were twelve classes keep the nearest.</summary>
+    /// <summary>The class for a character's look. Characters made before there were fifteen classes keep the nearest.</summary>
     public static Discipline For(string look) => look switch
     {
         "Knight" => Get("Paladin"),
@@ -195,6 +224,7 @@ public static class Classes
         Calling.Warrior => "the Iron Circle",
         Calling.Rogue => "the Velvet Knives",
         Calling.Bard => "the Bards' College",
+        Calling.Artificer => "the Brass Foundry",
         _ => "the Magi Archive",
     };
 }
