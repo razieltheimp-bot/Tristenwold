@@ -1,0 +1,19 @@
+# The Tristinwold shared-world server as a service (installed by setup.sh).
+[Unit]
+Description=Tristinwold server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=tristinwold
+WorkingDirectory=/opt/tristinwold
+EnvironmentFile=/etc/tristinwold.env
+ExecStart=/opt/tristinwold/Tristinwold.Server --password ${TRISTINWOLD_PASSWORD}
+StandardInput=null
+Restart=on-failure
+RestartSec=5
+# Leave it time to save the world when the machine stops it.
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
