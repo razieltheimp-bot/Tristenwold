@@ -678,9 +678,21 @@ sex and stage of life (a stocky dwarf, a towering half-giant, a goblin child, an
 skeleton. KayKit's whole move set (every walk, swing, spell, fall and gesture) is retargeted onto that skeleton, so
 they move exactly as the figures did. They have faces: MakeHuman's skin textures (an age, a face and a sex each,
 tinted for the people: an orc's green, an elf's pallor), eyes, brows, lashes and a head of hair fitted to each face.
-Clothes are painted on the body by trade and by class: a guard's grey mail and cap, a priest's white, a worker's bare
-arms, a pirate's red, a paladin's mail, a wizard's blue robe, a ranger's green with the hood up. Nothing of the
-cartoon figures is mixed in: the undead, the imps and the golems keep their own shapes, since they were never people.
+They wear real clothes, baked onto each body from MakeHuman's own (CC0): a shirt, trousers and shoes, dyed by trade
+and by class (a guard's grey, a priest's white, a pirate's red, a paladin's mail, a wizard's blue, a ranger's green
+with the hood up), with the body under them painted the same so no seam shows. What they carry is forged to real
+size in real materials (see below). Nothing of the cartoon figures is mixed in: the undead, the imps and the golems
+keep their own shapes, since they were never people. Nor do they stand like posts: every few seconds someone shifts
+their weight and turns, makes a small gesture, or takes a few steps and back where the way is clear, and their head
+turns to follow you when you come near; talking to someone holds them still, facing you.
+
+**Real gear.** The kit in every real hand is built to real proportions in physically based materials rather than
+the flat colours of the cartoon figures: a sword is a fullered, tapered steel blade with a crossguard, a wrapped
+grip and a pommel; an axe a forged head on an ash haft; a knife, a staff with a lit stone, a wand, a crossbow with
+its string, a planked round shield with an iron rim and boss, a steel heater with a painted badge, a pewter mug, a
+spellbook. Gear you wear is forged the same way, in its own metal (steel bright, dragonbone pale, a cinder axe black
+with embers), and goes into the hand it belongs in: a blade along the thumb, edge to the knuckles; a shield on the
+back of the forearm. Body armour dyes the shirt (steel for mail and plate); a helm paints a cap.
 
 **Making yourself.** The character page builds a hero from the same pieces: your people, your sex and your age pick
 the body; then the face the skin is painted from (fair, olive or dark, or your people's own mix), the colour of your

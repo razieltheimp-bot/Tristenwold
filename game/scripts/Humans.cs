@@ -602,7 +602,7 @@ public partial class Figure
             if (equip.Contains("Eye-") && who.Eyes.Length > 0) part = who.Eyes; // their own colour of eyes
             var part_arrays = source.SurfaceGetArrays(s);
             painted.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, part_arrays, flags: Weights(part_arrays));
-            painted.SurfaceSetMaterial(painted.GetSurfaceCount() - 1, PartMaterial(equip, part, who));
+            painted.SurfaceSetMaterial(painted.GetSurfaceCount() - 1, ClothMaterial(equip, part, outfit, garb.Metal) ?? PartMaterial(equip, part, who));
             if (Debug) GD.Print($"  part {s}: {equip} <- {part} ({(Humans.Texture(part) is { } t ? $"{t.GetWidth()}x{t.GetHeight()}" : "no texture")}), {source.SurfaceGetArrayLen(s)} vertices");
         }
         mi.Mesh = painted;
@@ -614,6 +614,35 @@ public partial class Figure
         var verts = arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array().Length;
         var bones = arrays[(int)Mesh.ArrayType.Bones].VariantType == Variant.Type.Nil ? 0 : arrays[(int)Mesh.ArrayType.Bones].AsInt32Array().Length;
         return verts > 0 && bones == verts * 8 ? Mesh.ArrayFormat.FlagUse8BoneWeights : 0;
+    }
+
+    /// <summary>
+    /// Real clothes, where the body was baked with them (a shirt, trousers and shoes: see tools/humans): each is dyed
+    /// in the outfit's colour over its own weave, the shirt in steel where the hero wears mail or plate. Null for a
+    /// part that isn't clothing.
+    /// </summary>
+    static Material? ClothMaterial(string equip, string file, Humans.Outfit outfit, bool metal)
+    {
+        var colour = equip switch
+        {
+            _ when equip.StartsWith("Shirt") || equip.StartsWith("Jacket") || equip.StartsWith("Top") => outfit.Tunic,
+            _ when equip.StartsWith("Pants") || equip.StartsWith("Trousers") || equip.StartsWith("Skirt") => outfit.Trousers,
+            _ when equip.StartsWith("Shoes") || equip.StartsWith("Boots") => outfit.Boots,
+            _ when equip.StartsWith("Hat") => outfit.Cap ?? outfit.Trousers,
+            _ => (Color?)null,
+        };
+        if (colour is not { } dye) return null;
+        var shirt = equip.StartsWith("Shirt") || equip.StartsWith("Jacket") || equip.StartsWith("Top");
+        var texture = Humans.Texture(file);
+        return new StandardMaterial3D
+        {
+            AlbedoTexture = texture,
+            AlbedoColor = texture is null ? dye : dye.Lightened(0.15f), // the weave in the texture darkens it a little
+            Metallic = shirt && metal ? 0.85f : 0,
+            Roughness = shirt && metal ? 0.4f : 0.88f,
+            MetallicSpecular = shirt && metal ? 0.7f : 0.2f,
+            CullMode = BaseMaterial3D.CullModeEnum.Disabled, // cloth is seen from inside at a cuff or a hem
+        };
     }
 
     /// <summary>Eyes as they are; hair, brows and lashes (grey in the files) tinted with the hair colour, cut out by their alpha.</summary>

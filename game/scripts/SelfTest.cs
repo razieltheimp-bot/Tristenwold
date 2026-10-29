@@ -28,7 +28,9 @@ public partial class SelfTest(Main main) : Node
         main.TownLifeNode.Stirring = false; // no young thief lifts the scripted hero's purse mid-test: the town's own test turns it on
         try
         {
+            GD.PrintErr("[selftest] ready; waiting ten physics frames");
             await Frames(10);
+            GD.PrintErr("[selftest] ten physics frames passed; starting");
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them

@@ -331,6 +331,7 @@ public partial class Main : Node3D
 
     void Begin(StartChoice choice)
     {
+        if (_args.ContainsKey("selftest")) GD.PrintErr("[selftest] Begin");
         Choice = choice;
         (_args["company"], _args["server"], _args["password"]) = (choice.Character.Name, choice.Server, choice.ServerPassword);
         TouchMode = _args.ContainsKey("touch") || _remoteTouch || DisplayServer.IsTouchscreenAvailable();
@@ -419,7 +420,7 @@ public partial class Main : Node3D
 
         if (TouchMode) EnableTouch();
         Connect();
-        if (_args.ContainsKey("selftest")) AddChild(new SelfTest(this));
+        if (_args.ContainsKey("selftest")) { GD.PrintErr("[selftest] world begun; adding the self-test"); AddChild(new SelfTest(this)); }
         else if (_args.TryGetValue("shots", out var shots)) AddChild(new Shots(this, shots, quick: _args.ContainsKey("quick"), dragon: _args.GetValueOrDefault("dragon"), skirmish: _args.ContainsKey("skirmish"), raid: _args.ContainsKey("raid"), lairs: _args.TryGetValue("lairs", out var lairs) ? lairs : null, wild: _args.ContainsKey("wild"), limit: _args.ContainsKey("limit"), market: _args.ContainsKey("market"), audit: _args.ContainsKey("audit"), spells: _args.ContainsKey("spells"), town: _args.ContainsKey("town")));
         else _hud.Toast($"Tristinwold. You are a {_player.Class.Name}. Esc: menu (save, log out)   M: map   J: journal   E: talk   K: skills   P: party   F10: the shared world");
     }

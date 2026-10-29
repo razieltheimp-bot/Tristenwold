@@ -32,6 +32,9 @@ const HAIR = {
 	"male": ["Hair-Short01", "Hair-Short02", "Hair-Short03", "Hair-Short04", "Hair-Afro01", "Hair-Short02", "Hair-Short03"],
 }
 const EYES = ["LeftEye-LowPolyEyeball", "RightEye-LowPolyEyeball"]
+# Real clothes on every body (MakeHuman's system clothes, CC0): a shirt, trousers and shoes, which the game tints by
+# trade and class. Each is a surface of its own, tagged like the hair, so the game can colour or drop it.
+const CLOTHES = [["Shirt-MakeHumanTShirt", null], ["Pants-SuitSlacks", "uncolored"], ["Shoes-01", "brown"]]
 const LASHES = ["LeftEyelash", "RightEyelash"]
 const BROWS = 12
 # The skins the game picks from: an age, a face, a sex.
@@ -39,6 +42,9 @@ const SKIN = "^(young|middleage|old)_(african|asian|caucasian)_(female|male)$"
 
 var only: PackedStringArray = []
 var textures_only = false
+var out_dir = OUT_DIR
+var tex_dir = TEX_DIR
+var no_clothes = false
 var exported := {} # texture resource path -> file written
 
 func _ready():
@@ -47,7 +53,9 @@ func _ready():
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="): only = a.substr(7).split(",")
 		if a == "--textures-only": textures_only = true
-	DirAccess.make_dir_recursive_absolute(TEX_DIR)
+		if a.begins_with("--out="): out_dir = a.substr(6); tex_dir = out_dir + "tex/"
+		if a == "--no-clothes": no_clothes = true
+	DirAccess.make_dir_recursive_absolute(tex_dir)
 	export_textures()
 	var made = 0
 	if not textures_only:
@@ -60,7 +68,7 @@ func _ready():
 					if only.size() > 0 and name not in only: continue
 					await bake(name, people, sex, stage, i)
 					made += 1
-	print("baked ", made, " bodies into ", OUT_DIR, ", ", exported.size(), " textures into ", TEX_DIR)
+	print("baked ", made, " bodies into ", out_dir, ", ", exported.size(), " textures into ", tex_dir)
 	get_tree().quit()
 
 # Every texture the game may dress a body in, once: the skins (an age, a face and a sex each), eyes, brows,
@@ -75,7 +83,7 @@ func export_textures():
 	if iris is Texture2D and iris.get_image() != null:
 		var img: Image = iris.get_image().duplicate()
 		if img.is_compressed(): img.decompress()
-		img.save_png(TEX_DIR + "lefteye-lowpolyeyeball__iris.png")
+		img.save_png(tex_dir + "lefteye-lowpolyeyeball__iris.png")
 		print("  texture lefteye-lowpolyeyeball__iris.png ", img.get_width(), "x", img.get_height(), " ", img.get_format())
 	for t in types:
 		var et = HumanizerRegistry.equipment.get(t)
@@ -98,8 +106,8 @@ func save_texture(type: String, tex_name: String, material) -> String:
 	var alpha = img.detect_alpha() != Image.ALPHA_NONE
 	if img.get_width() > 2048: img.resize(2048, int(2048.0 * img.get_height() / img.get_width()), Image.INTERPOLATE_LANCZOS)
 	var file = "%s__%s.%s" % [type.to_lower(), tex_name.to_lower(), "png" if alpha else "jpg"]
-	if alpha: img.save_png(TEX_DIR + file)
-	else: img.save_jpg(TEX_DIR + file, 0.9)
+	if alpha: img.save_png(tex_dir + file)
+	else: img.save_jpg(tex_dir + file, 0.9)
 	exported[key] = file
 	print("  texture ", file, " ", img.get_width(), "x", img.get_height())
 	return file
@@ -129,6 +137,10 @@ func bake(name: String, people: String, sex: String, stage: String, i: int):
 	if sex == "female": for e in LASHES: config.add_equipment(HumanizerEquipment.new(e))
 	var hair = HAIR[sex][(i * 3 + (0 if stage != "elder" else 1)) % HAIR[sex].size()]
 	config.add_equipment(HumanizerEquipment.new(hair, hair_texture(hair)))
+	if not no_clothes:
+		for c in CLOTHES:
+			if HumanizerRegistry.equipment.get(c[0]) == null: push_warning("no clothes " + c[0]); continue
+			config.add_equipment(HumanizerEquipment.new(c[0], c[1]))
 	if config.has_method("init_macros"): config.init_macros()
 	var hz = Humanizer.new()
 	await hz.load_config_async(config)
@@ -163,7 +175,7 @@ func bake(name: String, people: String, sex: String, stage: String, i: int):
 	var doc = GLTFDocument.new()
 	var st = GLTFState.new()
 	doc.append_from_scene(root, st)
-	var err = doc.write_to_filesystem(st, OUT_DIR + name + ".glb")
+	var err = doc.write_to_filesystem(st, out_dir + name + ".glb")
 	var box = mi.get_aabb()
 	print(name, ": ", err, " ", "%.2f m tall" % box.size.y, ", ", ", ".join(parts))
 	root.queue_free()
