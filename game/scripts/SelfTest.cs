@@ -818,7 +818,10 @@ public partial class SelfTest(Main main) : Node
         knight.Allied = true;
         main.AddEnemy(knight);
         var fallen = Spawn("dragon_red_corrupt", Ground(p.GlobalPosition + new Vector3(60, 0, 100)));
-        await Until(() => knight.Stats.Health < knight.Stats.MaxHealth || fallen.Stats.Health < fallen.Stats.MaxHealth, 25);
+        await Frames(10);
+        knight.Distract(fallen); // they'd find each other anyway; this spares the wait on their wandering
+        fallen.Distract(knight);
+        await Until(() => knight.Stats.Health < knight.Stats.MaxHealth || fallen.Stats.Health < fallen.Stats.MaxHealth, 40);
         Check(knight.Stats.Health < knight.Stats.MaxHealth || fallen.Stats.Health < fallen.Stats.MaxHealth,
             $"a dragon knight and a corrupted red dragon fight ({knight.Stats.Health:0} and {fallen.Stats.Health:0} hp left)");
         knight.QueueFree();
