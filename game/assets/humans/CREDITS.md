@@ -9,3 +9,8 @@
   imported with its bones mapped to Godot's humanoid profile (`kaykit_bonemap.tres`), so that its animations play on
   the bodies. Only its animations are used.
 - `body_bonemap.tres`: the bodies' bones mapped to the same profile, so their rest pose matches the animations'.
+- Each body carries its eyes, eyebrows, eyelashes and hair (MakeHuman's system assets, CC0, from Humanizer's asset
+  packs: https://github.com/NitroxNova/humanizer_assets), fitted to its face.
+- `tex/`: MakeHuman's system skin textures (an age, a face and a sex each), eye, eyebrow, eyelash and hair textures,
+  from the same packs (CC0), at most 2048 wide; the hair, brow and lash textures turned grey so the game can tint
+  them. The game picks a skin by age, face and sex and tints it for the people.

@@ -626,10 +626,13 @@ prize is infamy. `--selftest --standing-only` walks through all of it.
 On a PC at High graphics or better, Tristinwold's people have real bodies: baked from MakeHuman's base mesh (CC0)
 with the Humanizer tool, one body for every people, sex and stage of life (a stocky dwarf, a towering half-giant, a
 goblin child, an elder human), on Godot's humanoid skeleton. KayKit's whole move set (every walk, swing, spell,
-fall and gesture) is retargeted onto that skeleton, so the new bodies move exactly as the figures did. Clothes,
-hair and skin are painted on by trade: a guard's grey mail and cap, a priest's white, a worker's bare arms, a
+fall and gesture) is retargeted onto that skeleton, so the new bodies move exactly as the figures did. They have
+faces: MakeHuman's skin textures (an age, a face and a sex each, tinted for the people: an orc's green, an elf's
+pallor), eyes, brows, lashes and a head of hair fitted to each face, in the hair colours of their people (grey for
+the old). Clothes are painted on by trade: a guard's grey mail and cap, a priest's white, a worker's bare arms, a
 pirate's red. Where the bodies aren't (the phone build) or the setting is lower, the KayKit figures stand in. The
-hero and the enemies still wear KayKit's figures for now; they're next.
+hero and the enemies still wear KayKit's figures for now; they're next. `--shots DIR --town --faces --humans` takes
+close-ups of a few of the townsfolk; `tools/humans/` has the baking notes.
 
 ### Creatures that stand in the world
 

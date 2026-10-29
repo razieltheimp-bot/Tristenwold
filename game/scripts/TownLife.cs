@@ -226,12 +226,12 @@ public partial class TownLife(Main main) : Node
     }
 
     /// <summary>A young thief at the hero's purse.</summary>
-    void Lift(Walker w)
+    void Lift(Walker w, bool sure = false)
     {
         var p = main.PlayerNode;
         w.Stalking = false;
         _nextLift = _clock + 120;
-        if (_rng.Chance(Initiates.LiftChance(p.Pack.Level(Job.Thieving), p.Class.Calling == Calling.Rogue)))
+        if (sure || _rng.Chance(Initiates.LiftChance(p.Pack.Level(Job.Thieving), p.Class.Calling == Calling.Rogue)))
         {
             w.Purse = Initiates.Purse(p.Crowns, _rng);
             p.Crowns -= w.Purse;
@@ -357,5 +357,6 @@ public partial class TownLife(Main main) : Node
 
     // ---- for the self-test ----------------------------------------------------------------------
 
-    public void LiftForTest(Walker w) => Lift(w);
+    /// <summary>For the self-test: a thief at the purse, and (the dice aside) one who gets it.</summary>
+    public void LiftForTest(Walker w, bool sure = true) => Lift(w, sure);
 }

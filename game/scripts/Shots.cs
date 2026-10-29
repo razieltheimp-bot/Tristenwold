@@ -580,6 +580,27 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--faces"))
+        {
+            // Close up on a few of the townsfolk: their faces, hair and eyes (realistic people on).
+            var picks = new List<Person>();
+            foreach (var want in new Func<Person, bool>[] { x => x.Npc.Id == Main.WatchCaptain, x => x.Npc.Id == "tristinwold/harbourmaster", x => x.Npc.Race == "elf", x => x.Npc.Race == "dwarf", x => x.Npc.Race == "orc", x => x.Npc.Sex == Sex.Female && x.Npc.Age < 30 })
+                if (main.Locals.Concat(main.PlacesNode.People).FirstOrDefault(x => want(x) && !picks.Contains(x)) is { } who) picks.Add(who);
+            var n = 0;
+            foreach (var who in picks)
+            {
+                var at = who.GlobalPosition;
+                var head = at + Vector3.Up * (who.Figure is { } fig ? fig.Scale.Y * 1.5f : 1.5f);
+                var from = head + new Vector3(0, 0.05f, 1.1f);
+                p.GlobalPosition = at + new Vector3(0, 1, 3);
+                await ToSignal(GetTree().CreateTimer(2.0), SceneTreeTimer.SignalName.Timeout); // real seconds: let the idle settle
+                who.TalkTo(from);
+                await ToSignal(GetTree().CreateTimer(1.0), SceneTreeTimer.SignalName.Timeout);
+                await From($"face-{n++}-{who.Npc.Race ?? "human"}-{who.Npc.Name.Split(' ')[0]}", from, head);
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--sea"))
         {
             // The shipyard, then aboard at sea with pirates alongside.

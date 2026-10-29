@@ -31,6 +31,7 @@ public partial class SelfTest(Main main) : Node
             await Frames(10);
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
             if (OS.GetCmdlineUserArgs().Contains("--frontier-only")) { await FrontierTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--story-only")) { await StoryTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--caravan-only")) { await CaravanTest(); Finish(0); return; }
@@ -1110,7 +1111,7 @@ public partial class SelfTest(Main main) : Node
         await Teleport(City.PlayerStart);
         var knife = life.Cutthroat();
         await Until(() => main.WatchNode.Guards.Any(g => g.Rival == knife), 20);
-        Check(main.WatchNode.Guards.Any(g => g.Rival == knife), $"a Velvet Knife comes for you, and the Watch comes running ({main.WatchNode.Guards.Count(g => g.Rival == knife)} watchmen)");
+        Check(main.WatchNode.Guards.Any(g => g.Rival == knife), $"a Velvet Knife comes for you, and the Watch comes running ({main.WatchNode.Guards.Count(g => g.Rival == knife)} watchmen; {main.WatchNode.Guards.Count()} at their posts, {main.WatchNode.Guards.Count(g => g.Allied)} on your side; you're {main.Standing.Name})");
         var crowns = p.Crowns;
         if (IsInstanceValid(knife)) knife.TakeHit(1e6, DamageKind.Sun, AttackKind.Spell, false, p);
         await Frames(5);
@@ -1960,6 +1961,15 @@ public partial class SelfTest(Main main) : Node
         Check(distinct >= 4, $"dressed: {distinct} colours painted on (skin, tunic, trousers, boots, hair)");
         var box = mesh.GetAabb();
         Check(box.Size.Y is > 1.2f and < 2.6f && box.Position.Y > -0.15f, $"{box.Size.Y:0.00} m tall, feet on the ground");
+        // A face: skin from the textures, eyes, brows, lashes and hair, each dressed.
+        var parts = Enumerable.Range(1, mesh.Mesh.GetSurfaceCount() - 1).Select(i => mesh.Mesh.SurfaceGetMaterial(i) as StandardMaterial3D).ToList();
+        Check(mesh.Mesh.GetSurfaceCount() >= 6 && parts.All(m => m?.AlbedoTexture is not null), $"with a face: {mesh.Mesh.GetSurfaceCount() - 1} parts (eyes, brows, lashes, hair), each with its texture");
+        Check(mesh.Mesh.SurfaceGetMaterial(0) is ShaderMaterial skinned && skinned.GetShaderParameter("skin").AsGodotObject() is Texture2D, "and a skin texture under the painted clothes");
+        var arm = skeleton.FindBone("LeftUpperArm");
+        var elbow = skeleton.FindBone("LeftLowerArm");
+        await Until(() => (skeleton.GetBoneGlobalPose(elbow).Origin - skeleton.GetBoneGlobalPose(arm).Origin).Normalized().Y < -0.6f, 3);
+        var hang = (skeleton.GetBoneGlobalPose(elbow).Origin - skeleton.GetBoneGlobalPose(arm).Origin).Normalized();
+        Check(hang.Y < -0.6f, $"standing, the arms hang (the upper arm points {hang.Y:0.00} down)");
         figure.Move(3, true, false);
         await Frames(30);
         var hips = skeleton.GetBoneGlobalPose(skeleton.FindBone("Hips")).Origin;
