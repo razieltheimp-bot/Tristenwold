@@ -241,6 +241,9 @@ public static class Loot
         "draugr" or "draugr_overlord" or "cinder_thrall" or "hollow_soldier" or "familiar" =>
             [("bone_dust", 0.8, 1, 2), ("ancient_coin", 0.4, 1, 2), ("scrap_iron", 0.4, 1, 1), (kind == "cinder_thrall" ? "ember_ash" : kind == "hollow_soldier" ? "ectoplasm" : "bone_dust", 0.5, 1, 1)],
         "sea_wraith" => [("ectoplasm", 0.9, 1, 2), ("ancient_coin", 0.4, 1, 2)],
+        "pirate" or "pirate_captain" =>
+            [("ancient_coin", 0.6, 1, 3), ("linen", 0.4, 1, 2), ("iron_dagger", 0.12, 1, 1), ("healing_draught", 0.15, 1, 1), ("ale", 0.3, 1, 1)],
+        "marine" => [("bread", 0.4, 1, 2), ("linen", 0.3, 1, 1), ("iron_dagger", 0.1, 1, 1), ("healing_draught", 0.2, 1, 1)],
         "raider" or "raider_chief" =>
             [("raw_meat", 0.5, 1, 2), ("leather", 0.5, 1, 2), ("ancient_coin", 0.3, 1, 2), ("iron_dagger", 0.15, 1, 1), ("healing_draught", 0.15, 1, 1)],
         "dock_thug" or "lantern_boy" or "drowned_hand" or "bandit" or "bandit_chief" =>

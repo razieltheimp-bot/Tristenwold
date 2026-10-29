@@ -119,6 +119,8 @@ public sealed class CompanySave
     public TradeBook? Trade { get; set; }
     /// <summary>The barbarian raids reckoned with, and the clans the hero has broken.</summary>
     public RaidRecord? Warbands { get; set; }
+    /// <summary>Life at sea and in the shipyard: rank aboard, voyages, the hero's own ship and its hold.</summary>
+    public SeaBook? Sea { get; set; }
     public int Meat { get; set; }
     public GuildBook? Guilds { get; set; }
     public RaidBook? Raids { get; set; }
@@ -141,8 +143,9 @@ public sealed class CompanySave
 
     public static CompanySave Capture(ulong seed, int crowns, ExploredMap map, QuestLog log,
         Hero? hero = null, IEnumerable<Bond>? companions = null, DragonSaga? saga = null, int meat = 0, GuildBook? guilds = null, RaidBook? raids = null,
-        Pack? pack = null, HerbBook? herbs = null, Spot? where = null, CityEconomy? city = null, PursuitBook? pursuits = null, ImmortalSaga? story = null, TradeBook? trade = null, RaidRecord? warbands = null) => new()
+        Pack? pack = null, HerbBook? herbs = null, Spot? where = null, CityEconomy? city = null, PursuitBook? pursuits = null, ImmortalSaga? story = null, TradeBook? trade = null, RaidRecord? warbands = null, SeaBook? sea = null) => new()
     {
+        Sea = sea,
         Warbands = warbands,
         Trade = trade,
         Story = story,

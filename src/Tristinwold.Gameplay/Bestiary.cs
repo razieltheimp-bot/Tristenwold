@@ -52,6 +52,10 @@ public static class Bestiary
         new("sea_wraith", "Sea Wraith", 120, 18, 4.6, 0, 2.2, 2.0, DamageKind.Frost, "#7fc6c0", 2.0),
         new("bandit", "Bandit", 100, 11, 4.4, 50, 1.8, 1.3, DamageKind.Physical, "#6a5a3a", 1.8),
         new("bandit_chief", "Bandit Chief", 220, 18, 4.2, 140, 2.0, 1.5, DamageKind.Physical, "#8a2a1a", 1.95),
+        // At sea: the pirates of the Teeth who board merchantmen, and the company's marines who guard them.
+        new("pirate", "Pirate Cutthroat", 120, 13, 4.8, 60, 1.8, 1.2, DamageKind.Physical, "#3a4a6a", 1.8),
+        new("pirate_captain", "Pirate Captain", 300, 21, 4.6, 180, 2.0, 1.4, DamageKind.Physical, "#6a1a2a", 1.95),
+        new("marine", "Company Marine", 150, 14, 4.4, 70, 1.9, 1.3, DamageKind.Physical, "#8a3a2a", 1.85),
         // The barbarian clans that raid the frontier: big, painted, and they hit hard.
         new("raider", "Barbarian Raider", 140, 14, 4.6, 70, 1.9, 1.4, DamageKind.Physical, "#7a4a2a", 1.95),
         new("raider_chief", "Barbarian Warchief", 340, 22, 4.4, 200, 2.1, 1.6, DamageKind.Physical, "#9a3a1a", 2.1),

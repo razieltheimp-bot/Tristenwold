@@ -380,6 +380,7 @@ public partial class Main
         if (npc.Id == "eyrie/aldric") foreach (var o in Aldric(person)) yield return o;
         foreach (var o in StoryTalk(person)) yield return o;
         foreach (var o in CaravanTalk(person)) yield return o;
+        foreach (var o in SeaTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;
         foreach (var o in PursuitTalk(person)) yield return o;

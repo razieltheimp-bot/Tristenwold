@@ -543,6 +543,45 @@ ages.
 with every year that passes, through all five stages, and on, long past what any of your people live to: "143, an
 elder human, 63 years past the oldest any human lives to. Immortals age; they don't die of it."
 
+### The sea: the Brine Company, the shipyard, and the pirates of the Teeth
+
+Tristinwold's ships sail to five ports over the sea, each further out through worse water: **Saltmere** (a day's
+sailing, quiet water), **Brinehollow** and **Vosk** (two days), **the Isle of Corrow** (three, where the pirates hunt)
+and **Ambermouth** (four, through the worst of it). Every port has a market of its own, cheap in what it makes and
+dear in what it wants, like the towns inland.
+
+**Signing on.** Captain Marit Hale, the harbour master at the root of the north pier, signs on anyone as a
+**deckhand** on the Gull. A voyage is played out at sea, aboard, and it isn't short: a day's sailing each way per
+league (ten minutes a league; Saltmere and back is twenty minutes, Ambermouth eighty). The crew keep you busy the
+whole way: work turns up about the deck every half-minute (haul the line, scrub the deck, man the pump, trim the
+sail, mend the rigging; press E where it's marked), and a lookout at the bow or a trick at the wheel is kept by
+standing there. Let the work pile up and she loses way (the bosun will tell you); your wage at the end is by the
+share of the work you did. At the port its harbour master comes aboard; talk to them to trade (once you've a hold)
+or to cast off for home.
+
+**Pirates.** Out of the Teeth, a ship comes alongside and her crew come over the rail: two or three on the short
+runs, five or six on the long ones, with a captain's bosun among them. Boarders on deck hole her while they're
+there; beat them all off and she sails on (an officer gets their purses too). If the hull goes, the ship's taken.
+
+**Ranks.** Voyages home promote you: three and you're **bosun**; seven, with two boardings beaten off, **first
+mate** (the company sends you further out); twelve, five boardings and level 8, **captain**: command of the
+company's ship, the far ports, and a private venture of twenty loads in her hold, bought at the Exchange and sold
+where it's wanted (or the other way, home). A captain can buy a ship outright (1500 crowns), or a master shipwright
+can build one; your own ship has a hold for fifty loads, pays no company wage, and keeps every crown she makes.
+
+**The shipyard** on the shore south of the piers, Osric Tarr's, takes on anyone: carry planks from the timber stack
+to where the hull's marked in chalk, 6 crowns a plank, and a tight hull pays a bonus. Three hulls make you a
+**journeyman** (10 a plank), eight a **master** (15), and a master can lay down a keel for a ship of their own (500
+crowns of timber, three days' planking). Your own ship, holed by pirates, is mended here, by your own hands or for
+Osric's price; she won't sail under 40%.
+
+**The other side of the law.** When the pirates take a ship you're on, their captain, Black Ysolde of the Widow's
+Tooth, offers you a place in her crew. Take it and you're struck off the company's books, a **swab** of the Widow's
+Tooth: Nell Corran, the Drowned Hand's boatwoman by the south pier, rows you out, and a cruise hunts a merchantman
+(her crew to beat on the way out, maybe a company patrol on the way home) for a share of the plunder. Prizes taken
+make you **cutthroat**, **quartermaster**, and at last **pirate captain**. The company's pardon can be bought back
+from Marit Hale for 400 crowns, at the bottom of the ladder.
+
 ### Barbarian raiders on the frontier
 
 Out past Tristinwold's fields (more than a kilometre from the walls), **barbarian clans** roam the frontier: "the Red

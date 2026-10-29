@@ -35,6 +35,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--story-only")) { await StoryTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--caravan-only")) { await CaravanTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ageing-only")) { await AgeingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
@@ -56,7 +57,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1716,6 +1717,118 @@ public partial class SelfTest(Main main) : Node
         await Until(() => market.Raided > 0, 25);
         Check(market.Raided == 1 && market.Stock.Values.Sum() < stock * 0.7 && hud.Heard($"raided {other.Place!.Name}"),
             $"nobody stops {other.W.Name} at {other.Place!.Name}: its stores are plundered, and word comes to the city");
+    }
+
+
+    /// <summary>The shipyard, a voyage with pirates and a port call, and the pirates' offer to a hero whose ship they take.</summary>
+    async Task SeaTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        var sea = main.Sea;
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+
+        // The shipyard: planks off the stack and onto the hull.
+        await Teleport(Main.ShipyardAt + new Vector3(0, 0, 1));
+        main.Talk(Who("tristinwold/shipwright"));
+        Check(hud.Choose("Any work in the yard"), "Osric Tarr at the shipyard puts you to work");
+        hud.EndTalk();
+        var purse = p.Crowns;
+        for (var i = 0; i < SeaBook.PlanksPerJob; i++) main.PlankForTest();
+        Check(sea.Wright == WrightRank.Apprentice && sea.Repairs == 1 && p.Crowns == purse + SeaBook.PlanksPerJob * 6 + 5,
+            $"four planks fitted to a holed hull: an apprentice shipwright, +{p.Crowns - purse} crowns");
+
+        // Signed on, and out to sea.
+        await Teleport(Main.HarbourPost + new Vector3(1.5f, 0, 1.5f));
+        main.Talk(Who("tristinwold/harbourmaster"));
+        Check(hud.Choose("Sign me on") && sea.Rank == SeaRank.Deckhand, "Captain Marit Hale signs you on as a deckhand");
+        hud.EndTalk();
+        main.SailForTest("port:saltmere");
+        await Frames(30);
+        var at = main.AtSeaNode;
+        var v = sea.Voyage;
+        if (at is null || v is null) { Check(false, "a voyage under way"); return; }
+        (v.Out, v.Home) = ([0.05], []);
+        await Until(() => p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, 8);
+        Check(p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, $"aboard the Gull, standing on her deck out at sea ({v.LegSeconds / 60:0} minutes to Saltmere)");
+        await Until(() => at.Pending > 0, 10);
+        Check(at.Pending > 0 && hud.Tracked.Any(t => t.Contains("On deck:")), "there's work on deck, and the tracker says what");
+        at.WorkForTest();
+        Check(v.Chores > 0 && v.Chores == v.ChoresDue, $"the deck work done ({v.Chores}/{v.ChoresDue})");
+
+        // Pirates.
+        at.Along = 0.049;
+        await Until(() => at.Boarders.Count > 0, 20);
+        Check(at.Boarders.Count == v.Pirates && hud.Heard("Pirates!"), $"pirates come alongside and board: {at.Boarders.Count} of them");
+        await Frames(60);
+        Check(at.Boarders.All(e => e.GlobalPosition.Y > AtSea.DeckY - 3), "and they fight on her deck, not through it");
+        foreach (var e in at.Boarders.ToList()) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => sea.Repelled == 1, 8);
+        Check(sea.Repelled == 1 && hud.Heard("Beaten off"), "you beat them off");
+
+        // The port, and home.
+        at.Along = 0.999;
+        await Until(() => v.InPort && at.Agent is not null, 8);
+        Check(v.InPort && at.Agent is not null && hud.Heard("Land ho: Saltmere"), "Saltmere, and its harbour master comes aboard");
+        main.Talk(at.Agent!);
+        Check(hud.Choose("Cast off for home") && v.Homeward, "you cast off for home");
+        purse = p.Crowns;
+        at.Along = 0.999;
+        await Until(() => sea.Voyage is null, 8);
+        await Frames(20);
+        Check(sea.Voyages == 1 && p.Crowns > purse && main.AtSeaNode is null && p.GlobalPosition.Y < 50,
+            $"home to Tristinwold, paid {p.Crowns - purse} crowns, and ashore");
+
+        // Promotion, then a ship taken by pirates, and their offer.
+        sea.Voyages = SeaBook.ToBosun - 1;
+        main.SailForTest("port:saltmere");
+        await Frames(20);
+        sea.Voyage!.Out = [];
+        sea.Voyage!.Home = [];
+        main.AtSeaNode!.Along = 0.999;
+        await Until(() => sea.Voyage?.InPort == true, 8);
+        sea.CastOff();
+        main.AtSeaNode!.LeavePort();
+        main.AtSeaNode!.Along = 0.999;
+        await Until(() => sea.Voyage is null, 8);
+        Check(sea.Rank == SeaRank.Bosun && hud.Heard("makes you bosun"), "three voyages home, and Marit makes you bosun");
+
+        main.SailForTest("port:brinehollow");
+        await Frames(20);
+        at = main.AtSeaNode!;
+        (sea.Voyage!.Out, sea.Voyage!.Home) = ([0.05], []);
+        at.Along = 0.049;
+        await Until(() => at.Boarders.Count > 0, 20);
+        sea.Hull = 0.5;
+        await Until(() => hud.Talking, 6);
+        Check(hud.TalkTitle.Contains("Black Ysolde") && hud.Choose("Join the pirates"), "the pirates take the ship, and their captain offers you a place");
+        await Frames(20);
+        Check(sea.Outlaw && sea.Pirate == PirateRank.Swab && sea.Rank == SeaRank.Landsman && main.AtSeaNode is null, "you're a swab of the Widow's Tooth, struck off the company's books");
+
+        // Out on the account: a merchantman to take.
+        await Teleport(Main.Smugglers + new Vector3(1, 0, -1.5f));
+        main.Talk(Who("tristinwold/smuggler"));
+        Check(hud.Choose("Row me out"), "Nell Corran rows you out to the Widow's Tooth");
+        await Frames(20);
+        at = main.AtSeaNode!;
+        (sea.Voyage!.Out, sea.Voyage!.Home) = ([0.05], []);
+        at.Along = 0.049;
+        await Until(() => at.Boarders.Count > 0, 20);
+        Check(at.Boarders.All(e => e.Kind.Id == "marine"), "her marines come to meet you");
+        foreach (var e in at.Boarders.ToList()) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => sea.Prizes == 1, 8);
+        purse = p.Crowns;
+        at.Along = 0.999;
+        await Until(() => sea.Voyage is null, 8);
+        Check(sea.Prizes == 1 && sea.Raids == 1 && p.Crowns > purse, $"a prize taken, and your share at the Teeth: {p.Crowns - purse} crowns");
+
+        // And back to honest work, for a price.
+        p.Crowns += SeaBook.PardonPrice;
+        await Teleport(Main.HarbourPost + new Vector3(1.5f, 0, 1.5f));
+        main.Talk(Who("tristinwold/harbourmaster"));
+        Check(hud.Choose("I want the company's pardon") && !sea.Outlaw && sea.Rank == SeaRank.Deckhand, "the company's pardon, bought: a deckhand again");
+        hud.EndTalk();
     }
 
     /// <summary>The caravan yard: load, drive, then trade on your own account, with your own wagon and horses.</summary>

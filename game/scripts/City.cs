@@ -71,8 +71,12 @@ public static class City
 
     public static bool OnPier(Vector3 p) => p.X is > PierFrom and < PierTo && Piers.Any(z => Math.Abs(p.Z - z) < 2.5f);
 
+    /// <summary>Out at sea (see <see cref="AtSea"/>): the deck's height, where there's a ship under the hero instead of land.</summary>
+    public static Func<Vector3, float?>? Afloat { get; set; }
+
     public static float FloorAt(Vector3 p)
     {
+        if (Afloat?.Invoke(p) is { } deck) return deck;
         if (OnPier(p)) return Mathf.Max(0, (float)WorldGen.Default.Height(p.X, p.Z)); // the boards
         var r = new Vector2(p.X, p.Z).Length();
         return r < CrownRadius ? CrownHeight : r < InnerRadius ? InnerHeight : (float)WorldGen.Default.Height(p.X, p.Z);

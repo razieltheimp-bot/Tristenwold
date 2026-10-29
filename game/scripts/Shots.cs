@@ -528,7 +528,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                     for (var a = 0f; a < Mathf.Tau; a += 0.4f)
                     {
                         var (x, z) = (Mathf.Cos(a) * r, Mathf.Sin(a) * r);
-                        var steep = b != Biome.Crags || Math.Abs(main.World.Height(x + 4, z) - main.World.Height(x - 4, z)) + Math.Abs(main.World.Height(x, z + 4) - main.World.Height(x, z - 4)) > 6;
+                        var steep = b != Biome.Crags || Math.Abs(main.World.Height(x + 4, z) - main.World.Height(x - 4, z)) + Math.Abs(main.World.Height(x, z + 4) - main.World.Height(x, z - 4)) > 4;
                         if (main.World.BiomeAt(x, z) == b && steep && main.World.SettlementAt(x, z) is null && main.World.Height(x, z) > WorldGen.WaterLevel + 2) return new Vector3(x, 0, z);
                     }
                 return null;
@@ -542,6 +542,24 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                 await Frames(120);
                 var ground = City.FloorAt(at);
                 await From(name, at with { Y = ground + 6 } + new Vector3(0, 0, 18), at with { Y = ground + 3 } + new Vector3(0, 0, -20));
+            }
+            GetTree().Quit();
+            return;
+        }
+        if (OS.GetCmdlineUserArgs().Contains("--sea"))
+        {
+            // The shipyard, then aboard at sea with pirates alongside.
+            await From("sea-shipyard", Main.ShipyardAt + new Vector3(-10, 6, 10), Main.ShipyardAt + new Vector3(12, 1, -2));
+            main.Sea.SignOn();
+            main.SailForTest("port:saltmere");
+            await Frames(90);
+            if (main.AtSeaNode is { } sea && main.Sea.Voyage is { } v)
+            {
+                (v.Out, v.Home) = ([0.05], []);
+                sea.Along = 0.049;
+                for (var i = 0; i < 900 && sea.Boarders.Count == 0; i++) await Frames(1);
+                await Frames(30);
+                await From("sea-boarded", AtSea.Aboard + new Vector3(-7, 4, -14), AtSea.Aboard + new Vector3(0, 0.5f, 2));
             }
             GetTree().Quit();
             return;

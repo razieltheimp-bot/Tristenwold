@@ -36,6 +36,7 @@ public partial class Main
     /// <summary>The ring brought the hero back.</summary>
     void OnWoke()
     {
+        SeaWoke();
         _hud.Toast(_story.Returned(_storyRng), 12);
         Save();
     }

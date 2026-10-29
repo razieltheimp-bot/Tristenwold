@@ -57,6 +57,9 @@ public partial class Terrain(WorldGen world) : Node3D
     /// <summary>Wind in the trees and the wave shader on the water (set before the first chunk is built).</summary>
     public bool Fancy { get; set; }
 
+    /// <summary>The sky's photo, for the water to mirror (under global illumination: see <see cref="Graphics.Water"/>).</summary>
+    public Texture2D? MirrorSky { get; set; }
+
     public int Count => _chunks.Count;
     public int GrassCount => _grass.Count;
     readonly Dictionary<(int, int), Node3D> _grass = [];
@@ -74,8 +77,9 @@ public partial class Terrain(WorldGen world) : Node3D
         var reach = ChunkSize * (2 * ViewChunks + 1); // no further than the land, or it reads as an endless sea
         _water.Mesh = new PlaneMesh { Size = new Vector2(reach, reach), SubdivideWidth = Fancy ? reach / 8 : 0, SubdivideDepth = Fancy ? reach / 8 : 0 };
         _water.MaterialOverride = Fancy
-            ? Graphics.Water()
+            ? Graphics.Water(MirrorSky)
             : new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.25f, 0.33f, 0.85f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.1f, Metallic = 0.3f };
+        _water.GIMode = GeometryInstance3D.GIModeEnum.Disabled; // see-through: global illumination would take it for a bright solid floor
         AddChild(_water);
         if (Photographic) _ground = Graphics.Ground();
         // The simple renderer (old devices) draws the wind shader's grass black, so it gets plain grass.

@@ -354,6 +354,7 @@ public partial class Main : Node3D
         AddMarket();
         AddTownWork();
         AddCaravanYard();
+        AddShipyard();
         AddPursuits();
         _herbPatch = new HerbPatch(this);
         AddChild(_herbPatch);
@@ -676,6 +677,7 @@ public partial class Main : Node3D
         TendFarLairs();
         TendStory();
         TendCaravans(delta);
+        TendSea(delta);
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
 
         if (_player.Stats.LimitReady && !_limitWasReady)
@@ -710,7 +712,7 @@ public partial class Main : Node3D
         if (_suited is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
         if (_raiders.Tracker(pos, Direction) is { } clanLine) saga = [.. saga, clanLine];
-        saga = [.. saga, .. TownLines(pos), .. CaravanLines(pos), .. PursuitLines(pos)];
+        saga = [.. saga, .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. PursuitLines(pos)];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
     }
@@ -766,7 +768,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return TownAction(pos) ?? CaravanAction(pos) ?? PursuitAction(pos);
+        return SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>
@@ -919,6 +921,7 @@ public partial class Main : Node3D
                 _story = save.Story ?? new ImmortalSaga();
                 _trade = save.Trade ?? new TradeBook();
                 _raidRecord = save.Warbands ?? new RaidRecord();
+                _sea = save.Sea ?? new SeaBook();
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
                 _city = save.City ?? CityEconomy.Start(_world.Seed);
@@ -937,7 +940,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade, _raiders?.Record ?? _raidRecord).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade, _raiders?.Record ?? _raidRecord, _sea).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)
@@ -960,6 +963,21 @@ public partial class Main : Node3D
         Townsfolk(new Npc("tristinwold/ilse", "Sister Ilse Varrow", Sex.Female, 0, "archivist of the Magi", "city:tristinwold", "Tristinwold",
             "Sister Ilse keeps the Magi Archive and its locked shelves. She answers questions with questions, and remembers every answer you give.",
             ["the Magi", "maps"], "wary", "The Archive is not a library. What are you looking for?", -34, 6));
+    }
+
+    public Rng LootRng => _lootRng;
+
+    /// <summary>Someone met away from home (a port's harbour master come aboard), who can be talked to until they go.</summary>
+    public Person MeetAt(Npc npc, string? look = null)
+    {
+        Townsfolk(npc, look);
+        return _townsfolk[^1];
+    }
+
+    public void Dismiss(Person person)
+    {
+        _townsfolk.Remove(person);
+        if (IsInstanceValid(person)) person.QueueFree();
     }
 
     void Townsfolk(Npc npc, string? look = null)

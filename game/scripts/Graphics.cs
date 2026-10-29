@@ -46,6 +46,7 @@ public static class Graphics
         // Global illumination: sunlight and skylight bouncing round the whole scene, colour bleeding off walls and grass,
         // the insides of arches and alleys lit by what's outside them. It costs the most of anything, so Cinematic only.
         env.SdfgiEnabled = q >= Quality.Cinematic && Full;
+        terrain.MirrorSky = env.SdfgiEnabled ? (env.Sky?.SkyMaterial as PanoramaSkyMaterial)?.Panorama : null;
         if (env.SdfgiEnabled)
         {
             env.SdfgiCascades = 6;
@@ -285,13 +286,24 @@ public static class Graphics
     };
 
     /// <summary>Water: rolling waves, darker where it's deep, foam where it meets the shore, and a fresnel sheen.</summary>
-    public static ShaderMaterial Water() => new()
+    /// <param name="sky">
+    /// The sky's photo, for the water to mirror itself. Under global illumination the water would otherwise take its
+    /// reflection from the light probes, a blur of white; screen-space reflections never reach see-through water.
+    /// </param>
+    public static ShaderMaterial Water(Texture2D? sky = null)
     {
-        Shader = new Shader
-        {
-            Code = """
-                shader_type spatial;
+        var water = new ShaderMaterial { Shader = new Shader { Code = WaterCode(sky is not null) } };
+        if (sky is not null) water.SetShaderParameter("sky", sky);
+        return water;
+    }
+
+    static string WaterCode(bool mirror) => "shader_type spatial;\n" + (mirror ? "#define MIRROR\n" : "") + """
+                #ifdef MIRROR
+                render_mode blend_mix, depth_draw_always, cull_disabled, specular_schlick_ggx, ambient_light_disabled;
+                uniform sampler2D sky : source_color, filter_linear;
+                #else
                 render_mode blend_mix, depth_draw_always, cull_disabled, specular_schlick_ggx;
+                #endif
                 uniform vec4 shallow : source_color = vec4(0.22, 0.40, 0.42, 1.0);
                 uniform vec4 deep : source_color = vec4(0.05, 0.14, 0.20, 1.0);
                 uniform sampler2D depth_tex : hint_depth_texture, filter_linear;
@@ -325,9 +337,19 @@ public static class Graphics
                     ROUGHNESS = mix(0.04, 0.6, foam);
                     SPECULAR = 0.6;
                     ALPHA = clamp(0.5 + deepness * 0.45 + fresnel * 0.3 + foam, 0.0, 1.0);
+                #ifdef MIRROR
+                    // The sky, mirrored: looked up in its photo the way the sky itself is drawn, stronger at a glance.
+                    vec3 n = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+                    vec3 v = normalize((INV_VIEW_MATRIX * vec4(VIEW, 0.0)).xyz);
+                    vec3 r = reflect(-v, n);
+                    r.y = abs(r.y);
+                    vec2 st = vec2(atan(r.x, -r.z), acos(clamp(r.y, -1.0, 1.0)));
+                    if (st.x < 0.0) st.x += TAU;
+                    float f = 0.02 + 0.98 * pow(1.0 - clamp(dot(n, v), 0.0, 1.0), 5.0);
+                    EMISSION = texture(sky, st / vec2(TAU, PI)).rgb * mix(0.35, 1.0, f) * (1.0 - foam);
+                    ALBEDO *= 0.6;
+                #endif
                 }
-                """,
-        },
-    };
+                """;
 
 }
