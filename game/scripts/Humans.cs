@@ -741,6 +741,8 @@ public partial class Figure
 /// </summary>
 public partial class HumanGaze : SkeletonModifier3D
 {
+    /// <summary>Degrees the head is tipped forward from its clip, always: the clips look up on a real neck.</summary>
+    public const float Level = -14;
     public Node3D? Watching { get; set; }
     public float Range { get; set; } = 7;
     int _head = -1;
@@ -779,10 +781,11 @@ public partial class HumanGaze : SkeletonModifier3D
         _gazing = Mathf.MoveToward(_gazing, want, 0.03f);
         _turn = _turn.Slerp(goal, 0.1f);
         var turn = Quaternion.Identity.Slerp(_turn, _gazing);
-        if (_gazing < 0.001f) return;
+        // KayKit's clips tip a real head back a little (they were made for its big round heads): brought level, then turned.
+        var level = new Quaternion(Vector3.Right, Mathf.DegToRad(Level));
         var parent = sk.GetBoneParent(_head);
         var parentBasis = parent >= 0 ? sk.GetBoneGlobalPose(parent).Basis : Basis.Identity;
-        var turned = pose.Basis * new Basis(turn);
+        var turned = pose.Basis * new Basis(level * turn);
         sk.SetBonePoseRotation(_head, (parentBasis.Inverse() * turned).GetRotationQuaternion());
     }
 }

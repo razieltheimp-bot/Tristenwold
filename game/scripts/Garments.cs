@@ -26,9 +26,9 @@ public static class Garments
         "Thief" or "Rogue" or "protege" or "bandit" or "bandit_chief" or "lantern_boy" or "velvet" => new("jerkin", null, Bracers: true),
         "Assassin" or "Saboteur" or "Rogue_Hooded" or "drowned_hand" => new("jerkin", "hood", Bracers: true, Cloak: true),
         "Ranger" or "hunter" or "traveller" => new("jerkin", "hood", Bracers: true, Cloak: true),
-        "Wizard" or "Mage" or "apprentice" => new("robe", "hat"),
-        "Warlock" or "Sorcerer" or "Alchemist" or "scholar" or "laureate" or "Poet" or "Scribe" => new("robe", null),
-        "priest" => new("robe", "hood"),
+        "Wizard" or "Mage" or "apprentice" => new("robe", "hat", Belt: false),
+        "Warlock" or "Sorcerer" or "Alchemist" or "scholar" or "laureate" or "Poet" or "Scribe" => new("robe", null, Belt: false),
+        "priest" => new("robe", "hood", Belt: false),
         "pirate" or "sailor" => new(null, null, Bracers: true),
         "pirate_captain" => new("jerkin", null, Bracers: true, Cloak: true),
         "MartialArtist" => new(null, null, Bracers: true),
@@ -189,9 +189,10 @@ public static class Garments
                 var head = Hang(sk, "Head", made);
                 var hood = Armoury.Cloth("#" + (outfit.Cap ?? outfit.Tunic.Darkened(0.25f)).ToHtml(false));
                 var size = m.Top - m.Head.Y;
-                var centre = new Vector3(0, m.Head.Y + size * 0.45f, -0.045f);
-                head.AddChild(Part(new SphereMesh { Radius = 0.145f, Height = 0.29f, RadialSegments = 24, Rings = 12 }, hood, centre, scale: new Vector3(1, 1.15f, 0.95f)));
-                head.AddChild(Part(new TorusMesh { InnerRadius = 0.115f, OuterRadius = 0.15f, Rings = 28, RingSegments = 8 }, hood, new Vector3(0, m.Head.Y + size * 0.4f, 0.07f), new Vector3(90, 0, 0), new Vector3(1, 1, 1.15f))); // the opening, framing the face
+                // The hood sits back on the head so the face comes out of its opening: its front edge at the cheeks, the crown over the top.
+                var centre = new Vector3(0, m.Head.Y + size * 0.5f, -0.075f);
+                head.AddChild(Part(new SphereMesh { Radius = 0.125f, Height = 0.25f, RadialSegments = 24, Rings = 12 }, hood, centre, scale: new Vector3(1.05f, 1.15f, 0.9f)));
+                head.AddChild(Part(new TorusMesh { InnerRadius = 0.1f, OuterRadius = 0.125f, Rings = 28, RingSegments = 8 }, hood, new Vector3(0, m.Head.Y + size * 0.45f, 0.035f), new Vector3(90, 0, 0), new Vector3(1, 1, 1.2f))); // the opening, framing the face
                 head.AddChild(Part(new TorusMesh { InnerRadius = 0.08f, OuterRadius = 0.13f, Rings = 24, RingSegments = 8 }, hood, new Vector3(0, m.Neck.Y + 0.02f, 0), scale: new Vector3(1, 1.3f, 1))); // the cowl at the neck
                 break;
             }
