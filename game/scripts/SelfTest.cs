@@ -36,6 +36,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--caravan-only")) { await CaravanTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--humans-only")) { await HumansTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ageing-only")) { await AgeingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
@@ -57,7 +58,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await HumansTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1719,6 +1720,42 @@ public partial class SelfTest(Main main) : Node
             $"nobody stops {other.W.Name} at {other.Place!.Name}: its stores are plundered, and word comes to the city");
     }
 
+
+
+    /// <summary>Realistic people: every townsperson a baked body of their people, sex and age, in their trade's clothes, moved by KayKit's clips.</summary>
+    async Task HumansTest()
+    {
+        var hud = main.HudNode;
+        if (!Humans.Available) { Check(true, "no baked bodies on this build: the KayKit figures stand in"); return; }
+        var was = Humans.Enabled;
+        Humans.Enabled = true;
+        var who = main.Locals.First(x => x.Npc.Id == "tristinwold/harbourmaster");
+        var figure = Figure.Human("guard", who.Npc.Race, who.Npc.Sex, Ageing.Stage(who.Npc.Race, who.Npc.Age), 7);
+        Check(figure is not null, $"a body for {who.Npc.Name} ({who.Npc.Race}, {who.Npc.Age}): {Humans.BodyFor(who.Npc.Race, who.Npc.Sex, Ageing.Stage(who.Npc.Race, who.Npc.Age))}");
+        if (figure is null) { Humans.Enabled = was; return; }
+        AddChild(figure);
+        await Frames(5);
+        var skeleton = figure.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().First();
+        var mesh = figure.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().First(m => m.Skin is not null);
+        var anim = figure.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().First();
+        Check(skeleton.Name == "GeneralSkeleton" && skeleton.FindBone("Hips") >= 0 && skeleton.FindBone("LeftHand") >= 0, $"on Godot's humanoid skeleton ({skeleton.GetBoneCount()} bones)");
+        Check(anim.GetAnimationList().Length >= 70 && anim.HasAnimation("Walking_A") && anim.HasAnimation("1H_Melee_Attack_Chop"), $"with KayKit's {anim.GetAnimationList().Length} moves retargeted onto it");
+        var colours = mesh.Mesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Color].AsColorArray();
+        var distinct = colours.Select(c => c.ToHtml(false)).Distinct().Count();
+        Check(distinct >= 4, $"dressed: {distinct} colours painted on (skin, tunic, trousers, boots, hair)");
+        var box = mesh.GetAabb();
+        Check(box.Size.Y is > 1.2f and < 2.6f && box.Position.Y > -0.15f, $"{box.Size.Y:0.00} m tall, feet on the ground");
+        figure.Move(3, true, false);
+        await Frames(30);
+        var hips = skeleton.GetBoneGlobalPose(skeleton.FindBone("Hips")).Origin;
+        var foot = skeleton.GetBoneGlobalPose(skeleton.FindBone("LeftFoot")).Origin;
+        Check(anim.CurrentAnimation == "Walking_A" && hips.Y > 0.5f && hips.Y > foot.Y + 0.3f, $"walks: hips {hips.Y:0.00} m up, a foot at {foot.Y:0.00}");
+        figure.QueueFree();
+        // The townsfolk already standing about are these bodies too.
+        var people = main.Locals.Count(p => p.Figure.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().Any(s => s.Name == "GeneralSkeleton"));
+        Check(people > 10, $"{people} of Tristinwold's people wear real bodies (the rest are figures no body was made for)");
+        Humans.Enabled = was;
+    }
 
     /// <summary>The shipyard, a voyage with pirates and a port call, and the pirates' offer to a hero whose ship they take.</summary>
     async Task SeaTest()

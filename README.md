@@ -582,6 +582,16 @@ Tooth: Nell Corran, the Drowned Hand's boatwoman by the south pier, rows you out
 make you **cutthroat**, **quartermaster**, and at last **pirate captain**. The company's pardon can be bought back
 from Marit Hale for 400 crowns, at the bottom of the ladder.
 
+### Realistic people
+
+On a PC at High graphics or better, Tristinwold's people have real bodies: baked from MakeHuman's base mesh (CC0)
+with the Humanizer tool, one body for every people, sex and stage of life (a stocky dwarf, a towering half-giant, a
+goblin child, an elder human), on Godot's humanoid skeleton. KayKit's whole move set (every walk, swing, spell,
+fall and gesture) is retargeted onto that skeleton, so the new bodies move exactly as the figures did. Clothes,
+hair and skin are painted on by trade: a guard's grey mail and cap, a priest's white, a worker's bare arms, a
+pirate's red. Where the bodies aren't (the phone build) or the setting is lower, the KayKit figures stand in. The
+hero and the enemies still wear KayKit's figures for now; they're next.
+
 ### Barbarian raiders on the frontier
 
 Out past Tristinwold's fields (more than a kilometre from the walls), **barbarian clans** roam the frontier: "the Red

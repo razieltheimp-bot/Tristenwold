@@ -749,7 +749,7 @@ public partial class Figure : Body
     public Node3D? Carry(string item) =>
         FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is { } skeleton ? Craft(skeleton, "handslot.r", item) : null;
 
-    public override void _Ready() => Play(_look.Unarmed ? "Unarmed_Idle" : "Idle");
+    public override void _Ready() => Play(_look.Unarmed && !_human ? "Unarmed_Idle" : "Idle");
 
     public override void _Process(double delta) => _busy -= delta;
 
@@ -803,7 +803,7 @@ public partial class Figure : Body
             if (flew > 0.45 && !_dead && !_seated && _anim?.HasAnimation("Jump_Land") == true) { Once("Jump_Land", 0.28, 1.3f); return; }
         }
         if (_dead || _busy > 0 || _seated) return;
-        var idle = _look.Unarmed ? "Unarmed_Idle" : "Idle";
+        var idle = _look.Unarmed && !_human ? "Unarmed_Idle" : "Idle"; // the unarmed stance crouches, which a real body's long legs turn into a lunge
         var inAir = !grounded && _airborneSince >= 0 && now - _airborneSince > 0.18;
         var (name, rate) = swimming ? ("Walking_C", 0.8f)
             : inAir ? ("Jump_Idle", 1f)
