@@ -519,6 +519,32 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             await Shot(name);
         }
         if (OS.GetCmdlineUserArgs().Contains("--exchange")) goto exchange;
+        if (OS.GetCmdlineUserArgs().Contains("--scenery"))
+        {
+            // The photo-scanned scenery: a pine forest, the crags, and the harbour with its ships at anchor.
+            Vector3? Find(Biome b)
+            {
+                for (var r = 300; r < 4000; r += 150)
+                    for (var a = 0f; a < Mathf.Tau; a += 0.4f)
+                    {
+                        var (x, z) = (Mathf.Cos(a) * r, Mathf.Sin(a) * r);
+                        if (main.World.BiomeAt(x, z) == b && main.World.SettlementAt(x, z) is null && main.World.Height(x, z) > WorldGen.WaterLevel + 2) return new Vector3(x, 0, z);
+                    }
+                return null;
+            }
+            await From("scenery-harbour", new Vector3(130, 9, 2), new Vector3(215, 2, -10));
+            foreach (var (name, biome) in new[] { ("scenery-pines", Biome.PineForest), ("scenery-crags", Biome.Crags), ("scenery-autumn", Biome.AutumnForest) })
+            {
+                if (Find(biome) is not { } at) continue;
+                p.GlobalPosition = at with { Y = City.FloorAt(at) + 1 };
+                main.TerrainNode.EnsureAround(at, 2);
+                await Frames(120);
+                var ground = City.FloorAt(at);
+                await From(name, at with { Y = ground + 6 } + new Vector3(0, 0, 18), at with { Y = ground + 3 } + new Vector3(0, 0, -20));
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--caravans"))
         {
             // The caravan yard; a wagon following the hero out on the road; the hero on a horse; the Host's breach.

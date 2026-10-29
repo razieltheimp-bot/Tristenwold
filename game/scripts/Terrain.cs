@@ -371,6 +371,22 @@ public partial class Terrain(WorldGen world) : Node3D
     static readonly Plant Log = new("ph:dead_trunk.glb", 0.9f, 1.5f, 1, Sways: false);
     static readonly Plant Stump = new("ph:stump.glb", 0.9f, 1.4f, 1, Sways: false);
 
+    // Photo-scanned trees, rock faces, cliffs and undergrowth from Poly Haven, for the higher settings on a PC: real
+    // bark, real needles, real lichen on real stone. Godot draws simpler stand-ins of each further off (Cinematic
+    // keeps them at full detail); without the files, the woods are as they were.
+    static readonly Plant ScanFir = new("ph:fir_sapling.glb", 2.2f, 3.4f, 1, Sways: false); // a young fir, grown
+    static readonly Plant ScanPine = new("ph:small_tree.glb", 1.1f, 1.7f, 1, Sways: false); // a broadleaf
+    static readonly Plant Sapling = new("ph:fir_sapling.glb", 0.8f, 1.4f, 1, Sways: false);
+    static readonly Plant RockFace = new("ph:rock_face.glb", 0.8f, 1.6f, 1, Sways: false);
+    static readonly Plant RockFaceB = new("ph:rock_face_b.glb", 0.8f, 1.6f, 1, Sways: false);
+    static readonly Plant Cliff = new("ph:cliff.glb", 0.7f, 1.3f, 1, Sways: false);
+    static readonly Plant MossRocks = new("ph:moss_rocks.glb", 0.9f, 1.6f, 1, Sways: false);
+    static readonly Plant[] Shrubs = [new("ph:shrub.glb", 0.8f, 1.4f, 1, Sways: false), new("ph:shrub_b.glb", 0.8f, 1.4f, 1, Sways: false), new("ph:shrub_c.glb", 0.8f, 1.4f, 1, Sways: false)];
+    static readonly Plant Nettle = new("ph:nettle.glb", 0.9f, 1.3f, 1, Sways: false);
+
+    /// <summary>Whether the photo-scanned trees and rocks are drawn (High and up, on a PC: see <see cref="Graphics"/>).</summary>
+    public bool Scans { get; set; }
+
     /// <summary>Photo-real trees and rocks, when their textures are there; otherwise the KayKit ones.</summary>
     static bool Real => Foliage.Available;
 
@@ -389,7 +405,19 @@ public partial class Terrain(WorldGen world) : Node3D
 
     static (Plant Plant, double Weight)[] Each(Plant[] plants, double weight) => [.. plants.Select(p => (p, weight / plants.Length))];
 
-    static (Plant Plant, double Weight)[] Woods(Biome b) => !Real
+    (Plant Plant, double Weight)[] Woods(Biome b) => Scans && Real
+        ? b switch
+        {
+            Biome.AutumnForest => [.. Each(Autumns, 5), .. Each(Greens, 1), (ScanPine, 1.5), (ScanFir, 0.5), (Sapling, 0.4), .. Each(Bares, 0.3)],
+            Biome.PineForest => [(ScanFir, 5), .. Each(Firs, 3), (Sapling, 1), (ScanPine, 0.3), .. Each(Bares, 0.3)],
+            Biome.Marsh => [.. Each(Bares, 3), .. Each(Greens, 1.5), (ScanPine, 1), (Sapling, 0.4)],
+            Biome.Tundra => [(ScanFir, 3), .. Each(Firs, 2), (Sapling, 1), .. Each(Bares, 1.5)],
+            Biome.Snowfield => [(ScanFir, 2), .. Each(Firs, 2), .. Each(Bares, 1)],
+            _ => [(ScanFir, 1.5), (ScanPine, 0.5), .. Each(Firs, 1), .. Each(Bares, 1)],
+        }
+        : Plain(b);
+
+    static (Plant Plant, double Weight)[] Plain(Biome b) => !Real
         ? b switch
         {
             Biome.AutumnForest => [(OrangeL, 3), (YellowL, 2), (PineB, 2)],
@@ -408,7 +436,17 @@ public partial class Terrain(WorldGen world) : Node3D
         };
 
     /// <summary>What lies on the ground between the trees: boulders, and fallen logs and stumps in woods.</summary>
-    static (Plant Plant, double Weight)[] Stones(Biome b) => !Real
+    (Plant Plant, double Weight)[] Stones(Biome b) => Scans && Real
+        ? b switch
+        {
+            Biome.AutumnForest or Biome.PineForest => [(Boulder, 1.5), (MossRocks, 1.5), (Log, 2), (Stump, 1.5), .. Each(Shrubs, 3), (Nettle, 1)],
+            Biome.Marsh => [(MossRocks, 2), (Log, 2), (Stump, 1), .. Each(Shrubs, 2), (Nettle, 2)],
+            Biome.Crags => [(RockFace, 3), (RockFaceB, 3), (Cliff, 2), (Boulder, 2), (FlatBoulder, 1), (SmallBoulder, 1)],
+            _ => [(Boulder, 2), (FlatBoulder, 1), (SmallBoulder, 2), (RockFace, 1.5), (MossRocks, 1), .. Each(Shrubs, 1)],
+        }
+        : PlainStones(b);
+
+    static (Plant Plant, double Weight)[] PlainStones(Biome b) => !Real
         ? [.. KayKitRocks.Select(r => (r, 1.0))]
         : b is Biome.AutumnForest or Biome.PineForest or Biome.Marsh
             ? [(Boulder, 2), (SmallBoulder, 2), (Stone, 1), (Log, 2), (Stump, 2)]
@@ -423,7 +461,7 @@ public partial class Terrain(WorldGen world) : Node3D
         {
             Biome.AutumnForest => 18, Biome.PineForest => 24, Biome.Marsh => 7, Biome.Tundra => 5, Biome.Snowfield => 5, _ => 3,
         };
-        var rocks = mid == Biome.Crags ? 6 : 2;
+        var rocks = Scans && Real ? (mid == Biome.Crags ? 9 : mid is Biome.AutumnForest or Biome.PineForest or Biome.Marsh ? 7 : 3) : mid == Biome.Crags ? 6 : 2;
         var clear = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
         var lairs = LairsNear(x0, z0);
         var groups = new Dictionary<Plant, List<(Transform3D, Color, float)>>();

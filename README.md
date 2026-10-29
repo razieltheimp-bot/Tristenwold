@@ -70,16 +70,28 @@ From the command line, `--account Joe --secret yourpassword --company "Bram Ashm
 account and character if they're new, and plays. The server keeps accounts in `<campaign>.accounts.json`,
 next to the campaign file, with passwords stored only as salted PBKDF2 hashes.
 
-**Graphics** (on the login page, or `--graphics low|medium|high|ultra`), done with Godot's own renderer:
+**Graphics** (on the login page, or `--graphics low|medium|high|ultra|cinematic`), done with Godot's own renderer:
 
-| | Low | Medium | High | Ultra |
-|---|---|---|---|---|
-| View distance | 256 m | 384 m | 448 m | 576 m |
-| Water with waves, depth tint and shore foam; trees in the wind | | ✓ | ✓ | ✓ |
-| Grass around you | | | ✓ | ✓ (wider) |
-| Shadows | | ✓ | soft | soft, further |
-| Ambient occlusion, volumetric fog, AgX tone mapping | | | ✓ | ✓ |
-| Indirect light (SSIL), AMD FSR 2 anti-aliasing | | | | ✓ |
+| | Low | Medium | High | Ultra | Cinematic |
+|---|---|---|---|---|---|
+| View distance | 256 m | 384 m | 448 m | 576 m | 704 m |
+| Water with waves, depth tint and shore foam; trees in the wind | | ✓ | ✓ | ✓ | ✓ |
+| Grass around you | | | ✓ | ✓ (wider) | ✓ (widest, thickest) |
+| Shadows | | ✓ | soft | soft, further | finest, to 400 m |
+| Ambient occlusion, volumetric fog, AgX tone mapping | | | ✓ | ✓ | ✓ (full resolution) |
+| Photo-scanned trees, rock faces, cliffs and undergrowth (PC) | | | ✓ | ✓ | ✓ |
+| Indirect light (SSIL), reflections, AMD FSR 2 anti-aliasing | | | | ✓ | ✓ (finest) |
+| **Global illumination** (SDFGI): light bouncing round the whole scene | | | | | ✓ |
+| Every model at full detail however far off | | | | | ✓ |
+
+**Cinematic** is everything Godot has, for a big gaming PC with a good graphics card. It's this game's answer to
+Unreal Engine 5's showpieces: **global illumination** (sunlight and skylight bouncing round the whole scene, colour
+bleeding off walls and grass, alleys lit by what's outside them; Godot's SDFGI, where UE5 has Lumen), the finest
+reflections, shadows and fog, and **every model at full detail however far off** (UE5's Nanite streams detail in;
+here the photo-scanned models simply never drop to simpler stand-ins). The detail comes from **Poly Haven's
+photo-scanned models** (CC0): firs and pines, rock faces and cliffs, mossy boulders, shrubs and nettles in the wilds,
+and Dutch merchantmen and a pinnace at anchor in Tristinwold's harbour, riding the swell. (Unreal's own photoscan
+store and its MetaHuman characters are licensed for Unreal only, so they can't be used here.)
 
 Phones start on Medium and render slightly below screen size (FSR 1) to stay smooth; PCs start on High.
 The phone version always starts in landscape.

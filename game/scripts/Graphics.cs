@@ -9,7 +9,11 @@ namespace Tristinwold.Game;
 /// </summary>
 public static class Graphics
 {
-    public enum Quality { Low, Medium, High, Ultra }
+    /// <summary>
+    /// Cinematic is everything Godot has, for a big PC: global illumination (light bouncing round the whole scene, as
+    /// UE5's Lumen does), the finest reflections, shadows and fog, and every model at full detail however far off.
+    /// </summary>
+    public enum Quality { Low, Medium, High, Ultra, Cinematic }
 
     /// <summary>Phones start at Medium, everything else at High.</summary>
     public static Quality Default => OS.HasFeature("mobile") ? Quality.Medium : Quality.High;
@@ -20,10 +24,11 @@ public static class Graphics
     public static void Apply(Quality q, Viewport viewport, Godot.Environment env, DirectionalLight3D sun, Terrain terrain)
     {
         var mobile = OS.HasFeature("mobile");
-        terrain.ViewChunks = q switch { Quality.Low => 4, Quality.Medium => mobile ? 4 : 6, Quality.High => 7, _ => 9 };
-        terrain.GrassChunks = q switch { Quality.Low => 0, Quality.Medium => mobile ? 0 : 1, Quality.High => 2, _ => 3 };
-        terrain.GrassDensity = q switch { Quality.High => 2.5f, Quality.Ultra => 3.5f, _ => 1 };
+        terrain.ViewChunks = q switch { Quality.Low => 4, Quality.Medium => mobile ? 4 : 6, Quality.High => 7, Quality.Ultra => 9, _ => 11 };
+        terrain.GrassChunks = q switch { Quality.Low => 0, Quality.Medium => mobile ? 0 : 1, Quality.High => 2, Quality.Ultra => 3, _ => 4 };
+        terrain.GrassDensity = q switch { Quality.High => 2.5f, Quality.Ultra => 3.5f, Quality.Cinematic => 5, _ => 1 };
         terrain.Fancy = q >= Quality.Medium;
+        terrain.Scans = q >= Quality.High && !mobile; // photo-scanned trees, rock faces and undergrowth
 
         env.TonemapMode = q >= Quality.High ? Godot.Environment.ToneMapper.Agx : Godot.Environment.ToneMapper.Filmic;
         env.FogDensity = q switch { Quality.Low => 0.005f, Quality.Medium => 0.003f, Quality.High => 0.0022f, _ => 0.0017f };
@@ -37,7 +42,24 @@ public static class Graphics
         env.SsilEnabled = q >= Quality.High && Full; // light bouncing off the ground and walls
         env.SsilIntensity = 0.8f;
         env.SsrEnabled = q >= Quality.Ultra && Full;   // the water and wet stone mirror what's above them
-        env.SdfgiEnabled = false; // global illumination goes murky on land that streams in around you, and costs the most
+        // Global illumination: sunlight and skylight bouncing round the whole scene, colour bleeding off walls and grass,
+        // the insides of arches and alleys lit by what's outside them. It costs the most of anything, so Cinematic only.
+        env.SdfgiEnabled = q >= Quality.Cinematic && Full;
+        if (env.SdfgiEnabled)
+        {
+            env.SdfgiCascades = 6;
+            env.SdfgiMinCellSize = 0.25f;
+            env.SdfgiUseOcclusion = true;
+            env.SdfgiReadSkyLight = true;
+            env.SdfgiBounceFeedback = 0.55f;
+            env.SdfgiEnergy = 0.9f;
+            env.SdfgiNormalBias = 1.1f;
+            env.SdfgiProbeBias = 1.1f;
+            RenderingServer.EnvironmentSetSdfgiRayCount(RenderingServer.EnvironmentSdfgiRayCount.Count64);
+            RenderingServer.EnvironmentSetSdfgiFramesToConverge(RenderingServer.EnvironmentSdfgiFramesToConverge.In15Frames);
+            RenderingServer.EnvironmentSetSdfgiFramesToUpdateLight(RenderingServer.EnvironmentSdfgiFramesToUpdateLight.In8Frames);
+            RenderingServer.GISetUseHalfResolution(false);
+        }
         env.VolumetricFogEnabled = q >= Quality.High && Full;
         env.VolumetricFogDensity = 0.004f;
         env.VolumetricFogAlbedo = new Color("#d8cbb0");
@@ -46,21 +68,36 @@ public static class Graphics
         env.VolumetricFogAmbientInject = 0.35f;
         env.FogSunScatter = 0.25f;
         sun.LightVolumetricFogEnergy = 1.6f;
+        if (q >= Quality.Cinematic && Full)
+        {
+            // The finest of everything else: full-resolution ambient light and reflections, a finer fog volume.
+            env.SsrMaxSteps = 128;
+            env.SsilRadius = 8;
+            env.SsaoDetail = 1;
+            RenderingServer.EnvironmentSetSsaoQuality(RenderingServer.EnvironmentSsaoQuality.Ultra, false, 0.5f, 2, 50, 300);
+            RenderingServer.EnvironmentSetSsilQuality(RenderingServer.EnvironmentSsilQuality.Ultra, false, 0.5f, 4, 50, 300);
+            RenderingServer.EnvironmentSetVolumetricFogVolumeSize(256, 128);
+            RenderingServer.EnvironmentSetVolumetricFogFilterActive(true);
+        }
         env.AdjustmentEnabled = true;
         env.AdjustmentSaturation = q >= Quality.High ? 1.12f : 1.05f;
         env.AdjustmentContrast = 1.06f;
 
         sun.ShadowEnabled = q >= Quality.Medium;
-        sun.DirectionalShadowMaxDistance = q switch { Quality.Low => 0, Quality.Medium => 80, Quality.High => 140, _ => 220 };
+        sun.DirectionalShadowMaxDistance = q switch { Quality.Low => 0, Quality.Medium => 80, Quality.High => 140, Quality.Ultra => 220, _ => 400 };
         sun.ShadowBlur = q >= Quality.High ? 1.5f : 1f;
         sun.LightAngularDistance = q >= Quality.High ? 0.6f : 0; // soft shadows
         sun.DirectionalShadowMode = q >= Quality.Medium ? DirectionalLight3D.ShadowMode.Parallel4Splits : DirectionalLight3D.ShadowMode.Parallel2Splits;
         sun.DirectionalShadowBlendSplits = q >= Quality.High;
-        RenderingServer.DirectionalShadowAtlasSetSize(q switch { Quality.Ultra => 8192, Quality.High => 4096, _ => 2048 }, true);
+        RenderingServer.DirectionalShadowAtlasSetSize(q switch { >= Quality.Ultra => 8192, Quality.High => 4096, _ => 2048 }, true);
         RenderingServer.DirectionalSoftShadowFilterSetQuality(q switch
         {
-            Quality.Ultra => RenderingServer.ShadowQuality.SoftHigh, Quality.High => RenderingServer.ShadowQuality.SoftMedium, _ => RenderingServer.ShadowQuality.SoftLow,
+            Quality.Cinematic => RenderingServer.ShadowQuality.SoftUltra, Quality.Ultra => RenderingServer.ShadowQuality.SoftHigh,
+            Quality.High => RenderingServer.ShadowQuality.SoftMedium, _ => RenderingServer.ShadowQuality.SoftLow,
         });
+        RenderingServer.PositionalSoftShadowFilterSetQuality(q >= Quality.Cinematic ? RenderingServer.ShadowQuality.SoftUltra : RenderingServer.ShadowQuality.SoftLow);
+        // Every model at its full detail however far off (no simplified stand-ins at a distance).
+        viewport.MeshLodThreshold = q >= Quality.Cinematic ? 0 : q == Quality.Ultra ? 0.5f : 1;
 
         // The eye adjusts: walking from sunlight into the shade of the pines, or looking up at the sky.
         viewport.World3D.CameraAttributes = new CameraAttributesPractical
@@ -73,7 +110,7 @@ public static class Graphics
         // Upscaling: phones render a little under screen size; Ultra uses FSR 2 as its anti-aliasing.
         viewport.Scaling3DMode = q switch
         {
-            Quality.Ultra when Full => Viewport.Scaling3DModeEnum.Fsr2,
+            >= Quality.Ultra when Full => Viewport.Scaling3DModeEnum.Fsr2,
             Quality.Low or Quality.Medium when mobile => Viewport.Scaling3DModeEnum.Fsr,
             _ => Viewport.Scaling3DModeEnum.Bilinear,
         };

@@ -117,9 +117,31 @@ public partial class Main
         Sign(Warehouse + new Vector3(0, 3.2f, -2), "Warehouse");
 
         Board(FactorAt + new Vector3(-1.6f, 0, -1.6f));
+        Ships();
 
         _workings = new Workings(this);
         AddChild(_workings);
+    }
+
+    /// <summary>
+    /// Ships at anchor in the harbour: two great merchantmen, a smaller trader and a pinnace (Poly Haven's scanned
+    /// Dutch ships), riding the swell. Only where the files are (they're left out of the phone build).
+    /// </summary>
+    void Ships()
+    {
+        foreach (var (file, at, yaw) in new[] { ("ph:ship_large.glb", new Vector3(205, 0, -55), 0.4f), ("ph:ship.glb", new Vector3(225, 0, 50), -1.1f),
+                     ("ph:ship_large.glb", new Vector3(285, 0, 10), 2.0f), ("ph:pinnace.glb", new Vector3(165, 0, 25), 1.6f) })
+        {
+            if (OS.HasFeature("mobile") || Models.Scene(file)?.Instantiate() is not Node3D ship) continue;
+            var hold = new Node3D { Position = at with { Y = (float)WorldGen.WaterLevel - 1.6f }, Rotation = new Vector3(0, yaw, 0) };
+            AddChild(hold);
+            hold.AddChild(ship);
+            // Riding the swell: a slow roll and pitch, each ship its own.
+            var t = hold.CreateTween().SetLoops();
+            var (roll, pitch, period) = (0.025f + at.X % 3 * 0.005f, 0.012f, 4.5f + at.Z % 2);
+            t.TweenProperty(ship, "rotation", new Vector3(pitch, 0, roll), period).SetTrans(Tween.TransitionType.Sine);
+            t.TweenProperty(ship, "rotation", new Vector3(-pitch, 0, -roll), period).SetTrans(Tween.TransitionType.Sine);
+        }
     }
 
     /// <summary>The Exchange's market board: a notice board on two posts, papered with prices and contracts.</summary>
