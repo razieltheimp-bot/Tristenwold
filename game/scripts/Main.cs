@@ -171,6 +171,26 @@ public partial class Main : Node3D
             GD.Print($"  body: {verts.Length} verts, top {verts.Max(v => v.Y):0.000}, front (max z) {verts.Max(v => v.Z):0.000}, back {verts.Min(v => v.Z):0.000}; surfaces {string.Join(", ", Enumerable.Range(0, mesh.Mesh.GetSurfaceCount()).Select(k => mesh.Mesh.SurfaceGetMaterial(k)?.ResourceName ?? "-"))}");
             model.Free();
         }
+        // KayKit's knight: where its hand slot sits and how its sword lies in it, to put real gear in a real hand the same way.
+        if (Models.Scene("characters/Knight.glb")?.Instantiate() is Node3D knight)
+        {
+            var sk = knight.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().First();
+            GD.Print($"== KayKit Knight: {sk.GetBoneCount()} bones: {string.Join(" ", Enumerable.Range(0, sk.GetBoneCount()).Select(sk.GetBoneName))}");
+            foreach (var bone in new[] { "hand.r", "handslot.r", "hand.l", "handslot.l", "head", "chest", "arm.r", "forearm.r" })
+            {
+                var i = sk.FindBone(bone);
+                if (i < 0) { GD.Print($"  {bone}: none"); continue; }
+                var t = sk.GetBoneGlobalRest(i);
+                GD.Print($"  {bone}: origin {t.Origin.X:0.000},{t.Origin.Y:0.000},{t.Origin.Z:0.000}  X {t.Basis.X.X:0.00},{t.Basis.X.Y:0.00},{t.Basis.X.Z:0.00}  Y {t.Basis.Y.X:0.00},{t.Basis.Y.Y:0.00},{t.Basis.Y.Z:0.00}  Z {t.Basis.Z.X:0.00},{t.Basis.Z.Y:0.00},{t.Basis.Z.Z:0.00}");
+            }
+            foreach (var m in knight.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().Where(m => m.Name.ToString().Contains("Sword") || m.Name.ToString().Contains("Shield")))
+            {
+                var box = m.GetAabb();
+                GD.Print($"  mesh {m.Name} under {m.GetParent()?.Name} ({m.GetParent()?.GetType().Name}{(m.GetParent() is BoneAttachment3D ba ? " bone " + ba.BoneName : "")}): pos {m.Position.X:0.000},{m.Position.Y:0.000},{m.Position.Z:0.000} rot {m.RotationDegrees.X:0},{m.RotationDegrees.Y:0},{m.RotationDegrees.Z:0} aabb from {box.Position.X:0.00},{box.Position.Y:0.00},{box.Position.Z:0.00} size {box.Size.X:0.00},{box.Size.Y:0.00},{box.Size.Z:0.00} skin {(m.Skin is null ? "no" : "yes")}");
+                if (m.GetParent() is Node3D pn && pn is not Skeleton3D) GD.Print($"    parent {pn.Name} pos {pn.Position.X:0.000},{pn.Position.Y:0.000},{pn.Position.Z:0.000} rot {pn.RotationDegrees.X:0},{pn.RotationDegrees.Y:0},{pn.RotationDegrees.Z:0}");
+            }
+            knight.Free();
+        }
         GetTree().Quit();
     }
 

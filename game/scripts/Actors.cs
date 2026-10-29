@@ -361,6 +361,25 @@ public partial class Enemy : Fighter
             Resize(height * 0.55f, height * 0.22f);
         }
         else Resize((float)Math.Max(Kind.Height, 0.6) * bulk, (Kind.Height < 1 ? 0.3f : 0.4f) * Math.Max(0.5f, bulk));
+        // The name and the bars float just over the figure's actual head (a golem built big, a dragon grown), and a
+        // companion's show through its own body, so they're never lost behind it.
+        var top = FigureTop();
+        if (top > 0) Plate.Position = Plate.Position with { Y = Math.Max(Plate.Position.Y, top + 0.4f) };
+        if (Bond is not null) { Plate.NoDepthTest = true; Plate.RenderPriority = 10; Plate.FontSize = 34; Plate.OutlineSize = 10; }
+    }
+
+    /// <summary>How high the figure's meshes reach, in this body's own space (their rest shapes, through every transform down to them).</summary>
+    float FigureTop()
+    {
+        var top = 0f;
+        foreach (var m in Figure.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>())
+        {
+            if (!m.Visible || m.Mesh is null) continue;
+            var t = Transform3D.Identity;
+            for (Node? n = m; n is Node3D n3 && n != this; n = n.GetParent()) t = n3.Transform * t;
+            top = Math.Max(top, (t * m.GetAabb()).End.Y);
+        }
+        return top;
     }
 
     /// <summary>

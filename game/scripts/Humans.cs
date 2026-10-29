@@ -633,17 +633,30 @@ public partial class Figure
         };
         if (colour is not { } dye) return null;
         var shirt = equip.StartsWith("Shirt") || equip.StartsWith("Jacket") || equip.StartsWith("Top");
-        var texture = Humans.Texture(file);
+        var shoes = equip.StartsWith("Shoes") || equip.StartsWith("Boots");
+        // The clothes came with printed, modern textures (a logo on the shirt, denim); the dye goes over a plain weave instead. Leather keeps its grain.
+        var texture = shoes ? Humans.Texture(file) : Weave;
         return new StandardMaterial3D
         {
             AlbedoTexture = texture,
-            AlbedoColor = texture is null ? dye : dye.Lightened(0.15f), // the weave in the texture darkens it a little
+            AlbedoColor = shoes && texture is not null ? dye.Lightened(0.15f) : dye,
+            Uv1Scale = shoes ? Vector3.One : new Vector3(6, 6, 1),
             Metallic = shirt && metal ? 0.85f : 0,
             Roughness = shirt && metal ? 0.4f : 0.88f,
             MetallicSpecular = shirt && metal ? 0.7f : 0.2f,
             CullMode = BaseMaterial3D.CullModeEnum.Disabled, // cloth is seen from inside at a cuff or a hem
         };
     }
+
+    static Texture2D? _weave;
+
+    /// <summary>A plain cloth weave, made once: fine noise about a light grey, so a dye over it reads as the dye with a little thread in it.</summary>
+    static Texture2D Weave => _weave ??= new NoiseTexture2D
+    {
+        Width = 256, Height = 256, Seamless = true, GenerateMipmaps = true,
+        Noise = new FastNoiseLite { NoiseType = FastNoiseLite.NoiseTypeEnum.SimplexSmooth, Frequency = 0.9f, FractalOctaves = 3 },
+        ColorRamp = new Gradient { Offsets = [0f, 1f], Colors = [new Color(0.86f, 0.85f, 0.84f), new Color(0.97f, 0.96f, 0.95f)] },
+    };
 
     /// <summary>Eyes as they are; hair, brows and lashes (grey in the files) tinted with the hair colour, cut out by their alpha.</summary>
     static Material PartMaterial(string equip, string file, Humans.Skin who)
