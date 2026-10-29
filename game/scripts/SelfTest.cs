@@ -2232,6 +2232,10 @@ public partial class SelfTest(Main main) : Node
         var parts = Enumerable.Range(1, mesh.Mesh.GetSurfaceCount() - 1).Select(i => mesh.Mesh.SurfaceGetMaterial(i) as StandardMaterial3D).ToList();
         Check(mesh.Mesh.GetSurfaceCount() >= 6 && parts.All(m => m?.AlbedoTexture is not null), $"with a face: {mesh.Mesh.GetSurfaceCount() - 1} parts (eyes, brows, lashes, hair), each with its texture");
         Check(mesh.Mesh.SurfaceGetMaterial(0) is ShaderMaterial skinned && skinned.GetShaderParameter("skin").AsGodotObject() is Texture2D, "and a skin texture under the painted clothes");
+        // Real clothes, baked onto the body and dyed for the trade: a shirt, trousers and shoes, each with its own weave.
+        var clothes = Enumerable.Range(1, mesh.Mesh.GetSurfaceCount() - 1).Select(i => mesh.Mesh.SurfaceGetMaterial(i) as StandardMaterial3D)
+            .Where(m => m?.AlbedoTexture?.ResourcePath is { } path && (path.Contains("shirt") || path.Contains("pants") || path.Contains("shoes"))).ToList();
+        Check(clothes.Count >= 3 && clothes.All(m => m!.CullMode == BaseMaterial3D.CullModeEnum.Disabled), $"wearing real clothes: {clothes.Count} pieces (a shirt, trousers, shoes), dyed for the trade");
         var arm = skeleton.FindBone("LeftUpperArm");
         var elbow = skeleton.FindBone("LeftLowerArm");
         await Until(() => (skeleton.GetBoneGlobalPose(elbow).Origin - skeleton.GetBoneGlobalPose(arm).Origin).Normalized().Y < -0.6f, 3);
