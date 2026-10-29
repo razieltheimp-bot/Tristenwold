@@ -740,7 +740,8 @@ public partial class SelfTest(Main main) : Node
 
         // The road to Dragon Knight.
         await Teleport(new Vector3((float)DragonSaga.RookeryX + 4, 0, (float)DragonSaga.RookeryZ + 10));
-        await Until(() => main.WildsNode.Creatures.Count(e => e.Rider) >= 2, 8);
+        main.TerrainNode.EnsureAround(new Vector3((float)DragonSaga.RookeryX, 0, (float)DragonSaga.RookeryZ), 2); // the knights come once the hill is built
+        await Until(() => main.WildsNode.Creatures.Count(e => e.Rider) >= 2, 25);
         Check(main.WildsNode.Creatures.Count(e => e.Rider) >= 2, $"dragon knights at the rookery: {string.Join(", ", main.WildsNode.Creatures.Where(e => e.Rider).Select(e => e.Stats.Name))}");
         // Every day a rider of the Order comes down at the rookery, for anyone who's looking.
         main.RiderFlightsNode.LandForTest();
