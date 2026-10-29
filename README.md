@@ -592,6 +592,15 @@ hair and skin are painted on by trade: a guard's grey mail and cap, a priest's w
 pirate's red. Where the bodies aren't (the phone build) or the setting is lower, the KayKit figures stand in. The
 hero and the enemies still wear KayKit's figures for now; they're next.
 
+### Creatures that stand in the world
+
+Every animal and monster with known bones (horses, cows, sheep, pigs, wolves, foxes, boars, deer, dragons, goblins,
+trolls) now stands on the ground under each foot rather than on a flat stage: across a hillside a horse's uphill
+legs bend and its body settles so the downhill hooves still reach the ground; a wolf on a rock has a paw on the
+rock. Their heads turn to watch you when you come near and in front, and look away when you've gone; their tails
+swing with their own weight when they turn or set off. It's all done in the game's own code, bone by bone, on top
+of whatever their clips are doing.
+
 ### Barbarian raiders on the frontier
 
 Out past Tristinwold's fields (more than a kilometre from the walls), **barbarian clans** roam the frontier: "the Red

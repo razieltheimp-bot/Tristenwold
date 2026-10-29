@@ -1215,6 +1215,7 @@ public partial class Creature : Animal
     {
         var c = new Creature();
         if (!c.Load(file, height, yaw: yaw)) return null;
+        c.Footing = Poise.Attach(c, c.Model, file);
         if (tint is { } t) Models.Tint(c.Model, t);
         if (coat is not null) c.Coat(coat, metallic, glow);
         c._anim = c.Model.FindChildren("*", "AnimationPlayer", true, false).OfType<AnimationPlayer>().FirstOrDefault();
@@ -1247,6 +1248,9 @@ public partial class Creature : Animal
 
     DragonWings? _wings;
     bool _flying;
+
+    /// <summary>Its feet on the ground, its glance and its tail (see <see cref="Poise"/>); null for a model whose bones aren't known.</summary>
+    public Footing? Footing { get; set; }
     float _speed;
 
     /// <summary>Gives a dragon its great wings (it can fly from now on).</summary>

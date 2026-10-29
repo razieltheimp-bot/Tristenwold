@@ -546,6 +546,40 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--poise"))
+        {
+            // A horse across a hillside, its feet on the ground, watching the hero; a wolf beside.
+            var world = main.World;
+            // A hillside, not a cliff: a fair slope well above the water, with level enough ground round it for the camera.
+            var best = (At: new Vector3(300, 0, 300), Slope: 0.0);
+            for (var r = 350; r < 2500 && best.Slope < 0.22; r += 60)
+                for (var a = 0.0; a < Math.Tau; a += 0.25)
+                {
+                    var (x, z) = (Math.Cos(a) * r, Math.Sin(a) * r);
+                    if (world.Height(x, z) < WorldGen.WaterLevel + 8 || world.SettlementAt(x, z) is not null) continue;
+                    var slope = Math.Abs(world.Height(x + 2, z) - world.Height(x - 2, z)) / 4;
+                    var drop = world.Height(x, z) - Math.Min(world.Height(x, z + 8), world.Height(x + 8, z));
+                    if (slope is > 0.18 and < 0.3 && drop < 3 && slope > best.Slope) best = (new Vector3((float)x, 0, (float)z), slope);
+                }
+            main.TerrainNode.EnsureAround(best.At, 2);
+            p.GlobalPosition = best.At + new Vector3(5, 1, 1);
+            await Frames(90);
+            var ground = City.FloorAt(best.At);
+            foreach (var (look, off, yaw) in new[] { ("horse", new Vector3(0, 0, 0), 0f), ("wolf", new Vector3(-3, 0, 2), 0.4f) })
+                if (Body.For(look) is Creature c)
+                {
+                    main.AddChild(c);
+                    var at = best.At + off;
+                    c.GlobalPosition = at with { Y = City.FloorAt(at) };
+                    c.LookAt(c.GlobalPosition + new Vector3(1, 0, 0.2f), Vector3.Up);
+                    c.Move(0, true, false);
+                }
+            p.GlobalPosition = best.At + new Vector3(5, 1, 1) with { Y = City.FloorAt(best.At + new Vector3(5, 0, 1)) + 1 };
+            await Frames(120);
+            await From("poise-hillside", best.At + new Vector3(1, 0, 5.5f) with { Y = City.FloorAt(best.At + new Vector3(1, 0, 5.5f)) + 1.7f }, best.At + new Vector3(-0.5f, 0, 0) with { Y = ground + 1.1f });
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--sea"))
         {
             // The shipyard, then aboard at sea with pirates alongside.

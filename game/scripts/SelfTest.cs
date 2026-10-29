@@ -37,6 +37,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--humans-only")) { await HumansTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--poise-only")) { await PoiseTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ageing-only")) { await AgeingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
@@ -58,7 +59,7 @@ public partial class SelfTest(Main main) : Node
             }
             if (OS.GetCmdlineUserArgs().Contains("--save-only")) { await SaveTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--logout-only")) { await SaveTest(); GD.Print(string.Join("\n", _log)); main.LeaveForTest(); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await HumansTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
+            if (OS.GetCmdlineUserArgs().Contains("--company-only")) { await StoryTest(); await CompanyTest(); await GuildTest(); await RaidTest(); await LairTest(); await DeviantLairTest(); await HuntTest(); await LivingWorldTest(); await FrontierTest(); await CaravanTest(); await RaidersTest(); await SeaTest(); await HumansTest(); await PoiseTest(); await AgeingTest(); await StrangeWildsTest(); await TradeTest(); await TownWorkTest(); await PursuitsTest(); await SoundTest(); await SaveTest(); Finish(0); return; } // just the new systems
             var p = main.PlayerNode;
             p.GlobalPosition = new Vector3(-150, 1, -120); // open ground, away from every lair
             await Frames(30);
@@ -1721,6 +1722,72 @@ public partial class SelfTest(Main main) : Node
     }
 
 
+
+
+    /// <summary>Creatures stand on the ground under each foot, look at the hero, and swing their tails.</summary>
+    async Task PoiseTest()
+    {
+        var p = main.PlayerNode;
+        // A slope: where the land climbs most within a short walk of the city.
+        var world = main.World;
+        var best = (At: new Vector3(300, 0, 300), Slope: 0.0);
+        for (var r = 350; r < 2500 && best.Slope < 0.35; r += 60)
+            for (var a = 0.0; a < Math.Tau; a += 0.25)
+            {
+                var (x, z) = (Math.Cos(a) * r, Math.Sin(a) * r);
+                var h = world.Height(x, z);
+                if (h < WorldGen.WaterLevel + 2 || world.SettlementAt(x, z) is not null) continue;
+                var slope = Math.Abs(world.Height(x + 2, z) - world.Height(x - 2, z)) / 4;
+                if (slope > best.Slope) best = (new Vector3((float)x, 0, (float)z), slope);
+            }
+        await Teleport(best.At + new Vector3(3, 0, 3));
+        await Frames(30);
+        var horse = Body.For("horse") as Creature;
+        if (horse?.Footing is null) { Check(false, "a horse with known bones"); return; }
+        AddChild(horse);
+        horse.GlobalPosition = best.At with { Y = City.FloorAt(best.At) };
+        horse.LookAt(horse.GlobalPosition + new Vector3(1, 0, 0), Vector3.Up); // across the slope
+        horse.Move(0, true, false); // standing, its idle playing
+        async Task Passes(int n) { var from = horse.Footing!.Passes; await Until(() => horse.Footing.Passes >= from + n, 30); }
+        await Passes(30);
+        var lifts = horse.Footing.Lifts;
+        Check(lifts.Count == 4, $"four legs on IK (slope {best.Slope:0.00} at {best.At.X:0},{best.At.Z:0})");
+        Check(lifts.Max() - lifts.Min() > 0.04f, $"standing across a slope, its feet find the ground: lifts {string.Join(", ", lifts.Select(l => $"{l:+0.00;-0.00}"))} m");
+        var skeleton = horse.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().First();
+        var seen = horse.Footing.Witness;
+        var offGround = seen.FeetAt.Select(f => Math.Abs(f.Y - City.FloorAt(f))).ToList();
+        Check(seen.Misses.Count == 4 && seen.Misses.Max() < 0.12f && offGround.Max() < 0.15f,
+            $"and the leg IK puts every foot where it's sent: {string.Join(", ", seen.Misses.Select(d => $"{d:0.00}"))} m from its mark, {string.Join(", ", offGround.Select(d => $"{d:0.00}"))} m off the ground, the body settled {horse.Footing.Drop:0.00} m");
+        // A look: the hero walks round in front, and the horse's head turns.
+        var footing = horse.Footing;
+        var head = skeleton.FindBone("Head");
+        var ahead = -horse.GlobalTransform.Basis.Z;
+        var aside = ahead.Cross(Vector3.Up);
+        await Teleport(horse.GlobalPosition + ahead * 5 + aside * 3);
+        await Passes(40);
+        var turned = footing.Gazing;
+        var before = seen.HeadBasis.Y;
+        await Teleport(horse.GlobalPosition + ahead * 5 - aside * 3);
+        await Passes(40);
+        var after = seen.HeadBasis.Y;
+        var swung = Mathf.RadToDeg(before.AngleTo(after));
+        Check(turned > 0.9f && swung > 20 && footing.HeadTurn > 10, $"it watches the hero: its muzzle swung {swung:0}° as they crossed in front (a {footing.HeadTurn:0}° turn of the neck now)");
+        await Teleport(horse.GlobalPosition - ahead * 30);
+        await Passes(40);
+        Check(footing.Gazing < 0.1f, "and looks away when they're gone");
+        // A sharp turn flings the tail out; it settles again.
+        horse.RotateY(1.2f);
+        await Passes(3);
+        var flung = Math.Abs(footing.TailSwing);
+        await Passes(60);
+        Check(flung > 4 && Math.Abs(footing.TailSwing) < flung * 0.5f, $"a sharp turn flings its tail {flung:0}° aside, and it settles ({Math.Abs(footing.TailSwing):0}° after)");
+        horse.QueueFree();
+        var wolf = Body.For("wolf") as Creature;
+        var dragon = Body.For("dragon") as Creature;
+        Check(wolf?.Footing is not null && dragon?.Footing is not null, "wolves and dragons have their footing too");
+        wolf?.QueueFree();
+        dragon?.QueueFree();
+    }
 
     /// <summary>Realistic people: every townsperson a baked body of their people, sex and age, in their trade's clothes, moved by KayKit's clips.</summary>
     async Task HumansTest()

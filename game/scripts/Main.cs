@@ -327,6 +327,7 @@ public partial class Main : Node3D
             Element = Enum.TryParse<DamageKind>(choice.Character.Element, out var element) ? element : DamageKind.Fire,
         };
         AddChild(_player);
+        Poise.Hero = _player; // the creatures' eyes follow the hero
         _player.Said += text => _hud.Toast(text);
         _player.LimitUsed += (a, c) => _hud.LimitBanner(a.Name, a.Text, c);
         _player.WentDown += () => { _tracker.Downed(); _hud.Center("You have fallen."); };
