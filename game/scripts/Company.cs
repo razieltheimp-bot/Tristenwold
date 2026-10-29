@@ -64,7 +64,7 @@ public partial class Main
     Enemy BringCompanion(Bond bond, Vector3? at = null)
     {
         var spot = at ?? _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 3 + new Vector3((float)GD.RandRange(-2, 2), 0, 0);
-        var e = Enemy.Create(Bestiary.Get(bond.KindId), spot with { Y = City.FloorAt(spot) + 0.5f }, bond: bond);
+        var e = Enemy.Create(Bestiary.Get(bond.KindId), spot with { Y = City.FloorAt(spot) + 0.5f }, bond: bond, look: bond.Role == BondRole.Golem ? $"golem:{bond.Name}" : null);
         e.Leader = _player;
         AddEnemy(e);
         _companions.Add(e);
@@ -186,7 +186,7 @@ public partial class Main
         body.Visible = false;
         body.ProcessMode = ProcessModeEnum.Disabled; // the machine is you now
         var size = (float)Math.Max(1.25, body.Figure.Scale.X * 1.12);
-        _player.Possess(() => { var shell = Figure.Create("golem"); shell.Scale = Vector3.One * (float)golem.Size; return shell; }, size, seconds, () =>
+        _player.Possess(() => { var shell = Clockwork.For(golem.Name); shell.Scale = Vector3.One * (float)golem.Size; return shell; }, size, seconds, () =>
         {
             if (!IsInstanceValid(body)) return;
             body.ProcessMode = ProcessModeEnum.Inherit;

@@ -199,11 +199,14 @@ public partial class Main
     // ---- the clan ------------------------------------------------------------------------------------
 
     /// <summary>A clan's offer, taken: sworn to it, struck off the Watch, and the city hears.</summary>
+    /// <summary>The self-test's crimes are always seen.</summary>
+    public bool CaughtSure { get; set; }
+
     public void JoinClan(Warband w)
     {
         var wasWatch = _standing.Watch.In;
         if (!_standing.JoinClan(w)) return;
-        _hud.Toast($"You're a spear of {w.Name} now. Ride with them when they fall on a place, and you'll take a share of the plunder, and a name in Tristinwold you won't like.{(wasWatch ? " The Watch strikes you off its rolls." : "")}", 10);
+        _hud.Toast($"You're a spear of {w.Name} now. Ride with them when they fall on a place, and you'll take a share of the plunder, and a name in Tristinwold you won't like.{(wasWatch ? " The Watch doesn't know yet: get seen on a raid, and it will." : "")}", 10);
         Sound.Ui("quest", -3);
         Save();
     }
@@ -214,11 +217,13 @@ public partial class Main
         var (share, promoted) = _standing.Clan.Rode(w, _player.Hero.Level);
         _player.Crowns += share;
         _standing.Evil(6, $"rode with {w.Name} on {place.Name}");
-        _standing.Wanted(Standing.RaidBounty);
+        var seen = _standing.Caught(Standing.RaidSeen, Standing.RaidBounty, _lootRng, sure: CaughtSure);
         if (_trade.Towns.TryGetValue(place.Id, out var m)) m.Plundered(_city.Day);
         _raiders.Record.Reckon(w, round);
         Sound.Ui("coin", -2);
-        _hud.Toast($"{place.Name} is plundered. Your share: {share} crowns. Word of it will reach Tristinwold: {Standing.RaidBounty} more crowns on your head there ({_standing.Bounty} in all).", 10);
+        _hud.Toast(seen
+            ? $"{place.Name} is plundered. Your share: {share} crowns. Somebody knew your face: {Standing.RaidBounty} more crowns on your head in Tristinwold ({_standing.Bounty} in all){(_standing.Watch.Dismissals > 0 && !_standing.Watch.In ? ", and the Watch has struck you off" : "")}."
+            : $"{place.Name} is plundered. Your share: {share} crowns, and nobody who saw you lived to say so.", 10);
         if (promoted is { } rank)
         {
             _hud.Toast(rank == ClanRank.Warchief

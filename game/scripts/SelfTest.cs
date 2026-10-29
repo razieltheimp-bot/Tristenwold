@@ -1742,6 +1742,7 @@ public partial class SelfTest(Main main) : Node
     /// </summary>
     async Task StandingTest()
     {
+        main.CaughtSure = true; // every crime seen, so the prices and the dismissals the test looks for are sure
         var p = main.PlayerNode;
         var hud = main.HudNode;
         var s = main.Standing;
@@ -1863,7 +1864,7 @@ public partial class SelfTest(Main main) : Node
         hud.EndTalk();
         await Frames(5);
         Check(main.WatchNode.Guards.All(g => g.Allied), "the Watch stands down");
-        Check(s.WhyNotWatch == "you ride with a barbarian clan", "but the Watch won't have a clansman back");
+        Check(s.WhyNotWatch == "there's a price on your head", "but the Watch won't have you back while there's a price on your head: a double life lasts until you're seen");
 
         // The guilds' stories have a good choice and a wicked one, and the town gossips about what you've done.
         Check(Guilds.Drama.All(d => d.Choices.Any(c => c.Good) && d.Choices.Any(c => c.Evil)), $"every guild story ({Guilds.Drama.Count}) has a good choice and a wicked one");
@@ -1906,6 +1907,7 @@ public partial class SelfTest(Main main) : Node
         await Until(() => GolemBody() is not null, 6);
         var golem = GolemBody();
         Check(golem is { Bond: { Name: "Alembic", Eats: false } } && golem.Leader == p, $"an alchemist's golem, {golem?.Bond?.Name}, stamps after you (level {golem?.Bond?.Level}): not a pet, never fed");
+        Check(golem?.Figure is Clockwork { Design: "Alembic" }, "and it's the Alchemist's own design: a retort of brass and glass, a reagent glowing in its chest");
         var level = p.Hero.Level;
         main.GainXp(Hero.XpToNext(level) * 2);
         await Until(() => Golem()?.Level == p.Hero.Level && GolemBody() is not null, 6);
@@ -1940,6 +1942,7 @@ public partial class SelfTest(Main main) : Node
         await Until(() => Golem()?.Level == p.Hero.Level + 2 && GolemBody() is not null, 6);
         Check(Golem()?.Level == p.Hero.Level + 2, "a tinker's golem is sturdier: two levels up on you");
         Check(Golem()?.Build == Bond.AeronautBuild && GolemBody()?.Figure.Scale.X > 1.3f, $"and built bigger than the others, a hull with room inside (x{GolemBody()?.Figure.Scale.X:0.00})");
+        Check(GolemBody()?.Figure is Clockwork { Design: "Ballast" }, "the Aeronaut's own design: a riveted iron hull with a furnace core and chimneys");
         await Teleport(new Vector3(-150, 0, -120));
         thug = Spawn("dock_thug", p.GlobalPosition - p.GlobalTransform.Basis.Z * 11);
         await Frames(3);
@@ -1952,6 +1955,8 @@ public partial class SelfTest(Main main) : Node
         thug.QueueFree();
         var body = GolemBody()!;
         Check(p.Use(p.Class.Utility) && !body.Visible && p.Stats.Statuses.Contains(AutoStatus.Protect), "you climb inside the golem: it's gone from the field, and you wear its plate (Protect, Shell)");
+        await Frames(2);
+        Check(p.Possessing && p.Figure is Clockwork { Design: "Ballast" }, "and you drive the machine: the golem's body is yours for the while, at its full size");
         await Until(() => body.Visible, 20);
         Check(body.Visible, "and it steps back out beside you after");
         await Teleport(Main.ShipyardAt + new Vector3(0, 0, 1));
@@ -2055,7 +2060,7 @@ public partial class SelfTest(Main main) : Node
         }
         Check(sh.RoundDone && p.Crowns > purse && sh.For(ShadowLine.Thug).Done == 3, $"the round's done: +{p.Crowns - purse} crowns, infamy {s.Infamy}");
         main.ShadowsSure = false;
-        Check(s.WhyNotWatch == "you run with the Tongs", "and the Watch won't have a Tong");
+        Check(s.WhyNotWatch is null, "and the Watch would still have you: nobody's caught you at it yet");
         // One who won't pay: the Watch is sent for.
         var bounty = s.Bounty;
         sh.StartRound([.. Shops.All.Where(x => main.Locals.Any(l => l.Npc.Id == x.Id)).Select(x => x.Id)], new Tristinwold.Deviant.Rng(3));

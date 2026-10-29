@@ -289,9 +289,13 @@ metals; a Warlock bargains a fifth more on every load traded away from home; a S
 every lair; a Poet talks a tenth off every price; a Scribe is paid a fifth more for every job and contract; a Musician
 sells loads a tenth better in every town and port; and the artificers, below.
 
-**The artificers and their golems.** An artificer never fights alone: a **brass golem** stamps out of the Foundry yard
-after them the day they join (Alembic, Ballast or Scrap, by the class), fights beside them, and is as grown as its
-maker: it levels as the hero levels, it is never fed (a machine, not a pet), it gets up after every fight, and it
+**The artificers and their golems.** An artificer never fights alone: a **clockwork golem** stamps out of the Foundry
+yard after them the day they join, fights beside them, and is as grown as its maker. Each class's machine is its
+own design: the Alchemist's **Alembic** is a retort of brass and glass with a green reagent glowing in its chest
+vessel, copper pipes and spindly graspers; the Ether-Aeronaut's **Ballast** a riveted iron hull with room inside for
+its maker, a furnace glowing through the grate, chimney stacks on the shoulders and heavy clawed arms; the
+Saboteur's **Scrap** a thing of mismatched plates and exposed gears with one great hammer arm and a lantern eye.
+Their gears turn as they walk, their cores breathe, and they dim when they fall. A golem it levels as the hero levels, it is never fed (a machine, not a pet), it gets up after every fight, and it
 winds down in the yard if they leave the calling. The **Alchemist** throws vials of their element and lays elemental
 hazards across a chokepoint; their *Market Transmutation* steadies a town's or a port's market once a day, for three
 herbs or two ores, through Garrick Wain at the caravan yard or the harbour masters (a glut or a crash eases most of
@@ -659,6 +663,13 @@ and for your standing in it), and forty more crowns go on your head in Tristinwo
 horn. Speak with the warchief (E, when he's about) to see how you stand, or to leave the clan, which it takes
 badly. The pirates' path (above) works the same way: lose your ship and Black Ysolde offers you a place, and every
 prize is infamy. `--selftest --standing-only` walks through all of it.
+
+**A double life.** Nothing stops a watchman running with the Tongs, riding with a clan or sailing with the pirates
+on the quiet: every career is open at once, as long as nobody catches you at it. Every crime has its chance of
+being seen (a raid half the time, an ambushed wagon more often than not, a crate at the rail now and then, a farm's
+beast if the farmer's at the gate), and a shopkeeper who won't pay the Tongs always sends for the Watch. Caught,
+the price goes on your head, your name drops, and the Watch strikes you off its rolls; pay the bounty and you can
+ask Captain Vale to take you back, though he'll remember.
 
 **The wrong side of every job.** Every honest trade in the city has its shadow, and the shadow pays better and
 costs your name. Where the Watch walks beats, **the Ravenscrew Tongs** have Corvin Rask, leaning on a wall in the

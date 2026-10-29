@@ -157,13 +157,18 @@ public class StandingTests
         var s = new Standing();
         s.Watch.Join();
         Assert.True(s.JoinClan(Clan()));
+        Assert.True(s.Watch.In); // a double life: still on the rolls until caught
+        Assert.Null(s.WhyNotWatch is "you're already on the rolls" ? null : s.WhyNotWatch);
+        Assert.False(s.Caught(0.5, 40, new Rng(1), sure: false) && s.Watch.In); // caught, and struck off; or not seen, and still on the rolls
+        s.Caught(1, 40, new Rng(2), sure: true);
         Assert.False(s.Watch.In);
-        Assert.Equal("you ride with a barbarian clan", s.WhyNotWatch);
+        Assert.Equal("there's a price on your head", s.WhyNotWatch);
         Assert.True(s.Infamy > 0);
         Assert.StartsWith("swore to the ", s.LastDeed);
         s.Clan.Leave();
         s.Infamy = 100;
-        Assert.Equal("the whole city knows what you are", s.WhyNotWatch);
+        s.Bounty = 0; // paid off
+        Assert.Null(s.WhyNotWatch); // a villain nobody has caught (or who has paid) may still take the Watch's shilling
     }
 
     [Fact]

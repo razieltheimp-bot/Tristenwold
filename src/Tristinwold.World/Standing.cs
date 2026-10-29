@@ -446,12 +446,28 @@ public sealed class Standing
     }
 
     /// <summary>Why the Watch won't have the hero, or null if it will.</summary>
+    /// <summary>
+    /// What keeps you off the Watch's rolls: only a price on your head. A watchman may run with the Tongs, ride with a
+    /// clan or sail with pirates on the quiet, as long as nobody catches them at it; caught (a bounty), they're struck
+    /// off, and the city knows what they are.
+    /// </summary>
     public string? WhyNotWatch => Watch.In ? "you're already on the rolls"
         : Outlaw ? "there's a price on your head"
-        : Clan.In ? "you ride with a barbarian clan"
-        : Shadows.In(ShadowLine.Thug) ? "you run with the Tongs"
-        : Repute == Repute.Villain ? "the whole city knows what you are"
         : null;
+
+    /// <summary>The chance of being seen and known at a crime: a raid, an ambush, a crate at the rail, a beast on a farm.</summary>
+    public const double RaidSeen = 0.5, AmbushSeen = 0.6, CrateSeen = 0.15, PoachSeen = 0.2;
+
+    /// <summary>
+    /// A crime that may have been witnessed: on a roll under <paramref name="chance"/> it's known, and the price goes
+    /// on your head (which strikes you from the Watch); true if caught.
+    /// </summary>
+    public bool Caught(double chance, int bounty, Rng rng, bool sure = false)
+    {
+        if (!sure && !rng.Chance(chance)) return false;
+        Wanted(bounty);
+        return true;
+    }
 
     public bool MayJoinWatch => WhyNotWatch is null;
 
@@ -459,7 +475,6 @@ public sealed class Standing
     public bool JoinClan(Warband w)
     {
         if (!Clan.Join(w)) return false;
-        Watch.Dismiss();
         Evil(4, $"swore to {w.Name}");
         return true;
     }

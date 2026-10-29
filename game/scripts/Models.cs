@@ -267,6 +267,7 @@ public abstract partial class Body : Node3D
         "cinder_warden" => Burned(look, Cinder.Warden),
         "cinder_thrall" => Burned(look, Cinder.Thrall),
         _ when look.StartsWith("rider:") => Ridden(look[6..]),
+        _ when look.StartsWith("golem") => Clockwork.For(look.Contains(':') ? look[6..] : "Scrap"), // an artificer's machine, by its design
         _ when look.StartsWith("dragon_") && look.EndsWith("_corrupt") => Dragon(look[7..^8], corrupt: true),
         _ when look.StartsWith("dragon_") => Dragon(look[7..]),
         "wolf" => (Body?)Creature.Create("wolf.glb", 0.95f) ?? Beast.Wolf(new Color("#5a5650")),

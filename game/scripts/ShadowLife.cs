@@ -57,11 +57,10 @@ public partial class Main
 
     void JoinTongs(Person corvin)
     {
-        if (_standing.Watch.In) { Say(corvin, "Not with the Watch's colours on you. Hand them in first."); return; }
         Shadows.Join(ShadowLine.Thug);
         _standing.Evil(2, "went to work for the Ravenscrew Tongs");
         Say(corvin, "Good. The Tongs keep the peace in their own way: the shops pay, and nothing happens to them. You collect. Come back when you want a round.");
-        _hud.Toast("You run with the Ravenscrew Tongs now. Corvin Rask gives you rounds: shops to collect the Tongs' due from. The Watch won't have you while you do.", 10);
+        _hud.Toast($"You run with the Ravenscrew Tongs now. Corvin Rask gives you rounds: shops to collect the Tongs' due from.{(_standing.Watch.In ? " Keep the Watch's colours off while you do: a shopkeeper who sends for the Watch is you caught, and struck off." : "")}", 10);
         Save();
     }
 
@@ -136,7 +135,9 @@ public partial class Main
         _standing.Evil(2, $"ran a crate for Nell Corran to {Seas.Get(port)?.Name ?? port}");
         Sound.Ui("coin", -2);
         Say(agent, $"A man in a tarred coat takes the crate off you at the rail, and leaves {pay} crowns in your hand without a word.");
-        _hud.Toast($"The crate's delivered: +{pay} crowns. Nell will have another.", 6);
+        if (_standing.Caught(Standing.CrateSeen, ShadowBook.RefusedBounty, _lootRng))
+            _hud.Toast($"The crate's delivered: +{pay} crowns. But the harbour watch saw it change hands: {ShadowBook.RefusedBounty} crowns on your head in Tristinwold ({_standing.Bounty} in all).", 9);
+        else _hud.Toast($"The crate's delivered: +{pay} crowns, and nobody the wiser. Nell will have another.", 6);
         Save();
     }
 
@@ -159,7 +160,9 @@ public partial class Main
         if (!Shadows.In(ShadowLine.Poacher)) return false;
         Shadows.Pelts++;
         _standing.Evil(1, $"poached somebody's {victim.Kind.Name.ToLowerInvariant()}");
-        _hud.Toast($"Somebody's {victim.Kind.Name.ToLowerInvariant()}, and nobody saw: a pelt for Nell ({Shadows.Pelts} owed).", 5);
+        if (!ShadowsSure && _standing.Caught(Standing.PoachSeen, 10, _lootRng))
+            _hud.Toast($"Somebody's {victim.Kind.Name.ToLowerInvariant()}: a pelt for Nell ({Shadows.Pelts} owed), but the farmer saw you from the gate. 10 crowns on your head ({_standing.Bounty} in all).", 7);
+        else _hud.Toast($"Somebody's {victim.Kind.Name.ToLowerInvariant()}, and nobody saw: a pelt for Nell ({Shadows.Pelts} owed).", 5);
         return true;
     }
 

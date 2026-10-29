@@ -184,9 +184,11 @@ public partial class Main
         var t = _standing.Tracker;
         if (t is not null && _trade.Towns.TryGetValue(t.TownId, out var m)) m.Plundered(_city.Day);
         _standing.Evil(5, $"ambushed a wagon bound for {t?.TownName ?? "the road"}");
-        _standing.Wanted(Standing.RaidBounty);
+        var seen = _standing.Caught(Standing.AmbushSeen, Standing.RaidBounty, _lootRng, sure: CaughtSure);
         Sound.Ui("coin", -2);
-        _hud.Toast($"The wagon's strongbox and its best loads: {take} crowns. Word will reach Tristinwold: {Standing.RaidBounty} crowns on your head ({_standing.Bounty} in all).", 9);
+        _hud.Toast(seen
+            ? $"The wagon's strongbox and its best loads: {take} crowns. The driver got away and knew your face: {Standing.RaidBounty} crowns on your head ({_standing.Bounty} in all)."
+            : $"The wagon's strongbox and its best loads: {take} crowns, and nobody left to say who took them.", 9);
         if (_ambushWagon is { } w && IsInstanceValid(w)) GetTree().CreateTimer(20).Timeout += () => { if (IsInstanceValid(w)) w.QueueFree(); };
         _ambush = null;
         _ambushWagon = null;

@@ -70,7 +70,7 @@ public class ShadowTests
         var s = new Standing();
         Assert.Null(s.WhyNotWatch);
         s.Shadows.Join(ShadowLine.Thug);
-        Assert.Equal("you run with the Tongs", s.WhyNotWatch);
+        Assert.Null(s.WhyNotWatch); // a Tong may wear the Watch's colours, until a shopkeeper sends for the Watch
         s.Shadows.CrateFor = "port:vosk";
         s.Tracker = new WagonTracker { TownId = "t", TownName = "Larkmere", X = 500, Z = 0, FromX = 0, FromZ = 0, PlantedAt = 10 };
         var json = CompanySave.Capture(1, 5, new ExploredMap(), new QuestLog(), standing: s).ToJson();
