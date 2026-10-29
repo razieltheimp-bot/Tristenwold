@@ -89,6 +89,18 @@ public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
         new("rookery_silver", "dragon_silver", DragonSaga.RookeryX + 15, DragonSaga.RookeryZ - 25, 1, 25, DragonSize.Normal, "eyrie", Allied: true, Riders: true),
     ];
 
+    /// <summary>For the self-test: herds whose ids start like this are cleared away, bodies and all, and may come again at once.</summary>
+    public void ClearForTest(string prefix)
+    {
+        foreach (var (id, members) in _herds.Where(h => h.Key.StartsWith(prefix)).ToList())
+        {
+            foreach (var e in members.Where(IsInstanceValid)) e.QueueFree();
+            _herds.Remove(id);
+            if (_hawks.Remove(id, out var hawk) && IsInstanceValid(hawk)) hawk.QueueFree();
+        }
+        foreach (var id in _gone.Keys.Where(k => k.StartsWith(prefix)).ToList()) _gone.Remove(id);
+    }
+
     void Bring(Herd herd, double clock, bool hawks = false, double regrow = Regrow)
     {
         if (_herds.ContainsKey(herd.Id)) return;
