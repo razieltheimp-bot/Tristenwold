@@ -137,6 +137,17 @@ public sealed class Bond
     [JsonIgnore]
     public bool Machine => Role == BondRole.Golem;
 
+    /// <summary>
+    /// How big a golem is built, compared with the Foundry's pattern: an ether-aeronaut's is a hull with room for
+    /// its maker inside, so it stands a good deal taller and heavier than an alchemist's or a saboteur's.
+    /// </summary>
+    public double Build { get; set; } = 1;
+
+    public const double AeronautBuild = 1.35;
+
+    /// <summary>The build of the golem the Foundry makes for each artificer: the aeronaut's is the one you climb inside.</summary>
+    public static double GolemBuild(string discipline) => discipline == "EtherAeronaut" ? AeronautBuild : 1;
+
     /// <summary>How its numbers compare to a grown one of its kind: smaller while young, stronger with every level.</summary>
     [JsonIgnore]
     public double Strength => (0.3 + 0.7 * Growth) * (1 + 0.07 * (Level - 1)) * (Fed <= 0 && Eats ? 0.6 : 1);
@@ -147,6 +158,7 @@ public sealed class Bond
     {
         BondRole.Dragon => Level >= 30 ? 10.5 / 4.5 : Level >= 20 ? 7 / 4.5 : Growth,
         BondRole.Pet => Math.Min(1, 0.4 + 0.12 * (Level - 1)),
+        BondRole.Golem => Build,
         _ => 0.82 + 0.18 * Growth, // a youth grows into a squire's or apprentice's full height
     };
 

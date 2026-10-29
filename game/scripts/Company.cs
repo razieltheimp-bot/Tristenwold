@@ -138,16 +138,19 @@ public partial class Main
         if (_player.Class.Calling == Calling.Artificer)
         {
             var level = _player.Hero.Level + (_player.Class.Id == "EtherAeronaut" ? 2 : 0); // a tinker's golem is sturdier
+            var build = Bond.GolemBuild(_player.Class.Id); // and a hull you can climb inside is built bigger
             if (golem is null)
             {
-                golem = new Bond { KindId = "golem", Name = GolemName(_player.Class.Id), Role = BondRole.Golem, Level = level, Following = true };
+                golem = new Bond { KindId = "golem", Name = GolemName(_player.Class.Id), Role = BondRole.Golem, Level = level, Build = build, Following = true };
                 _bonds.Add(golem);
                 BringCompanion(golem);
-                _hud.Toast($"{golem.Name}, your golem, stamps out of the Foundry yard after you. It fights beside you, and grows as you do.", 10);
+                _hud.Toast(build > 1
+                    ? $"{golem.Name}, your golem, stamps out of the Foundry yard after you: a hull of brass with room inside for you, head and shoulders over the Foundry's other work. It fights beside you, and grows as you do."
+                    : $"{golem.Name}, your golem, stamps out of the Foundry yard after you. It fights beside you, and grows as you do.", 10);
             }
-            else if (golem.Level != level)
+            else if (golem.Level != level || golem.Build != build)
             {
-                golem.Level = level;
+                (golem.Level, golem.Build) = (level, build);
                 if (BodyOf(golem) is { } body && body.State != EnemyState.Dead && golem.Following)
                 {
                     var at = body.GlobalPosition;
@@ -180,7 +183,7 @@ public partial class Main
         body.ProcessMode = ProcessModeEnum.Disabled;
         var figure = _player.Figure;
         var scale = figure.Scale;
-        figure.Scale = scale * 1.25f;
+        figure.Scale = scale * Math.Max(1.25f, body.Figure.Scale.X); // as big as the hull you're wearing
         _hud.Toast($"You climb inside {golem.Name} and the plates close round you: its weight behind every blow, and its brass between you and theirs.", 7);
         GetTree().CreateTimer(seconds).Timeout += () =>
         {

@@ -296,8 +296,10 @@ winds down in the yard if they leave the calling. The **Alchemist** throws vials
 hazards across a chokepoint; their *Market Transmutation* steadies a town's or a port's market once a day, for three
 herbs or two ores, through Garrick Wain at the caravan yard or the harbour masters (a glut or a crash eases most of
 the way back to the usual), and their preserving salts get a tenth more for every load traded away. The
-**Ether-Aeronaut** harpoons foes to them and pins them, *merges* with the golem (climbs inside and wears it: Protect,
-Shell, and its weight behind every blow, for a while), and at the shipyard fits ships with **modules** that sail with
+**Ether-Aeronaut**'s golem, Ballast, is built a good deal bigger than the others', a hull of brass with room inside
+for its maker (and the tougher for its size); the aeronaut harpoons foes to them and pins them, *merges* with the
+golem (climbs inside and wears it, standing as tall as it does: Protect, Shell, and its weight behind every blow,
+for a while), and at the shipyard fits ships with **modules** that sail with
 them on any ship: an automated bilge pump (boarders hole her half as fast) and light sails (a quarter off every leg);
 their limit, *Overdrive*, puts a ship under them to four times her pace. The **Saboteur** stuns with a wrench, hobbles
 with smoke caltrops and bites with spring traps; breaks spare gear down into parts Nell Corran pays the black market's

@@ -26,6 +26,9 @@ public class ArtificerTests
         Assert.False(golem.DiesIfFelled);
         Assert.True(golem.Strength > new Bond { KindId = "golem", Role = BondRole.Golem, Level = 1 }.Strength, "it grows with its maker");
         Assert.NotNull(Bestiary.Get("golem"));
+        var hull = new Bond { KindId = "golem", Role = BondRole.Golem, Level = 7, Build = Bond.GolemBuild("EtherAeronaut") };
+        Assert.True(hull.Size > golem.Size && golem.Size == 1, "the aeronaut's golem, the one they climb inside, is built bigger than the others'");
+        Assert.Equal(1, Bond.GolemBuild("Alchemist"));
     }
 
     [Fact]

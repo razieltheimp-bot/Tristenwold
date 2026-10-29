@@ -1937,6 +1937,7 @@ public partial class SelfTest(Main main) : Node
         p.Join("EtherAeronaut");
         await Until(() => Golem()?.Level == p.Hero.Level + 2 && GolemBody() is not null, 6);
         Check(Golem()?.Level == p.Hero.Level + 2, "a tinker's golem is sturdier: two levels up on you");
+        Check(Golem()?.Build == Bond.AeronautBuild && GolemBody()?.Figure.Scale.X > 1.3f, $"and built bigger than the others, a hull with room inside (x{GolemBody()?.Figure.Scale.X:0.00})");
         await Teleport(new Vector3(-150, 0, -120));
         thug = Spawn("dock_thug", p.GlobalPosition - p.GlobalTransform.Basis.Z * 11);
         await Frames(3);
