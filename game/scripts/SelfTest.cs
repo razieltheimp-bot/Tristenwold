@@ -2244,6 +2244,45 @@ public partial class SelfTest(Main main) : Node
         // The townsfolk already standing about are these bodies too.
         var people = main.Locals.Count(p => p.Figure.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().Any(s => s.Name == "GeneralSkeleton"));
         Check(people > 10, $"{people} of Tristinwold's people wear real bodies (the rest are figures no body was made for)");
+        // The hero, as they made themselves: a real body picked by people, sex and age, dressed from the sheet.
+        var made = Avatar.For("Ranger") with { Race = "elf", Sex = "Female", Age = "Adult", Face = "Dark", Eyes = "Green", Style = "Ponytail01", Hair = "Blond", Outfit = "Crimson", Height = "Tall", Build = "Slim" };
+        var hero = Figure.Create("Ranger", made);
+        Check(hero.IsHuman, "a hero made in the creator stands in a real body: an elf woman, a ranger");
+        AddChild(hero);
+        await Frames(3);
+        var herSkeleton = hero.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().First();
+        var herMesh = herSkeleton.GetChildren().OfType<MeshInstance3D>().First(m => m.Skin is not null && !m.Name.ToString().StartsWith("BorrowedHair"));
+        var herEyes = Enumerable.Range(1, herMesh.Mesh.GetSurfaceCount() - 1).Select(i => herMesh.Mesh.SurfaceGetMaterial(i) as StandardMaterial3D).FirstOrDefault(m => m?.AlbedoTexture?.ResourcePath.Contains("eyes__") == true);
+        Check(herEyes?.AlbedoTexture?.ResourcePath.Contains("eyes__green") == true, $"with the eyes she chose ({herEyes?.AlbedoTexture?.ResourcePath.Split('/').Last()})");
+        Check(herMesh.Mesh.SurfaceGetMaterial(0) is ShaderMaterial herSkin && (herSkin.GetShaderParameter("skin").AsGodotObject() as Texture2D)?.ResourcePath.Contains("african_female") == true, "the face she chose, on a woman's body");
+        Check(herSkeleton.GetChildren().OfType<MeshInstance3D>().Any(m => m.Name.ToString().StartsWith("BorrowedHair")) || Humans.HairOf("elf", Sex.Female, LifeStage.Adult) == "Ponytail01", "and the hair style she chose, borrowed from a body made with it");
+        Check(hero.GetChildren().OfType<Node3D>().First().Scale.Y > 1.05f && hero.GetChildren().OfType<Node3D>().First().Scale.X < 0.95f, "tall and slim, as she chose");
+        Check(herSkeleton.GetChildren().OfType<BoneAttachment3D>().Any(b => b.BoneName == "RightHand"), "the ranger's crossbow in a real hand");
+        hero.QueueFree();
+        // Dragonkind grow horns from a real head; a hooded class starts hooded.
+        var scaled = Figure.Create("Paladin", Avatar.For("Paladin") with { Race = Races.Dragonkind, Dragon = "Gold", Horns = "Ram" });
+        Check(scaled.IsHuman && scaled.FindChildren("Adorn_Head", "", true, false).Count == 1, "a gold dragonkind paladin: a real body with horns from the head");
+        scaled.QueueFree();
+        Check(Avatar.For("Assassin").Headwear == "Hood", "an assassin starts with the hood up");
+        // Everyone else who is somebody gets a body too: a guard, a bandit chief (a head taller than his men), a squire (a youth).
+        var guard = Figure.Create("guard");
+        var chief = Figure.Create("bandit_chief");
+        var squire = Figure.Create("squire");
+        Check(guard.IsHuman && chief.IsHuman && squire.IsHuman, "guards, bandit chiefs and squires are real people now, cast for the part");
+        Check(chief.GetChildren().OfType<Node3D>().First().Scale.Y > 1.1f, $"the chief stands {chief.GetChildren().OfType<Node3D>().First().Scale.Y:0.00} times his men");
+        Check(!Figure.Create("draugr").IsHuman && !Figure.Create("golem").IsHuman, "the undead and the golem keep their own figures");
+        foreach (var f in new[] { guard, chief, squire }) f.QueueFree();
+        // Worn gear on a real body: armour paints the tunic in its colour and metal, a helm a cap, a sword goes in the hand.
+        var armed = Figure.Create("Thief", Avatar.For("Thief"));
+        AddChild(armed);
+        var pack = new Pack();
+        foreach (var id in new[] { "steel_sword", "steel_helm", "iron_mail" }) { pack.Add(id); pack.Equip(id); }
+        Wardrobe.Wear(armed, pack);
+        await Frames(2);
+        var armedMesh = armed.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().First().GetChildren().OfType<MeshInstance3D>().First(m => m.Skin is not null);
+        Check(armedMesh.Mesh.SurfaceGetMaterial(0) is ShaderMaterial m2 && m2.GetShaderParameter("metal").AsSingle() > 0.5f, "a mail shirt makes the painted tunic metal");
+        Check(armed.Held == Grip.OneHand, "and the steel sword is held one-handed in a real hand");
+        armed.QueueFree();
         Humans.Enabled = was;
     }
 

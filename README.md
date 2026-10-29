@@ -671,16 +671,27 @@ line has four ranks, each pays, and each is infamy: a name the shops and the tow
 
 ### Realistic people
 
-On a PC at High graphics or better, Tristinwold's people have real bodies: baked from MakeHuman's base mesh (CC0)
-with the Humanizer tool, one body for every people, sex and stage of life (a stocky dwarf, a towering half-giant, a
-goblin child, an elder human), on Godot's humanoid skeleton. KayKit's whole move set (every walk, swing, spell,
-fall and gesture) is retargeted onto that skeleton, so the new bodies move exactly as the figures did. They have
-faces: MakeHuman's skin textures (an age, a face and a sex each, tinted for the people: an orc's green, an elf's
-pallor), eyes, brows, lashes and a head of hair fitted to each face, in the hair colours of their people (grey for
-the old). Clothes are painted on by trade: a guard's grey mail and cap, a priest's white, a worker's bare arms, a
-pirate's red. Where the bodies aren't (the phone build) or the setting is lower, the KayKit figures stand in. The
-hero and the enemies still wear KayKit's figures for now; they're next. `--shots DIR --town --faces --humans` takes
-close-ups of a few of the townsfolk; `tools/humans/` has the baking notes.
+On a PC, Tristinwold's people are real: the hero, the townsfolk, the guards and the Watch, the bandits, pirates and
+raiders, the company's marines, the squires and apprentices who follow a hero, and the heroes of everyone else on the
+shared world. Their bodies are baked from MakeHuman's base mesh (CC0) with the Humanizer tool, one for every people,
+sex and stage of life (a stocky dwarf, a towering half-giant, a goblin child, an elder human), on Godot's humanoid
+skeleton. KayKit's whole move set (every walk, swing, spell, fall and gesture) is retargeted onto that skeleton, so
+they move exactly as the figures did. They have faces: MakeHuman's skin textures (an age, a face and a sex each,
+tinted for the people: an orc's green, an elf's pallor), eyes, brows, lashes and a head of hair fitted to each face.
+Clothes are painted on the body by trade and by class: a guard's grey mail and cap, a priest's white, a worker's bare
+arms, a pirate's red, a paladin's mail, a wizard's blue robe, a ranger's green with the hood up. Nothing of the
+cartoon figures is mixed in: the undead, the imps and the golems keep their own shapes, since they were never people.
+
+**Making yourself.** The character page builds a hero from the same pieces: your people, your sex and your age pick
+the body; then the face the skin is painted from (fair, olive or dark, or your people's own mix), the colour of your
+eyes, a hair style (any your sex's bodies were made with, borrowed from the body that has it, or shaved) and its
+colour, a hood or a cap, your clothes' colour over the class's cut, your skin tone, height and build, and for
+dragonkind the horns. The class decides what you carry (a real crossbow in a real hand) and what cut you wear.
+Gear you put on shows the same way: a sword or an axe goes into the hand, body armour paints the tunic in its
+colour (and metal, if it's mail or plate), a helm paints a cap. Old characters keep their look and simply stand in a
+man's body until restyled. Where the bodies aren't (the phone build) or the setting is Low, the KayKit figures stand
+in, with the older head-body-arms-legs choices. `--shots DIR --town --faces --humans` takes close-ups of a few of the
+townsfolk; `tools/humans/` has the baking notes.
 
 ### Creatures that stand in the world
 

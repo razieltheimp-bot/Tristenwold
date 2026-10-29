@@ -26,6 +26,7 @@ public static class Wardrobe
     /// <summary>Puts the pack's worn gear on a figure (one built fresh from its look).</summary>
     public static void Wear(Figure f, Pack pack)
     {
+        if (f.IsHuman) { f.WearHuman(pack, Piece); return; } // a real body: gear in real hands, armour and helms painted on
         if (f.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is not { } skeleton) return;
         var meshes = f.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().ToList();
         foreach (var (slot, (bone, own)) in Slots)

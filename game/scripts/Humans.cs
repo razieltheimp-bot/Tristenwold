@@ -21,9 +21,63 @@ public static class Humans
 {
     const string Folder = "res://assets/humans/";
 
-    /// <summary>Whether the bodies are here and wanted (the graphics setting; never on a phone).</summary>
-    public static bool Enabled { get; set; }
+    /// <summary>Whether the bodies are here and wanted: on a PC they're the people of the game (the Low setting turns
+    /// them off); never on a phone, which hasn't the files.</summary>
+    public static bool Enabled { get; set; } = Available && !OS.HasFeature("mobile");
     public static bool Available => ResourceLoader.Exists(Folder + "moves.glb") && ResourceLoader.Exists(Folder + "human_male_adult.glb");
+
+    /// <summary>The peoples in the order the bodies were baked (tools/humans/bake_humans.gd), which decided each one's hair.</summary>
+    public static readonly string[] Peoples = ["human", "elf", "dwarf", "orc", "goblin", "half_giant", "dragonkind"];
+    static readonly string[] FemaleHair = ["Bob01", "Long01", "Braid01", "Ponytail01", "Bob02", "Long01", "Braid01"];
+    static readonly string[] MaleHair = ["Short01", "Short02", "Short03", "Short04", "Afro01", "Short02", "Short03"];
+
+    /// <summary>The hair style a body was made with (the bake spread the styles about the peoples and sexes).</summary>
+    public static string HairOf(string? race, Sex sex, LifeStage stage)
+    {
+        var i = Math.Max(0, Array.IndexOf(Peoples, race ?? "human"));
+        var set = sex == Sex.Female ? FemaleHair : MaleHair;
+        return set[(i * 3 + (stage == LifeStage.Elder ? 1 : 0)) % set.Length];
+    }
+
+    /// <summary>A body of this sex made with this hair style (the same stage of life where there is one), to borrow the hair from.</summary>
+    public static string? BodyWithHair(string style, Sex sex, LifeStage stage)
+    {
+        foreach (var when in new[] { stage, LifeStage.Adult, LifeStage.Elder, LifeStage.Adolescent, LifeStage.Young }.Distinct())
+            foreach (var people in Peoples)
+                if (HairOf(people, sex, when) == style && BodyFor(people, sex, when) is { } file && file.Contains($"/{people}_")) return file;
+        return null;
+    }
+
+    /// <summary>The looks that aren't people: machines, the undead, spirits and trolls keep their own figures.</summary>
+    static readonly HashSet<string> NotPeople = ["golem", "familiar", "cinder_warden", "cinder_thrall", "forge_golem", "draugr", "draugr_overlord", "sea_wraith", "spriggan", "frost_troll"];
+
+    /// <summary>Whether a look is somebody: a person, to be given a real body.</summary>
+    public static bool IsPerson(string look) => Figure.Looks.ContainsKey(look) && !NotPeople.Contains(look);
+
+    /// <summary>Who an enemy or a follower of this look is: a people, a sex and an age, drawn for each one.</summary>
+    public static (string Race, Sex Sex, LifeStage Stage, ulong Seed)? Cast(string look, ulong? seed = null)
+    {
+        if (!IsPerson(look)) return null;
+        var s = seed ?? ((ulong)GD.Randi() << 32 | GD.Randi());
+        var rng = new Rng(s ^ 0xCA57);
+        string[] peoples = look switch
+        {
+            "raider" or "raider_chief" or "warmaster" => ["human", "orc", "half_giant", "human"],
+            "bandit" or "bandit_chief" or "dock_thug" or "drowned_hand" => ["human", "human", "dwarf", "orc"],
+            "pirate" or "pirate_captain" or "sailor" => ["human", "human", "elf", "dwarf"],
+            "guard" or "marine" or "squire" or "hollow_soldier" or "ghost_captain" => ["human", "human", "dwarf"],
+            "dragon_knight" or "aldric" or "laureate" => ["human"],
+            _ => ["human", "human", "human", "elf", "dwarf"],
+        };
+        var stage = look switch
+        {
+            "child" => LifeStage.Young,
+            "youth" or "squire" or "apprentice" or "protege" or "understudy" or "lantern_boy" => LifeStage.Adolescent,
+            "elder" or "laureate" => LifeStage.Elder,
+            _ => LifeStage.Adult,
+        };
+        return (rng.Pick(peoples), rng.Chance(0.5) ? Sex.Female : Sex.Male, stage, s);
+    }
 
     static PackedScene? _moves;
     static bool _fitted;
@@ -120,6 +174,37 @@ public static class Humans
         ["warmaster"] = new(new("#6a4a3a"), new("#3a3a44"), new("#2a2220")),
         ["aldric"] = new(new("#c8b080"), new("#3a3a44"), new("#2a2220")),
         ["dragon_knight"] = new(new("#b8a870"), new("#3a3a44"), new("#2a2220")),
+        // The playable classes: what each wears out of its guild, before the hero's own colours go on.
+        ["Paladin"] = new(new("#8a8e96"), new("#3a3a44"), new("#2a2220")),
+        ["Knight"] = new(new("#8a8e96"), new("#3a3a44"), new("#2a2220")),
+        ["MartialArtist"] = new(new("#c8b090"), new("#5a4a3a"), new("#3a2a20"), Sleeves: false),
+        ["Barbarian"] = new(new("#7a4a2a"), new("#5a3a2a"), new("#3a2a20"), Sleeves: false),
+        ["Ranger"] = new(new("#5a6a40"), new("#4a4a30"), new("#3a2a20"), Cap: new("#4a5a30")),
+        ["Thief"] = new(new("#4a3a30"), new("#2a2a2a"), new("#2a2220")),
+        ["Rogue"] = new(new("#4a3a30"), new("#2a2a2a"), new("#2a2220")),
+        ["Assassin"] = new(new("#2a2a34"), new("#1e1e24"), new("#1a1a1a"), Cap: new("#22222a")),
+        ["Rogue_Hooded"] = new(new("#4a3a30"), new("#2a2a2a"), new("#2a2220"), Cap: new("#3a2a20")),
+        ["Wizard"] = new(new("#3a4a8a"), new("#2a2a4a"), new("#3a2a20")),
+        ["Mage"] = new(new("#3a4a8a"), new("#2a2a4a"), new("#3a2a20")),
+        ["Warlock"] = new(new("#4a2a5a"), new("#2a1a30"), new("#2a2220")),
+        ["Sorcerer"] = new(new("#8a2a2a"), new("#4a2020"), new("#3a2a20")),
+        ["Poet"] = new(new("#e8dcc0"), new("#6a5a4a"), new("#3a2a20")),
+        ["Scribe"] = new(new("#6a6a8a"), new("#3a3a4a"), new("#3a2a20")),
+        ["Musician"] = new(new("#c08a50"), new("#5a4a3a"), new("#3a2a20")),
+        ["Alchemist"] = new(new("#5a7a4a"), new("#3a3a30"), new("#3a2a20")),
+        ["EtherAeronaut"] = new(new("#a88a50"), new("#3a3a44"), new("#2a2220")),
+        ["Saboteur"] = new(new("#6a6a4a"), new("#3a3a2a"), new("#2a2220"), Cap: new("#5a5a3a")),
+        // The young who follow a hero, and the rest of the enemies.
+        ["squire"] = new(new("#a0a4ac"), new("#3a3a44"), new("#2a2220")),
+        ["apprentice"] = new(new("#4a5a9a"), new("#2a2a4a"), new("#3a2a20")),
+        ["protege"] = new(new("#5a4a3a"), new("#2a2a2a"), new("#2a2220")),
+        ["understudy"] = new(new("#d0a060"), new("#5a4a3a"), new("#3a2a20")),
+        ["laureate"] = new(new("#f0e4c8"), new("#6a5a4a"), new("#3a2a20")),
+        ["lantern_boy"] = new(new("#8a5a3a"), new("#4a3a2a"), new("#2a2220")),
+        ["drowned_hand"] = new(new("#3a5a6a"), new("#2a2a3a"), new("#2a2220"), Cap: new("#2a4a5a")),
+        ["dock_thug"] = new(new("#6a4a3a"), new("#4a3a2a"), new("#2a2220"), Sleeves: false),
+        ["hollow_soldier"] = new(new("#8aa0a8"), new("#5a6a70"), new("#3a3a40")),
+        ["ghost_captain"] = new(new("#9ab0b8"), new("#5a6a70"), new("#3a3a40"), Cap: new("#8a9aa0")),
     };
 
     public static Outfit OutfitFor(string look) => Outfits.GetValueOrDefault(look) ?? Outfits["townsfolk"];
@@ -160,10 +245,10 @@ public static class Humans
     /// A people's skin, hair and eyes, with the sameness broken by who they are: one of MakeHuman's skins (an age, a
     /// face and a sex) tinted the people's way, the plain tone for where the textures aren't, and the hair.
     /// </summary>
-    public static Skin SkinFor(string? race, Sex sex, LifeStage stage, ulong seed)
+    public static Skin SkinFor(string? race, Sex sex, LifeStage stage, ulong seed, string? face = null, string? eyes = null, Color? hair = null, Color? tint = null, float? recolour = null)
     {
         var rng = new Rng(seed ^ 0x5C1A);
-        var (faces, tint, recolour) = race switch
+        var (faces, ownTint, ownRecolour) = race switch
         {
             "elf" => (new[] { 0, 0, 1 }, new Color(1.0f, 0.98f, 0.96f), 0f),
             "dwarf" => (new[] { 0, 0, 1 }, new Color(1.0f, 0.9f, 0.84f), 0f),
@@ -173,13 +258,17 @@ public static class Humans
             Races.Dragonkind => (new[] { 2, 1 }, new Color(0.58f, 0.46f, 0.62f), 0.5f),
             _ => (new[] { 0, 1, 2, 0, 1, 2 }, Colors.White, 0f),
         };
-        var face = Faces[rng.Pick(faces)];
+        var chosen = Faces.Contains(face ?? "") ? face! : Faces[rng.Pick(faces)];
         var age = stage switch { LifeStage.Elder => "old", LifeStage.Seasoned => "middleage", _ => "young" };
-        var file = $"body-default__{age}_{face}_{(sex == Sex.Female ? "female" : "male")}.jpg";
-        var (plain, hair) = ColoursFor(race, stage, seed);
-        var eyes = rng.Pick(EyesOf(race));
-        return new Skin(Texture(file) is null ? null : file, tint, recolour, plain, hair, Texture($"eyes__{eyes}.jpg") is null ? "" : $"eyes__{eyes}.jpg");
+        var file = $"body-default__{age}_{chosen}_{(sex == Sex.Female ? "female" : "male")}.jpg";
+        var (plain, ownHair) = ColoursFor(race, stage, seed);
+        var eye = eyes ?? rng.Pick(EyesOf(race));
+        return new Skin(Texture(file) is null ? null : file, tint ?? ownTint, recolour ?? ownRecolour, plain, hair ?? ownHair, Texture($"eyes__{eye}.jpg") is null ? "" : $"eyes__{eye}.jpg");
     }
+
+    /// <summary>The creator's names for the faces and eyes, as the files have them.</summary>
+    public static string? FaceFile(string face) => face switch { "Fair" => "caucasian", "Olive" => "asian", "Dark" => "african", _ => null };
+    public static string? EyeFile(string eyes) => eyes == "Natural" ? null : eyes.ToLowerInvariant();
 
     /// <summary>A people's plain skin tone and hair colour, with the sameness broken by who they are.</summary>
     public static (Color Skin, Color Hair) ColoursFor(string? race, LifeStage stage, ulong seed)
@@ -209,16 +298,81 @@ public static class Humans
 
 public partial class Figure
 {
+    /// <summary>What a real body is dressed in, kept so it can be dressed again (armour put on, a helm): the clothes,
+    /// the skin, a plain tone instead, the hair style ("None" for shaved; null for the body's own), and whether the
+    /// clothes are metal.</summary>
+    sealed record Garb(Humans.Outfit Outfit, Humans.Skin Who, Color? Plain, string? Hair, bool Metal = false, float Width = 1);
+
+    bool _human;
+    ArrayMesh? _source;
+    MeshInstance3D? _mesh;
+    Skeleton3D? _skeleton;
+    Garb? _garb;
+    Sex _sex;
+    LifeStage _stage;
+    readonly Dictionary<string, Node> _held = [];
+
+    /// <summary>A real body (see <see cref="Humans"/>), rather than a KayKit figure.</summary>
+    public bool IsHuman => _human;
+
     /// <summary>
     /// A realistic person (see <see cref="Humans"/>): the baked body for their people, sex and age, painted with their
     /// trade's clothes, moved by KayKit's retargeted move set, and carrying what their look carries.
     /// </summary>
     public static Figure? Human(string look, string? race, Sex sex, LifeStage stage, ulong seed, Color? skin = null)
     {
-        if (Humans.BodyFor(race, sex, stage) is not { } file || GD.Load<PackedScene>(file)?.Instantiate() is not Node3D model) return null;
         var l = Looks.GetValueOrDefault(look) ?? Looks["townsfolk"];
-        var f = new Figure { _look = l, _human = true };
+        var size = l.Scale > 0.8f ? l.Scale / 0.74f : 1; // a chief or a captain stands bigger than his men, as his figure did
+        return Build(look, Humans.BodyFor(race, sex, stage), sex, stage, new Garb(Humans.OutfitFor(look), Humans.SkinFor(race, sex, stage, seed), skin, null), size, 1, null);
+    }
+
+    /// <summary>
+    /// A hero as they made themselves: their people, sex and age pick the body; their face, eyes, hair and its colour,
+    /// clothes, skin tone, height and build dress it; the class decides what they carry; dragonkind grow horns.
+    /// </summary>
+    public static Figure? Human(string classLook, Tristinwold.Gameplay.Avatar a)
+    {
+        var people = a.IsDragonkind && !a.PureDragon ? a.Half : a.Race;
+        var sex = a.Female ? Sex.Female : Sex.Male;
+        var stage = a.Age switch { "Elder" => LifeStage.Elder, "Seasoned" => LifeStage.Seasoned, _ => LifeStage.Adult };
+        var seed = (ulong)WorldGen.StableHash(a.Encode());
+        // Their skin: their people's own, or a tone picked; dragon blood shows in it.
+        Color? tint = a.Skin == "Natural" ? null : new Color(a.SkinHex);
+        float? recolour = a.Skin is "Ashen" or "Frost" or "Verdant" ? 0.6f : a.Skin == "Natural" ? null : 0f;
+        if (a.Blood is { } blood)
+        {
+            var own = Humans.SkinFor(people, sex, stage, seed).Tint;
+            tint = (tint ?? own).Lerp(new Color(blood.Hex), a.PureDragon ? 0.45f : 0.25f);
+            recolour = Math.Max(recolour ?? 0, 0.5f);
+        }
+        var who = Humans.SkinFor(people, sex, stage, seed, Humans.FaceFile(a.Face), Humans.EyeFile(a.Eyes), new Color(a.HairHex), tint, recolour);
+        // Their clothes: the class's, in their colour, with a hood or a cap if they want one.
+        var outfit = Humans.OutfitFor(classLook);
+        if (a.Outfit != "Natural")
+        {
+            var dye = new Color(a.OutfitHex);
+            outfit = outfit with { Tunic = outfit.Tunic * dye, Trousers = outfit.Trousers * dye.Darkened(0.2f), Cap = outfit.Cap is { } c ? c * dye : null };
+        }
+        outfit = a.Headwear switch
+        {
+            "Hood" => outfit with { Cap = outfit.Cap ?? outfit.Tunic.Darkened(0.25f) },
+            "Cap" => outfit with { Cap = outfit.Trousers.Lightened(0.1f) },
+            _ => outfit with { Cap = null },
+        };
+        var height = Tristinwold.Gameplay.Avatar.Heights.FirstOrDefault(h => h.Name == a.Height).Scale is > 0 and var h ? h / 0.74f : 1;
+        var width = Tristinwold.Gameplay.Avatar.Builds.FirstOrDefault(b => b.Name == a.Build).Width is > 0 and var w ? w : 1;
+        var hair = a.Style == "Natural" ? null : a.Style;
+        var f = Build(classLook, Humans.BodyFor(people, sex, stage), sex, stage, new Garb(outfit, who, null, hair, Width: width), height, width, a);
+        return f;
+    }
+
+    static Figure? Build(string look, string? file, Sex sex, LifeStage stage, Garb garb, float height, float width, Tristinwold.Gameplay.Avatar? a)
+    {
+        if (file is null || GD.Load<PackedScene>(file)?.Instantiate() is not Node3D model) return null;
+        var l = Looks.GetValueOrDefault(look) ?? Looks["townsfolk"];
+        var f = new Figure { _look = l, _human = true, _sex = sex, _stage = stage };
         model.RotationDegrees = new Vector3(0, 180, 0); // the bodies face +Z, like KayKit's
+        model.Scale = new Vector3(width, height, width);
         f.AddChild(model);
         var skeleton = model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault();
         var mesh = model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().FirstOrDefault();
@@ -228,7 +382,10 @@ public partial class Figure
         skeleton.Name = "GeneralSkeleton";
         skeleton.Owner = model;
         skeleton.UniqueNameInOwner = true;
-        Dress(mesh, skeleton, Humans.OutfitFor(look), Humans.SkinFor(race, sex, stage, seed), skin);
+        f._source = mesh.Mesh as ArrayMesh;
+        f._mesh = mesh;
+        f._skeleton = skeleton;
+        f.Redress(garb);
         // The move set, told where its skeleton is.
         model.AddChild(moves);
         moves.RootNode = moves.GetPathTo(model);
@@ -237,35 +394,149 @@ public partial class Figure
             if (Looping.Contains(name)) moves.GetAnimation(name).LoopMode = Animation.LoopModeEnum.Linear;
         // What they carry, in real hands (KayKit's weapons are sized for its small figures).
         foreach (var (bone, item) in new[] { ("RightHand", l.RightHand ?? l.Show.FirstOrDefault(Weapons.Contains)), ("LeftHand", l.LeftHand ?? l.Show.FirstOrDefault(s => s.Contains("Shield") || s == "Knife_Offhand" || s == "Spellbook_open")) })
-            HoldHuman(skeleton, bone, item);
+            if (HoldHuman(skeleton, bone, item) is { } held) f._held[bone] = held;
+        if (a is not null) f.HornsHuman(a);
         return f;
     }
 
     static readonly string[] Weapons = ["1H_Sword", "2H_Sword", "1H_Axe", "2H_Axe", "Knife", "1H_Wand", "2H_Staff", "1H_Crossbow", "2H_Crossbow", "Mug", "Spellbook"];
-    bool _human;
 
-    static void HoldHuman(Skeleton3D skeleton, string bone, string? item)
+    static Node? HoldHuman(Skeleton3D skeleton, string bone, string? item)
     {
-        if (item is null || skeleton.FindBone(bone) < 0) return;
+        if (item is null || skeleton.FindBone(bone) < 0) return null;
         var slot = new BoneAttachment3D { BoneName = bone };
         skeleton.AddChild(slot);
-        if (item.StartsWith('@')) { _ = Craft(skeleton, bone, item[1..]); return; }
-        if (Models.Scene($"weapons/{item}.gltf")?.Instantiate() is not Node3D weapon) return;
+        if (item.StartsWith('@')) { var crafted = Craft(skeleton, bone, item[1..]); return crafted is null ? slot : (Node)slot; }
+        if (Models.Scene($"weapons/{item}.gltf")?.Instantiate() is not Node3D weapon) return slot;
+        slot.AddChild(Grip(bone, weapon));
+        return slot;
+    }
+
+    /// <summary>A KayKit piece in a real hand: a third bigger, turned to lie along the palm.</summary>
+    static Node3D Grip(string bone, Node3D piece)
+    {
         var grip = new Node3D { Scale = Vector3.One * 1.35f, Position = new Vector3(0, -0.02f, 0.06f), RotationDegrees = bone.StartsWith("Left") ? new Vector3(-90, 0, 90) : new Vector3(-90, 0, -90) };
-        slot.AddChild(grip);
-        grip.AddChild(weapon);
+        grip.AddChild(piece);
+        return grip;
+    }
+
+    /// <summary>
+    /// Dresses a real body in what it wears (a hero putting armour on, or a helm): the hero's class pieces leave the
+    /// hands that gear takes, body armour paints the tunic in its colour (metal, if it's metal), and a helm or a hat
+    /// paints a cap on the head in its colour, so nothing of another style sits on a real body.
+    /// </summary>
+    public void WearHuman(Tristinwold.Gameplay.Pack pack, Func<Tristinwold.Gameplay.Item, Node3D?> piece)
+    {
+        if (_skeleton is null || _garb is null) return;
+        foreach (var (slot, bone) in new[] { (Tristinwold.Gameplay.Slot.Weapon, "RightHand"), (Tristinwold.Gameplay.Slot.Offhand, "LeftHand") })
+        {
+            if (pack.WornIn(slot) is not { } item || piece(item) is not { } p) continue;
+            if (_held.Remove(bone, out var was)) was.QueueFree();
+            var hold = new BoneAttachment3D { BoneName = bone };
+            _skeleton.AddChild(hold);
+            hold.AddChild(Grip(bone, p));
+            _held[bone] = hold;
+            if (slot == Tristinwold.Gameplay.Slot.Weapon) Held = item.Grip;
+        }
+        var garb = _garb;
+        if (pack.WornIn(Tristinwold.Gameplay.Slot.Body) is { } armour)
+        {
+            var tint = new Color(armour.Tint ?? "#8a6a48");
+            garb = garb with { Outfit = garb.Outfit with { Tunic = tint, Trousers = tint.Darkened(0.35f) }, Metal = armour.Metal };
+        }
+        if (pack.WornIn(Tristinwold.Gameplay.Slot.Head) is { } helm)
+            garb = garb with { Outfit = garb.Outfit with { Cap = new Color(helm.Tint ?? (helm.Metal ? "#9a9ea6" : "#5a4a3a")) } };
+        if (garb != _garb) Redress(garb);
+    }
+
+    /// <summary>Dresses (or dresses again) the body from its untouched mesh.</summary>
+    void Redress(Garb garb)
+    {
+        if (_source is null || _mesh is null || _skeleton is null) return;
+        _garb = garb;
+        foreach (var old in _skeleton.GetChildren().OfType<MeshInstance3D>().Where(m => m.Name.ToString().StartsWith("BorrowedHair")).ToList()) { _skeleton.RemoveChild(old); old.QueueFree(); }
+        Dress(_mesh, _skeleton, _source, garb);
+        if (garb.Hair is { } style && style != "None" && style != Humans.HairOf(PeopleOf(_source), _sex, _stage)) BorrowHair(style);
+    }
+
+    /// <summary>Which people a body is, from its file name (kept in the mesh's name by the bake).</summary>
+    string? PeopleOf(ArrayMesh mesh) => Humans.Peoples.FirstOrDefault(p => (_skeleton?.GetParent()?.Name.ToString() ?? "").StartsWith(p + "_") || mesh.ResourcePath.Contains($"/{p}_"));
+
+    /// <summary>
+    /// Hair of another style, borrowed from a body of the same sex that was made with it: its hair surfaces go on
+    /// this skeleton with that body's own binding, so they sit where that body's head is, which is where this one's is.
+    /// </summary>
+    void BorrowHair(string style)
+    {
+        if (_skeleton is null || _garb is null || Humans.BodyWithHair(style, _sex, _stage) is not { } file || GD.Load<PackedScene>(file)?.Instantiate() is not Node3D donor) return;
+        var mi = donor.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().FirstOrDefault();
+        if (mi?.Mesh is ArrayMesh source && mi.Skin is { } skin)
+        {
+            var hair = new ArrayMesh();
+            for (var s = 1; s < source.GetSurfaceCount(); s++)
+            {
+                var tag = source.SurfaceGetMaterial(s)?.ResourceName ?? "";
+                if (!tag.StartsWith("Hair")) continue;
+                var bar = tag.IndexOf('|');
+                var part = bar < 0 ? "" : tag[(bar + 1)..];
+                if (part.Length > 4 && part[^4] == '_') part = part[..^4] + "." + part[^3..];
+                var arrays = source.SurfaceGetArrays(s);
+                hair.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: Weights(arrays));
+                hair.SurfaceSetMaterial(hair.GetSurfaceCount() - 1, PartMaterial("Hair", part, _garb.Who));
+            }
+            if (hair.GetSurfaceCount() > 0)
+            {
+                var worn = new MeshInstance3D { Name = "BorrowedHair", Mesh = hair, Skin = skin, Transform = mi.Transform };
+                _skeleton.AddChild(worn);
+                worn.Skeleton = worn.GetPathTo(_skeleton);
+            }
+        }
+        donor.Free();
+    }
+
+    /// <summary>Dragonkind's horns, from the top of a real head, hung from the head bone so they nod with it.</summary>
+    void HornsHuman(Tristinwold.Gameplay.Avatar a)
+    {
+        if (a.Blood is not { } blood || _skeleton is null || _source is null || _skeleton.FindBone("Head") is var head && head < 0) return;
+        var horns = a.Horns == "none" ? "Swept" : a.Horns;
+        var slot = new BoneAttachment3D { BoneName = "Head" };
+        _skeleton.AddChild(slot);
+        var space = new Node3D { Name = "Adorn_Head", Transform = _skeleton.GetBoneGlobalRest(head).AffineInverse() };
+        slot.AddChild(space);
+        var rest = _skeleton.GetBoneGlobalRest(head).Origin;
+        var verts = _source.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+        var top = verts.Length > 0 ? verts.Max(v => v.Y) : rest.Y + 0.2f;
+        var crown = new Vector3(rest.X, rest.Y + (top - rest.Y) * 0.8f, rest.Z - 0.01f);
+        var horn = new StandardMaterial3D { AlbedoColor = new Color(blood.Hex).Darkened(0.45f), Roughness = 0.5f, RimEnabled = true, Rim = 0.3f, RimTint = 0.65f };
+        var size = top - rest.Y; // the head's height, roughly
+        foreach (var side in new[] { -1f, 1f })
+        {
+            var root = crown + new Vector3(side * size * 0.42f, 0, 0);
+            switch (horns)
+            {
+                case "Nubs": space.AddChild(Cone(root, new Vector3(side * 0.3f, 1, 0.1f), size * 0.35f, size * 0.12f, horn)); break;
+                case "Long": space.AddChild(Cone(root, new Vector3(side * 0.25f, 1, -0.35f), size * 1.3f, size * 0.14f, horn)); break;
+                case "Ram":
+                    space.AddChild(Cone(root, new Vector3(side * 0.6f, 0.2f, -1), size * 0.7f, size * 0.16f, horn));
+                    space.AddChild(Cone(root + new Vector3(side * size * 0.25f, -size * 0.2f, -size * 0.55f), new Vector3(side * 0.3f, -1, -0.1f), size * 0.6f, size * 0.13f, horn));
+                    space.AddChild(Cone(root + new Vector3(side * size * 0.3f, -size * 0.7f, -size * 0.45f), new Vector3(side * 0.1f, -0.2f, 1), size * 0.5f, size * 0.1f, horn));
+                    break;
+                default: space.AddChild(Cone(root, new Vector3(side * 0.3f, 0.55f, -1), size * 1.1f, size * 0.14f, horn)); break;
+            }
+        }
     }
 
     /// <summary>
     /// Paints the clothes on: each vertex goes with the bone that moves it most, and the bone says what covers it.
-    /// The body is rebuilt once with vertex colours (clothes where the alpha is 1, skin where it's 0) and a skin
-    /// material that reads them over the skin texture; the eyes, brows, lashes and hair that came with the body are
-    /// dressed from their tags ("Hair-Bob01|hair-bob01__bob01.png") and tinted with the hair colour.
+    /// The body is rebuilt from its untouched mesh with vertex colours (clothes where the alpha is 1, skin where it's
+    /// 0) and a skin material that reads them over the skin texture; the eyes, brows, lashes and hair that came with
+    /// the body are dressed from their tags ("Hair-Bob01|hair-bob01__bob01.png") and tinted with the hair colour.
     /// </summary>
-    static void Dress(MeshInstance3D mi, Skeleton3D skeleton, Humans.Outfit outfit, Humans.Skin who, Color? plain)
+    static void Dress(MeshInstance3D mi, Skeleton3D skeleton, ArrayMesh source, Garb garb)
     {
-        if (mi.Mesh is not ArrayMesh source || source.GetSurfaceCount() == 0) return;
-        if (Debug) GD.Print($"dressing {mi.GetParent()?.GetParent()?.Name}: {source.GetSurfaceCount()} surfaces, skin {who.File ?? "plain"}, materials {string.Join(", ", Enumerable.Range(0, source.GetSurfaceCount()).Select(i => source.SurfaceGetMaterial(i)?.ResourceName ?? "-"))}");
+        var (outfit, who, plain) = (garb.Outfit, garb.Who, garb.Plain);
+        if (source.GetSurfaceCount() == 0) return;
+        if (Debug) GD.Print($"dressing {mi.GetParent()?.GetParent()?.Name}: {source.GetSurfaceCount()} surfaces, skin {who.File ?? "plain"}, hair {garb.Hair ?? "own"}, materials {string.Join(", ", Enumerable.Range(0, source.GetSurfaceCount()).Select(i => source.SurfaceGetMaterial(i)?.ResourceName ?? "-"))}");
         var skin = plain ?? who.Plain;
         var arrays = source.SurfaceGetArrays(0);
         var verts = arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
@@ -289,7 +560,7 @@ public partial class Figure
             _ when name.Contains("Hand") || name.Contains("Thumb") || name.Contains("Index") || name.Contains("Middle") || name.Contains("Ring") || name.Contains("Little") => bare,
             _ when name.Contains("LowerArm") => outfit.Sleeves ? outfit.Tunic : bare,
             _ when name.Contains("UpperArm") || name.Contains("Shoulder") || name.Contains("Spine") || name.Contains("Chest") => outfit.Tunic,
-            "Head" when v.Y > headY + (top - headY) * 0.45f && (v.Z < -0.01f || v.Y > headY + (top - headY) * 0.8f) => outfit.Cap ?? who.Hair,
+            "Head" when v.Y > headY + (top - headY) * 0.45f && (v.Z < -0.01f || v.Y > headY + (top - headY) * 0.8f) => outfit.Cap ?? (garb.Hair == "None" ? bare : who.Hair),
             _ => bare,
         };
         var colours = new Color[verts.Length];
@@ -312,20 +583,21 @@ public partial class Figure
         arrays[(int)Mesh.ArrayType.Color] = colours;
         var painted = new ArrayMesh();
         painted.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, flags: Weights(arrays));
-        painted.SurfaceSetMaterial(0, plain is null && who.File is { } file && Humans.Texture(file) is { } texture ? SkinMaterial(texture, who.Tint, who.Recolour) : new StandardMaterial3D
+        painted.SurfaceSetMaterial(0, plain is null && who.File is { } file && Humans.Texture(file) is { } texture ? SkinMaterial(texture, who.Tint, who.Recolour, garb.Metal) : new StandardMaterial3D
         {
             VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 0.62f, MetallicSpecular = 0.3f,
             SubsurfScatterEnabled = true, SubsurfScatterStrength = 0.35f, SubsurfScatterSkinMode = true,
             RimEnabled = true, Rim = 0.2f, RimTint = 0.7f,
         });
         // The parts that came with the body: eyes, brows, lashes, hair.
+        var ownHair = garb.Hair is null; // another style is borrowed, or none worn
         for (var s = 1; s < source.GetSurfaceCount(); s++)
         {
             var tag = source.SurfaceGetMaterial(s)?.ResourceName ?? "";
             var bar = tag.IndexOf('|');
             var (equip, part) = bar < 0 ? (tag, "") : (tag[..bar], tag[(bar + 1)..]);
             if (part.Length > 4 && part[^4] == '_') part = part[..^4] + "." + part[^3..]; // the glTF export made "eyeball.png" into "eyeball_png"
-            if (equip.StartsWith("Hair") && outfit.Cap is not null) continue; // under a hood or a cap
+            if (equip.StartsWith("Hair") && (outfit.Cap is not null || !ownHair)) continue; // under a hood or a cap, or another style
             if (equip.Contains("Eye-") && who.Eyes.Length > 0) part = who.Eyes; // their own colour of eyes
             var part_arrays = source.SurfaceGetArrays(s);
             painted.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, part_arrays, flags: Weights(part_arrays));
@@ -367,13 +639,14 @@ public partial class Figure
     static Shader? _skinShader;
 
     /// <summary>The skin texture, tinted for the people, with the painted clothes over it where the vertex alpha says so.</summary>
-    static ShaderMaterial SkinMaterial(Texture2D skin, Color tint, float recolour)
+    static ShaderMaterial SkinMaterial(Texture2D skin, Color tint, float recolour, bool metal = false)
     {
         _skinShader ??= new Shader { Code = SkinCode };
         var m = new ShaderMaterial { Shader = _skinShader };
         m.SetShaderParameter("skin", skin);
         m.SetShaderParameter("tint", new Vector3(tint.R, tint.G, tint.B));
         m.SetShaderParameter("recolour", recolour);
+        m.SetShaderParameter("metal", metal ? 1f : 0f);
         return m;
     }
 
@@ -382,6 +655,7 @@ public partial class Figure
         uniform sampler2D skin : source_color, filter_linear_mipmap_anisotropic;
         uniform vec3 tint = vec3(1.0);
         uniform float recolour = 0.0;
+        uniform float metal = 0.0;
         void fragment() {
             vec4 t = texture(skin, UV);
             float cloth = COLOR.a;
@@ -389,8 +663,9 @@ public partial class Figure
             float lum = dot(t.rgb, vec3(0.3, 0.59, 0.11));
             vec3 flesh = mix(t.rgb * tint, vec3(lum) * 2.2 * tint, recolour); // recoloured skin keeps the texture's shading
             ALBEDO = mix(flesh, paint, cloth);
-            ROUGHNESS = mix(0.5, 0.85, cloth);
-            SPECULAR = mix(0.4, 0.2, cloth);
+            ROUGHNESS = mix(0.5, mix(0.85, 0.35, metal), cloth);
+            SPECULAR = mix(0.4, mix(0.2, 0.6, metal), cloth);
+            METALLIC = metal * cloth;
             SSS_STRENGTH = 0.35 * (1.0 - cloth);
             RIM = 0.15;
             RIM_TINT = 0.7;

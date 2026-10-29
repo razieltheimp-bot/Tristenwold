@@ -20,6 +20,17 @@ public class AvatarTests
         Assert.Equal(mixed, Avatar.Parse(mixed.Encode()));
         var rng = new Random(4);
         for (var i = 0; i < 50; i++) { var a = Avatar.Random(rng); Assert.Equal(a, Avatar.Parse(a.Encode())); }
+        // The real body's choices ride along: sex, age, face, eyes, hair style and what's on the head.
+        var real = Avatar.For("Ranger") with { Sex = "Female", Age = "Elder", Face = "Dark", Eyes = "Green", Style = "Braid01", Headwear = "Cap", Hair = "White" };
+        Assert.Equal(real, Avatar.Parse(real.Encode()));
+        Assert.True(real.Female);
+        Assert.Equal("Hood", Avatar.For("Ranger").Headwear);
+        Assert.Equal("none", Avatar.For("Wizard").Headwear);
+        Assert.Equal("Braid", Avatar.StyleName("Braid01"));
+        Assert.Contains("Afro01", Avatar.Styles("Male"));
+        Assert.DoesNotContain("Afro01", Avatar.Styles("Female"));
+        Assert.Equal("Natural", Avatar.Parse("sex=Female;style=Afro01")!.Style); // a man's style on a woman's body is left as made
+        for (var i = 0; i < 50; i++) { var a = Avatar.Random(rng); Assert.Contains(a.Style, Avatar.Styles(a.Sex)); }
     }
 
     [Fact]

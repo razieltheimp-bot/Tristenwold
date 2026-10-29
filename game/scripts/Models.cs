@@ -401,6 +401,12 @@ public partial class Figure : Body
     /// worn instead of the class's. The class still decides what they carry.</param>
     public static Figure Create(string look, Tristinwold.Gameplay.Avatar? avatar = null)
     {
+        // On a PC, people are real bodies (see Humans): a hero as they made themselves, anyone else cast for the part.
+        if (Humans.Enabled && Humans.IsPerson(look))
+        {
+            if (avatar is not null) { if (Human(look, avatar) is { } hero) return hero; }
+            else if (Humans.Cast(look) is { } cast && Human(look, cast.Race, cast.Sex, cast.Stage, cast.Seed) is { } person) return person;
+        }
         var l = Looks.GetValueOrDefault(look) ?? (look.StartsWith('#') ? Looks["Knight"] : Looks["townsfolk"]);
         if (avatar is not null)
             l = l with { Scale = avatar.Scale, Tint = null, Glow = 0, Show = [.. l.Show.Where(x => !x.Contains("Hat") && !x.Contains("Helmet"))] };

@@ -190,17 +190,30 @@ public partial class StartScreen : CanvasLayer
             d => { if (_avatar.IsDragonkind) _avatar = _avatar with { Dragon = Step([.. Races.Dragons.Select(x => x.Colour)], _avatar.Dragon, d) }; });
         Row(rows, "Other half", () => !_avatar.IsDragonkind ? "(dragonkind only)" : _avatar.Half == "none" ? "None: pure dragon" : Races.Get(_avatar.Half).Name,
             d => { if (_avatar.IsDragonkind) _avatar = _avatar with { Half = Step(["none", .. Races.Halves.Select(r => r.Id)], _avatar.Half, d) }; });
-        Row(rows, "Head", () => Avatar.Called(_avatar.Head), d => _avatar = _avatar with { Head = Step(figures, _avatar.Head, d) });
-        Row(rows, "Body", () => Avatar.Called(_avatar.Body), d => _avatar = _avatar with { Body = Step(figures, _avatar.Body, d) });
-        Row(rows, "Arms", () => Avatar.Called(_avatar.Arms), d => _avatar = _avatar with { Arms = Step(figures, _avatar.Arms, d) });
-        Row(rows, "Legs", () => Avatar.Called(_avatar.Legs), d => _avatar = _avatar with { Legs = Step(figures, _avatar.Legs, d) });
-        Row(rows, "On the head", () => _avatar.HatName, d => _avatar = _avatar with { Hat = Step(Avatar.Hats.Select(h => h.Id).ToArray(), _avatar.Hat, d) });
+        var real = Humans.Enabled; // a real body on a PC: who they are, not which figure's pieces
+        if (real)
+        {
+            Row(rows, "Sex", () => _avatar.Sex, d => _avatar = _avatar with { Sex = Step(Avatar.Sexes, _avatar.Sex, d), Style = "Natural" });
+            Row(rows, "Age", () => _avatar.Age, d => _avatar = _avatar with { Age = Step(Avatar.Ages, _avatar.Age, d) });
+            Row(rows, "Face", () => _avatar.Face, d => _avatar = _avatar with { Face = Step(Avatar.Faces, _avatar.Face, d) });
+            Row(rows, "Eyes", () => _avatar.Eyes, d => _avatar = _avatar with { Eyes = Step(Avatar.EyeColours, _avatar.Eyes, d) });
+            Row(rows, "Hair", () => Avatar.StyleName(_avatar.Style), d => _avatar = _avatar with { Style = Step([.. Avatar.Styles(_avatar.Sex)], _avatar.Style, d) });
+            Row(rows, "On the head", () => _avatar.Headwear == "none" ? "Nothing" : _avatar.Headwear, d => _avatar = _avatar with { Headwear = Step(Avatar.Headwears, _avatar.Headwear, d) });
+        }
+        else
+        {
+            Row(rows, "Head", () => Avatar.Called(_avatar.Head), d => _avatar = _avatar with { Head = Step(figures, _avatar.Head, d) });
+            Row(rows, "Body", () => Avatar.Called(_avatar.Body), d => _avatar = _avatar with { Body = Step(figures, _avatar.Body, d) });
+            Row(rows, "Arms", () => Avatar.Called(_avatar.Arms), d => _avatar = _avatar with { Arms = Step(figures, _avatar.Arms, d) });
+            Row(rows, "Legs", () => Avatar.Called(_avatar.Legs), d => _avatar = _avatar with { Legs = Step(figures, _avatar.Legs, d) });
+            Row(rows, "On the head", () => _avatar.HatName, d => _avatar = _avatar with { Hat = Step(Avatar.Hats.Select(h => h.Id).ToArray(), _avatar.Hat, d) });
+        }
         Row(rows, "Clothes", () => _avatar.Outfit, d => _avatar = _avatar with { Outfit = Step(Avatar.Outfits.Select(o => o.Name).ToArray(), _avatar.Outfit, d) });
         Row(rows, "Skin", () => _avatar.Skin, d => _avatar = _avatar with { Skin = Step(Avatar.Skins.Select(o => o.Name).ToArray(), _avatar.Skin, d) });
         Row(rows, "Height", () => _avatar.Height, d => _avatar = _avatar with { Height = Step(Avatar.Heights.Select(o => o.Name).ToArray(), _avatar.Height, d) });
         Row(rows, "Build", () => _avatar.Build, d => _avatar = _avatar with { Build = Step(Avatar.Builds.Select(o => o.Name).ToArray(), _avatar.Build, d) });
-        Row(rows, "Beard", () => _avatar.Beard == "none" ? "None" : _avatar.Beard, d => _avatar = _avatar with { Beard = Step(Avatar.Beards, _avatar.Beard, d) });
-        Row(rows, "Hair (beard)", () => _avatar.Hair, d => _avatar = _avatar with { Hair = Step(Avatar.Hairs.Select(o => o.Name).ToArray(), _avatar.Hair, d) });
+        if (!real) Row(rows, "Beard", () => _avatar.Beard == "none" ? "None" : _avatar.Beard, d => _avatar = _avatar with { Beard = Step(Avatar.Beards, _avatar.Beard, d) });
+        Row(rows, real ? "Hair colour" : "Hair (beard)", () => _avatar.Hair, d => _avatar = _avatar with { Hair = Step(Avatar.Hairs.Select(o => o.Name).ToArray(), _avatar.Hair, d) });
         Row(rows, "Horns", () => _avatar.Horns == "none" ? (_avatar.IsDragonkind ? "Swept (dragonkind)" : "None") : _avatar.Horns,
             d => _avatar = _avatar with { Horns = Step(Avatar.HornStyles, _avatar.Horns, d) });
         var quick = new HBoxContainer();
@@ -247,7 +260,7 @@ public partial class StartScreen : CanvasLayer
     void ShowLook()
     {
         foreach (var r in _refresh) r();
-        _lookTitle.Text = _restyling is { } sheet ? $"{sheet.Name}'s look" : "Who they are and how they look (the class decides what they carry)";
+        _lookTitle.Text = _restyling is { } sheet ? $"{sheet.Name}'s look" : "Who they are and how they look (the class decides what they carry and wear)";
         var people = _avatar.People;
         _peopleText.Text = $"{_avatar.Kind}{(_avatar.Blood is { } blood ? $" ({blood.Says})" : "")}: {people.Text}\n  + {people.Good}.\n  - {people.Bad}.";
         if (_preview.IsInsideTree()) _preview.Show(_restyling?.Look ?? _look, _avatar);

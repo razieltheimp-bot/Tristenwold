@@ -1,15 +1,28 @@
 namespace Tristinwold.Gameplay;
 
 /// <summary>
-/// How a hero looks, picked apart from their class: a head, body, arms and legs from any of the nine KayKit
-/// figures (they all share one skeleton, so any mix stands and moves), something on the head, the colours of
-/// their clothes and skin, and their height. Kept on the character as a short line of text
+/// How a hero looks, picked apart from their class. On a PC the hero has a real body (see the game's Humans): their
+/// people, sex and age pick the body, and the face, eyes, hair and its colour, clothes, skin tone, height and build
+/// dress it. Where the real bodies aren't (the phone), the older choices stand in: a head, body, arms and legs from
+/// any of the nine KayKit figures, and something on the head. Kept on the character as a short line of text
 /// ("head=Mage;body=Knight;..."), so the server needs to know nothing about it.
 /// </summary>
 public sealed record Avatar(string Head, string Body, string Arms, string Legs, string Hat, string Outfit, string Skin, string Height)
 {
     /// <summary>Their people (see <see cref="Races"/>).</summary>
     public string Race { get; init; } = "human";
+    /// <summary>"Male" or "Female": the real bodies come in both.</summary>
+    public string Sex { get; init; } = "Male";
+    /// <summary>"Adult", "Seasoned" (an adult's body, an older face) or "Elder".</summary>
+    public string Age { get; init; } = "Adult";
+    /// <summary>The face the skin is painted from: "Natural" (their people's own mix), "Fair", "Olive" or "Dark".</summary>
+    public string Face { get; init; } = "Natural";
+    /// <summary>The colour of their eyes: "Natural" (their people's) or a colour.</summary>
+    public string Eyes { get; init; } = "Natural";
+    /// <summary>The hair style: "Natural" (as their body was made), "None" (shaved), or one of <see cref="Styles"/>.</summary>
+    public string Style { get; init; } = "Natural";
+    /// <summary>What covers the hair on a real body: "none", "Hood" or "Cap".</summary>
+    public string Headwear { get; init; } = "none";
     /// <summary>For dragonkind: the colour of their dragon.</summary>
     public string Dragon { get; init; } = "Red";
     /// <summary>For dragonkind: the people they're half of, or "none" for pure dragonkind.</summary>
@@ -27,6 +40,21 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
         ("Grey", "#8a8a88"), ("White", "#e8e8e4"),
     ];
     public static readonly string[] HornStyles = ["none", "Nubs", "Swept", "Ram", "Long"];
+    public static readonly string[] Sexes = ["Male", "Female"];
+    public static readonly string[] Ages = ["Adult", "Seasoned", "Elder"];
+    public static readonly string[] Faces = ["Natural", "Fair", "Olive", "Dark"];
+    public static readonly string[] EyeColours = ["Natural", "Brown", "Hazel", "Blue", "Green", "Grey", "Amber", "Red"];
+    /// <summary>The hair styles the real bodies were made with, by sex (see tools/humans): a hero may wear any of their sex's.</summary>
+    public static readonly (string Id, string Name)[] MaleStyles = [("Short01", "Short"), ("Short02", "Cropped"), ("Short03", "Swept"), ("Short04", "Tousled"), ("Afro01", "Afro")];
+    public static readonly (string Id, string Name)[] FemaleStyles = [("Bob01", "Bob"), ("Bob02", "Long bob"), ("Long01", "Long"), ("Braid01", "Braid"), ("Ponytail01", "Ponytail")];
+    public static readonly string[] Headwears = ["none", "Hood", "Cap"];
+    public static IEnumerable<string> Styles(string sex) => ["Natural", "None", .. (sex == "Female" ? FemaleStyles : MaleStyles).Select(s => s.Id)];
+    public static string StyleName(string style) => style switch
+    {
+        "Natural" => "As made", "None" => "Shaved",
+        _ => MaleStyles.Concat(FemaleStyles).FirstOrDefault(s => s.Id == style).Name ?? style,
+    };
+    public bool Female => Sex == "Female";
 
     public bool IsDragonkind => Race == Races.Dragonkind;
     public bool PureDragon => IsDragonkind && Half == "none";
@@ -105,11 +133,12 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
             "Warlock" or "Sorcerer" or "Poet" or "Scribe" => ("Mage", "none"),
             _ => ("Rogue", "none"),
         };
-        return new(figure, figure, figure, figure, hat, "Natural", "Natural", "Average");
+        return new(figure, figure, figure, figure, hat, "Natural", "Natural", "Average") { Headwear = figure == "Rogue_Hooded" ? "Hood" : "none" };
     }
 
     public string Encode() => $"head={Head};body={Body};arms={Arms};legs={Legs};hat={Hat};outfit={Outfit};skin={Skin};height={Height}" +
-                              $";race={Race};dragon={Dragon};half={Half};build={Build};beard={Beard};hair={Hair};horns={Horns}";
+                              $";race={Race};dragon={Dragon};half={Half};build={Build};beard={Beard};hair={Hair};horns={Horns}" +
+                              $";sex={Sex};age={Age};face={Face};eyes={Eyes};style={Style};headwear={Headwear}";
 
     /// <summary>Reads a saved look; anything missing or unknown is left as the class would have it. Null for none.</summary>
     public static Avatar? Parse(string? text, string classId = "")
@@ -132,6 +161,12 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
             Beard = Pick("beard", "none", Beards),
             Hair = Pick("hair", "Brown", Hairs.Select(h => h.Name)),
             Horns = Pick("horns", "none", HornStyles),
+            Sex = Pick("sex", "Male", Sexes),
+            Age = Pick("age", "Adult", Ages),
+            Face = Pick("face", "Natural", Faces),
+            Eyes = Pick("eyes", "Natural", EyeColours),
+            Style = Pick("style", "Natural", Styles(Pick("sex", "Male", Sexes))),
+            Headwear = Pick("headwear", "none", Headwears),
         };
     }
 
@@ -139,7 +174,8 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
     public static Avatar Random(Random rng)
     {
         string Any(string[] from) => from[rng.Next(from.Length)];
-        return new(Any(Figures), Any(Figures), Any(Figures), Any(Figures), Hats[rng.Next(Hats.Length)].Id,
+        var sex = Any(Sexes);
+        return new Avatar(Any(Figures), Any(Figures), Any(Figures), Any(Figures), Hats[rng.Next(Hats.Length)].Id,
             Outfits[rng.Next(Outfits.Length)].Name, Skins[rng.Next(Skins.Length)].Name, Heights[rng.Next(Heights.Length)].Name)
         {
             Race = Races.All[rng.Next(Races.All.Count)].Id,
@@ -149,6 +185,12 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
             Beard = rng.Next(3) == 0 ? Any(Beards) : "none",
             Hair = Hairs[rng.Next(Hairs.Length)].Name,
             Horns = rng.Next(4) == 0 ? Any(HornStyles) : "none",
+            Sex = sex,
+            Age = rng.Next(4) == 0 ? Any(Ages) : "Adult",
+            Face = Any(Faces),
+            Eyes = Any(EyeColours),
+            Style = Any([.. Styles(sex)]),
+            Headwear = rng.Next(3) == 0 ? Any(Headwears) : "none",
         };
     }
 }

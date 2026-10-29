@@ -48,7 +48,7 @@ public partial class Player : Fighter
     /// <summary>What shops ask of them, as a share of the usual price.</summary>
     public double Markup => Races.Prices(Race);
 
-    Body MakeFigure() => Tristinwold.Game.Figure.Create(Class.Look, Gameplay.Avatar.Parse(Avatar, Class.Id));
+    Body MakeFigure() => Tristinwold.Game.Figure.Create(Class.Look, Gameplay.Avatar.Parse(Avatar, Class.Id) ?? (Humans.Enabled ? Gameplay.Avatar.For(Class.Id) : null));
 
     /// <summary>Their rank in their guild ("Adept of the Iron Circle").</summary>
     public string GuildTitle { get; set; } = "";
@@ -107,7 +107,7 @@ public partial class Player : Fighter
         if (Hero.Discipline is null or "") Hero.Discipline = Classes.For(Outfit).Id;
         Stats = new Combatant(Company, 1);
         var size = Appearance?.Size ?? 1;
-        Dress(Class.Look, 1.8f * size, make: Avatar is null ? null : MakeFigure);
+        Dress(Class.Look, 1.8f * size, make: Avatar is null && !Humans.Enabled ? null : MakeFigure);
         Fit();
         Stats.Heal(1e9);
         Stats.Restore(1e9, 1e9);
@@ -152,7 +152,7 @@ public partial class Player : Fighter
     /// <summary>Puts on what's worn: the class's own look, then the gear over it, and the numbers to match.</summary>
     public void Dress()
     {
-        Restyle(Class.Look, Avatar is null ? null : MakeFigure);
+        Restyle(Class.Look, Avatar is null && !Humans.Enabled ? null : MakeFigure);
         if (Figure is Figure f) Wardrobe.Wear(f, Pack);
         Fit();
     }
