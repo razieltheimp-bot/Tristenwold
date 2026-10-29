@@ -311,6 +311,9 @@ public partial class Figure
     Sex _sex;
     LifeStage _stage;
     readonly Dictionary<string, Node> _held = [];
+    List<Node> _garments = [];
+    string _garmentLook = "townsfolk";
+    float _top = 1.7f;
 
     /// <summary>A real body (see <see cref="Humans"/>), rather than a KayKit figure.</summary>
     public bool IsHuman => _human;
@@ -385,7 +388,10 @@ public partial class Figure
         f._source = mesh.Mesh as ArrayMesh;
         f._mesh = mesh;
         f._skeleton = skeleton;
+        f._garmentLook = look;
+        if (f._source is { } src && src.GetSurfaceCount() > 0) { var vs = src.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array(); if (vs.Length > 0) f._top = vs.Max(v => v.Y); }
         f.Redress(garb);
+        f.Regarment(null, null);
         // The move set, told where its skeleton is.
         model.AddChild(moves);
         moves.RootNode = moves.GetPathTo(model);
@@ -448,7 +454,19 @@ public partial class Figure
         if (pack.WornIn(Tristinwold.Gameplay.Slot.Head) is { } helm)
             garb = garb with { Outfit = garb.Outfit with { Cap = new Color(helm.Tint ?? (helm.Metal ? "#9a9ea6" : "#5a4a3a")) } };
         if (garb != _garb) Redress(garb);
+        Regarment(pack.WornIn(Tristinwold.Gameplay.Slot.Body) is { } worn ? (new Color(worn.Tint ?? "#8a6a48"), worn.Metal) : null,
+            pack.WornIn(Tristinwold.Gameplay.Slot.Head) is { } hat ? new Color(hat.Tint ?? (hat.Metal ? "#9a9ea6" : "#5a4a3a")) : null);
     }
+
+    /// <summary>The medieval kit over the clothes (see <see cref="Garments"/>), put on fresh: the look's own, or the armour and helm worn.</summary>
+    void Regarment((Color Tint, bool Metal)? armour, Color? helm)
+    {
+        foreach (var n in _garments) if (IsInstanceValid(n)) { n.GetParent()?.RemoveChild(n); n.QueueFree(); }
+        _garments = _skeleton is not null && _garb is not null ? Garments.Dress(_skeleton, _garmentLook, _garb.Outfit, _top, armour, helm) : [];
+    }
+
+    /// <summary>How many kit pieces hang on this body (the self-test counts).</summary>
+    public int GarmentCount => _garments.Count;
 
     /// <summary>Dresses (or dresses again) the body from its untouched mesh.</summary>
     void Redress(Garb garb)

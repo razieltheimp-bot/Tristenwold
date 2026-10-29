@@ -262,6 +262,8 @@ public static class Armoury
             hold.Basis = left
                 ? new Basis(new Vector3(0, 1, 0), new Vector3(-1, 0, 0), new Vector3(0, 0, 1))
                 : new Basis(new Vector3(0, 1, 0), new Vector3(1, 0, 0), new Vector3(0, 0, -1));
+            // A relaxed wrist lets the blade drop toward the fingers: forward-and-down when the arm hangs, rather than level.
+            hold.Basis = new Basis(new Vector3(0, 0, 1), Mathf.DegToRad(left ? 40 : -40)) * hold.Basis;
             hold.Position = new Vector3(0, 0.04f, 0.025f); // into the palm, where the fingers close
         }
         hold.AddChild(piece);
