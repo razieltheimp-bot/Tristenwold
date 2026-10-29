@@ -77,6 +77,8 @@ var accountsPath = Path.ChangeExtension(campaignPath, null) + ".accounts.json";
 var host = new SharedWorldHost(core, () => state.Save(campaignPath), voice, Log, spoilers, new AccountStore(accountsPath));
 using var shutdown = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; shutdown.Cancel(); };
+// A cloud machine stops a service with SIGTERM, not Ctrl+C: save the world and stop the same way.
+using var terminated = System.Runtime.InteropServices.PosixSignalRegistration.Create(System.Runtime.InteropServices.PosixSignal.SIGTERM, c => { c.Cancel = true; shutdown.Cancel(); });
 
 // ---- TCP (tools, bots) ---------------------------------------------------------------------------
 

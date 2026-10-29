@@ -203,6 +203,34 @@ and an Apple developer account).
 | T | rest (the world moves on, companions mend, and a dragon egg warms) |
 | F10 | the shared world: contract board, companies, deviants, chronicle and chat |
 
+### Running the server in the cloud, so it isn't on your computer
+
+The server is small (a few dozen megabytes of memory), so the cheapest Linux machine any cloud offers is
+plenty: a Hetzner CX22, a DigitalOcean or Vultr $4-6 droplet, or Oracle Cloud's free tier. With a cloud
+machine the server has a fixed public address, is up day and night, and needs no tunnel.
+
+1. Make an Ubuntu machine at the provider, and in its firewall settings allow TCP ports 7777 and 7778 in.
+2. Copy the Linux server download (`Tristinwold-Server-Linux.tar.gz`, or build it yourself with
+   `dotnet publish tools/Tristinwold.Server -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o server`
+   and add `tools/cloud/setup.sh` and `tools/cloud/tristinwold.service`) to the machine and unpack it:
+   ```
+   scp Tristinwold-Server-Linux.tar.gz root@<address>:
+   ssh root@<address>
+   tar xzf Tristinwold-Server-Linux.tar.gz && cd tristinwold-server
+   sudo sh setup.sh --password <a password for your friends>
+   ```
+3. It prints the address to type in the game's Server box (`<address>:7777`) and the one for Android phones
+   (`http://<address>:7778`).
+
+It runs as a service: it starts when the machine does, restarts if it falls over, and saves the world when
+it's stopped. The world is `/opt/tristinwold/tristinwold.json`; to bring your current world along, copy your
+`tristinwold.json` (and `tristinwold.accounts.json`) there before running setup, or into it later and
+`sudo systemctl restart tristinwold`. Claude's voice for Vann and Telegram's messages are switched on by
+filling in their keys in `/etc/tristinwold.env`. To update, unpack a newer download and run setup again.
+
+Playing on an iPhone is different: the game itself runs on a computer and the iPhone shows it, so that
+part still needs a computer with a graphics card (a cloud one with a GPU costs far more than the server).
+
 ### Sound and music
 
 The game has sound (`game/scripts/Sound.cs`). The music follows what's happening: a grand theme on the start
