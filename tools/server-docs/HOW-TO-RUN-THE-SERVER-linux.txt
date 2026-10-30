@@ -1,0 +1,29 @@
+The Rings of Tristinwold - shared world server (Linux)
+
+RUN IT BY HAND
+1. Unzip this download somewhere it can stay (the world is saved there, in tristinwold.json).
+2. In a terminal, in that folder:
+       chmod +x Tristinwold.Server
+       ./Tristinwold.Server --password secret        (leave --password off for no password)
+   It listens on TCP port 7777 for PCs and HTTP port 7778 for phones. Ctrl+C stops it;
+   nothing is lost, the world is saved after every change.
+
+RUN IT AS A SERVICE (Ubuntu or Debian: starts on boot, restarts if it falls over)
+       sudo sh setup.sh --password secret
+   Running it again later updates the program and keeps the world. Settings live in
+   /etc/tristinwold.env; the world in /opt/tristinwold. "sudo systemctl status tristinwold" shows it.
+
+JOIN IT (in the game, on the login page)
+- Same machine:              127.0.0.1:7777
+- Same house:                this machine's address, e.g. 192.168.1.20:7777
+- Friends elsewhere:         its Tailscale address (tailscale.com, free) with :7777, or forward
+                             TCP 7777 (and 7778 for phones) on the router; or a cloud machine's
+                             public address. Open those ports in its firewall.
+Then enter the server password, create an account the first time, and pick or make a character.
+
+Everyone on the server sees each other's heroes walk about, with their names over them. For that the
+server and every game must be the same version (0.16 or later): an older game is turned away with a
+version message until it's updated.
+
+In the shared world the nemesis system runs: enemies that beat you take names and come back,
+and a lair boss that beats you roams the wilds under the same name for everyone.

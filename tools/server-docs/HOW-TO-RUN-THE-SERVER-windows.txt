@@ -1,0 +1,26 @@
+The Rings of Tristinwold - shared world server (Windows)
+
+START IT
+1. Unzip this download next to the game (Tristinwold.exe), so that a folder named "server" with
+   Tristinwold.Server.exe in it sits beside the game's "Start Server.bat". It can also live anywhere
+   on its own: this folder's "Start Server.bat" finds it. The world is saved here, in tristinwold.json.
+2. Double-click "Start Server.bat". Pick a password (or press Enter for none).
+   If Windows asks whether to let it through the firewall, click Allow (private networks).
+3. Leave the black window open while you play. Close it to stop the server;
+   nothing is lost, the world is saved after every change.
+
+JOIN IT (in the game, on the login page)
+- On the same PC:            server address 127.0.0.1:7777
+- Friends in your house:     this PC's address, e.g. 192.168.1.20:7777
+                             (find it: open Command Prompt, type ipconfig, look for IPv4 Address)
+- Friends elsewhere:         install Tailscale (free, tailscale.com) on every PC and use this PC's
+                             Tailscale address with :7777; or forward TCP port 7777 on your router
+                             to this PC. Phones use HTTP port 7778.
+Then enter the server password, create an account the first time, and pick or make a character.
+
+Everyone on the server sees each other's heroes walk about, with their names over them. For that the
+server and every game must be the same version (0.16 or later): an older game is turned away with a
+version message until it's updated.
+
+In the shared world the nemesis system runs: enemies that beat you take names and come back,
+and a lair boss that beats you roams the wilds under the same name for everyone.
