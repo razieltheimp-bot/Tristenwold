@@ -37,7 +37,8 @@ public sealed class Contract
 /// cargo on the docks, paid the Crown for land. The game does it to its own copy of the city at once; on a server,
 /// it's sent on and done to the one city everybody shares (see <see cref="CityEconomy.Apply"/>).
 /// </summary>
-public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0, string? Contract = null, IReadOnlyList<string>? Items = null, Good? Good = null, int N = 0)
+public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0, string? Contract = null, IReadOnlyList<string>? Items = null, Good? Good = null, int N = 0,
+    string? Town = null, TownMarket? Market = null)
 {
     public static CityAction Sold(string item, int crowns) => new("sold", item, crowns);
     public static CityAction Bought(string item, int crowns) => new("bought", item, crowns);
@@ -46,6 +47,15 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction DonateCrowns(int crowns) => new("donate_crowns", Crowns: crowns);
     public static CityAction Cargo(Good good, int n) => new("cargo", Good: good, N: n);
     public static CityAction Treasury(int crowns) => new("treasury", Crowns: crowns);
+    // The roads (see Roads): a place come to know, goods put into or taken from its stores, and what befalls it.
+    public static CityAction Know(TownMarket market) => new("know", Town: market.Id, Market: market);
+    public static CityAction TownStock(string town, Good good, int delta) => new("town_stock", Town: town, Good: good, N: delta);
+    public static CityAction CityStock(Good good, int delta) => new("city_stock", Good: good, N: delta);
+    public static CityAction Plundered(string town) => new("plundered", Town: town);
+    public static CityAction Steadied(string town) => new("steady", Town: town);
+    public static CityAction Escorted(string town) => new("escorted", Town: town);
+    public static CityAction Raiders(string town, string clan) => new("raiders", Item: clan, Town: town);
+    public static CityAction Cleared(string trouble, string by) => new("cleared", Item: by, Contract: trouble);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -147,6 +157,14 @@ public sealed class CityEconomy
     public int Renown { get; set; }
     public List<string> News { get; set; } = [];
     public int NextContract { get; set; }
+    /// <summary>
+    /// Things the city doesn't trade by the cartload (swords, cloaks, trophies), by how many more or fewer of each the
+    /// shops hold than they'd like: sell them a hundred swords and swords are cheap for a couple of days; buy them out
+    /// and they're dear. Mostly gone in a couple of days.
+    /// </summary>
+    public Dictionary<string, double> Flood { get; set; } = [];
+    /// <summary>The roads out of the city: the places it trades with, its caravans, and what befalls them.</summary>
+    public Roads Roads { get; set; } = new();
 
     public static CityEconomy Start(ulong seed)
     {
@@ -164,7 +182,17 @@ public sealed class CityEconomy
     public double Factor(Good g)
     {
         var stock = Math.Max(1, Stock.GetValueOrDefault(g, Info(g).Target));
-        return Math.Clamp(Math.Pow(Info(g).Target / stock, 0.55), 0.45, 2.6);
+        return Math.Clamp(Math.Pow(Info(g).Target / stock, 0.7), 0.45, 2.6);
+    }
+
+    /// <summary>How many of a thing the shops take before its price is well down (or give up before it's well up).</summary>
+    public const double FloodScale = 25;
+
+    /// <summary>The price of something not traded by the cartload, as a share of its worth: a hundred sold and it's under half; the shops bought out and it's dear.</summary>
+    public double ItemFactor(string itemId)
+    {
+        var f = Flood.GetValueOrDefault(itemId);
+        return f >= 0 ? Math.Max(0.45, Math.Pow(FloodScale / (FloodScale + f), 0.6)) : Math.Min(2.5, Math.Pow(FloodScale / Math.Max(FloodScale * 0.15, FloodScale + f), 0.6));
     }
 
     /// <summary>The good an item is, if it's one the city trades in by the cartload (gear, trophies and meals aren't).</summary>
@@ -185,7 +213,7 @@ public sealed class CityEconomy
     };
 
     /// <summary>What a shop asks for an item today (before the buyer's own markup).</summary>
-    public int Price(Item item) => GoodOf(item.Id) is { } g ? Math.Max(1, (int)Math.Round(item.Value * Factor(g))) : item.Value;
+    public int Price(Item item) => Math.Max(1, (int)Math.Round(item.Value * (GoodOf(item.Id) is { } g ? Factor(g) : ItemFactor(item.Id))));
 
     /// <summary>What a shop pays for an item today: half its price, less for a hero the Exchange doesn't know.</summary>
     public int Offer(Item item) => Math.Max(1, (int)Math.Round(Price(item) * (0.5 + 0.02 * RenownTier)));
@@ -203,6 +231,7 @@ public sealed class CityEconomy
     public void Sold(string itemId, int crowns)
     {
         if (GoodOf(itemId) is { } g) Stock[g] = Stock.GetValueOrDefault(g) + 1;
+        else Flood[itemId] = Flood.GetValueOrDefault(itemId) + 1;
         Taxes += crowns * 0.05;
     }
 
@@ -210,6 +239,7 @@ public sealed class CityEconomy
     public void Bought(string itemId, int crowns)
     {
         if (GoodOf(itemId) is { } g) Stock[g] = Math.Max(0, Stock.GetValueOrDefault(g) - 1);
+        else Flood[itemId] = Math.Max(-FloodScale * 0.85, Flood.GetValueOrDefault(itemId) - 1);
         Taxes += crowns * 0.05;
     }
 
@@ -256,8 +286,11 @@ public sealed class CityEconomy
         (Stock[Good.Ore], Stock[Good.Coal], Stock[Good.Iron]) = (Stock[Good.Ore] - 2 * smelted, Stock[Good.Coal] - smelted, Stock[Good.Iron] + smelted);
         var brewed = Math.Min(9, Stock[Good.Herbs] / 2);
         (Stock[Good.Herbs], Stock[Good.Potions]) = (Stock[Good.Herbs] - 2 * brewed, Stock[Good.Potions] + brewed);
-        // Merchants bring what's short and ship out a glut, a little at a time.
-        foreach (var g in Goods) Stock[g.Good] += (g.Target - Stock[g.Good]) * 0.08;
+        // Merchants bring what's short and ship out a glut, a fair bit each day: a glut is a couple of days' bargain, not a season's.
+        foreach (var g in Goods) Stock[g.Good] += (g.Target - Stock[g.Good]) * 0.3;
+        // The shops sell down a pile of swords, or restock a run on them, by half each day.
+        foreach (var (id, f) in Flood.ToList())
+            if (Math.Abs(f) < 0.5) Flood.Remove(id); else Flood[id] = f * 0.35;
 
         // Events run out, and new ones begin.
         foreach (var r in Running) r.DaysLeft--;
@@ -299,6 +332,9 @@ public sealed class CityEconomy
         // Contracts run out, and the businesses that are short post new ones.
         Contracts.RemoveAll(c => c.Expires < Day || c.Left <= 0);
         PostContracts(rng);
+
+        // The city's caravans, out along every road it knows.
+        told.AddRange(Roads.TradeDay(this, Day, rng));
 
         News.AddRange(told);
         if (News.Count > 12) News.RemoveRange(0, News.Count - 12);
@@ -376,19 +412,33 @@ public sealed class CityEconomy
     /// Does what a hero did (see <see cref="CityAction"/>). A server does this for every player's game, so nothing a
     /// game sends can do more than a hero could: a cartload of goods at most, a few thousand crowns.
     /// </summary>
-    public void Apply(CityAction a)
+    public bool Apply(CityAction a)
     {
         var items = (a.Items ?? []).Take(200).ToList();
         var crowns = Math.Clamp(a.Crowns, 0, 5000);
         switch (a.Kind)
         {
-            case "sold" when a.Item is not null: Sold(a.Item, crowns); break;
-            case "bought" when a.Item is not null: Bought(a.Item, crowns); break;
-            case "deliver" when Contracts.FirstOrDefault(c => c.Id == a.Contract) is { } c: Deliver(c, items); break;
-            case "donate": Donate(items, out _); break;
-            case "donate_crowns": DonateCrowns(crowns, out _); break;
-            case "cargo" when a.Good is { } g && Enum.IsDefined(g): Stock[g] = Stock.GetValueOrDefault(g) + Math.Clamp(a.N, 0, 10); break;
-            case "treasury": Treasury += crowns; break;
+            case "sold" when a.Item is not null: Sold(a.Item, crowns); return true;
+            case "bought" when a.Item is not null: Bought(a.Item, crowns); return true;
+            case "deliver" when Contracts.FirstOrDefault(c => c.Id == a.Contract) is { } c: Deliver(c, items); return true;
+            case "donate": Donate(items, out _); return true;
+            case "donate_crowns": DonateCrowns(crowns, out _); return true;
+            case "cargo" when a.Good is { } g && Enum.IsDefined(g): Stock[g] = Stock.GetValueOrDefault(g) + Math.Clamp(a.N, 0, 10); return true;
+            case "treasury": Treasury += crowns; return true;
+            // The roads.
+            case "know" when a.Market is { } m && m.Id.Length is > 0 and <= 80: return Roads.Know(m);
+            case "town_stock" when a.Town is not null && a.Good is { } tg && Enum.IsDefined(tg): Roads.Adjust(a.Town, tg, Math.Clamp(a.N, -60, 60)); return true;
+            case "city_stock" when a.Good is { } cg && Enum.IsDefined(cg): Stock[cg] = Math.Max(0, Stock.GetValueOrDefault(cg) + Math.Clamp(a.N, -60, 60)); return true;
+            case "plundered" when a.Town is not null: return Roads.Plundered(a.Town, Day) > 0;
+            case "steady" when a.Town is not null: return Roads.Steady(a.Town, Day);
+            case "escorted" when a.Town is not null:
+                if (Roads.Escorted(this, a.Town, Day, new Rng(Seed ^ (ulong)Day ^ (ulong)Roads.Wagons * 7919)) is { } said) News.Add(said);
+                return true;
+            case "raiders" when a.Town is not null && a.Item is not null: Roads.RaidersAbout(a.Town, Day, a.Item.Length > 40 ? a.Item[..40] : a.Item); return true;
+            case "cleared" when a.Contract is not null && Roads.Cleared(a.Contract) is { } t:
+                News.Add($"{(a.Item is { Length: > 0 and <= 40 } who ? who + "'s company" : "Someone")} cleared {(t.Clan ? t.By : "the bandits")} off the road to {t.TownName}. The wagons roll again.");
+                return true;
+            default: return false;
         }
     }
 
@@ -432,7 +482,7 @@ public sealed class CityEconomy
             return $"{Cap(g.Name)}: {word}, {f:0.00}x ({arrow})";
         });
         var happening = Running.Count == 0 ? "Nothing out of the ordinary." : string.Join(" ", Running.Select(r => $"{Event(r.Id).Title} ({r.DaysLeft} day{(r.DaysLeft == 1 ? "" : "s")} more)."));
-        return $"Day {Day}. The city is {Mood}; the treasury holds {Treasury} crowns.\n{string.Join("\n", lines)}\nNews: {happening}";
+        return $"Day {Day}. The city is {Mood}; the treasury holds {Treasury} crowns.\n{string.Join("\n", lines)}\nNews: {happening}\n{Roads.Report(Day)}";
     }
 
     static string Cap(string s) => char.ToUpperInvariant(s[0]) + s[1..];

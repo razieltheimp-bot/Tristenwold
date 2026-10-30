@@ -1,136 +1,12 @@
+using System.Text.Json.Serialization;
 using Tristinwold.Gameplay;
 using Tristinwold.Deviant;
 
 namespace Tristinwold.World;
 
-/// <summary>
-/// The little economy of one place out in the world: a hamlet, a farmstead, a mine, a town. It makes a few goods,
-/// which are cheap there because there are plenty, and wants a few it doesn't make, which are dear because there are
-/// few. Bring it what it wants and it pays well; every load you sell it fills it up, and the price falls. Left alone,
-/// its stores drift back to what they usually are, a day at a time (Tristinwold's days). Once a place is known, its
-/// market is remembered with the company, and Tristinwold's own caravans start trading with it.
-/// </summary>
-public sealed class TownMarket
+/// <summary>What a place out in the world trades in, the first time anyone comes to it (see <see cref="TownMarket"/>, kept with the city).</summary>
+public static class TownMarkets
 {
-    public string Id { get; set; } = "";
-    public string Name { get; set; } = "";
-    public double X { get; set; }
-    public double Z { get; set; }
-    /// <summary>How big a market it is, against Tristinwold's (a hamlet's is a sliver of it).</summary>
-    public double Size { get; set; } = 0.15;
-    public List<Good> Makes { get; set; } = [];
-    public List<Good> Wants { get; set; } = [];
-    public Dictionary<Good, double> Stock { get; set; } = [];
-    /// <summary>The Tristinwold day it was last brought up to date.</summary>
-    public int Day { get; set; }
-    /// <summary>How many times the hero has brought a wagon here.</summary>
-    public int Visits { get; set; }
-    /// <summary>The Tristinwold day a caravan last ran between here and the city.</summary>
-    public int LastTrade { get; set; }
-
-    /// <summary>The Tristinwold day an alchemist last steadied this market (once a day).</summary>
-    public int Steadied { get; set; } = -1;
-
-    /// <summary>
-    /// An alchemist's transmutation: with the reagents to pay for it, every good's stock is brought most of the way
-    /// back to what the place usually keeps, so a glut or a crash eases and the prices with it. Once a day; whether
-    /// it was done.
-    /// </summary>
-    public bool Steady(int day)
-    {
-        if (Steadied == day) return false;
-        foreach (var g in Enum.GetValues<Good>())
-        {
-            var usual = Usual(g);
-            var stock = Stock.GetValueOrDefault(g, usual);
-            Stock[g] = stock + (usual - stock) * 0.7;
-        }
-        Steadied = day;
-        return true;
-    }
-
-    /// <summary>What it usually keeps of a good: plenty of what it makes, little of what it wants.</summary>
-    public double Usual(Good g) => Baseline(g) * (Makes.Contains(g) ? 2.6 : Wants.Contains(g) ? 0.3 : 1);
-
-    double Baseline(Good g) => Math.Max(2, CityEconomy.Info(g).Target * Size * 0.7);
-
-    /// <summary>A good's price now, as a share of its usual worth anywhere: what it has plenty of is cheap, what it lacks dear.</summary>
-    public double Factor(Good g) => Math.Clamp(Math.Pow(Baseline(g) / Math.Max(0.5, Stock.GetValueOrDefault(g, Usual(g))), 0.55), 0.4, 2.8);
-
-    /// <summary>What it asks for one of a good.</summary>
-    public int Asks(Good g) => Math.Max(1, (int)Math.Round(CityEconomy.Info(g).Worth * Factor(g)));
-
-    /// <summary>What it pays for one.</summary>
-    public int Pays(Good g) => Math.Max(1, (int)Math.Round(CityEconomy.Info(g).Worth * Factor(g) * 0.85));
-
-    /// <summary>Sells it <paramref name="n"/> of a good, one at a time (so the price falls as it fills): the crowns it pays.</summary>
-    public int Sell(Good g, int n)
-    {
-        var crowns = 0;
-        for (var i = 0; i < n; i++)
-        {
-            crowns += Pays(g);
-            Stock[g] = Stock.GetValueOrDefault(g, Usual(g)) + 1;
-        }
-        return crowns;
-    }
-
-    /// <summary>What <paramref name="n"/> of a good would cost, bought one at a time; it won't sell its last one.</summary>
-    public int Cost(Good g, int n)
-    {
-        var (crowns, stock) = (0, Stock.GetValueOrDefault(g, Usual(g)));
-        for (var i = 0; i < n; i++, stock--)
-            crowns += Math.Max(1, (int)Math.Round(CityEconomy.Info(g).Worth * Math.Clamp(Math.Pow(Baseline(g) / Math.Max(0.5, stock), 0.55), 0.4, 2.8)));
-        return crowns;
-    }
-
-    /// <summary>
-    /// Drowning in a good: far more of it than it usually keeps (someone sold it a hundred fish), so cheap that it's worth
-    /// carting somewhere else.
-    /// </summary>
-    public bool Glut(Good g) => Stock.GetValueOrDefault(g, Usual(g)) >= Usual(g) * 2 + 6;
-
-    /// <summary>How much more of a good it has than it usually keeps.</summary>
-    public int Surplus(Good g) => Math.Max(0, (int)Math.Floor(Stock.GetValueOrDefault(g, Usual(g)) - Usual(g)));
-
-    /// <summary>Raided: the clan carries off nearly half of everything in its stores. Returns how many loads were taken.</summary>
-    public int Plundered(int day)
-    {
-        Catch(day);
-        var taken = 0.0;
-        foreach (var g in Stock.Keys.ToList())
-        {
-            taken += Stock[g] * 0.45;
-            Stock[g] *= 0.55;
-        }
-        Raided++;
-        return (int)Math.Round(taken);
-    }
-
-    /// <summary>How many times raiders have plundered it.</summary>
-    public int Raided { get; set; }
-
-    /// <summary>How many of a good it has to sell.</summary>
-    public int ForSale(Good g) => Math.Max(0, (int)Math.Floor(Stock.GetValueOrDefault(g, Usual(g))) - 1);
-
-    /// <summary>Buys <paramref name="n"/> of a good from it (as many as it has to spare): the crowns it costs.</summary>
-    public int Buy(Good g, int n)
-    {
-        n = Math.Min(n, ForSale(g));
-        var crowns = Cost(g, n);
-        Stock[g] = Stock.GetValueOrDefault(g, Usual(g)) - n;
-        return crowns;
-    }
-
-    /// <summary>Days pass: its stores drift back toward what they usually are.</summary>
-    public void Catch(int day)
-    {
-        if (day <= Day) return;
-        var keep = Math.Pow(0.8, day - Day);
-        foreach (var g in Stock.Keys.ToList()) Stock[g] = Usual(g) + (Stock[g] - Usual(g)) * keep;
-        Day = day;
-    }
-
     /// <summary>Whether a place keeps a market at all: anywhere people live and work, not a bandit camp, a barrow or a den.</summary>
     public static bool Trades(Settlement s) =>
         s.Kind is not (SettlementKind.BanditCamp or SettlementKind.Barrow or SettlementKind.Den) && s.Id != "city:tristinwold";
@@ -172,12 +48,6 @@ public sealed class TownMarket
         return m;
     }
 
-    public double DistanceTo(double x, double z) => Math.Sqrt((X - x) * (X - x) + (Z - z) * (Z - z));
-
-    /// <summary>"timber and bread".</summary>
-    public string MakesText => And(Makes);
-    public string WantsText => And(Wants);
-    static string And(IEnumerable<Good> goods) => string.Join(" and ", goods.Select(g => CityEconomy.Info(g).Name));
 }
 
 /// <summary>How far up the caravan yard a hero has come.</summary>
@@ -219,7 +89,13 @@ public sealed record GlutJob(string From, string FromName, double FromX, double 
 /// </summary>
 public sealed class TradeBook
 {
-    public Dictionary<string, TownMarket> Towns { get; set; } = [];
+    /// <summary>The roads and the markets out there: the city's, shared by everyone on a server (see <see cref="CityEconomy.Roads"/>). Pointed at the city's after a load.</summary>
+    [JsonIgnore] public Roads Roads { get; set; } = new();
+    [JsonIgnore] public Dictionary<string, TownMarket> Towns => Roads.Towns;
+    /// <summary>What this book did to the roads (a place come to know, goods moved), for the game to pass on to the server.</summary>
+    [JsonIgnore] public List<CityAction> Outbox { get; } = [];
+    /// <summary>The camp of caravan-robbers the hero's gone to clear (a <see cref="RoadTrouble"/> id), if any.</summary>
+    public string? Hunting { get; set; }
     public CaravanRank Rank { get; set; } = CaravanRank.None;
     public int Loads { get; set; }
     public int Runs { get; set; }
@@ -242,9 +118,31 @@ public sealed class TradeBook
     /// <summary>A place's market: the one already known, or a new one the first time.</summary>
     public TownMarket Market(Settlement s, int day)
     {
-        if (!Towns.TryGetValue(s.Id, out var m)) Towns[s.Id] = m = TownMarket.For(s, day);
+        if (!Towns.TryGetValue(s.Id, out var m))
+        {
+            m = TownMarkets.For(s, day);
+            Roads.Know(m);
+            Outbox.Add(CityAction.Know(m));
+        }
         m.Catch(day);
         return m;
+    }
+
+    /// <summary>Sells a place some of a good from the hero's wagon: the crowns it pays.</summary>
+    public int SellAt(TownMarket m, Good g, int n)
+    {
+        var crowns = m.Sell(g, n);
+        Outbox.Add(CityAction.TownStock(m.Id, g, n));
+        return crowns;
+    }
+
+    /// <summary>Buys some of a good from a place for the hero's wagon: the crowns it costs, and how many came.</summary>
+    public (int Crowns, int N) BuyAt(TownMarket m, Good g, int n)
+    {
+        n = Math.Min(n, m.ForSale(g));
+        var crowns = m.Buy(g, n);
+        if (n > 0) Outbox.Add(CityAction.TownStock(m.Id, g, -n));
+        return (crowns, n);
     }
 
     /// <summary>Loaded a sack or crate onto the yard's wagon. Returns true when that makes them a driver.</summary>
@@ -261,14 +159,14 @@ public sealed class TradeBook
     /// Tristinwold's trade routes: the places the hero has found (and only those), near enough for a wagon. Every place
     /// found adds a route.
     /// </summary>
-    public IEnumerable<TownMarket> Routes => Towns.Values.Where(m => m.DistanceTo(0, 0) < Reach).OrderBy(m => m.DistanceTo(0, 0));
+    public IEnumerable<TownMarket> Routes => Roads.Known;
 
     /// <summary>
     /// The routes Tristinwold has always run: its nearest market towns and villages, two of them, known to every hero
     /// from the start. Everything further out is for the hero to find.
     /// </summary>
     public static IEnumerable<Settlement> OldRoutes(WorldGen world) =>
-        world.SettlementsNear(0, 0, 2500).Where(s => TownMarket.Trades(s) && s.Kind is SettlementKind.Town or SettlementKind.Hamlet or SettlementKind.Farmstead or SettlementKind.Inn)
+        world.SettlementsNear(0, 0, 2500).Where(s => TownMarkets.Trades(s) && s.Kind is SettlementKind.Town or SettlementKind.Hamlet or SettlementKind.Farmstead or SettlementKind.Inn)
             .OrderBy(s => s.DistanceTo(0, 0)).Take(2);
 
     /// <summary>Opens Tristinwold's old routes, if the book has none yet. Returns the places.</summary>
@@ -301,6 +199,8 @@ public sealed class TradeBook
         m.Catch(day);
         m.Stock[r.Out] = m.Stock.GetValueOrDefault(r.Out) + r.Load;
         m.Stock[r.Back] = Math.Max(1, m.Stock.GetValueOrDefault(r.Back) - r.Load);
+        Outbox.Add(CityAction.TownStock(r.To, r.Out, r.Load));
+        Outbox.Add(CityAction.TownStock(r.To, r.Back, -r.Load));
         m.Visits++;
         r.Returning = true;
         return r.Pay / 2;
@@ -327,38 +227,6 @@ public sealed class TradeBook
         return true;
     }
 
-    /// <summary>
-    /// A day of Tristinwold's own trade along its routes: a small caravan runs to each of a few known places (the ones
-    /// that have waited longest), bringing some of what the place makes, and taking home some of what it wants.
-    /// Returns what's said of it at the Exchange.
-    /// </summary>
-    public List<string> TradeDay(CityEconomy city, int day, Rng rng)
-    {
-        var news = new List<string>();
-        foreach (var m in Routes.OrderBy(m => m.LastTrade).Take(3).ToList())
-            if (Exchange(m, city, day, rng, 1) is { } said) news.Add($"A caravan from {m.Name} {said}.");
-        return news;
-    }
-
-    /// <summary>One caravan between Tristinwold and a place: goods each way, <paramref name="loads"/> times the usual. Returns what it did.</summary>
-    static string? Exchange(TownMarket m, CityEconomy city, int day, Rng rng, int loads)
-    {
-        m.Catch(day);
-        m.LastTrade = day;
-        var (brings, takes) = (rng.Pick(m.Makes), rng.Pick(m.Wants));
-        var n = Math.Min(Math.Max(1, (int)Math.Round(4 * m.Size / 0.15)) * loads, m.ForSale(brings));
-        if (n <= 0) return null;
-        m.Stock[brings] -= n;
-        city.Stock[brings] = city.Stock.GetValueOrDefault(brings) + n;
-        var back = Math.Min(n, (int)city.Stock.GetValueOrDefault(takes) - 1);
-        if (back > 0)
-        {
-            city.Stock[takes] -= back;
-            m.Stock[takes] = m.Stock.GetValueOrDefault(takes) + back;
-        }
-        return $"brings {CityEconomy.Info(brings).Name}{(back > 0 ? $" and takes {CityEconomy.Info(takes).Name} home" : "")}";
-    }
-
     // ---- guarding the city's caravans --------------------------------------------------------------------------
 
     /// <summary>How seasoned an adventurer must be before the yard will pay them to guard a caravan.</summary>
@@ -377,36 +245,48 @@ public sealed class TradeBook
     /// The short road: the city's caravan along the nearest route, one ambush of two bandits on the way. A new hero's
     /// first guard job, and there every day after for anyone, whatever their level.
     /// </summary>
-    public Escort? ShortRoad() => Routes.Select(m => new Escort
+    public Escort? ShortRoad(int day = 0) => Routes.Select(m => Priced(new Escort
     {
         To = m.Id, ToName = m.Name, X = m.X, Z = m.Z, Bandits = 2, Ambushes = [0.5],
         Pay = 30 + (int)Math.Round(m.DistanceTo(0, 0) / 30),
-    }).FirstOrDefault();
+    }, day)).FirstOrDefault();
+
+    /// <summary>What the yard pays on a road with known trouble (wagons lost, camps uncleared, a clan about): more, and says why; and more bandits wait on it.</summary>
+    Escort Priced(Escort e, int day)
+    {
+        var mult = Roads.PayMult(e.To, day);
+        e.Pay = (int)Math.Round(e.Pay * mult);
+        e.Bandits = Math.Min(8, e.Bandits + Roads.ExtraBandits(e.To));
+        e.Known = Roads.KnownDanger(e.To, day);
+        e.Mult = mult;
+        return e;
+    }
 
     /// <summary>
     /// The guard work the yard has going: a caravan along each route, the further and the more seasoned the guard, the
     /// more bandits on the road and the better it pays.
     /// </summary>
-    public IEnumerable<Escort> Escorts(int heroLevel) => Routes.Take(6).Select(m =>
+    public IEnumerable<Escort> Escorts(int heroLevel, int day = 0) => Routes.Take(6).Select(m =>
     {
         var d = m.DistanceTo(0, 0);
         var ambushes = d < 900 ? 1 : d < 2200 ? 2 : 3;
-        return new Escort
+        return Priced(new Escort
         {
             To = m.Id, ToName = m.Name, X = m.X, Z = m.Z,
             Bandits = Math.Min(6, 2 + heroLevel / 4 + (int)(d / 1500)),
             Ambushes = [.. Enumerable.Range(1, ambushes).Select(i => (double)i / (ambushes + 1))],
             Pay = (int)Math.Round((25 + d / 25) * (1 + 0.12 * heroLevel)),
-        };
+        }, day);
     });
 
     /// <summary>The caravan got through: paid, and a big load each way between the place and Tristinwold. Returns what the Exchange says.</summary>
     public string? Delivered(CityEconomy city, int day, Rng rng)
     {
-        if (Guarding is not { } e || !Towns.TryGetValue(e.To, out var m)) return null;
+        if (Guarding is not { } e || !Towns.ContainsKey(e.To)) return null;
         Guarding = null;
         Guarded++;
-        return Exchange(m, city, day, rng, 3) is { } said ? $"The caravan you guarded to {m.Name} {said}." : null;
+        Outbox.Add(CityAction.Escorted(e.To));
+        return Roads.Escorted(city, e.To, day, rng);
     }
 
     /// <summary>The bandits took the wagon.</summary>
@@ -462,11 +342,12 @@ public sealed class TradeBook
     public void LoadGlut(CityEconomy city, int day)
     {
         if (Run is not { Glut: true, Loaded: false } r) return;
-        if (r.From == CityId) city.Stock[r.Out] = Math.Max(1, city.Stock.GetValueOrDefault(r.Out) - r.Load);
+        if (r.From == CityId) { city.Stock[r.Out] = Math.Max(1, city.Stock.GetValueOrDefault(r.Out) - r.Load); Outbox.Add(CityAction.CityStock(r.Out, -r.Load)); }
         else if (Towns.TryGetValue(r.From, out var m))
         {
             m.Catch(day);
             m.Stock[r.Out] = Math.Max(1, m.Stock.GetValueOrDefault(r.Out) - r.Load);
+            Outbox.Add(CityAction.TownStock(r.From, r.Out, -r.Load));
         }
         r.Loaded = true;
     }
@@ -475,11 +356,12 @@ public sealed class TradeBook
     public int DeliverGlut(CityEconomy city, int day)
     {
         if (Run is not { Glut: true, Loaded: true } r) return 0;
-        if (r.To == CityId) city.Stock[r.Out] = city.Stock.GetValueOrDefault(r.Out) + r.Load;
+        if (r.To == CityId) { city.Stock[r.Out] = city.Stock.GetValueOrDefault(r.Out) + r.Load; Outbox.Add(CityAction.CityStock(r.Out, r.Load)); }
         else if (Towns.TryGetValue(r.To, out var m))
         {
             m.Catch(day);
             m.Stock[r.Out] = m.Stock.GetValueOrDefault(r.Out) + r.Load;
+            Outbox.Add(CityAction.TownStock(r.To, r.Out, r.Load));
         }
         Run = null;
         GlutsMoved++;
@@ -505,10 +387,13 @@ public sealed class Escort
     public int Sprung { get; set; }
     /// <summary>What's left of the wagon and its load (it's lost at 0).</summary>
     public double Wagon { get; set; } = 100;
+    /// <summary>What's known against this road ("a wagon lost on it this week"), if anything, and what that does to the pay.</summary>
+    public string? Known { get; set; }
+    public double Mult { get; set; } = 1;
 
     /// <summary>The next ambush, if the wagon has come far enough along the road for it.</summary>
     public bool AmbushDue(double along) => Sprung < Ambushes.Count && along >= Ambushes[Sprung];
 
     /// <summary>"dangerous", by how many bandits wait, and how often.</summary>
-    public string Danger => (Bandits * Ambushes.Count) switch { <= 2 => "a quiet road", <= 5 => "bandits about", <= 10 => "dangerous", _ => "deadly" };
+    public string Danger => ((Bandits * Ambushes.Count) switch { <= 2 => "a quiet road", <= 5 => "bandits about", <= 10 => "dangerous", _ => "deadly" }) + (Known is null ? "" : $"; known trouble: {Known}, {Mult:0.0}x pay");
 }

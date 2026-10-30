@@ -17,8 +17,10 @@ public partial class Main
     TradeBook _trade = new();
     Wagon? _wagon;
     double _caravanTick, _ambushAt = 120, _glutCheck = 5;
-    int _tradeDay;
     (int Left, bool Holding)? _loading;
+    /// <summary>The camp of caravan-robbers the hero's gone to clear, once they're near it: who's there.</summary>
+    List<Enemy>? _camp;
+    string? _campOf;
     Node3D? _sack;
 
     public TradeBook TradeLog => _trade;
@@ -36,6 +38,9 @@ public partial class Main
     {
         foreach (var s in _trade.OpenOldRoutes(_world, _city.Day))
             if (!_explored.Discovered.Contains(s.Id)) _explored.Rumored.Add(s.Id);
+        // Every trading place the company has found is on the roads (a save from before the roads were the city's knows them again).
+        foreach (var id in _explored.Discovered.ToList())
+            if (!_trade.Towns.ContainsKey(id) && _world.Find(id) is { } s && TownMarkets.Trades(s)) _trade.Market(s, _city.Day);
     }
 
     void AddCaravanYard()
@@ -81,7 +86,7 @@ public partial class Main
             yield break;
         }
         // Anyone out in the world can say what their place trades in; with your own wagon there, you can trade.
-        if (_world.Find(npc.HomeId) is not { } home || !TownMarket.Trades(home) || person.GlobalPosition.DistanceTo(_player.GlobalPosition) > 8) yield break;
+        if (_world.Find(npc.HomeId) is not { } home || !TownMarkets.Trades(home) || person.GlobalPosition.DistanceTo(_player.GlobalPosition) > 8) yield break;
         var m = _trade.Market(home, _city.Day);
         yield return ($"What does {home.Name} trade in?", () => Say(person,
             $"We make {m.MakesText}, and sell it cheap. What we're short of is {m.WantsText}: bring us those and we pay well."));
@@ -102,6 +107,10 @@ public partial class Main
         }
         if (t.Run is null && !t.WagonOut && t.Guarding is null)
             yield return ("Any caravans that need a guard?", () => OfferGuardWork(person));
+        if (_city.Roads.Troubles.Count > 0)
+            yield return ($"Trouble on the roads? ({_city.Roads.Troubles.Count})", () => OfferTroubles(person));
+        if (t.Hunting is { } hunting && _city.Roads.Troubles.FirstOrDefault(x => x.Id == hunting) is { } going)
+            yield return ("About that camp...", () => Say(person, $"{going.By} took the caravan from {going.TownName}; they're camped off that road, {Direction(person.GlobalPosition, (going.X, going.Z))} of here, {going.Bandits} of them. {going.Bounty} crowns when they're cleared."));
         if (t.Run is { } r)
             yield return ("About my run...", () => Say(person, r.Returning
                 ? $"You've {r.ToName}'s {CityEconomy.Info(r.Back).Name} aboard. Bring it home, here, to the yard."
@@ -245,7 +254,6 @@ public partial class Main
         var there = r.To == TradeBook.CityId ? at.DistanceTo(YardAt with { Y = at.Y }) < 20 : _world.Find(r.To) is { } to && to.DistanceTo(at.X, at.Z) < to.Radius + 25;
         if (!there) return;
         var pay = _trade.DeliverGlut(_city, _city.Day);
-        if (r.To == TradeBook.CityId) Share(CityAction.Cargo(r.Out, Math.Min(10, r.Load)));
         _player.Crowns += pay;
         _city.Renown += 2;
         Sound.Ui("coin", -2);
@@ -272,7 +280,7 @@ public partial class Main
     /// <summary>The yard's caravans along its routes, each wanting a guard: pick one, and see it through.</summary>
     void OfferGuardWork(Person master)
     {
-        if (!_trade.Seasoned && _trade.ShortRoad() is { } first)
+        if (!_trade.Seasoned && _trade.ShortRoad(_city.Day) is { } first)
         {
             _hud.Talk(Who(master.Npc),
                 $"New, are you? Everyone starts somewhere. The city's wagon for {first.ToName} goes out today, and it's a short road: a couple of bandits at most, if they bother. Walk beside it, keep them off the load, and the {first.Pay} crowns are yours. Do that, and I'll trust you with the long roads once you've made a name.",
@@ -282,15 +290,19 @@ public partial class Main
         }
         // The short road goes out every day, for anyone; the long roads are for those who've made a name.
         var options = new List<(string, Action)>();
-        if (_trade.ShortRoad() is { } shortRoad)
+        var shortRoad = _trade.ShortRoad(_city.Day);
+        if (shortRoad is not null)
             options.Add(($"The short road to {shortRoad.ToName}: {shortRoad.Pay} crowns ({shortRoad.Danger})", () => StartGuarding(master, shortRoad)));
         var seasoned = _player.Hero.Level >= TradeBook.GuardLevel;
-        if (seasoned)
-            options.AddRange(_trade.Escorts(_player.Hero.Level).Select(e => ($"To {e.ToName}, {Direction(YardAt, (e.X, e.Z))}: {e.Pay} crowns ({e.Danger})", (Action)(() => StartGuarding(master, e)))));
+        var escorts = seasoned ? _trade.Escorts(_player.Hero.Level, _city.Day).ToList() : [];
+        options.AddRange(escorts.Select(e => ($"To {e.ToName}, {Direction(YardAt, (e.X, e.Z))}: {e.Pay} crowns ({e.Danger})", (Action)(() => StartGuarding(master, e)))));
         options.Add(("Not today.", () => Say(master, "The roads will still be there.")));
-        _hud.Talk(Who(master.Npc), seasoned
+        // Known danger pays: a road that's lost wagons, or has a camp on it, or a clan about, pays over the odds, and he says so.
+        var known = (shortRoad is { Known: not null } ? [shortRoad] : Enumerable.Empty<Escort>()).Concat(escorts.Where(e => e.Known is not null)).DistinctBy(e => e.To).ToList();
+        var warning = known.Count == 0 ? "" : " " + string.Join(" ", known.Select(e => $"The road to {e.ToName} is known trouble ({e.Known}): I'm paying {e.Mult:0.0} times the rate on it, and I'll want the wagon back."));
+        _hud.Talk(Who(master.Npc), (seasoned
             ? "The city's caravans go out along every road to every place we know, and the bandits know it. I pay guards by the road: the further, the more, and more again for someone who's made a name."
-            : $"The short road's yours any day you want it. The long roads I don't give to anyone without some steel in them: come back at level {TradeBook.GuardLevel}.", [.. options]);
+            : $"The short road's yours any day you want it. The long roads I don't give to anyone without some steel in them: come back at level {TradeBook.GuardLevel}.") + warning, [.. options]);
     }
 
     void StartGuarding(Person master, Escort e)
@@ -474,7 +486,7 @@ public partial class Main
         foreach (var (g, n) in _trade.Cargo.Where(c => c.Value > 0).ToList())
             options.Add(($"Sell {n} {CityEconomy.Info(g).Name} (they pay {m.Pays(g)} a load{(m.Wants.Contains(g) ? ", and they want it" : "")})", () =>
             {
-                var crowns = (int)Math.Round(m.Sell(g, n) * PerkTrade);
+                var crowns = (int)Math.Round(_trade.SellAt(m, g, n) * PerkTrade);
                 _trade.Cargo.Remove(g);
                 _player.Crowns += crowns;
                 _trade.Profit += crowns;
@@ -490,9 +502,10 @@ public partial class Main
             {
                 var cost = m.Cost(g, n);
                 if (_player.Crowns < cost) { _hud.Toast("You can't afford it.", 3); return; }
-                _player.Crowns -= m.Buy(g, n);
-                _trade.Profit -= cost;
-                _trade.Cargo[g] = _trade.Cargo.GetValueOrDefault(g) + n;
+                var (paid, got) = _trade.BuyAt(m, g, n);
+                _player.Crowns -= paid;
+                _trade.Profit -= paid;
+                _trade.Cargo[g] = _trade.Cargo.GetValueOrDefault(g) + got;
                 _hud.Toast($"{cost} crowns for {n} {CityEconomy.Info(g).Name} ({_trade.Loaded}/{_trade.Capacity} aboard).", 4);
                 Save();
                 TradeHere(person, m);
@@ -528,6 +541,10 @@ public partial class Main
         if (_wagon is null && (_trade.Run is not null || _trade.WagonOut)) TakeWagon(_trade.WagonOut ? "horse" : null);
         TendRun();
         TendGuarding(0.5);
+        TendHunt();
+        // What the book did to the roads (places come to know, goods moved), told to the server.
+        foreach (var a in _trade.Outbox) Share(a);
+        _trade.Outbox.Clear();
         if ((_glutCheck -= 0.5) <= 0) { _glutCheck = 5; WatchGluts(); }
         // A loaded wagon out on the road draws bandits.
         if (_wagon is not null && (_trade.Run is not null || _trade.Loaded > 0) && new Vector2(_wagon.GlobalPosition.X, _wagon.GlobalPosition.Z).Length() > 400 && (_ambushAt -= 0.5) <= 0)
@@ -535,13 +552,84 @@ public partial class Main
             _ambushAt = 150 + _lootRng.Next(120);
             if (_lootRng.Chance(0.35)) Ambush();
         }
-        // Tristinwold's own caravans trade with the places it knows, a day at a time.
-        if (_city.Day != _tradeDay)
+    }
+
+    // ---- the camps of caravan-robbers ------------------------------------------------------------------------
+
+    /// <summary>The caravans lost lately, and the camps of whoever took them: Garrick pays to have them cleared.</summary>
+    void OfferTroubles(Person master)
+    {
+        var options = _city.Roads.Troubles.OrderBy(t => t.Day).Select(t =>
+            ($"{(t.Clan ? t.By : "Bandits")} on the road to {t.TownName}, {Direction(master.GlobalPosition, (t.X, t.Z))}: {t.Bandits} of them, {t.Wagons} wagon{(t.Wagons == 1 ? "" : "s")} taken. {t.Bounty} crowns.",
+             (Action)(() =>
+             {
+                 _trade.Hunting = t.Id;
+                 Sound.Ui("quest", -5);
+                 Say(master, $"They're camped off the road to {t.TownName}, {Direction(master.GlobalPosition, (t.X, t.Z))} of here, a little way to the side of it. {t.Bandits} of them{(t.Clan ? $", {t.By} by the look of what they left" : "")}. Clear them and {t.Bounty} crowns are yours, and the wagons roll again.");
+                 Save();
+             }))).ToList();
+        options.Add(("Not now.", () => Say(master, "They'll not clear themselves.")));
+        _hud.Talk(Who(master.Npc), _city.Roads.Troubles.Count == 1
+            ? "A caravan's been taken on the road, and the ones who took it are still out there, camped by it and waiting for the next. I'll pay to have them cleared off."
+            : $"{_city.Roads.Troubles.Count} caravans taken lately, and the ones who took them are still out there, camped by the roads and waiting for the next. I pay to have them cleared off.", [.. options]);
+    }
+
+    /// <summary>The camp the hero's gone for: it's there when they come near, and cleared when the last of them falls.</summary>
+    void TendHunt()
+    {
+        if (_trade.Hunting is not { } id) { ClearCamp(); return; }
+        var t = _city.Roads.Troubles.FirstOrDefault(x => x.Id == id);
+        if (t is null)
         {
-            if (_tradeDay != 0 && !_sharedCity)
-                foreach (var news in _trade.TradeDay(_city, _city.Day, _lootRng)) _hud.Log($"Tristinwold: {news}");
-            _tradeDay = _city.Day;
+            // Someone else cleared it, or they moved on.
+            _trade.Hunting = null;
+            ClearCamp();
+            _hud.Toast("Word from the yard: that camp's gone, cleared or moved on. Garrick's bounty with it.", 7);
+            return;
         }
+        var spot = new Vector3((float)t.X, 0, (float)t.Z);
+        var near = new Vector2(_player.GlobalPosition.X - spot.X, _player.GlobalPosition.Z - spot.Z).Length();
+        if (_camp is null || _campOf != id)
+        {
+            if (near > 120) return;
+            // Round their fire: bandits, or a clan's raiders, with a chief when there are enough of them.
+            _camp = [];
+            _campOf = id;
+            _terrain.EnsureAround(spot, 1);
+            for (var i = 0; i < t.Bandits; i++)
+            {
+                var a = i * Math.Tau / t.Bandits;
+                var at = spot + new Vector3((float)Math.Cos(a) * 4, 0, (float)Math.Sin(a) * 4);
+                var kind = i == 0 && t.Bandits >= 5 ? (t.Clan ? "raider_chief" : "bandit_chief") : t.Clan ? "raider" : "bandit";
+                var e = Enemy.Create(Bestiary.Get(kind), at with { Y = City.FloorAt(at) + 0.5f }, WorldGen.Danger(at.X, at.Z) * (1 + 0.05 * _player.Hero.Level));
+                AddEnemy(e);
+                _camp.Add(e);
+            }
+            _hud.Toast($"The camp: {t.Bandits} {(t.Clan ? t.By : "bandits")} round a fire, and the caravan's goods stacked behind them.", 7);
+            return;
+        }
+        if (near > 400) { ClearCamp(); return; } // walked away: they'll be there when you come back
+        if (_camp.Any(e => IsInstanceValid(e) && e.State != EnemyState.Dead)) return;
+        // Cleared: paid, known for it, and the road's open again (the server hears, so everyone's wagons roll).
+        DoCity(CityAction.Cleared(t.Id, _player.Company));
+        _trade.Hunting = null;
+        _player.Crowns += t.Bounty;
+        _city.Renown += 4;
+        _standing.Good(2, $"cleared {(t.Clan ? t.By : "the bandits")} off the road to {t.TownName}");
+        Sound.Ui("coin", -2);
+        _hud.Toast($"The camp's cleared. {t.Bounty} crowns from Garrick, and the road to {t.TownName} is open again.", 9);
+        _hud.Log($"Roads: cleared {(t.Clan ? t.By : "the bandits")} off the road to {t.TownName}.");
+        _camp = null;
+        _campOf = null;
+        Save();
+    }
+
+    void ClearCamp()
+    {
+        if (_camp is null) return;
+        foreach (var e in _camp) if (IsInstanceValid(e) && e.State != EnemyState.Dead) e.QueueFree();
+        _camp = null;
+        _campOf = null;
     }
 
     void Ambush()
@@ -565,6 +653,8 @@ public partial class Main
             yield return $"Starter work: the caravan yard by the west gate is hiring guards for the city's caravans. Ask Garrick Wain ({Direction(pos, (YardAt.X, YardAt.Z))})";
         if (_trade.Guarding is { } g && _guarded is not null)
             yield return $"Caravan guard: see the wagon safe to {g.ToName} ({Direction(pos, (g.X, g.Z))}), {g.Wagon:0}% of the load, {g.Pay} crowns";
+        if (_trade.Hunting is { } hunting && _city.Roads.Troubles.FirstOrDefault(x => x.Id == hunting) is { } camp)
+            yield return $"Garrick's bounty: clear {(camp.Clan ? camp.By : "the bandits")} camped off the road to {camp.TownName} ({Direction(pos, (camp.X, camp.Z))}), {camp.Bounty} crowns";
         if (_loading is { } l)
             yield return l.Holding
                 ? $"Caravan yard: load it onto the wagon ({Direction(pos, (YardWagon.X, YardWagon.Z))}). {l.Left} to go."

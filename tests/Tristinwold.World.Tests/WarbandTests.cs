@@ -53,7 +53,7 @@ public class WarbandTests
     {
         var clan = Warband.Near(0, 0, 6000).First(c => c.Targets(W).Count > 0);
         var place = clan.Where(W, Warband.Round - 10).Raiding!;
-        var market = TownMarket.For(place);
+        var market = TownMarkets.For(place);
         var before = market.Stock.Values.Sum();
         var taken = market.Plundered(1);
         Assert.True(taken > 0 && market.Stock.Values.Sum() < before * 0.6);

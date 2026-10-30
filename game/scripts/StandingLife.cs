@@ -218,7 +218,7 @@ public partial class Main
         _player.Crowns += share;
         _standing.Evil(6, $"rode with {w.Name} on {place.Name}");
         var seen = _standing.Caught(Standing.RaidSeen, Standing.RaidBounty, _lootRng, sure: CaughtSure);
-        if (_trade.Towns.TryGetValue(place.Id, out var m)) m.Plundered(_city.Day);
+        if (_trade.Towns.TryGetValue(place.Id, out var m)) { m.Plundered(_city.Day); Report(CityAction.Plundered(m.Id)); }
         _raiders.Record.Reckon(w, round);
         Sound.Ui("coin", -2);
         _hud.Toast(seen

@@ -130,4 +130,34 @@ public class SharedCityTests
         }
         finally { File.Delete(path); }
     }
+
+    [Fact]
+    public void The_roads_are_everyones_a_place_one_company_finds_is_on_every_companys_map_and_its_caravans_run_on_the_server()
+    {
+        var (server, _, wait) = Server();
+        server.Connect(Hi("Joe"));
+        server.Connect(Hi("Mira"));
+        var mill = new TownMarket { Id = "hamlet:mill", Name = "Millford", X = 800, Z = 100, Size = 0.35, Makes = [Good.Timber], Wants = [Good.Iron, Good.Fish, Good.Ale] };
+        foreach (var g in Enum.GetValues<Good>()) mill.Stock[g] = mill.Usual(g);
+        server.Handle("Joe", new CityTrade(CityAction.Know(mill)));
+        // Mira hears of it with the next city.
+        wait(1.5);
+        var outs = server.Tick();
+        var seen = To<CitySnapshot>(outs, "Mira").Last().City;
+        Assert.True(seen.Roads.Towns.ContainsKey("hamlet:mill"), "the place is on the shared roads");
+        Assert.Equal([Good.Timber], seen.Roads.Towns["hamlet:mill"].Makes);
+        // A day on the server: the city's caravans run to it, and everyone hears.
+        var day = new List<Outgoing>();
+        for (var i = 0; i < 12; i++) { wait(60); day.AddRange(server.Tick()); }
+        Assert.Contains(To<Notice>(day, "Mira"), n => n.Text.Contains("A caravan from Millford") || n.Text.Contains("wagon"));
+        Assert.True(To<CitySnapshot>(day, "Joe").Last().City.Roads.Wagons >= 1);
+        // Goods a hero moves out there, and a camp cleared, are done to everyone's roads.
+        server.Handle("Mira", new CityTrade(CityAction.TownStock("hamlet:mill", Good.Iron, 7)));
+        var city = server.City;
+        Assert.True(city.Roads.Towns["hamlet:mill"].Stock[Good.Iron] >= 7);
+        city.Roads.Troubles.Add(new RoadTrouble { Id = "road1", Town = "hamlet:mill", TownName = "Millford", Day = city.Day, Bounty = 60 });
+        var cleared = server.Handle("Joe", new CityTrade(CityAction.Cleared("road1", "Joe")));
+        Assert.Empty(city.Roads.Troubles);
+        Assert.Contains(To<Notice>(cleared, "Mira"), n => n.Text.Contains("Joe's company cleared the bandits off the road to Millford"));
+    }
 }

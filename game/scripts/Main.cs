@@ -810,7 +810,7 @@ public partial class Main : Node3D
             if (s.DistanceTo(pos.X, pos.Z) > s.Radius + (s.IsCity ? 150 : 60) || !_explored.Discovered.Add(s.Id)) continue;
             _explored.Rumored.Remove(s.Id);
             _hud.Toast($"Discovered {s.Name}, {(s.IsCity ? s.Epithet : s.What)}.");
-            if (TownMarket.Trades(s)) _trade.Market(s, _city.Day); // known now: its market is remembered, and Tristinwold's caravans find it
+            if (TownMarkets.Trades(s)) _trade.Market(s, _city.Day); // known now: its market is remembered, and Tristinwold's caravans find it
             _hud.Log(s.Story);
         }
     }
@@ -989,6 +989,7 @@ public partial class Main : Node3D
         if (scripted && Godot.FileAccess.FileExists(_savePath)) DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(_savePath));
         if (Choice.Account is not null) _savePath = $"user://saves/{string.Concat(Choice.Account.Where(char.IsLetterOrDigit))}-{company}.json";
         _city = CityEconomy.Start(_world.Seed);
+        _trade.Roads = _city.Roads;
         _pursuits = new PursuitBook();
         var stored = Choice.Save ?? (Choice.Account is null && Godot.FileAccess.FileExists(_savePath) ? Godot.FileAccess.GetFileAsString(_savePath) : null);
         if (stored is not null)
@@ -1012,6 +1013,7 @@ public partial class Main : Node3D
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
                 _city = save.City ?? CityEconomy.Start(_world.Seed);
+                _trade.Roads = _city.Roads;
                 _pursuits = save.Pursuits ?? new PursuitBook();
                 if (!scripted && save.Where is { } where) StandAt(where);
                 return;

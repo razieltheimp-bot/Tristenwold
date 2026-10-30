@@ -741,10 +741,35 @@ to the next. Every company sees the same clan in the same place at the same time
 **Every place you find keeps its own little economy.** A hamlet, a farmstead, a mine, an inn, a town: each makes a few
 goods (cheap there, because there's plenty) by its country and its trade, and is short of a few (dear there). Ask
 anyone who lives there what it trades in. Sell it what it lacks and it pays well, but every load fills it up and the
-price falls; left alone, its stores drift back a little each day. Once a place is known, its market is remembered with
-your company, and **Tristinwold's own caravans start trading with it**: every day the Exchange hears of a caravan from
-one of the places you've found, bringing what it makes and taking home what it wants, and Tristinwold's stores move
-with it.
+price falls; left alone, its stores drift back each day. Once a place is known, its market is **the city's**, kept
+with Tristinwold's own economy (on a server, everyone's: a place one company finds is on every company's map), and
+**Tristinwold's own caravans start trading with it**.
+
+**The roads run by the prices.** Every day the city's caravans go wherever the gap is worth the trip: a wagon for
+each good a place sells cheaper than the Exchange pays, or pays more for than the Exchange asks (three at most to a
+place), and one to each of the three places that have waited longest regardless. On a server the server runs them,
+so every company sees the same wagons move the same stock. The market board (F10, or the Exchange) says how many
+wagons are out and on how many roads.
+
+**Sell a hundred of anything and it's cheap for a couple of days.** Cartload goods were always priced by the city's
+stock; now gear is too: sell the Anvil Gate a hundred swords and a sword is worth under half for the next day or
+two, then the shops sell them down and the price climbs back; buy them out of something and it's dear until they
+restock. A glut of fish or iron clears the same way, in a few days rather than a season.
+
+**Traffic draws trouble.** Every caravan on a road takes its chances, and the odds follow what's on the road: more
+wagons, more risk; a warband in the town's country (the game tells the city when one is), far more; a camp already
+sitting uncleared on that road, more again. A caravan lost is a rumour at the Exchange the moment it happens
+("A caravan from Millford was sacked on the road by bandits: 4 loads of timber lost"), its goods never arrive, the
+road is **known trouble** for the week, and whoever took it is **camped off the road**, a third to two thirds of the
+way out, waiting for the next. Garrick Wain puts a **bounty** on every camp ("Trouble on the roads?"): take it, and
+it's on your tracker; walk up and they're there round their fire, bandits or the clan's raiders with a chief when
+there are enough of them; clear them and the bounty is yours, the city knows you for it, and the road is open again
+(the wagons roll; on a server everyone hears who cleared it). A camp nobody goes for moves on after six days, and
+takes any wagon that passes meanwhile.
+
+**Known danger pays.** Garrick pays guards over the odds on a road with known trouble, and says why: wagons lost
+on it this week, camps uncleared, a clan about, up to two and a half times the rate, with more bandits waiting at
+each ambush. Clear the camp and the pay settles.
 
 **The caravan yard** stands right up against the city wall south of the west gate, where the Watch can see it (it
 has its own post). It's a busy place: wagons standing waiting for teams and drivers, goods piled everywhere, three
@@ -1108,6 +1133,10 @@ own company, at their own pace. One server, usually run by the DM, holds the cit
   their Vann.
 - **Keystones.** Each company secretly gets a Keystone from its own party. Nobody knows who, until two
   Keystones end up in the same place and time stops around them.
+- **One economy, one set of roads.** Tristinwold's stock and prices, the markets of every place anyone has found,
+  the city's caravans, the camps of whoever robs them and Garrick's bounties are the server's: what any company
+  sells, buys, carts or clears is done to the one city, and its days (ten minutes each while anyone plays) run the
+  caravans for everyone.
 - **You see each other.** Every hero on the server walks about in everyone's world: their class look and
   character-page choices, where they are, which way they face, their walk and run, and every swing, spell
   and jump they make, a few times a second over the same link the rest of the server uses (TCP on a PC,

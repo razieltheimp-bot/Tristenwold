@@ -237,7 +237,7 @@ public partial class SelfTest(Main main) : Node
     async Task Explore()
     {
         var (p, w, hud, journal) = (main.PlayerNode, main.World, main.HudNode, main.Journal);
-        Check(w.AuthoredCities.Where(c => c.StartsKnown).All(c => main.Explored.Rumored.Contains(c.Id) || main.Explored.Discovered.Contains(c.Id)) && main.Explored.Rumored.Count == 4, "five cities are known from the start: Tristinwold, and four more on the map");
+        Check(w.AuthoredCities.Where(c => c.StartsKnown).All(c => main.Explored.Rumored.Contains(c.Id) || main.Explored.Discovered.Contains(c.Id)) && main.Explored.Rumored.Count >= 4, $"five cities are known from the start: Tristinwold, and four more on the map (with the old trade routes, {main.Explored.Rumored.Count} places heard of)");
 
         // 3. Walk north: the land streams in under you and the map fills in behind you.
         for (var z = -150f; z >= -1500; z -= 150) await Teleport(new Vector3(0, 0, z));
@@ -2431,7 +2431,7 @@ public partial class SelfTest(Main main) : Node
         Check(old.Count == 2 && trade.Routes.All(m => main.Explored.Rumored.Contains(m.Id) || main.Explored.Discovered.Contains(m.Id)),
             $"Tristinwold's old trade routes are open from the start: {string.Join(" and ", old)} (on the map)");
         Check(hud.Tracked.Any(t => t.StartsWith("Starter work: the caravan yard")), "and a starter's job on the tracker: the caravan yard is hiring guards");
-        var village = main.World.SettlementsNear(0, 0, 2500).Where(s => TownMarket.Trades(s) && !trade.Towns.ContainsKey(s.Id)).OrderBy(s => s.DistanceTo(0, 0)).First();
+        var village = main.World.SettlementsNear(0, 0, 2500).Where(s => TownMarkets.Trades(s) && !trade.Towns.ContainsKey(s.Id)).OrderBy(s => s.DistanceTo(0, 0)).First();
         await Teleport(new Vector3((float)village.X + 5, 0, (float)village.Z + 5));
         await Frames(30);
         Check(trade.Routes.Any(m => m.Id == village.Id) && trade.Routes.Count() == 3, $"finding {village.Name} opens a third trade route");
@@ -2594,6 +2594,42 @@ public partial class SelfTest(Main main) : Node
         main.Economy.NextDayAt = main.GuildBook.PlaySeconds;
         await Until(() => hud.Heard("A caravan from"), 6);
         Check(hud.Heard("A caravan from"), "a new day: Tristinwold's own caravans trade with the places you've found");
+
+        // A hundred of anything sold, and it's cheap for a couple of days (gear too, not only cartload goods).
+        var sword = Items.Get("iron_sword")!;
+        var full = main.Economy.Price(sword);
+        for (var i = 0; i < 100; i++) main.Economy.Sold("iron_sword", 1);
+        Check(main.Economy.Price(sword) <= full / 2, $"a hundred swords sold to the shops: a sword goes from {full} to {main.Economy.Price(sword)} crowns");
+
+        // A caravan lost on a road: known trouble. Garrick pays over the odds to guard it, and a bounty to clear the camp.
+        var ways = main.Economy.Roads;
+        var route = ways.Known.First();
+        ways.RaidersAbout(route.Id, main.Economy.Day, "the Bone Fang");
+        ways.Road(route.Id).Lost.Add(main.Economy.Day);
+        var camp = new RoadTrouble { Id = "road-test", Town = route.Id, TownName = route.Name, X = route.X * 0.5 + 60, Z = route.Z * 0.5, By = "bandits", Bandits = 3, Bounty = 80, Day = main.Economy.Day };
+        ways.Troubles.Add(camp);
+        await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+        main.Talk(Who("tristinwold/caravans"));
+        hud.Choose("Any caravans that need a guard");
+        var priced = hud.Options.FirstOrDefault(o => o.Contains(route.Name) && o.Contains("known trouble"));
+        Check(priced is not null && hud.TalkText.Contains("known trouble") && hud.TalkText.Contains("times the rate"), $"known danger pays: {priced}");
+        hud.EndTalk();
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Trouble on the roads") && hud.Options.Any(o => o.Contains(route.Name) && o.Contains("80 crowns")), "and he has a camp to clear: " + hud.Options.FirstOrDefault(o => o.Contains(route.Name)));
+        hud.Choose(hud.Options.First(o => o.Contains(route.Name) && o.Contains("80 crowns")));
+        await Frames(40);
+        Check(trade.Hunting == "road-test" && hud.Tracked.Any(t => t.StartsWith("Garrick's bounty")), "you take the bounty, and it's on the tracker");
+        hud.EndTalk();
+        await Teleport(new Vector3((float)camp.X + 25, 0, (float)camp.Z + 25));
+        bool AtCamp(Enemy e) => e.Kind.Id is "bandit" or "bandit_chief" && new Vector2(e.GlobalPosition.X - (float)camp.X, e.GlobalPosition.Z - (float)camp.Z).Length() < 12;
+        await Until(() => main.Enemies().Count(AtCamp) >= 3, 8);
+        var robbers = main.Enemies().Where(AtCamp).ToList();
+        Check(robbers.Count == 3 && hud.Heard("round a fire"), "the camp: three bandits round their fire");
+        var purseC = p.Crowns;
+        foreach (var r in robbers) await FightUntilDead(r, 60, chase: true);
+        await Until(() => trade.Hunting is null, 6);
+        Check(trade.Hunting is null && p.Crowns >= purseC + 80 && ways.Troubles.All(t => t.Id != "road-test") && hud.Heard("open again"),
+            $"cleared: +{p.Crowns - purseC} crowns from Garrick, and the road to {route.Name} is open again");
     }
 
     /// <summary>Far past the edge of every map: the land goes on, with its villages and dens, and lairs of its own.</summary>
@@ -2795,9 +2831,9 @@ public partial class SelfTest(Main main) : Node
         p.Crowns = 200;
         main.Talk(smith!);
         Check(main.HudNode.Choose("Let me see"), "the smith shows her wares");
+        var sword = main.ShopPriceFor(Items.Get("iron_sword")!); // their people's markup, the city's regard, their standing and their perks (and dearer once bought: one fewer on her rack)
         Check(main.HudNode.Choose("Iron Sword"), "and sells you an iron sword");
-        var sword = Shops.Charge(Items.Get("iron_sword")!.Value, p.Markup); // a human pays a little less
-        Check(pack.Count("iron_sword") == 1 && p.Crowns == 200 - sword, $"for {sword} crowns");
+        Check(pack.Count("iron_sword") == 1 && p.Crowns == 200 - sword, $"for {sword} crowns ({p.Crowns} left of 200)");
         main.HudNode.EndTalk();
 
         // Worn, it shows in your hand and makes you hit harder.

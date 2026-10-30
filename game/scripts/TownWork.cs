@@ -39,8 +39,19 @@ public partial class Main
         _city = s.City;
         _city.Renown = renown;
         _city.NextDayAt = _guilds.PlaySeconds + Math.Max(0, s.City.NextDayAt - s.Seconds);
+        _trade.Roads = _city.Roads; // the roads are the city's: everyone's
         _sharedCity = true;
     }
+
+    /// <summary>Does something to the city here and now, and on the server too.</summary>
+    public void DoCity(CityAction a)
+    {
+        _city.Apply(a);
+        Share(a);
+    }
+
+    /// <summary>Something already done to our copy of the city, told to the server.</summary>
+    public void Report(CityAction a) => Share(a);
 
     /// <summary>What we just did to our copy of the city, done to the server's too (on a server).</summary>
     void Share(CityAction a)
@@ -56,6 +67,8 @@ public partial class Main
 
     /// <summary>What a shopkeeper charges this hero: their people's markup, less what the city's regard is worth.</summary>
     double ShopMarkup => _player.Markup * (1 - _city.Discount) * _standing.PriceFactor * PerkShop;
+    /// <summary>What a shop would charge this hero for something today (for the self-test).</summary>
+    public int ShopPriceFor(Item item) => Shops.Charge(_city.Price(item), ShopMarkup);
 
     void AddTownWork()
     {

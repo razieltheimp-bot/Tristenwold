@@ -7,32 +7,32 @@ namespace Tristinwold.World.Tests;
 /// <summary>Every place out in the world keeps its own little market; the caravan yard sends wagons between them.</summary>
 public class CaravanTests
 {
-    static Settlement Village(WorldGen w) => w.SettlementsNear(0, 0, 2500).Where(TownMarket.Trades).OrderBy(s => s.DistanceTo(0, 0)).First();
+    static Settlement Village(WorldGen w) => w.SettlementsNear(0, 0, 2500).Where(TownMarkets.Trades).OrderBy(s => s.DistanceTo(0, 0)).First();
 
     [Fact]
     public void Each_place_makes_a_few_goods_cheaply_and_pays_well_for_what_it_lacks()
     {
         var w = WorldGen.Default;
-        var places = w.SettlementsNear(0, 0, 6000).Where(TownMarket.Trades).Take(30).ToList();
+        var places = w.SettlementsNear(0, 0, 6000).Where(TownMarkets.Trades).Take(30).ToList();
         Assert.NotEmpty(places);
         foreach (var s in places)
         {
-            var m = TownMarket.For(s);
+            var m = TownMarkets.For(s);
             Assert.InRange(m.Makes.Count, 1, 4);
             Assert.InRange(m.Wants.Count, 3, 4);
             Assert.Empty(m.Makes.Intersect(m.Wants));
             foreach (var g in m.Makes) Assert.True(m.Asks(g) < CityEconomy.Info(g).Worth, $"{s.Name} makes {g} but asks {m.Asks(g)}");
             foreach (var g in m.Wants) Assert.True(m.Pays(g) > CityEconomy.Info(g).Worth, $"{s.Name} wants {g} but pays {m.Pays(g)}");
-            Assert.Equal(m.Makes, TownMarket.For(s).Makes); // the same place is the same market for everyone
+            Assert.Equal(m.Makes, TownMarkets.For(s).Makes); // the same place is the same market for everyone
         }
-        Assert.True(places.Select(s => string.Join(",", TownMarket.For(s).Makes)).Distinct().Count() > 3, "every place trades in the same things");
-        Assert.DoesNotContain(w.SettlementsNear(0, 0, 6000).Where(s => s.Kind is SettlementKind.BanditCamp or SettlementKind.Den), TownMarket.Trades);
+        Assert.True(places.Select(s => string.Join(",", TownMarkets.For(s).Makes)).Distinct().Count() > 3, "every place trades in the same things");
+        Assert.DoesNotContain(w.SettlementsNear(0, 0, 6000).Where(s => s.Kind is SettlementKind.BanditCamp or SettlementKind.Den), TownMarkets.Trades);
     }
 
     [Fact]
     public void Selling_fills_its_stores_and_the_price_falls_then_the_days_bring_it_back()
     {
-        var m = TownMarket.For(Village(WorldGen.Default));
+        var m = TownMarkets.For(Village(WorldGen.Default));
         var want = m.Wants[0];
         var first = m.Pays(want);
         var crowns = m.Sell(want, 12);
@@ -85,7 +85,12 @@ public class CaravanTests
         var copy = JsonSerializer.Deserialize<TradeBook>(JsonSerializer.Serialize(book))!;
         Assert.Equal(CaravanRank.Entrepreneur, copy.Rank);
         Assert.Equal(5, copy.Cargo[Good.Iron]);
-        Assert.Equal(book.Towns.Keys, copy.Towns.Keys);
+        // The markets out there are the city's now (everyone's, on a server): they travel with it, not the book.
+        Assert.Empty(copy.Towns);
+        var city = CityEconomy.Start(1);
+        foreach (var a in book.Outbox) city.Apply(a);
+        var cityCopy = JsonSerializer.Deserialize<CityEconomy>(JsonSerializer.Serialize(city))!;
+        Assert.Equal(book.Towns.Keys, cityCopy.Roads.Towns.Keys);
     }
 
     [Fact]
@@ -93,13 +98,13 @@ public class CaravanTests
     {
         var w = WorldGen.Default;
         var city = CityEconomy.Start(1);
-        var book = new TradeBook();
-        Assert.Empty(book.TradeDay(city, 1, new Rng(1))); // knows nowhere yet
+        var book = new TradeBook { Roads = city.Roads };
+        Assert.Empty(city.Roads.TradeDay(city, 1, new Rng(1))); // knows nowhere yet
         var s = Village(w);
         var m = book.Market(s, 1);
         var made = m.Makes.ToDictionary(g => g, g => city.Stock[g]);
-        var news = book.TradeDay(city, 2, new Rng(1));
-        Assert.Contains($"A caravan from {s.Name}", Assert.Single(news));
+        var news = city.Roads.TradeDay(city, 2, new Rng(1));
+        Assert.Contains(news, n => n.StartsWith($"A caravan from {s.Name}"));
         Assert.Contains(m.Makes, g => city.Stock[g] > made[g]);
     }
 
@@ -109,7 +114,7 @@ public class CaravanTests
         var w = WorldGen.Default;
         var book = new TradeBook();
         Assert.Empty(book.Routes);
-        var places = w.SettlementsNear(0, 0, 2500).Where(TownMarket.Trades).OrderBy(s => s.DistanceTo(0, 0)).Take(5).ToList();
+        var places = w.SettlementsNear(0, 0, 2500).Where(TownMarkets.Trades).OrderBy(s => s.DistanceTo(0, 0)).Take(5).ToList();
         foreach (var (s, i) in places.Select((s, i) => (s, i)))
         {
             book.Market(s, 1);
@@ -118,9 +123,10 @@ public class CaravanTests
         Assert.Equal(places.Select(s => s.Id).Order(), book.Routes.Select(m => m.Id).Order());
         // Day by day, every route gets its turn.
         var city = CityEconomy.Start(1);
+        foreach (var a in book.Outbox) city.Apply(a);
         var rng = new Rng(2);
-        for (var day = 2; day < 6; day++) book.TradeDay(city, day, rng);
-        Assert.All(book.Routes, m => Assert.True(m.LastTrade > 1, $"{m.Name} never traded"));
+        for (var day = 2; day < 6; day++) city.Roads.TradeDay(city, day, rng);
+        Assert.All(city.Roads.Known, m => Assert.True(city.Roads.Road(m.Id).LastTrade > 1, $"{m.Name} never traded"));
     }
 
     [Fact]
@@ -129,7 +135,7 @@ public class CaravanTests
         var w = WorldGen.Default;
         var book = new TradeBook();
         Assert.Empty(book.Escorts(5)); // nowhere known, no caravans to guard
-        foreach (var s in w.SettlementsNear(0, 0, 3500).Where(TownMarket.Trades).Take(8)) book.Market(s, 1);
+        foreach (var s in w.SettlementsNear(0, 0, 3500).Where(TownMarkets.Trades).Take(8)) book.Market(s, 1);
         var low = book.Escorts(3).ToList();
         var high = book.Escorts(12).ToList();
         Assert.NotEmpty(low);
@@ -167,7 +173,7 @@ public class CaravanTests
         var w = WorldGen.Default;
         var book = new TradeBook();
         var city = CityEconomy.Start(1);
-        var places = w.SettlementsNear(0, 0, 3000).Where(TownMarket.Trades).OrderBy(s => s.DistanceTo(0, 0)).Take(4).ToList();
+        var places = w.SettlementsNear(0, 0, 3000).Where(TownMarkets.Trades).OrderBy(s => s.DistanceTo(0, 0)).Take(4).ToList();
         foreach (var s in places) book.Market(s, 1);
         Assert.Empty(book.Gluts(city));
 

@@ -81,6 +81,7 @@ public partial class Main
                 while (left > 0 && _player.Pack.Take(id)) { left--; spent.Add(Items.Get(id)?.Name ?? id); }
         }
         if (!m.Steady(_city.Day)) { Say(keeper, $"{m.Name}'s book is steadied for today already."); return; }
+        Report(CityAction.Steadied(m.Id));
         _standing.Good(1, $"steadied {m.Name}'s market");
         Sound.Ui("quest", -4);
         Say(keeper, $"Done: {string.Join(", ", spent)} into salts, tinctures and a quiet word in the right ears. {m.Name}'s gluts and shortages ease, and its prices with them, for the day.");
@@ -182,7 +183,7 @@ public partial class Main
         var take = 60 + 12 * _player.Hero.Level;
         _player.Crowns += take;
         var t = _standing.Tracker;
-        if (t is not null && _trade.Towns.TryGetValue(t.TownId, out var m)) m.Plundered(_city.Day);
+        if (t is not null && _trade.Towns.TryGetValue(t.TownId, out var m)) { m.Plundered(_city.Day); Report(CityAction.Plundered(m.Id)); }
         _standing.Evil(5, $"ambushed a wagon bound for {t?.TownName ?? "the road"}");
         var seen = _standing.Caught(Standing.AmbushSeen, Standing.RaidBounty, _lootRng, sure: CaughtSure);
         Sound.Ui("coin", -2);

@@ -223,9 +223,12 @@ public partial class Raiders(Main main) : Node
             foreach (var w in Warband.Near(m.X, m.Z, 0))
             {
                 if (Record.IsBroken(w, t)) continue;
+                // A clan in the town's country: the road there is known trouble, and the city's caravans on it take their chances.
+                if (main.Economy.Roads.Road(m.Id).RaidersDay != day) main.DoCity(CityAction.Raiders(m.Id, w.Name));
                 var (round, _, _, raiding) = w.Where(main.World, t);
                 if (raiding?.Id != m.Id || !Record.Reckon(w, round)) continue;
                 var loads = m.Plundered(day);
+                main.Report(CityAction.Plundered(m.Id));
                 main.HudNode.Toast($"Word from the road: {w.Name} under {w.Chief} raided {m.Name} and carried off {loads} loads from its stores.", 8);
                 main.HudNode.Log($"Raiders: {w.Name} plundered {m.Name}.");
             }
