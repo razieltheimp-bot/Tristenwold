@@ -704,7 +704,9 @@ few steps and back where the way is clear; talking to someone holds them still, 
 enemy wear bodies baked from MakeHuman's base mesh (CC0) with the Humanizer tool, one for every
 people, sex and stage of life, on Godot's humanoid skeleton, moved by KayKit's retargeted move set, with faces,
 eyes, hair, real clothes dyed by trade, a medieval kit built to each body (belts, cuirasses, jerkins, robes, hoods,
-caps, cloaks), heads that turn to you, and gear forged to real size in real materials. The character page then
+caps, cloaks, pirates' bandanas), heads that turn to you, and gear forged to real size in real materials. The cloth
+of that kit hangs rather than stands: tabards, cloaks, hoods and kerchief ends are curved sheets with a flare to the
+hem and a few soft folds, in a weave that sways a little as its wearer moves. The character page then
 builds you from them: people, sex, age, face, eyes, hair and colour, hood or cap, clothes, skin, height, build,
 horns. The character page switches between the two the moment the setting changes. `--humans` asks for the bodies
 at any setting; `tools/humans/` has the baking notes; `--shots DIR --town --faces --humans` takes close-ups.
