@@ -169,6 +169,12 @@ public partial class Main : Node3D
             var mesh = model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().First();
             var verts = (mesh.Mesh as ArrayMesh)!.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
             GD.Print($"  body: {verts.Length} verts, top {verts.Max(v => v.Y):0.000}, front (max z) {verts.Max(v => v.Z):0.000}, back {verts.Min(v => v.Z):0.000}; surfaces {string.Join(", ", Enumerable.Range(0, mesh.Mesh.GetSurfaceCount()).Select(k => mesh.Mesh.SurfaceGetMaterial(k)?.ResourceName ?? "-"))}");
+            var headTop = verts.Max(v => v.Y);
+            foreach (var band in new[] { 0.02f, 0.05f, 0.1f, 0.15f, 0.2f, 0.3f })
+            {
+                var inBand = verts.Where(v => v.Y > headTop - band).ToList();
+                GD.Print($"    within {band:0.00} of the top: {inBand.Count} verts, x {inBand.Min(v => v.X):0.000}..{inBand.Max(v => v.X):0.000}, z {inBand.Min(v => v.Z):0.000}..{inBand.Max(v => v.Z):0.000}");
+            }
             model.Free();
         }
         // KayKit's knight: where its hand slot sits and how its sword lies in it, to put real gear in a real hand the same way.

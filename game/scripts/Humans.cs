@@ -742,7 +742,7 @@ public partial class Figure
 public partial class HumanGaze : SkeletonModifier3D
 {
     /// <summary>Degrees the head is tipped forward from its clip, always: the clips look up on a real neck.</summary>
-    public const float Level = -14;
+    public const float Level = -28;
     public Node3D? Watching { get; set; }
     public float Range { get; set; } = 7;
     int _head = -1;
