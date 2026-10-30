@@ -151,7 +151,9 @@ public static class Models
         foreach (var m in model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>())
             for (var s = 0; s < m.GetSurfaceOverrideMaterialCount(); s++)
             {
-                if ((m.GetActiveMaterial(s)?.Duplicate() ?? new StandardMaterial3D()) is not BaseMaterial3D mat) continue;
+                var active = m.GetActiveMaterial(s);
+                if (active is ShaderMaterial) { m.SetSurfaceOverrideMaterial(s, Styled.Painted(active, tint, glow > 0 ? "#" + tint.ToHtml(false) : null, glow)); continue; }
+                if ((active?.Duplicate() ?? new StandardMaterial3D()) is not BaseMaterial3D mat) continue;
                 mat.AlbedoColor = tint;
                 if (glow > 0) { mat.EmissionEnabled = true; mat.Emission = tint; mat.EmissionEnergyMultiplier = glow; }
                 m.SetSurfaceOverrideMaterial(s, mat);
@@ -441,32 +443,12 @@ public partial class Figure : Body
 
     // ---- shading -------------------------------------------------------------------------------
 
-    static readonly Dictionary<Material, Material> Shaded = [];
-
     /// <summary>
     /// Takes the plastic off: KayKit's colours with a soft rim of light round the edges (so a figure stands out
     /// against what's behind it, as people do in daylight) and a matte, cloth-and-skin surface instead of a sheen.
     /// Each material is done once and shared.
     /// </summary>
-    static void Shade(Node3D model)
-    {
-        foreach (var m in model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>())
-            for (var i = 0; i < m.GetSurfaceOverrideMaterialCount(); i++)
-            {
-                if (m.GetActiveMaterial(i) is not BaseMaterial3D original) continue;
-                if (!Shaded.TryGetValue(original, out var done))
-                {
-                    var mat = (BaseMaterial3D)original.Duplicate();
-                    mat.RimEnabled = true;
-                    mat.Rim = 0.3f;
-                    mat.RimTint = 0.65f;
-                    mat.Roughness = Mathf.Max(mat.Roughness, 0.7f);
-                    mat.MetallicSpecular = 0.35f;
-                    Shaded[original] = Shaded[mat] = done = mat;
-                }
-                m.SetSurfaceOverrideMaterial(i, done);
-            }
-    }
+    static void Shade(Node3D model) => Styled.Apply(model); // steel, skin and cloth read from the palette, with grain and bump
 
     // ---- a hero's own look ---------------------------------------------------------------------
 

@@ -21,9 +21,9 @@ public static class Humans
 {
     const string Folder = "res://assets/humans/";
 
-    /// <summary>Whether the bodies are here and wanted: on a PC they're the people of the game (the Low setting turns
-    /// them off); never on a phone, which hasn't the files.</summary>
-    public static bool Enabled { get; set; } = Available && !OS.HasFeature("mobile");
+    /// <summary>Whether the bodies are wanted: an option (--humans), off by default. The cartoon figures are the game's
+    /// look, on every screen; the baked bodies are kept for anyone who wants to try them on a PC.</summary>
+    public static bool Enabled { get; set; } = Available && !OS.HasFeature("mobile") && OS.GetCmdlineUserArgs().Contains("--humans");
     public static bool Available => ResourceLoader.Exists(Folder + "moves.glb") && ResourceLoader.Exists(Folder + "human_male_adult.glb");
 
     /// <summary>The peoples in the order the bodies were baked (tools/humans/bake_humans.gd), which decided each one's hair.</summary>

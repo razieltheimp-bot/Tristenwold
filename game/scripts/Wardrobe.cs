@@ -64,6 +64,7 @@ public static class Wardrobe
             Sources[parts[0]] = source = Models.Scene($"characters/{parts[0]}.glb")?.Instantiate() as Node3D;
         if (source?.FindChild(parts[1], true, false) is not MeshInstance3D original) return null;
         var copy = new MeshInstance3D { Mesh = original.Mesh, Transform = original.Transform, Name = $"Worn_{item.Id}" };
+        Styled.Apply(copy);
         if (item.Tint is { } tint) Paint(copy, new Color(tint), item.Metal, item.Glow);
         return copy;
     }
@@ -73,13 +74,7 @@ public static class Wardrobe
     static void Paint(MeshInstance3D m, Color tint, bool metal, string? glow)
     {
         for (var s = 0; s < m.GetSurfaceOverrideMaterialCount(); s++)
-        {
-            if ((m.GetActiveMaterial(s)?.Duplicate() ?? new StandardMaterial3D()) is not BaseMaterial3D mat) continue;
-            mat.AlbedoColor = tint;
-            if (metal) { mat.Metallic = 0.75f; mat.Roughness = 0.35f; mat.MetallicSpecular = 0.7f; }
-            if (glow is not null) { mat.EmissionEnabled = true; mat.Emission = new Color(glow); mat.EmissionEnergyMultiplier = 0.9f; }
-            m.SetSurfaceOverrideMaterial(s, mat);
-        }
+            m.SetSurfaceOverrideMaterial(s, Styled.Painted(m.GetActiveMaterial(s), tint, glow, glow is null ? 0 : 0.9f, metal ? true : null));
     }
 
     /// <summary>The Goblin King's crown, cut down to a hero's head: a gold band and its spikes, a red stone at the front.</summary>

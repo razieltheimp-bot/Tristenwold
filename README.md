@@ -689,41 +689,25 @@ there (E) for its guards and its strongbox, as the Saboteur does with a tracking
 line has four ranks, each pays, and each is infamy: a name the shops and the townsfolk read. `--selftest
 --shadows-only` walks through the lot.
 
-### Realistic people
+### The figures, and the realistic bodies as an option
 
-On a PC, Tristinwold's people are real: the hero, the townsfolk, the guards and the Watch, the bandits, pirates and
-raiders, the company's marines, the squires and apprentices who follow a hero, and the heroes of everyone else on the
-shared world. Their bodies are baked from MakeHuman's base mesh (CC0) with the Humanizer tool, one for every people,
-sex and stage of life (a stocky dwarf, a towering half-giant, a goblin child, an elder human), on Godot's humanoid
-skeleton. KayKit's whole move set (every walk, swing, spell, fall and gesture) is retargeted onto that skeleton, so
-they move exactly as the figures did. They have faces: MakeHuman's skin textures (an age, a face and a sex each,
-tinted for the people: an orc's green, an elf's pallor), eyes, brows, lashes and a head of hair fitted to each face.
-They wear real clothes, baked onto each body from MakeHuman's own (CC0): a shirt, trousers and shoes, dyed by trade
-and by class (a guard's grey, a priest's white, a pirate's red, a paladin's mail, a wizard's blue, a ranger's green
-with the hood up), with the body under them painted the same so no seam shows. What they carry is forged to real
-size in real materials (see below). Nothing of the cartoon figures is mixed in: the undead, the imps and the golems
-keep their own shapes, since they were never people. Nor do they stand like posts: every few seconds someone shifts
-their weight and turns, makes a small gesture, or takes a few steps and back where the way is clear, and their head
-turns to follow you when you come near; talking to someone holds them still, facing you.
+Tristinwold's people are KayKit's figures (CC0): the knight, the mage, the rogues, the barbarian and the rest,
+mixed and matched in the character page, on every screen from the phone to the PC. They wear a material of their
+own now rather than KayKit's flat palette as it comes: each swatch of the palette is read for what it stands for,
+the greys as brushed steel with a metal sheen and scratches, the warm tones as skin with a little scattering,
+everything else as cloth and leather with a fine weave and a bump to it, laid on from every side so nothing is
+stretched. Worn gear and tints paint through the same material. What they carry is KayKit's own kit. Townsfolk
+don't stand like posts: every few seconds someone shifts their weight and turns, makes a small gesture, or takes a
+few steps and back where the way is clear; talking to someone holds them still, facing you.
 
-**Real gear.** The kit in every real hand is built to real proportions in physically based materials rather than
-the flat colours of the cartoon figures: a sword is a fullered, tapered steel blade with a crossguard, a wrapped
-grip and a pommel; an axe a forged head on an ash haft; a knife, a staff with a lit stone, a wand, a crossbow with
-its string, a planked round shield with an iron rim and boss, a steel heater with a painted badge, a pewter mug, a
-spellbook. Gear you wear is forged the same way, in its own metal (steel bright, dragonbone pale, a cinder axe black
-with embers), and goes into the hand it belongs in: a blade along the thumb, edge to the knuckles; a shield on the
-back of the forearm. Body armour dyes the shirt (steel for mail and plate); a helm paints a cap.
-
-**Making yourself.** The character page builds a hero from the same pieces: your people, your sex and your age pick
-the body; then the face the skin is painted from (fair, olive or dark, or your people's own mix), the colour of your
-eyes, a hair style (any your sex's bodies were made with, borrowed from the body that has it, or shaved) and its
-colour, a hood or a cap, your clothes' colour over the class's cut, your skin tone, height and build, and for
-dragonkind the horns. The class decides what you carry (a real crossbow in a real hand) and what cut you wear.
-Gear you put on shows the same way: a sword or an axe goes into the hand, body armour paints the tunic in its
-colour (and metal, if it's mail or plate), a helm paints a cap. Old characters keep their look and simply stand in a
-man's body until restyled. Where the bodies aren't (the phone build) or the setting is Low, the KayKit figures stand
-in, with the older head-body-arms-legs choices. `--shots DIR --town --faces --humans` takes close-ups of a few of the
-townsfolk; `tools/humans/` has the baking notes.
+**Realistic bodies, if you want them.** A PC can run with `--humans`, and then the hero, the townsfolk, the guards
+and every human enemy wear bodies baked from MakeHuman's base mesh (CC0) with the Humanizer tool, one for every
+people, sex and stage of life, on Godot's humanoid skeleton, moved by KayKit's retargeted move set, with faces,
+eyes, hair, real clothes dyed by trade, a medieval kit built to each body (belts, cuirasses, jerkins, robes, hoods,
+caps, cloaks), heads that turn to you, and gear forged to real size in real materials. The character page then
+builds you from them: people, sex, age, face, eyes, hair and colour, hood or cap, clothes, skin, height, build,
+horns. It's an option, off by default, since the figures read better on a tablet. `tools/humans/` has the baking
+notes; `--shots DIR --town --faces --humans` takes close-ups.
 
 ### Creatures that stand in the world
 
