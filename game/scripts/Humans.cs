@@ -390,6 +390,9 @@ public partial class Figure
         f._skeleton = skeleton;
         f._garmentLook = look;
         if (f._source is { } src && src.GetSurfaceCount() > 0) { var vs = src.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array(); if (vs.Length > 0) f._top = vs.Max(v => v.Y); }
+        // A cap or a hood in the kit covers the hair: it's put away, and the scalp painted its colour, so nothing pokes through the steel.
+        if (Garments.For(look).Head is "cap" or "hood" && garb.Outfit.Cap is null)
+            garb = garb with { Outfit = garb.Outfit with { Cap = Garments.For(look).Head == "cap" ? garb.Outfit.Trousers.Darkened(0.2f) : garb.Outfit.Tunic.Darkened(0.25f) } };
         f.Redress(garb);
         f.Regarment(null, null);
         // The move set, told where its skeleton is.
@@ -742,7 +745,7 @@ public partial class Figure
 public partial class HumanGaze : SkeletonModifier3D
 {
     /// <summary>Degrees the head is tipped forward from its clip, always: the clips look up on a real neck.</summary>
-    public const float Level = -28;
+    public const float Level = 22; // positive tips the face down: the clips hold a real head tipped back about so much
     public Node3D? Watching { get; set; }
     public float Range { get; set; } = 7;
     int _head = -1;

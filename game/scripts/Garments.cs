@@ -200,9 +200,10 @@ public static class Garments
             {
                 var head = Hang(sk, "Head", made);
                 var mat = helm is { } h ? Armoury.Metal(h, 0.42f) : steel;
-                head.AddChild(Part(new SphereMesh { Radius = 0.118f, Height = 0.236f, RadialSegments = 24, Rings = 12 }, mat, new Vector3(0, m.Top - 0.09f, -0.01f), scale: new Vector3(1, 0.8f, 1.05f)));
-                head.AddChild(Part(new TorusMesh { InnerRadius = 0.105f, OuterRadius = 0.128f, Rings = 28, RingSegments = 8 }, Armoury.Iron, new Vector3(0, m.Top - 0.11f, -0.01f), scale: new Vector3(1, 1.4f, 1.05f))); // the rim
-                head.AddChild(Part(new BoxMesh { Size = new Vector3(0.016f, 0.08f, 0.02f) }, Armoury.Iron, new Vector3(0, m.Top - 0.13f, 0.11f))); // a nasal
+                // Sits on the crown like a skullcap: its rim just above the brows and ears, the dome over the top of the head.
+                head.AddChild(Part(new SphereMesh { Radius = 0.122f, Height = 0.244f, RadialSegments = 24, Rings = 12 }, mat, new Vector3(0, m.Top - 0.075f, -0.012f), scale: new Vector3(1, 0.85f, 1.05f)));
+                head.AddChild(Part(new TorusMesh { InnerRadius = 0.11f, OuterRadius = 0.132f, Rings = 28, RingSegments = 8 }, Armoury.Iron, new Vector3(0, m.Top - 0.1f, -0.012f), scale: new Vector3(1, 1.4f, 1.05f))); // the rim
+                head.AddChild(Part(new BoxMesh { Size = new Vector3(0.016f, 0.08f, 0.02f) }, Armoury.Iron, new Vector3(0, m.Top - 0.125f, 0.112f))); // a nasal
                 break;
             }
             case "hat":
