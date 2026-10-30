@@ -17,9 +17,9 @@ dest_files=["res://.godot/imported/bronze.png-5f8b575edcc2fe770aa424786b6a87f6.s
 
 [params]
 
-compress/mode=2
+compress/mode=1
 compress/high_quality=false
-compress/lossy_quality=0.7
+compress/lossy_quality=0.85
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1

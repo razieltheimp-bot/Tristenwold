@@ -19,7 +19,7 @@ dest_files=["res://.godot/imported/plaster_nor.jpg-8133e3bfbdc96a49a6ccbb83c4fed
 
 compress/mode=2
 compress/high_quality=false
-compress/lossy_quality=0.7
+compress/lossy_quality=0.85
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1

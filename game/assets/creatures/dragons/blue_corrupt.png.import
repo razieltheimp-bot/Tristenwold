@@ -17,9 +17,9 @@ dest_files=["res://.godot/imported/blue_corrupt.png-3fc72d97e7cdb806628a3ec18380
 
 [params]
 
-compress/mode=2
+compress/mode=1
 compress/high_quality=false
-compress/lossy_quality=0.7
+compress/lossy_quality=0.85
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1

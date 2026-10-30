@@ -19,7 +19,7 @@ dest_files=["res://.godot/imported/bark_nor.jpg-1b13371e54323b0189776a3b8688a790
 
 compress/mode=2
 compress/high_quality=false
-compress/lossy_quality=0.7
+compress/lossy_quality=0.85
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1

@@ -17,9 +17,9 @@ dest_files=["res://.godot/imported/white_corrupt_glow.png-9a0c0dbd5d7fd3610c464e
 
 [params]
 
-compress/mode=2
+compress/mode=1
 compress/high_quality=false
-compress/lossy_quality=0.7
+compress/lossy_quality=0.85
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
