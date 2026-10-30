@@ -1864,7 +1864,7 @@ public partial class SelfTest(Main main) : Node
         hud.EndTalk();
         await Frames(5);
         Check(main.WatchNode.Guards.All(g => g.Allied), "the Watch stands down");
-        Check(s.WhyNotWatch == "there's a price on your head", "but the Watch won't have you back while there's a price on your head: a double life lasts until you're seen");
+        Check(s.WhyNotWatch is null && !s.Watch.In, "struck off when you were seen, but with the price paid the Watch would have you back, clansman or not: a double life lasts until you're caught");
 
         // The guilds' stories have a good choice and a wicked one, and the town gossips about what you've done.
         Check(Guilds.Drama.All(d => d.Choices.Any(c => c.Good) && d.Choices.Any(c => c.Evil)), $"every guild story ({Guilds.Drama.Count}) has a good choice and a wicked one");
