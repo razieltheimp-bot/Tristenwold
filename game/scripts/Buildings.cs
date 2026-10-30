@@ -30,7 +30,35 @@ public static class Buildings
             body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size }, Position = centre });
         body.SetMeta("height", design.Height * scale);
         parent.AddChild(body);
+        if (HasInside(KindFor(kind)))
+            Doors.Add((body, KindFor(kind), seed, design.Solids.Max(s => s.Centre.Z + s.Size.Z / 2) * scale));
         return body;
+    }
+
+    /// <summary>The buildings you can walk into, and where each one's door is (on the front, +Z, in the middle).</summary>
+    static readonly List<(Node3D Body, string Kind, int Seed, float Front)> Doors = [];
+
+    static bool HasInside(string kind) => kind is "house" or "cottage" or "tavern" or "longhall" or "smithy" or "barn" or "church" or "keep" or "tower";
+
+    /// <summary>A door that isn't on a building made here: its node's +Z points out of it.</summary>
+    public static void Door(Node3D at, string kind, int seed) => Doors.Add((at, kind, seed, 0));
+
+    /// <summary>The nearest door within reach, and the spot outside it to come back to.</summary>
+    public static (string Kind, int Seed, Vector3 Step)? DoorNear(Vector3 pos)
+    {
+        Doors.RemoveAll(d => !GodotObject.IsInstanceValid(d.Body));
+        (string, int, Vector3)? best = null;
+        var nearest = 3.2f;
+        foreach (var (body, kind, seed, front) in Doors)
+        {
+            if (!body.IsInsideTree()) continue;
+            var door = body.ToGlobal(new Vector3(0, 0, front));
+            var flat = new Vector2(door.X - pos.X, door.Z - pos.Z).Length();
+            if (flat >= nearest || Mathf.Abs(door.Y - pos.Y) > 4) continue;
+            nearest = flat;
+            best = (kind, seed, body.ToGlobal(new Vector3(0, 0, front + 1.6f)));
+        }
+        return best;
     }
 
     public static float HeightOf(Node3D building) => building.HasMeta("height") ? (float)building.GetMeta("height") : 8;
@@ -83,6 +111,8 @@ public static class Buildings
             case "lighthouse": Lighthouse(b); break;
             case "ruin": Ruin(b, rng); break;
             case "mine": MineEntrance(b); break;
+            case "mine_portal": MinePortal(b); break;
+            case "store": Store(b, roof); break;
             case "lantern": Lantern(b); break;
             case "pier": Pier(b); break;
             default: House(b, rng, roof); break;
@@ -345,6 +375,39 @@ public static class Buildings
         foreach (var x in new[] { -1.6f, 1.6f }) b.Beam(new Vector3(x, 0, -1), new Vector3(x, 3.1f, -1), 0.3f, Surface.Timber);
         b.Beam(new Vector3(-2f, 3.1f, -1), new Vector3(2f, 3.1f, -1), 0.32f, Surface.Timber);
         b.Solid(new Vector3(0, 3.5f, -5), new Vector3(12, 7, 7.6f));
+    }
+
+    /// <summary>A shop with its whole front open to the street: plank floor, three walls, a roof, and room to walk in to the counter.</summary>
+    static void Store(Builder b, Surface roof)
+    {
+        const float w = 6.8f, d = 6.4f, h = 3.2f;
+        b.Box(Surface.Planks, new Vector3(-w / 2, 0, -d / 2), new Vector3(w / 2, 0.06f, d / 2));
+        b.Box(Surface.Plaster, new Vector3(-w / 2, 0, -d / 2), new Vector3(w / 2, h, -d / 2 + 0.2f));
+        b.Solid(new Vector3(0, h / 2, -d / 2 + 0.1f), new Vector3(w, h, 0.2f));
+        foreach (var side in new[] { -1f, 1f })
+        {
+            b.Box(Surface.Plaster, new Vector3(side < 0 ? -w / 2 : w / 2 - 0.2f, 0, -d / 2), new Vector3(side < 0 ? -w / 2 + 0.2f : w / 2, h, d / 2));
+            b.Solid(new Vector3(side * (w / 2 - 0.1f), h / 2, 0), new Vector3(0.2f, h, d));
+            b.Beam(new Vector3(side * (w / 2 - 0.1f), 0, d / 2), new Vector3(side * (w / 2 - 0.1f), h, d / 2), 0.26f, Surface.Timber);
+            b.Beam(new Vector3(side * (w / 2 - 0.1f), 0, -d / 2 + 0.1f), new Vector3(side * (w / 2 - 0.1f), h, -d / 2 + 0.1f), 0.26f, Surface.Timber);
+        }
+        b.Beam(new Vector3(-w / 2, h, d / 2), new Vector3(w / 2, h, d / 2), 0.28f, Surface.Timber);
+        b.Gable(w, d, h, 0.6f, roof, Surface.Plaster, acrossFront: true, overhang: 0.6f);
+    }
+
+    /// <summary>A mine's open doorway, to be set into a hillside: timber sets holding back the rock, and the way in between them.</summary>
+    static void MinePortal(Builder b)
+    {
+        foreach (var side in new[] { -1f, 1f })
+        {
+            b.Box(Surface.DarkStone, new Vector3(side < 0 ? -4.4f : 1.6f, 0, -5.4f), new Vector3(side < 0 ? -1.6f : 4.4f, 7, -0.1f));
+            b.Solid(new Vector3(side * 3, 3.5f, -2.75f), new Vector3(2.8f, 7, 5.3f));
+            foreach (var z in new[] { -0.2f, -2.2f, -4.2f }) b.Beam(new Vector3(side * 1.55f, 0, z), new Vector3(side * 1.55f, 3.1f, z), 0.3f, Surface.Timber);
+        }
+        b.Box(Surface.DarkStone, new Vector3(-1.6f, 3.2f, -5.4f), new Vector3(1.6f, 7, -0.1f));
+        foreach (var z in new[] { -0.2f, -2.2f, -4.2f }) b.Beam(new Vector3(-2f, 3.1f, z), new Vector3(2f, 3.1f, z), 0.32f, Surface.Timber);
+        b.Solid(new Vector3(0, 5.1f, -2.75f), new Vector3(3.2f, 3.8f, 5.3f));
+        b.Solid(new Vector3(0, 3.5f, -5.6f), new Vector3(3.2f, 7, 0.4f));
     }
 
     // ---- the builder ---------------------------------------------------------------------------

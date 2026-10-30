@@ -31,6 +31,13 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
     public string Beard { get; init; } = "none";
     public string Hair { get; init; } = "Brown";
     public string Horns { get; init; } = "none";
+    /// <summary>The colour of their shirt or tunic, and of their trousers: "Class" (what the class wears) or a cloth.</summary>
+    public string Top { get; init; } = "Class";
+    public string Bottom { get; init; } = "Class";
+    /// <summary>Whether the sleeves are long or the arms bare: "Class", "Long" or "Short".</summary>
+    public string Sleeves { get; init; } = "Class";
+    /// <summary>What's worn over the clothes that isn't armour: "Class" (the class's own kit) or one of <see cref="Wears"/>.</summary>
+    public string Wear { get; init; } = "Class";
 
     public static readonly (string Name, float Width)[] Builds = [("Slim", 0.9f), ("Average", 1f), ("Broad", 1.12f)];
     public static readonly string[] Beards = ["none", "Stubble", "Short", "Long", "Forked", "Braided"];
@@ -38,6 +45,7 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
     [
         ("Brown", "#5a3a22"), ("Black", "#1c1a1a"), ("Auburn", "#8a3a1c"), ("Blond", "#d8b060"), ("Copper", "#b8642a"),
         ("Grey", "#8a8a88"), ("White", "#e8e8e4"),
+        ("Chestnut", "#6e3f22"), ("Honey", "#c08a3e"), ("Platinum", "#e0d8bc"), ("Red", "#a02818"), ("Raven", "#16161e"), ("Moss", "#4a6a34"), ("Sapphire", "#2a4a9a"), ("Rose", "#c0587a"),
     ];
     public static readonly string[] HornStyles = ["none", "Nubs", "Swept", "Ram", "Long"];
     public static readonly string[] Sexes = ["Male", "Female"];
@@ -48,11 +56,24 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
     public static readonly (string Id, string Name)[] MaleStyles = [("Short01", "Short"), ("Short02", "Cropped"), ("Short03", "Swept"), ("Short04", "Tousled"), ("Afro01", "Afro")];
     public static readonly (string Id, string Name)[] FemaleStyles = [("Bob01", "Bob"), ("Bob02", "Long bob"), ("Long01", "Long"), ("Braid01", "Braid"), ("Ponytail01", "Ponytail")];
     public static readonly string[] Headwears = ["none", "Hood", "Cap"];
-    public static IEnumerable<string> Styles(string sex) => ["Natural", "None", .. (sex == "Female" ? FemaleStyles : MaleStyles).Select(s => s.Id)];
+    /// <summary>Cuts built on the head from the body's own measure rather than baked into a body, so anyone can wear them.</summary>
+    public static readonly (string Id, string Name)[] Cuts = [("Topknot", "Top-knot"), ("Bun", "Bun"), ("Mohawk", "Mohawk"), ("Spikes", "Spikes"), ("Mane", "Mane"), ("Twintails", "Twin tails")];
+    public static bool IsCut(string style) => Cuts.Any(c => c.Id == style);
+    public static IEnumerable<string> Styles(string sex) => ["Natural", "None", .. (sex == "Female" ? FemaleStyles : MaleStyles).Select(s => s.Id), .. Cuts.Select(c => c.Id)];
+
+    /// <summary>Plain cloth for shirts and trousers, picked apart from each other.</summary>
+    public static readonly (string Name, string Hex)[] Cloths =
+    [
+        ("Class", ""), ("White", "#e8e4d8"), ("Linen", "#cdbf9f"), ("Sand", "#b09a70"), ("Russet", "#8a4a26"), ("Crimson", "#8a2020"), ("Rose", "#b86a7a"),
+        ("Gold", "#c49a3a"), ("Olive", "#6a6a30"), ("Forest", "#2f5a34"), ("Teal", "#2a6a6a"), ("Royal", "#2a3f8a"), ("Violet", "#5a3a7a"), ("Slate", "#4a5058"), ("Charcoal", "#2e2e32"), ("Black", "#17171a"),
+    ];
+    public static readonly string[] SleeveStyles = ["Class", "Long", "Short"];
+    public static readonly string[] Wears = ["Class", "Plain", "Vest", "Jerkin", "Robe", "Wrapped robe", "Sash", "Cloak"];
+    public static string? ClothHex(string name) => Cloths.FirstOrDefault(c => c.Name == name).Hex is { Length: > 0 } hex ? hex : null;
     public static string StyleName(string style) => style switch
     {
         "Natural" => "As made", "None" => "Shaved",
-        _ => MaleStyles.Concat(FemaleStyles).FirstOrDefault(s => s.Id == style).Name ?? style,
+        _ => MaleStyles.Concat(FemaleStyles).Concat(Cuts).FirstOrDefault(s => s.Id == style).Name ?? style,
     };
     public bool Female => Sex == "Female";
 
@@ -138,7 +159,8 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
 
     public string Encode() => $"head={Head};body={Body};arms={Arms};legs={Legs};hat={Hat};outfit={Outfit};skin={Skin};height={Height}" +
                               $";race={Race};dragon={Dragon};half={Half};build={Build};beard={Beard};hair={Hair};horns={Horns}" +
-                              $";sex={Sex};age={Age};face={Face};eyes={Eyes};style={Style};headwear={Headwear}";
+                              $";sex={Sex};age={Age};face={Face};eyes={Eyes};style={Style};headwear={Headwear}" +
+                              $";top={Top};bottom={Bottom};sleeves={Sleeves};wear={Wear}";
 
     /// <summary>Reads a saved look; anything missing or unknown is left as the class would have it. Null for none.</summary>
     public static Avatar? Parse(string? text, string classId = "")
@@ -167,6 +189,10 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
             Eyes = Pick("eyes", "Natural", EyeColours),
             Style = Pick("style", "Natural", Styles(Pick("sex", "Male", Sexes))),
             Headwear = Pick("headwear", "none", Headwears),
+            Top = Pick("top", "Class", Cloths.Select(c => c.Name)),
+            Bottom = Pick("bottom", "Class", Cloths.Select(c => c.Name)),
+            Sleeves = Pick("sleeves", "Class", SleeveStyles),
+            Wear = Pick("wear", "Class", Wears),
         };
     }
 
@@ -191,6 +217,10 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
             Eyes = Any(EyeColours),
             Style = Any([.. Styles(sex)]),
             Headwear = rng.Next(3) == 0 ? Any(Headwears) : "none",
+            Top = Cloths[rng.Next(Cloths.Length)].Name,
+            Bottom = Cloths[rng.Next(Cloths.Length)].Name,
+            Sleeves = Any(SleeveStyles),
+            Wear = Any(Wears),
         };
     }
 }

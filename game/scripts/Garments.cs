@@ -14,7 +14,20 @@ public static class Garments
 {
     /// <summary>What someone wears over their clothes: the body piece ("cuirass", "jerkin", "robe", "fur" or none), what's on
     /// the head ("hood", "cap", "hat" or none), and the rest.</summary>
-    public sealed record Kit(string? Body = null, string? Head = null, bool Belt = true, bool Pauldrons = false, bool Bracers = false, bool Cloak = false, bool Tabard = false, bool MetalBracers = false);
+    public sealed record Kit(string? Body = null, string? Head = null, bool Belt = true, bool Pauldrons = false, bool Bracers = false, bool Cloak = false, bool Tabard = false, bool MetalBracers = false, bool Mantle = false, bool Sash = false);
+
+    /// <summary>What a hero picked to wear over their clothes, in place of the class's kit (what's on the head stays the class's).</summary>
+    static Kit Picked(string wear, Kit own) => wear switch
+    {
+        "Plain" => new(null, own.Head),
+        "Vest" => new("vest", own.Head),
+        "Jerkin" => new("jerkin", own.Head, Bracers: true),
+        "Robe" => new("robe", own.Head, Belt: false),
+        "Wrapped robe" => new("robe", own.Head, Belt: false, Mantle: true),
+        "Sash" => new(null, own.Head, Belt: false, Sash: true),
+        "Cloak" => new(null, own.Head, Cloak: true),
+        _ => own,
+    };
 
     public static Kit For(string look) => look switch
     {
@@ -27,7 +40,8 @@ public static class Garments
         "Assassin" or "Saboteur" or "Rogue_Hooded" or "drowned_hand" => new("jerkin", "hood", Bracers: true, Cloak: true),
         "Ranger" or "hunter" or "traveller" => new("jerkin", "hood", Bracers: true, Cloak: true),
         "Wizard" or "Mage" or "apprentice" => new("robe", "hat", Belt: false),
-        "Warlock" or "Sorcerer" or "Alchemist" or "scholar" or "laureate" or "Poet" or "Scribe" => new("robe", null, Belt: false),
+        "Alchemist" => new("jerkin", null, Bracers: true),
+        "Warlock" or "Sorcerer" or "scholar" or "laureate" or "Poet" or "Scribe" => new("robe", null, Belt: false),
         "priest" => new("robe", "hood", Belt: false),
         "pirate" or "sailor" => new(null, "bandana", Bracers: true),
         "pirate_captain" => new("jerkin", "bandana", Bracers: true, Cloak: true),
@@ -69,11 +83,11 @@ public static class Garments
     /// Dresses a body in its kit. Armour worn from the pack (a tint and whether it's metal) puts a cuirass on in that
     /// metal; a helm worn puts a cap on in its tint. Returns the nodes made, so they can be taken off again.
     /// </summary>
-    public static List<Node> Dress(Skeleton3D sk, string look, Humans.Outfit outfit, float top, (Color Tint, bool Metal)? armour = null, Color? helm = null)
+    public static List<Node> Dress(Skeleton3D sk, string look, Humans.Outfit outfit, float top, (Color Tint, bool Metal)? armour = null, Color? helm = null, string wear = "Class", (string Style, Color Colour)? cut = null)
     {
         var made = new List<Node>();
         if (Measured(sk, top) is not { } m) return made;
-        var kit = For(look);
+        var kit = Picked(wear, For(look));
         if (armour is { } a) kit = kit with { Body = a.Metal ? "cuirass" : "jerkin", Pauldrons = kit.Pauldrons || a.Metal, Bracers = true, MetalBracers = a.Metal };
         if (helm is not null) kit = kit with { Head = "cap" };
         var leather = Armoury.Leather(outfit.Boots.Darkened(0.1f).ToHtml(false) is var b ? "#" + b : "#3a2a1c");
@@ -142,6 +156,34 @@ public static class Garments
                 chest.AddChild(Part(new TorusMesh { InnerRadius = m.ShoulderHalf * 0.55f, OuterRadius = m.ShoulderHalf * 1.1f, Rings = 28, RingSegments = 10 }, fur, new Vector3(0, m.Neck.Y - 0.06f, 0.01f), scale: new Vector3(1, 1.3f, 0.85f))); // a mantle of hide
                 break;
             }
+        }
+
+        if (kit.Body == "vest")
+        {
+            // An open vest: a panel down each side of the chest, and one across the back.
+            var chest = Hang(sk, "Chest", made);
+            var felt = Cloth(outfit.Trousers.Lightened(0.08f));
+            var collar = m.Hips.Y + torsoH * 0.82f;
+            var front = m.ShoulderHalf * 0.82f + 0.012f;
+            foreach (var side in new[] { -1f, 1f })
+                chest.AddChild(Part(Drape(m.ShoulderHalf * 0.5f, torsoH * 0.78f, m.ShoulderHalf * 0.2f, 0.1f), felt, new Vector3(side * m.ShoulderHalf * 0.62f, collar, front), new Vector3(0, side * 16, 0)));
+            chest.AddChild(Part(Drape(m.ShoulderHalf * 1.8f, torsoH * 0.78f, m.ShoulderHalf * 0.4f, 0.1f), felt, new Vector3(0, collar, -front), new Vector3(0, 180, 0)));
+        }
+
+        if (kit.Mantle)
+        {
+            // A second cloth wrapped round the shoulders, thrown over one arm.
+            var chest = Hang(sk, "Chest", made);
+            var wrap = Cloth(outfit.Trousers.Lightened(0.12f), span: 0);
+            chest.AddChild(Part(new TorusMesh { InnerRadius = m.ShoulderHalf * 0.5f, OuterRadius = m.ShoulderHalf * 1.15f, Rings = 28, RingSegments = 10 }, wrap, new Vector3(0, m.Neck.Y - 0.1f, 0.01f), new Vector3(-6, 0, 12), new Vector3(1, 1.5f, 0.9f)));
+        }
+
+        if (kit.Sash)
+        {
+            var hips = Hang(sk, "Hips", made);
+            var band = Cloth(outfit.Trousers.Lightened(0.25f), span: 0);
+            hips.AddChild(Part(new TorusMesh { InnerRadius = m.HipHalf + 0.005f, OuterRadius = m.HipHalf + 0.05f, Rings = 36, RingSegments = 8 }, band, new Vector3(0, m.Hips.Y + 0.07f, 0), scale: new Vector3(1, 1.8f, 1)));
+            hips.AddChild(Part(Drape(0.1f, 0.34f, 0.01f, 0.4f, 6, 8, lean: 0.03f), Cloth(outfit.Trousers.Lightened(0.25f)), new Vector3(m.HipHalf * 0.6f, m.Hips.Y + 0.05f, m.HipHalf + 0.03f)));
         }
 
         if (kit.Tabard)
@@ -221,7 +263,66 @@ public static class Garments
                 break;
             }
         }
+        if (cut is { } style && kit.Head is null && outfit.Cap is null) Hair(sk, m, style.Style, style.Colour, made);
         return made;
+    }
+
+    /// <summary>A cut built on the head to the body's own measure, for anyone: a close crop of the scalp, then whatever makes it that cut.</summary>
+    static void Hair(Skeleton3D sk, Measure m, string style, Color colour, List<Node> made)
+    {
+        var head = Hang(sk, "Head", made);
+        var hair = new StandardMaterial3D { AlbedoColor = colour, Roughness = 0.62f, RimEnabled = true, Rim = 0.2f };
+        var crown = new Vector3(0, m.Top - 0.075f, -0.016f);
+        void Crop() => head.AddChild(Part(new SphereMesh { Radius = 0.122f, Height = 0.244f, RadialSegments = 24, Rings = 12 }, hair, crown, new Vector3(-16, 0, 0), new Vector3(1.02f, 0.86f, 1.06f)));
+        void Lock(Vector3 from, Vector3 way, float length, float width)
+        {
+            var mesh = new CapsuleMesh { Radius = width, Height = length, RadialSegments = 12, Rings = 6 };
+            var part = Part(mesh, hair, from + way.Normalized() * length / 2);
+            head.AddChild(part);
+            Aim(part, way.Normalized());
+        }
+        switch (style)
+        {
+            case "Topknot":
+                Crop();
+                head.AddChild(Part(new SphereMesh { Radius = 0.058f, Height = 0.116f, RadialSegments = 16, Rings = 8 }, hair, new Vector3(0, m.Top + 0.035f, -0.03f)));
+                head.AddChild(Part(new TorusMesh { InnerRadius = 0.022f, OuterRadius = 0.034f, Rings = 16, RingSegments = 6 }, Armoury.Leather("#a85a2a"), new Vector3(0, m.Top - 0.012f, -0.028f), scale: new Vector3(1, 1.3f, 1)));
+                break;
+            case "Bun":
+                Crop();
+                head.AddChild(Part(new SphereMesh { Radius = 0.066f, Height = 0.132f, RadialSegments = 16, Rings = 8 }, hair, new Vector3(0, m.Top - 0.06f, -0.145f)));
+                break;
+            case "Mohawk":
+                for (var i = 0; i < 8; i++)
+                {
+                    var along = -0.6f + i * 0.34f;
+                    var at = crown + new Vector3(0, Mathf.Cos(along) * 0.1f, -Mathf.Sin(along) * 0.115f);
+                    Lock(at, new Vector3(0, Mathf.Cos(along), -Mathf.Sin(along)), 0.11f, 0.018f);
+                }
+                break;
+            case "Spikes":
+                Crop();
+                for (var i = 0; i < 12; i++)
+                {
+                    var (a, up) = (i * Mathf.Tau / 12, 0.35f + i % 3 * 0.25f);
+                    var way = new Vector3(Mathf.Cos(a) * (1 - up), up, Mathf.Sin(a) * (1 - up));
+                    Lock(crown + way.Normalized() * 0.09f, way, 0.11f, 0.018f);
+                }
+                break;
+            case "Mane":
+                Crop();
+                for (var i = -3; i <= 3; i++)
+                    Lock(crown + new Vector3(i * 0.032f, 0.03f, -0.1f + Mathf.Abs(i) * 0.008f), new Vector3(i * 0.04f, -1, -0.28f), 0.3f, 0.034f);
+                break;
+            case "Twintails":
+                Crop();
+                foreach (var side in new[] { -1f, 1f })
+                {
+                    head.AddChild(Part(new SphereMesh { Radius = 0.026f, Height = 0.052f, RadialSegments = 10, Rings = 6 }, Armoury.Leather("#8a2a2a"), crown + new Vector3(side * 0.118f, 0.02f, -0.03f)));
+                    Lock(crown + new Vector3(side * 0.128f, 0.012f, -0.03f), new Vector3(side * 0.3f, -1, -0.1f), 0.34f, 0.03f);
+                }
+                break;
+        }
     }
 
     static Material Robe(Humans.Outfit outfit) => Cloth(outfit.Tunic, span: 2);

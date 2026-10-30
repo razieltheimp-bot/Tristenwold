@@ -334,6 +334,7 @@ public partial class Terrain(WorldGen world) : Node3D
         var dirt = 0.0;
         foreach (var s in places)
             dirt = Math.Max(dirt, 1 - Noise.SmoothStep(s.Radius * 0.55, s.Radius * 0.95, s.DistanceTo(x, z)));
+        if (x < 400 && z < 60 && Northwood.OnPath(x, z)) dirt = 1.15;
         Blend(w, Dirt, dirt * 0.85);
         Blend(w, Shore, 1 - Noise.SmoothStep(WorldGen.WaterLevel + 0.1, WorldGen.WaterLevel + 1.1, y));
         return (new Color(w[0], w[1], w[2], w[3]), new Color(w[4], w[5], w[6], w[7]));
@@ -475,6 +476,8 @@ public partial class Terrain(WorldGen world) : Node3D
         {
             Biome.AutumnForest => 18, Biome.PineForest => 24, Biome.Marsh => 7, Biome.Tundra => 5, Biome.Snowfield => 5, _ => 3,
         };
+        var wood = Northwood.Inside(x0 + ChunkSize / 2, z0 + ChunkSize / 2);
+        if (wood) count *= 11; // the Northwood: thick, under and between the giants
         var rocks = Scans && Real ? (mid == Biome.Crags ? 9 : mid is Biome.AutumnForest or Biome.PineForest or Biome.Marsh ? 7 : 3) : mid == Biome.Crags ? 6 : 2;
         var clear = world.SettlementsNear(x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize).ToList();
         var lairs = LairsNear(x0, z0);
@@ -489,6 +492,7 @@ public partial class Terrain(WorldGen world) : Node3D
             if (clear.Any(s => s.DistanceTo(wx, wz) < s.Radius + (s.IsCity ? 30 : 8))) continue;
             if (lairs.Any(r => r.DistanceTo(wx, wz) < 26)) continue; // a lair stands in a clearing
             if (Clearings.Any(c => new Vector2((float)wx - c.At.X, (float)wz - c.At.Z).Length() < c.Radius)) continue;
+            if (wx < 400 && wz < 60 && (Northwood.OnPath(wx, wz) || Northwood.Clearing(wx, wz))) continue;
             var (ix, iz) = ((int)Math.Round(lx / Step), (int)Math.Round(lz / Step));
             float At(int x, int z) => h[Math.Clamp(z, 0, Steps) * (Steps + 1) + Math.Clamp(x, 0, Steps)];
             var y = At(ix, iz);
@@ -520,6 +524,7 @@ public partial class Terrain(WorldGen world) : Node3D
                 Add(far, Band.Far, new Transform3D(Basis.Identity.Scaled(Vector3.One * Mathf.Lerp(far.MinScale, far.MaxScale, t)).Rotated(Vector3.Up, yaw), at), new Color(shade, shade, shade), snow);
             }
         }
+        Giants(chunk, x0, z0, Add, (x, z) => h[Math.Clamp((int)Math.Round((z - z0) / Step), 0, Steps) * (Steps + 1) + Math.Clamp((int)Math.Round((x - x0) / Step), 0, Steps)]);
         foreach (var ((plant, band), items) in groups)
             if (Look(plant) is { } look)
             {
@@ -528,6 +533,22 @@ public partial class Terrain(WorldGen world) : Node3D
                 if (band == Band.Far) (drawn.VisibilityRangeBegin, drawn.VisibilityRangeBeginMargin) = (ScanReach, 16);
                 if (band != Band.All) drawn.VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Self;
             }
+    }
+
+    /// <summary>The Northwood's giants: trees many times the height of any other, trunk beside trunk, walling the maze. You can't walk through them.</summary>
+    void Giants(Node3D chunk, float x0, float z0, Action<Plant, Band, Transform3D, Color, float> add, Func<double, double, float> ground)
+    {
+        var (shape, body) = (new CylinderShape3D { Radius = 1.7f, Height = 14 }, (StaticBody3D?)null);
+        foreach (var (x, z) in Northwood.GiantsIn(x0, z0, ChunkSize))
+        {
+            if (Northwood.Clearing(x, z)) continue;
+            var dice = Math.Abs(WorldGen.StableHash($"{x:0}/{z:0}"));
+            var scale = 3.6f + dice % 100 / 100f * 2.4f;
+            var at = new Vector3((float)x - x0, ground(x, z) - 0.4f, (float)z - z0);
+            add(Firs[dice % Firs.Length], Band.All, new Transform3D(Basis.Identity.Scaled(Vector3.One * scale).Rotated(Vector3.Up, dice % 628 / 100f), at), new Color(0.74f, 0.7f, 0.66f), 0);
+            if (body is null) chunk.AddChild(body = new StaticBody3D());
+            body.AddChild(new CollisionShape3D { Shape = shape, Position = at + Vector3.Up * 6 });
+        }
     }
 
     /// <summary>Drawn at any distance, only near, or only far (where a stand-in takes over from a heavy scan).</summary>
@@ -540,7 +561,7 @@ public partial class Terrain(WorldGen world) : Node3D
             .. FarLairs.Near(world, x0 + ChunkSize / 2, z0 + ChunkSize / 2, ChunkSize + 30)];
 
     public static readonly (Vector3 At, float Radius)[] Clearings =
-        [(Main.QuarryAt, 24), (Main.WoodlotAt, 18), (Main.AllotmentsAt, 18), (Main.HousePlotAt, 16), (Main.CourseAt + new Vector3(-2, 0, -14), 24), (Main.YardAt, 26)];
+        [(Main.QuarryAt, 24), (Main.MineDoor + new Vector3(0, 0, 5), 9), (Main.WoodlotAt, 18), (Main.AllotmentsAt, 18), (Main.HousePlotAt, 16), (Main.CourseAt + new Vector3(-2, 0, -14), 24), (Main.YardAt, 26)];
 
     static void Multi(Node3D parent, Mesh mesh, List<(Transform3D T, Color C)> items, Material material)
     {

@@ -23,7 +23,7 @@ public partial class Main
     {
         if (_player.IsInsideTree() && !_player.Downed && !_player.Stats.Dead) // closing: the last place they stood
         {
-            var p = _player.GlobalPosition;
+            var p = _indoors is not null ? _outside : _player.GlobalPosition; // a room is only there while you're in it
             _spot = new Spot(p.X, _player.Mount is null ? p.Y : City.FloorAt(p), p.Z, _player.Rotation.Y); // off the dragon's back
         }
         return _spot;

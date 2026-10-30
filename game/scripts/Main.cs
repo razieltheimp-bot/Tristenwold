@@ -41,9 +41,12 @@ public partial class Main : Node3D
     Visitors _visitors = null!;
     readonly Dictionary<Lair, List<Enemy>> _lairs = [];
     readonly List<Person> _townsfolk = [];
+    Skies? _skies;
+    public Skies? SkiesNode => _skies;
 
     public override void _Ready()
     {
+        Skies.Prepare();
         ParseArgs();
         // Closing the window (or Android's back button) saves first: see _Notification.
         GetTree().AutoAcceptQuit = false;
@@ -368,6 +371,7 @@ public partial class Main : Node3D
         City.Build(this);
         _terrain = new Terrain(_world);
         Graphics.Apply(choice.Quality, GetViewport(), City.Sky, City.Sun, _terrain);
+        AddChild(_skies = new Skies(this));
         AddChild(_terrain);
         _terrain.EnsureAround(City.PlayerStart, 2);
 
@@ -759,6 +763,8 @@ public partial class Main : Node3D
         TendStory();
         TendCaravans(delta);
         TendSea(delta);
+        TendMine(delta);
+        TendIndoors();
         TendStanding(delta);
         TendArtificer(delta);
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
@@ -788,7 +794,7 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("ride")) ToggleRide();
         if (Input.IsActionJustPressed("rest") && !_tracker.InFight) Rest();
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills   I: pack   H: heal   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}");
+        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills   I: pack   H: heal   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}");
         var saga = _saga.Objective(Dragon, _player.Hero.Level) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
         if (StoryLine(pos) is { } story) saga = [story, .. saga];
         // The nearest lair that suits the hero, and the nearest deviant out roaming.
@@ -851,7 +857,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
+        return IndoorAction(pos) ?? MineAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>
@@ -1009,6 +1015,8 @@ public partial class Main : Node3D
                 _trade = save.Trade ?? new TradeBook();
                 _raidRecord = save.Warbands ?? new RaidRecord();
                 _sea = save.Sea ?? new SeaBook();
+                _mine = save.Mine ?? new MineBook();
+                _forest = save.Forest ?? new ForestBook();
                 _standing = save.Standing ?? new Standing();
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
@@ -1029,7 +1037,7 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade, _raiders?.Record ?? _raidRecord, _sea, _standing).ToJson();
+        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade, _raiders?.Record ?? _raidRecord, _sea, _standing, _mine, _forest).ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)

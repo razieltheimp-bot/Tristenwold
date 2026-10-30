@@ -99,6 +99,11 @@ public static class Bestiary
         new("rock_bear", "Rock Bear", 800, 24, 5.2, 220, 2.8, 1.8, DamageKind.Physical, "#5a4a3a", 2.6),
         new("briar_mother", "Briar Mother", 700, 20, 2.8, 60, 3.2, 1.8, DamageKind.Poison, "#3a5a2a", 3.6),
         new("ghost_captain", "Hollow Captain", 700, 22, 4.6, 160, 2.4, 1.4, DamageKind.Frost, "#a8e0f0", 2.3),
+        // The Northwood's guardians: older than the city, and they leave you be unless you've given them reason.
+        new("guardian_moss", "Forest Guardian", 5200, 46, 3.6, 120, 4.5, 2.4, DamageKind.Physical, "#5a8a3a", 8, Wary: true),
+        new("guardian_bark", "Forest Guardian", 4400, 56, 4.4, 90, 4.5, 2.0, DamageKind.Physical, "#8a6a4a", 7.5, Wary: true),
+        new("guardian_elder", "Forest Guardian", 6000, 42, 3.2, 140, 5, 2.6, DamageKind.Frost, "#3a6a5a", 8.5, Wary: true),
+        new("guardian_blight", "Corrupted Guardian", 6200, 60, 4.2, 100, 4.5, 2.1, DamageKind.Poison, "#2e4a2e", 8, Wary: true),
         new("hollow_soldier", "Hollow Soldier", 60, 8, 4.2, 80, 1.9, 1.3, DamageKind.Frost, "#9ad0e0", 1.8),
         new("crystal_basilisk", "Crystal Basilisk", 800, 24, 4.2, 200, 3.2, 1.7, DamageKind.Shock, "#5a3a7a", 2.4),
         new("crystal_rat", "Crystal Rat", 40, 6, 5.5, 60, 1.4, 1.0, DamageKind.Shock, "#7a5aa8", 0.7),

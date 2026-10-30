@@ -150,6 +150,8 @@ public static class Graphics
         render_mode cull_disabled;
         uniform sampler2D albedo_tex : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
         uniform sampler2D normal_tex : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+        global uniform float season_snow;
+        global uniform vec3 season_tint;
         uniform bool textured = false;
         uniform float strength = 1.0;
         uniform float height_scale = 1.0;
@@ -180,8 +182,8 @@ public static class Graphics
         #ifdef NORMALS
             NORMAL_MAP = texture(normal_tex, UV * uv_scale).rgb;
         #endif
-            float cover = snow * smoothstep(0.15, 0.6, world_normal.y);
-            ALBEDO = mix(base, vec3(0.9, 0.93, 0.98), cover);
+            float cover = max(snow, season_snow) * smoothstep(0.15, 0.6, world_normal.y);
+            ALBEDO = mix(base * season_tint, vec3(0.9, 0.93, 0.98), cover);
             ROUGHNESS = 0.85;
             BACKLIGHT = base * 0.35;
         }
@@ -217,6 +219,8 @@ public static class Graphics
         Code = """
             shader_type spatial;
             render_mode cull_disabled;
+            global uniform float season_snow;
+            global uniform vec3 season_tint;
             uniform sampler2DArray albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
             uniform sampler2DArray normals : filter_linear_mipmap_anisotropic, repeat_enable;
             uniform sampler2DArray arm : filter_linear_mipmap, repeat_enable;
@@ -278,7 +282,7 @@ public static class Graphics
                 col *= 0.82 + 0.36 * noise(world.xz * 0.025 + 3.0);
                 vec3 n = normalize(wnormal + bend * 0.9);
                 NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);
-                ALBEDO = col;
+                ALBEDO = mix(col * season_tint, vec3(0.86, 0.89, 0.94), season_snow * smoothstep(0.55, 0.85, wnormal.y) * (0.75 + wobble * 0.5));
                 ROUGHNESS = clamp(rough, 0.4, 1.0);
                 AO = ao;
                 AO_LIGHT_AFFECT = 0.4;

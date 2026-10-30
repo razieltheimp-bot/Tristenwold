@@ -5,8 +5,8 @@ using Tristinwold.World;
 namespace Tristinwold.Game;
 
 /// <summary>
-/// The market stalls on the Gallows Perch road: a counter under a striped awning on four posts, goods piled about it,
-/// a sign over it; and at the smithy, a forge glowing beside the anvil.
+/// The shops on the Gallows Perch road: each a little building open to the street, a counter across it, goods along its
+/// walls and a sign over it; and at the smithy, a forge glowing beside the anvil.
 /// </summary>
 public static class Market
 {
@@ -16,44 +16,35 @@ public static class Market
     public static void Stall(Node3D world, Vector3 at, Shop shop)
     {
         var floor = City.FloorAt(at);
-        var root = new Node3D { Position = at with { Y = floor }, Name = shop.Id.Replace(':', '_') };
+        // The shop opens onto the road, with the keeper at the back of it behind the counter (+Z here is away from the road).
+        var root = new Node3D { Position = at with { Y = floor }, Rotation = new Vector3(0, at.Z < 0 ? Mathf.Pi : 0, 0), Name = shop.Id.Replace(':', '_') };
         world.AddChild(root);
-        // The keeper stands behind the counter (to the north, off the road), facing the road.
         var back = new Vector3(0, 0, 1.6f);
-        var awning = shop.Forge ? "#5a5248" : shop.Bench ? "#4a7a5a" : shop.Beasts ? "#7a5a2a" : "#a83a2a";
-        Solid(root, back + new Vector3(0, 0.5f, -1.2f), new Vector3(3.4f, 1, 0.8f), Wood);
-        foreach (var (x, z) in new[] { (-1.9f, -1.8f), (1.9f, -1.8f), (-1.9f, 1.8f), (1.9f, 1.8f) })
-            root.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.07f, BottomRadius = 0.08f, Height = 2.8f }, MaterialOverride = Wood, Position = back + new Vector3(x, 1.4f, z) });
-        // The striped awning.
-        for (var i = 0; i < 6; i++)
-            root.AddChild(new MeshInstance3D
-            {
-                Mesh = new BoxMesh { Size = new Vector3(4.2f / 6, 0.05f, 4.2f) },
-                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(i % 2 == 0 ? awning : "#e8dcc4"), Roughness = 0.9f },
-                Position = back + new Vector3(-2.1f + 4.2f / 12 + i * 4.2f / 6, 2.85f, 0), RotationDegrees = new Vector3(-8, 0, 0),
-            });
+        Buildings.Place(root, "store", new Vector3(0, 0, -2), Mathf.Pi, Math.Abs(shop.Id.GetHashCode()), Buildings.RoofFor(shop.Forge ? "blue" : shop.Bench ? "gold" : "red"));
+        Solid(root, new Vector3(0, 0.5f, -1.5f), new Vector3(3.6f, 1, 0.8f), Wood);
         root.AddChild(new Label3D
         {
-            Text = shop.Name, Position = back + new Vector3(0, 3.4f, -1.9f), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
+            Text = shop.Name, Position = new Vector3(0, 3.5f, -5.4f), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             FontSize = 48, OutlineSize = 10, PixelSize = 0.012f, Modulate = new Color("#ffd27a"),
         });
-        // Their goods.
-        string[] goods = shop.Forge ? ["dungeon/sword_shield.glb", "dungeon/barrel_small_stack.glb"]
-            : shop.Beasts ? ["dungeon/box_small.glb", "dungeon/barrel_large.glb"]
+        // Their goods, on the floor down each wall and along the back.
+        string[] goods = shop.Forge ? ["dungeon/sword_shield.glb", "dungeon/barrel_small_stack.glb", "medieval/props/weaponrack.gltf"]
+            : shop.Beasts ? ["dungeon/box_small.glb", "dungeon/barrel_large.glb", "medieval/props/sack.gltf"]
             : shop.Bench ? ["halloween/candle_triple.gltf", "dungeon/shelf_small.glb", "dungeon/keg.glb"]
             : ["dungeon/crates_stacked.glb", "dungeon/barrel_large.glb", "dungeon/box_small.glb"];
         for (var i = 0; i < goods.Length; i++)
-            Models.Place(root, goods[i], back + new Vector3(-2.6f + i * 2.6f, 0, 1.2f), goods[i].Contains("candle") ? 1.2f : 0.5f, i * 1.3f, solid: false);
+            Models.Place(root, goods[i], new Vector3(i == 0 ? -2.6f : i == 1 ? 2.6f : -1.8f, 0, i == 2 ? 0.4f : -3), goods[i].Contains("candle") ? 1.2f : 0.5f, i * 1.3f, solid: false);
         if (shop.Bench)
             for (var i = 0; i < 5; i++)
                 root.AddChild(new MeshInstance3D
                 {
                     Mesh = new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.08f, Height = 0.22f },
                     MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(new[] { "#c03030", "#3060c0", "#30a050", "#c0a030", "#9050c0" }[i], 0.8f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.1f },
-                    Position = back + new Vector3(-1.2f + i * 0.6f, 1.12f, -1.2f),
+                    Position = new Vector3(-1.2f + i * 0.6f, 1.12f, -1.5f),
                 });
-        if (shop.Forge) Forge(root, back + new Vector3(3.6f, 0, -0.4f));
-        if (shop.Beasts) Pen(root, back + new Vector3(4.2f, 0, -0.6f));
+        root.AddChild(new OmniLight3D { Position = new Vector3(0, 2.6f, -1.5f), LightColor = new Color("#ffd0a0"), LightEnergy = 0.8f, OmniRange = 7 });
+        if (shop.Forge) Forge(root, back + new Vector3(4.6f, 0, -1.4f));
+        if (shop.Beasts) Pen(root, back + new Vector3(5.4f, 0, -2));
     }
 
     /// <summary>A little fenced pen beside the beastkeeper's stall, straw on the ground and a water trough.</summary>

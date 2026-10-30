@@ -290,6 +290,8 @@ public partial class Enemy : Fighter
 
     /// <summary>A companion was knocked down.</summary>
     public static event Action<Enemy>? Felled;
+    /// <summary>An enemy's blow has landed: on another enemy or a companion, or (null) on the hero.</summary>
+    public static event Action<Enemy, Enemy?>? Landed;
 
     /// <summary>How much bigger than its kind's normal size it is drawn.</summary>
     float Bulk => Bond is not null ? (float)Bond.Size
@@ -656,6 +658,7 @@ public partial class Enemy : Fighter
                     else Figure.Attack();
                     var bite = Stats.Outgoing(AttackKind.Weapon, Kind.Damage, _rng, out var bit) * power;
                     _rival.TakeHitFrom(this, bite, bit);
+                    Landed?.Invoke(this, _rival);
                 }
                 break;
 
@@ -684,6 +687,7 @@ public partial class Enemy : Fighter
                     // In a duel, the hero yields rather than falls.
                     if (Sparring && _target.Stats.Health - damage <= _target.Stats.MaxHealth * 0.15) { EndSpar(false); break; }
                     _target.TakeHit(damage, Kind.DamageKind, AttackKind.Weapon, crit, this);
+                    Landed?.Invoke(this, null);
                 }
                 break;
 
@@ -764,7 +768,7 @@ public partial class Enemy : Fighter
         {
             var to = e.GlobalPosition - GlobalPosition;
             to.Y = 0;
-            if (to.Length() < length && forward.Dot(to.Normalized()) > 0.6f) e.TakeHitFrom(this, damage, false);
+            if (to.Length() < length && forward.Dot(to.Normalized()) > 0.6f) { e.TakeHitFrom(this, damage, false); Landed?.Invoke(this, e); }
         }
     }
 
@@ -966,6 +970,36 @@ public partial class Enemy : Fighter
         if (State == EnemyState.Dead) Figure.Die();
         RefreshPlate();
         return true;
+    }
+
+    /// <summary>A blighted companion fell, and the rot got up instead: it turns on its hero.</summary>
+    public void Rot(Player hero)
+    {
+        if (Bond is null || Leader is null) return;
+        (Master, Leader) = (Leader, null);
+        Bond.Rotted = true;
+        Revive();
+        Stats.Name = $"{Bond.Name}, Rotten";
+        RefreshPlate();
+        Provoke(hero);
+    }
+
+    /// <summary>Beaten down by its hero: subdued, and it'll follow them to a druid.</summary>
+    public void Subdue()
+    {
+        if (Bond is null || Master is null) return;
+        Leader = Master;
+        Stats.Name = $"{Bond.Name} (bound)";
+        RefreshPlate();
+    }
+
+    /// <summary>A druid drew the rot out.</summary>
+    public void Cured()
+    {
+        if (Bond is null) return;
+        (Bond.Blighted, Bond.Rotted) = (false, false);
+        Stats.Name = Bond.Name;
+        RefreshPlate();
     }
 
     /// <summary>Falls where it stands (a companion starving).</summary>

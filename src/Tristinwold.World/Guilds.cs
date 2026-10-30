@@ -201,10 +201,10 @@ public static class Guilds
             [
                 new(Person("ambrose", "Doctor Ambrose Vell", Sex.Male, 48, "teacher of reagents",
                     "Ambrose was the Exchange's assayer until he worked out he could make what he was assaying. He teaches alchemy, and the price of everything.",
-                    "Everything is a reagent. Even you. Especially the Exchange.", -118, 90, "warm", "money", "herbs"), GuildRole.Teacher, "Alchemist", "Alchemist"),
+                    "Everything is a reagent. Even you. Especially the Exchange.", -123, 103, "warm", "money", "herbs"), GuildRole.Teacher, "Alchemist", "Alchemist"),
                 new(Person("thessaly", "Captain-Engineer Thessaly Brand", Sex.Female, 39, "teacher of ether and engines",
                     "Thessaly flew the Foundry's one airship, and brought the compass down with her when it burned. She fits the Brine Company's ships now, and dreams of the sky.",
-                    "A ship's an engine with a hull on. So are you, with a golem on.", -102, 88, "brisk", "the sea", "engines"), GuildRole.Teacher, "EtherAeronaut", "EtherAeronaut"),
+                    "A ship's an engine with a hull on. So are you, with a golem on.", -98, 104, "brisk", "the sea", "engines"), GuildRole.Teacher, "EtherAeronaut", "EtherAeronaut"),
                 new(Person("wick", "Wick Harrow", Sex.Male, 44, "teacher of the wrench",
                     "Wick learned his trade taking wagons apart that weren't his, and the Foundry took him on rather than keep buying its own gears back from him.",
                     "Anything built can be unbuilt. Quicker, usually.", -114, 104, "dry", "cards", "the Tongs"), GuildRole.Teacher, "Saboteur", "Saboteur"),
@@ -222,7 +222,7 @@ public static class Guilds
             ],
             new(Person("jonquil", "Jonquil Pike", Sex.Female, 27, "the Foundry's brightest spark",
                 "Jonquil builds faster than anyone in the yard, tests nothing, and has never once admitted an engine of hers failed on its own.",
-                "Still building the slow way? Sweet.", -108, 86, "proud", "engines", "money"), GuildRole.Rival, "EtherAeronaut", "EtherAeronaut")),
+                "Still building the slow way? Sweet.", -104, 108, "proud", "engines", "money"), GuildRole.Rival, "EtherAeronaut", "EtherAeronaut")),
     ];
 
     public static Guild Of(Calling c) => All.First(g => g.Calling == c);

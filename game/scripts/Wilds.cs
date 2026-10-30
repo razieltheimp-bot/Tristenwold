@@ -50,6 +50,7 @@ public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
         }
 
         foreach (var herd in Wildlife.Near(world, player.X, player.Z, Near)) Bring(herd, clock, hawks: true);
+        foreach (var herd in Northwood.Near(player.X, player.Z, Near)) Bring(herd, clock);
 
         // Ancient dragons in their lairs, and the dragon wars of this season.
         foreach (var ancient in Dragons.Near(world, player.X, player.Z, DragonNear))

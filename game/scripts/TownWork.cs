@@ -11,8 +11,8 @@ namespace Tristinwold.Game;
 /// <list type="bullet">
 /// <item>Fishing: with a rod, face open water (the piers, the shore, a lake or river) and press E; when the float goes
 /// under, press E again. The harbour, fresh water and the cold north each have their own fish.</item>
-/// <item>Mining at the Greyhollow quarry west of the walls (stone, iron, coal, a little silver), and at outcrops up on
-/// the crags (silver and gold); woodcutting at Hollin's woodlot (pine, oak, yew). Each needs its tool.</item>
+/// <item>Mining down the Greyhollow mine west of the walls (stone, iron, coal, silver, and gold in the deep), and at
+/// outcrops up on the crags (silver and gold); woodcutting at Hollin's woodlot (pine, oak, yew). Each needs its tool.</item>
 /// <item>Cooking at a tavern's kitchen: the Gallows Perch and the Salt Barrel.</item>
 /// <item>Day work: carrying cargo on the docks for Haskel Brine, and running letters for the Exchange.</item>
 /// <item>The Exchange: Factor Ottilie Marsh's market report, the contracts for what's short, the city's works.</item>
@@ -60,7 +60,7 @@ public partial class Main
     }
     public Workings WorkingsNode => _workings;
 
-    public static readonly Vector3 QuarryAt = new(-112, 0, 100), WoodlotAt = new(-92, 0, -118);
+    public static readonly Vector3 QuarryAt = new((float)Greyhollow.QuarryX, 0, (float)Greyhollow.QuarryZ), WoodlotAt = new(-92, 0, -118);
     /// <summary>Where the cargo waits (the end of the middle pier), and where it goes (the warehouse by the east gate).</summary>
     public static readonly Vector3 CrateStack = new(136, 0, 0), Warehouse = new(90, 0, -9);
     public static readonly Vector3 FactorAt = new(25, 0, -25), ForemanAt = new(104, 0, 1.5f);
@@ -91,10 +91,11 @@ public partial class Main
             if (stall) Market.Stall(this, at, shop);
         }
 
-        // The quarry: a mine's mouth in the hillside, stone and tools about, and the veins (see Workings).
+        // The quarry: the mound over the mine's mouth, and stone and tools about. The veins are down the mine now (see Cave).
         City.Zones.Add(new Zone("The Greyhollow Quarry", QuarryAt, 22, 9));
         City.Zones.Add(new Zone("Hollin's Woodlot", WoodlotAt, 24, 9));
-        Buildings.Place(this, "mine", QuarryAt with { Y = City.FloorAt(QuarryAt) } + new Vector3(0, 0, -15), 0, 7);
+        AddMineMound();
+        AddForest();
         // The quarry's faces: broken rock round the back, cut back where the stone's been taken, and a gravel floor.
         for (var i = 0; i < 9; i++)
         {
@@ -118,7 +119,7 @@ public partial class Main
         foreach (var (path, off, scale) in new[] { ("medieval/props/resource_lumber.gltf", new Vector3(10, 0, 3), 5f), ("medieval/props/resource_lumber.gltf", new Vector3(11, 0, 9), 5f),
                      ("medieval/props/wheelbarrow.gltf", new Vector3(3, 0, 10), 5f), ("ph:stump.glb", new Vector3(-3, 0, 12), 0.8f) })
             Models.Place(this, path, WoodlotAt + off, scale, off.Z);
-        Sign(QuarryAt + new Vector3(0, 6, 0), "Greyhollow Quarry");
+        Sign(QuarryAt + new Vector3(-13, 4, 8), "Greyhollow Quarry");
         Sign(WoodlotAt + new Vector3(0, 7, 0), "Hollin's Woodlot");
 
         // The docks: cargo waiting at the end of the middle pier, and the warehouse it goes to.
@@ -419,6 +420,8 @@ public partial class Main
         var up = _player.Pack.Practise(job, xp);
         _herbs.Worked(spot.Id, _guilds.PlaySeconds);
         _workings.Worked(spot);
+        if (!spot.IsTree) MineWorked(spot);
+        ForestWorked(spot, spot.At);
         Did(spot.IsTree ? "trees" : "veins");
         Sound.Ui("pickup");
         _hud.Toast($"{(spot.IsTree ? "Timber!" : "You break it open:")} {Loot.Describe(got)}.{(up is { } l ? $" {job} rises to {l}!" : "")}", 4);
@@ -558,7 +561,7 @@ public partial class Main
         Job.Fishing => "Get a rod, face open water and cast (E). Watch the float: when it goes under, strike (E again), quick. Herring and mackerel in the harbour, " +
                        "perch and carp in the lakes, char in the cold north; the better you get, the rarer what bites: lobster, salmon, pike, even pearls. " +
                        $"You're a level {_player.Pack.Level(Job.Fishing)} angler. Sell to me, or cook it at the Salt Barrel.",
-        Job.Mining => "A pick, and the veins round the quarry: grey stone, rust-red iron, black coal, and a silver seam for the skilled. Out on the crags " +
+        Job.Mining => "A pick, and the veins down the mine, through the cutting in the mound: grey stone, rust-red iron, black coal, and a silver seam for the skilled. Out on the crags " +
                       $"there's silver and gold. The smelters take the ore, and a forge turns two into an ingot. You're a level {_player.Pack.Level(Job.Mining)} miner.",
         Job.Woodcutting => "An axe, and the trees with the red band: pine for anyone, oak once you've the knack, yew for the skilled. Shipwrights and " +
                            $"builders want the timber, and the city's always building. You're a level {_player.Pack.Level(Job.Woodcutting)} woodcutter.",
@@ -672,11 +675,11 @@ public partial class Main
     public bool DeliverForTest(Person to) => DeliverErrand(to);
 }
 
-/// <summary>Somewhere to mine or fell: a quarry vein, a wild outcrop, or a woodlot tree.</summary>
+/// <summary>Somewhere to mine or fell: a mine vein, a wild outcrop, or a woodlot tree.</summary>
 public sealed record WorkSpot(string Id, string Kind, bool IsTree, Vector3 At);
 
 /// <summary>
-/// The veins of the quarry and the crags and the trees of the woodlot, shown near the hero. A worked one is gone (a
+/// The veins of the mine and the crags and the trees of the woodlot, shown near the hero. A worked one is gone (a
 /// felled tree leaves a stump) until it comes back.
 /// </summary>
 public partial class Workings(Main main) : Node3D
@@ -686,18 +689,20 @@ public partial class Workings(Main main) : Node3D
 
     public const float Reach = 2.8f;
 
-    /// <summary>The quarry's veins round its floor, and the woodlot's marked trees in rows.</summary>
+    /// <summary>The mine's veins in its chambers' walls, and the woodlot's marked trees in rows.</summary>
     public static readonly IReadOnlyList<WorkSpot> Fixed = Build();
 
     static List<WorkSpot> Build()
     {
         var spots = new List<WorkSpot>();
-        string[] veins = ["stone", "iron", "coal", "stone", "iron", "coal", "stone", "iron", "silver", "coal", "stone"];
-        for (var i = 0; i < veins.Length; i++)
+        foreach (var seam in Greyhollow.Seams)
         {
-            var a = Mathf.DegToRad(-160 + i * 140f / (veins.Length - 1)); // an arc round the back of the quarry floor
-            spots.Add(new WorkSpot($"quarry_{i}", veins[i], false, Main.QuarryAt + new Vector3(Mathf.Cos(a) * 10, 0, Mathf.Sin(a) * 9)));
+            var (x, z, _) = Greyhollow.SeamAt(seam);
+            spots.Add(new WorkSpot(seam.Id, seam.Kind, false, Cave.At(x, z)));
         }
+        // The logging camp: a stand in rows at the wood's edge, cut and cut again.
+        for (var i = 0; i < 16; i++)
+            spots.Add(new WorkSpot($"camp_{i}", i % 5 == 4 ? "oak" : "pine", true, new Vector3((float)Northwood.CampX - 18 + i % 4 * 12, 0, (float)Northwood.CampZ - 15 + i / 4 * 10)));
         string[] trees = ["pine", "pine", "oak", "pine", "oak", "yew", "pine", "oak", "pine", "oak", "yew", "pine"];
         for (var i = 0; i < trees.Length; i++)
             spots.Add(new WorkSpot($"woodlot_{i}", trees[i], true, Main.WoodlotAt + new Vector3(-9 + i % 4 * 5.5f + (i / 4 % 2) * 2.5f, 0, -8 + i / 4 * 6)));
@@ -710,8 +715,9 @@ public partial class Workings(Main main) : Node3D
         _tick = 1;
         var p = main.PlayerNode.GlobalPosition;
         var now = main.GuildBook.PlaySeconds;
-        var near = Fixed.Where(s => s.At.DistanceTo(p with { Y = 0 }) < 110)
-            .Concat(Outcrops.Near(main.World, p.X, p.Z, 110).Select(o => new WorkSpot(o.Id, o.VeinId, false, new Vector3((float)o.X, 0, (float)o.Z))))
+        var below = main.InMine; // the mine's veins down the mine, and everything else on the surface
+        var near = Fixed.Where(s => s.At.Y > Cave.Threshold == below && s.At.DistanceTo(p with { Y = s.At.Y }) < 110)
+            .Concat(below ? [] : Outcrops.Near(main.World, p.X, p.Z, 110).Select(o => new WorkSpot(o.Id, o.VeinId, false, new Vector3((float)o.X, 0, (float)o.Z))))
             .ToDictionary(s => s.Id);
         foreach (var id in _shown.Keys.Where(id => !near.ContainsKey(id) || Ready(near[id], now) != !_shown[id].Body.HasMeta("stump")).ToList())
         {
@@ -720,17 +726,18 @@ public partial class Workings(Main main) : Node3D
         }
         foreach (var (id, spot) in near)
         {
-            if (_shown.ContainsKey(id) || !main.TerrainNode.HasGround(spot.At)) continue;
+            if (_shown.ContainsKey(id) || !below && !main.TerrainNode.HasGround(spot.At)) continue;
             var ready = Ready(spot, now);
             if (!ready && !spot.IsTree) continue; // a worked vein is just rock until it comes back
-            var at = spot.At with { Y = City.FloorAt(spot.At) };
+            var at = below ? spot.At : spot.At with { Y = City.FloorAt(spot.At) };
             var body = ready ? (spot.IsTree ? Tree(spot) : Vein(spot)) : Stump(spot);
             body.Position = at;
             _shown[id] = (spot, body);
         }
     }
 
-    bool Ready(WorkSpot s, double now) => main.HerbLog.Ready(s.Id, now, Gathering.RegrowSeconds);
+    /// <summary>The camp's stand grows back every other day; everything else in eight minutes.</summary>
+    bool Ready(WorkSpot s, double now) => main.HerbLog.Ready(s.Id, now, s.Id.StartsWith("camp_") ? 2 * CityEconomy.DaySeconds : Gathering.RegrowSeconds);
 
     /// <summary>The vein or tree within reach of a spot, if any (not a stump).</summary>
     public WorkSpot? Within(Vector3 at) => _shown.Values.Where(v => !v.Body.HasMeta("stump") && v.Body.GlobalPosition.DistanceTo(at with { Y = v.Body.GlobalPosition.Y }) < Reach + (v.Spot.IsTree ? 0.2f : 0.6f))

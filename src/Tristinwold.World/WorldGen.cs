@@ -142,6 +142,7 @@ public sealed class WorldGen
 
     static double Level(double x, double z, double h, IEnumerable<Settlement> near)
     {
+        h = Northwood.Shape(x, z, h) + Greyhollow.Hill(x, z);
         foreach (var s in near)
         {
             if (s.Id == "city:tristinwold") continue; // built into the raw land
@@ -180,7 +181,7 @@ public sealed class WorldGen
     };
 
     /// <summary>How hard the wilds are here: 1 at Tristinwold, rising the further you go.</summary>
-    public static double Danger(double x, double z) => 1 + Math.Sqrt(x * x + z * z) / 4000;
+    public static double Danger(double x, double z) => Northwood.Inside(x, z) ? Northwood.DangerFor(Northwood.Level(x, z)) : 1 + Math.Sqrt(x * x + z * z) / 4000;
 
     // ---- where things are ---------------------------------------------------------------------
 

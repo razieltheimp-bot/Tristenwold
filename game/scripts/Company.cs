@@ -105,6 +105,18 @@ public partial class Main
     void OnFelled(Enemy e)
     {
         if (e.Bond is not { } bond || !_bonds.Contains(bond)) return;
+        if (bond.Rotted && e.Leader is null)
+        {
+            e.Subdue();
+            _hud.Toast($"{bond.Name} goes down, and the rot lets go a little. It'll follow you now, but only a druid can get it out.", 9);
+            return;
+        }
+        if (bond.Blighted && !bond.Rotted && !bond.DiesIfFelled)
+        {
+            e.Rot(_player);
+            _hud.Toast($"{bond.Name} fell with the rot in its blood, and something else gets up. It doesn't know you. Knock it out and get it to a druid!", 10);
+            return;
+        }
         if (e.Cleanse())
         {
             // Beaten down by its own hero, a turned dragon is freed, whatever its age.
@@ -472,6 +484,8 @@ public partial class Main
         foreach (var o in StandingTalk(person)) yield return o;
         foreach (var o in ArtificerTalk(person)) yield return o;
         foreach (var o in ShadowTalk(person)) yield return o;
+        foreach (var o in MineTalk(person)) yield return o;
+        foreach (var o in ForestTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;
         foreach (var o in PursuitTalk(person)) yield return o;

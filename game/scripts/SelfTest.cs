@@ -435,24 +435,40 @@ public partial class SelfTest(Main main) : Node
         Check(pack.Count("grilled_fish") >= 1 && pack.JobXp.GetValueOrDefault(Job.Cooking) > 0, "it's in your pack, and you've learned a little cooking");
         hud.EndTalk();
 
-        // Mining at Greyhollow.
+        // Mining down Greyhollow.
         await Teleport(Main.QuarryAt + new Vector3(5, 0, 6));
         main.Talk(Who(Shops.Quarry.Id));
         Check(hud.Choose("Let me see") && hud.Choose("Pickaxe") && pack.Count("pickaxe") == 1, "Dagna sells you a pickaxe");
         hud.EndTalk();
+        main.Talk(Who(Shops.Quarry.Id));
+        Check(hud.Choose("Is there work down the mine") && main.MineLog.Stage == MineStage.Hired, "Dagna takes you on");
+        hud.EndTalk();
+        Check(Main.MineDoor.DistanceTo(Main.QuarryAt) < 20, $"the mine door is at the quarry ({Main.MineDoor.DistanceTo(Main.QuarryAt):0} m from its middle)");
+        await Teleport(Main.MineDoor + new Vector3(0, 0, 2.5f));
+        Check(p.GlobalPosition.Y < Main.MineDoor.Y + 3, "the cutting is level with the quarry floor");
+        main.EnterMineForTest();
+        await Until(() => main.InMine, 5);
+        Check(main.InMine && p.GlobalPosition.Y > Cave.Threshold && !City.Sun.Visible, "the way in through the mound takes you down the mine, out of the sun");
+        await Frames(30);
+        Check(p.GlobalPosition.Y > Cave.Landing.Y - 2, $"and the rock holds you up ({p.GlobalPosition.Y - Cave.Stage.Y:0.0} m from the adit)");
+        Check(City.AreaAt(p.GlobalPosition) == "The Adit", $"this is {City.AreaAt(p.GlobalPosition)}");
+        await Teleport(Cave.InRoom("timbering"));
         await Until(() => main.WorkingsNode.Shown.Any(s => s.Kind == "iron"), 10);
         var vein = main.WorkingsNode.Shown.FirstOrDefault(s => s.Kind == "iron");
-        Check(vein is not null, $"the quarry's veins are there ({main.WorkingsNode.Shown.Count(s => !s.IsTree)} near)");
+        Check(vein is not null, $"the quarry's veins are down here now ({main.WorkingsNode.Shown.Count(s => !s.IsTree)} near)");
         if (vein is not null)
         {
-            await Teleport(vein.At + (Main.QuarryAt - vein.At).Normalized() * 2.2f);
+            var room = Cave.InRoom(Greyhollow.Seams.First(s => s.Id == vein.Id).Room);
+            await Teleport(vein.At + (room - vein.At).Normalized() * 2.2f);
             Check(main.WorkingsNode.Within(p.GlobalPosition) == vein, "you can reach the iron vein");
             var ore = pack.Count("iron_ore");
             main.WorkForTest(vein);
             await Until(() => !main.Working && pack.Count("iron_ore") > ore, 20);
             Check(pack.Count("iron_ore") > ore && pack.JobXp.GetValueOrDefault(Job.Mining) > 0, $"you mine it: {hud.LastLine}");
             Check(!main.WorkingsNode.Shown.Contains(vein), "and the vein's worked out for now");
+            Check(main.MineLog.Worked == 1, "and Dagna counts it");
         }
+        await TheOldFace();
 
         // Woodcutting at Hollin's woodlot.
         await Teleport(Main.WoodlotAt + new Vector3(6, 0, 9));
@@ -2656,6 +2672,46 @@ public partial class SelfTest(Main main) : Node
             "and it's let go once you're far from it (the nine near home stay)");
     }
 
+    /// <summary>Dagna's job to its end: the wall comes down, the dead come through, Tam's held, the deep's open, and she pays.</summary>
+    async Task TheOldFace()
+    {
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        var (p, hud, book, cave) = (main.PlayerNode, main.HudNode, main.MineLog, main.CaveNode);
+        if (cave is null) { Check(false, "down the mine for the old face"); return; }
+        Check(cave.WallStands && cave.Dens.All(e => e.Kind.Id == "giant_rat"), "the deep is walled off, and only rats live on this side of it");
+        book.Worked = MineBook.VeinsToProve - 1;
+        Check(book.VeinWorked() && book.Stage == MineStage.AtTheFace, "enough veins, and Dagna's ready to send you to the old face");
+        await Teleport(Cave.FaceAt + new Vector3(0, 0, 3));
+        main.BreakFaceForTest();
+        await Until(() => cave.Wave.Count > 0, 10);
+        Check(book.Stage == MineStage.Breached && !cave.WallStands && cave.Wave.Count == MineBook.Wave(0).Sum(w => w.Count), $"the face comes down, and {cave.Wave.Count} of the dead come through");
+        var waves = 0;
+        for (var t = 0.0; t < 150 && book.Stage == MineStage.Breached; t += 0.5)
+        {
+            var next = cave.Wave.FirstOrDefault(e => IsInstanceValid(e) && e.State != EnemyState.Dead);
+            if (next is null) { await Frames(30); continue; }
+            book.Tam = MineBook.TamHealth; // the scripted player isn't being tested on their footwork
+            await FightUntilDead(next, 15, chase: true);
+            waves = book.Waves;
+        }
+        Check(book.DeepOpen, $"you hold them through {MineBook.WaveCount} waves ({book.Stage}, {waves} beaten)");
+        Check(cave.Dens.Any(e => e.Kind.Id == "draugr"), "and the dead walk the deep from now on");
+        await Teleport(Cave.InRoom("gold_seam"));
+        Check(City.AreaAt(p.GlobalPosition) == "The Gold Seam" && p.GlobalPosition.Y < Cave.Landing.Y - 30, $"you can stand at the bottom of the mine, {Cave.Landing.Y - p.GlobalPosition.Y:0} m down");
+        await Until(() => main.WorkingsNode.Shown.Any(s => s.Kind == "gold"), 5);
+        Check(main.WorkingsNode.Shown.Any(s => s.Kind == "gold"), "where there's gold in the walls");
+        await main.LeaveMineForTest();
+        await Frames(10);
+        Check(!main.InMine && p.GlobalPosition.Y < 100 && City.Sun.Visible, "the way up brings you back to daylight");
+        await Teleport(Main.QuarryAt + new Vector3(5, 0, 6));
+        var purse = p.Crowns;
+        main.Talk(Who(Shops.Quarry.Id));
+        Check(hud.Choose("It's done") && p.Crowns == purse + MineBook.Pay && book.Stage == MineStage.Done, $"Dagna pays {MineBook.Pay} crowns");
+        hud.EndTalk();
+        var saved = CompanySave.FromJson(main.Save());
+        Check(saved.Mine?.Stage == MineStage.Done, "and the save remembers it");
+    }
+
     async Task Teleport(Vector3 at)
     {
         var p = main.PlayerNode;
@@ -2854,8 +2910,11 @@ public partial class SelfTest(Main main) : Node
         pack.Add("scrap_iron", 3);
         main.Talk(smith!);
         Check(main.HudNode.Choose("Can I use your forge"), "she lets you use her forge");
-        Check(main.HudNode.Choose("Make Iron Ingot"), "you smelt scrap into an iron ingot");
-        Check(pack.Count("iron_ingot") >= 1 && pack.JobXp.GetValueOrDefault(Job.Smithing) > 0, "and learn a little smithing");
+        Check(main.HudNode.Choose("Make Iron Ingot") && pack.Count("iron_ingot") == 0, "a forge with nothing to burn won't work the iron");
+        pack.Add("pine_log", 2);
+        main.HudNode.Choose("Make Iron Ingot");
+        Check(pack.Count("iron_ingot") >= 1 && pack.Count("pine_log") == 1, "with a log on the fire you smelt scrap into an iron ingot");
+        Check(pack.JobXp.GetValueOrDefault(Job.Smithing) > 0, "and learn a little smithing");
         main.HudNode.EndTalk();
 
         // Sell what you don't need.

@@ -44,7 +44,24 @@ public static class Seas
             "a rich alchemists' city at the mouth of the Amber, four days south through the worst of the pirate waters"),
     ];
 
-    public static SeaPort? Get(string id) => Ports.FirstOrDefault(p => p.Id == id);
+    /// <summary>What lies past the known ports, nearest first: nobody's sailed there and come back with a chart. Each one found is a port for good.</summary>
+    public static readonly IReadOnlyList<SeaPort> Uncharted =
+    [
+        new("port:skerrylund", "Skerrylund", 4, 0.45, [Good.Fish, Good.Leather], [Good.Timber, Good.Ale, Good.Bread],
+            "a scatter of rocky isles where the seal-hunters winter, off every chart the Brine Company owns"),
+        new("port:halcyon", "Port Halcyon", 5, 0.5, [Good.Herbs, Good.Ale], [Good.Iron, Good.Stone, Good.Potions],
+            "a white-walled harbour town on a warm coast, who'd never heard of Tristinwold and were glad to"),
+        new("port:cinderisles", "the Cinder Isles", 5, 0.7, [Good.Coal, Good.Ore], [Good.Bread, Good.Timber, Good.Meat],
+            "black islands that smoke at the peak, mined by people who've learned not to mind"),
+        new("port:pearlatoll", "the Pearl Atoll", 6, 0.55, [Good.Precious, Good.Fish], [Good.Timber, Good.Iron, Good.Leather],
+            "a ring of reef and palm round a green lagoon, where the divers go deeper than anyone should"),
+        new("port:verdane", "Verdane", 7, 0.6, [Good.Timber, Good.Herbs], [Good.Iron, Good.Potions, Good.Precious],
+            "the first port on a whole new continent of forest, its back to trees nobody's seen the far side of"),
+        new("port:ostmark", "Ostmark", 8, 0.8, [Good.Iron, Good.Precious], [Good.Bread, Good.Ale, Good.Herbs],
+            "a walled city of iron and old money on the far continent's cold shore, with a fleet of its own"),
+    ];
+
+    public static SeaPort? Get(string id) => Ports.Concat(Uncharted).FirstOrDefault(p => p.Id == id);
 }
 
 /// <summary>A voyage under way: out to a port, a call there, and home again; and the pirates waiting on each leg.</summary>
@@ -77,6 +94,8 @@ public sealed class Voyage
 
     /// <summary>How far along this leg (0 to 1), kept with the save: a voyage is long.</summary>
     public double Along { get; set; }
+    /// <summary>Out past the charts, to find a port rather than to trade with one.</summary>
+    public bool Explore { get; set; }
     /// <summary>How fast she sails against the usual: light sails make it 1.33.</summary>
     public double Pace { get; set; } = 1;
     /// <summary>A leg takes a day of the city's clock for every day out: ten minutes a league.</summary>
@@ -162,7 +181,15 @@ public sealed class SeaBook
 
     /// <summary>How far out the company will send someone of the hero's rank.</summary>
     public int Reach => Rank switch { SeaRank.Captain or SeaRank.FirstMate => 4, SeaRank.Bosun => 3, _ => 2 };
-    public IEnumerable<SeaPort> Ports => Seas.Ports.Where(p => p.Leagues <= Reach);
+    public IEnumerable<SeaPort> Ports => Seas.Ports.Where(p => p.Leagues <= Reach).Concat(Seas.Uncharted.Where(p => Charted.Contains(p.Id)));
+
+    /// <summary>The ports the hero has found past the old charts; open to them for good.</summary>
+    public HashSet<string> Charted { get; set; } = [];
+    /// <summary>A bosun can be trusted with a chart. The next place past the edge of it, if there's one left.</summary>
+    public SeaPort? NextChart => Rank >= SeaRank.Bosun ? Seas.Uncharted.FirstOrDefault(p => !Charted.Contains(p.Id)) : null;
+    public const double ExplorePay = 1.6;
+
+    public static string Explorer(int charted) => charted switch { >= 6 => "master of the charts", >= 4 => "pathfinder", >= 2 => "navigator", >= 1 => "chart-maker", _ => "" };
 
     public static string Title(SeaRank r) => r switch
     {
@@ -198,9 +225,11 @@ public sealed class SeaBook
     }
 
     /// <summary>Sets sail for a port: where the pirates lie in wait on each leg, and the deck work there'll be.</summary>
-    public Voyage? Sail(SeaPort port, Rng rng)
+    /// <param name="explore">Out past the charts: it's the port that's the prize, and the company pays more for the risk.</param>
+    public Voyage? Sail(SeaPort port, Rng rng, bool explore = false)
     {
-        if (Rank == SeaRank.Landsman || Outlaw || Voyage is not null || port.Leagues > Reach || OwnShip && Hull < Seaworthy) return null;
+        var allowed = explore ? NextChart == port : port.Leagues <= Reach || Charted.Contains(port.Id);
+        if (Rank == SeaRank.Landsman || Outlaw || Voyage is not null || !allowed || OwnShip && Hull < Seaworthy) return null;
         if (!OwnShip) Hull = 100; // the company sends a sound ship
         List<double> Leg()
         {
@@ -214,7 +243,7 @@ public sealed class SeaBook
             Pace = Pace,
             Port = port.Id, PortName = port.Name, Leagues = port.Leagues, Out = Leg(), Home = Leg(),
             Pirates = 2 + port.Leagues + rng.Next(2) + (Rank >= SeaRank.FirstMate ? 1 : 0),
-            Pay = PayFor(port), Command = Rank == SeaRank.Captain,
+            Pay = (int)Math.Round(PayFor(port) * (explore ? ExplorePay : 1)), Command = Rank == SeaRank.Captain, Explore = explore,
         };
     }
 
@@ -227,6 +256,7 @@ public sealed class SeaBook
     {
         if (Voyage is not { InPort: false, Homeward: false } v) return false;
         v.InPort = true;
+        if (v.Explore) Charted.Add(v.Port);
         return true;
     }
 

@@ -196,9 +196,9 @@ public static class Humans
         ["Poet"] = new(new("#e8dcc0"), new("#6a5a4a"), new("#3a2a20")),
         ["Scribe"] = new(new("#6a6a8a"), new("#3a3a4a"), new("#3a2a20")),
         ["Musician"] = new(new("#c08a50"), new("#5a4a3a"), new("#3a2a20")),
-        ["Alchemist"] = new(new("#5a7a4a"), new("#3a3a30"), new("#3a2a20")),
-        ["EtherAeronaut"] = new(new("#a88a50"), new("#3a3a44"), new("#2a2220")),
-        ["Saboteur"] = new(new("#6a6a4a"), new("#3a3a2a"), new("#2a2220"), Cap: new("#5a5a3a")),
+        ["Alchemist"] = new(new("#8a6a3e"), new("#40382c"), new("#3a2a20"), Cap: new("#5a4630")),
+        ["EtherAeronaut"] = new(new("#7a4f2c"), new("#3a3028"), new("#2a2220"), Cap: new("#b08a4a")),
+        ["Saboteur"] = new(new("#34342e"), new("#26261f"), new("#1e1a16"), Cap: new("#2c2c26")),
         // The young who follow a hero, and the rest of the enemies.
         ["squire"] = new(new("#a0a4ac"), new("#3a3a44"), new("#2a2220")),
         ["apprentice"] = new(new("#4a5a9a"), new("#2a2a4a"), new("#3a2a20")),
@@ -318,6 +318,8 @@ public partial class Figure
     readonly Dictionary<string, Node> _held = [];
     List<Node> _garments = [];
     string _garmentLook = "townsfolk";
+    string _wear = "Class";
+    (string Style, Color Colour)? _cut;
     float _top = 1.7f;
 
     /// <summary>A real body (see <see cref="Humans"/>), rather than a KayKit figure.</summary>
@@ -361,6 +363,9 @@ public partial class Figure
             var dye = new Color(a.OutfitHex);
             outfit = outfit with { Tunic = outfit.Tunic * dye, Trousers = outfit.Trousers * dye.Darkened(0.2f), Cap = outfit.Cap is { } c ? c * dye : null };
         }
+        if (Tristinwold.Gameplay.Avatar.ClothHex(a.Top) is { } top) outfit = outfit with { Tunic = new Color(top) };
+        if (Tristinwold.Gameplay.Avatar.ClothHex(a.Bottom) is { } bottom) outfit = outfit with { Trousers = new Color(bottom) };
+        if (a.Sleeves != "Class") outfit = outfit with { Sleeves = a.Sleeves == "Long" };
         outfit = a.Headwear switch
         {
             "Hood" => outfit with { Cap = outfit.Cap ?? outfit.Tunic.Darkened(0.25f) },
@@ -369,7 +374,7 @@ public partial class Figure
         };
         var height = Tristinwold.Gameplay.Avatar.Heights.FirstOrDefault(h => h.Name == a.Height).Scale is > 0 and var h ? h / 0.74f : 1;
         var width = Tristinwold.Gameplay.Avatar.Builds.FirstOrDefault(b => b.Name == a.Build).Width is > 0 and var w ? w : 1;
-        var hair = a.Style == "Natural" ? null : a.Style;
+        var hair = a.Style == "Natural" ? null : Tristinwold.Gameplay.Avatar.IsCut(a.Style) ? "None" : a.Style;
         var f = Build(classLook, Humans.BodyFor(people, sex, stage), sex, stage, new Garb(outfit, who, null, hair, Width: width), height, width, a);
         return f;
     }
@@ -394,6 +399,11 @@ public partial class Figure
         f._mesh = mesh;
         f._skeleton = skeleton;
         f._garmentLook = look;
+        if (a is not null)
+        {
+            f._wear = a.Wear;
+            f._cut = Tristinwold.Gameplay.Avatar.IsCut(a.Style) ? (a.Style, new Color(a.HairHex)) : null;
+        }
         if (f._source is { } src && src.GetSurfaceCount() > 0) { var vs = src.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array(); if (vs.Length > 0) f._top = vs.Max(v => v.Y); }
         // A cap or a hood in the kit covers the hair: it's put away, and the scalp painted its colour, so nothing pokes through the steel.
         // With nothing on the head, the hair is kept and the scalp left alone, whatever the outfit's cap colour was for.
@@ -446,6 +456,13 @@ public partial class Figure
         {
             // The item names its KayKit piece ("Knight/1H_Sword"); the armoury forges the same thing to real size, in the item's metal.
             if (pack.WornIn(slot) is not { } item || item.Look is null) continue;
+            if (item.Look.StartsWith('@')) // made from shapes: a hammer, a mace
+            {
+                if (_held.Remove(bone, out var off)) off.QueueFree();
+                if (Craft(_skeleton, bone, item.Look[1..]) is { } crafted) _held[bone] = crafted;
+                if (slot == Tristinwold.Gameplay.Slot.Weapon) Held = item.Grip;
+                continue;
+            }
             var id = item.Look.Contains('/') ? item.Look.Split('/')[1] : item.Look;
             var forged = Armoury.Make(id, item.Tint is { } t ? new Color(t) : null, item.Metal, item.Glow) ?? piece(item);
             if (forged is null) continue;
@@ -473,7 +490,7 @@ public partial class Figure
     void Regarment((Color Tint, bool Metal)? armour, Color? helm)
     {
         foreach (var n in _garments) if (IsInstanceValid(n)) { n.GetParent()?.RemoveChild(n); n.QueueFree(); }
-        _garments = _skeleton is not null && _garb is not null ? Garments.Dress(_skeleton, _garmentLook, _garb.Outfit, _top, armour, helm) : [];
+        _garments = _skeleton is not null && _garb is not null ? Garments.Dress(_skeleton, _garmentLook, _garb.Outfit, _top, armour, helm, _wear, _cut) : [];
     }
 
     /// <summary>How many kit pieces hang on this body (the self-test counts).</summary>
@@ -790,7 +807,7 @@ public partial class HumanGaze : SkeletonModifier3D
             }
         }
         _gazing = Mathf.MoveToward(_gazing, want, 0.03f);
-        _turn = _turn.Slerp(goal, 0.1f);
+        _turn = _turn.Normalized().Slerp(goal.Normalized(), 0.1f).Normalized(); // a little drift each frame would otherwise add up to an error
         var turn = Quaternion.Identity.Slerp(_turn, _gazing);
         // KayKit's clips tip a real head back a little (they were made for its big round heads): brought level, then turned.
         var level = new Quaternion(Vector3.Right, Mathf.DegToRad(Level));

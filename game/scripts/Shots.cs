@@ -520,6 +520,118 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             await Shot(name);
         }
         if (OS.GetCmdlineUserArgs().Contains("--exchange")) goto exchange;
+        if (OS.GetCmdlineUserArgs().Contains("--wood"))
+        {
+            // The wood from above, down its road, in the maze, and the mountains behind it.
+            await From("wood-above", new Vector3(-140, 110, -470), new Vector3(-140, 0, -700));
+            await From("village-road", new Vector3(-146, 3, -558), new Vector3(-140, 12, -640));
+            await From("village-trunk", new Vector3(-118, 5, -612), new Vector3(-140, 14, -640));
+            await From("village-above", new Vector3(-60, 34, -600), new Vector3(-140, 10, -645));
+            await From("guardian", new Vector3(-406, 6, -880), new Vector3(-420, 5, -905));
+            await From("wood-road", new Vector3(-162, 3, -340), new Vector3(-150, 3, -420));
+            await From("wood-maze", new Vector3(-280, 3, -900), new Vector3(-320, 3, -900));
+            await From("wood-ridge", new Vector3(-400, 40, -1010), new Vector3(-1100, 80, -1430));
+            await From("wood-strand", new Vector3(-930, 8, -260), new Vector3(-1500, 0, -250));
+            GetTree().Quit();
+            return;
+        }
+        if (OS.GetCmdlineUserArgs().Contains("--seasons"))
+        {
+            // The same view of the woods in each season.
+            foreach (var (name, day) in new[] { ("spring", 3), ("summer", 10), ("fall", 17), ("winter", 25) })
+            {
+                main.Economy.Day = day;
+                await From("season-" + name, new Vector3(-150, 6, -96), new Vector3(-150, 2, -130));
+                await Frames(160);
+                await Shot("season-" + name);
+            }
+            GetTree().Quit();
+            return;
+        }
+        if (OS.GetCmdlineUserArgs().Contains("--looks"))
+        {
+            // New cuts and mixed clothes in a row, then the artificers and the classes with new things in hand (run with --humans).
+            var stand = new Vector3(-150, 0, -120);
+            main.TerrainNode.EnsureAround(stand, 1);
+            p.GlobalPosition = stand + new Vector3(0, 1, 9);
+            await Frames(30);
+            async Task Row(string name, (string Class, Tristinwold.Gameplay.Avatar Look)[] who)
+            {
+                var row = new List<Figure>();
+                for (var i = 0; i < who.Length; i++)
+                {
+                    var f = Figure.Create(who[i].Class, who[i].Look);
+                    main.AddChild(f);
+                    var at = stand + new Vector3((i - (who.Length - 1) / 2f) * 1.25f, 0, 0);
+                    f.GlobalPosition = at with { Y = City.FloorAt(at) };
+                    f.RotationDegrees = new Vector3(0, 180, 0);
+                    row.Add(f);
+                }
+                await Frames(40);
+                var eye = stand with { Y = City.FloorAt(stand) } + new Vector3(0, 1.3f, -5.6f);
+                cam.GlobalPosition = eye;
+                cam.LookAt(stand with { Y = City.FloorAt(stand) } + new Vector3(0, 1, 0), Vector3.Up);
+                cam.MakeCurrent();
+                await Shot(name);
+                foreach (var f in row) f.QueueFree();
+            }
+            Tristinwold.Gameplay.Avatar Base(string look, string sex) => Tristinwold.Gameplay.Avatar.For(look) with { Sex = sex, Headwear = "none" };
+            await Row("looks-hair", [
+                ("Thief", Base("Thief", "Male") with { Style = "Topknot", Hair = "Black", Top = "Forest", Bottom = "Sand", Wear = "Wrapped robe" }),
+                ("Thief", Base("Thief", "Female") with { Style = "Bun", Hair = "Chestnut", Top = "Teal", Bottom = "Slate", Wear = "Vest" }),
+                ("Thief", Base("Thief", "Male") with { Style = "Mohawk", Hair = "Red", Top = "Charcoal", Bottom = "Black", Sleeves = "Short", Wear = "Plain" }),
+                ("Thief", Base("Thief", "Female") with { Style = "Spikes", Hair = "Platinum", Top = "Violet", Bottom = "Black", Wear = "Sash" }),
+                ("Thief", Base("Thief", "Male") with { Style = "Mane", Hair = "Honey", Top = "Russet", Bottom = "Linen", Sleeves = "Short", Wear = "Cloak" }),
+                ("Thief", Base("Thief", "Female") with { Style = "Twintails", Hair = "Rose", Top = "White", Bottom = "Royal", Wear = "Robe" }),
+            ]);
+            await Row("looks-classes", [.. new[] { "Alchemist", "EtherAeronaut", "Saboteur", "Sorcerer", "Poet", "Scribe", "Musician" }.Select(c => (c, Base(c, "Male")))]);
+            GetTree().Quit();
+            return;
+        }
+        if (OS.GetCmdlineUserArgs().Contains("--indoors"))
+        {
+            // The shops on the Gallows road, and a room of each kind.
+            await From("store-road", new Vector3(74, 5, -2), new Vector3(78, 1, 13));
+            await From("store-smithy", new Vector3(76, 2.2f, 5.5f), new Vector3(75, 1.2f, 13));
+            foreach (var kind in new[] { "house", "tavern", "smithy", "church" })
+            {
+                main.GoInsideForTest(kind, 3, City.PlayerStart);
+                await Frames(40);
+                cam.GlobalPosition = p.GlobalPosition + new Vector3(0, 1.2f, 0.8f);
+                cam.LookAt(p.GlobalPosition + new Vector3(0, 0.6f, -9), Vector3.Up);
+                cam.MakeCurrent();
+                await Shot("inside-" + kind);
+                main.GoOutsideForTest();
+                await Frames(10);
+            }
+            GetTree().Quit();
+            return;
+        }
+        if (OS.GetCmdlineUserArgs().Contains("--mine"))
+        {
+            // The mound and its door, then the mine from the adit down to the gold (--mine-deep to see past the old face).
+            await From("mine-mound", Main.MineDoor + new Vector3(3, 6, 24), Main.MineDoor + new Vector3(0, 3, -3));
+            await From("mine-door", Main.MineDoor + new Vector3(1.5f, 2.4f, 7), Main.MineDoor + new Vector3(0, 1.8f, 0));
+            main.EnterMineForTest();
+            await Frames(90);
+            if (OS.GetCmdlineUserArgs().Contains("--mine-deep")) main.MineLog.Stage = MineStage.Done;
+            async Task Below(string name, Vector3 stand, Vector3 eye, Vector3 look)
+            {
+                p.GlobalPosition = stand + Vector3.Up;
+                await Frames(40);
+                cam.GlobalPosition = eye;
+                cam.LookAt(look, Vector3.Up);
+                cam.MakeCurrent();
+                await Shot(name);
+            }
+            await Below("mine-adit", Cave.Landing, Cave.At(0, 7) + Vector3.Up * 2.2f, Cave.At(0, -8) + Vector3.Up);
+            await Below("mine-timbering", Cave.InRoom("timbering"), Cave.At(0, -25) + Vector3.Up * 2.4f, Cave.At(0, -40) + Vector3.Up);
+            await Below("mine-drift", Cave.At(-14, -40), Cave.At(-11, -39) + Vector3.Up * 1.7f, Cave.At(-22, -44) + Vector3.Up * 1.5f);
+            await Below("mine-stope", Cave.InRoom("iron_stope"), Cave.At(-26, -44) + Vector3.Up * 2.5f, Cave.At(-38, -52) + Vector3.Up);
+            await Below("mine-old-face", Cave.InRoom("old_face"), Cave.At(4, -113) + Vector3.Up * 2.2f, Cave.FaceAt + Vector3.Up * 1.5f);
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--scenery"))
         {
             // The photo-scanned scenery: a pine forest, the crags, and the harbour with its ships at anchor.

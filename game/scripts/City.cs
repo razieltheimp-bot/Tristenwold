@@ -55,13 +55,14 @@ public static class City
 
     public static string AreaAt(Vector3 p)
     {
+        if (BelowName?.Invoke(p) is { } chamber) return chamber;
         Zone? best = null;
         foreach (var z in Zones)
         {
             var flat = new Vector2(p.X - z.Center.X, p.Z - z.Center.Z).Length();
             if (flat <= z.Radius && (best is null || z.Priority > best.Priority)) best = z;
         }
-        return best?.Name ?? WorldGen.Default.AreaAt(p.X, p.Z);
+        return best?.Name ?? (Northwood.Inside(p.X, p.Z) ? "The Northwood" : WorldGen.Default.AreaAt(p.X, p.Z));
     }
 
     /// <summary>Ground height at a point: the city's ring platforms, or the land outside them.</summary>
@@ -74,8 +75,47 @@ public static class City
     /// <summary>Out at sea (see <see cref="AtSea"/>): the deck's height, where there's a ship under the hero instead of land.</summary>
     public static Func<Vector3, float?>? Afloat { get; set; }
 
+    /// <summary>Down the mine (see <see cref="Cave"/>): the rock floor, and the name of the chamber, where there's a cave instead of land.</summary>
+    public static Func<Vector3, float?>? Below { get; set; }
+    public static Func<Vector3, string?>? BelowName { get; set; }
+
+    static Action? _letIn;
+
+    /// <summary>The sky's shut out just now: the hero's under a roof or down a mine.</summary>
+    public static bool Shut => _letIn is not null;
+
+    /// <summary>Under a roof or a mountain: no sky, no sun, a little light from nowhere and whatever lamps there are.</summary>
+    public static void ShutOutSky(Color ambient, float energy, float fog)
+    {
+        LetInSky();
+        var env = Sky;
+        var (background, colour, source, light, power, reflected, haze, density, sun) = (env.BackgroundMode, env.BackgroundColor, env.AmbientLightSource, env.AmbientLightColor, env.AmbientLightEnergy, env.ReflectedLightSource, env.FogLightColor, env.FogDensity, Sun.Visible);
+        _letIn = () =>
+        {
+            (env.BackgroundMode, env.BackgroundColor, env.AmbientLightSource, env.AmbientLightColor, env.AmbientLightEnergy, env.ReflectedLightSource, env.FogLightColor, env.FogDensity) =
+                (background, colour, source, light, power, reflected, haze, density);
+            Sun.Visible = sun;
+        };
+        env.BackgroundMode = Godot.Environment.BGMode.Color;
+        env.BackgroundColor = new Color("#050404");
+        env.AmbientLightSource = Godot.Environment.AmbientSource.Color;
+        env.AmbientLightColor = ambient;
+        env.AmbientLightEnergy = energy;
+        env.ReflectedLightSource = Godot.Environment.ReflectionSource.Disabled;
+        env.FogLightColor = new Color("#0c0a08");
+        env.FogDensity = fog;
+        Sun.Visible = false;
+    }
+
+    public static void LetInSky()
+    {
+        _letIn?.Invoke();
+        _letIn = null;
+    }
+
     public static float FloorAt(Vector3 p)
     {
+        if (Below?.Invoke(p) is { } rock) return rock;
         if (Afloat?.Invoke(p) is { } deck) return deck;
         if (OnPier(p)) return Mathf.Max(0, (float)WorldGen.Default.Height(p.X, p.Z)); // the boards
         var r = new Vector2(p.X, p.Z).Length();

@@ -78,6 +78,7 @@ public partial class Main
         else if (_atSea?.Agent == person && _sea.Voyage is { InPort: true } v && Seas.Get(v.Port) is { } port)
         {
             if (_sea.Capacity > 0) yield return ("Trade from the hold.", () => TradeAtPort(person, _sea.Market(port, _city.Day)));
+            if (v.Explore) yield return ("What is this place?", () => Say(person, $"Stranger, you're the first ship from your side of the water to find {port.Name}. Tell them we'll trade."));
             yield return ($"What news in {port.Name}?", () => Say(person, $"{char.ToUpper(port.About[0])}{port.About[1..]}. That's {port.Name} for you."));
             yield return ("Cast off for home.", () =>
             {
@@ -111,6 +112,10 @@ public partial class Main
         if (s.Voyage is null)
         {
             yield return ("Where are the ships bound?", () => OfferVoyages(person));
+            if (s.NextChart is { } edge)
+                yield return ($"I want to chart new waters. ({edge.Leagues} days out, past the charts)", () => OfferChart(person, edge));
+            else if (s.Rank >= SeaRank.Bosun && s.Charted.Count > 0)
+                yield return ("Is there anything left to chart?", () => Say(person, "You've filled every map I own. The company's never had a better chart-maker."));
             if (s.Capacity > 0)
             {
                 yield return ($"Load the hold from the Exchange. ({s.Loaded}/{s.Capacity} aboard)", () => LoadHold(person));
@@ -136,11 +141,20 @@ public partial class Main
             : $"There's a berth for {Article(SeaBook.Title(s.Rank))} on {SeaBook.CompanyShip} to any of these.", [.. options]);
     }
 
-    void Embark(Person? person, SeaPort port)
+    /// <summary>Marit's offer of a voyage past the charts: a better wage, worse water, and a new port for the company if you find it.</summary>
+    void OfferChart(Person person, SeaPort port)
     {
-        if (_sea.Sail(port, _lootRng) is not { } v) { if (person is not null) Say(person, "Not with that ship, you're not."); return; }
+        if (_sea.OwnShip && _sea.Hull < SeaBook.Seaworthy) { Say(person, $"{_sea.ShipName} won't swim with her hull like that. Get her to Osric's yard."); return; }
+        var pay = (int)Math.Round(_sea.PayFor(port) * SeaBook.ExplorePay);
+        _hud.Talk(Who(person.Npc), $"A fisherman swears there's land {port.Leagues} days past the last chart I've got. Find it, and it's a port for the company from then on. {(pay > 0 ? $"{pay} crowns, and I won't pretend the water's safe." : "It's your own ship, so it's your own risk.")}",
+            ("Cast off for the edge of the chart.", () => Embark(person, port, explore: true)), ("Not today.", () => Say(person, "The edge of the map'll keep.")));
+    }
+
+    void Embark(Person? person, SeaPort port, bool explore = false)
+    {
+        if (_sea.Sail(port, _lootRng, explore) is not { } v) { if (person is not null) Say(person, "Not with that ship, you're not."); return; }
         _hud.EndTalk();
-        _hud.Toast($"Aboard {_sea.Ship}, bound for {port.Name}: {v.Leagues} day{(v.Leagues == 1 ? "" : "s")} out, {v.Danger}.", 7);
+        _hud.Toast(explore ? $"Aboard {_sea.Ship}, past the last line on the chart: {v.Leagues} days of open water." : $"Aboard {_sea.Ship}, bound for {port.Name}: {v.Leagues} day{(v.Leagues == 1 ? "" : "s")} out, {v.Danger}.", 7);
         GoToSea(v);
         Save();
     }

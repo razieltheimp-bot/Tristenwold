@@ -116,6 +116,10 @@ public sealed class Bond
     /// <summary>Its health when last saved, as a share of full.</summary>
     public double Health { get; set; } = 1;
 
+    /// <summary>The Northwood's rot: in its blood; or got the better of it (turned on its hero, then beaten down and bound) until a druid cures it.</summary>
+    public bool Blighted { get; set; }
+    public bool Rotted { get; set; }
+
     /// <summary>Following you now, or waiting at home (the Gallows Perch).</summary>
     public bool Following { get; set; } = true;
 

@@ -107,6 +107,9 @@ public sealed record Recipe(Job Job, int Level, string Makes, int Count, (string
 
 public static class Recipes
 {
+    /// <summary>What a forge will burn: every piece made at one takes a log, the cheapest first.</summary>
+    public static readonly IReadOnlyList<string> Fuels = ["pine_log", "oak_log", "yew_log", "rotwood"];
+
     static Recipe Forge(int level, string makes, params (string, int)[] needs) => new(Job.Smithing, level, makes, 1, needs);
     static Recipe Brew(int level, string makes, params (string, int)[] needs) => new(Job.Herbalism, level, makes, 1, needs);
     static Recipe Cook(int level, string makes, int count, params (string, int)[] needs) => new(Job.Cooking, level, makes, count, needs);
@@ -129,6 +132,9 @@ public static class Recipes
         Forge(1, "iron_dagger", ("iron_ingot", 1), ("leather", 1)),
         Forge(1, "iron_sword", ("iron_ingot", 2), ("leather", 1)),
         Forge(1, "iron_axe", ("iron_ingot", 2), ("leather", 1)),
+        Forge(1, "iron_hammer", ("iron_ingot", 2), ("leather", 1)),
+        Forge(1, "iron_mace", ("iron_ingot", 2), ("leather", 1)),
+        Forge(4, "steel_hammer", ("steel_ingot", 2), ("leather", 1)),
         Forge(2, "iron_greatsword", ("iron_ingot", 3), ("leather", 1)),
         Forge(2, "iron_greataxe", ("iron_ingot", 3), ("leather", 1)),
         Forge(1, "wooden_shield", ("leather", 1), ("iron_ingot", 1)),
@@ -138,6 +144,7 @@ public static class Recipes
         Forge(2, "hunting_crossbow", ("iron_ingot", 1), ("leather", 1), ("antler", 1)),
         // Leather and fur.
         Forge(1, "leather_armor", ("leather", 4)),
+        Forge(1, "leather_cap", ("leather", 2)),
         Forge(2, "fur_armor", ("leather", 2), ("wolf_pelt", 3)),
         Forge(1, "wolf_cloak", ("wolf_pelt", 2)),
         Forge(2, "bear_cloak", ("bear_pelt", 1), ("leather", 1)),
@@ -340,8 +347,8 @@ public static class Shops
 
     public static readonly Shop Smithy = new("shop:smithy", "The Anvil Gate", "Hulda Ironhand",
         "Steel's honest. People aren't. What do you need hitting, or hitting you less?",
-        ["iron_ingot", "steel_ingot", "coal", "leather", "iron_dagger", "iron_sword", "iron_axe", "iron_greatsword", "iron_greataxe",
-         "hunting_crossbow", "wooden_shield", "iron_shield", "iron_helm", "horned_hat", "leather_armor", "iron_mail", "knight_cape"],
+        ["iron_ingot", "steel_ingot", "coal", "pine_log", "leather", "iron_dagger", "iron_sword", "iron_axe", "iron_hammer", "iron_mace", "iron_greatsword", "iron_greataxe",
+         "hunting_crossbow", "wooden_shield", "iron_shield", "leather_cap", "iron_helm", "horned_hat", "leather_armor", "iron_mail", "knight_cape"],
         Forge: true);
 
     public static readonly Shop Apothecary = new("shop:apothecary", "Saffron's Remedies", "Old Saffron",
@@ -353,7 +360,7 @@ public static class Shops
     /// <summary>Young beasts, raised tame (see <see cref="Gameplay.Menagerie"/>), and meat to feed them.</summary>
     public static readonly Shop Menagerie = new("shop:menagerie", "Wren's Menagerie", "Wren Halloway",
         "Every one of them raised by my own hand, and every one of them tame. Mostly. No dragons: nobody sells dragons.",
-        ["meat"], Beasts: true);
+        ["meat", "snare", "leather"], Beasts: true);
 
     /// <summary>Bryn's stall by the east gate: rods, and the morning's catch. Bryn buys any fish.</summary>
     public static readonly Shop Fishmonger = new("shop:fishmonger", "Bryn's Fish Stall", "Bryn Saltmarsh",
@@ -363,17 +370,17 @@ public static class Shops
     /// <summary>The Greyhollow quarry and mine, west of the walls: picks, stone and ore.</summary>
     public static readonly Shop Quarry = new("shop:quarry", "Greyhollow Quarry", "Dagna Flint",
         "Stone for the walls, ore for the smelters, coal for everyone. Grab a pick and swing it, if you've the arms for it.",
-        ["pickaxe", "stone_block", "iron_ore", "coal"], Trade: Job.Mining);
+        ["pickaxe", "stone_block", "iron_ore", "coal", "tinderbox", "bread", "healing_draught"], Trade: Job.Mining);
 
     /// <summary>Hollin's woodlot, south-west of the walls: axes and timber.</summary>
     public static readonly Shop Woodlot = new("shop:woodlot", "Hollin's Woodlot", "Hollin Ashby",
         "Pine for the fires, oak for the ships, and a yew or two for the bowyers. Fell what's marked, and I'll buy every log.",
-        ["woodcutters_axe", "pine_log", "oak_log"], Trade: Job.Woodcutting);
+        ["woodcutters_axe", "pine_log", "oak_log", "bread", "tinderbox", "traveller_cloak"], Trade: Job.Woodcutting);
 
     /// <summary>The Salt Barrel's kitchen, down by the south road: ale, hot food, and a hearth a hero can cook at.</summary>
     public static readonly Shop SaltBarrel = new("shop:salt_barrel", "The Salt Barrel", "Fenna Rook",
         "Sit down before you fall down. Ale's four, stew's eighteen, and if you've caught something, the hearth's yours.",
-        ["ale", "bread", "grilled_fish", "fish_stew", "roast_venison"], Kitchen: true, Trade: Job.Cooking);
+        ["ale", "bread", "grilled_fish", "fish_stew", "roast_venison", "vegetable_stew", "roast_bird"], Kitchen: true, Trade: Job.Cooking);
 
     /// <summary>The allotments south of the walls: seeds, and a plot to grow them in.</summary>
     public static readonly Shop Allotments = new("shop:allotments", "The Commons Allotments", "Gilly Thatch",
@@ -389,7 +396,7 @@ public static class Shops
     /// <summary>The keeper of the Tumblers' Run, the obstacle course west of the walls.</summary>
     public static readonly Shop Course = new("shop:course", "The Tumblers' Run", "Cole Sparrow",
         "Log, net, rope, stones, wall, slide. In that order, and don't stop. Every lap makes you quicker.",
-        ["stamina_brew", "travel_rations"], Trade: Job.Agility);
+        ["stamina_brew", "travel_rations", "bread", "healing_draught", "traveller_cloak"], Trade: Job.Agility);
 
     public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie, Fishmonger, Quarry, Woodlot, SaltBarrel, Allotments, Jeweller, Course];
 

@@ -218,6 +218,11 @@ public partial class StartScreen : CanvasLayer
             Row(rows, "Eyes", () => _avatar.Eyes, d => _avatar = _avatar with { Eyes = Step(Avatar.EyeColours, _avatar.Eyes, d) });
             Row(rows, "Hair", () => Avatar.StyleName(_avatar.Style), d => _avatar = _avatar with { Style = Step([.. Avatar.Styles(_avatar.Sex)], _avatar.Style, d) });
             Row(rows, "On the head", () => _avatar.Headwear == "none" ? "Nothing" : _avatar.Headwear, d => _avatar = _avatar with { Headwear = Step(Avatar.Headwears, _avatar.Headwear, d) });
+            var cloths = Avatar.Cloths.Select(c => c.Name).ToArray();
+            Row(rows, "Top", () => _avatar.Top == "Class" ? "As the class" : _avatar.Top, d => _avatar = _avatar with { Top = Step(cloths, _avatar.Top, d) });
+            Row(rows, "Bottoms", () => _avatar.Bottom == "Class" ? "As the class" : _avatar.Bottom, d => _avatar = _avatar with { Bottom = Step(cloths, _avatar.Bottom, d) });
+            Row(rows, "Sleeves", () => _avatar.Sleeves == "Class" ? "As the class" : _avatar.Sleeves, d => _avatar = _avatar with { Sleeves = Step(Avatar.SleeveStyles, _avatar.Sleeves, d) });
+            Row(rows, "Over them", () => _avatar.Wear == "Class" ? "As the class" : _avatar.Wear, d => _avatar = _avatar with { Wear = Step(Avatar.Wears, _avatar.Wear, d) });
         }
         else
         {

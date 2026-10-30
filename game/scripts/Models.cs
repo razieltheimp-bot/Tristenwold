@@ -268,6 +268,13 @@ public abstract partial class Body : Node3D
     {
         "giant_rat" => (Body?)Creature.Create("giant_rat.glb", 0.6f) ?? Beast.Rat(),
         "spriggan" => (Body?)Creature.Create("forest_monster.glb", 2.3f) ?? Figure.Create(look),
+        "guardian_moss" => (Body?)Creature.Create("forest_monster.glb", 8f, new Color("#7fae55")) ?? Figure.Create(look),
+        "guardian_bark" => (Body?)Creature.Create("forest_monster.glb", 7.5f, new Color("#a98a64")) ?? Figure.Create(look),
+        "guardian_elder" => (Body?)Creature.Create("forest_monster.glb", 8.5f, new Color("#5a8a78")) ?? Figure.Create(look),
+        "guardian_blight" => (Body?)Creature.Create("forest_monster.glb", 8f, new Color("#3a3a2a")) ?? Figure.Create(look),
+        "ape_elder" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
+        "ape_warrior" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
+        "shroomie" => (Body?)Creature.Create("forest_monster.glb", 1.5f, new Color("#c89070")) ?? Figure.Create(look),
         "frost_troll" => (Body?)Wildfolk.Troll(2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
         "goblin" => (Body?)Creature.Create("goblin.glb", 1.3f) ?? Figure.Create(look),
         "dragon" => Dragon("white"),
@@ -326,13 +333,13 @@ public partial class Figure : Body
         ["Assassin"] = new("Rogue_Hooded", ["Knife", "Knife_Offhand"], 0.74f, new Color("#8c88aa")),
         ["Wizard"] = new("Mage", ["2H_Staff", "Mage_Hat"]),
         ["Warlock"] = new("Mage", ["1H_Wand", "Spellbook_open"], 0.74f, new Color("#b49ad8")),
-        ["Sorcerer"] = new("Mage", [], 0.74f, new Color("#f2a888")),
-        ["Poet"] = new("Mage", ["Spellbook_open"], 0.74f, new Color("#f4dca0"), LeftHand: "@laurel"),
+        ["Sorcerer"] = new("Mage", ["1H_Wand"], 0.74f, new Color("#f2a888")),
+        ["Poet"] = new("Mage", ["Spellbook_open", "1H_Wand"], 0.74f, new Color("#f4dca0"), LeftHand: "@laurel"),
         ["Scribe"] = new("Mage", ["Spellbook"], 0.74f, new Color("#c8c0e0"), RightHand: "@quill"),
-        ["Musician"] = new("Rogue", [], 0.74f, new Color("#f0c890"), LeftHand: "@lute", Unarmed: true),
-        ["Alchemist"] = new("Mage", ["Spellbook_open"], 0.74f, new Color("#b8e0a8")),
-        ["EtherAeronaut"] = new("Knight", ["2H_Crossbow", "Knight_Helmet"], 0.74f, new Color("#d8b870"), 0.05f),
-        ["Saboteur"] = new("Rogue_Hooded", ["Knife"], 0.74f, new Color("#9a9a70")),
+        ["Musician"] = new("Rogue", ["Knife"], 0.74f, new Color("#f0c890"), LeftHand: "@lute"),
+        ["Alchemist"] = new("Mage", ["Spellbook_open"], 0.74f, new Color("#d8c890"), RightHand: "@hammer"),
+        ["EtherAeronaut"] = new("Rogue", ["2H_Crossbow"], 0.74f, new Color("#d8b870"), 0.05f),
+        ["Saboteur"] = new("Rogue_Hooded", [], 0.74f, new Color("#8a8a78"), RightHand: "@wrench"),
         ["golem"] = new("Knight", ["Knight_Helmet"], 1.12f, new Color("#c8a048"), 0.3f, Unarmed: true),
         // Characters made before there were nine classes.
         ["Knight"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"]),
@@ -707,6 +714,24 @@ public partial class Figure : Body
             case "axe":
                 Part(new CylinderMesh { TopRadius = 0.035f, BottomRadius = 0.04f, Height = 1.1f }, Paint("#8a6a3e"), new Vector3(0, 0.35f, 0));
                 Part(new BoxMesh { Size = new Vector3(0.36f, 0.26f, 0.04f) }, Paint("#8a8e96", 0.4f), new Vector3(0.18f, 0.82f, 0));
+                break;
+            case "hammer":
+                Part(new CylinderMesh { TopRadius = 0.035f, BottomRadius = 0.04f, Height = 1.0f }, Paint("#7a5a36"), new Vector3(0, 0.3f, 0));
+                Part(new BoxMesh { Size = new Vector3(0.42f, 0.22f, 0.22f) }, Paint("#6e7178", 0.4f), new Vector3(0, 0.82f, 0));
+                Part(new BoxMesh { Size = new Vector3(0.06f, 0.26f, 0.26f) }, Paint("#8a8e96", 0.35f), new Vector3(0.21f, 0.82f, 0)); // the striking face
+                break;
+            case "mace":
+                Part(new CylinderMesh { TopRadius = 0.035f, BottomRadius = 0.04f, Height = 1.0f }, Paint("#5a4632"), new Vector3(0, 0.3f, 0));
+                Part(new SphereMesh { Radius = 0.17f, Height = 0.34f }, Paint("#7a7e86", 0.4f), new Vector3(0, 0.84f, 0));
+                for (var flange = 0; flange < 6; flange++)
+                    Part(new BoxMesh { Size = new Vector3(0.05f, 0.3f, 0.12f) }, Paint("#8a8e96", 0.35f), new Vector3(Mathf.Cos(flange * Mathf.Tau / 6) * 0.15f, 0.84f, Mathf.Sin(flange * Mathf.Tau / 6) * 0.15f), new Vector3(0, -flange * 60, 0));
+                break;
+            case "wrench":
+                Part(new BoxMesh { Size = new Vector3(0.09f, 1.0f, 0.04f) }, Paint("#8a8e96", 0.4f), new Vector3(0, 0.3f, 0));
+                Part(new BoxMesh { Size = new Vector3(0.3f, 0.08f, 0.05f) }, Paint("#7a7e86", 0.4f), new Vector3(0, 0.78f, 0));
+                foreach (var side in new[] { -1, 1 })
+                    Part(new BoxMesh { Size = new Vector3(0.07f, 0.22f, 0.05f) }, Paint("#7a7e86", 0.4f), new Vector3(side * 0.12f, 0.88f, 0));
+                Part(new BoxMesh { Size = new Vector3(0.11f, 0.3f, 0.05f) }, Paint("#b08a4a"), new Vector3(0, -0.05f, 0)); // the brass grip
                 break;
             case "quill":
                 Part(new CylinderMesh { TopRadius = 0.012f, BottomRadius = 0.006f, Height = 0.5f }, Paint("#e8e0d0"), new Vector3(0, 0.15f, 0));

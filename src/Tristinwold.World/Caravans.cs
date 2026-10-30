@@ -94,6 +94,11 @@ public sealed class TradeBook
     [JsonIgnore] public Dictionary<string, TownMarket> Towns => Roads.Towns;
     /// <summary>What this book did to the roads (a place come to know, goods moved), for the game to pass on to the server.</summary>
     [JsonIgnore] public List<CityAction> Outbox { get; } = [];
+    /// <summary>The place past the known roads the yard has sent the hero to find, if any, and how many they've found.</summary>
+    public string? Scouting { get; set; }
+    public string? ScoutingName { get; set; }
+    public int Scouted { get; set; }
+    public const int ScoutPay = 120;
     /// <summary>The camp of caravan-robbers the hero's gone to clear (a <see cref="RoadTrouble"/> id), if any.</summary>
     public string? Hunting { get; set; }
     public CaravanRank Rank { get; set; } = CaravanRank.None;
@@ -225,6 +230,30 @@ public sealed class TradeBook
         OwnWagon = true;
         Rank = CaravanRank.Entrepreneur;
         return true;
+    }
+
+    // ---- scouting the frontier -----------------------------------------------------------------------------------
+
+    /// <summary>The nearest place that trades and has no road from Tristinwold yet, out to half as far again as the wagons go.</summary>
+    public Settlement? NextFrontier(WorldGen world) => world.SitesNear(0, 0, Reach * 1.5)
+        .Where(s => TownMarkets.Trades(s) && !Towns.ContainsKey(s.Id)).MinBy(s => s.DistanceTo(0, 0));
+
+    /// <summary>The yard sends the hero out to find a place.</summary>
+    public bool Scout(Settlement s)
+    {
+        if (Scouting is not null) return false;
+        (Scouting, ScoutingName) = (s.Id, s.Name);
+        return true;
+    }
+
+    /// <summary>The hero's reached the place and opened a road to it: the pay, more for each one found.</summary>
+    public int? Found(Settlement s, int day)
+    {
+        if (Scouting != s.Id) return null;
+        Market(s, day);
+        (Scouting, ScoutingName) = (null, null);
+        Scouted++;
+        return ScoutPay + 20 * Scouted;
     }
 
     // ---- guarding the city's caravans --------------------------------------------------------------------------

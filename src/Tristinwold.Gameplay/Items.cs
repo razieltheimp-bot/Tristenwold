@@ -209,6 +209,8 @@ public static class Items
         new("roast_bird", "Roast Grouse", ItemKind.Food, 12, "Crisp skin and dark meat. Heals a fair bit.") { Use = new Effect(Health: 0.3, Stamina: 0.3) },
         new("rabbit_stew", "Rabbit Stew", ItemKind.Food, 20, "Rabbit, potato and onion. Heals well, and keeps you going for two minutes.") { Use = new Effect(Health: 0.45, Stamina: 0.6, Ward: 8, Seconds: 120) },
         new("smoked_eel", "Smoked Eel", ItemKind.Food, 15, "Keeps for weeks. Heals and restores mana.") { Use = new Effect(Health: 0.3, Mana: 0.4) },
+        new("spoiled_herbs", "Spoiled Herbs", ItemKind.Material, 1, "Picked in the rot, and black to the root. No use for anything."),
+        new("rotwood", "Rotwood", ItemKind.Material, 2, "Corrupted wood. It'll burn, but what it burns off is poison."),
         // ---- weapons ----------------------------------------------------------------------------------
         Gear("iron_sword", "Iron Sword", 40, Slot.Weapon, Grip.OneHand, "Knight/1H_Sword", damage: 0.1),
         Gear("steel_sword", "Steel Sword", 110, Slot.Weapon, Grip.OneHand, "Knight/1H_Sword", damage: 0.2, tint: "#e4ecf4", metal: true),
@@ -221,6 +223,14 @@ public static class Items
         Gear("iron_greataxe", "Iron Greataxe", 60, Slot.Weapon, Grip.TwoHand, "Barbarian/2H_Axe", damage: 0.18),
         Gear("steel_greataxe", "Steel Greataxe", 160, Slot.Weapon, Grip.TwoHand, "Barbarian/2H_Axe", damage: 0.3, tint: "#e4ecf4", metal: true),
         Gear("cinder_greataxe", "The Warden's Cinder Axe", 600, Slot.Weapon, Grip.TwoHand, "Barbarian/2H_Axe", damage: 0.42, tint: "#2a2018", glow: "#ff6a20"),
+        // ---- what the Northwood's guardians leave: worth a very great deal, and a very great crime --------------------
+        Gear("mosswarden_staff", "Ulmoth's Living Staff", 1400, Slot.Weapon, Grip.Caster, "Mage/2H_Staff", damage: 0.5, tint: "#6aa04a", glow: "#a0ff60"),
+        Gear("barkbreaker_maul", "Korrun's Heartwood Maul", 1400, Slot.Weapon, Grip.TwoHand, "Barbarian/2H_Axe", damage: 0.56, tint: "#8a6a44", glow: "#d070ff"),
+        Gear("drowned_mantle", "Mantle of the Drowned Root", 1400, Slot.Body, Grip.None, null, armor: 66, tint: "#3f6a5a"),
+        Gear("blightthorn", "Blightthorn", 1400, Slot.Weapon, Grip.OneHand, "Rogue/Knife", damage: 0.52, tint: "#2a3a22", glow: "#80ff40"),
+        Gear("iron_hammer", "Iron Hammer", 45, Slot.Weapon, Grip.OneHand, "@hammer", damage: 0.12),
+        Gear("steel_hammer", "Steel Hammer", 115, Slot.Weapon, Grip.OneHand, "@hammer", damage: 0.22, tint: "#e4ecf4", metal: true),
+        Gear("iron_mace", "Iron Mace", 45, Slot.Weapon, Grip.OneHand, "@mace", damage: 0.12),
         Gear("iron_dagger", "Iron Dagger", 25, Slot.Weapon, Grip.OneHand, "Rogue/Knife", damage: 0.08),
         Gear("steel_dagger", "Steel Dagger", 80, Slot.Weapon, Grip.OneHand, "Rogue/Knife", damage: 0.16, tint: "#e4ecf4", metal: true),
         Gear("shadow_dagger", "Duskfang", 520, Slot.Weapon, Grip.OneHand, "Rogue/Knife", damage: 0.34, tint: "#1a1424", glow: "#a050ff"),
@@ -241,6 +251,7 @@ public static class Items
         // ---- helmets and hats -------------------------------------------------------------------------
         Gear("iron_helm", "Iron Helm", 40, Slot.Head, Grip.None, "Knight/Knight_Helmet", armor: 12),
         Gear("steel_helm", "Steel Helm", 100, Slot.Head, Grip.None, "Knight/Knight_Helmet", armor: 20, tint: "#e4ecf4", metal: true),
+        Gear("leather_cap", "Leather Cap", 18, Slot.Head, Grip.None, "Barbarian/Barbarian_Hat", armor: 6, tint: "#7a5a3a"),
         Gear("horned_hat", "Horned Fur Hat", 30, Slot.Head, Grip.None, "Barbarian/Barbarian_Hat", armor: 8),
         Gear("wizard_hat", "Wizard's Hat", 40, Slot.Head, Grip.None, "Mage/Mage_Hat", damage: 0.05, armor: 2),
         Gear("goblin_crown", "The Goblin King's Crown", 400, Slot.Head, Grip.None, "graft:crown", armor: 14, damage: 0.06, tint: "#e0b040", metal: true),

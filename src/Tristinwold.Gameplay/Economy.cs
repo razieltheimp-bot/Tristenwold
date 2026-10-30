@@ -56,6 +56,8 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction Escorted(string town) => new("escorted", Town: town);
     public static CityAction Raiders(string town, string clan) => new("raiders", Item: clan, Town: town);
     public static CityAction Cleared(string trouble, string by) => new("cleared", Item: by, Contract: trouble);
+    /// <summary>A guardian of the Northwood slain, or the dragon: everybody's business.</summary>
+    public static CityAction Guardian(string id, bool corrupted = false) => new("guardian", Item: id, N: corrupted ? 1 : 0);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -141,6 +143,19 @@ public sealed class CityEconomy
 
     public ulong Seed { get; set; }
     public int Day { get; set; } = 1;
+    /// <summary>The Northwood, for everyone: the first time the turned guardian falls the dragon's lair opens; a true guardian killed after that breaks the barrier.</summary>
+    public bool LairOpen { get; set; }
+    public bool DragonFree { get; set; }
+    public bool DragonSlain { get; set; }
+    public HashSet<string> GuardiansSlain { get; set; } = [];
+
+    void Slain(string guardian, bool corrupted)
+    {
+        if (guardian == "dragon") { DragonSlain = true; DragonFree = false; return; }
+        if (corrupted) LairOpen = true; // however often it's killed, this happens once
+        else GuardiansSlain.Add(guardian);
+        if (LairOpen && GuardiansSlain.Count > 0 && !DragonSlain) DragonFree = true;
+    }
     public double NextDayAt { get; set; } = DaySeconds;
     public Dictionary<Good, double> Stock { get; set; } = [];
     /// <summary>Each good's price yesterday (as a share of its worth), for the market's arrows.</summary>
@@ -425,6 +440,7 @@ public sealed class CityEconomy
             case "donate_crowns": DonateCrowns(crowns, out _); return true;
             case "cargo" when a.Good is { } g && Enum.IsDefined(g): Stock[g] = Stock.GetValueOrDefault(g) + Math.Clamp(a.N, 0, 10); return true;
             case "treasury": Treasury += crowns; return true;
+            case "guardian" when a.Item is { } guardian: Slain(guardian, a.N == 1); return true;
             // The roads.
             case "know" when a.Market is { } m && m.Id.Length is > 0 and <= 80: return Roads.Know(m);
             case "town_stock" when a.Town is not null && a.Good is { } tg && Enum.IsDefined(tg): Roads.Adjust(a.Town, tg, Math.Clamp(a.N, -60, 60)); return true;

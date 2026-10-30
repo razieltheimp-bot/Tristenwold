@@ -87,6 +87,16 @@ public partial class Main
         }
         // Anyone out in the world can say what their place trades in; with your own wagon there, you can trade.
         if (_world.Find(npc.HomeId) is not { } home || !TownMarkets.Trades(home) || person.GlobalPosition.DistanceTo(_player.GlobalPosition) > 8) yield break;
+        if (_trade.Scouting == home.Id)
+            yield return ("The caravan yard sent me. Will you trade with Tristinwold?", () =>
+            {
+                var pay = _trade.Found(home, _city.Day) ?? 0;
+                _player.Crowns += pay;
+                Sound.Ui("coin");
+                Say(person, $"Tristinwold! We've heard of it, and not much else. Send your wagons, and we'll deal with them fair.");
+                _hud.Toast($"New trade route: {home.Name}. The yard pays {pay} crowns for the scouting.", 8);
+                Save();
+            });
         var m = _trade.Market(home, _city.Day);
         yield return ($"What does {home.Name} trade in?", () => Say(person,
             $"We make {m.MakesText}, and sell it cheap. What we're short of is {m.WantsText}: bring us those and we pay well."));
@@ -107,6 +117,16 @@ public partial class Main
         }
         if (t.Run is null && !t.WagonOut && t.Guarding is null)
             yield return ("Any caravans that need a guard?", () => OfferGuardWork(person));
+        if (t.Scouting is { } scouting)
+            yield return ($"Where am I scouting again?", () => Say(person, _world.Find(scouting) is { } place ? $"{place.Name}, {Direction(person.GlobalPosition, (place.X, place.Z))}. Talk to anyone there and say the yard sent you." : "Forget that one. Nobody's sure it's there."));
+        else if (t.Rank >= CaravanRank.Driver && t.NextFrontier(_world) is { } frontier)
+            yield return ("Is there any frontier to scout?", () =>
+            {
+                t.Scout(frontier);
+                _explored.Rumored.Add(frontier.Id);
+                Say(person, $"Word is there's a place called {frontier.Name}, {Direction(person.GlobalPosition, (frontier.X, frontier.Z))}, and no road of ours goes there. Find it, talk to someone, and open the road. {TradeBook.ScoutPay}-odd crowns in it for you.");
+                Save();
+            });
         if (_city.Roads.Troubles.Count > 0)
             yield return ($"Trouble on the roads? ({_city.Roads.Troubles.Count})", () => OfferTroubles(person));
         if (t.Hunting is { } hunting && _city.Roads.Troubles.FirstOrDefault(x => x.Id == hunting) is { } going)

@@ -62,7 +62,8 @@ public partial class Main
     {
         var pack = _player.Pack;
         var n = Gathered(Herbs.Yield(pack.Level(Job.Herbalism), _lootRng.NextDouble()));
-        pack.Add(plant.HerbId, n);
+        var rotten = Northwood.Corrupted(plant.X, plant.Z); // it comes up black in the hand, and it's good for nothing
+        pack.Add(rotten ? "spoiled_herbs" : plant.HerbId, n);
         _herbs.Picked(plant, _guilds.PlaySeconds);
         _herbPatch.Picked(plant);
         var up = pack.Practise(Job.Herbalism, 5);
@@ -74,7 +75,7 @@ public partial class Main
             _player.Stats.Lose(_player.Stats.MaxHealth * 0.06);
             Hands()?.Hurt();
         }
-        _hud.Toast($"{(plant.HerbId == "honeycomb" ? "Took" : "Picked")} {Items.Count(plant.HerbId, n).ToLowerInvariant()}.{(stung ? " The bees take exception." : "")}{(up is { } level ? $" Herbalism rises to {level}!" : "")}", 3);
+        _hud.Toast($"{(plant.HerbId == "honeycomb" ? "Took" : "Picked")} {Items.Count(rotten ? "spoiled_herbs" : plant.HerbId, n).ToLowerInvariant()}.{(stung ? " The bees take exception." : "")}{(up is { } level ? $" Herbalism rises to {level}!" : "")}", 3);
     }
 
     // ---- the pack (I) ---------------------------------------------------------------------------
@@ -141,7 +142,7 @@ public partial class Main
         var text = $"{TradeName(job)} {level} ({pack.JobXp.GetValueOrDefault(job)}/{(level < Pack.MaxJobLevel ? Pack.XpFor(level + 1) : pack.JobXp.GetValueOrDefault(job))} xp). " +
                    job switch
                    {
-                       Job.Smithing => "Smelt ore or scrap into iron, silver and gold, iron and coal into steel; tan hides into leather; forge weapons and armour.",
+                       Job.Smithing => $"Smelt ore or scrap into iron, silver and gold, iron and coal into steel; tan hides into leather; forge weapons and armour. Each piece burns a log ({Recipes.Fuels.Sum(pack.Count)} in your pack).",
                        Job.Cooking => "Cook what you catch, hunt, snare and grow: any fish grills; venison roasts; stews, pies and a seafood platter fit for the Crown, as you get better. Meals heal, and some make you harder to hurt or harder-hitting for a while.",
                        Job.Crafting => "Cut gems, and make rings and amulets from silver and gold (worn on a finger and at the throat), and clothes on the loom.",
                        Job.Building => "Saw logs into planks for your house, and carve a charm to come home by.",
@@ -155,7 +156,17 @@ public partial class Main
             return (label, (Action)(() =>
             {
                 var before = pack.Level(job);
+                var fuel = job == Job.Smithing ? Recipes.Fuels.FirstOrDefault(f => pack.Count(f) > 0) : null;
+                if (job == Job.Smithing && fuel is null) { Sound.Ui("error"); _hud.Toast("A forge won't get hot on nothing: you need a log to burn. Hulda sells pine, or fell your own.", 5); return; }
                 if (!pack.Make(r)) { Sound.Ui("error"); _hud.Toast(r.Level > level ? $"You need {job.ToString().ToLowerInvariant()} {r.Level} for that." : "You don't have everything for that.", 3); return; }
+                if (fuel is not null) pack.Take(fuel);
+                if (fuel == "rotwood")
+                {
+                    _player.Stats.Lose(_player.Stats.MaxHealth * 0.2);
+                    Hands()?.Hurt();
+                    Effects.Smoke(this, _player.GlobalPosition + Vector3.Up, 2);
+                    _hud.Toast("The rotwood catches with a green flame and a choking stink. You stagger back, coughing.", 5);
+                }
                 Sound.Ui(job == Job.Smithing ? "anvil" : job == Job.Cooking ? "herb" : "potion");
                 Made(r);
                 _hud.Toast($"You make {Items.Count(r.Makes, r.Count).ToLowerInvariant()}.{(pack.Level(job) > before ? $" {job} rises to {pack.Level(job)}!" : "")}", 4);
