@@ -333,7 +333,8 @@ public partial class Main : Node3D
         GetViewport().GetTexture().GetImage().SavePng(path);
         if (_args.TryGetValue("snap-characters", out var second))
         {
-            // The characters page, playing alone so no server is needed.
+            // The characters page, playing alone so no server is needed (--ultra: at Ultra, for the real bodies' page).
+            if (_args.ContainsKey("ultra")) start.SelectQuality(Graphics.Quality.Ultra);
             await start.PlayAloneForSnapshot();
             for (var i = 0; i < 20; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             GetViewport().GetTexture().GetImage().SavePng(second);

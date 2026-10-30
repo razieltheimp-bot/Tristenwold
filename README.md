@@ -689,25 +689,25 @@ there (E) for its guards and its strongbox, as the Saboteur does with a tracking
 line has four ranks, each pays, and each is infamy: a name the shops and the townsfolk read. `--selftest
 --shadows-only` walks through the lot.
 
-### The figures, and the realistic bodies as an option
+### Two looks, by the graphics setting
 
-Tristinwold's people are KayKit's figures (CC0): the knight, the mage, the rogues, the barbarian and the rest,
-mixed and matched in the character page, on every screen from the phone to the PC. They wear a material of their
-own now rather than KayKit's flat palette as it comes: each swatch of the palette is read for what it stands for,
+At **High and below** (and always on the phone), Tristinwold's people are KayKit's figures (CC0): the knight, the
+mage, the rogues, the barbarian and the rest, mixed and matched in the character page. They wear a material of
+their own now rather than KayKit's flat palette as it comes: each swatch of the palette is read for what it stands for,
 the greys as brushed steel with a metal sheen and scratches, the warm tones as skin with a little scattering,
 everything else as cloth and leather with a fine weave and a bump to it, laid on from every side so nothing is
 stretched. Worn gear and tints paint through the same material. What they carry is KayKit's own kit. Townsfolk
 don't stand like posts: every few seconds someone shifts their weight and turns, makes a small gesture, or takes a
 few steps and back where the way is clear; talking to someone holds them still, facing you.
 
-**Realistic bodies, if you want them.** A PC can run with `--humans`, and then the hero, the townsfolk, the guards
-and every human enemy wear bodies baked from MakeHuman's base mesh (CC0) with the Humanizer tool, one for every
+**Realistic bodies, at Ultra and Cinematic.** Above High, the hero, the townsfolk, the guards and every human
+enemy wear bodies baked from MakeHuman's base mesh (CC0) with the Humanizer tool, one for every
 people, sex and stage of life, on Godot's humanoid skeleton, moved by KayKit's retargeted move set, with faces,
 eyes, hair, real clothes dyed by trade, a medieval kit built to each body (belts, cuirasses, jerkins, robes, hoods,
 caps, cloaks), heads that turn to you, and gear forged to real size in real materials. The character page then
 builds you from them: people, sex, age, face, eyes, hair and colour, hood or cap, clothes, skin, height, build,
-horns. It's an option, off by default, since the figures read better on a tablet. `tools/humans/` has the baking
-notes; `--shots DIR --town --faces --humans` takes close-ups.
+horns. The character page switches between the two the moment the setting changes. `--humans` asks for the bodies
+at any setting; `tools/humans/` has the baking notes; `--shots DIR --town --faces --humans` takes close-ups.
 
 ### Creatures that stand in the world
 

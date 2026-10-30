@@ -87,6 +87,7 @@ public partial class StartScreen : CanvasLayer
         quality.AddChild(new Label { Text = "Graphics", CustomMinimumSize = new Vector2(110, 0) });
         foreach (var q in Enum.GetNames<Graphics.Quality>()) _quality.AddItem(q);
         _quality.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _quality.ItemSelected += i => { Humans.Enabled = Humans.WantedAt((Graphics.Quality)i); RebuildAppearance(); }; // the look follows the setting
         quality.AddChild(_quality);
         _login.AddChild(quality);
         _login.AddChild(Sound.Sliders());
@@ -173,6 +174,24 @@ public partial class StartScreen : CanvasLayer
     /// The appearance editor: the hero turning on a little stage, and beside them a row for each part (head, body,
     /// arms, legs from any of the nine figures; a hat; clothes and skin colours; height), each stepped with arrows.
     /// </summary>
+    /// <summary>Picks a graphics setting as the player would (the look follows it).</summary>
+    public void SelectQuality(Graphics.Quality q)
+    {
+        _quality.Selected = (int)q;
+        _quality.EmitSignal(OptionButton.SignalName.ItemSelected, (long)q);
+    }
+
+    /// <summary>Builds the appearance editor again (the rows differ between the figures and the real bodies), keeping the look picked.</summary>
+    void RebuildAppearance()
+    {
+        if (_appearance.GetChildCount() == 0) return; // not built yet
+        foreach (var keep in new Control[] { _lookTitle, _peopleText, _preview }) keep.GetParent()?.RemoveChild(keep);
+        foreach (var child in _appearance.GetChildren().ToList()) { _appearance.RemoveChild(child); child.QueueFree(); }
+        _refresh.Clear();
+        _lookValues.Clear();
+        BuildAppearance();
+    }
+
     Control BuildAppearance()
     {
         _appearance.AddThemeConstantOverride("separation", 8);
@@ -344,6 +363,7 @@ public partial class StartScreen : CanvasLayer
         _serverPassword.Text = _settings.GetValueOrDefault("serverPassword", "");
         _account.Text = _settings.GetValueOrDefault("account", "");
         _quality.Selected = (int)(Enum.TryParse<Graphics.Quality>(_settings.GetValueOrDefault("quality", ""), out var q) ? q : Graphics.Default);
+        if (Humans.Enabled != Humans.WantedAt((Graphics.Quality)_quality.Selected)) { Humans.Enabled = Humans.WantedAt((Graphics.Quality)_quality.Selected); RebuildAppearance(); }
         _token = _settings.GetValueOrDefault("token");
         if (_token is not null && _server.Text.Length > 0 && _account.Text.Length > 0) _ = LogIn("login", useToken: true);
     }

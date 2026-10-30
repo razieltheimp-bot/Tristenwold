@@ -29,7 +29,7 @@ public static class Graphics
         terrain.GrassDensity = q switch { Quality.High => 2.5f, Quality.Ultra => 3.5f, Quality.Cinematic => 5, _ => 1 };
         terrain.Fancy = q >= Quality.Medium;
         terrain.Scans = q >= Quality.High && !mobile; // photo-scanned trees, rock faces and undergrowth
-        Humans.Enabled = OS.GetCmdlineUserArgs().Contains("--humans") && q >= Quality.Medium && !mobile && Humans.Available; // the realistic bodies: an option, off unless asked for
+        Humans.Enabled = Humans.WantedAt(q); // the realistic bodies above High, the figures at High and below
         terrain.ScanReach = q switch { Quality.High => 140, Quality.Ultra => 200, _ => 320 };
 
         env.TonemapMode = q >= Quality.High ? Godot.Environment.ToneMapper.Agx : Godot.Environment.ToneMapper.Filmic;
