@@ -18,7 +18,7 @@ public static class Styled
     static readonly Dictionary<Material, ShaderMaterial> Done = [];
 
     /// <summary>A fine seamless noise, laid over everything: the weave of cloth, the brushing of steel.</summary>
-    static Texture2D Grain => _grain ??= new NoiseTexture2D
+    internal static Texture2D Grain => _grain ??= new NoiseTexture2D
     {
         Width = 256, Height = 256, Seamless = true, GenerateMipmaps = true,
         Noise = new FastNoiseLite { NoiseType = FastNoiseLite.NoiseTypeEnum.SimplexSmooth, Frequency = 0.06f, FractalOctaves = 4, FractalLacunarity = 2.4f },

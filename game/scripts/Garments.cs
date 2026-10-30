@@ -29,8 +29,8 @@ public static class Garments
         "Wizard" or "Mage" or "apprentice" => new("robe", "hat", Belt: false),
         "Warlock" or "Sorcerer" or "Alchemist" or "scholar" or "laureate" or "Poet" or "Scribe" => new("robe", null, Belt: false),
         "priest" => new("robe", "hood", Belt: false),
-        "pirate" or "sailor" => new(null, null, Bracers: true),
-        "pirate_captain" => new("jerkin", null, Bracers: true, Cloak: true),
+        "pirate" or "sailor" => new(null, "bandana", Bracers: true),
+        "pirate_captain" => new("jerkin", "bandana", Bracers: true, Cloak: true),
         "MartialArtist" => new(null, null, Bracers: true),
         "captive" or "child" or "youth" => new(null, null, Belt: false),
         _ => new(),
@@ -88,7 +88,8 @@ public static class Garments
             var r = m.HipHalf + 0.035f;
             hips.AddChild(Part(new TorusMesh { InnerRadius = r - 0.012f, OuterRadius = r + 0.012f, Rings = 40, RingSegments = 10 }, leather, new Vector3(0, m.Hips.Y + 0.05f, 0.01f), scale: new Vector3(1, 2.2f, 0.92f)));
             hips.AddChild(Part(new BoxMesh { Size = new Vector3(0.055f, 0.06f, 0.016f) }, Armoury.Brass, new Vector3(0, m.Hips.Y + 0.05f, r * 0.92f + 0.012f)));
-            hips.AddChild(Part(new BoxMesh { Size = new Vector3(0.07f, 0.09f, 0.045f) }, leather, new Vector3(-r * 0.75f, m.Hips.Y - 0.01f, r * 0.5f), new Vector3(0, 30, 0))); // a pouch
+            hips.AddChild(Part(new CapsuleMesh { Radius = 0.5f, Height = 1.3f, RadialSegments = 16, Rings = 6 }, leather, new Vector3(-r * 0.75f, m.Hips.Y - 0.015f, r * 0.5f), new Vector3(0, 30, 0), new Vector3(0.075f, 0.075f, 0.05f))); // a pouch, soft and rounded
+            hips.AddChild(Part(new TorusMesh { InnerRadius = 0.03f, OuterRadius = 0.04f, Rings = 20, RingSegments = 8 }, leather, new Vector3(-r * 0.75f, m.Hips.Y + 0.025f, r * 0.5f), new Vector3(0, 30, 0), new Vector3(1, 0.8f, 0.9f))); // its flap's roll
         }
 
         switch (kit.Body)
@@ -106,7 +107,13 @@ public static class Garments
                     for (var i = -3; i <= 3; i++) chest.AddChild(Part(new SphereMesh { Radius = 0.009f, Height = 0.018f }, Armoury.Brass, new Vector3(i * m.ShoulderHalf * 0.26f, m.Hips.Y + torsoH * 0.2f, m.ShoulderHalf * 0.74f)));
                     chest.AddChild(Part(new TorusMesh { InnerRadius = 0.07f, OuterRadius = 0.1f, Rings = 24, RingSegments = 8 }, steel, new Vector3(0, m.Neck.Y - 0.015f, 0.01f), scale: new Vector3(1, 1.6f, 1)));
                 }
-                else chest.AddChild(Part(new BoxMesh { Size = new Vector3(0.02f, torsoH * 0.6f, 0.012f) }, Armoury.Leather("#2a1e14"), new Vector3(0, centreY, m.ShoulderHalf * 0.78f + 0.004f))); // the lacing
+                else
+                {
+                    // The lacing: a cord up the front through a row of eyelets.
+                    var cord = Armoury.Leather("#2a1e14");
+                    chest.AddChild(Part(new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.006f, Height = torsoH * 0.6f, RadialSegments = 8 }, cord, new Vector3(0, centreY, m.ShoulderHalf * 0.78f + 0.006f)));
+                    for (var i = -2; i <= 2; i++) chest.AddChild(Part(new TorusMesh { InnerRadius = 0.006f, OuterRadius = 0.012f, Rings = 12, RingSegments = 6 }, Armoury.Brass, new Vector3(0, centreY + i * torsoH * 0.13f, m.ShoulderHalf * 0.78f + 0.004f), new Vector3(90, 0, 0)));
+                }
                 break;
             }
             case "robe":
@@ -123,7 +130,7 @@ public static class Garments
                         var rest = sk.GetBoneGlobalRest(li);
                         var toHand = rest.Basis.Y.Normalized();
                         var at = rest.Origin + toHand * 0.12f;
-                        arm.AddChild(Part(new CylinderMesh { TopRadius = 0.06f, BottomRadius = 0.1f, Height = 0.24f, RadialSegments = 16 }, Robe(outfit), at, scale: Vector3.One) is var sleeve ? Aim(sleeve, toHand) : null!);
+                        arm.AddChild(Part(new CylinderMesh { TopRadius = 0.06f, BottomRadius = 0.11f, Height = 0.24f, RadialSegments = 20, CapTop = false, CapBottom = false }, Robe(outfit), at, scale: Vector3.One) is var sleeve ? Aim(sleeve, toHand) : null!);
                     }
                 }
                 break;
@@ -139,47 +146,32 @@ public static class Garments
 
         if (kit.Tabard)
         {
+            // A tabard: a panel of cloth down the chest, curved round the trunk and swinging free below the belt,
+            // with a cross of a second colour on it.
             var chest = Hang(sk, "Chest", made);
-            var heraldry = Armoury.Cloth("#" + outfit.Tunic.Lightened(0.25f).ToHtml(false));
+            var heraldry = Cloth(outfit.Tunic.Lightened(0.25f));
+            var cross = Cloth(new Color("#a82a2a"));
             var w = m.ShoulderHalf * 1.1f;
-            chest.AddChild(Part(new BoxMesh { Size = new Vector3(w, torsoH * 0.62f, 0.01f) }, heraldry, new Vector3(0, m.Hips.Y + torsoH * 0.45f, m.ShoulderHalf * 0.82f + 0.012f)));
-            chest.AddChild(Part(new BoxMesh { Size = new Vector3(w * 0.22f, torsoH * 0.5f, 0.004f) }, Armoury.Cloth("#a82a2a"), new Vector3(0, m.Hips.Y + torsoH * 0.45f, m.ShoulderHalf * 0.82f + 0.02f)));
-            chest.AddChild(Part(new BoxMesh { Size = new Vector3(w * 0.7f, torsoH * 0.12f, 0.004f) }, Armoury.Cloth("#a82a2a"), new Vector3(0, m.Hips.Y + torsoH * 0.55f, m.ShoulderHalf * 0.82f + 0.02f)));
+            var collar = m.Hips.Y + torsoH * 0.76f;
+            var front = m.ShoulderHalf * 0.82f + 0.012f;
+            var curve = m.ShoulderHalf * 0.4f;
+            chest.AddChild(Part(Drape(w, torsoH * 0.62f, curve, 0.1f), heraldry, new Vector3(0, collar, front)));
+            chest.AddChild(Part(Drape(w * 0.22f, torsoH * 0.5f, curve * 0.05f, 0.1f), cross, new Vector3(0, collar - torsoH * 0.06f, front + 0.006f)));
+            chest.AddChild(Part(Drape(w * 0.7f, torsoH * 0.12f, curve * 0.49f, 0.1f), cross, new Vector3(0, collar - torsoH * 0.15f, front + 0.006f)));
             var hips = Hang(sk, "Hips", made);
-            hips.AddChild(Part(new BoxMesh { Size = new Vector3(w * 0.9f, 0.3f, 0.01f) }, heraldry, new Vector3(0, m.Hips.Y - 0.12f, m.HipHalf + 0.04f)));
-            hips.AddChild(Part(new BoxMesh { Size = new Vector3(w * 0.9f, 0.3f, 0.01f) }, heraldry, new Vector3(0, m.Hips.Y - 0.12f, -(m.HipHalf + 0.04f))));
+            var skirt = Drape(w * 1.25f, 0.38f, m.HipHalf * 0.55f, 0.2f, 12, 16, lean: 0.05f);
+            hips.AddChild(Part(skirt, heraldry, new Vector3(0, m.Hips.Y + 0.03f, m.HipHalf + 0.03f)));
+            hips.AddChild(Part(skirt, heraldry, new Vector3(0, m.Hips.Y + 0.03f, -(m.HipHalf + 0.03f)), new Vector3(0, 180, 0)));
         }
 
-        if (kit.Pauldrons)
-            foreach (var side in new[] { "Left", "Right" })
-            {
-                var i = sk.FindBone($"{side}UpperArm");
-                if (i < 0) continue;
-                var arm = Hang(sk, $"{side}UpperArm", made);
-                var at = sk.GetBoneGlobalRest(i).Origin;
-                var mat = kit.Body == "fur" ? Armoury.Leather("#6a4a30") : kit.Body == "jerkin" ? hide : steel;
-                arm.AddChild(Part(new SphereMesh { Radius = 0.1f, Height = 0.2f, RadialSegments = 20, Rings = 10 }, mat, at + new Vector3(side == "Left" ? 0.02f : -0.02f, 0.03f, 0), scale: new Vector3(1.1f, 0.75f, 1)));
-            }
-
-        if (kit.Bracers)
-            foreach (var side in new[] { "Left", "Right" })
-            {
-                var i = sk.FindBone($"{side}LowerArm");
-                if (i < 0) continue;
-                var arm = Hang(sk, $"{side}LowerArm", made);
-                var rest = sk.GetBoneGlobalRest(i);
-                var toHand = rest.Basis.Y.Normalized();
-                var mat = kit.MetalBracers ? steel : leather;
-                var bracer = Part(new CylinderMesh { TopRadius = 0.042f, BottomRadius = 0.05f, Height = 0.19f, RadialSegments = 16 }, mat, rest.Origin + toHand * 0.15f);
-                arm.AddChild(Aim(bracer, toHand));
-            }
 
         if (kit.Cloak)
         {
+            // A cloak from the shoulders, wrapping round the back and swinging behind the legs.
             var chest = Hang(sk, "Chest", made);
-            var cape = Armoury.Cloth("#" + outfit.Trousers.Darkened(0.15f).ToHtml(false));
+            var cape = Cloth(outfit.Trousers.Darkened(0.15f));
             var length = m.Neck.Y - 0.25f;
-            chest.AddChild(Part(new BoxMesh { Size = new Vector3(m.ShoulderHalf * 2.3f, length, 0.012f) }, cape, new Vector3(0, m.Neck.Y - length / 2 - 0.02f, -(m.ShoulderHalf * 0.85f + 0.02f)), new Vector3(-4, 0, 0)));
+            chest.AddChild(Part(Drape(m.ShoulderHalf * 2.2f, length, m.ShoulderHalf * 0.9f, 0.3f, 12, 18, lean: 0.08f), cape, new Vector3(0, m.Neck.Y - 0.02f, -(m.ShoulderHalf * 0.85f + 0.02f)), new Vector3(0, 180, 0)));
         }
 
         switch (kit.Head)
@@ -187,13 +179,26 @@ public static class Garments
             case "hood":
             {
                 var head = Hang(sk, "Head", made);
-                var hood = Armoury.Cloth("#" + (outfit.Cap ?? outfit.Tunic.Darkened(0.25f)).ToHtml(false));
+                var hood = Cloth(outfit.Cap ?? outfit.Tunic.Darkened(0.25f), span: 0);
                 var size = m.Top - m.Head.Y;
                 // The hood sits back on the head so the face comes out of its opening: its front edge at the cheeks, the crown over the top.
                 var centre = new Vector3(0, m.Head.Y + size * 0.5f, -0.075f);
-                head.AddChild(Part(new SphereMesh { Radius = 0.125f, Height = 0.25f, RadialSegments = 24, Rings = 12 }, hood, centre, scale: new Vector3(1.05f, 1.15f, 0.9f)));
-                head.AddChild(Part(new TorusMesh { InnerRadius = 0.1f, OuterRadius = 0.125f, Rings = 28, RingSegments = 8 }, hood, new Vector3(0, m.Head.Y + size * 0.45f, 0.035f), new Vector3(90, 0, 0), new Vector3(1, 1, 1.2f))); // the opening, framing the face
+                head.AddChild(Part(new SphereMesh { Radius = 0.118f, Height = 0.236f, RadialSegments = 32, Rings = 16 }, hood, centre, scale: new Vector3(1.02f, 1.12f, 0.95f)));
+                head.AddChild(Part(new TorusMesh { InnerRadius = 0.105f, OuterRadius = 0.122f, Rings = 32, RingSegments = 8 }, hood, new Vector3(0, m.Head.Y + size * 0.45f, 0.03f), new Vector3(90, 0, 0), new Vector3(1, 1, 1.2f))); // the opening, framing the face
+                head.AddChild(Part(Drape(0.2f, 0.16f, 0.05f, 0.3f, 8, 8, lean: 0.02f), hood, new Vector3(0, m.Head.Y + size * 0.3f, -0.1f), new Vector3(0, 180, 0))); // the fall of it down the back of the neck
                 head.AddChild(Part(new TorusMesh { InnerRadius = 0.08f, OuterRadius = 0.13f, Rings = 24, RingSegments = 8 }, hood, new Vector3(0, m.Neck.Y + 0.02f, 0), scale: new Vector3(1, 1.3f, 1))); // the cowl at the neck
+                break;
+            }
+            case "bandana":
+            {
+                // A kerchief tied over the crown, its ends hanging at the nape.
+                var head = Hang(sk, "Head", made);
+                var kerchief = Cloth(outfit.Cap ?? outfit.Tunic, span: 0);
+                head.AddChild(Part(new SphereMesh { Radius = 0.128f, Height = 0.256f, RadialSegments = 32, Rings = 16 }, kerchief, new Vector3(0, m.Top - 0.045f, -0.012f), scale: new Vector3(1.0f, 0.62f, 1.04f)));
+                head.AddChild(Part(new TorusMesh { InnerRadius = 0.114f, OuterRadius = 0.128f, Rings = 32, RingSegments = 8 }, kerchief, new Vector3(0, m.Top - 0.085f, -0.012f), new Vector3(8, 0, 0), new Vector3(1, 1.1f, 1.04f))); // the rolled edge over the brow
+                head.AddChild(Part(new SphereMesh { Radius = 0.03f, Height = 0.06f, RadialSegments = 12, Rings = 6 }, kerchief, new Vector3(0, m.Top - 0.085f, -0.125f), scale: new Vector3(1.3f, 0.8f, 0.8f))); // the knot
+                head.AddChild(Part(Drape(0.07f, 0.17f, 0.01f, 0.5f, 6, 8, lean: 0.03f), kerchief, new Vector3(0.012f, m.Top - 0.095f, -0.13f), new Vector3(0, 180, 12))); // its ends
+                head.AddChild(Part(Drape(0.06f, 0.14f, 0.01f, 0.5f, 6, 8, lean: 0.03f), kerchief, new Vector3(-0.015f, m.Top - 0.095f, -0.13f), new Vector3(0, 180, -10)));
                 break;
             }
             case "cap":
@@ -219,7 +224,91 @@ public static class Garments
         return made;
     }
 
-    static Material Robe(Humans.Outfit outfit) => new StandardMaterial3D { AlbedoColor = outfit.Tunic, Roughness = 0.95f, MetallicSpecular = 0.1f, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
+    static Material Robe(Humans.Outfit outfit) => Cloth(outfit.Tunic, span: 2);
+
+    static Shader? _clothShader;
+
+    /// <summary>
+    /// Cloth that hangs: a matte dyed weave, seen from both sides, that sways a little more the further it is from
+    /// where it hangs (the top of its UV). <paramref name="span"/> is how much of the UV's height is the hang (2 for
+    /// a cylinder, whose side takes the top half).
+    /// </summary>
+    static ShaderMaterial Cloth(Color dye, float span = 1)
+    {
+        _clothShader ??= new Shader { Code = ClothCode };
+        var m = new ShaderMaterial { Shader = _clothShader };
+        m.SetShaderParameter("dye", dye);
+        m.SetShaderParameter("grain_tex", Styled.Grain);
+        m.SetShaderParameter("span", span);
+        return m;
+    }
+
+    const string ClothCode = """
+        shader_type spatial;
+        render_mode cull_disabled;
+        uniform vec4 dye : source_color = vec4(1.0);
+        uniform sampler2D grain_tex : hint_default_white, filter_linear_mipmap, repeat_enable;
+        uniform float span = 1.0;
+        uniform float sway = 1.0;
+
+        void vertex() {
+            float hang = clamp(UV.y * span, 0.0, 1.0);
+            hang *= hang;
+            float phase = NODE_POSITION_WORLD.x * 2.9 + NODE_POSITION_WORLD.z * 2.1;
+            float t = TIME * 1.6 + phase;
+            float swing = sin(t + UV.x * 4.0) * 0.012 + sin(t * 0.63 + UV.y * 5.0) * 0.008;
+            VERTEX.z += swing * hang * sway;
+            VERTEX.x += cos(t * 0.8) * 0.006 * hang * sway;
+        }
+
+        void fragment() {
+            float fine = texture(grain_tex, UV * vec2(9.0, 12.0)).r;
+            float coarse = texture(grain_tex, UV * vec2(1.5, 2.0)).r;
+            ALBEDO = dye.rgb * (0.93 + 0.14 * fine) * (0.94 + 0.12 * coarse);
+            ROUGHNESS = 0.82 + 0.16 * fine;
+            SPECULAR = 0.2;
+            NORMAL = normalize(NORMAL + (fine - 0.5) * 0.1 * TANGENT + (coarse - 0.5) * 0.05 * BINORMAL);
+            RIM = 0.2;
+            RIM_TINT = 0.6;
+        }
+        """;
+
+    /// <summary>
+    /// A hanging panel of cloth, built as a smooth sheet rather than a box: it hangs from the origin down -Y facing
+    /// +Z, curves back round the body by <paramref name="curve"/> at its edges, widens toward the hem by
+    /// <paramref name="flare"/> of its width, leans out by <paramref name="lean"/> at the hem, and has a few soft
+    /// folds. Its normals are its own, so it shades like cloth and not like a plank.
+    /// </summary>
+    static ArrayMesh Drape(float width, float length, float curve, float flare, int across = 10, int down = 14, float lean = 0.03f)
+    {
+        Vector3 At(float u, float v)
+        {
+            var bend = (u - 0.5f) * 2;
+            var x = bend * width / 2 * (1 + flare * v);
+            var folds = Mathf.Sin(u * Mathf.Pi * 3) * 0.012f * v + Mathf.Sin(u * Mathf.Pi * 7 + 1) * 0.004f * v;
+            return new Vector3(x, -length * v, -curve * bend * bend + lean * v + folds);
+        }
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        for (var j = 0; j <= down; j++)
+            for (var i = 0; i <= across; i++)
+            {
+                float u = (float)i / across, v = (float)j / down;
+                var n = (At(u + 0.01f, v) - At(u - 0.01f, v)).Cross(At(u, v + 0.01f) - At(u, v - 0.01f));
+                st.SetNormal(-n.Normalized());
+                st.SetUV(new Vector2(u, v));
+                st.AddVertex(At(u, v));
+            }
+        for (var j = 0; j < down; j++)
+            for (var i = 0; i < across; i++)
+            {
+                int a = j * (across + 1) + i, b = a + 1, c = a + across + 1, d = c + 1;
+                st.AddIndex(a); st.AddIndex(c); st.AddIndex(b);
+                st.AddIndex(b); st.AddIndex(c); st.AddIndex(d);
+            }
+        st.GenerateTangents();
+        return st.Commit();
+    }
 
     /// <summary>Turns a Y-long piece to lie along a direction.</summary>
     static MeshInstance3D Aim(MeshInstance3D piece, Vector3 along)

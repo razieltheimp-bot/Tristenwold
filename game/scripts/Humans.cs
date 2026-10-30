@@ -164,8 +164,8 @@ public static class Humans
         ["townsfolk"] = new(new("#8a7a5a"), new("#5a4a3a"), new("#3a2a20")),
         ["traveller"] = new(new("#6a5a4a"), new("#4a3a30"), new("#3a2a20"), Cap: new("#5a4a3a")),
         ["sailor"] = new(new("#c8d0e0"), new("#3a4a6a"), new("#3a2a20")),
-        ["pirate"] = new(new("#a83a3a"), new("#2a2a3a"), new("#2a2220"), Cap: new("#3a2a2a")),
-        ["pirate_captain"] = new(new("#5a1a2a"), new("#2a2a3a"), new("#2a2220"), Cap: new("#2a1a1a")),
+        ["pirate"] = new(new("#a83a3a"), new("#2a2a3a"), new("#2a2220"), Cap: new("#8a2a2a")),
+        ["pirate_captain"] = new(new("#5a1a2a"), new("#2a2a3a"), new("#2a2220"), Cap: new("#2a1a2a")),
         ["bandit"] = new(new("#6a5a3a"), new("#4a3a2a"), new("#2a2220"), Cap: new("#4a3a2a")),
         ["bandit_chief"] = new(new("#8a2a1a"), new("#4a3a2a"), new("#2a2220")),
         ["raider"] = new(new("#7a4a2a"), new("#5a3a2a"), new("#3a2a20"), Sleeves: false),
@@ -396,8 +396,11 @@ public partial class Figure
         f._garmentLook = look;
         if (f._source is { } src && src.GetSurfaceCount() > 0) { var vs = src.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array(); if (vs.Length > 0) f._top = vs.Max(v => v.Y); }
         // A cap or a hood in the kit covers the hair: it's put away, and the scalp painted its colour, so nothing pokes through the steel.
+        // With nothing on the head, the hair is kept and the scalp left alone, whatever the outfit's cap colour was for.
         if (Garments.For(look).Head is "cap" or "hood" && garb.Outfit.Cap is null)
             garb = garb with { Outfit = garb.Outfit with { Cap = Garments.For(look).Head == "cap" ? garb.Outfit.Trousers.Darkened(0.2f) : garb.Outfit.Tunic.Darkened(0.25f) } };
+        else if (Garments.For(look).Head is null or "hat" or "bandana" && garb.Outfit.Cap is not null)
+            garb = garb with { Outfit = garb.Outfit with { Cap = null } };
         f.Redress(garb);
         f.Regarment(null, null);
         // The move set, told where its skeleton is.

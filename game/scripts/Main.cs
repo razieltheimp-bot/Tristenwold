@@ -266,7 +266,7 @@ public partial class Main : Node3D
             figures.Add(figure);
         }
         var wide = _args.ContainsKey("dragons");
-        var camera = new Camera3D { Position = _args.ContainsKey("top") ? new Vector3(0, _args.ContainsKey("only") ? 9 : 28, 0.01f) : _args.ContainsKey("animals") ? new Vector3(0, 3.5f, 30) : _args.ContainsKey("frost") ? new Vector3(0, 5, 34) : _args.ContainsKey("hero") ? new Vector3(0, 9, 30) : wide ? new Vector3(0, 14, 62) : new Vector3(0, 1.3f, 9f), Fov = 38, Far = 500 };
+        var camera = new Camera3D { Position = _args.ContainsKey("top") ? new Vector3(0, _args.ContainsKey("only") ? 9 : 28, 0.01f) : _args.ContainsKey("animals") ? new Vector3(0, 3.5f, 30) : _args.ContainsKey("frost") ? new Vector3(0, 5, 34) : _args.ContainsKey("hero") ? new Vector3(0, 9, 30) : wide ? new Vector3(0, 14, 62) : _args.ContainsKey("close") ? new Vector3(0, 1.15f, 4.6f) : new Vector3(0, 1.3f, 9f), Fov = 38, Far = 500 };
         AddChild(camera);
         camera.LookAt(wide ? new Vector3(0, 4, 0) : new Vector3(0, 0.9f, 0), Vector3.Up);
         async Task Shoot(string name)
