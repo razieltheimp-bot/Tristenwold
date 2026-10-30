@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://mrlomtjl1os1"
-path.s3tc="res://.godot/imported/green.png-c2e31f9bc12197f0b6a20f5a73db2e63.s3tc.ctex"
-path.etc2="res://.godot/imported/green.png-c2e31f9bc12197f0b6a20f5a73db2e63.etc2.ctex"
+path="res://.godot/imported/green.png-c2e31f9bc12197f0b6a20f5a73db2e63.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/dragons/green.png"
-dest_files=["res://.godot/imported/green.png-c2e31f9bc12197f0b6a20f5a73db2e63.s3tc.ctex", "res://.godot/imported/green.png-c2e31f9bc12197f0b6a20f5a73db2e63.etc2.ctex"]
+dest_files=["res://.godot/imported/green.png-c2e31f9bc12197f0b6a20f5a73db2e63.ctex"]
 
 [params]
 

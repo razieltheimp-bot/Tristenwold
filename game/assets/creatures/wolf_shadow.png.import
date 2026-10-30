@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bxjhwhkmsmowr"
-path.s3tc="res://.godot/imported/wolf_shadow.png-bc34e9eb426858bfc84cab1e6297c5ab.s3tc.ctex"
-path.etc2="res://.godot/imported/wolf_shadow.png-bc34e9eb426858bfc84cab1e6297c5ab.etc2.ctex"
+path="res://.godot/imported/wolf_shadow.png-bc34e9eb426858bfc84cab1e6297c5ab.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/wolf_shadow.png"
-dest_files=["res://.godot/imported/wolf_shadow.png-bc34e9eb426858bfc84cab1e6297c5ab.s3tc.ctex", "res://.godot/imported/wolf_shadow.png-bc34e9eb426858bfc84cab1e6297c5ab.etc2.ctex"]
+dest_files=["res://.godot/imported/wolf_shadow.png-bc34e9eb426858bfc84cab1e6297c5ab.ctex"]
 
 [params]
 

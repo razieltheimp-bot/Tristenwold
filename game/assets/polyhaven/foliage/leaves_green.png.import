@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ckht8t3ctbrp3"
-path.s3tc="res://.godot/imported/leaves_green.png-7674b8873a71509077580e8b86915412.s3tc.ctex"
-path.etc2="res://.godot/imported/leaves_green.png-7674b8873a71509077580e8b86915412.etc2.ctex"
+path="res://.godot/imported/leaves_green.png-7674b8873a71509077580e8b86915412.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/foliage/leaves_green.png"
-dest_files=["res://.godot/imported/leaves_green.png-7674b8873a71509077580e8b86915412.s3tc.ctex", "res://.godot/imported/leaves_green.png-7674b8873a71509077580e8b86915412.etc2.ctex"]
+dest_files=["res://.godot/imported/leaves_green.png-7674b8873a71509077580e8b86915412.ctex"]
 
 [params]
 

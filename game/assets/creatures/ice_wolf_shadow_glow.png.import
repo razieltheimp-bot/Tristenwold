@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dq0dbgkxal38w"
-path.s3tc="res://.godot/imported/ice_wolf_shadow_glow.png-da18af7222e6ce7137f47373975b8fba.s3tc.ctex"
-path.etc2="res://.godot/imported/ice_wolf_shadow_glow.png-da18af7222e6ce7137f47373975b8fba.etc2.ctex"
+path="res://.godot/imported/ice_wolf_shadow_glow.png-da18af7222e6ce7137f47373975b8fba.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/ice_wolf_shadow_glow.png"
-dest_files=["res://.godot/imported/ice_wolf_shadow_glow.png-da18af7222e6ce7137f47373975b8fba.s3tc.ctex", "res://.godot/imported/ice_wolf_shadow_glow.png-da18af7222e6ce7137f47373975b8fba.etc2.ctex"]
+dest_files=["res://.godot/imported/ice_wolf_shadow_glow.png-da18af7222e6ce7137f47373975b8fba.ctex"]
 
 [params]
 

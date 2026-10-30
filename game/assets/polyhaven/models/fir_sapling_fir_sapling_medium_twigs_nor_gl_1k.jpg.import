@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c00xra6a86d2e"
-path="res://.godot/imported/fir_sapling_fir_sapling_medium_twigs_nor_gl_1k.jpg-1a3a32f09f4eca2f4c2325da9b23d606.ctex"
+path.s3tc="res://.godot/imported/fir_sapling_fir_sapling_medium_twigs_nor_gl_1k.jpg-1a3a32f09f4eca2f4c2325da9b23d606.s3tc.ctex"
+path.etc2="res://.godot/imported/fir_sapling_fir_sapling_medium_twigs_nor_gl_1k.jpg-1a3a32f09f4eca2f4c2325da9b23d606.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "d4f339cd646e5e1c093d3fab56312ca7"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/fir_sapling_fir_sapling_medium_twigs_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/fir_sapling_fir_sapling_medium_twigs_nor_gl_1k.jpg-1a3a32f09f4eca2f4c2325da9b23d606.ctex"]
+dest_files=["res://.godot/imported/fir_sapling_fir_sapling_medium_twigs_nor_gl_1k.jpg-1a3a32f09f4eca2f4c2325da9b23d606.s3tc.ctex", "res://.godot/imported/fir_sapling_fir_sapling_medium_twigs_nor_gl_1k.jpg-1a3a32f09f4eca2f4c2325da9b23d606.etc2.ctex"]
 
 [params]
 

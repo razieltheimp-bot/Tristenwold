@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b70mh5u4xohhf"
-path="res://.godot/imported/crate_wooden_crate_01_nor_gl_1k.jpg-7f3eb31587386a41c958ebb7c99e9afa.ctex"
+path.s3tc="res://.godot/imported/crate_wooden_crate_01_nor_gl_1k.jpg-7f3eb31587386a41c958ebb7c99e9afa.s3tc.ctex"
+path.etc2="res://.godot/imported/crate_wooden_crate_01_nor_gl_1k.jpg-7f3eb31587386a41c958ebb7c99e9afa.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "d363e93bf6e8ece644c79fac82f746e0"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/crate_wooden_crate_01_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/crate_wooden_crate_01_nor_gl_1k.jpg-7f3eb31587386a41c958ebb7c99e9afa.ctex"]
+dest_files=["res://.godot/imported/crate_wooden_crate_01_nor_gl_1k.jpg-7f3eb31587386a41c958ebb7c99e9afa.s3tc.ctex", "res://.godot/imported/crate_wooden_crate_01_nor_gl_1k.jpg-7f3eb31587386a41c958ebb7c99e9afa.etc2.ctex"]
 
 [params]
 

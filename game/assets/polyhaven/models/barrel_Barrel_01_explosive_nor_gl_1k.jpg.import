@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://datyy1fln0kk0"
-path="res://.godot/imported/barrel_Barrel_01_explosive_nor_gl_1k.jpg-0f32e33c51474698a072a4c70d4843b1.ctex"
+path.s3tc="res://.godot/imported/barrel_Barrel_01_explosive_nor_gl_1k.jpg-0f32e33c51474698a072a4c70d4843b1.s3tc.ctex"
+path.etc2="res://.godot/imported/barrel_Barrel_01_explosive_nor_gl_1k.jpg-0f32e33c51474698a072a4c70d4843b1.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "4195f7c9ebe2cf334ce37b99ef47a839"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/barrel_Barrel_01_explosive_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/barrel_Barrel_01_explosive_nor_gl_1k.jpg-0f32e33c51474698a072a4c70d4843b1.ctex"]
+dest_files=["res://.godot/imported/barrel_Barrel_01_explosive_nor_gl_1k.jpg-0f32e33c51474698a072a4c70d4843b1.s3tc.ctex", "res://.godot/imported/barrel_Barrel_01_explosive_nor_gl_1k.jpg-0f32e33c51474698a072a4c70d4843b1.etc2.ctex"]
 
 [params]
 

@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cjaw1l530ynv2"
-path="res://.godot/imported/boulder_boulder_01_nor_gl_1k.jpg-29cd0b34279d8db88bc52f5727832662.ctex"
+path.s3tc="res://.godot/imported/boulder_boulder_01_nor_gl_1k.jpg-29cd0b34279d8db88bc52f5727832662.s3tc.ctex"
+path.etc2="res://.godot/imported/boulder_boulder_01_nor_gl_1k.jpg-29cd0b34279d8db88bc52f5727832662.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "a86c33424a01bcbc46545c70bd6a7969"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/boulder_boulder_01_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/boulder_boulder_01_nor_gl_1k.jpg-29cd0b34279d8db88bc52f5727832662.ctex"]
+dest_files=["res://.godot/imported/boulder_boulder_01_nor_gl_1k.jpg-29cd0b34279d8db88bc52f5727832662.s3tc.ctex", "res://.godot/imported/boulder_boulder_01_nor_gl_1k.jpg-29cd0b34279d8db88bc52f5727832662.etc2.ctex"]
 
 [params]
 

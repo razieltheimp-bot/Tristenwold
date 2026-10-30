@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cvf2505qm0oup"
-path="res://.godot/imported/barrel_apples_T_Trim_Metal_Normal.jpg-b72dda714b33e4a174b48fa88fee9a9f.ctex"
+path.s3tc="res://.godot/imported/barrel_apples_T_Trim_Metal_Normal.jpg-b72dda714b33e4a174b48fa88fee9a9f.s3tc.ctex"
+path.etc2="res://.godot/imported/barrel_apples_T_Trim_Metal_Normal.jpg-b72dda714b33e4a174b48fa88fee9a9f.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "cce8d646247e686c5fb6587ac4de6c12"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/props/caravan/barrel_apples_T_Trim_Metal_Normal.jpg"
-dest_files=["res://.godot/imported/barrel_apples_T_Trim_Metal_Normal.jpg-b72dda714b33e4a174b48fa88fee9a9f.ctex"]
+dest_files=["res://.godot/imported/barrel_apples_T_Trim_Metal_Normal.jpg-b72dda714b33e4a174b48fa88fee9a9f.s3tc.ctex", "res://.godot/imported/barrel_apples_T_Trim_Metal_Normal.jpg-b72dda714b33e4a174b48fa88fee9a9f.etc2.ctex"]
 
 [params]
 

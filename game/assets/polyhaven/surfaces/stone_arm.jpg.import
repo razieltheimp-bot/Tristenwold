@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dyhw1bdynurow"
-path.s3tc="res://.godot/imported/stone_arm.jpg-a47334d152d87a27779bece4a8566701.s3tc.ctex"
-path.etc2="res://.godot/imported/stone_arm.jpg-a47334d152d87a27779bece4a8566701.etc2.ctex"
+path="res://.godot/imported/stone_arm.jpg-a47334d152d87a27779bece4a8566701.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/surfaces/stone_arm.jpg"
-dest_files=["res://.godot/imported/stone_arm.jpg-a47334d152d87a27779bece4a8566701.s3tc.ctex", "res://.godot/imported/stone_arm.jpg-a47334d152d87a27779bece4a8566701.etc2.ctex"]
+dest_files=["res://.godot/imported/stone_arm.jpg-a47334d152d87a27779bece4a8566701.ctex"]
 
 [params]
 

@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bgw8vc2i5dv4v"
-path.s3tc="res://.godot/imported/hawk_storm.png-2375a52fb38cb89177b10d7741379ca4.s3tc.ctex"
-path.etc2="res://.godot/imported/hawk_storm.png-2375a52fb38cb89177b10d7741379ca4.etc2.ctex"
+path="res://.godot/imported/hawk_storm.png-2375a52fb38cb89177b10d7741379ca4.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/hawk_storm.png"
-dest_files=["res://.godot/imported/hawk_storm.png-2375a52fb38cb89177b10d7741379ca4.s3tc.ctex", "res://.godot/imported/hawk_storm.png-2375a52fb38cb89177b10d7741379ca4.etc2.ctex"]
+dest_files=["res://.godot/imported/hawk_storm.png-2375a52fb38cb89177b10d7741379ca4.ctex"]
 
 [params]
 

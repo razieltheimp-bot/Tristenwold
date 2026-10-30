@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cbjbakl3r172i"
-path="res://.godot/imported/rock_face_b_rock_face_02_nor_gl_1k.jpg-8b0c7dedae28a0c9f688ee8249e21ae5.ctex"
+path.s3tc="res://.godot/imported/rock_face_b_rock_face_02_nor_gl_1k.jpg-8b0c7dedae28a0c9f688ee8249e21ae5.s3tc.ctex"
+path.etc2="res://.godot/imported/rock_face_b_rock_face_02_nor_gl_1k.jpg-8b0c7dedae28a0c9f688ee8249e21ae5.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "4bf72fa97755023e008c76b6f80a11e9"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/rock_face_b_rock_face_02_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/rock_face_b_rock_face_02_nor_gl_1k.jpg-8b0c7dedae28a0c9f688ee8249e21ae5.ctex"]
+dest_files=["res://.godot/imported/rock_face_b_rock_face_02_nor_gl_1k.jpg-8b0c7dedae28a0c9f688ee8249e21ae5.s3tc.ctex", "res://.godot/imported/rock_face_b_rock_face_02_nor_gl_1k.jpg-8b0c7dedae28a0c9f688ee8249e21ae5.etc2.ctex"]
 
 [params]
 

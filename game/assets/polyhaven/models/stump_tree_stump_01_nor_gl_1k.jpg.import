@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dedslr35ispll"
-path="res://.godot/imported/stump_tree_stump_01_nor_gl_1k.jpg-780ab23387afc808aab93e231d638937.ctex"
+path.s3tc="res://.godot/imported/stump_tree_stump_01_nor_gl_1k.jpg-780ab23387afc808aab93e231d638937.s3tc.ctex"
+path.etc2="res://.godot/imported/stump_tree_stump_01_nor_gl_1k.jpg-780ab23387afc808aab93e231d638937.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "1962bcbe7416c9aed042fa410a6bca30"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/stump_tree_stump_01_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/stump_tree_stump_01_nor_gl_1k.jpg-780ab23387afc808aab93e231d638937.ctex"]
+dest_files=["res://.godot/imported/stump_tree_stump_01_nor_gl_1k.jpg-780ab23387afc808aab93e231d638937.s3tc.ctex", "res://.godot/imported/stump_tree_stump_01_nor_gl_1k.jpg-780ab23387afc808aab93e231d638937.etc2.ctex"]
 
 [params]
 

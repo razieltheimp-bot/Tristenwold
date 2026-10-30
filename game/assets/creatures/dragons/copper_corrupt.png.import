@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://jcsr8thj3n38"
-path.s3tc="res://.godot/imported/copper_corrupt.png-c7f46d03eaa6273232040b761af60dc1.s3tc.ctex"
-path.etc2="res://.godot/imported/copper_corrupt.png-c7f46d03eaa6273232040b761af60dc1.etc2.ctex"
+path="res://.godot/imported/copper_corrupt.png-c7f46d03eaa6273232040b761af60dc1.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/dragons/copper_corrupt.png"
-dest_files=["res://.godot/imported/copper_corrupt.png-c7f46d03eaa6273232040b761af60dc1.s3tc.ctex", "res://.godot/imported/copper_corrupt.png-c7f46d03eaa6273232040b761af60dc1.etc2.ctex"]
+dest_files=["res://.godot/imported/copper_corrupt.png-c7f46d03eaa6273232040b761af60dc1.ctex"]
 
 [params]
 

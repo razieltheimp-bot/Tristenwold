@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://gt0b4kou7rnp"
-path.s3tc="res://.godot/imported/slate_arm.jpg-cc734bc9220b38a56e49a366dbd74199.s3tc.ctex"
-path.etc2="res://.godot/imported/slate_arm.jpg-cc734bc9220b38a56e49a366dbd74199.etc2.ctex"
+path="res://.godot/imported/slate_arm.jpg-cc734bc9220b38a56e49a366dbd74199.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/surfaces/slate_arm.jpg"
-dest_files=["res://.godot/imported/slate_arm.jpg-cc734bc9220b38a56e49a366dbd74199.s3tc.ctex", "res://.godot/imported/slate_arm.jpg-cc734bc9220b38a56e49a366dbd74199.etc2.ctex"]
+dest_files=["res://.godot/imported/slate_arm.jpg-cc734bc9220b38a56e49a366dbd74199.ctex"]
 
 [params]
 

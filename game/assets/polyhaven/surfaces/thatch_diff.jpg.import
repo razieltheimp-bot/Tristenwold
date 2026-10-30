@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bpsxs5uchdpjo"
-path.s3tc="res://.godot/imported/thatch_diff.jpg-077cc4643569b7325c03335e7ec97cfa.s3tc.ctex"
-path.etc2="res://.godot/imported/thatch_diff.jpg-077cc4643569b7325c03335e7ec97cfa.etc2.ctex"
+path="res://.godot/imported/thatch_diff.jpg-077cc4643569b7325c03335e7ec97cfa.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/surfaces/thatch_diff.jpg"
-dest_files=["res://.godot/imported/thatch_diff.jpg-077cc4643569b7325c03335e7ec97cfa.s3tc.ctex", "res://.godot/imported/thatch_diff.jpg-077cc4643569b7325c03335e7ec97cfa.etc2.ctex"]
+dest_files=["res://.godot/imported/thatch_diff.jpg-077cc4643569b7325c03335e7ec97cfa.ctex"]
 
 [params]
 

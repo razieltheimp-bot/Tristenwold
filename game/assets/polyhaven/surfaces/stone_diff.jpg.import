@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://djarnlid6nop5"
-path.s3tc="res://.godot/imported/stone_diff.jpg-c04bdc1d8ff6319403b79525d996f203.s3tc.ctex"
-path.etc2="res://.godot/imported/stone_diff.jpg-c04bdc1d8ff6319403b79525d996f203.etc2.ctex"
+path="res://.godot/imported/stone_diff.jpg-c04bdc1d8ff6319403b79525d996f203.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/surfaces/stone_diff.jpg"
-dest_files=["res://.godot/imported/stone_diff.jpg-c04bdc1d8ff6319403b79525d996f203.s3tc.ctex", "res://.godot/imported/stone_diff.jpg-c04bdc1d8ff6319403b79525d996f203.etc2.ctex"]
+dest_files=["res://.godot/imported/stone_diff.jpg-c04bdc1d8ff6319403b79525d996f203.ctex"]
 
 [params]
 

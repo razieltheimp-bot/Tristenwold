@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ot81qom467dp"
-path.s3tc="res://.godot/imported/plaster_arm.jpg-f86bf39293bf9c59e68c5e848e354635.s3tc.ctex"
-path.etc2="res://.godot/imported/plaster_arm.jpg-f86bf39293bf9c59e68c5e848e354635.etc2.ctex"
+path="res://.godot/imported/plaster_arm.jpg-f86bf39293bf9c59e68c5e848e354635.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/surfaces/plaster_arm.jpg"
-dest_files=["res://.godot/imported/plaster_arm.jpg-f86bf39293bf9c59e68c5e848e354635.s3tc.ctex", "res://.godot/imported/plaster_arm.jpg-f86bf39293bf9c59e68c5e848e354635.etc2.ctex"]
+dest_files=["res://.godot/imported/plaster_arm.jpg-f86bf39293bf9c59e68c5e848e354635.ctex"]
 
 [params]
 

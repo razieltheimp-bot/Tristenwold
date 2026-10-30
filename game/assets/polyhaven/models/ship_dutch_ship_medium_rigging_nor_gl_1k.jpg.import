@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b2e87uv7l6ih4"
-path="res://.godot/imported/ship_dutch_ship_medium_rigging_nor_gl_1k.jpg-1d5c35fccc6332c70ba5f28d0567961e.ctex"
+path.s3tc="res://.godot/imported/ship_dutch_ship_medium_rigging_nor_gl_1k.jpg-1d5c35fccc6332c70ba5f28d0567961e.s3tc.ctex"
+path.etc2="res://.godot/imported/ship_dutch_ship_medium_rigging_nor_gl_1k.jpg-1d5c35fccc6332c70ba5f28d0567961e.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "c041ab2adab23b2f4ed1d49c65baebf3"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/ship_dutch_ship_medium_rigging_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/ship_dutch_ship_medium_rigging_nor_gl_1k.jpg-1d5c35fccc6332c70ba5f28d0567961e.ctex"]
+dest_files=["res://.godot/imported/ship_dutch_ship_medium_rigging_nor_gl_1k.jpg-1d5c35fccc6332c70ba5f28d0567961e.s3tc.ctex", "res://.godot/imported/ship_dutch_ship_medium_rigging_nor_gl_1k.jpg-1d5c35fccc6332c70ba5f28d0567961e.etc2.ctex"]
 
 [params]
 

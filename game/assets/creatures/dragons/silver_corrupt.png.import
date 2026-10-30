@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://brtapv0oj0iy8"
-path.s3tc="res://.godot/imported/silver_corrupt.png-d1c79bb8cea368ef4339b3405ac6581a.s3tc.ctex"
-path.etc2="res://.godot/imported/silver_corrupt.png-d1c79bb8cea368ef4339b3405ac6581a.etc2.ctex"
+path="res://.godot/imported/silver_corrupt.png-d1c79bb8cea368ef4339b3405ac6581a.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/dragons/silver_corrupt.png"
-dest_files=["res://.godot/imported/silver_corrupt.png-d1c79bb8cea368ef4339b3405ac6581a.s3tc.ctex", "res://.godot/imported/silver_corrupt.png-d1c79bb8cea368ef4339b3405ac6581a.etc2.ctex"]
+dest_files=["res://.godot/imported/silver_corrupt.png-d1c79bb8cea368ef4339b3405ac6581a.ctex"]
 
 [params]
 

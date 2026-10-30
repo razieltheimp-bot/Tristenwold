@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bluq6yn265f80"
-path="res://.godot/imported/lantern_wooden_lantern_01_glass_nor_gl_1k.jpg-fda261fd8fe69ff88cda8184d844a148.ctex"
+path.s3tc="res://.godot/imported/lantern_wooden_lantern_01_glass_nor_gl_1k.jpg-fda261fd8fe69ff88cda8184d844a148.s3tc.ctex"
+path.etc2="res://.godot/imported/lantern_wooden_lantern_01_glass_nor_gl_1k.jpg-fda261fd8fe69ff88cda8184d844a148.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "c49ca5fa31397ff357912dadd4420991"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/lantern_wooden_lantern_01_glass_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/lantern_wooden_lantern_01_glass_nor_gl_1k.jpg-fda261fd8fe69ff88cda8184d844a148.ctex"]
+dest_files=["res://.godot/imported/lantern_wooden_lantern_01_glass_nor_gl_1k.jpg-fda261fd8fe69ff88cda8184d844a148.s3tc.ctex", "res://.godot/imported/lantern_wooden_lantern_01_glass_nor_gl_1k.jpg-fda261fd8fe69ff88cda8184d844a148.etc2.ctex"]
 
 [params]
 

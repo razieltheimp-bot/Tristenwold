@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bx5myj0gvm1gp"
-path="res://.godot/imported/pinnace_ship_pinnace_hull_nor_gl_1k.jpg-4c0a117cef66af6c21c69b668b5e7c7c.ctex"
+path.s3tc="res://.godot/imported/pinnace_ship_pinnace_hull_nor_gl_1k.jpg-4c0a117cef66af6c21c69b668b5e7c7c.s3tc.ctex"
+path.etc2="res://.godot/imported/pinnace_ship_pinnace_hull_nor_gl_1k.jpg-4c0a117cef66af6c21c69b668b5e7c7c.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "74c57a9764f5af980a06bfc948d6651f"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/pinnace_ship_pinnace_hull_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/pinnace_ship_pinnace_hull_nor_gl_1k.jpg-4c0a117cef66af6c21c69b668b5e7c7c.ctex"]
+dest_files=["res://.godot/imported/pinnace_ship_pinnace_hull_nor_gl_1k.jpg-4c0a117cef66af6c21c69b668b5e7c7c.s3tc.ctex", "res://.godot/imported/pinnace_ship_pinnace_hull_nor_gl_1k.jpg-4c0a117cef66af6c21c69b668b5e7c7c.etc2.ctex"]
 
 [params]
 

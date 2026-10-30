@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b020qj1rslk83"
-path.s3tc="res://.godot/imported/brass.png-b040f442c3dc6e62e05c15365e047675.s3tc.ctex"
-path.etc2="res://.godot/imported/brass.png-b040f442c3dc6e62e05c15365e047675.etc2.ctex"
+path="res://.godot/imported/brass.png-b040f442c3dc6e62e05c15365e047675.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/dragons/brass.png"
-dest_files=["res://.godot/imported/brass.png-b040f442c3dc6e62e05c15365e047675.s3tc.ctex", "res://.godot/imported/brass.png-b040f442c3dc6e62e05c15365e047675.etc2.ctex"]
+dest_files=["res://.godot/imported/brass.png-b040f442c3dc6e62e05c15365e047675.ctex"]
 
 [params]
 

@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://uqvqlskup73q"
-path="res://.godot/imported/barrel_apples_T_Trim_Props_Normal.jpg-179f5b196c84f1b5d262032d5cf3916a.ctex"
+path.s3tc="res://.godot/imported/barrel_apples_T_Trim_Props_Normal.jpg-179f5b196c84f1b5d262032d5cf3916a.s3tc.ctex"
+path.etc2="res://.godot/imported/barrel_apples_T_Trim_Props_Normal.jpg-179f5b196c84f1b5d262032d5cf3916a.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "34f8b0ff4983cc4586287a28d5d3a56a"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/props/caravan/barrel_apples_T_Trim_Props_Normal.jpg"
-dest_files=["res://.godot/imported/barrel_apples_T_Trim_Props_Normal.jpg-179f5b196c84f1b5d262032d5cf3916a.ctex"]
+dest_files=["res://.godot/imported/barrel_apples_T_Trim_Props_Normal.jpg-179f5b196c84f1b5d262032d5cf3916a.s3tc.ctex", "res://.godot/imported/barrel_apples_T_Trim_Props_Normal.jpg-179f5b196c84f1b5d262032d5cf3916a.etc2.ctex"]
 
 [params]
 

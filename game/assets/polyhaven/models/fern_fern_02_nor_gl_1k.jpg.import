@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cmtwmiu8wykn5"
-path="res://.godot/imported/fern_fern_02_nor_gl_1k.jpg-9f43fcbc865d39715f8ea826cfdede1b.ctex"
+path.s3tc="res://.godot/imported/fern_fern_02_nor_gl_1k.jpg-9f43fcbc865d39715f8ea826cfdede1b.s3tc.ctex"
+path.etc2="res://.godot/imported/fern_fern_02_nor_gl_1k.jpg-9f43fcbc865d39715f8ea826cfdede1b.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "3b81ace99cf54d631ffafdb8f54a1e77"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/fern_fern_02_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/fern_fern_02_nor_gl_1k.jpg-9f43fcbc865d39715f8ea826cfdede1b.ctex"]
+dest_files=["res://.godot/imported/fern_fern_02_nor_gl_1k.jpg-9f43fcbc865d39715f8ea826cfdede1b.s3tc.ctex", "res://.godot/imported/fern_fern_02_nor_gl_1k.jpg-9f43fcbc865d39715f8ea826cfdede1b.etc2.ctex"]
 
 [params]
 

@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://hsaoxq6l02cu"
-path.s3tc="res://.godot/imported/silver.png-2bf7fdba2ed5048dc04446d0c9eb6a0a.s3tc.ctex"
-path.etc2="res://.godot/imported/silver.png-2bf7fdba2ed5048dc04446d0c9eb6a0a.etc2.ctex"
+path="res://.godot/imported/silver.png-2bf7fdba2ed5048dc04446d0c9eb6a0a.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/dragons/silver.png"
-dest_files=["res://.godot/imported/silver.png-2bf7fdba2ed5048dc04446d0c9eb6a0a.s3tc.ctex", "res://.godot/imported/silver.png-2bf7fdba2ed5048dc04446d0c9eb6a0a.etc2.ctex"]
+dest_files=["res://.godot/imported/silver.png-2bf7fdba2ed5048dc04446d0c9eb6a0a.ctex"]
 
 [params]
 

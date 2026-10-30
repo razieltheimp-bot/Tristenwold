@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b1mra2comlt2m"
-path.s3tc="res://.godot/imported/plaster_diff.jpg-c6fcff630982cb0c0bdea89da89ce821.s3tc.ctex"
-path.etc2="res://.godot/imported/plaster_diff.jpg-c6fcff630982cb0c0bdea89da89ce821.etc2.ctex"
+path="res://.godot/imported/plaster_diff.jpg-c6fcff630982cb0c0bdea89da89ce821.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/surfaces/plaster_diff.jpg"
-dest_files=["res://.godot/imported/plaster_diff.jpg-c6fcff630982cb0c0bdea89da89ce821.s3tc.ctex", "res://.godot/imported/plaster_diff.jpg-c6fcff630982cb0c0bdea89da89ce821.etc2.ctex"]
+dest_files=["res://.godot/imported/plaster_diff.jpg-c6fcff630982cb0c0bdea89da89ce821.ctex"]
 
 [params]
 

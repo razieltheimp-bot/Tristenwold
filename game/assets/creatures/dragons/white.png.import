@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dfbhyxq47ly5a"
-path.s3tc="res://.godot/imported/white.png-9e9921009b6e37743e58b7f5dfea5937.s3tc.ctex"
-path.etc2="res://.godot/imported/white.png-9e9921009b6e37743e58b7f5dfea5937.etc2.ctex"
+path="res://.godot/imported/white.png-9e9921009b6e37743e58b7f5dfea5937.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/dragons/white.png"
-dest_files=["res://.godot/imported/white.png-9e9921009b6e37743e58b7f5dfea5937.s3tc.ctex", "res://.godot/imported/white.png-9e9921009b6e37743e58b7f5dfea5937.etc2.ctex"]
+dest_files=["res://.godot/imported/white.png-9e9921009b6e37743e58b7f5dfea5937.ctex"]
 
 [params]
 

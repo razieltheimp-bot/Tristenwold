@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d1lu66xed5bu4"
-path.s3tc="res://.godot/imported/amethyst_glow.png-3560c6fd9320860ce7431918469f7917.s3tc.ctex"
-path.etc2="res://.godot/imported/amethyst_glow.png-3560c6fd9320860ce7431918469f7917.etc2.ctex"
+path="res://.godot/imported/amethyst_glow.png-3560c6fd9320860ce7431918469f7917.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/dragons/amethyst_glow.png"
-dest_files=["res://.godot/imported/amethyst_glow.png-3560c6fd9320860ce7431918469f7917.s3tc.ctex", "res://.godot/imported/amethyst_glow.png-3560c6fd9320860ce7431918469f7917.etc2.ctex"]
+dest_files=["res://.godot/imported/amethyst_glow.png-3560c6fd9320860ce7431918469f7917.ctex"]
 
 [params]
 

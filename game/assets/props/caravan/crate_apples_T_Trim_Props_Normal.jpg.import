@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ctmrm21wpoq7t"
-path="res://.godot/imported/crate_apples_T_Trim_Props_Normal.jpg-fbd6f118c38274c5510b605ce4a57a4c.ctex"
+path.s3tc="res://.godot/imported/crate_apples_T_Trim_Props_Normal.jpg-fbd6f118c38274c5510b605ce4a57a4c.s3tc.ctex"
+path.etc2="res://.godot/imported/crate_apples_T_Trim_Props_Normal.jpg-fbd6f118c38274c5510b605ce4a57a4c.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "34f8b0ff4983cc4586287a28d5d3a56a"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/props/caravan/crate_apples_T_Trim_Props_Normal.jpg"
-dest_files=["res://.godot/imported/crate_apples_T_Trim_Props_Normal.jpg-fbd6f118c38274c5510b605ce4a57a4c.ctex"]
+dest_files=["res://.godot/imported/crate_apples_T_Trim_Props_Normal.jpg-fbd6f118c38274c5510b605ce4a57a4c.s3tc.ctex", "res://.godot/imported/crate_apples_T_Trim_Props_Normal.jpg-fbd6f118c38274c5510b605ce4a57a4c.etc2.ctex"]
 
 [params]
 

@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://de7cii4rkdgya"
-path.s3tc="res://.godot/imported/bear_kipine.png-d4dddfb5f78ec1f2c65bf06cac7d9f1e.s3tc.ctex"
-path.etc2="res://.godot/imported/bear_kipine.png-d4dddfb5f78ec1f2c65bf06cac7d9f1e.etc2.ctex"
+path="res://.godot/imported/bear_kipine.png-d4dddfb5f78ec1f2c65bf06cac7d9f1e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/bear_kipine.png"
-dest_files=["res://.godot/imported/bear_kipine.png-d4dddfb5f78ec1f2c65bf06cac7d9f1e.s3tc.ctex", "res://.godot/imported/bear_kipine.png-d4dddfb5f78ec1f2c65bf06cac7d9f1e.etc2.ctex"]
+dest_files=["res://.godot/imported/bear_kipine.png-d4dddfb5f78ec1f2c65bf06cac7d9f1e.ctex"]
 
 [params]
 

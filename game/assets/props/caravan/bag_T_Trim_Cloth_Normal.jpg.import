@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c868h42wbni16"
-path="res://.godot/imported/bag_T_Trim_Cloth_Normal.jpg-a6a68bd60fe286ddfa5e930e298052eb.ctex"
+path.s3tc="res://.godot/imported/bag_T_Trim_Cloth_Normal.jpg-a6a68bd60fe286ddfa5e930e298052eb.s3tc.ctex"
+path.etc2="res://.godot/imported/bag_T_Trim_Cloth_Normal.jpg-a6a68bd60fe286ddfa5e930e298052eb.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "7b46dcc85a3b7c37b4079e04a0e07166"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/props/caravan/bag_T_Trim_Cloth_Normal.jpg"
-dest_files=["res://.godot/imported/bag_T_Trim_Cloth_Normal.jpg-a6a68bd60fe286ddfa5e930e298052eb.ctex"]
+dest_files=["res://.godot/imported/bag_T_Trim_Cloth_Normal.jpg-a6a68bd60fe286ddfa5e930e298052eb.s3tc.ctex", "res://.godot/imported/bag_T_Trim_Cloth_Normal.jpg-a6a68bd60fe286ddfa5e930e298052eb.etc2.ctex"]
 
 [params]
 

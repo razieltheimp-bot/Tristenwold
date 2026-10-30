@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dkngdyi51f12q"
-path.s3tc="res://.godot/imported/white_corrupt.png-58f62583c5f8f8f7efcde8516113ca53.s3tc.ctex"
-path.etc2="res://.godot/imported/white_corrupt.png-58f62583c5f8f8f7efcde8516113ca53.etc2.ctex"
+path="res://.godot/imported/white_corrupt.png-58f62583c5f8f8f7efcde8516113ca53.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/dragons/white_corrupt.png"
-dest_files=["res://.godot/imported/white_corrupt.png-58f62583c5f8f8f7efcde8516113ca53.s3tc.ctex", "res://.godot/imported/white_corrupt.png-58f62583c5f8f8f7efcde8516113ca53.etc2.ctex"]
+dest_files=["res://.godot/imported/white_corrupt.png-58f62583c5f8f8f7efcde8516113ca53.ctex"]
 
 [params]
 

@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b50nygwm8mmag"
-path="res://.godot/imported/moss_rocks_rock_moss_set_01_nor_gl_1k.jpg-345b57afd4a4e7342748cdd97480cb00.ctex"
+path.s3tc="res://.godot/imported/moss_rocks_rock_moss_set_01_nor_gl_1k.jpg-345b57afd4a4e7342748cdd97480cb00.s3tc.ctex"
+path.etc2="res://.godot/imported/moss_rocks_rock_moss_set_01_nor_gl_1k.jpg-345b57afd4a4e7342748cdd97480cb00.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "b7aa9f4ea80a668050aa7312ebec982c"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/moss_rocks_rock_moss_set_01_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/moss_rocks_rock_moss_set_01_nor_gl_1k.jpg-345b57afd4a4e7342748cdd97480cb00.ctex"]
+dest_files=["res://.godot/imported/moss_rocks_rock_moss_set_01_nor_gl_1k.jpg-345b57afd4a4e7342748cdd97480cb00.s3tc.ctex", "res://.godot/imported/moss_rocks_rock_moss_set_01_nor_gl_1k.jpg-345b57afd4a4e7342748cdd97480cb00.etc2.ctex"]
 
 [params]
 

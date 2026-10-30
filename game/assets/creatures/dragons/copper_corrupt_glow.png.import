@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cuysmv3fjtmbe"
-path.s3tc="res://.godot/imported/copper_corrupt_glow.png-d59145d1bc12f94abcf47bd6082f2cea.s3tc.ctex"
-path.etc2="res://.godot/imported/copper_corrupt_glow.png-d59145d1bc12f94abcf47bd6082f2cea.etc2.ctex"
+path="res://.godot/imported/copper_corrupt_glow.png-d59145d1bc12f94abcf47bd6082f2cea.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/creatures/dragons/copper_corrupt_glow.png"
-dest_files=["res://.godot/imported/copper_corrupt_glow.png-d59145d1bc12f94abcf47bd6082f2cea.s3tc.ctex", "res://.godot/imported/copper_corrupt_glow.png-d59145d1bc12f94abcf47bd6082f2cea.etc2.ctex"]
+dest_files=["res://.godot/imported/copper_corrupt_glow.png-d59145d1bc12f94abcf47bd6082f2cea.ctex"]
 
 [params]
 

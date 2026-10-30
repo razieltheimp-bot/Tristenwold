@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bt6ikc3h1r10y"
-path="res://.godot/imported/bag_T_Trim_Furniture_Normal.jpg-7d534c7b55a4be54181ba0c0e986088f.ctex"
+path.s3tc="res://.godot/imported/bag_T_Trim_Furniture_Normal.jpg-7d534c7b55a4be54181ba0c0e986088f.s3tc.ctex"
+path.etc2="res://.godot/imported/bag_T_Trim_Furniture_Normal.jpg-7d534c7b55a4be54181ba0c0e986088f.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "c8f316de5c8893cf8761e45aa1c2fcb0"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/props/caravan/bag_T_Trim_Furniture_Normal.jpg"
-dest_files=["res://.godot/imported/bag_T_Trim_Furniture_Normal.jpg-7d534c7b55a4be54181ba0c0e986088f.ctex"]
+dest_files=["res://.godot/imported/bag_T_Trim_Furniture_Normal.jpg-7d534c7b55a4be54181ba0c0e986088f.s3tc.ctex", "res://.godot/imported/bag_T_Trim_Furniture_Normal.jpg-7d534c7b55a4be54181ba0c0e986088f.etc2.ctex"]
 
 [params]
 

@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cfbu2lnmno0hf"
-path.s3tc="res://.godot/imported/planks_arm.jpg-708c1a02e69a7aa49ff8f71f0aaebf40.s3tc.ctex"
-path.etc2="res://.godot/imported/planks_arm.jpg-708c1a02e69a7aa49ff8f71f0aaebf40.etc2.ctex"
+path="res://.godot/imported/planks_arm.jpg-708c1a02e69a7aa49ff8f71f0aaebf40.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/surfaces/planks_arm.jpg"
-dest_files=["res://.godot/imported/planks_arm.jpg-708c1a02e69a7aa49ff8f71f0aaebf40.s3tc.ctex", "res://.godot/imported/planks_arm.jpg-708c1a02e69a7aa49ff8f71f0aaebf40.etc2.ctex"]
+dest_files=["res://.godot/imported/planks_arm.jpg-708c1a02e69a7aa49ff8f71f0aaebf40.ctex"]
 
 [params]
 
