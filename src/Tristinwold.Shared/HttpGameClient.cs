@@ -66,6 +66,9 @@ public sealed class HttpGameClient : IGameLink
                 }
 
                 while (_outbox.TryDequeue(out var m)) pending.Add(m);
+                // Only the latest position matters; the ones before it would only be played back late.
+                for (var i = pending.FindLastIndex(m => m is Moved) - 1; i >= 0; i--)
+                    if (pending[i] is Moved) pending.RemoveAt(i);
                 _sending = pending.Count > 0;
                 var (status, synced) = await PostAsync("v1/sync", JsonSerializer.Serialize(new SyncRequest(session, pending), Wire.Options), ct).ConfigureAwait(false);
                 if (status == HttpStatusCode.Unauthorized) { session = null; continue; } // timed out: join again, keep what we had to say

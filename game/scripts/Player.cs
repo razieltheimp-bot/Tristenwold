@@ -1,6 +1,7 @@
 using Godot;
 using Tristinwold.Gameplay;
 using Tristinwold.Deviant;
+using Tristinwold.Shared;
 
 namespace Tristinwold.Game;
 
@@ -326,6 +327,13 @@ public partial class Player : Fighter
     // ---- the moves -----------------------------------------------------------------------------
 
     /// <summary>The main attack (left button). In the saddle, the dragon strikes instead.</summary>
+    /// <summary>Where this hero is and what they're doing, for the friends on the server to see (see <see cref="Visitors"/>).</summary>
+    public Moved Report()
+    {
+        var p = GlobalPosition;
+        return new Moved(Class.Look, Avatar, Stats.Name, p.X, p.Y, p.Z, Figure.GlobalRotation.Y, Frozen ? 0 : GroundSpeed, Figure.Recent, Figure.Beat);
+    }
+
     public bool Swing() => Mount is not null ? DragonStrike() : Use(Class.Primary);
 
     /// <summary>The signature move (right button).</summary>

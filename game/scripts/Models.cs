@@ -207,6 +207,11 @@ public abstract partial class Body : Node3D
     /// <summary>Plays one of its moves by name (a kick, a crossbow shot, a spell raised high), if it has it.</summary>
     public virtual void Perform(string clip, double seconds = 0.7, float speed = 1.3f) => Attack();
 
+    /// <summary>The last move it made and a count of them, for telling friends on the server (see <see cref="Visitors"/>).</summary>
+    public string? Recent { get; private set; }
+    public int Beat { get; private set; }
+    protected void Noted(string clip) { Recent = clip; Beat++; }
+
     /// <summary>Sits down (in a saddle) or gets up.</summary>
     public virtual void Seat(bool seated) { }
 
@@ -778,6 +783,7 @@ public partial class Figure : Body
     public override void Perform(string clip, double seconds = 0.7, float speed = 1.3f)
     {
         if (_anim is not null) _anim.SpeedScale = 1;
+        Noted(clip);
         if (_anim?.HasAnimation(clip) != true) { Attack(); return; }
         Once(clip, seconds, speed);
     }
@@ -815,6 +821,7 @@ public partial class Figure : Body
     public override void Attack(bool heavy = false)
     {
         if (_anim is not null) _anim.SpeedScale = 1;
+        Noted(heavy ? "Attack!" : "Attack");
         var twoHanded = Held is { } held ? held == Tristinwold.Gameplay.Grip.TwoHand
             : _look.Model.StartsWith("Skeleton") || _look.Show.Contains("2H_Axe") || _look.Show.Contains("2H_Sword");
         string[] swings = twoHanded
@@ -827,6 +834,7 @@ public partial class Figure : Body
     public override void Cast()
     {
         if (_anim is not null) _anim.SpeedScale = 1;
+        Noted("Cast");
         Once("Spellcast_Shoot", 0.8, 1.3f);
     }
 

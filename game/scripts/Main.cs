@@ -36,7 +36,9 @@ public partial class Main : Node3D
     string _area = "", _sentArea = "", _savePath = "";
     string? _deviantJson;
     bool _limitWasReady;
-    double _clock, _lastScore, _fightMusicUntil, _lastRespawnCheck, _lastReveal, _lastPlaces, _lastSave;
+    double _clock, _lastScore, _fightMusicUntil, _lastRespawnCheck, _lastReveal, _lastPlaces, _lastSave, _lastMoved, _lastTold;
+    Moved? _told;
+    Visitors _visitors = null!;
     readonly Dictionary<Lair, List<Enemy>> _lairs = [];
     readonly List<Person> _townsfolk = [];
 
@@ -379,6 +381,14 @@ public partial class Main : Node3D
             Element = Enum.TryParse<DamageKind>(choice.Character.Element, out var element) ? element : DamageKind.Fire,
         };
         AddChild(_player);
+        AddChild(_visitors = new Visitors { Name = "Visitors" });
+        if (_args.ContainsKey("visitor-demo")) // a pretend friend standing by the start, for a look at how visitors are drawn
+        {
+            var at = City.PlayerStart + new Vector3(2.5f, 0, -2);
+            _visitors.Seen("Mira", new Moved("Wizard", null, "Mira", at.X, City.FloorAt(at), at.Z, 0.6f, 0, null, 0));
+            var at2 = City.PlayerStart + new Vector3(-2.5f, 0, -3);
+            _visitors.Seen("Dax", new Moved("Barbarian", null, "Dax", at2.X, City.FloorAt(at2), at2.Z, -0.4f, 0, null, 0));
+        }
         Poise.Hero = _player; // the creatures' eyes follow the hero
         _player.Said += text => _hud.Toast(text);
         _player.LimitUsed += (a, c) => _hud.LimitBanner(a.Name, a.Text, c);
@@ -609,6 +619,7 @@ public partial class Main : Node3D
     }
 
     public IGameLink? Client => _client;
+    public Visitors VisitorsNode => _visitors;
     public Player PlayerNode => _player;
     public EncounterTracker Tracker => _tracker;
     public event Action<Message>? Received;
@@ -654,7 +665,8 @@ public partial class Main : Node3D
             case Reward r: _player.Crowns += r.Coppers / 100; _hud.Toast($"Contract paid: {r.Coppers / 100} crowns."); break;
             case Board b: _hud.ShowBoard(b.Contracts); break;
             case CitySnapshot c: TakeCity(c); break;
-            case Roster r: _hud.ShowCompanies(r.Groups); break;
+            case Roster r: _hud.ShowCompanies(r.Groups); _visitors.Roster(r.Groups); break;
+            case Seen s: _visitors.Seen(s.Player, s.Where); break;
             case DeviantSnapshot s: _hud.ShowDeviants(s.WorldJson); _deviantJson = s.WorldJson; break;
             case DeviantEvents e:
                 foreach (var ev in e.Events)
@@ -717,6 +729,18 @@ public partial class Main : Node3D
         {
             _sentArea = _area;
             _client.Send(new Presence(_area, [_player.Company]));
+        }
+        // Where we are, for the friends on the server: a few times a second while it changes, and now and then regardless.
+        if (_client?.Status == ClientStatus.Connected && _clock - _lastMoved > 0.2)
+        {
+            _lastMoved = _clock;
+            var report = _player.Report();
+            if (report != _told || _clock - _lastTold > 5)
+            {
+                _told = report;
+                _lastTold = _clock;
+                _client.Send(report);
+            }
         }
 
         foreach (var e in Enemies().Where(e => e.FightingCompany && !e.Sparring && !e.Yielded))

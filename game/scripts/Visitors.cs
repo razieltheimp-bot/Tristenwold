@@ -1,0 +1,122 @@
+using Godot;
+using Tristinwold.Shared;
+
+namespace Tristinwold.Game;
+
+/// <summary>
+/// The other players on the shared server, walking about this game's world. Each is drawn as their own hero
+/// (class look and character page choices) from what the server last said of them, eased toward where they
+/// were, playing the moves they made; a name floats over them. Nothing here fights or blocks: they're company,
+/// not obstacles. A player not heard of for a while, or gone from the roster, fades out.
+/// </summary>
+public partial class Visitors : Node3D
+{
+    const double Stale = 40;
+    readonly Dictionary<string, Visitor> _here = new(StringComparer.OrdinalIgnoreCase);
+    double _clock;
+
+    public int Count => _here.Count;
+
+    /// <summary>Where a player was last seen, if they're about.</summary>
+    public Vector3? Where(string player) => _here.TryGetValue(player, out var v) ? v.Target : null;
+
+    public void Seen(string player, Moved where)
+    {
+        if (!_here.TryGetValue(player, out var v))
+        {
+            v = new Visitor { Name = $"Visitor_{player}" };
+            _here[player] = v;
+            AddChild(v);
+            v.Position = new Vector3(where.X, where.Y, where.Z);
+            v.Rotation = new Vector3(0, where.Yaw, 0);
+        }
+        v.Take(where, _clock);
+    }
+
+    /// <summary>The roster says who's online: anyone else is gone.</summary>
+    public void Roster(IReadOnlyList<GroupView> groups)
+    {
+        var online = groups.Where(g => g.Online).Select(g => g.Player).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var (player, v) in _here.ToList())
+            if (!online.Contains(player)) { _here.Remove(player); v.QueueFree(); }
+    }
+
+    public override void _Process(double delta)
+    {
+        _clock += delta;
+        foreach (var (player, v) in _here.ToList())
+        {
+            if (_clock - v.Heard > Stale) { _here.Remove(player); v.QueueFree(); continue; }
+            v.Ease(delta);
+        }
+    }
+
+    sealed partial class Visitor : Node3D
+    {
+        Body? _figure;
+        Label3D? _plate;
+        string _look = "", _avatar = "";
+        int _beat = -1;
+        float _yaw, _speed;
+        public Vector3 Target;
+        public double Heard;
+
+        public void Take(Moved m, double now)
+        {
+            Heard = now;
+            if (_figure is null || m.Look != _look || (m.Avatar ?? "") != _avatar) Dress(m);
+            Target = new Vector3(m.X, m.Y, m.Z);
+            _yaw = m.Yaw;
+            _speed = m.Speed;
+            if (_plate is not null && _plate.Text != m.Name) _plate.Text = m.Name;
+            if (m.Clip is { } clip && m.Beat != _beat)
+            {
+                if (_beat >= 0 && _figure is not null)
+                    switch (clip)
+                    {
+                        case "Attack": _figure.Attack(); break;
+                        case "Attack!": _figure.Attack(true); break;
+                        case "Cast": _figure.Cast(); break;
+                        default: _figure.Perform(clip); break;
+                    }
+                _beat = m.Beat;
+            }
+        }
+
+        void Dress(Moved m)
+        {
+            _figure?.QueueFree();
+            _plate?.QueueFree();
+            _look = m.Look;
+            _avatar = m.Avatar ?? "";
+            _figure = Figure.Create(m.Look, Tristinwold.Gameplay.Avatar.Parse(m.Avatar, m.Look));
+            AddChild(_figure);
+            var top = Models.Bounds(_figure).End.Y;
+            _plate = new Label3D
+            {
+                Text = m.Name, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 34, OutlineSize = 10, PixelSize = 0.008f,
+                NoDepthTest = true, RenderPriority = 10, Modulate = new Color("#dff4ff"),
+                Position = new Vector3(0, Math.Max(1.6f, top) + 0.45f, 0),
+            };
+            AddChild(_plate);
+        }
+
+        public void Ease(double delta)
+        {
+            var gap = Target - Position;
+            var far = gap.Length();
+            float moved;
+            if (far > 25) { Position = Target; moved = 0; } // too far behind to catch up: just be there
+            else if (far > 0.02f)
+            {
+                var pace = Math.Max(_speed, far * 3); // their own speed, or faster to close a gap
+                var step = Math.Min(far, pace * (float)delta);
+                Position += gap / far * step;
+                moved = step / (float)Math.Max(delta, 1e-4);
+            }
+            else moved = 0;
+            Rotation = new Vector3(0, Mathf.LerpAngle(Rotation.Y, _yaw, (float)Math.Min(1, delta * 10)), 0);
+            _figure?.Move(Math.Min(moved, Math.Max(_speed, 0.5f) * 1.2f) is var pace2 && far > 0.05f ? Math.Max(pace2, 0.6f) : 0, true, false);
+        }
+    }
+}

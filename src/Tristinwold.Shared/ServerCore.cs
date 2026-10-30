@@ -45,6 +45,8 @@ public sealed partial class ServerCore
     readonly Rng _rng;
     readonly HashSet<string> _online = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, (string Area, DateTime Left)> _lastLeft = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Where each player online was last seen (not saved: it means nothing once they're gone).</summary>
+    readonly Dictionary<string, Moved> _sights = new(StringComparer.OrdinalIgnoreCase);
 
     public CampaignState State { get; }
     public DeviantWorld World { get; private set; }
@@ -90,20 +92,25 @@ public sealed partial class ServerCore
         _online.Add(name);
         Dirty = true;
 
-        return
-        [
+        var outgoing = new List<Outgoing>
+        {
             new(name, new Welcome(name, State.Campaign, [.. State.Flags])),
             new(name, new DeviantSnapshot(World.ToJson())),
             new(name, new Board(PublicBoard())),
             new(name, CityMessage()),
             new(null, RosterMessage()),
             new(null, new Notice(NoticeKind.World, $"{name}'s company has arrived in Tristinwold."), Except: name),
-        ];
+        };
+        // Everyone already out there, where they were last seen, so the newcomer sees them at once.
+        foreach (var (other, where) in _sights)
+            if (!other.Equals(name, StringComparison.OrdinalIgnoreCase)) outgoing.Add(new(name, new Seen(other, where)));
+        return outgoing;
     }
 
     public IReadOnlyList<Outgoing> Disconnect(string player)
     {
         if (!_online.Remove(player)) return [];
+        _sights.Remove(player);
         if (State.Groups.TryGetValue(player, out var g) && g.Area.Length > 0) _lastLeft[player] = (g.Area, _clock());
         return [new(null, RosterMessage())];
     }
@@ -127,8 +134,17 @@ public sealed partial class ServerCore
             Say s when !string.IsNullOrWhiteSpace(s.Text) => [new(null, new Notice(NoticeKind.Chat, Clip(s.Text, 400), player))],
             EncounterStarted e => OnEncounter(player, e),
             CityTrade t => OnCityTrade(player, t),
+            Moved m => OnMoved(player, m),
             _ => [],
         };
+    }
+
+    /// <summary>A hero moved: everyone else sees where. Nothing is saved; a position is stale the moment it's sent.</summary>
+    IReadOnlyList<Outgoing> OnMoved(string player, Moved m)
+    {
+        var where = m with { Look = Clip(m.Look, 40), Avatar = m.Avatar is null ? null : Clip(m.Avatar, 400), Name = Clip(m.Name, 40), Clip = m.Clip is null ? null : Clip(m.Clip, 40) };
+        _sights[player] = where;
+        return [new(null, new Seen(player, where), Except: player)];
     }
 
     IReadOnlyList<Outgoing> OnPresence(Group group, Presence p)
@@ -158,20 +174,8 @@ public sealed partial class ServerCore
                 outgoing.AddRange(meeting);
                 continue;
             }
-            if (_rng.Chance(_options.RewindChance))
-            {
-                outgoing.Add(new(group.Player, new Notice(NoticeKind.NearMiss,
-                    $"For a heartbeat you see {other.Player}'s company across {area}. Then time skips, and they're streets away.")));
-                outgoing.Add(new(other.Player, new Notice(NoticeKind.NearMiss,
-                    $"The world stutters. Somewhere in {area}, {group.Player}'s company was just within reach.")));
-            }
-            else
-            {
-                outgoing.Add(new(group.Player, new Notice(NoticeKind.NearMiss,
-                    $"{other.Player}'s company is somewhere in {area}. A cloaked figure ducks out of sight as you arrive.")));
-                outgoing.Add(new(other.Player, new Notice(NoticeKind.NearMiss,
-                    $"A stranger who looks oddly familiar passes behind you: {group.Player}'s company has come to {area}.")));
-            }
+            outgoing.Add(new(group.Player, new Notice(NoticeKind.NearMiss, $"{other.Player}'s company is in {area} too. Look about for them.")));
+            outgoing.Add(new(other.Player, new Notice(NoticeKind.NearMiss, $"{group.Player}'s company has come to {area}.")));
         }
         foreach (var (who, (leftArea, when)) in _lastLeft)
         {

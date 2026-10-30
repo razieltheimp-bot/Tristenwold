@@ -24,6 +24,7 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(Say), "say")]
 [JsonDerivedType(typeof(EncounterStarted), "encounter_started")]
 [JsonDerivedType(typeof(CityTrade), "city_trade")]
+[JsonDerivedType(typeof(Moved), "moved")]
 // server -> client
 [JsonDerivedType(typeof(Welcome), "welcome")]
 [JsonDerivedType(typeof(Rejected), "rejected")]
@@ -38,6 +39,7 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(DeviantAppears), "deviant_appears")]
 [JsonDerivedType(typeof(DeviantHunts), "deviant_hunts")]
 [JsonDerivedType(typeof(CitySnapshot), "city_snapshot")]
+[JsonDerivedType(typeof(Seen), "seen")]
 public abstract record Message;
 
 // ---- client -> server ----------------------------------------------------------------------
@@ -68,6 +70,14 @@ public sealed record EncounterStarted(string Area, IReadOnlyList<FormationSlot> 
 
 /// <summary>Something this company did to Tristinwold's economy (sold, bought, delivered, gave): the server does it to the shared city.</summary>
 public sealed record CityTrade(Gameplay.CityAction Action) : Message;
+
+/// <summary>
+/// Where this player's hero is and what they're doing, a few times a second while it changes, so friends on
+/// the same server see them walk by. <paramref name="Look"/> and <paramref name="Avatar"/> say what to draw
+/// (the class look and the character page's choices); <paramref name="Clip"/> is the last move performed (a
+/// swing, a spell, a jump) and <paramref name="Beat"/> counts them, so each is played once.
+/// </summary>
+public sealed record Moved(string Look, string? Avatar, string Name, float X, float Y, float Z, float Yaw, float Speed, string? Clip, int Beat) : Message;
 
 // ---- server -> client ----------------------------------------------------------------------
 
@@ -106,6 +116,9 @@ public sealed record DeviantHunts(Guid DeviantId, string Kind, string Species, s
 /// </summary>
 public sealed record CitySnapshot(Gameplay.CityEconomy City, double Seconds) : Message;
 
+/// <summary>Another player's hero, where they were last seen. Sent to everyone else whenever a player moves, and to a newcomer for everyone already there.</summary>
+public sealed record Seen(string Player, Moved Where) : Message;
+
 // ---- views (what players may see) ------------------------------------------------------------
 
 public enum ContractStatus { Open, Claimed, Done }
@@ -119,7 +132,7 @@ public sealed record GroupView(string Player, string Area, IReadOnlyList<string>
 
 public static class Wire
 {
-    public const int ProtocolVersion = 4; // 2: the shared city; 3: deviants; 4: their new ranks
+    public const int ProtocolVersion = 5; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other
     public const int DefaultPort = 7777;
     public const int MaxLineBytes = 4 * 1024 * 1024; // a big deviant world is still well under this
 

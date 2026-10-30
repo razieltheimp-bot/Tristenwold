@@ -93,6 +93,29 @@ public class SharedWorldTests
     }
 
     [Fact]
+    public void Heroes_see_each_other_move_and_a_newcomer_sees_everyone_already_there()
+    {
+        var server = NewServer();
+        server.Connect(Hi("Joe"));
+        server.Connect(Hi("Mira"));
+
+        var step = new Moved("Knight", "head=1", "Joe", 10, 0.5f, -3, 1.2f, 3.8f, "Attack", 1);
+        var outs = server.Handle("Joe", step);
+        var seen = Assert.Single(To<Seen>(outs, "Mira"));
+        Assert.Equal("Joe", seen.Player);
+        Assert.Equal(step, seen.Where);
+        Assert.Empty(To<Seen>(outs, "Joe")); // not echoed back
+
+        // Whoever joins later is told where everyone already is, and nothing about themselves.
+        var dax = server.Connect(Hi("Dax"));
+        Assert.Equal("Joe", Assert.Single(To<Seen>(dax, "Dax")).Player);
+
+        // Gone is gone.
+        server.Disconnect("Joe");
+        Assert.Empty(To<Seen>(server.Connect(Hi("Pell")), "Pell"));
+    }
+
+    [Fact]
     public void Dead_drops_reach_the_next_group_unless_vann_intercepts_them()
     {
         var server = NewServer();

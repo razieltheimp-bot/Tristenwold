@@ -53,6 +53,11 @@ public class HttpGatewayTests
         Assert.Contains(miraSync.Messages, m => m is Notice { Kind: NoticeKind.Chat, From: "Joe" } n && n.Text.Contains("Bannered Mare"));
         Assert.Contains(miraSync.Messages, m => m is Board b && b.Contracts.Any(c => c.Id == "brother" && c.ClaimedBy == "Joe"));
 
+        // A phone's hero walking by reaches the PC's game on its next sync.
+        await Post(http, "/v1/sync", Sync(mira.Session!, new Moved("Wizard", null, "Mira", 4, 0, 2, 0.3f, 3.8f, null, 0)));
+        var (_, joeSync) = await Post(http, "/v1/sync", Sync(joe.Session!));
+        Assert.Contains(joeSync.Messages, m => m is Seen { Player: "Mira", Where.Look: "Wizard" });
+
         var (expired, _) = await Post(http, "/v1/sync", Sync("not-a-session"));
         Assert.Equal(HttpStatusCode.Unauthorized, expired);
 

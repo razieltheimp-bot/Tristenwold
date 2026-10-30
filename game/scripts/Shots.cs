@@ -1,4 +1,5 @@
 using Godot;
+using Tristinwold.Shared;
 using Tristinwold.Gameplay;
 using Tristinwold.Deviant;
 using Tristinwold.World;
@@ -577,6 +578,17 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             p.GlobalPosition = best.At + new Vector3(5, 1, 1) with { Y = City.FloorAt(best.At + new Vector3(5, 0, 1)) + 1 };
             await Frames(120);
             await From("poise-hillside", best.At + new Vector3(1, 0, 5.5f) with { Y = City.FloorAt(best.At + new Vector3(1, 0, 5.5f)) + 1.7f }, best.At + new Vector3(-0.5f, 0, 0) with { Y = ground + 1.1f });
+            GetTree().Quit();
+            return;
+        }
+        if (OS.GetCmdlineUserArgs().Contains("--visitors"))
+        {
+            // Two friends from the server by the start (--visitor-demo put them there), one of them walking over.
+            var start = City.PlayerStart;
+            main.VisitorsNode.Seen("Dax", new Moved("Barbarian", null, "Dax", start.X - 4, City.FloorAt(start + new Vector3(-4, 0, -3)), start.Z - 3, 0.9f, 3.8f, "Cheer", 1));
+            await From("visitors", start + new Vector3(1, 2.2f, 5), start + new Vector3(0, 1, -2.5f));
+            await ToSignal(GetTree().CreateTimer(1.2), SceneTreeTimer.SignalName.Timeout);
+            await Shot("visitors-later");
             GetTree().Quit();
             return;
         }

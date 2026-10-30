@@ -1108,8 +1108,12 @@ own company, at their own pace. One server, usually run by the DM, holds the cit
   their Vann.
 - **Keystones.** Each company secretly gets a Keystone from its own party. Nobody knows who, until two
   Keystones end up in the same place and time stops around them.
-- **Near misses.** Arrive where another company is and you glimpse them before the crowd closes, or time
-  skips and they're streets away. Arrive just after they left and you find fresh tracks.
+- **You see each other.** Every hero on the server walks about in everyone's world: their class look and
+  character-page choices, where they are, which way they face, their walk and run, and every swing, spell
+  and jump they make, a few times a second over the same link the rest of the server uses (TCP on a PC,
+  the HTTP gateway on a phone). A name floats over them. They're company, not obstacles: you can't bump
+  into them or hit them. Arrive where another company is and the game says so; arrive just after they
+  left and you find fresh tracks.
 - **Dead drops.** Hide a note in your current area for the next company. Some never arrive: Vann reads
   them. The DM can `release` an intercepted note.
 - **Contract pay** arrives in crowns when you mark a contract done. **Resting** (saving)
