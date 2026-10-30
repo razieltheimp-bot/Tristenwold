@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://becc3sltl8x08"
-path="res://.godot/imported/boulder_small_namaqualand_boulder_05_nor_gl_1k.jpg-f29b8a749c6683af0e87099af90a4945.ctex"
+path.s3tc="res://.godot/imported/boulder_small_namaqualand_boulder_05_nor_gl_1k.jpg-f29b8a749c6683af0e87099af90a4945.s3tc.ctex"
+path.etc2="res://.godot/imported/boulder_small_namaqualand_boulder_05_nor_gl_1k.jpg-f29b8a749c6683af0e87099af90a4945.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "0312c5f484266cc631c6af8c2f8c51d1"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/boulder_small_namaqualand_boulder_05_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/boulder_small_namaqualand_boulder_05_nor_gl_1k.jpg-f29b8a749c6683af0e87099af90a4945.ctex"]
+dest_files=["res://.godot/imported/boulder_small_namaqualand_boulder_05_nor_gl_1k.jpg-f29b8a749c6683af0e87099af90a4945.s3tc.ctex", "res://.godot/imported/boulder_small_namaqualand_boulder_05_nor_gl_1k.jpg-f29b8a749c6683af0e87099af90a4945.etc2.ctex"]
 
 [params]
 

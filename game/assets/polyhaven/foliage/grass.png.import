@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cr1v6qjeo82is"
-path.s3tc="res://.godot/imported/grass.png-eb4e7b02dbd34a48c73612af852fb632.s3tc.ctex"
-path.etc2="res://.godot/imported/grass.png-eb4e7b02dbd34a48c73612af852fb632.etc2.ctex"
+path="res://.godot/imported/grass.png-eb4e7b02dbd34a48c73612af852fb632.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/foliage/grass.png"
-dest_files=["res://.godot/imported/grass.png-eb4e7b02dbd34a48c73612af852fb632.s3tc.ctex", "res://.godot/imported/grass.png-eb4e7b02dbd34a48c73612af852fb632.etc2.ctex"]
+dest_files=["res://.godot/imported/grass.png-eb4e7b02dbd34a48c73612af852fb632.ctex"]
 
 [params]
 

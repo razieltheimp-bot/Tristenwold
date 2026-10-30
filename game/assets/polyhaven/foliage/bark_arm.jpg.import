@@ -3,17 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c5grd2kgy6ty4"
-path.s3tc="res://.godot/imported/bark_arm.jpg-4d28f9a9d38b348db171e65daccbe067.s3tc.ctex"
-path.etc2="res://.godot/imported/bark_arm.jpg-4d28f9a9d38b348db171e65daccbe067.etc2.ctex"
+path="res://.godot/imported/bark_arm.jpg-4d28f9a9d38b348db171e65daccbe067.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/polyhaven/foliage/bark_arm.jpg"
-dest_files=["res://.godot/imported/bark_arm.jpg-4d28f9a9d38b348db171e65daccbe067.s3tc.ctex", "res://.godot/imported/bark_arm.jpg-4d28f9a9d38b348db171e65daccbe067.etc2.ctex"]
+dest_files=["res://.godot/imported/bark_arm.jpg-4d28f9a9d38b348db171e65daccbe067.ctex"]
 
 [params]
 

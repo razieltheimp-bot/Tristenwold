@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cp1didfkep063"
-path="res://.godot/imported/coast_rocks_coast_rocks_01_nor_gl_1k.jpg-e0df3a9b1687ed3ea251c2bed3ed243f.ctex"
+path.s3tc="res://.godot/imported/coast_rocks_coast_rocks_01_nor_gl_1k.jpg-e0df3a9b1687ed3ea251c2bed3ed243f.s3tc.ctex"
+path.etc2="res://.godot/imported/coast_rocks_coast_rocks_01_nor_gl_1k.jpg-e0df3a9b1687ed3ea251c2bed3ed243f.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "145c5a3be9a3ec23d8441e90fd7213ba"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/coast_rocks_coast_rocks_01_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/coast_rocks_coast_rocks_01_nor_gl_1k.jpg-e0df3a9b1687ed3ea251c2bed3ed243f.ctex"]
+dest_files=["res://.godot/imported/coast_rocks_coast_rocks_01_nor_gl_1k.jpg-e0df3a9b1687ed3ea251c2bed3ed243f.s3tc.ctex", "res://.godot/imported/coast_rocks_coast_rocks_01_nor_gl_1k.jpg-e0df3a9b1687ed3ea251c2bed3ed243f.etc2.ctex"]
 
 [params]
 

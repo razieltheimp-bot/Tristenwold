@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cari8h47e87rj"
-path="res://.godot/imported/cliff_namaqualand_cliff_01_nor_gl_1k.jpg-9aa6b9700b9e4128dc37e265bef7ca9d.ctex"
+path.s3tc="res://.godot/imported/cliff_namaqualand_cliff_01_nor_gl_1k.jpg-9aa6b9700b9e4128dc37e265bef7ca9d.s3tc.ctex"
+path.etc2="res://.godot/imported/cliff_namaqualand_cliff_01_nor_gl_1k.jpg-9aa6b9700b9e4128dc37e265bef7ca9d.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "1578cce6de9e474de5b1df9c5954fd41"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/cliff_namaqualand_cliff_01_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/cliff_namaqualand_cliff_01_nor_gl_1k.jpg-9aa6b9700b9e4128dc37e265bef7ca9d.ctex"]
+dest_files=["res://.godot/imported/cliff_namaqualand_cliff_01_nor_gl_1k.jpg-9aa6b9700b9e4128dc37e265bef7ca9d.s3tc.ctex", "res://.godot/imported/cliff_namaqualand_cliff_01_nor_gl_1k.jpg-9aa6b9700b9e4128dc37e265bef7ca9d.etc2.ctex"]
 
 [params]
 

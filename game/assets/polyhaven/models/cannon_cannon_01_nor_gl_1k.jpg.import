@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cumsuf1stlgja"
-path="res://.godot/imported/cannon_cannon_01_nor_gl_1k.jpg-70c8d582a00ea5933b7cafea490f903e.ctex"
+path.s3tc="res://.godot/imported/cannon_cannon_01_nor_gl_1k.jpg-70c8d582a00ea5933b7cafea490f903e.s3tc.ctex"
+path.etc2="res://.godot/imported/cannon_cannon_01_nor_gl_1k.jpg-70c8d582a00ea5933b7cafea490f903e.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "2c40795fd449bb1151dba1aab1353880"
@@ -14,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/polyhaven/models/cannon_cannon_01_nor_gl_1k.jpg"
-dest_files=["res://.godot/imported/cannon_cannon_01_nor_gl_1k.jpg-70c8d582a00ea5933b7cafea490f903e.ctex"]
+dest_files=["res://.godot/imported/cannon_cannon_01_nor_gl_1k.jpg-70c8d582a00ea5933b7cafea490f903e.s3tc.ctex", "res://.godot/imported/cannon_cannon_01_nor_gl_1k.jpg-70c8d582a00ea5933b7cafea490f903e.etc2.ctex"]
 
 [params]
 
