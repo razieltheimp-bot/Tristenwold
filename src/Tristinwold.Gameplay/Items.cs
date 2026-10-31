@@ -1,3 +1,5 @@
+using Tristinwold.Deviant;
+
 namespace Tristinwold.Gameplay;
 
 /// <summary>What sort of thing an item is.</summary>
@@ -31,6 +33,27 @@ public sealed record Item(string Id, string Name, ItemKind Kind, int Value, stri
     /// <summary>A glow in the piece (a cinder axe's embers, a shadow cloak's violet).</summary>
     public string? Glow { get; init; }
     public Effect? Use { get; init; }
+
+    // What only forged pieces have (see Forging): a share more speed and health, points of critical chance, and a fire.
+    public double Speed { get; init; }
+    public double Crit { get; init; }
+    public double Health { get; init; }
+    public DamageKind? Fire { get; init; }
+    /// <summary>A forged weapon's plus to hit (points off the chance a blow glances), and flat damage added to every blow.</summary>
+    public int ToHit { get; init; }
+    /// <summary>The die a forged weapon's fire rolls on every blow: 6, 8, 10 or 12, or 0 if it has none.</summary>
+    public int FireDie { get; init; }
+    public int Power { get; init; }
+    public bool Forged { get; init; }
+    public ForgeGrade? Grade { get; init; }
+    public string[]? Parts { get; init; }
+    // How it shows: the blade's length and width, and the colours of the parts added to it.
+    public float Length { get; init; } = 1;
+    public float Width { get; init; } = 1;
+    public float GuardWidth { get; init; }
+    public string? GuardTint { get; init; }
+    public string? PommelTint { get; init; }
+    public string? GripTint { get; init; }
 
     public bool Wearable => Slot != Slot.None;
     public bool Usable => Use is not null;
@@ -323,7 +346,7 @@ public static class Items
 
     static readonly Dictionary<string, Item> ById = All.ToDictionary(i => i.Id);
 
-    public static Item? Get(string id) => ById.GetValueOrDefault(id);
+    public static Item? Get(string id) => ById.GetValueOrDefault(id) ?? Forging.Resolve(id);
 
     /// <summary>"2 Wolf Pelts", "Wolf Fang".</summary>
     public static string Count(string id, int n)

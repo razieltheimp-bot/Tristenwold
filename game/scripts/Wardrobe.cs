@@ -65,16 +65,31 @@ public static class Wardrobe
         if (source?.FindChild(parts[1], true, false) is not MeshInstance3D original) return null;
         var copy = new MeshInstance3D { Mesh = original.Mesh, Transform = original.Transform, Name = $"Worn_{item.Id}" };
         Styled.Apply(copy);
-        if (item.Tint is { } tint) Paint(copy, new Color(tint), item.Metal, item.Glow);
-        return copy;
+        if ((item.Tint ?? (item.Forged ? "#c8ccd4" : null)) is { } tint) Paint(copy, new Color(tint), item.Metal, item.Glow, item.Forged ? 0.22f : 0.9f);
+        return item.Forged && item.Slot == Slot.Weapon ? Parted(copy, item) : copy;
+    }
+
+    /// <summary>A forged weapon's own shape: its blade drawn out or broadened, and a guard, a wrapped grip and a pommel of its own put on, measured off the piece.</summary>
+    static Node3D Parted(MeshInstance3D blade, Item item)
+    {
+        blade.Scale = new Vector3(blade.Scale.X * item.Width, blade.Scale.Y * item.Length, blade.Scale.Z * item.Width);
+        var box = blade.GetAabb();
+        var (low, tall, across) = (box.Position.Y, box.Size.Y, Math.Max(0.02f, Math.Min(box.Size.X, box.Size.Z)));
+        var hilt = low + tall * 0.2f;
+        static StandardMaterial3D Made(string? tint, string fallback, bool metal = true) => new() { AlbedoColor = new Color(tint ?? fallback), Metallic = metal ? 0.7f : 0, Roughness = metal ? 0.35f : 0.8f };
+        if (item.GuardWidth > 0)
+            blade.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(tall * 0.2f * item.GuardWidth, tall * 0.022f, across * 1.2f) }, MaterialOverride = Made(item.GuardTint, "#8a8f98"), Position = new Vector3(0, hilt, 0) });
+        blade.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = across * 0.42f, BottomRadius = across * 0.42f, Height = tall * 0.13f, RadialSegments = 10 }, MaterialOverride = Made(item.GripTint, "#5a3e28", metal: false), Position = new Vector3(0, low + tall * 0.11f, 0) });
+        blade.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = across * 0.62f, Height = across * 1.24f, RadialSegments = 12, Rings = 6 }, MaterialOverride = Made(item.PommelTint, "#8a8f98"), Position = new Vector3(0, low + tall * 0.025f, 0) });
+        return blade;
     }
 
     /// <summary>Paints a piece (or the body): its own texture with the colour multiplied in, shining if metal,
     /// glowing if it has a glow.</summary>
-    static void Paint(MeshInstance3D m, Color tint, bool metal, string? glow)
+    static void Paint(MeshInstance3D m, Color tint, bool metal, string? glow, float strength = 0.9f)
     {
         for (var s = 0; s < m.GetSurfaceOverrideMaterialCount(); s++)
-            m.SetSurfaceOverrideMaterial(s, Styled.Painted(m.GetActiveMaterial(s), tint, glow, glow is null ? 0 : 0.9f, metal ? true : null));
+            m.SetSurfaceOverrideMaterial(s, Styled.Painted(m.GetActiveMaterial(s), tint, glow, glow is null ? 0 : strength, metal ? true : null));
     }
 
     /// <summary>The Goblin King's crown, cut down to a hero's head: a gold band and its spikes, a red stone at the front.</summary>

@@ -489,6 +489,7 @@ public partial class Main
         foreach (var o in MineTalk(person)) yield return o;
         foreach (var o in ForestTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
+        foreach (var o in ForgeTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;
         foreach (var o in PursuitTalk(person)) yield return o;
     }

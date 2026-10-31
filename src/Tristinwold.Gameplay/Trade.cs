@@ -61,6 +61,12 @@ public sealed class Pack
     /// <summary>What everything worn adds: a share more damage, and armour.</summary>
     public double Damage => Worn.Values.Sum(id => Gameplay.Items.Get(id)?.Damage ?? 0);
     public double Armor => Worn.Values.Sum(id => Gameplay.Items.Get(id)?.Armor ?? 0);
+    /// <summary>What forged gear adds: a share more speed and health, and points of critical chance.</summary>
+    public double Speed => Worn.Values.Sum(id => Gameplay.Items.Get(id)?.Speed ?? 0);
+    public double Crit => Worn.Values.Sum(id => Gameplay.Items.Get(id)?.Crit ?? 0);
+    public double Health => Worn.Values.Sum(id => Gameplay.Items.Get(id)?.Health ?? 0);
+    public int ToHit => WornIn(Slot.Weapon)?.ToHit ?? 0;
+    public int Power => WornIn(Slot.Weapon)?.Power ?? 0;
 
     // ---- trades -------------------------------------------------------------------------------------------
 
