@@ -103,6 +103,55 @@ public class ReputationTests
     }
 
     [Fact]
+    public void The_black_blade_makes_anyone_minus_one_at_best_and_it_lifts_when_put_away()
+    {
+        var r = new ReputationBook { Country = 5 };
+        r.Towns[Town] = 5;
+        r.Helped("a", "Ana");
+        r.Marked = true;
+        Assert.Equal((-1.0, -1.0, -1.0), (r.Town(Town), r.Person("a"), r.CountryView));
+        Assert.Equal(-1, r.Regard(Town, "a"));
+        r.Marked = false;
+        Assert.Equal((5.0, ReputationBook.HelpRegard, 5.0), (r.Town(Town), r.Person("a"), r.CountryView));
+    }
+
+    [Fact]
+    public void It_cant_make_a_bad_name_any_better()
+    {
+        var r = new ReputationBook();
+        r.Towns[Town] = -4;
+        r.Marked = true;
+        Assert.Equal(-4, r.Town(Town));
+    }
+
+    [Fact]
+    public void What_people_really_think_keeps_moving_under_the_mark()
+    {
+        var r = new ReputationBook { Marked = true };
+        r.Helped("a", "Ana");
+        r.Marked = false;
+        Assert.Equal(ReputationBook.HelpRegard, r.Person("a"));
+    }
+
+    [Fact]
+    public void Nobody_with_the_black_blade_in_hand_is_known_as_good()
+    {
+        var s = new Standing();
+        s.Good(500, "a test");
+        Assert.Equal(Tristinwold.Gameplay.Repute.Hero, s.Repute);
+        s.Reputation.Marked = true;
+        Assert.Equal(Tristinwold.Gameplay.Repute.Rough, s.Repute);
+    }
+
+    [Fact]
+    public void The_mark_isnt_saved_the_game_works_it_out()
+    {
+        var save = new CompanySave { Standing = new Standing() };
+        save.Standing.Reputation.Marked = true;
+        Assert.False(CompanySave.FromJson(save.ToJson()).Standing!.Reputation.Marked);
+    }
+
+    [Fact]
     public void The_number_on_the_meter_reads_cleanly()
     {
         Assert.Equal(("0", "+1", "-2.5"), (ReputationBook.Number(0), ReputationBook.Number(1), ReputationBook.Number(-2.5)));

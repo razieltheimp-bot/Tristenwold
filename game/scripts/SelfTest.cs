@@ -2293,10 +2293,16 @@ public partial class SelfTest(Main main) : Node
         foe.QueueFree();
 
         // Whoever took his blade: he comes for them, and if he wins, he has it back.
+        var rep = main.ReputationLog;
+        rep.Country = 4;
+        s.Good(400, "a test of being very good");
+        await Teleport(new Vector3(-400, 0, 120));
+        await Frames(50);
+        var clean = hud.ReputeNumber;
         p.Pack.Equip(Legend.Arachnicalibur);
         p.Pack.Equip(Legend.ArachnicaliburScabbard);
-        await Teleport(new Vector3(-400, 0, 120));
-        await Frames(30);
+        await Frames(50);
+        Check(clean.StartsWith('+') && hud.ReputeNumber == "-1" && s.Repute == Repute.Rough, $"the black blade in hand, a hero at {clean} reads {hud.ReputeNumber}, and is known as {s.Name}");
         var deaths = city.SorenDeaths;
         main.LegendsNode.HuntForTest();
         await Frames(5);
@@ -2307,6 +2313,8 @@ public partial class SelfTest(Main main) : Node
         await Frames(10);
         Check(city.WebHolder is null && p.Pack.Count(Legend.Arachnicalibur) == 0 && p.Pack.WornIn(Slot.Weapon)?.Id != Legend.Arachnicalibur && p.Pack.WornIn(Slot.Neck) is null && main.LegendsNode.Soren is null, "beaten, they lose it: blade and scabbard go back to him");
         Check(city.SorenDeaths == deaths, "and he didn't have to die for it");
+        await Frames(50);
+        Check(!rep.Marked && rep.CountryView == rep.Country && rep.CountryView >= 4, $"with it gone, people remember who they were: {rep.CountryView:0.0} again");
     }
 
     /// <summary>The forge's work: two swords off the same anvil are two different swords, and they show it in the hand and in the fight.</summary>

@@ -615,6 +615,9 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.LookAt(stand with { Y = ground } + new Vector3(0, 1.3f, 0), Vector3.Up);
             cam.MakeCurrent();
             await Shot("soren-forms");
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(5.25f, 1.75f, -3f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(5.25f, 1.45f, 0), Vector3.Up);
+            await Shot("soren-first");
             GetTree().Quit();
             return;
         }

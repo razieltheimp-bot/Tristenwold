@@ -386,7 +386,9 @@ public sealed class Standing
 
     public int Score => Honour - Infamy;
 
-    public Repute Repute => Score switch
+    public Repute Repute => Reputation.Marked && Earned > Repute.Rough ? Repute.Rough : Earned; // nobody good carries the black blade
+
+    Repute Earned => Score switch
     {
         <= -50 => Repute.Villain,
         <= -15 => Repute.Rough,

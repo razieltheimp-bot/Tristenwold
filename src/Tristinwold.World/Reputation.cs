@@ -30,6 +30,16 @@ public sealed class ReputationBook
     public Dictionary<string, double> Links { get; set; } = [];
     public double Country { get; set; }
 
+    /// <summary>The most anyone can think of whoever has Arachnicalibur in hand, however good they've been.</summary>
+    public const double WebMark = -1;
+    /// <summary>The black blade's in the hero's hand. Set by the game from what they're holding; what people really thought comes back when it's put away.</summary>
+    [System.Text.Json.Serialization.JsonIgnore] public bool Marked { get; set; }
+
+    double Seen(double view) => Marked ? Math.Min(view, WebMark) : view;
+
+    /// <summary>What the country thinks, as it stands.</summary>
+    public double CountryView => Seen(Country);
+
     static double Clamp(double v) => Math.Clamp(v, Least, Most);
 
     /// <summary>The one place, whether you came to it by road or by sea.</summary>
@@ -48,10 +58,10 @@ public sealed class ReputationBook
     public double Town(string place)
     {
         var (own, link) = (Own(place), Link(place));
-        return Clamp(own + (Country - own) * link / 2);
+        return Seen(Clamp(own + (Country - own) * link / 2));
     }
 
-    public double Person(string id) => People.GetValueOrDefault(id);
+    public double Person(string id) => Seen(People.GetValueOrDefault(id));
 
     /// <summary>How much a deed of this size moves the people who saw it: small things a little, the great ones never more than a point and a half.</summary>
     public static double Weight(int size) => Math.Min(1.5, 0.1 + 0.12 * Math.Abs(size));
@@ -66,7 +76,7 @@ public sealed class ReputationBook
 
     void Regard(string id, string name, double by)
     {
-        People[id] = Clamp(Person(id) + by);
+        People[id] = Clamp(People.GetValueOrDefault(id) + by);
         Names[id] = name;
     }
 
