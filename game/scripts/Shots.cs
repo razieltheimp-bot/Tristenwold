@@ -1,4 +1,4 @@
-using Godot;
+﻿using Godot;
 using Tristinwold.Shared;
 using Tristinwold.Gameplay;
 using Tristinwold.Deviant;
@@ -519,19 +519,116 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.MakeCurrent();
             await Shot(name);
         }
+        if (OS.GetCmdlineUserArgs().Contains("--minigames"))
+        {
+            // Through the hero's own eyes: the tavern's tables, the wagon's box, and the ship's wheel.
+            main.ForestLog.Turlin.Met = true;
+            main.ForestLog.Turlin.NextAt = 1e9;
+            var room = main.EnterTavernForTest();
+            await Frames(40);
+            p.GlobalPosition = room.CardTable + new Vector3(-3, 0.5f, 3);
+            p.Face(room.CardTable);
+            await Frames(30);
+            await Shot("tavern");
+            main.ActionForTest();
+            p.GlobalPosition = room.CardTable + new Vector3(1.2f, 0.5f, 0);
+            await Frames(10);
+            main.ActionForTest()?.Act();
+            main.HudNode.Choose("Play for 5");
+            await Frames(10);
+            await Shot("twenty-one");
+            main.HudNode.EndTalk();
+            main.LeaveTavernForTest();
+            await Frames(30);
+            main.StartCaravanForTest(driver: true);
+            await Frames(20);
+            p.GlobalPosition = main.GuardedWagon!.GlobalPosition + new Vector3(3, 1, 0);
+            await Frames(20);
+            main.ClimbForTest();
+            await Frames(240);
+            await Shot("wagon-driver");
+            main.ClimbDownForTest();
+            await Frames(10);
+            await Shot("wagon-beside");
+            main.AbandonCaravanForTest();
+            if (main.Sea.Rank == Tristinwold.World.SeaRank.Landsman) main.Sea.SignOn();
+            main.SailForTest("port:druitt");
+            main.ExploreForTest();
+            await Frames(40);
+            main.AtSeaNode!.TakeHelm();
+            main.AtSeaNode.Heading = 0.4;
+            await Frames(200);
+            main.HudNode.Visible = true;
+            await Shot("helm");
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--exchange")) goto exchange;
         if (OS.GetCmdlineUserArgs().Contains("--wood"))
         {
+            main.ForestLog.Turlin.Met = true; // he'd stop the shoot to pick a fight
+            main.ForestLog.Turlin.NextAt = 1e9;
+            main.HudNode.Visible = false;
+            if (OS.GetCmdlineUserArgs().Contains("--quays"))
+            {
+                cam.Far = 4000;
+                await From("quay-greywater", new Vector3(690, 26, -520), new Vector3(800, 0, -600));
+                await From("orchard-greywater", new Vector3(600, 18, -400), new Vector3(640, 2, -490));
+                await From("quay-druitt", new Vector3(-960, 22, -180), new Vector3(-1040, 0, -262));
+                await From("yard-druitt", new Vector3(-850, 10, -330), new Vector3(-850, 2, -362));
+                GetTree().Quit();
+                return;
+            }
             // The wood from above, down its road, in the maze, and the mountains behind it.
             await From("wood-above", new Vector3(-140, 110, -470), new Vector3(-140, 0, -700));
             await From("village-road", new Vector3(-146, 3, -558), new Vector3(-140, 12, -640));
             await From("village-trunk", new Vector3(-118, 5, -612), new Vector3(-140, 14, -640));
             await From("village-above", new Vector3(-60, 34, -600), new Vector3(-140, 10, -645));
             await From("guardian", new Vector3(-406, 6, -880), new Vector3(-420, 5, -905));
+            cam.Far = 4000;
+            await From("cove-above", new Vector3(120, 180, -60), new Vector3(640, 0, 180));
+            await From("cove-mouth", new Vector3(760, 40, 40), new Vector3(1100, 0, -400));
+            await From("greywater", new Vector3(560, 30, -500), new Vector3(640, 0, -600));
+            await From("druitt", new Vector3(-820, 30, -200), new Vector3(-900, 0, -262));
             await From("wood-road", new Vector3(-162, 3, -340), new Vector3(-150, 3, -420));
             await From("wood-maze", new Vector3(-280, 3, -900), new Vector3(-320, 3, -900));
             await From("wood-ridge", new Vector3(-400, 40, -1010), new Vector3(-1100, 80, -1430));
             await From("wood-strand", new Vector3(-930, 8, -260), new Vector3(-1500, 0, -250));
+            GetTree().Quit();
+            return;
+        }
+        if (OS.GetCmdlineUserArgs().Contains("--turlin"))
+        {
+            // Turlin in every shape he comes back in, one at a time, then side by side.
+            var stand = new Vector3(-700, 0, -300);
+            main.TerrainNode.EnsureAround(stand, 1);
+            p.GlobalPosition = stand + new Vector3(0, 1, 26);
+            await Frames(60);
+            main.HudNode.Visible = false;
+            var ground = City.FloorAt(stand);
+            foreach (var (name, deaths, back, high) in new[] { ("turlin-1-close", 0, 1.5f, 1.75f), ("turlin-1-human", 0, 3.4f, 1.15f), ("turlin-1-fruit-aura", 0, 3.6f, 1.15f), ("turlin-6-fruit-aura", 5, 12f, 3.8f), ("turlin-2-turning", 1, 3.8f, 1.2f), ("turlin-3-half-beast", 2, 5f, 1.5f), ("turlin-4-horned", 3, 6.5f, 2f), ("turlin-5-demon", 4, 8f, 2.5f), ("turlin-6-giant-ape", 5, 12f, 3.8f) })
+            {
+                var e = main.ForestNode!.PoseRival(deaths, stand);
+                if (name.Contains("aura")) main.ForestNode!.PoseAura(e);
+                await Frames(40);
+                e.Rotation = Vector3.Zero;
+                await Frames(4);
+                cam.GlobalPosition = new Vector3(stand.X + back * 0.2f, ground + high, stand.Z - back);
+                cam.LookAt(new Vector3(stand.X, ground + high, stand.Z), Vector3.Up);
+                cam.MakeCurrent();
+                await Shot(name);
+                e.QueueFree();
+                await Frames(4);
+            }
+            var row = new List<Enemy>();
+            for (var i = 0; i < 6; i++) row.Add(main.ForestNode!.PoseRival(i, stand + new Vector3((2.5f - i) * (3 + i * 0.5f), 0, 0)));
+            await Frames(40);
+            foreach (var e in row) e.Rotation = Vector3.Zero;
+            await Frames(4);
+            cam.GlobalPosition = new Vector3(stand.X, ground + 5, stand.Z - 26);
+            cam.LookAt(new Vector3(stand.X, ground + 3, stand.Z), Vector3.Up);
+            cam.MakeCurrent();
+            await Shot("turlin-0-all");
             GetTree().Quit();
             return;
         }
@@ -555,6 +652,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             main.TerrainNode.EnsureAround(stand, 1);
             p.GlobalPosition = stand + new Vector3(0, 1, 9);
             await Frames(30);
+            var (lens, lensAt) = (new Vector3(0, 1.3f, -5.6f), new Vector3(0, 1, 0));
             async Task Row(string name, (string Class, Tristinwold.Gameplay.Avatar Look)[] who)
             {
                 var row = new List<Figure>();
@@ -564,13 +662,11 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                     main.AddChild(f);
                     var at = stand + new Vector3((i - (who.Length - 1) / 2f) * 1.25f, 0, 0);
                     f.GlobalPosition = at with { Y = City.FloorAt(at) };
-                    f.RotationDegrees = new Vector3(0, 180, 0);
                     row.Add(f);
                 }
                 await Frames(40);
-                var eye = stand with { Y = City.FloorAt(stand) } + new Vector3(0, 1.3f, -5.6f);
-                cam.GlobalPosition = eye;
-                cam.LookAt(stand with { Y = City.FloorAt(stand) } + new Vector3(0, 1, 0), Vector3.Up);
+                cam.GlobalPosition = stand with { Y = City.FloorAt(stand) } + lens;
+                cam.LookAt(stand with { Y = City.FloorAt(stand) } + lensAt, Vector3.Up);
                 cam.MakeCurrent();
                 await Shot(name);
                 foreach (var f in row) f.QueueFree();
@@ -584,6 +680,12 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                 ("Thief", Base("Thief", "Male") with { Style = "Mane", Hair = "Honey", Top = "Russet", Bottom = "Linen", Sleeves = "Short", Wear = "Cloak" }),
                 ("Thief", Base("Thief", "Female") with { Style = "Twintails", Hair = "Rose", Top = "White", Bottom = "Royal", Wear = "Robe" }),
             ]);
+            Tristinwold.Gameplay.Avatar Kin(string race, string sex) => Tristinwold.Gameplay.Avatar.For("Thief") with { Race = race, Sex = sex, Headwear = "none", Top = "Forest", Bottom = "Sand", Wear = "Wrapped robe" };
+            await Row("looks-races", [("Thief", Kin("ape", "Male") with { Style = "Topknot", Hair = "Black" }), ("Thief", Kin("plant", "Female")), ("Thief", Kin("plant", "Female") with { Form = "Fall", Wear = "Plain" }), ("Thief", Kin("shroomie", "Male") with { Wear = "Vest" }), ("Thief", Kin("ape", "Female") with { Wear = "Vest", Top = "Crimson" })]);
+            var (hands, wide) = (new Vector3(0, 1, -2.7f), new Vector3(0, 1.3f, -5.6f));
+            (lens, lensAt) = (hands, new Vector3(0, 0.95f, 0));
+            await Row("looks-grips", [.. new[] { "Alchemist", "Saboteur", "Paladin", "Barbarian" }.Select(c => (c, Base(c, "Male")))]);
+            (lens, lensAt) = (wide, new Vector3(0, 1, 0));
             await Row("looks-classes", [.. new[] { "Alchemist", "EtherAeronaut", "Saboteur", "Sorcerer", "Poet", "Scribe", "Musician" }.Select(c => (c, Base(c, "Male")))]);
             GetTree().Quit();
             return;
@@ -730,7 +832,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             // The shipyard, then aboard at sea with pirates alongside.
             await From("sea-shipyard", Main.ShipyardAt + new Vector3(-10, 6, 10), Main.ShipyardAt + new Vector3(12, 1, -2));
             main.Sea.SignOn();
-            main.SailForTest("port:saltmere");
+            main.SailForTest("port:druitt");
             await Frames(90);
             if (main.AtSeaNode is { } sea && main.Sea.Voyage is { } v)
             {

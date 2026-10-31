@@ -6,6 +6,9 @@ namespace Tristinwold.World.Tests;
 /// <summary>The fifth calling: its classes, its guild and stories, its golem, and what it does to the markets and the ships.</summary>
 public class ArtificerTests
 {
+    /// <summary>A sailor whose company has charted every old port: these tests are about the voyages, not the finding.</summary>
+    static HashSet<string> Everywhere() => [.. Seas.Ports.Select(p => p.Id)];
+
     [Fact]
     public void Three_artificers_with_a_golem_each_and_a_guild_to_teach_them()
     {
@@ -56,15 +59,15 @@ public class ArtificerTests
     [Fact]
     public void An_aeronaut_fits_a_ship_with_modules_that_make_it_faster_and_tougher()
     {
-        var sea = new SeaBook();
+        var sea = new SeaBook { Charted = Everywhere() };
         sea.SignOn();
         var crowns = 1000;
         Assert.Null(sea.Fit("rocket", ref crowns));
         Assert.Equal(260, sea.Fit("light_sails", ref crowns));
         Assert.Null(sea.Fit("light_sails", ref crowns)); // fitted already
         Assert.Equal(740, crowns);
-        var plain = new SeaBook().Sail(Seas.Get("port:saltmere")!, new Rng(1));
-        new SeaBook { Rank = SeaRank.Deckhand }.ToString();
+        var plain = new SeaBook { Charted = Everywhere() }.Sail(Seas.Get("port:saltmere")!, new Rng(1));
+        new SeaBook { Charted = Everywhere(), Rank = SeaRank.Deckhand }.ToString();
         var quick = sea.Sail(Seas.Get("port:saltmere")!, new Rng(1))!;
         Assert.Equal(1.33, quick.Pace);
         Assert.True(quick.LegSeconds < CityEconomy.DaySeconds, "a quarter off the leg");

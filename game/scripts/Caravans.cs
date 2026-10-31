@@ -302,9 +302,11 @@ public partial class Main
     {
         if (!_trade.Seasoned && _trade.ShortRoad(_city.Day) is { } first)
         {
+            void Drive() { first.Driver = true; BeginCaravan(master, first); }
             _hud.Talk(Who(master.Npc),
                 $"New, are you? Everyone starts somewhere. The city's wagon for {first.ToName} goes out today, and it's a short road: a couple of bandits at most, if they bother. Walk beside it, keep them off the load, and the {first.Pay} crowns are yours. Do that, and I'll trust you with the long roads once you've made a name.",
-                ("I'll guard it.", () => StartGuarding(master, first)),
+                ("I'll guard it.", () => BeginCaravan(master, first)),
+                ($"I'll drive it. (+{TradeBook.DriverShare:P0} pay)", Drive),
                 ("Not today.", () => Say(master, "It'll go without you, then.")));
             return;
         }
@@ -325,14 +327,20 @@ public partial class Main
             : $"The short road's yours any day you want it. The long roads I don't give to anyone without some steel in them: come back at level {TradeBook.GuardLevel}.") + warning, [.. options]);
     }
 
-    void StartGuarding(Person master, Escort e)
+    /// <summary>The job's picked: as a guard riding along, or holding the reins, for a bit more.</summary>
+    void StartGuarding(Person master, Escort e) => _hud.Talk(Who(master.Npc), $"To {e.ToName}, then. Guard or driver? Either way there's a seat on the wagon, and either way you get down and fight if they come.",
+        ($"Guard, {e.Pay} crowns", () => BeginCaravan(master, e)),
+        ($"Driver, {(int)Math.Round(e.Pay * (1 + TradeBook.DriverShare))} crowns", () => { e.Driver = true; BeginCaravan(master, e); }),
+        ("Not today.", () => Say(master, "The roads will still be there.")));
+
+    void BeginCaravan(Person master, Escort e)
     {
         _trade.Guarding = e;
         _guarded?.QueueFree();
         _guarded = new Wagon(this, "horse") { Goal = new Vector3((float)e.X, 0, (float)e.Z), Hold = GuardHold };
         AddChild(_guarded);
         _guarded.GlobalPosition = YardWagon with { Y = City.FloorAt(YardWagon) };
-        Say(master, $"The carter leaves for {e.ToName} when you do. Stay close: she won't drive on without her guard, and she pulls up when there's trouble. Bring the wagon through and the {e.Pay} crowns are yours.");
+        Say(master, e.Driver ? $"She's yours to drive to {e.ToName}. Climb up on the box when you're ready: she'll hold the road by herself, and you set the pace. Bring the wagon through and the {(int)Math.Round(e.Pay * (1 + TradeBook.DriverShare))} crowns are yours." : $"The carter leaves for {e.ToName} when you do. Walk beside her, or climb up on the load for the ride. Stay close: she won't drive on without her guard, and she pulls up when there's trouble. Bring the wagon through and the {e.Pay} crowns are yours.");
         Save();
     }
 
@@ -347,13 +355,54 @@ public partial class Main
         GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly && !e.Allied && e.Leader is null
             && e.Kind.Id is "bandit" or "bandit_chief" && e.GlobalPosition.DistanceTo(at) < metres);
 
+    Wagon? _ridden;
+    float _riddenYaw;
+    public Wagon? RiddenWagon => _ridden;
+
+    /// <summary>Up on the wagon, seeing the road through your own eyes.</summary>
+    void ClimbAboard()
+    {
+        if (_guarded is not { } wagon || _trade.Guarding is not { } job) return;
+        _ridden = wagon;
+        _riddenYaw = wagon.Rotation.Y;
+        _player.Rotation = new Vector3(0, wagon.Rotation.Y, 0);
+        var driver = job.Driver;
+        _player.SitAt(() => wagon.SeatAt(driver));
+        wagon.HoldReins(driver);
+        _hud.Toast(driver ? "You've the reins. W to push the horse on, S to pull up, the mouse to look about. E to jump down." : "You settle on the load. The mouse looks about. E to jump down.", 7);
+    }
+
+    void ClimbDown()
+    {
+        if (_ridden is not { } wagon) return;
+        _ridden = null;
+        var at = IsInstanceValid(wagon) ? wagon.GlobalPosition + wagon.GlobalTransform.Basis.X * 2.6f : _player.GlobalPosition;
+        if (IsInstanceValid(wagon)) { wagon.Urge = 1; wagon.HoldReins(false); }
+        _player.StandUp(at with { Y = City.FloorAt(at) + 0.3f });
+    }
+
+    /// <summary>Riding: the view turns with the wagon, and a driver sets the pace.</summary>
+    void TendRide()
+    {
+        if (_ridden is not { } wagon) return;
+        if (!IsInstanceValid(wagon) || wagon != _guarded || _player.Downed) { ClimbDown(); return; }
+        _player.RotateY(Mathf.AngleDifference(_riddenYaw, wagon.Rotation.Y));
+        _riddenYaw = wagon.Rotation.Y;
+        var driving = _trade.Guarding?.Driver == true && !_hud.Talking;
+        wagon.Urge = !driving ? Wagon.RidePace : Input.IsActionPressed("move_back") ? 0 : Input.IsActionPressed("move_forward") ? Wagon.PushPace : Wagon.RidePace;
+    }
+
+    /// <summary>For the self-test.</summary>
+    public void ClimbForTest() => ClimbAboard();
+    public void ClimbDownForTest() => ClimbDown();
+
     /// <summary>The guarded wagon on the road: ambushes as it gets far enough along, the bandits at the wagon, and the end of the road.</summary>
     void TendGuarding(double delta)
     {
         if (_trade.Guarding is not { } e) return;
         if (_guarded is null || !IsInstanceValid(_guarded)) // a loaded game: the caravan sets off again from the yard
         {
-            StartGuarding(Locals.First(p => p.Npc.Id == Master), e);
+            BeginCaravan(Locals.First(p => p.Npc.Id == Master), e);
             return;
         }
         var at = _guarded.GlobalPosition;
@@ -372,7 +421,7 @@ public partial class Main
                 AddEnemy(b);
                 b.Provoke(_player);
             }
-            _hud.Toast($"Ambush! {e.Bandits} bandits come out of cover at the wagon. Keep them off it.", 6);
+            _hud.Toast($"Ambush! {e.Bandits} bandits come out of cover at the wagon. {(_ridden is not null ? "Press E to jump down and fight!" : "Keep them off it.")}", 6);
         }
         // Bandits at the wagon break into the load.
         var at_ = FoesNear(at, 9).Count();
@@ -392,10 +441,12 @@ public partial class Main
         }
         if (_world.Find(e.To) is { } town && town.DistanceTo(at.X, at.Z) < town.Radius + 12)
         {
-            var bonus = e.Wagon >= 90 ? e.Pay / 4 : 0;
+            var bonus = (e.Wagon >= 90 ? e.Pay / 4 : 0) + (e.Driver ? (int)Math.Round(e.Pay * TradeBook.DriverShare) : 0);
             var news = _trade.Delivered(_city, _city.Day, _lootRng);
             _player.Crowns += e.Pay + bonus;
             _city.Renown += 3;
+            _standing.Good(2, $"brought a caravan safe to {e.ToName}");
+            TradedAt(e.To, e.ToName);
             Sound.Ui("coin", -2);
             _hud.Toast($"The caravan reaches {e.ToName} safe{(bonus > 0 ? ", hardly a scratch on it" : "")}. +{e.Pay + bonus} crowns.{(news is null ? "" : " " + news)}", 9);
             if (news is not null) _hud.Log($"Tristinwold: {news}");
@@ -506,10 +557,11 @@ public partial class Main
         foreach (var (g, n) in _trade.Cargo.Where(c => c.Value > 0).ToList())
             options.Add(($"Sell {n} {CityEconomy.Info(g).Name} (they pay {m.Pays(g)} a load{(m.Wants.Contains(g) ? ", and they want it" : "")})", () =>
             {
-                var crowns = (int)Math.Round(_trade.SellAt(m, g, n) * PerkTrade);
+                var crowns = (int)Math.Round(_trade.SellAt(m, g, n) * PerkTrade * RepSellAt(m.Id));
                 _trade.Cargo.Remove(g);
                 _player.Crowns += crowns;
                 _trade.Profit += crowns;
+                TradedAt(m.Id, m.Name);
                 Sound.Ui("coin", -2);
                 _hud.Toast($"+{crowns} crowns for {CityEconomy.Info(g).Name} at {m.Name}.", 4);
                 Save();
@@ -518,13 +570,13 @@ public partial class Main
         foreach (var g in m.Makes.Concat(Enum.GetValues<Good>().Where(m.Glut)).Distinct().Where(g => m.ForSale(g) > 0 && _trade.Room > 0))
         {
             var n = Math.Min(Math.Min(_trade.Room, m.ForSale(g)), 6);
-            options.Add(($"Buy {n} {CityEconomy.Info(g).Name} ({m.Cost(g, n)} crowns; Tristinwold pays about {ExchangePays(g)} a load)", () =>
+            options.Add(($"Buy {n} {CityEconomy.Info(g).Name} ({(int)Math.Round(m.Cost(g, n) * RepBuyAt(m.Id))} crowns; Tristinwold pays about {ExchangePays(g)} a load)", () =>
             {
-                var cost = m.Cost(g, n);
+                var cost = (int)Math.Round(m.Cost(g, n) * RepBuyAt(m.Id));
                 if (_player.Crowns < cost) { _hud.Toast("You can't afford it.", 3); return; }
-                var (paid, got) = _trade.BuyAt(m, g, n);
-                _player.Crowns -= paid;
-                _trade.Profit -= paid;
+                var (_, got) = _trade.BuyAt(m, g, n);
+                _player.Crowns -= cost;
+                _trade.Profit -= cost;
                 _trade.Cargo[g] = _trade.Cargo.GetValueOrDefault(g) + got;
                 _hud.Toast($"{cost} crowns for {n} {CityEconomy.Info(g).Name} ({_trade.Loaded}/{_trade.Capacity} aboard).", 4);
                 Save();
@@ -693,6 +745,7 @@ public partial class Main
 
     (string Verb, Action Act)? CaravanAction(Vector3 pos)
     {
+        if (_guarded is { } wagon && _trade.Guarding is { } job && _player.Mount is null && pos.DistanceTo(wagon.GlobalPosition with { Y = pos.Y }) < 6) return (job.Driver ? "climb up and take the reins" : "climb up on the wagon", ClimbAboard);
         if (_loading is { Holding: false } && pos.DistanceTo(YardStack with { Y = pos.Y }) < 3.5f) return ("lift a load", LiftSack);
         if (_loading is { Holding: true } && pos.DistanceTo(YardWagon with { Y = pos.Y }) < 4.5f) return ("load the wagon", LoadWagon);
         return null;
@@ -727,7 +780,41 @@ public partial class Wagon(Main main, string? horse) : Node3D
     public Vector3? Goal { get; init; }
     /// <summary>When the carter pulls up.</summary>
     public Func<bool>? Hold { get; init; }
+    /// <summary>How hard she's driven: 1 at a walk; a little more with someone riding, more again if a driver pushes on, and 0 pulls her up.</summary>
+    public float Urge { get; set; } = 1;
+    public const float RidePace = 1.7f, PushPace = 3f;
     Body? _horse;
+
+    Node3D? _reins;
+
+    /// <summary>What a driver sees of themselves: their hands out in front, and the reins running down to the horse.</summary>
+    public void HoldReins(bool holding)
+    {
+        _reins?.QueueFree();
+        _reins = null;
+        if (!holding) return;
+        AddChild(_reins = new Node3D());
+        var skin = new StandardMaterial3D { AlbedoColor = new Color("#b98a68"), Roughness = 0.75f };
+        var sleeve = new StandardMaterial3D { AlbedoColor = new Color("#4a3a2c"), Roughness = 0.9f };
+        var strap = new StandardMaterial3D { AlbedoColor = new Color("#2a1c12"), Roughness = 0.8f };
+        void Limb(Vector3 from, Vector3 to, float radius, Material paint)
+        {
+            var way = to - from;
+            var limb = new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = radius, BottomRadius = radius, Height = way.Length(), RadialSegments = 10 }, MaterialOverride = paint, Position = (from + to) / 2, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
+            limb.Basis = new Basis(new Quaternion(Vector3.Up, way.Normalized()));
+            _reins!.AddChild(limb);
+        }
+        foreach (var side in new[] { -1f, 1f })
+        {
+            var hand = new Vector3(side * 0.2f, 1.72f, -2.72f);
+            Limb(new Vector3(side * 0.34f, 1.42f, -2.2f), hand, 0.05f, sleeve);
+            _reins.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.062f, Height = 0.12f, RadialSegments = 12, Rings = 8 }, MaterialOverride = skin, Position = hand, Scale = new Vector3(1.1f, 0.9f, 1.25f), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+            Limb(hand, new Vector3(side * 0.14f, 1.62f, -4.5f), 0.009f, strap);
+        }
+    }
+
+    /// <summary>Where someone rides: the driver's box up front, or on the load behind (the feet: the eyes are above them).</summary>
+    public Vector3 SeatAt(bool driver) => GlobalTransform * (driver ? new Vector3(0, 0.6f, -2.2f) : new Vector3(0, 1.1f, 0.5f));
     float _speed;
 
     public override void _Ready()
@@ -789,7 +876,7 @@ public partial class Wagon(Main main, string? horse) : Node3D
     void Drive(Vector3 goal, double delta)
     {
         var to = new Vector3(goal.X - GlobalPosition.X, 0, goal.Z - GlobalPosition.Z);
-        var want = Hold?.Invoke() == true || to.Length() < 2 ? 0 : 3.2f;
+        var want = Hold?.Invoke() == true || to.Length() < 2 ? 0 : 3.2f * Urge;
         _speed = Mathf.Lerp(_speed, want, (float)Math.Min(1, delta * 2));
         if (_speed > 0.05f)
         {

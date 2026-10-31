@@ -273,6 +273,9 @@ public abstract partial class Body : Node3D
         "guardian_elder" => (Body?)Creature.Create("forest_monster.glb", 8.5f, new Color("#5a8a78")) ?? Figure.Create(look),
         "guardian_blight" => (Body?)Creature.Create("forest_monster.glb", 8f, new Color("#3a3a2a")) ?? Figure.Create(look),
         "ape_elder" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
+        "lu_wukong" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
+        "giant_ape" => Figure.Create(look),
+        "spirit_beast" => (Body?)Creature.Create("wolf.glb", 1.1f, new Color(0.7f, 0.95f, 1f)) ?? Figure.Create("familiar"),
         "ape_warrior" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
         "shroomie" => (Body?)Creature.Create("forest_monster.glb", 1.5f, new Color("#c89070")) ?? Figure.Create(look),
         "frost_troll" => (Body?)Wildfolk.Troll(2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
@@ -340,6 +343,9 @@ public partial class Figure : Body
         ["Alchemist"] = new("Mage", ["Spellbook_open"], 0.74f, new Color("#d8c890"), RightHand: "@hammer"),
         ["EtherAeronaut"] = new("Rogue", ["2H_Crossbow"], 0.74f, new Color("#d8b870"), 0.05f),
         ["Saboteur"] = new("Rogue_Hooded", [], 0.74f, new Color("#8a8a78"), RightHand: "@wrench"),
+        ["Stormdruid"] = new("Mage", ["2H_Staff"], 0.74f, new Color("#b8d4a0")),
+        ["Shapeshifter"] = new("Rogue", [], 0.74f, new Color("#c8b088"), Unarmed: true),
+        ["Spiritcaller"] = new("Mage", ["1H_Wand", "Spellbook_open"], 0.74f, new Color("#c0d8d8")),
         ["golem"] = new("Knight", ["Knight_Helmet"], 1.12f, new Color("#c8a048"), 0.3f, Unarmed: true),
         // Characters made before there were nine classes.
         ["Knight"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"]),
@@ -375,6 +381,9 @@ public partial class Figure : Body
         ["bandit_chief"] = new("Barbarian", ["2H_Axe", "Barbarian_Hat"], 0.84f, new Color("#e0a090")),
         ["pirate"] = new("Rogue", ["1H_Sword"], 0.74f, new Color("#a8bce0")),
         ["pirate_captain"] = new("Rogue_Hooded", ["1H_Sword", "1H_Crossbow"], 0.84f, new Color("#e08888")),
+        ["turlin"] = new("Barbarian", [], 0.92f, null, Unarmed: true),
+        ["giant_ape"] = new("Barbarian", [], 3f, null, Unarmed: true),
+        ["dread_soren"] = new("Barbarian", ["2H_Axe"], 1.05f, new Color("#e05040")),
         ["marine"] = new("Knight", ["1H_Sword", "Round_Shield"], 0.8f, new Color("#e8b8a0")),
         ["sailor"] = new("Rogue", [], 0.72f, new Color("#c8d8f0"), Unarmed: true),
         ["raider"] = new("Barbarian", ["1H_Axe", "Round_Shield", "Barbarian_Hat"], 0.86f, new Color("#d8a888")),
@@ -416,6 +425,9 @@ public partial class Figure : Body
     /// worn instead of the class's. The class still decides what they carry.</param>
     public static Figure Create(string look, Tristinwold.Gameplay.Avatar? avatar = null)
     {
+        // Turlin's always a real body, at any setting: he's built on one.
+        if (look == "turlin" && Human(look, Tristinwold.Gameplay.Avatar.For("Barbarian") with { Race = "human", Sex = "Male", Skin = "Deep", Face = "Dark", Headwear = "none", Style = "None", Sleeves = "Long" }) is { } rival) return rival;
+        if (look == "giant_ape" && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, new Color("#4a2e22")) is { } ape) return ape;
         // On a PC, people are real bodies (see Humans): a hero as they made themselves, anyone else cast for the part.
         if (Humans.Enabled && Humans.IsPerson(look))
         {
@@ -637,10 +649,41 @@ public partial class Figure : Body
                 }
             }
         }
-        // A dragonkind's tail, from the small of the back, down and out behind, tapering.
-        if (blood is not null && Box("body") is { } body && skeleton.FindBone("hips") is var hips and >= 0 && Hang("hips") is { } low)
+        // The forest peoples, on a figure: an ape's muzzle and tail, a plant person's leaves or branches, a shroomie's cap.
+        if (a.Race is "ape" or "plant" or "shroomie" or "lizard" && Box("head") is { } brow && Hang("head") is { } crown)
         {
-            var scales = Matte(new Color(blood.Hex), 0.55f);
+            var (c, sz) = (brow.GetCenter(), brow.Size);
+            void Round(Vector3 at, float r, Color colour, Vector3 scale) =>
+                crown.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = r, Height = r * 2, RadialSegments = 14, Rings = 8 }, MaterialOverride = Matte(colour), Position = at, Scale = scale });
+            switch (a.Race)
+            {
+                case "ape":
+                    Round(c + new Vector3(0, -sz.Y * 0.12f, sz.Z * 0.46f), sz.X * 0.26f, new Color("#a0806a"), new Vector3(1.1f, 0.8f, 0.9f));
+                    foreach (var side in new[] { -1f, 1f }) Round(c + new Vector3(side * sz.X * 0.54f, sz.Y * 0.1f, 0), sz.X * 0.16f, new Color("#a0806a"), new Vector3(0.5f, 1, 1));
+                    break;
+                case "lizard":
+                    Round(c + new Vector3(0, -sz.Y * 0.12f, sz.Z * 0.62f), sz.X * 0.3f, new Color("#5f8a4a"), new Vector3(0.8f, 0.55f, 2.1f));
+                    break;
+                case "shroomie":
+                    Round(c + new Vector3(0, sz.Y * 0.5f, 0), sz.X * 1.05f, new Color("#a85a3a"), new Vector3(1, 0.42f, 1));
+                    for (var i = 0; i < 6; i++) Round(c + new Vector3(Mathf.Cos(i * 2.4f) * sz.X * 0.55f, sz.Y * 0.84f, Mathf.Sin(i * 2.4f) * sz.X * 0.55f), sz.X * 0.11f, new Color("#f0e4cc"), new Vector3(1, 0.5f, 1));
+                    break;
+                default:
+                    for (var i = 0; i < 12; i++)
+                    {
+                        var (t, up) = (i * 2.4f, 0.35f + i % 4 * 0.18f);
+                        var way = new Vector3(Mathf.Cos(t) * (1 - up), up, Mathf.Sin(t) * (1 - up)).Normalized();
+                        var from = c + new Vector3(0, sz.Y * 0.28f, 0) + way * sz.X * 0.42f;
+                        if (a.Form == "Fall") crown.AddChild(Cone(from, way, sz.Y * (0.6f + i % 3 * 0.2f), sz.X * 0.05f, Matte(new Color("#3e3024"))));
+                        else Round(from + way * sz.X * 0.16f, sz.X * 0.28f, new Color("#4f8a30"), new Vector3(1.2f, 0.62f, 1.2f));
+                    }
+                    break;
+            }
+        }
+        // A dragonkind's tail, from the small of the back, down and out behind, tapering.
+        if ((blood is not null || a.Race is "ape" or "lizard") && Box("body") is { } body && skeleton.FindBone("hips") is var hips and >= 0 && Hang("hips") is { } low)
+        {
+            var scales = Matte(new Color(blood?.Hex ?? (a.Race == "ape" ? "#3e2c20" : "#5f8a4a")), 0.55f);
             var at = skeleton.GetBoneGlobalRest(hips).Origin + new Vector3(0, -body.Size.Y * 0.05f, -body.Size.Z * 0.42f);
             var dir = new Vector3(0, -0.55f, -1).Normalized();
             for (var i = 0; i < 6; i++)
@@ -764,13 +807,19 @@ public partial class Figure : Body
         if (skeleton.FindBone(bone) < 0) return null;
         var slot = new BoneAttachment3D { BoneName = bone };
         skeleton.AddChild(slot);
-        slot.AddChild(thing);
+        if (bone is "RightHand" or "LeftHand")
+        {
+            // A real hand: made to KayKit's small scale, so brought to size, and gripped by the handle like anything forged.
+            thing.Scale = Vector3.One * 0.62f;
+            slot.AddChild(Armoury.InHand(bone, thing));
+        }
+        else slot.AddChild(thing);
         return slot;
     }
 
     /// <summary>Puts something made from shapes (a fishing rod) in the right hand for a while; free the node to put it away.</summary>
     public Node3D? Carry(string item) =>
-        FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is { } skeleton ? Craft(skeleton, "handslot.r", item) : null;
+        FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is { } skeleton ? Craft(skeleton, skeleton.FindBone("handslot.r") >= 0 ? "handslot.r" : "RightHand", item) : null;
 
     public override void _Ready() => Play(_look.Unarmed && !_human ? "Unarmed_Idle" : "Idle");
 
@@ -888,6 +937,27 @@ public partial class Figure : Body
     public override void Talk() => Once("Interact", 1.2);
 
     public override void Mark(Color colour) => Models.Tint(this, colour.Lerp(Colors.White, 0.35f), 0.35f);
+}
+
+/// <summary>
+/// How a great ape stands: after the animations each frame, its arms are held out from its sides, so all that muscle
+/// doesn't swallow them. Walking and swinging still work: it only adds to whatever the arm's doing.
+/// </summary>
+public partial class ApeStance : SkeletonModifier3D
+{
+    const float Out = 0.42f;
+
+    public override void _ProcessModificationWithDelta(double delta)
+    {
+        if (GetSkeleton() is not { } sk) return;
+        foreach (var bone in new[] { "LeftUpperArm", "RightUpperArm" })
+        {
+            if (sk.FindBone(bone) is var i && i < 0) continue;
+            var pose = sk.GetBoneGlobalPose(i);
+            pose.Basis = new Basis(Vector3.Back, Mathf.Sign(pose.Origin.X) * Out) * pose.Basis;
+            sk.SetBoneGlobalPose(i, pose);
+        }
+    }
 }
 
 /// <summary>

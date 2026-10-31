@@ -112,29 +112,42 @@ public partial class StartScreen : CanvasLayer
         _newOnly.AddThemeConstantOverride("separation", 10);
         _newOnly.AddChild(new Label { Text = "A new character", Modulate = new Color("#ffd27a") });
         _newOnly.AddChild(_newName);
-        // Pick a class: four callings side by side, so all twelve classes are in view at once, a portrait for each.
+        // Pick a class: one row of callings, and only the chosen calling's classes open under it.
         var picks = new List<Button>();
-        var columns = new HBoxContainer();
-        columns.AddThemeConstantOverride("separation", 8);
-        _swatches.AddChild(columns);
+        var callings = new HBoxContainer();
+        callings.AddThemeConstantOverride("separation", 6);
+        _swatches.AddChild(callings);
+        var rows = new Dictionary<Calling, HBoxContainer>();
+        var heads = new Dictionary<Calling, Button>();
+        void Open(Calling chosen)
+        {
+            foreach (var (calling, row) in rows) row.Visible = calling == chosen;
+            foreach (var (calling, head) in heads) head.ButtonPressed = calling == chosen;
+        }
         foreach (var calling in Enum.GetValues<Calling>())
         {
-            var row = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-            row.AddChild(new Label { Text = calling + "s", Modulate = new Color("#ffd27a"), HorizontalAlignment = HorizontalAlignment.Center });
+            var head = new Button { Text = calling + "s", ToggleMode = true, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 34) };
+            head.Pressed += () => Open(calling);
+            heads[calling] = head;
+            callings.AddChild(head);
+            var row = new HBoxContainer { Visible = false };
+            row.AddThemeConstantOverride("separation", 8);
+            rows[calling] = row;
             foreach (var d in Classes.Of(calling))
             {
                 var pick = new Button
                 {
-                    CustomMinimumSize = new Vector2(150, 118), ToggleMode = true, ButtonPressed = d.Look == _look, Text = d.Name,
+                    CustomMinimumSize = new Vector2(150, 118), ToggleMode = true, ButtonPressed = d.Look == _look, Text = d.Name, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                     Icon = Portrait(d.Look), IconAlignment = HorizontalAlignment.Center, VerticalIconAlignment = VerticalAlignment.Top, ExpandIcon = true,
                 };
-                pick.AddThemeStyleboxOverride("pressed", new StyleBoxFlat { BgColor = new Color("#3a3226"), BorderColor = new Color("#ffd27a"), BorderWidthBottom = 3, BorderWidthTop = 3, BorderWidthLeft = 3, BorderWidthRight = 3 });
+                pick.AddThemeStyleboxOverride("pressed", new StyleBoxFlat { BgColor = new Color("#3a3226"), BorderColor = new Color("#ffd27a"), BorderWidthBottom = 2, BorderWidthTop = 2, BorderWidthLeft = 2, BorderWidthRight = 2 });
                 pick.Pressed += () => { PickClass(d.Look); foreach (var b in picks) b.ButtonPressed = b == pick; };
                 picks.Add(pick);
                 row.AddChild(pick);
             }
-            columns.AddChild(row);
+            _swatches.AddChild(row);
         }
+        Open(Classes.Get(_look).Calling);
         _newOnly.AddChild(_swatches);
         _newOnly.AddChild(_about);
         Describe(Classes.Get(_look));
@@ -205,6 +218,8 @@ public partial class StartScreen : CanvasLayer
         var figures = Avatar.Figures;
         var races = Races.All.Select(r => r.Id).ToArray();
         Row(rows, "People", () => Races.Get(_avatar.Race).Name, d => _avatar = _avatar with { Race = Step(races, _avatar.Race, d) });
+        Row(rows, "Form", () => _avatar.Race == "plant" ? _avatar.Form : "(plant people only)",
+            d => { if (_avatar.Race == "plant") _avatar = _avatar with { Form = Step(Avatar.Forms, _avatar.Form, d) }; });
         Row(rows, "Dragon", () => _avatar.IsDragonkind ? _avatar.Dragon : "(dragonkind only)",
             d => { if (_avatar.IsDragonkind) _avatar = _avatar with { Dragon = Step([.. Races.Dragons.Select(x => x.Colour)], _avatar.Dragon, d) }; });
         Row(rows, "Other half", () => !_avatar.IsDragonkind ? "(dragonkind only)" : _avatar.Half == "none" ? "None: pure dragon" : Races.Get(_avatar.Half).Name,

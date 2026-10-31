@@ -69,7 +69,7 @@ public static class Humans
         {
             "raider" or "raider_chief" or "warmaster" => ["human", "orc", "half_giant", "human"],
             "bandit" or "bandit_chief" or "dock_thug" or "drowned_hand" => ["human", "human", "dwarf", "orc"],
-            "pirate" or "pirate_captain" or "sailor" => ["human", "human", "elf", "dwarf"],
+            "pirate" or "pirate_captain" or "dread_soren" or "sailor" => ["human", "human", "elf", "dwarf"],
             "guard" or "marine" or "squire" or "hollow_soldier" or "ghost_captain" => ["human", "human", "dwarf"],
             "dragon_knight" or "aldric" or "laureate" => ["human"],
             _ => ["human", "human", "human", "elf", "dwarf"],
@@ -154,6 +154,8 @@ public static class Humans
 
     static readonly Dictionary<string, Outfit> Outfits = new()
     {
+        ["giant_ape"] = new(new("#4a2e22"), new("#4a2e22"), new("#a98470")),
+        ["turlin"] = new(new("#17151a"), new("#17151a"), new("#17151a")), // black fur, near enough all over
         ["guard"] = new(new("#6a6e74"), new("#3a3a44"), new("#2a2220"), Cap: new("#7a7e84")),
         ["marine"] = new(new("#8a3a2a"), new("#3a3a44"), new("#2a2220"), Cap: new("#6a6e74")),
         ["scholar"] = new(new("#4a5a8a"), new("#3a3a4a"), new("#3a2a20")),
@@ -198,6 +200,9 @@ public static class Humans
         ["Musician"] = new(new("#c08a50"), new("#5a4a3a"), new("#3a2a20")),
         ["Alchemist"] = new(new("#8a6a3e"), new("#40382c"), new("#3a2a20"), Cap: new("#5a4630")),
         ["EtherAeronaut"] = new(new("#7a4f2c"), new("#3a3028"), new("#2a2220"), Cap: new("#b08a4a")),
+        ["Stormdruid"] = new(new("#4a6a4a"), new("#34402c"), new("#3a2a20")),
+        ["Shapeshifter"] = new(new("#7a5a3a"), new("#4a3a28"), new("#3a2a20"), Sleeves: false),
+        ["Spiritcaller"] = new(new("#8aa0a0"), new("#3a4a4a"), new("#3a2a20")),
         ["Saboteur"] = new(new("#34342e"), new("#26261f"), new("#1e1a16"), Cap: new("#2c2c26")),
         // The young who follow a hero, and the rest of the enemies.
         ["squire"] = new(new("#a0a4ac"), new("#3a3a44"), new("#2a2220")),
@@ -260,6 +265,10 @@ public static class Humans
             "orc" => (new[] { 1, 0 }, new Color(0.36f, 0.5f, 0.28f), 0.8f),
             "goblin" => (new[] { 0, 1 }, new Color(0.5f, 0.62f, 0.3f), 0.8f),
             "half_giant" => (new[] { 1, 2, 0 }, new Color(0.98f, 0.94f, 0.9f), 0f),
+            "ape" => (new[] { 2 }, new Color(0.3f, 0.22f, 0.17f), 0.9f),
+            "plant" => (new[] { 0 }, new Color(0.42f, 0.5f, 0.24f), 0.9f),
+            "shroomie" => (new[] { 0 }, new Color(0.84f, 0.76f, 0.64f), 0.7f),
+            "lizard" => (new[] { 0 }, new Color(0.34f, 0.5f, 0.27f), 0.9f),
             Races.Dragonkind => (new[] { 2, 1 }, new Color(0.58f, 0.46f, 0.62f), 0.5f),
             _ => (new[] { 0, 1, 2, 0, 1, 2 }, Colors.White, 0f),
         };
@@ -320,6 +329,7 @@ public partial class Figure
     string _garmentLook = "townsfolk";
     string _wear = "Class";
     (string Style, Color Colour)? _cut;
+    (string Race, string Form)? _kin;
     float _top = 1.7f;
 
     /// <summary>A real body (see <see cref="Humans"/>), rather than a KayKit figure.</summary>
@@ -333,7 +343,7 @@ public partial class Figure
     {
         var l = Looks.GetValueOrDefault(look) ?? Looks["townsfolk"];
         var size = l.Scale > 0.8f ? l.Scale / 0.74f : 1; // a chief or a captain stands bigger than his men, as his figure did
-        return Build(look, Humans.BodyFor(race, sex, stage), sex, stage, new Garb(Humans.OutfitFor(look), Humans.SkinFor(race, sex, stage, seed), skin, null), size, 1, null);
+        return Build(look, Humans.BodyFor(race, sex, stage), sex, stage, new Garb(Humans.OutfitFor(look), Humans.SkinFor(race, sex, stage, seed), skin, null), size, look == "giant_ape" ? size * 1.12f : 1, null); // the ape's broad with it
     }
 
     /// <summary>
@@ -355,6 +365,7 @@ public partial class Figure
             tint = (tint ?? own).Lerp(new Color(blood.Hex), a.PureDragon ? 0.45f : 0.25f);
             recolour = Math.Max(recolour ?? 0, 0.5f);
         }
+        if (a.Race == "plant" && a.Form == "Fall" && a.Skin == "Natural") (tint, recolour) = (new Color(0.36f, 0.27f, 0.19f), 0.9f); // bare wood
         var who = Humans.SkinFor(people, sex, stage, seed, Humans.FaceFile(a.Face), Humans.EyeFile(a.Eyes), new Color(a.HairHex), tint, recolour);
         // Their clothes: the class's, in their colour, with a hood or a cap if they want one.
         var outfit = Humans.OutfitFor(classLook);
@@ -374,7 +385,8 @@ public partial class Figure
         };
         var height = Tristinwold.Gameplay.Avatar.Heights.FirstOrDefault(h => h.Name == a.Height).Scale is > 0 and var h ? h / 0.74f : 1;
         var width = Tristinwold.Gameplay.Avatar.Builds.FirstOrDefault(b => b.Name == a.Build).Width is > 0 and var w ? w : 1;
-        var hair = a.Style == "Natural" ? null : Tristinwold.Gameplay.Avatar.IsCut(a.Style) ? "None" : a.Style;
+        if (a.Race is "ape" or "plant" or "shroomie" or "lizard") (height, width) = (height * (float)a.People.Size, width * (float)a.People.Width); // they have no bodies of their own to be built to size
+        var hair = a.Race is "plant" or "shroomie" or "lizard" || Tristinwold.Gameplay.Avatar.IsCut(a.Style) ? "None" : a.Style == "Natural" ? null : a.Style;
         var f = Build(classLook, Humans.BodyFor(people, sex, stage), sex, stage, new Garb(outfit, who, null, hair, Width: width), height, width, a);
         return f;
     }
@@ -392,6 +404,7 @@ public partial class Figure
         if (skeleton is null || mesh is null) { f.Free(); return null; }
         var moves = Humans.Moves(skeleton);
         if (moves is null) { f.Free(); return null; }
+        if (look == "giant_ape") skeleton.AddChild(new ApeStance());
         skeleton.Name = "GeneralSkeleton";
         skeleton.Owner = model;
         skeleton.UniqueNameInOwner = true;
@@ -403,6 +416,7 @@ public partial class Figure
         {
             f._wear = a.Wear;
             f._cut = Tristinwold.Gameplay.Avatar.IsCut(a.Style) ? (a.Style, new Color(a.HairHex)) : null;
+            f._kin = a.Race is "ape" or "plant" or "shroomie" or "lizard" ? (a.Race, a.Form) : null;
         }
         if (f._source is { } src && src.GetSurfaceCount() > 0) { var vs = src.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array(); if (vs.Length > 0) f._top = vs.Max(v => v.Y); }
         // A cap or a hood in the kit covers the hair: it's put away, and the scalp painted its colour, so nothing pokes through the steel.
@@ -490,7 +504,7 @@ public partial class Figure
     void Regarment((Color Tint, bool Metal)? armour, Color? helm)
     {
         foreach (var n in _garments) if (IsInstanceValid(n)) { n.GetParent()?.RemoveChild(n); n.QueueFree(); }
-        _garments = _skeleton is not null && _garb is not null ? Garments.Dress(_skeleton, _garmentLook, _garb.Outfit, _top, armour, helm, _wear, _cut) : [];
+        _garments = _skeleton is not null && _garb is not null ? Garments.Dress(_skeleton, _garmentLook, _garb.Outfit, _top, armour, helm, _wear, _cut, _kin) : [];
     }
 
     /// <summary>How many kit pieces hang on this body (the self-test counts).</summary>

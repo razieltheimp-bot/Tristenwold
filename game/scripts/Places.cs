@@ -297,11 +297,12 @@ public partial class Places(Main main, WorldGen world) : Node3D
     Built Build(Settlement s)
     {
         _lots.Clear(); // plots are counted per settlement
+        _raised.Clear();
         var root = new Node3D { Name = s.Name.Replace(" ", "_") + "_" + Math.Abs(WorldGen.StableHash(s.Id) % 10000) };
         AddChild(root);
         var b = new Built { Site = s, Root = root };
         var rng = Noise.Dice(world.Seed, 8, WorldGen.StableHash(s.Id));
-        if (s.Id != "city:tristinwold")
+        if (s.Id is not ("city:tristinwold" or "city:hollowheart")) // those two have their own builders
         {
             var colour = Models.Colours[Math.Abs(WorldGen.StableHash(s.Id) % Models.Colours.Length)];
             switch (s.Kind)
@@ -320,6 +321,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
             }
             Label(root, Ground(s.X, s.Z) + new Vector3(0, s.IsCity ? 40 : 12, 0), s.Name, s.IsCity ? 0.08f : 0.04f);
         }
+        if (s.Id != "city:hollowheart") Fabric(root, s, rng, b);
 
         // Its people as they are this year: aged, the old gone, the children born since (see Ageing). Anyone who has
         // left home to follow the company isn't here.
@@ -415,7 +417,64 @@ public partial class Places(Main main, WorldGen world) : Node3D
         var size = kind == "keep" ? (s.Kind == SettlementKind.City ? 1f : 0.82f) : 1f;
         var b = Buildings.Place(parent, kind, Ground(s.X + dx, s.Z + dz), facing, (int)(WorldGen.StableHash(s.Id) % 1000) + _lots.Count, Buildings.RoofFor(colour), size);
         if (name is not null) Label(parent, b.Position + new Vector3(0, Buildings.HeightOf(b) + 2.5f, 0), name, 0.02f);
+        if (name is null && kind is "house" or "cottage" or "barn") _raised.Add(b);
         return b;
+    }
+
+    readonly List<Node3D> _raised = [];
+
+    /// <summary>What the years have done to a place: homes the dragon burned, still ash; new ones up beyond the old; and the carpenter at work.</summary>
+    void Fabric(Node3D parent, Settlement s, Rng rng, Built b)
+    {
+        var fabric = main.Economy.FabricOf(s.Id);
+        for (var i = 0; i < fabric.Grown; i++)
+        {
+            var a = i * 2.399 + 0.6;
+            var r = s.Radius * (s.IsCity ? 1.2 : 1.1) + i % 3 * 7;
+            if (world.Height(s.X + Math.Cos(a) * r, s.Z + Math.Sin(a) * r) > WorldGen.WaterLevel + 1)
+                Building(parent, s, i % 4 == 3 ? "barn" : "house", Models.Colours[Math.Abs(WorldGen.StableHash(s.Id) % Models.Colours.Length)], Math.Cos(a) * r, Math.Sin(a) * r, -(float)a + Mathf.Pi / 2);
+        }
+        var homes = _raised.Where(n => IsInstanceValid(n) && Buildings.HeightOf(n) < 14).ToList();
+        for (var i = 0; i < Math.Min(fabric.Burnt, homes.Count); i++)
+        {
+            var home = homes[i * 7 % homes.Count];
+            homes.Remove(home);
+            var at = home.GlobalPosition;
+            home.QueueFree();
+            Ruin(parent, at, rng);
+        }
+        if (!s.IsCity && s.Kind != SettlementKind.Hamlet || s.Id == "city:tristinwold" || s.Hostile) return;
+        // There's always something going up, or being put right.
+        var (ca, cr) = (rng.NextDouble() * Math.Tau, s.Radius * 0.72);
+        var (cx, cz) = (s.X + Math.Cos(ca) * cr, s.Z + Math.Sin(ca) * cr);
+        var timber = BuildingMaterials.For(Surface.Planks);
+        foreach (var (px, pz) in new[] { (-2.4f, -2.4f), (2.4f, -2.4f), (-2.4f, 2.4f), (2.4f, 2.4f) })
+            parent.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.22f, 4.6f, 0.22f) }, MaterialOverride = timber, Position = parent.ToLocal(Ground(cx + px, cz + pz)) + Vector3.Up * 2.3f });
+        foreach (var y in new[] { 2.1f, 4.2f })
+            parent.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(5.4f, 0.14f, 5.4f) }, MaterialOverride = timber, Position = parent.ToLocal(Ground(cx, cz)) + Vector3.Up * y });
+        Prop(parent, s, "medieval/props/resource_lumber.gltf", Math.Cos(ca) * cr + 4, Math.Sin(ca) * cr + 2, 4, 0.5f);
+        string[] names = ["Bram", "Ansel", "Corra", "Tobin", "Mabry", "Hale"];
+        var first = names[Math.Abs(WorldGen.StableHash(s.Id) % names.Length)];
+        var talk = fabric.Burnt > 0 ? "Nails are nothing. It's the timber we can't get. Everyone's scared to cut it now." : "Slow work, but it stands longer than you or I will.";
+        b.People.Add(Add(parent, new Person
+        {
+            Npc = new Npc($"{s.Id}/carpenter", $"{first} the Carpenter", Tristinwold.World.Sex.Other, 44, "carpenter", s.Id, s.Name, $"{first} has sawdust in everything and a pencil behind each ear, and is usually on the far side of a half-built wall.", ["trade"], "gruff", talk, cx + 3.4, cz),
+            Look = "worker", Position = Ground(cx + 3.4, cz),
+        }));
+    }
+
+    /// <summary>What's left of a home the dragon's been through.</summary>
+    void Ruin(Node3D parent, Vector3 at, Rng rng)
+    {
+        var char_ = new StandardMaterial3D { AlbedoColor = new Color("#17130f"), Roughness = 1 };
+        var local = parent.ToLocal(at);
+        parent.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(9, 0.5f, 8) }, MaterialOverride = char_, Position = local + Vector3.Up * 0.2f });
+        for (var i = 0; i < 7; i++)
+            parent.AddChild(new MeshInstance3D
+            {
+                Mesh = new BoxMesh { Size = new Vector3(0.45f, 2 + (float)rng.NextDouble() * 3, 0.45f) }, MaterialOverride = char_,
+                Position = local + new Vector3((float)rng.NextDouble() * 8 - 4, 1.4f, (float)rng.NextDouble() * 7 - 3.5f), Rotation = new Vector3((float)rng.NextDouble() - 0.5f, 0, (float)rng.NextDouble() - 0.5f),
+            });
     }
 
     /// <summary>Buildings in a ring around the centre, facing in.</summary>
@@ -478,6 +537,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
             var kind = Models.BuildingFor(s.Places[i]);
             Building(parent, s, kind == "castle" ? "tower_B" : kind, colour, Math.Cos(a) * r * 0.34, Math.Sin(a) * r * 0.34, -(float)a + Mathf.Pi / 2, Models.BuildingScale(kind) * 0.9f, s.Places[i]);
         }
+        Building(parent, s, "tavern", colour, Math.Cos(0.8) * r * 0.62, Math.Sin(0.8) * r * 0.62, -0.8f + Mathf.Pi / 2, 6.5f); // every town has somewhere to drink
         var houses = (int)(r * 0.32f);
         for (var placed = 0; placed < houses;)
         {

@@ -213,8 +213,8 @@ public class CaravanTests
         var w = WorldGen.Default;
         var book = new TradeBook();
         var old = book.OpenOldRoutes(w, 1);
-        Assert.Equal(2, old.Count);
-        Assert.Equal(2, book.Routes.Count());
+        Assert.Equal(["city:hollowheart", "city:druitt", "city:greywater"], old.Select(s => s.Id));
+        Assert.Equal(3, book.Routes.Count());
         Assert.Empty(book.OpenOldRoutes(w, 1)); // only once
         Assert.Equal(old.Select(s => s.Id), TradeBook.OldRoutes(w).Select(s => s.Id)); // the same for every hero
 

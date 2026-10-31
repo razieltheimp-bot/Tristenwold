@@ -270,6 +270,7 @@ public partial class Roamers(Main main) : Node
         {
             body = Enemy.Create(Bestiary.Get(r.KindId), at + Vector3.Up * 0.4f, raid is null ? WorldGen.Danger(r.StartX, r.StartZ) : 1, look: r.KindId);
             main.AddEnemy(body);
+            main.FeudsNode.Soldiers(body, (Tristinwold.Deviant.Rank)Math.Min(3, (r.Wins - 1) / 2), raid?.ThrallKind);
         }
         Out? o = null;
         var brain = raid is null ? null : new BossBrain(main, raid, r.Name, spot => o?.Adds.Add(Add(raid, spot)));
@@ -327,7 +328,7 @@ public partial class Roamers(Main main) : Node
 
     /// <summary>Whether what put the hero down takes a name for it: a foe of the wilds, not a lair's, a town's or a friend.</summary>
     bool Becomes(Enemy e) =>
-        IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly && !e.Young && !e.Kind.Timid && !e.InLair && !e.Sparring
+        IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly && !e.Young && !e.Kind.Timid && !e.InLair && !e.Sparring && !e.HeroesRival
         && e.Bond is null && _out.All(o => o.Body != e) && !InTown(e.GlobalPosition);
 
     /// <summary>Something out in the wilds beat the hero: it takes a name, and from now on it roams, and hunts.</summary>

@@ -55,6 +55,8 @@ public static class Bestiary
         // At sea: the pirates of the Teeth who board merchantmen, and the company's marines who guard them.
         new("pirate", "Pirate Cutthroat", 120, 13, 4.8, 60, 1.8, 1.2, DamageKind.Physical, "#3a4a6a", 1.8),
         new("pirate_captain", "Pirate Captain", 300, 21, 4.6, 180, 2.0, 1.4, DamageKind.Physical, "#6a1a2a", 1.95),
+        new("dread_soren", "The Dread Pirate Soren", 1500, 44, 5.0, 240, 2.8, 1.3, DamageKind.Physical, "#8a1a1a", 2.4),
+        new("lu_wukong", "Lu Wukong", 1000, 30, 7.0, 130, 3.0, 0.9, DamageKind.Physical, "#4a4038", 2.0),
         new("marine", "Company Marine", 150, 14, 4.4, 70, 1.9, 1.3, DamageKind.Physical, "#8a3a2a", 1.85),
         // The barbarian clans that raid the frontier: big, painted, and they hit hard.
         new("raider", "Barbarian Raider", 140, 14, 4.6, 70, 1.9, 1.4, DamageKind.Physical, "#7a4a2a", 1.95),
@@ -100,6 +102,8 @@ public static class Bestiary
         new("briar_mother", "Briar Mother", 700, 20, 2.8, 60, 3.2, 1.8, DamageKind.Poison, "#3a5a2a", 3.6),
         new("ghost_captain", "Hollow Captain", 700, 22, 4.6, 160, 2.4, 1.4, DamageKind.Frost, "#a8e0f0", 2.3),
         // The Northwood's guardians: older than the city, and they leave you be unless you've given them reason.
+        new("turlin", "Turlin", 150, 11, 5.2, 40, 2.0, 1.2, DamageKind.Physical, "#3a3440", 2.0, Wary: true),
+        new("giant_ape", "Giant Ape", 3200, 30, 5.6, 110, 3.2, 1.7, DamageKind.Physical, "#35303a", 7.2, Wary: true),
         new("guardian_moss", "Forest Guardian", 5200, 46, 3.6, 120, 4.5, 2.4, DamageKind.Physical, "#5a8a3a", 8, Wary: true),
         new("guardian_bark", "Forest Guardian", 4400, 56, 4.4, 90, 4.5, 2.0, DamageKind.Physical, "#8a6a4a", 7.5, Wary: true),
         new("guardian_elder", "Forest Guardian", 6000, 42, 3.2, 140, 5, 2.6, DamageKind.Frost, "#3a6a5a", 8.5, Wary: true),

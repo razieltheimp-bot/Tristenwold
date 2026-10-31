@@ -12,6 +12,14 @@ public abstract partial class Fighter : CharacterBody3D
     public Combatant Stats { get; protected set; } = new("?", 1);
     protected Label3D Plate = new();
     public Body Figure { get; private set; } = null!;
+
+    /// <summary>Puts another body on this one (a shapeshifter's beast), or its own back, keeping both.</summary>
+    protected void Wear(Body body)
+    {
+        Figure.Visible = false;
+        body.Visible = true;
+        Figure = body;
+    }
     protected float Gravity = (float)ProjectSettings.GetSetting("physics/3d/default_gravity", 9.8);
 
     /// <summary>Gives this fighter its look (a character preset or an animal) and something to collide with.</summary>
@@ -418,9 +426,15 @@ public partial class Enemy : Fighter
         Stats.Apply(mods);
         if (IsDragon) Grow((DragonSize)Math.Min(3, Math.Max((int)mods.Rank, mods.Victories)));
         else Scale = new Vector3(1.15f, 1.15f, 1.15f);
-        Figure.Mark(new Color("#ff5030"));
+        if (!HeroesRival) Figure.Mark(new Color("#ff5030"));
         RefreshPlate();
     }
+
+    /// <summary>The kind of the last blow that landed on it.</summary>
+    public DamageKind LastBlow { get; private set; }
+    /// <summary>A hero's own rival: a deviant kept in their save, so what happens to it isn't the shared world's to record.</summary>
+    public bool HeroesRival { get; set; }
+    public void HidePlate() => Plate.Visible = false;
 
     /// <summary>A lair boss that beat a company and took a name: it shows the name, stands taller and burns red.</summary>
     public bool Named { get; private set; }
@@ -433,7 +447,7 @@ public partial class Enemy : Fighter
         {
             Named = true;
             Figure.Scale *= 1.15f;
-            Figure.Mark(new Color("#ff5030"));
+            if (!HeroesRival) Figure.Mark(new Color("#ff5030"));
         }
         RefreshPlate();
     }
@@ -569,8 +583,12 @@ public partial class Enemy : Fighter
     /// <summary>Who it's fighting, if a creature (for tests).</summary>
     public Enemy? Rival => _rival;
 
+    /// <summary>Something else is moving it (a shapeshifter on the wing): it goes where it's put, and the ground has no say.</summary>
+    public bool Carried { get; set; }
+
     public override void _PhysicsProcess(double delta)
     {
+        if (Carried && State != EnemyState.Dead) return;
         if (State == EnemyState.Dead)
         {
             if (!IsOnFloor()) FallAndSlide(delta, Vector3.Zero); // a dragon killed in the air falls
@@ -875,6 +893,7 @@ public partial class Enemy : Fighter
 
     public HitResult TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Player by)
     {
+        LastBlow = kind;
         var result = Stats.TakeHit(damage, kind, attack, crit, by.Stats);
         Struck?.Invoke(result.Dealt, kind, attack, by);
         if (Sparring && (result.Killed || Stats.Health < Stats.MaxHealth * 0.15)) { EndSpar(true); return result; }

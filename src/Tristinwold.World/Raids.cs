@@ -87,7 +87,7 @@ public static class Raids
     public static readonly Raid GoblinWarren = new("raid:goblin_warren", "the Goblin Warren", "the Goblin King",
         "Goblins have always lived in the rocks south-east of Tristinwold. Then one of them got big: very big, from eating everything he stole, and the rest started calling him king. Now the warren raids the farms every week and the firepots come flying at anyone who goes in after their chickens.",
         "MINE! All of it MINE! Get 'em, lads!",
-        257, 306, MaxLevel: 8, CooldownSeconds: 20 * 60, Thralls: 5)
+        172, 440, MaxLevel: 8, CooldownSeconds: 20 * 60, Thralls: 5)
     {
         MinLevel = 3, Site = LairSite.Cave, BossKind = "goblin_king", ThrallKind = "goblin", Might = 1.05, Element = DamageKind.Fire,
         Moves = [BossMove.Marks, BossMove.Summon, BossMove.Enrage],
@@ -134,7 +134,7 @@ public static class Raids
     public static readonly Raid HollowBastion = new("raid:hollow_bastion", "the Hollow Bastion", "the Hollow Captain",
         "Two hundred years ago the Bastion on the eastern road held for forty days against an army, and then it fell, and every man in it died at his post. They are still at their posts. Their captain walks the walls at night in armour made of moonlight, and his legion forms its shield wall at the gate for anyone who comes too close.",
         "Hold the gate! HOLD THE GATE!",
-        489, -178, MaxLevel: 12, CooldownSeconds: 30 * 60, Thralls: 4)
+        350, -345, MaxLevel: 12, CooldownSeconds: 30 * 60, Thralls: 4)
     {
         MinLevel = 7, Site = LairSite.Fort, BossKind = "ghost_captain", ThrallKind = "hollow_soldier", Might = 1.2, Element = DamageKind.Frost,
         Moves = [BossMove.Charge, BossMove.Volley, BossMove.Summon],

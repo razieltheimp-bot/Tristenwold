@@ -6,7 +6,14 @@ public sealed class DeviantRules
     public int MaxScourges { get; init; } = 5;
     public int MaxRingleadersPerScourge { get; init; } = 4;
     public int MaxUnassignedRingleaders { get; init; } = 6;
-    public int MaxStrays { get; init; } = 12;
+    /// <summary>No limit: there's always someone new who thinks they can climb.</summary>
+    public int MaxStrays { get; init; } = int.MaxValue;
+    /// <summary>How many strays can turn up for any one fight, whatever the size of the roster.</summary>
+    public int StraysPerBattle { get; init; } = 4;
+    /// <summary>What a stray gains in a day of scheming, the chance it picks a fight above it, and the chance a soldier breaks away to be a stray.</summary>
+    public int AmbitionPerDay { get; init; } = 6;
+    public double StrayChallengePerDay { get; init; } = 0.3;
+    public double BreakawayPerDay { get; init; } = 0.25;
 
     public int PowerForScourge { get; init; } = 100;
     public int PowerForTyrant { get; init; } = 250;
@@ -20,7 +27,8 @@ public sealed class DeviantRules
 
     public double GrudgeChancePerDay { get; init; } = 0.2;
     public double GrudgeFightChancePerDay { get; init; } = 0.5;
-    public double PactChancePerDay { get; init; } = 0.1;
+    /// <summary>Oaths come from an underling rising, not from chance; this is only for a world that wants pacts as well.</summary>
+    public double PactChancePerDay { get; init; }
 }
 
 /// <summary>
@@ -65,6 +73,10 @@ public sealed class DeviantWorld
         Living.Where(n => n.Rank == Rank.Ringleader && (n.ServesUnder is null || Find(n.ServesUnder.Value)?.Alive != true));
     public IEnumerable<Deviant> Strays => Living.Where(n => n.Rank == Rank.Stray).OrderByDescending(n => n.Power);
 
+    /// <summary>Every pair with a grudge still open: what a hero might walk in on.</summary>
+    public IEnumerable<(Deviant A, Deviant B)> Feuds =>
+        Living.SelectMany(a => a.Rivals.Select(Find).Where(b => b is { Alive: true } && a.Id.CompareTo(b.Id) < 0).Select(b => (a, b!)));
+
     // ---- Battle setup ----------------------------------------------------------------------
 
     /// <summary>
@@ -75,8 +87,9 @@ public sealed class DeviantWorld
     {
         var spawns = new List<DeviantSpawn>();
         var freeSlots = formation.ToList();
-        var candidates = Living
-            .Where(n => freeSlots.Any(s => s.Kind == n.Kind))
+        var fitting = Living.Where(n => freeSlots.Any(s => s.Kind == n.Kind)).ToList();
+        var strays = fitting.Where(n => n.Rank == Rank.Stray).OrderBy(_ => _rng.Next(int.MaxValue)).Take(Rules.StraysPerBattle);
+        var candidates = fitting.Where(n => n.Rank != Rank.Stray).Concat(strays)
             .Select(n => (Deviant: n, Weight: AppearanceWeight(n, areaId, players)))
             .OrderByDescending(c => c.Weight)
             .ToList();
@@ -279,9 +292,10 @@ public sealed class DeviantWorld
         Log(n, $"Slain by {killer ?? "the party"} in {report.AreaId}.");
         events.Add(new(WorldEventKind.Slain, n.Id, $"{n.FullName} has been slain by {killer ?? "the party"}!"));
 
-        // Death has consequences: a pact-sworn swears revenge on whoever did it.
-        if (n.PactSworn is { } bid && Find(bid) is { Alive: true } sworn)
+        // Death has consequences: all who are sworn to it swear revenge on whoever did it.
+        foreach (var bid in n.Oaths.Concat(n.PactSworn is { } pact ? [pact] : []).Distinct().ToList())
         {
+            if (Find(bid) is not { Alive: true } sworn) continue;
             sworn.Memory |= Memory.Vengeful;
             if (killer is not null) sworn.Player(killer).Memory |= Memory.Vengeful;
             GainPower(sworn, 15, levels: 1);
@@ -409,6 +423,7 @@ public sealed class DeviantWorld
             Promote(rising, Rank.Scourge, events);
             // Its old scourge's other ringleaders stay put; the new scourge starts with none.
             if (oldChief is not null) Log(rising, "Left its scourge's service to lead its own band.");
+            if (oldChief is { } chiefId && Find(chiefId) is { Alive: true } chiefSworn) BloodOath(rising, chiefSworn, events);
         }
 
         if (Tyrant is null && Scourges.FirstOrDefault(w => w.Power >= Rules.PowerForTyrant) is { } heir)
@@ -421,7 +436,7 @@ public sealed class DeviantWorld
         if (Scourges.Count() >= Rules.MaxScourges)
         {
             var weakest = Scourges.Last();
-            var challenger = Living.Where(n => n.Rank == Rank.Ringleader && n.Power > weakest.Power + 20)
+            var challenger = Living.Where(n => n.Rank == Rank.Ringleader && n.Power > weakest.Power + 20 && !Sworn(n, weakest))
                 .OrderByDescending(n => n.Power).FirstOrDefault();
             if (challenger is not null && challenger.Rivals.Add(weakest.Id))
             {
@@ -430,6 +445,21 @@ public sealed class DeviantWorld
                     $"{challenger.FullName} challenges Scourge {weakest.FullName} for its title.", weakest.Id));
             }
         }
+    }
+
+    /// <summary>Bound never to hunt each other.</summary>
+    public static bool Sworn(Deviant a, Deviant b) => a.Oaths.Contains(b.Id) || a.PactSworn == b.Id || b.PactSworn == a.Id;
+
+    /// <summary>An underling has risen: it and the one it rose under are bound by blood, and any quarrel between them is over.</summary>
+    void BloodOath(Deviant risen, Deviant master, List<WorldEvent> events)
+    {
+        risen.Oaths.Add(master.Id);
+        master.Oaths.Add(risen.Id);
+        risen.Rivals.Remove(master.Id);
+        master.Rivals.Remove(risen.Id);
+        Log(risen, $"Swore a blood oath with {master.FullName}, who it rose under.");
+        Log(master, $"Swore a blood oath with {risen.FullName}, who rose under it.");
+        events.Add(new(WorldEventKind.Pact, risen.Id, $"{risen.FullName} and {master.FullName} are bound by a blood oath. They'll never hunt one another.", master.Id));
     }
 
     bool HasRingleaderVacancy() =>
@@ -474,7 +504,7 @@ public sealed class DeviantWorld
         if (living.Count >= 2 && _rng.Chance(Rules.GrudgeChancePerDay))
         {
             var a = _rng.Pick(living);
-            var b = _rng.Pick(living.Where(x => x != a && x.PactSworn != a.Id).ToList() is { Count: > 0 } others ? others : [a]);
+            var b = _rng.Pick(living.Where(x => x != a && !Sworn(a, x)).ToList() is { Count: > 0 } others ? others : [a]);
             if (a != b && a.Rivals.Add(b.Id))
             {
                 b.Rivals.Add(a.Id);
@@ -496,6 +526,8 @@ public sealed class DeviantWorld
             }
         }
 
+        Ambition(events);
+
         foreach (var a in Living.ToList())
         {
             foreach (var rivalId in a.Rivals.ToList())
@@ -509,6 +541,41 @@ public sealed class DeviantWorld
 
         UpdateHierarchy(events);
         return events;
+    }
+
+    /// <summary>Nobody stays a stray by choice: they scheme, pick fights above them, and soldiers break away to try it themselves.</summary>
+    void Ambition(List<WorldEvent> events)
+    {
+        var strays = Strays.ToList();
+        foreach (var s in strays) GainPower(s, 1 + _rng.Next(Rules.AmbitionPerDay), levels: 0);
+        if (strays.Count > 0 && _rng.Chance(Rules.StrayChallengePerDay))
+        {
+            var climber = _rng.Pick(strays);
+            var above = Living.Where(n => n != climber && n.Rank <= Rank.Ringleader && !Sworn(climber, n) && !climber.Rivals.Contains(n.Id)).ToList();
+            if (above.Count > 0)
+            {
+                var target = _rng.Pick(above);
+                climber.Rivals.Add(target.Id);
+                target.Rivals.Add(climber.Id);
+                events.Add(new(WorldEventKind.GrudgeStarted, climber.Id, $"{climber.FullName} has picked a fight with {target.FullName}, and means to climb over them.", target.Id));
+            }
+        }
+        if (Living.ToList() is { Count: > 0 } all && _rng.Chance(Rules.BreakawayPerDay))
+        {
+            var from = _rng.Pick(all);
+            var n = new Deviant
+            {
+                Id = _rng.NextGuid(), Name = MakeName(), Kind = from.Kind, BaseForm = from.BaseForm, Species = from.Species,
+                Rank = Rank.Stray, Level = 1, HomeArea = from.HomeArea, Power = 10,
+            };
+            AddTrait(n, TraitKind.Strength);
+            AddTrait(n, TraitKind.Weakness);
+            n.Epithet = n.Traits.Select(t => t.Epithet).FirstOrDefault(e => e is not null) ?? _rng.Pick(Names.Epithets);
+            _deviants.Add(n);
+            Log(n, $"Broke away from {from.FullName}'s soldiers to make a name of its own.");
+            events.Add(new(WorldEventKind.Born, n.Id, $"{n.FullName} has broken away from {from.FullName}'s band. Another stray, looking to climb."));
+            BloodOath(n, from, events);
+        }
     }
 
     void Duel(Deviant a, Deviant b, List<WorldEvent> events)
@@ -525,7 +592,7 @@ public sealed class DeviantWorld
             (winner.Rank, loser.Rank) = (loser.Rank, winner.Rank);
             winner.ServesUnder = null;
             foreach (var c in Living.Where(c => c.ServesUnder == loser.Id).ToList()) c.ServesUnder = winner.Id;
-            loser.ServesUnder = winner.Rank == Rank.Scourge ? winner.Id : null;
+            loser.ServesUnder = winner.Rank == Rank.Scourge && RingleadersUnder(winner.Id).Count() < Rules.MaxRingleadersPerScourge ? winner.Id : null;
             events.Add(new(WorldEventKind.Succession, winner.Id, $"{winner.FullName} took {loser.FullName}'s place as {winner.Rank}!", loser.Id));
         }
 

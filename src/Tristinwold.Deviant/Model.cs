@@ -5,6 +5,12 @@ namespace Tristinwold.Deviant;
 /// <summary>Place in the hierarchy. Higher ranks hit harder and are harder to kill for good.</summary>
 public enum Rank { Stray = 0, Ringleader = 1, Scourge = 2, Tyrant = 3 }
 
+/// <summary>The soldiers of its own kind each rank has at its back.</summary>
+public static class Bands
+{
+    public static int Soldiers(Rank rank) => rank switch { Rank.Stray => 1, Rank.Ringleader => 3, Rank.Scourge => 6, _ => 10 };
+}
+
 /// <summary>What an enemy remembers about the party, across sessions.</summary>
 [Flags]
 public enum Memory
@@ -93,6 +99,8 @@ public sealed class Deviant
     public Dictionary<string, PlayerRecord> Players { get; init; } = [];
     public HashSet<Guid> Rivals { get; init; } = [];
     public Guid? PactSworn { get; set; }
+    /// <summary>Blood oaths: those it rose under, and those who rose under it. Sworn deviants never hunt one another.</summary>
+    public HashSet<Guid> Oaths { get; init; } = [];
     public Guid? ServesUnder { get; set; }
     public List<HistoryEntry> History { get; init; } = [];
 

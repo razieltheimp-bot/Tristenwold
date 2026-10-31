@@ -188,7 +188,7 @@ public class WorldTests
     public void Every_city_has_its_own_name_story_and_places()
     {
         var atlas = Atlas.Default;
-        Assert.Equal(9, atlas.Cities.Count);
+        Assert.Equal(12, atlas.Cities.Count);
         Assert.Equal(atlas.Cities.Count, atlas.Cities.Select(c => c.Name).Distinct().Count());
         foreach (var city in atlas.Cities)
         {

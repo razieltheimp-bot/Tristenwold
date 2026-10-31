@@ -5,6 +5,15 @@ namespace Tristinwold.Gameplay;
 /// <summary>The kinds of goods Tristinwold trades in. Every item that's one of these is priced by how much of it the city has.</summary>
 public enum Good { Fish, Meat, Bread, Ale, Timber, Stone, Ore, Coal, Iron, Leather, Herbs, Potions, Precious }
 
+/// <summary>What's become of a town's buildings, for everyone on the server: burned stays burned until carpenters rebuild it.</summary>
+public sealed class TownFabric
+{
+    /// <summary>Homes the dragon has burned, and not yet rebuilt.</summary>
+    public int Burnt { get; set; }
+    /// <summary>New buildings its carpenters have raised over the years.</summary>
+    public int Grown { get; set; }
+}
+
 /// <summary>
 /// One good in the city: how much it likes to keep (<paramref name="Target"/>), how much its own people make and use
 /// in a day, who makes it, who wants it, and what a unit of it is usually worth.
@@ -149,6 +158,58 @@ public sealed class CityEconomy
     public bool DragonSlain { get; set; }
     public HashSet<string> GuardiansSlain { get; set; } = [];
 
+    /// <summary>The towns' buildings, by place.</summary>
+    public Dictionary<string, TownFabric> Fabric { get; set; } = [];
+    /// <summary>How far the market's fallen with people fleeing the dragon: a share off every price, wearing away.</summary>
+    public double Slump { get; set; }
+    /// <summary>Where the dragon went last.</summary>
+    public string? DragonAt { get; set; }
+
+    public const int RampageEvery = 3, CarpentersEvery = 5, BurnedAtOnce = 3, GrowthCap = 12, RebuildTimber = 12;
+    public const double SlumpBlow = 0.3, MostSlump = 0.6;
+    /// <summary>How much each town lives by wood, which is what the dragon hunts. Hollowheart isn't here: it's never cut a tree.</summary>
+    public static readonly IReadOnlyDictionary<string, int> WoodHunger = new Dictionary<string, int> { ["city:druitt"] = 12, ["city:tristinwold"] = 7, ["city:greywater"] = 5 };
+
+    public TownFabric FabricOf(string town) => Fabric.TryGetValue(town, out var f) ? f : Fabric[town] = new TownFabric();
+
+    /// <summary>The town the dragon's hungriest for: whoever's burning the most wood, less what it's burned there already.</summary>
+    public string DragonTarget() => WoodHunger.OrderByDescending(t => t.Value + (t.Key == "city:tristinwold" ? Stock.GetValueOrDefault(Good.Timber) / 30 : 0) - FabricOf(t.Key).Burnt).First().Key;
+
+    /// <summary>The dragon comes down on a town. What burns stays burned, and everyone who can run does.</summary>
+    string Rampage()
+    {
+        var town = DragonAt = DragonTarget();
+        FabricOf(town).Burnt += BurnedAtOnce;
+        Slump = Math.Min(MostSlump, Slump + SlumpBlow);
+        foreach (var g in Goods) Stock[g.Good] = Stock.GetValueOrDefault(g.Good) * 0.85;
+        Stock[Good.Timber] = Stock.GetValueOrDefault(Good.Timber) * 0.5;
+        Treasury = Math.Max(0, Treasury - 100);
+        return $"The dragon has come down on {PlaceName(town)}: {BurnedAtOnce} more homes are ash, and the market's falling as people run for the coast.";
+    }
+
+    static string PlaceName(string town) => town.Replace("city:", "") is var n && n.Length > 0 ? char.ToUpperInvariant(n[0]) + n[1..] : town;
+
+    /// <summary>The carpenters' week: the burned go back up first, if there's timber; and a town that's doing well grows.</summary>
+    public string? Carpenters(Rng rng)
+    {
+        var burned = Fabric.Where(f => f.Value.Burnt > 0).Select(f => f.Key).OrderBy(k => k, StringComparer.Ordinal).ToList();
+        if (burned.Count > 0)
+        {
+            if (Stock.GetValueOrDefault(Good.Timber) < RebuildTimber) return null;
+            var town = rng.Pick(burned);
+            FabricOf(town).Burnt--;
+            Stock[Good.Timber] -= RebuildTimber;
+            return $"Carpenters have raised a home again in {PlaceName(town)}, on the ash of the last one.";
+        }
+        if (DragonFree || Treasury < 500 || Stock.GetValueOrDefault(Good.Timber) < 3 * RebuildTimber) return null;
+        var towns = Roads.Towns.Keys.Where(k => FabricOf(k).Grown < GrowthCap).OrderBy(k => k, StringComparer.Ordinal).ToList();
+        if (towns.Count == 0) return null;
+        var grown = rng.Pick(towns);
+        FabricOf(grown).Grown++;
+        Stock[Good.Timber] -= 2 * RebuildTimber;
+        return $"{Roads.Towns[grown].Name} is growing: its carpenters have put up a new building.";
+    }
+
     void Slain(string guardian, bool corrupted)
     {
         if (guardian == "dragon") { DragonSlain = true; DragonFree = false; return; }
@@ -197,7 +258,7 @@ public sealed class CityEconomy
     public double Factor(Good g)
     {
         var stock = Math.Max(1, Stock.GetValueOrDefault(g, Info(g).Target));
-        return Math.Clamp(Math.Pow(Info(g).Target / stock, 0.7), 0.45, 2.6);
+        return Math.Clamp(Math.Pow(Info(g).Target / stock, 0.7) * (1 - Slump), 0.45, 2.6);
     }
 
     /// <summary>How many of a thing the shops take before its price is well down (or give up before it's well up).</summary>
@@ -353,6 +414,9 @@ public sealed class CityEconomy
 
         News.AddRange(told);
         if (News.Count > 12) News.RemoveRange(0, News.Count - 12);
+        Slump = Math.Max(0, Slump - 0.02);
+        if (DragonFree && !DragonSlain && Day % RampageEvery == 0) told.Add(Rampage());
+        if (Day % CarpentersEvery == 0 && Carpenters(rng) is { } built) told.Add(built);
         return told;
     }
 

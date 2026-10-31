@@ -30,8 +30,30 @@ public sealed record SeaPort(string Id, string Name, int Leagues, double Pirates
 /// <summary>The ports Tristinwold's ships sail to, nearest first.</summary>
 public static class Seas
 {
+    /// <summary>The worst names on the water, worst first.</summary>
+    public static readonly IReadOnlyList<Flagship> Flagships =
+    [
+        new("soren", "the Dread Pirate Soren", "the Red Reckoning", "dread_soren", 3, 0.14, 2500, "sorens_reaver",
+            "A black sail, and a red coat at her rail with a sword as tall as you are. The Dread Pirate Soren is coming aboard",
+            "Soren laughs round his pipe with your blood on his gauntlet, and steps backward off the rail. A rope takes him up. \"Again sometime,\" he calls.",
+            "\"Not one in a hundred stays standing that long. I've Black Ysolde and a dozen like her who answer to me; go and swab her deck till you've earned mine. Or there's the sea.\""),
+        new("wukong", "Lu Wukong", "the Drunken Monkey", "lu_wukong", 2, 0.22, 1200, "wukongs_staff",
+            "A patched sail and somebody singing. A hooded ape swings across on a chain with a gourd at his hip: Lu Wukong himself",
+            "Lu Wukong vaults the rail on his staff, takes a pull at his gourd and bows from the other deck. \"Tell my brother I said hello!\"",
+            "\"You fight like someone who's been told they can't. I like that. Ysolde's short of hands. Go and be a pirate; it's better than this. Or there's the sea, which is also fine.\""),
+    ];
+
+    public static Flagship? Flag(string? id) => Flagships.FirstOrDefault(f => f.Id == id);
+
+    /// <summary>Whether a voyage this far out crosses a named captain: the worst of them only sail the far water.</summary>
+    public static Flagship? Flies(int leagues, Rng rng) => Flagships.FirstOrDefault(f => leagues >= f.MinLeagues && rng.Chance(f.Chance));
+
     public static readonly IReadOnlyList<SeaPort> Ports =
     [
+        new("port:druitt", "Druitt", 1, 0.1, [Good.Timber, Good.Leather], [Good.Bread, Good.Iron, Good.Ale],
+            "the timber port under the western mountains, a day round the headland; it lives on what it cuts"),
+        new("port:greywater", "Greywater", 1, 0.1, [Good.Bread, Good.Herbs, Good.Ale], [Good.Timber, Good.Iron, Good.Stone],
+            "the orchard town on the wood's eastern shore, a day out of the cove and round the point, all fruit trees, berries and cider"),
         new("port:saltmere", "Saltmere", 1, 0.25, [Good.Fish, Good.Ale], [Good.Timber, Good.Bread],
             "a fishing town on the next cape up the coast, all smokehouses and nets; the short run, and the pirates mostly leave it be"),
         new("port:brinehollow", "Brinehollow", 2, 0.4, [Good.Leather, Good.Meat], [Good.Iron, Good.Fish],
@@ -61,8 +83,21 @@ public static class Seas
             "a walled city of iron and old money on the far continent's cold shore, with a fleet of its own"),
     ];
 
+    /// <summary>The only two ports a Tristinwold ship knows at the start. Everything else has to be found.</summary>
+    public static readonly IReadOnlyList<string> Home = ["port:druitt", "port:greywater"];
+
+    /// <summary>What there is to find, nearest first.</summary>
+    public static IEnumerable<SeaPort> ToChart => Ports.Where(p => !Home.Contains(p.Id)).Concat(Uncharted);
+
     public static SeaPort? Get(string id) => Ports.Concat(Uncharted).FirstOrDefault(p => p.Id == id);
 }
+
+/// <summary>
+/// A name on the water: a pirate captain who comes over the rail in person. The Dread Pirate Soren is the worst of them,
+/// and Lu Wukong, brother to the ape king of Hollowheart, the next. A big enough name gets away over the side, so they can
+/// be met again.
+/// </summary>
+public sealed record Flagship(string Id, string Captain, string Ship, string Kind, int MinLeagues, double Chance, int Bounty, string Loot, string Hail, string Escape, string Offer);
 
 /// <summary>A voyage under way: out to a port, a call there, and home again; and the pirates waiting on each leg.</summary>
 public sealed class Voyage
@@ -81,6 +116,8 @@ public sealed class Voyage
     public int Sprung { get; set; }
     /// <summary>How many pirates board in each attack.</summary>
     public int Pirates { get; set; }
+    /// <summary>A named captain hunting these waters this voyage (see <see cref="Seas.Flagships"/>): whoever boards first.</summary>
+    public string? Flag { get; set; }
     public int Pay { get; set; }
     /// <summary>The hero has command (a captain), rather than serving under someone.</summary>
     public bool Command { get; set; }
@@ -181,12 +218,14 @@ public sealed class SeaBook
 
     /// <summary>How far out the company will send someone of the hero's rank.</summary>
     public int Reach => Rank switch { SeaRank.Captain or SeaRank.FirstMate => 4, SeaRank.Bosun => 3, _ => 2 };
-    public IEnumerable<SeaPort> Ports => Seas.Ports.Where(p => p.Leagues <= Reach).Concat(Seas.Uncharted.Where(p => Charted.Contains(p.Id)));
+    public IEnumerable<SeaPort> Ports => Seas.Ports.Where(p => Seas.Home.Contains(p.Id) || Charted.Contains(p.Id) && p.Leagues <= Reach).Concat(Seas.Uncharted.Where(p => Charted.Contains(p.Id)));
 
     /// <summary>The ports the hero has found past the old charts; open to them for good.</summary>
     public HashSet<string> Charted { get; set; } = [];
+    /// <summary>The named captains this hero has driven off their deck.</summary>
+    public HashSet<string> Humbled { get; set; } = [];
     /// <summary>A bosun can be trusted with a chart. The next place past the edge of it, if there's one left.</summary>
-    public SeaPort? NextChart => Rank >= SeaRank.Bosun ? Seas.Uncharted.FirstOrDefault(p => !Charted.Contains(p.Id)) : null;
+    public SeaPort? NextChart => Rank >= SeaRank.Bosun ? Seas.ToChart.FirstOrDefault(p => !Charted.Contains(p.Id)) : null;
     public const double ExplorePay = 1.6;
 
     public static string Explorer(int charted) => charted switch { >= 6 => "master of the charts", >= 4 => "pathfinder", >= 2 => "navigator", >= 1 => "chart-maker", _ => "" };
@@ -228,7 +267,7 @@ public sealed class SeaBook
     /// <param name="explore">Out past the charts: it's the port that's the prize, and the company pays more for the risk.</param>
     public Voyage? Sail(SeaPort port, Rng rng, bool explore = false)
     {
-        var allowed = explore ? NextChart == port : port.Leagues <= Reach || Charted.Contains(port.Id);
+        var allowed = explore ? NextChart == port : Ports.Contains(port);
         if (Rank == SeaRank.Landsman || Outlaw || Voyage is not null || !allowed || OwnShip && Hull < Seaworthy) return null;
         if (!OwnShip) Hull = 100; // the company sends a sound ship
         List<double> Leg()
@@ -244,7 +283,15 @@ public sealed class SeaBook
             Port = port.Id, PortName = port.Name, Leagues = port.Leagues, Out = Leg(), Home = Leg(),
             Pirates = 2 + port.Leagues + rng.Next(2) + (Rank >= SeaRank.FirstMate ? 1 : 0),
             Pay = (int)Math.Round(PayFor(port) * (explore ? ExplorePay : 1)), Command = Rank == SeaRank.Captain, Explore = explore,
+            Flag = Seas.Flies(port.Leagues, rng)?.Id,
         };
+    }
+
+    /// <summary>A named captain beaten off: the price on them the first time, a purse after that. The flag's gone for this voyage.</summary>
+    public int Humble(Flagship f)
+    {
+        if (Voyage is { } v) v.Flag = null;
+        return Humbled.Add(f.Id) ? f.Bounty : f.Bounty / 5;
     }
 
 

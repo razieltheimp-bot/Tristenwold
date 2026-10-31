@@ -373,6 +373,11 @@ public sealed class Standing
     /// <summary>The wrong side of every honest job.</summary>
     public ShadowBook Shadows { get; set; } = new();
 
+    /// <summary>What people think of the hero, town by town and person by person.</summary>
+    public ReputationBook Reputation { get; set; } = new();
+    /// <summary>Tells the game of a deed, good or bad by its sign, so it can go round the town it was done in.</summary>
+    [System.Text.Json.Serialization.JsonIgnore] public Action<int, string>? Told { get; set; }
+
     public const int KeepDeeds = 12;
     /// <summary>What goes on the head of whoever kills a watchman, or rides with a clan on a place.</summary>
     public const int WatchmanBounty = 100, RaidBounty = 40;
@@ -411,6 +416,7 @@ public sealed class Standing
         if (honour <= 0) return;
         Honour += honour;
         Tell(deed);
+        Told?.Invoke(honour, deed);
     }
 
     public void Evil(int infamy, string deed)
@@ -418,6 +424,7 @@ public sealed class Standing
         if (infamy <= 0) return;
         Infamy += infamy;
         Tell(deed);
+        Told?.Invoke(-infamy, deed);
     }
 
     /// <summary>A crime against Tristinwold: a price on the head, and the Watch strikes its own off the rolls for it.</summary>

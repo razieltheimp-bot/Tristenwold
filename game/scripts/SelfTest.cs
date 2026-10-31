@@ -31,6 +31,12 @@ public partial class SelfTest(Main main) : Node
             GD.PrintErr("[selftest] ready; waiting ten physics frames");
             await Frames(10);
             GD.PrintErr("[selftest] ten physics frames passed; starting");
+            if (OS.GetCmdlineUserArgs().Contains("--rival-only")) { await TheRival(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--repute-only")) { await TheRepute(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--feud-only")) { await TheFeud(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--tavern-only")) { await TheTavern(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--ride-only")) { await TheRide(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -2026,10 +2032,12 @@ public partial class SelfTest(Main main) : Node
         var guards = main.Enemies().Where(e => e.Stats.Name == "Caravan guard").ToList();
         Check(guards.Count == 2 && t.Sprung, "the wagon pulls up and two guards come off the box");
         var (purse2, infamy, bounty) = (p.Crowns, s.Infamy, s.Bounty);
+        main.CaughtSure = true; // the driver's seen 60% of the time; the price on your head is what's being checked
         foreach (var e in guards) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
         await Until(() => s.Tracker is null, 6);
+        main.CaughtSure = false;
         Check(s.Tracker is null && p.Crowns > purse2 && s.Infamy > infamy && s.Bounty == bounty + Standing.RaidBounty,
-            $"the guards down, the load is yours: +{p.Crowns - purse2} crowns, infamy {s.Infamy}, {Standing.RaidBounty} crowns on your head");
+            $"the guards down, the load is yours: +{p.Crowns - purse2} crowns, infamy {s.Infamy}, bounty {bounty} to {s.Bounty}, tracker {s.Tracker is null}");
         s.Bounty = 0;
         main.WatchNode.Hostile = false;
 
@@ -2090,6 +2098,7 @@ public partial class SelfTest(Main main) : Node
             hud.EndTalk();
         }
         Check(refused && hud.Heard("won't pay, and the Watch is sent for"), $"a shopkeeper who won't pay sends for the Watch: {s.Bounty} crowns on your head");
+        sh.For(ShadowLine.Thug).Done = 3; // those who paid before one refused don't count toward the ranks below
         s.Bounty = 0;
         main.WatchNode.Hostile = false;
 
@@ -2161,6 +2170,202 @@ public partial class SelfTest(Main main) : Node
         Check(sh.TitleOf(ShadowLine.Thug) == "a Tong enforcer" && ShadowBook.Title(ShadowLine.Thug, 0) == "a Tong knuckle" && ShadowBook.Title(ShadowLine.Thug, 3) == "a Tong captain", $"the Tongs' ranks run from knuckle to captain: three doors in, you're {sh.TitleOf(ShadowLine.Thug)}");
     }
 
+    /// <summary>Over the rise, two bands at it: each has its soldiers, and they go for each other, not for the hero.</summary>
+    async Task TheFeud()
+    {
+        var f = main.FeudsNode;
+        await Teleport(new Vector3(-420, 0, 180));
+        await Frames(60);
+        for (var i = 0; i < 8 && !f.Begin(); i++) main.PlayerNode.RotateY(0.8f);
+        await Frames(120);
+        Check(f.Fighters.Count >= 4 && f.Fighters.Count(e => e.Named) == 2, $"a feud: {f.Fighters.Count} fighters, two of them named");
+        var fighting = f.Fighters.Count(e => e.Rival is not null);
+        Check(fighting >= 2, $"and they're at each other: {fighting} locked in a fight");
+        var hurt = 0;
+        for (var i = 0; i < 40 && hurt == 0; i++)
+        {
+            await Frames(30);
+            hurt = f.Fighters.Count(e => !IsInstanceValid(e) || e.Stats.Health < e.Stats.MaxHealth);
+        }
+        Check(hurt > 0, $"with real blows: {hurt} hurt");
+    }
+
+    /// <summary>A tavern: the bar, the card and dice tables, and a Bard's set, with the takings right.</summary>
+    async Task TheTavern()
+    {
+        var (p, hud) = (main.PlayerNode, main.HudNode);
+        p.Crowns = 500;
+        var room = main.EnterTavernForTest();
+        await Frames(40);
+        await Teleport(room.Bar);
+        await Frames(10);
+        Check(main.ActionForTest()?.Verb == "order at the bar", $"at the bar: E to {main.ActionForTest()?.Verb}");
+        main.ActionForTest()?.Act();
+        Check(hud.TalkTitle == "The bar" && hud.Choose("Honey Mead") && p.Pack.Contents.Any(c => c.Item.Id == "mead") && p.Crowns < 500, $"a mead, bought: {p.Crowns} crowns left");
+        hud.EndTalk();
+        await Teleport(room.CardTable + new Vector3(1.2f, 0, 0));
+        await Frames(10);
+        Check(main.ActionForTest()?.Verb.Contains("Twenty-One") == true, $"at the card table: E to {main.ActionForTest()?.Verb}");
+        main.ActionForTest()?.Act();
+        var before = p.Crowns;
+        Check(hud.Choose("Play for 25"), "a stake of 25");
+        for (var i = 0; i < 12 && main.TavernHand?.Result == TableResult.Playing; i++) hud.Choose("I'll stand");
+        var h = main.TavernHand!;
+        Check(h.Result != TableResult.Playing && p.Crowns == before - h.Stake + h.Returned && hud.TalkText.Contains("The house:"), $"a hand played out, {h.Result}: {before} to {p.Crowns}");
+        hud.EndTalk();
+        await Teleport(room.DiceTable + new Vector3(1.2f, 0, 0));
+        await Frames(10);
+        main.ActionForTest()?.Act();
+        before = p.Crowns;
+        Check(hud.Choose("Play for 5") && hud.TalkText.Contains("dice stop") && (p.Crowns == before - 5 || p.Crowns == before + 20), $"a throw of the dice: {hud.TalkText}");
+        hud.EndTalk();
+        await Teleport(room.Fireside + new Vector3(0, 0, 1));
+        await Frames(10);
+        Check(main.ActionForTest()?.Verb != "play a set by the fire", "only a Bard plays for tips");
+    }
+
+    /// <summary>A caravan as driver: up on the box, through your own eyes, the pace in your hands; an ambush, and down to fight.</summary>
+    async Task TheRide()
+    {
+        var (p, hud) = (main.PlayerNode, main.HudNode);
+        main.StartCaravanForTest(driver: true);
+        await Frames(20);
+        var w = main.GuardedWagon!;
+        await Teleport(w.GlobalPosition + new Vector3(3, 0, 0));
+        await Frames(10);
+        Check(main.ActionForTest()?.Verb.Contains("reins") == true, $"by the wagon: E to {main.ActionForTest()?.Verb}");
+        main.ClimbForTest();
+        await Frames(10);
+        Check(p.Seat is not null && !p.Figure.Visible && main.RiddenWagon == w, "up on the box, seeing the road through your own eyes");
+        var start = w.GlobalPosition;
+        await Frames(180);
+        Check(w.GlobalPosition.DistanceTo(start) > 3 && p.GlobalPosition.DistanceTo(w.SeatAt(true)) < 1.5f, $"the wagon rolls, and you with it: {w.GlobalPosition.DistanceTo(start):0.0}m");
+        Check(main.ActionForTest()?.Verb == "jump down", "and E gets you down");
+        main.ClimbDownForTest();
+        await Frames(5);
+        Check(p.Seat is null && p.Figure.Visible && p.GlobalPosition.DistanceTo(w.GlobalPosition) < 6, "down beside the wagon, ready to fight");
+    }
+
+    /// <summary>A voyage of exploration: take the wheel, turn her, and the sea comes past with a compass to steer by.</summary>
+    async Task TheHelm()
+    {
+        var (p, hud) = (main.PlayerNode, main.HudNode);
+        if (main.Sea.Rank == SeaRank.Landsman) main.Sea.SignOn();
+        main.SailForTest("port:druitt");
+        main.ExploreForTest();
+        await Frames(30);
+        var sea = main.AtSeaNode!;
+        await Teleport(new Vector3(AtSea.Stage.X, AtSea.DeckY + 0.5f, AtSea.Stage.Z - 7));
+        await Frames(10);
+        Check(main.ActionForTest()?.Verb == "take the helm", $"at the wheel: E to {main.ActionForTest()?.Verb}");
+        sea.TakeHelm();
+        await Frames(10);
+        Check(sea.AtHelm && p.Seat is not null, "you take the wheel");
+        Check(sea.Line()?.StartsWith("At the helm") == true, sea.Line() ?? "no line");
+        var bearing = Helm.Bearing("port:druitt");
+        sea.Heading = bearing;
+        var (along, from) = (sea.Along, sea.SeaPosition);
+        await Frames(120);
+        Check(sea.Along > along && sea.SeaPosition.DistanceTo(from) > 10, $"steering true she makes way: {sea.Along - along:P2} of the leg, {sea.SeaPosition.DistanceTo(from):0}m");
+        Check(sea.Line()!.Contains("steady on course"), sea.Line()!);
+        sea.Heading = bearing + Math.PI;
+        along = sea.Along;
+        await Frames(120);
+        Check(sea.Along < along, $"steer away and she loses ground: {sea.Along - along:P2}");
+        sea.LeaveHelm();
+        await Frames(5);
+        Check(!sea.AtHelm && p.Seat is null, "you give her back to the bosun");
+    }
+
+    /// <summary>What people think of the hero: the meter starts at nothing, deeds move it where they're done, and each town and person keeps their own view.</summary>
+    async Task TheRepute()
+    {
+        var (p, hud, r, s) = (main.PlayerNode, main.HudNode, main.ReputationLog, main.Standing);
+        await Teleport(new Vector3(0, 0, 0));
+        await Frames(50);
+        Check(hud.ReputeNumber == "0" && Mathf.IsZeroApprox(hud.ReputeReach), $"a stranger in Tristinwold: the meter reads {hud.ReputeNumber}");
+        s.Good(8, "a test of good deeds");
+        await Frames(50);
+        Check(hud.ReputeNumber.StartsWith('+') && hud.ReputeReach > 0, $"a good deed in town moves it up: {hud.ReputeNumber}");
+        var here = hud.ReputeNumber;
+        await Teleport(new Vector3(-900, 0, -262));
+        await Frames(50);
+        Check(hud.ReputeNumber != here, $"it's a different number in Druitt, which only heard of it: {hud.ReputeNumber} after {here}");
+        s.Evil(25, "a test of bad deeds");
+        await Frames(50);
+        Check(hud.ReputeNumber.StartsWith('-') && hud.ReputeReach > 0, $"a bad one there sends it down: {hud.ReputeNumber}");
+        await Teleport(new Vector3(0, 0, 0));
+        await Frames(50);
+        Check(hud.ReputeNumber != "0" && r.Own(ReputationBook.Capital) > 0, $"and home again, the city's own view stands, whatever it's heard: {hud.ReputeNumber}");
+        var keeper = main.Locals.First(x => Shops.All.Any(o => o.Id == x.Npc.Id));
+        r.Robbed(keeper.Npc.Id, keeper.Npc.Name);
+        Check(r.Person(keeper.Npc.Id) == ReputationBook.RobRegard, $"and {keeper.Npc.Name} has their own opinion");
+        await Teleport(keeper.GlobalPosition + new Vector3(1.5f, 0, 1.5f));
+        await Frames(10);
+        r.People.Remove(keeper.Npc.Id);
+        r.Towns[ReputationBook.Capital] = 4;
+        r.Country = 4;
+        r.People[keeper.Npc.Id] = 4;
+        Check(main.RepBuy(keeper) < 0.9 && main.RepSell(keeper) > 1.1, $"loved, you pay {main.RepBuy(keeper):P0} of the price and get {main.RepSell(keeper):P0} of the offer");
+        main.Talk(keeper);
+        Check(hud.TalkText.Contains("lights up"), "and they're glad to see you");
+        hud.EndTalk();
+        r.Towns[ReputationBook.Capital] = -5;
+        r.Country = -5;
+        r.People[keeper.Npc.Id] = -5;
+        Check(main.RepBuy(keeper) > 1.1 && main.RepSell(keeper) < 0.9, $"hated, you pay {main.RepBuy(keeper):P0} and get {main.RepSell(keeper):P0}");
+        main.Talk(keeper);
+        Check(hud.TalkText.Contains("very still") && hud.Choose("Let me see what you have"), "and they don't want you there");
+        Check(hud.TalkText.Contains("coin's no good"), "and they won't serve you");
+        hud.EndTalk();
+        (r.Towns[ReputationBook.Capital], r.Country, r.People[keeper.Npc.Id]) = (0, 0, 0);
+    }
+
+    /// <summary>Turlin: the meeting at the edge of the wood, the fight, the wings at a quarter of his blood, and what each ending does.</summary>
+    async Task TheRival()
+    {
+        var (p, hud, t, f) = (main.PlayerNode, main.HudNode, main.ForestLog.Turlin, main.ForestNode!);
+        var edge = new Vector3((float)Northwood.TurlinX, 0, (float)Northwood.TurlinZ - 26);
+        await Teleport(edge);
+        await Until(() => t.Met && hud.Talking, 6);
+        Check(t.Met && hud.Talking && hud.TalkTitle == "Turlin" && !Northwood.NearVillage(p.GlobalPosition.X, p.GlobalPosition.Z), "at the edge of the wood, before the village, Turlin steps out");
+        Check(f.RivalBody is { } first && first.Stats.Name == "Turlin" && first.Stats.MaxHealth < 400, $"and he isn't too much for a hero starting out: {f.RivalBody?.Stats.MaxHealth:0} health");
+        Check(hud.Choose("Fight."), "you can refuse to talk");
+        await Frames(10);
+        var e = f.RivalBody!;
+        Check(e.FightingCompany, "and he comes at you");
+        var (crowns, health) = (p.Crowns, p.Stats.MaxHealth);
+        e.TakeHit(e.Stats.Health - e.Stats.MaxHealth * 0.2, DamageKind.Physical, AttackKind.Weapon, false, p);
+        await Frames(4);
+        var high = e.GlobalPosition.Y;
+        await Until(() => e.GlobalPosition.Y > high + 8, 4);
+        Check(IsInstanceValid(e) && e.GlobalPosition.Y > high + 8, $"at a quarter of his blood he grows wings and goes: {e.GlobalPosition.Y - high:0.0}m up");
+        await Until(() => f.RivalBody is null, 10);
+        Check(f.RivalBody is null && t.Deaths == 0 && t.Edge == 1, "let him go and he's gone, whole, and you're stronger for beating him");
+        await Frames(2);
+        p.Fit();
+        Check(p.Stats.MaxHealth > health, $"which is for good: {health:0} health to {p.Stats.MaxHealth:0}");
+        t.NextAt = 0;
+        main.MeetTurlinForTest();
+        await Frames(2);
+        hud.Choose("Fight.");
+        await Frames(10);
+        e = f.RivalBody!;
+        var before = t.Form.Demon;
+        e.TakeHit(1e7, DamageKind.Fire, AttackKind.Spell, false, p);
+        await Until(() => f.RivalBody is null, 4);
+        Check(t.Deaths == 1 && t.Self.Name == "Turlin" && t.Form.Demon > before && t.Self.Scars.Count == 1, $"catch him and he dies, and comes back less himself: {t.Form.Is}");
+        for (var i = 0; i < 6; i++) t.HeLost("test", DamageKind.Fire, 1, 0);
+        t.NextAt = 0;
+        await Teleport(edge);
+        main.MeetTurlinForTest();
+        await Frames(2);
+        Check(f.RivalBody is { } last && last.Kind.Id == "giant_ape" && last.Stats.Name == "Turlin", $"still Turlin at the last, in a {f.RivalBody?.Kind.Name}");
+        hud.EndTalk();
+        f.RivalBody?.QueueFree();
+        await Frames(2);
+    }
+
     /// <summary>Creatures stand on the ground under each foot, look at the hero, and swing their tails.</summary>
     async Task PoiseTest()
     {
@@ -2208,7 +2413,7 @@ public partial class SelfTest(Main main) : Node
         await Passes(40);
         var after = seen.HeadBasis.Y;
         var swung = Mathf.RadToDeg(before.AngleTo(after));
-        Check(turned > 0.9f && swung > 20 && footing.HeadTurn > 10, $"it watches the hero: its muzzle swung {swung:0}° as they crossed in front (a {footing.HeadTurn:0}° turn of the neck now)");
+        Check(turned > 0.9f && swung > 20 && footing.HeadTurn > 10, $"it watches the hero: its muzzle swung {swung:0}Â° as they crossed in front (a {footing.HeadTurn:0}Â° turn of the neck now)");
         await Teleport(horse.GlobalPosition - ahead * 30);
         await Passes(40);
         Check(footing.Gazing < 0.1f, "and looks away when they're gone");
@@ -2217,7 +2422,7 @@ public partial class SelfTest(Main main) : Node
         await Passes(3);
         var flung = Math.Abs(footing.TailSwing);
         await Passes(60);
-        Check(flung > 4 && Math.Abs(footing.TailSwing) < flung * 0.5f, $"a sharp turn flings its tail {flung:0}° aside, and it settles ({Math.Abs(footing.TailSwing):0}° after)");
+        Check(flung > 4 && Math.Abs(footing.TailSwing) < flung * 0.5f, $"a sharp turn flings its tail {flung:0}Â° aside, and it settles ({Math.Abs(footing.TailSwing):0}Â° after)");
         horse.QueueFree();
         var wolf = Body.For("wolf") as Creature;
         var dragon = Body.For("dragon") as Creature;
@@ -2339,14 +2544,14 @@ public partial class SelfTest(Main main) : Node
         main.Talk(Who("tristinwold/harbourmaster"));
         Check(hud.Choose("Sign me on") && sea.Rank == SeaRank.Deckhand, "Captain Marit Hale signs you on as a deckhand");
         hud.EndTalk();
-        main.SailForTest("port:saltmere");
+        main.SailForTest("port:druitt");
         await Frames(30);
         var at = main.AtSeaNode;
         var v = sea.Voyage;
         if (at is null || v is null) { Check(false, "a voyage under way"); return; }
         (v.Out, v.Home) = ([0.05], []);
         await Until(() => p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, 8);
-        Check(p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, $"aboard the Gull, standing on her deck out at sea ({v.LegSeconds / 60:0} minutes to Saltmere)");
+        Check(p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, $"aboard the Gull, standing on her deck out at sea ({v.LegSeconds / 60:0} minutes to Druitt)");
         await Until(() => at.Pending > 0, 10);
         Check(at.Pending > 0 && hud.Tracked.Any(t => t.Contains("On deck:")), "there's work on deck, and the tracker says what");
         at.WorkForTest();
@@ -2365,7 +2570,7 @@ public partial class SelfTest(Main main) : Node
         // The port, and home.
         at.Along = 0.999;
         await Until(() => v.InPort && at.Agent is not null, 8);
-        Check(v.InPort && at.Agent is not null && hud.Heard("Land ho: Saltmere"), "Saltmere, and its harbour master comes aboard");
+        Check(v.InPort && at.Agent is not null && hud.Heard("Land ho: Druitt"), "Druitt, and its harbour master comes aboard");
         main.Talk(at.Agent!);
         Check(hud.Choose("Cast off for home") && v.Homeward, "you cast off for home");
         purse = p.Crowns;
@@ -2377,7 +2582,7 @@ public partial class SelfTest(Main main) : Node
 
         // Promotion, then a ship taken by pirates, and their offer.
         sea.Voyages = SeaBook.ToBosun - 1;
-        main.SailForTest("port:saltmere");
+        main.SailForTest("port:druitt");
         await Frames(20);
         sea.Voyage!.Out = [];
         sea.Voyage!.Home = [];
@@ -2389,7 +2594,7 @@ public partial class SelfTest(Main main) : Node
         await Until(() => sea.Voyage is null, 8);
         Check(sea.Rank == SeaRank.Bosun && hud.Heard("makes you bosun"), "three voyages home, and Marit makes you bosun");
 
-        main.SailForTest("port:brinehollow");
+        main.SailForTest("port:greywater");
         await Frames(20);
         at = main.AtSeaNode!;
         (sea.Voyage!.Out, sea.Voyage!.Home) = ([0.05], []);
@@ -2444,13 +2649,13 @@ public partial class SelfTest(Main main) : Node
 
         // Tristinwold has always traded with its nearest market towns; everything else is for the hero to find.
         var old = trade.Routes.Select(m => m.Name).ToList();
-        Check(old.Count == 2 && trade.Routes.All(m => main.Explored.Rumored.Contains(m.Id) || main.Explored.Discovered.Contains(m.Id)),
+        Check(old.Count == 3 && trade.Routes.All(m => main.Explored.Rumored.Contains(m.Id) || main.Explored.Discovered.Contains(m.Id)),
             $"Tristinwold's old trade routes are open from the start: {string.Join(" and ", old)} (on the map)");
         Check(hud.Tracked.Any(t => t.StartsWith("Starter work: the caravan yard")), "and a starter's job on the tracker: the caravan yard is hiring guards");
         var village = main.World.SettlementsNear(0, 0, 2500).Where(s => TownMarkets.Trades(s) && !trade.Towns.ContainsKey(s.Id)).OrderBy(s => s.DistanceTo(0, 0)).First();
         await Teleport(new Vector3((float)village.X + 5, 0, (float)village.Z + 5));
         await Frames(30);
-        Check(trade.Routes.Any(m => m.Id == village.Id) && trade.Routes.Count() == 3, $"finding {village.Name} opens a third trade route");
+        Check(trade.Routes.Any(m => m.Id == village.Id) && trade.Routes.Count() == 4, $"finding {village.Name} opens a fourth trade route");
         for (var run = 1; run <= TradeBook.RunsToOwn; run++)
         {
             await Teleport(Main.YardAt + new Vector3(0, 0, 4));
@@ -2573,7 +2778,7 @@ public partial class SelfTest(Main main) : Node
         main.Talk(Who("tristinwold/caravans"));
         Check(hud.Choose("Any caravans that need a guard") && hud.TalkText.Contains("steel") && hud.Options.Any(o => o.StartsWith("The short road"))
               && !hud.Options.Any(o => o.StartsWith("To ")), "after that the short road is there any day, but Garrick won't send a green guard down the long roads");
-        Check(hud.Choose("The short road") && trade.Guarding is { Bandits: 2 }, "and you can take the short road again");
+        Check(hud.Choose("The short road") && hud.Choose("Guard") && trade.Guarding is { Bandits: 2 }, "and you can take the short road again");
         trade.Guarding = null; // (not today, after all: the next job's wagon replaces it)
         hud.EndTalk();
         p.Hero.Level = 8;

@@ -72,6 +72,8 @@ public partial class Main
     IEnumerable<(string, Action)> SeaTalk(Person person)
     {
         var id = person.Npc.Id;
+        if (id is HarbourMaster or Smuggler) yield return ("Who's the worst on the water?", () => Say(person,
+            "Black Ysolde's the one you'll meet. The Teeth are hers, and she's bad enough. But she answers to the Dread Pirate Soren of the Red Reckoning, and he's the worst name there is: a sword like a broken gate, and a fist of iron. After him it's Lu Wukong of the Drunken Monkey, the ape king's own brother, who'll rob you singing. They keep to the far water. Mostly."));
         if (id == HarbourMaster) foreach (var o in HarbourTalk(person)) yield return o;
         else if (id == Shipwright) foreach (var o in YardWork(person)) yield return o;
         else if (id == Smuggler) foreach (var o in SmugglerTalk(person)) yield return o;
@@ -104,7 +106,7 @@ public partial class Main
             yield return ("Sign me on.", () =>
             {
                 s.SignOn();
-                Say(person, $"Deckhand, then. You haul what the bosun says, you sleep where he says, and you're paid when we're home: {s.PayFor(Seas.Ports[0])} crowns for the Saltmere run, more for the long ones. Come and see me when you want a ship.");
+                Say(person, $"Deckhand, then. You haul what the bosun says, you sleep where he says, and you're paid when we're home: {s.PayFor(Seas.Ports[0])} crowns for the Druitt run, more for the long ones. Come and see me when you want a ship.");
                 Save();
             });
             yield break;
@@ -244,10 +246,11 @@ public partial class Main
             return;
         }
         var ship = _sea.Ship;
+        var flag = Seas.Flag(v.Flag);
         _sea.Taken();
         _atSea?.ClearDeck();
-        _hud.Talk("Black Ysolde, captain of the Widow's Tooth",
-            $"\"You fought well for a {(_sea.Rank == SeaRank.Landsman ? "landsman" : SeaBook.Title(_sea.Rank))}. {ship}'s ours now, and her cargo. There's a place in my crew for someone who can fight. Or there's the sea.\"",
+        _hud.Talk(flag is { } f ? $"{char.ToUpperInvariant(f.Captain[0])}{f.Captain[1..]}, of {f.Ship}" : "Black Ysolde, captain of the Widow's Tooth",
+            flag?.Offer ?? $"\"You fought well for a {(_sea.Rank == SeaRank.Landsman ? "landsman" : SeaBook.Title(_sea.Rank))}. {ship}'s ours now, and her cargo. There's a place in my crew for someone who can fight. Or there's the sea.\"",
             ("Join the pirates.", () =>
             {
                 _sea.JoinPirates();
@@ -275,6 +278,14 @@ public partial class Main
         }
         else
         {
+            if (Seas.Flag(_sea.Voyage?.Flag) is { } f && _atSea?.ReachedFlag == true)
+            {
+                var first = !_sea.Humbled.Contains(f.Id);
+                var price = _sea.Humble(f);
+                _player.Crowns += price;
+                if (first) Take([(f.Loot, 1)]);
+                _hud.Toast($"{f.Escape} {(first ? $"The price on {f.Captain}: {price} crowns, and {Items.Get(f.Loot)!.Name} left behind on your deck." : $"+{price} crowns.")}", 12);
+            }
             _sea.Repel();
             var bounty = _sea.Rank >= SeaRank.FirstMate ? 15 + _sea.Voyage!.Leagues * 10 : 0;
             _player.Crowns += bounty;
@@ -332,10 +343,11 @@ public partial class Main
         foreach (var (g, n) in _sea.Hold.Where(c => c.Value > 0).ToList())
             options.Add(($"Sell {n} {CityEconomy.Info(g).Name} (they pay {m.Pays(g)} a load{(m.Wants.Contains(g) ? ", and they want it" : "")})", () =>
             {
-                var crowns = (int)Math.Round(m.Sell(g, n) * PerkTrade);
+                var crowns = (int)Math.Round(m.Sell(g, n) * PerkTrade * RepSellAt(m.Id));
                 _sea.Hold.Remove(g);
                 _player.Crowns += crowns;
                 _sea.Profit += crowns;
+                TradedAt(m.Id, m.Name);
                 Sound.Ui("coin", -2);
                 Save();
                 TradeAtPort(person, m);
@@ -343,11 +355,12 @@ public partial class Main
         foreach (var g in m.Makes.Where(g => m.ForSale(g) > 0 && _sea.Room > 0))
         {
             var n = Math.Min(Math.Min(_sea.Room, m.ForSale(g)), 8);
-            options.Add(($"Buy {n} {CityEconomy.Info(g).Name} ({m.Cost(g, n)} crowns; Tristinwold pays about {ExchangePays(g)} a load)", () =>
+            options.Add(($"Buy {n} {CityEconomy.Info(g).Name} ({(int)Math.Round(m.Cost(g, n) * RepBuyAt(m.Id))} crowns; Tristinwold pays about {ExchangePays(g)} a load)", () =>
             {
-                var cost = m.Cost(g, n);
+                var cost = (int)Math.Round(m.Cost(g, n) * RepBuyAt(m.Id));
                 if (_player.Crowns < cost) { _hud.Toast("You can't afford it.", 3); return; }
-                _player.Crowns -= m.Buy(g, n);
+                m.Buy(g, n);
+                _player.Crowns -= cost;
                 _sea.Profit -= cost;
                 _sea.Hold[g] = _sea.Hold.GetValueOrDefault(g) + n;
                 Save();
@@ -510,6 +523,8 @@ public partial class Main
 
     /// <summary>For the self-test: a voyage begun without the talking, and the yard's work without the walking.</summary>
     public void SailForTest(string port) => Embark(null, Seas.Get(port)!);
+    /// <summary>For the self-test: the voyage under way counts as one of exploration.</summary>
+    public void ExploreForTest() { if (_sea.Voyage is { } v) v.Explore = true; }
     public void ProwlForTest() { if (_sea.Prowl(_lootRng) is { } v) GoToSea(v); }
     public void PlankForTest(bool building = false)
     {
@@ -662,8 +677,152 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         main.HudNode.Toast(_jobs.Count == 0 ? $"The deck's in order ({voyage.Chores}/{voyage.ChoresDue} this voyage). The bosun nods." : $"Done ({voyage.Chores}/{voyage.ChoresDue} this voyage).", 3);
     }
 
+    // ---- at the wheel, on a voyage of exploration ------------------------------------------------------------
+
+    Node3D? _sea, _goal;
+    MeshInstance3D? _wheel;
+    readonly Dictionary<(int, int), Node3D> _patches = [];
+    readonly HashSet<int> _charted = [];
+    bool _helm;
+    double _heading, _rudder, _sail = 1, _knock;
+    Vector2 _at;
+
+    public bool AtHelm => _helm;
+    public double Heading { get => _heading; set => _heading = value; }
+    public Vector2 SeaPosition => _at;
+    double Bearing => Helm.Bearing(voyage.Port);
+    static Vector3 WheelAt => new(Stage.X, DeckY, Stage.Z - 8);
+
+    bool CanSteer => voyage.Explore && !voyage.InPort && _raider is null;
+
+    /// <summary>E at the wheel: take her, or give her back.</summary>
+    public (string Verb, Action Act)? HelmAction() => _helm ? ("give the wheel back to the bosun", LeaveHelm) : null;
+
+    public void TakeHelm()
+    {
+        if (!CanSteer || _helm) return;
+        _helm = true;
+        BuildWheel();
+        main.PlayerNode.Face(main.PlayerNode.GlobalPosition + Vector3.Back);
+        main.PlayerNode.SitAt(() => new Vector3(Stage.X, DeckY + 0.15f, Stage.Z - 9.3f));
+        main.HudNode.Toast("You take the wheel. A and D steer, W for full sail, S to shorten sail near rocks. Follow the compass in the tracker. E to give her back.", 9);
+    }
+
+    public void LeaveHelm()
+    {
+        if (!_helm) return;
+        _helm = false;
+        main.PlayerNode.StandUp(WheelAt + Vector3.Back * 1.5f + Vector3.Up * 0.4f);
+    }
+
+    void BuildWheel()
+    {
+        if (_wheel is not null) return;
+        var wood = new StandardMaterial3D { AlbedoColor = new Color("#5a3a22"), Roughness = 0.7f };
+        _wheel = new MeshInstance3D { Mesh = new TorusMesh { InnerRadius = 0.5f, OuterRadius = 0.6f, Rings = 24, RingSegments = 10 }, MaterialOverride = wood, Position = new Vector3(Stage.X, DeckY + 1.25f, Stage.Z - 8.3f), Rotation = new Vector3(Mathf.Pi / 2, 0, 0) };
+        for (var i = 0; i < 4; i++)
+            _wheel.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.03f, BottomRadius = 0.03f, Height = 1.1f, RadialSegments = 6 }, MaterialOverride = wood, Rotation = new Vector3(Mathf.Pi / 2, i * Mathf.Pi / 4, 0) });
+        AddChild(_wheel);
+        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.25f, 1.2f, 0.25f) }, MaterialOverride = wood, Position = new Vector3(Stage.X, DeckY + 0.6f, Stage.Z - 8.1f) });
+        // The sea round her, in its own frame: it turns and slides past while she stays put on the stage.
+        AddChild(_sea = new Node3D());
+        var land = new StandardMaterial3D { AlbedoColor = new Color("#7d8a4a"), Roughness = 1 };
+        _goal = new Node3D();
+        _sea.AddChild(_goal);
+        _goal.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = 240, Height = 90, RadialSegments = 32, Rings = 12 }, MaterialOverride = land });
+        _goal.AddChild(new Label3D { Text = voyage.PortName, Position = Vector3.Up * 90, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 96, OutlineSize = 16, PixelSize = 0.3f, Modulate = new Color("#ffd27a"), NoDepthTest = true });
+    }
+
+    /// <summary>A patch of the sea, made as she comes to it: its islets and reefs, and foam on the water to show she's moving.</summary>
+    Node3D MakePatch(int px, int pz)
+    {
+        var patch = new Node3D();
+        var sand = new StandardMaterial3D { AlbedoColor = new Color("#c8b47a"), Roughness = 1 };
+        var green = new StandardMaterial3D { AlbedoColor = new Color("#4a6a34"), Roughness = 1 };
+        var rock = new StandardMaterial3D { AlbedoColor = new Color("#3a3a3e"), Roughness = 0.9f };
+        foreach (var m in Helm.In(px, pz, voyage.Port))
+        {
+            var (at, r) = (new Vector3((float)m.X, 0, (float)m.Z), (float)m.Radius);
+            if (m.Reef)
+                for (var i = 0; i < 5; i++)
+                    patch.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = r * 0.42f, Height = r * 0.5f, RadialSegments = 8, Rings = 5 }, MaterialOverride = rock, Position = at + new Vector3(Mathf.Cos(i * 2.4f) * r * 0.6f, 0.5f, Mathf.Sin(i * 2.4f) * r * 0.6f) });
+            else
+            {
+                patch.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = r, Height = r * 0.3f, RadialSegments = 20, Rings = 8 }, MaterialOverride = sand, Position = at });
+                patch.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = r * 0.6f, Height = r * 0.5f, RadialSegments = 16, Rings = 8 }, MaterialOverride = green, Position = at + Vector3.Up * r * 0.1f });
+            }
+        }
+        var foam = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, Mesh = new SphereMesh { Radius = 1, Height = 0.1f, RadialSegments = 6, Rings = 2 }, InstanceCount = 40 };
+        var rng = new Tristinwold.Deviant.Rng((ulong)WorldGen.StableHash($"{px}/{pz}"));
+        for (var i = 0; i < foam.InstanceCount; i++)
+        {
+            var spot = new Vector3((px + (float)rng.NextDouble()) * (float)Helm.Patch, 0.1f, (pz + (float)rng.NextDouble()) * (float)Helm.Patch);
+            foam.SetInstanceTransform(i, new Transform3D(Basis.Identity.Scaled(new Vector3(2 + (float)rng.NextDouble() * 4, 1, 1 + (float)rng.NextDouble() * 2)), spot));
+        }
+        patch.AddChild(new MultiMeshInstance3D { Multimesh = foam, MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(1, 1, 1, 0.7f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded } });
+        return patch;
+    }
+
+    /// <summary>A moment at the wheel: she answers the rudder, sails on, and what's out there comes up to meet her.</summary>
+    double Steer(double delta)
+    {
+        var talking = main.HudNode.Talking;
+        var turn = talking ? 0 : Input.GetAxis("move_right", "move_left");
+        _rudder = Mathf.Lerp(_rudder, turn, Math.Min(1, delta * 2.5));
+        _heading = Mathf.Wrap(_heading + _rudder * Helm.TurnRate * delta, -Math.PI, Math.PI);
+        if (!talking && Input.IsActionPressed("move_back")) _sail = Math.Max(Helm.ReefSail, _sail - delta * 0.6);
+        else if (!talking && Input.IsActionPressed("move_forward")) _sail = Math.Min(1, _sail + delta * 0.6);
+        var dir = new Vector2((float)Math.Sin(_heading), (float)Math.Cos(_heading));
+        _at += dir * (float)(Helm.FullSpeed * _sail * delta);
+        if (_wheel is not null) _wheel.Rotation = new Vector3(Mathf.Pi / 2, (float)_rudder * 2.5f, 0);
+        if (_ship is not null) _ship.Rotation = new Vector3(0, 0, -(float)_rudder * 0.05f);
+
+        var (cx, cz) = ((int)Math.Floor(_at.X / Helm.Patch), (int)Math.Floor(_at.Y / Helm.Patch));
+        foreach (var key in _patches.Keys.Where(k => Math.Abs(k.Item1 - cx) > 3 || Math.Abs(k.Item2 - cz) > 3).ToList())
+        {
+            _patches[key].QueueFree();
+            _patches.Remove(key);
+        }
+        for (var px = cx - 3; px <= cx + 3; px++)
+            for (var pz = cz - 3; pz <= cz + 3; pz++)
+                if (!_patches.ContainsKey((px, pz)))
+                {
+                    var patch = MakePatch(px, pz);
+                    _sea!.AddChild(patch);
+                    _patches[(px, pz)] = patch;
+                }
+        _knock -= delta;
+        for (var px = cx - 1; px <= cx + 1; px++)
+            for (var pz = cz - 1; pz <= cz + 1; pz++)
+                foreach (var m in Helm.In(px, pz, voyage.Port))
+                {
+                    var d = new Vector2((float)m.X - _at.X, (float)m.Z - _at.Y).Length();
+                    if (m.Reef && d < m.Radius + Helm.Clearance && _knock <= 0)
+                    {
+                        _knock = 5;
+                        _at -= dir * 24;
+                        main.Sea.Damage(main.Sea.Hull > Helm.LowestHull + Helm.ReefDamage ? Helm.ReefDamage : 0);
+                        main.HudNode.Toast("She grinds on the reef! The whole ship shudders. Shorten sail and steer clear.", 5);
+                    }
+                    else if (!m.Reef && d < Helm.Charting + m.Radius && _charted.Add(m.Id))
+                    {
+                        voyage.Pay += Helm.ChartPay;
+                        main.HudNode.Toast($"An islet nobody's charted! You mark it down: +{Helm.ChartPay} crowns on your pay.", 5);
+                    }
+                }
+        // The sea's frame, turned and slid so her place in it sits where she does on the stage.
+        var turned = Basis.Identity.Rotated(Vector3.Up, -(float)_heading);
+        _sea!.Transform = new Transform3D(turned, Stage + Vector3.Up * 0.2f - turned * new Vector3(_at.X, 0, _at.Y));
+        var left = (float)((1 - Along) * Helm.FullSpeed * voyage.LegSeconds);
+        var way = new Vector2((float)Math.Sin(Bearing), (float)Math.Cos(Bearing));
+        var goal = _at + way * Math.Min(left + 300, 1300);
+        _goal!.Position = new Vector3(goal.X, 0, goal.Y);
+        return Helm.Pace(_heading, Bearing, _sail);
+    }
+
     public (string Verb, Action Act)? Action(Vector3 pos)
     {
+        if (CanSteer && !_helm && pos.DistanceTo(WheelAt) < 2.6f) return ("take the helm", TakeHelm);
         var job = _jobs.FirstOrDefault(j => !j.Watch && j.Marker.GlobalPosition.DistanceTo(pos) < 2.5f);
         return job is null || voyage.InPort ? null : (job.Verb, () => Complete(job));
     }
@@ -706,7 +865,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         }
         if (voyage.InPort) return;
         // The work never stops: more comes every half-minute or so, and a watch is kept by standing it.
-        if ((_nextJob -= delta) <= 0)
+        if (!_helm && (_nextJob -= delta) <= 0)
         {
             _nextJob = 30 + main.LootRng.NextDouble() * 30;
             if (_jobs.Count < 5) Post();
@@ -717,17 +876,18 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
                 Complete(watch);
         // Work left undone slows her: slack lines, a foul bottom, water in the well.
         var behind = _jobs.Count(j => _clock - j.Posted > 45);
-        var pace = (behind >= 3 ? 0.4 : behind >= 2 ? 0.7 : 1) * ((_surge -= delta) > 0 ? 4 : 1);
-        if (behind >= 2 && (_nag -= delta) <= 0)
+        var pace = (_helm ? Steer(delta) : behind >= 3 ? 0.4 : behind >= 2 ? 0.7 : 1) * ((_surge -= delta) > 0 ? 4 : 1);
+        if (!_helm && behind >= 2 && (_nag -= delta) <= 0)
         {
             _nag = 40;
             main.HudNode.Toast(main.Sea.Outlaw ? "The quartermaster: \"She's dragging like a barge! Work, or walk the plank!\"" : "The bosun: \"Slack lines and water in the well, and she's losing way! Get to it!\"", 5);
         }
-        Along = Math.Min(1, Along + delta * pace / voyage.LegSeconds);
+        Along = Math.Clamp(Along + delta * pace / voyage.LegSeconds, 0, 1);
         if ((_saved += delta) > 30) { _saved = 0; main.Save(); }
-        if (voyage.AttackDue(Along)) Attack();
+        if (voyage.AttackDue(Along)) { LeaveHelm(); Attack(); }
         else if (Along >= 1)
         {
+            LeaveHelm();
             if (voyage.Homeward) main.HomePort();
             else if (voyage.Raid) { } // she got away: nothing to do but wait for the ship to turn
             else
@@ -751,6 +911,9 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         voyage.Sprung = 0;
     }
 
+    /// <summary>This boarding is a named captain's, come in person.</summary>
+    public bool ReachedFlag { get; private set; }
+
     /// <summary>A sail on the horizon, then she's alongside and they're over the rail.</summary>
     void Attack()
     {
@@ -762,7 +925,9 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         var tween = _raider.CreateTween();
         tween.TweenProperty(_raider, "position", to, 9).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
         tween.TweenCallback(Callable.From(() => Board(side)));
-        var foe = voyage.Raid ? (voyage.Homeward ? "A company patrol! Marines over the rail" : $"There she is: {voyage.PortName}. Grapples! Her crew's coming to meet you") : "Pirates! A ship out of the Teeth is closing";
+        var named = voyage.Raid ? null : Seas.Flag(voyage.Flag);
+        ReachedFlag = named is not null;
+        var foe = voyage.Raid ? (voyage.Homeward ? "A company patrol! Marines over the rail" : $"There she is: {voyage.PortName}. Grapples! Her crew's coming to meet you") : named?.Hail ?? "Pirates! A ship out of the Teeth is closing";
         main.HudNode.Toast($"{foe}. All hands!", 7);
     }
 
@@ -775,8 +940,9 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         {
             var leader = i == 0 && !voyage.Raid && voyage.Pirates >= 5;
             var spot = new Vector3(Stage.X + side * 2.6f, DeckY + 0.8f, Stage.Z - 8 + i * 16f / Math.Max(1, voyage.Pirates - 1));
-            var e = Enemy.Create(Bestiary.Get(leader ? "pirate_captain" : kind), spot, danger);
-            if (leader) e.Stats.Name = "Black Ysolde's bosun";
+            var named = i == 0 && ReachedFlag ? Seas.Flag(voyage.Flag) : null;
+            var e = Enemy.Create(Bestiary.Get(named?.Kind ?? (leader ? "pirate_captain" : kind)), spot, danger);
+            if (leader && named is null) e.Stats.Name = "Black Ysolde's bosun";
             e.Roam = 6;
             main.AddEnemy(e);
             e.Provoke(main.PlayerNode);
@@ -829,6 +995,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         var s = main.Sea;
         var where = voyage.Raid ? $"hunting {voyage.PortName}" : voyage.Homeward ? "homeward bound" : voyage.InPort ? $"in port at {voyage.PortName}" : $"bound for {voyage.PortName}";
         var hull = s.Hull < 100 ? $", hull {s.Hull:0}%" : "";
+        if (_helm) return $"At the helm of {(s.Outlaw ? SeaBook.PirateShip : s.Ship)}: {Helm.Steer(_heading, Bearing)}. {voyage.PortName} {Along:P0} of the way, sail {_sail:P0}, hull {s.Hull:0}%";
         if (_raider is not null) return $"At sea aboard {(s.Outlaw ? SeaBook.PirateShip : s.Ship)}: boarders on deck! {_boarders.Count} left{hull}";
         var left = (int)Math.Ceiling((1 - Along) * voyage.LegSeconds / 60);
         var next = _jobs.OrderBy(j => j.Posted).FirstOrDefault();

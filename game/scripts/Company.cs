@@ -80,13 +80,15 @@ public partial class Main
     void Summon(double seconds)
     {
         var at = _player.GlobalPosition - _player.GlobalTransform.Basis.Z * 2;
-        var familiar = Enemy.Create(Bestiary.Get("familiar"), at with { Y = City.FloorAt(at) + 0.3f }, look: "familiar");
+        var spirit = _player.Class.Id == "Spiritcaller";
+        var familiar = Enemy.Create(Bestiary.Get("familiar"), at with { Y = City.FloorAt(at) + 0.3f }, look: spirit ? "spirit_beast" : "familiar");
+        if (spirit) familiar.Stats.Name = "Spectral Beast";
         familiar.Leader = _player;
         familiar.Expires = seconds;
         familiar.RefreshPlate();
         AddEnemy(familiar);
         Effects.Burst(this, at + Vector3.Up, DamageKind.Shock, 2);
-        _hud.Toast("A familiar steps out of the dark to fight beside you.");
+        _hud.Toast(spirit ? "A pale shape pads out of the air and stands beside you." : "A familiar steps out of the dark to fight beside you.");
     }
 
     /// <summary>A dragon has turned to the Rift: news if it's near, and a warning if it was yours.</summary>

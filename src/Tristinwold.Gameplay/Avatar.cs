@@ -38,6 +38,8 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
     public string Sleeves { get; init; } = "Class";
     /// <summary>What's worn over the clothes that isn't armour: "Class" (the class's own kit) or one of <see cref="Wears"/>.</summary>
     public string Wear { get; init; } = "Class";
+    /// <summary>The plant people's two looks: leaf and root in their "Spring", bare wood and branch in their "Fall".</summary>
+    public string Form { get; init; } = "Spring";
 
     public static readonly (string Name, float Width)[] Builds = [("Slim", 0.9f), ("Average", 1f), ("Broad", 1.12f)];
     public static readonly string[] Beards = ["none", "Stubble", "Short", "Long", "Forked", "Braided"];
@@ -67,6 +69,7 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
         ("Class", ""), ("White", "#e8e4d8"), ("Linen", "#cdbf9f"), ("Sand", "#b09a70"), ("Russet", "#8a4a26"), ("Crimson", "#8a2020"), ("Rose", "#b86a7a"),
         ("Gold", "#c49a3a"), ("Olive", "#6a6a30"), ("Forest", "#2f5a34"), ("Teal", "#2a6a6a"), ("Royal", "#2a3f8a"), ("Violet", "#5a3a7a"), ("Slate", "#4a5058"), ("Charcoal", "#2e2e32"), ("Black", "#17171a"),
     ];
+    public static readonly string[] Forms = ["Spring", "Fall"];
     public static readonly string[] SleeveStyles = ["Class", "Long", "Short"];
     public static readonly string[] Wears = ["Class", "Plain", "Vest", "Jerkin", "Robe", "Wrapped robe", "Sash", "Cloak"];
     public static string? ClothHex(string name) => Cloths.FirstOrDefault(c => c.Name == name).Hex is { Length: > 0 } hex ? hex : null;
@@ -151,7 +154,7 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
             "Paladin" or "Knight" => ("Knight", "Knight_Helmet"),
             "Ranger" or "Assassin" or "Saboteur" or "Rogue_Hooded" => ("Rogue_Hooded", "none"),
             "Wizard" or "Mage" => ("Mage", "Mage_Hat"),
-            "Warlock" or "Sorcerer" or "Poet" or "Scribe" => ("Mage", "none"),
+            "Warlock" or "Sorcerer" or "Poet" or "Scribe" or "Stormdruid" or "Spiritcaller" => ("Mage", "none"),
             _ => ("Rogue", "none"),
         };
         return new(figure, figure, figure, figure, hat, "Natural", "Natural", "Average") { Headwear = figure == "Rogue_Hooded" ? "Hood" : "none" };
@@ -160,7 +163,7 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
     public string Encode() => $"head={Head};body={Body};arms={Arms};legs={Legs};hat={Hat};outfit={Outfit};skin={Skin};height={Height}" +
                               $";race={Race};dragon={Dragon};half={Half};build={Build};beard={Beard};hair={Hair};horns={Horns}" +
                               $";sex={Sex};age={Age};face={Face};eyes={Eyes};style={Style};headwear={Headwear}" +
-                              $";top={Top};bottom={Bottom};sleeves={Sleeves};wear={Wear}";
+                              $";top={Top};bottom={Bottom};sleeves={Sleeves};wear={Wear};form={Form}";
 
     /// <summary>Reads a saved look; anything missing or unknown is left as the class would have it. Null for none.</summary>
     public static Avatar? Parse(string? text, string classId = "")
@@ -193,6 +196,7 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
             Bottom = Pick("bottom", "Class", Cloths.Select(c => c.Name)),
             Sleeves = Pick("sleeves", "Class", SleeveStyles),
             Wear = Pick("wear", "Class", Wears),
+            Form = Pick("form", "Spring", Forms),
         };
     }
 
@@ -221,6 +225,7 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
             Bottom = Cloths[rng.Next(Cloths.Length)].Name,
             Sleeves = Any(SleeveStyles),
             Wear = Any(Wears),
+            Form = Any(Forms),
         };
     }
 }

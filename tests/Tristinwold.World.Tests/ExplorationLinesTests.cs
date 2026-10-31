@@ -30,7 +30,7 @@ public class ExplorationLinesTests
     public void There_is_only_so_much_to_chart_and_every_new_port_can_be_traded_with()
     {
         var sea = new SeaBook { Rank = SeaRank.Captain };
-        foreach (var p in Seas.Uncharted)
+        foreach (var p in Seas.ToChart)
         {
             Assert.NotEmpty(p.Makes);
             Assert.NotEmpty(p.Wants);
@@ -41,6 +41,7 @@ public class ExplorationLinesTests
         Assert.Null(sea.NextChart);
         Assert.Equal("master of the charts", SeaBook.Explorer(sea.Charted.Count));
         Assert.Equal(Seas.Uncharted.Count + Seas.Ports.Count(p => p.Leagues <= sea.Reach), sea.Ports.Count());
+        Assert.Equal(["port:druitt", "port:greywater"], new SeaBook { Rank = SeaRank.Deckhand }.Ports.Select(p => p.Id)); // all anyone knows, to begin with
         Assert.Equal(Seas.Ports.Concat(Seas.Uncharted).Count(), Seas.Ports.Concat(Seas.Uncharted).Select(p => p.Id).Distinct().Count());
     }
 

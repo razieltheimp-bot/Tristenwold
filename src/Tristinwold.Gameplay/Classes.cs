@@ -3,7 +3,7 @@ using Tristinwold.Deviant;
 namespace Tristinwold.Gameplay;
 
 /// <summary>The five callings a character can follow: the way of the blade, of the shadow, of magic, of the word and the song, or of the workshop.</summary>
-public enum Calling { Warrior, Rogue, Mage, Bard, Artificer }
+public enum Calling { Warrior, Rogue, Mage, Bard, Artificer, Druid }
 
 /// <summary>
 /// One of a class's moves. <paramref name="Power"/> is base damage (or, for a heal, the share of health
@@ -194,6 +194,31 @@ public static class Classes
             new("merge", "Merge", "Climb inside your golem and wear it: Protect and Shell, and your blows carry its weight, for a while.", AttackKind.Spell, 40, 30, 0.5, 0, Seconds: 14),
             new("overdrive", "Overdrive", "The engine opened wide: you and your golem move and strike like lightning for a while, and a ship under you surges ahead.", AttackKind.Spell, 0, 0, 0.6, 0, Seconds: 12),
             new("tinker", "Tinker", "You fit ships with modules at the shipyard (a bilge pump that halves what boarders hole; light sails that cut a quarter off every leg), and your golem is sturdier.", AttackKind.Spell, 0, 0, 0.25, 0)),
+        // ---- druids ----
+        new("Stormdruid", "Elemental Druid", Calling.Druid,
+            "The wood's own weather in your hands. Calls down fire, frost and lightning, and the ground itself, and every storm answers to you.",
+            125, 165, 100, 30,
+            new("bolt", "Nature's Bolt", "A bolt of your element at the foe you face, up to 28 m.", AttackKind.Spell, 14, 0.8, 25, 28),
+            new("blast", "Wrath of the Wild", "A burst of your element where the foe stands, hurting everything near it.", AttackKind.Spell, 40, 6, 34, 28),
+            Attune,
+            new("meteor", "Heart of the Storm", "The sky falls on the foe you face and all around it.", AttackKind.Spell, 0, 0, 105, 30, DamageKind.Shock),
+            new("arcane_mastery", "Old Weather", "Stronger spells and a deeper well of mana.", AttackKind.Spell, 0, 0, 0.3, 0)),
+        new("Shapeshifter", "Shapeshifter", Calling.Druid,
+            "Fights as the beasts fight. Starts with the wolf, and learns any beast it studies by fighting enough of them: bear, boar, rat and on and on. Nothing undead, and no dragons.",
+            160, 90, 150, 40,
+            new("flurry", "Claw and Fang", "Quick blows; every third one hits twice as hard.", AttackKind.Weapon, 0, 0.45, 15, 2.2),
+            new("flying_kick", "Pounce", "Leap at a foe up to 10 m away and bring them down hard.", AttackKind.Weapon, 25, 6, 24, 10),
+            new("shift", "Beast Form", "Take the shape of a beast you've studied, cycling through them, and back to your own. Stronger, tougher, and it stays until you change.", AttackKind.Weapon, 0, 1.5, 0.35, 0),
+            new("hundred_fists", "Feeding Frenzy", "Eight savage blows in a heartbeat on the foe in front of you.", AttackKind.Weapon, 0, 0, 12, 3),
+            new("evasion", "Animal Instinct", "A chance to slip any blow entirely.", AttackKind.Weapon, 0, 0, 0.2, 0)),
+        new("Spiritcaller", "Spiritcaller", Calling.Druid,
+            "Speaks to what's left when the body's gone. Sends spirits of the wild to fight, and draws the life out of anything that stands against them.",
+            120, 170, 95, 30,
+            new("eldritch_blast", "Spirit Bolt", "A bolt of pale spirit-fire, up to 26 m.", AttackKind.Spell, 12, 0.75, 24, 26, DamageKind.Shock),
+            new("drain_life", "Soul Tether", "Pull the life out of a foe and keep it.", AttackKind.Spell, 30, 5, 30, 20, DamageKind.Frost),
+            new("familiar", "Spectral Beast", "A spectral animal fights beside you for half a minute.", AttackKind.Spell, 40, 25, 0, 0, Seconds: 30),
+            new("soul_harvest", "The Pack Returns", "Every spirit of the wood falls on the foes around you.", AttackKind.Spell, 0, 0, 60, 10, DamageKind.Frost),
+            new("dark_pact", "Spirit Debt", "Every kill restores health and mana.", AttackKind.Spell, 0, 0, 0.1, 0)),
         new("Saboteur", "Saboteur", Calling.Artificer,
             "The wrong kind of artificer. A wrench that stuns, smoke caltrops, spring traps, and a nose for parts: breaks gear and wrecks down for the black market, and plants trackers on wagons for an ambush.",
             135, 70, 150, 40,
@@ -225,6 +250,7 @@ public static class Classes
         Calling.Rogue => "the Velvet Knives",
         Calling.Bard => "the Bards' College",
         Calling.Artificer => "the Brass Foundry",
+        Calling.Druid => "the Root Circle",
         _ => "the Magi Archive",
     };
 }

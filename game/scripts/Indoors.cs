@@ -68,6 +68,13 @@ public partial class Main
 /// </summary>
 public partial class Indoors(Main main, string kind, int seed) : Node3D
 {
+    public bool IsTavern => kind == "tavern";
+    /// <summary>Where a tavern's business is: the bar, the card table, the dice table and the hearth.</summary>
+    public Vector3 Bar { get; private set; }
+    public Vector3 CardTable => Stage + new Vector3(2, 0, -2);
+    public Vector3 DiceTable => Stage + new Vector3(4.2f, 0, 3);
+    public Vector3 Fireside { get; private set; }
+
     public const float Threshold = 3000;
     static readonly Vector3 Stage = new(0, 3400, 0);
 
@@ -143,6 +150,8 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         AddChild(body);
     }
 
+    void Sign(Vector3 at, string text) => AddChild(new Label3D { Text = text, Position = Stage + at, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 36, OutlineSize = 8, PixelSize = 0.008f, Modulate = new Color("#ffd27a") });
+
     void Light(Vector3 at, float energy, float reach, string colour = "#ffc890") =>
         AddChild(new OmniLight3D { Position = Stage + at, LightColor = new Color(colour), LightEnergy = energy, OmniRange = reach, OmniAttenuation = 1.1f });
 
@@ -171,6 +180,14 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
             case "tavern" or "longhall":
                 Hearth(deep);
                 Slab(new Vector3(-wide / 2 + 1, 0.55f, -1), new Vector3(1, 1.1f, 7), Surface.Timber); // the bar
+                Bar = Stage + new Vector3(-wide / 2 + 2, 0, -1);
+                Fireside = Stage + new Vector3(0, 0, -deep / 2 + 2);
+                if (IsTavern)
+                {
+                    Sign(new Vector3(-wide / 2 + 1, 2.2f, -1), "The Bar");
+                    Sign(new Vector3(2, 1.9f, -2), "Twenty-One");
+                    Sign(new Vector3(4.2f, 1.9f, 3), "Doubles");
+                }
                 Put("dungeon/keg.glb", -wide / 2 + 0.6f, 3, 0.7f);
                 Put("dungeon/keg.glb", -wide / 2 + 0.6f, 4.2f, 0.7f);
                 foreach (var (x, z) in new[] { (2f, -2f), (4.2f, 3f), (0.2f, 2f) })

@@ -29,6 +29,10 @@ public static class Perks
         new("Poet", "Silver Tongue", "Talks a tenth off every price, and a better one into every sale.", Shop: 0.9, Sell: 1.1),
         new("Scribe", "Clerk", "Keeps the books: the Exchange, the yard and the company pay a scribe a fifth more for every job and contract.", Pay: 1.2),
         new("Musician", "Crowd-Pleaser", "Plays the markets as well as the Salt Barrel: loads sell a tenth better in every town and port, and the crowd pays for the song.", Trade: 1.1, Pay: 1.1),
+        // Druids
+        new("Stormdruid", "Weather Eye", "Reads the sky and the land: a fifth more from everything gathered, picked and fished.", Gather: 1.2),
+        new("Shapeshifter", "Pack Sense", "Hunts like what it's hunting: a quarter more from everything gathered off the land.", Gather: 1.25),
+        new("Spiritcaller", "Old Friends", "The dead put in a good word: a tenth more on everything sold.", Sell: 1.1),
         // Artificers
         new("Alchemist", "Refiner", "Refines what the land gives: a fifth more for everything gathered, fished and hunted, and preserving salts that keep loads sound on the road (a tenth more away from home). Once a day, steadies a town's market with reagents.", Gather: 1.2, Sell: 1.1, Trade: 1.1),
         new("EtherAeronaut", "Shipwright's Engineer", "Fits ships with modules at the shipyard; the company pays an engineer a fifth more a voyage, and the yard a fifth more a plank.", Pay: 1.2, Trade: 1.1),

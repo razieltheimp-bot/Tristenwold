@@ -89,6 +89,9 @@ public sealed record GlutJob(string From, string FromName, double FromX, double 
 /// </summary>
 public sealed class TradeBook
 {
+    /// <summary>What driving a caravan pays over guarding it.</summary>
+    public const double DriverShare = 0.25;
+
     /// <summary>The roads and the markets out there: the city's, shared by everyone on a server (see <see cref="CityEconomy.Roads"/>). Pointed at the city's after a load.</summary>
     [JsonIgnore] public Roads Roads { get; set; } = new();
     [JsonIgnore] public Dictionary<string, TownMarket> Towns => Roads.Towns;
@@ -167,12 +170,11 @@ public sealed class TradeBook
     public IEnumerable<TownMarket> Routes => Roads.Known;
 
     /// <summary>
-    /// The routes Tristinwold has always run: its nearest market towns and villages, two of them, known to every hero
-    /// from the start. Everything further out is for the hero to find.
+    /// The routes Tristinwold has always run, known to every hero from the start: the only partners the wood and the
+    /// mountains have ever left it, the treetop village and the two dock towns. Everything further out is for the hero to find.
     /// </summary>
     public static IEnumerable<Settlement> OldRoutes(WorldGen world) =>
-        world.SettlementsNear(0, 0, 2500).Where(s => TownMarkets.Trades(s) && s.Kind is SettlementKind.Town or SettlementKind.Hamlet or SettlementKind.Farmstead or SettlementKind.Inn)
-            .OrderBy(s => s.DistanceTo(0, 0)).Take(2);
+        new[] { "city:hollowheart", "city:druitt", "city:greywater" }.Select(world.Find).OfType<Settlement>();
 
     /// <summary>Opens Tristinwold's old routes, if the book has none yet. Returns the places.</summary>
     public List<Settlement> OpenOldRoutes(WorldGen world, int day)
@@ -419,6 +421,8 @@ public sealed class Escort
     /// <summary>What's known against this road ("a wagon lost on it this week"), if anything, and what that does to the pay.</summary>
     public string? Known { get; set; }
     public double Mult { get; set; } = 1;
+    /// <summary>Hired to drive it, rather than to guard it.</summary>
+    public bool Driver { get; set; }
 
     /// <summary>The next ambush, if the wagon has come far enough along the road for it.</summary>
     public bool AmbushDue(double along) => Sprung < Ambushes.Count && along >= Ambushes[Sprung];

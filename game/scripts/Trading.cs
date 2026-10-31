@@ -216,11 +216,12 @@ public partial class Main
     /// </summary>
     void Buy(Person person, Shop shop)
     {
+        if (!Serves(person)) return;
         var options = shop.Sells.Select(id =>
         {
             var item = Items.Get(id);
             var (name, price, text) = id == "meat" ? ("Meat", Shops.MeatPrice, "for your beasts") : (item!.Name, _city.Price(item), item.Text);
-            price = Shops.Charge(price, ShopMarkup);
+            price = Shops.Charge(price, ShopMarkup * RepBuy(person));
             var sold = item is not null && !_city.InStock(item);
             return (sold ? $"{name}: sold out" : $"{name}, {price} crowns{Dearness(id)}: {text}", (Action)(() =>
             {
@@ -231,6 +232,7 @@ public partial class Main
                 else _player.Pack.Add(id);
                 _city.Bought(id, price);
                 Share(CityAction.Bought(id, price));
+                Repute.TradedWith(person.Npc.Id, person.Npc.Name);
                 Sound.Ui("coin");
                 _hud.Toast($"Bought {name.ToLowerInvariant()}. ({_player.Crowns} crowns left)", 3);
                 Save();
@@ -254,20 +256,25 @@ public partial class Main
             "and grow up at your side. Dragons aren't for sale: no one sells a dragon.", [.. options]);
     }
 
+    Person? _sellingTo;
+
     /// <summary>Sells one of something at today's offer: the city's stock grows, and the price for the next one falls.</summary>
     int SellOne(string id)
     {
         if (Items.Get(id) is not { } item || !_player.Pack.Take(id)) return 0;
-        var offer = (int)Math.Round(_city.Offer(item) * PerkSell);
+        var offer = (int)Math.Round(_city.Offer(item) * PerkSell * (_sellingTo is { } shop ? RepSell(shop) : 1));
         _player.Crowns += offer;
         _city.Sold(id, offer);
         Share(CityAction.Sold(id, offer));
+        if (_sellingTo is { } buyer) Repute.TradedWith(buyer.Npc.Id, buyer.Npc.Name);
         return offer;
     }
 
     void Sell(Person person, Shop shop)
     {
-        var options = _player.Pack.Contents.Where(c => c.Item.Id != "alchemist_kit" || c.N > 1).Select(c => ($"{c.Item.Name} ({c.N}): {(int)Math.Round(_city.Offer(c.Item) * PerkSell)} crowns each{Dearness(c.Item.Id)}",
+        if (!Serves(person)) return;
+        _sellingTo = person;
+        var options = _player.Pack.Contents.Where(c => c.Item.Id != "alchemist_kit" || c.N > 1).Select(c => ($"{c.Item.Name} ({c.N}): {(int)Math.Round(_city.Offer(c.Item) * PerkSell * RepSell(person))} crowns each{Dearness(c.Item.Id)}",
             (Action)(() =>
             {
                 SellOne(c.Item.Id);

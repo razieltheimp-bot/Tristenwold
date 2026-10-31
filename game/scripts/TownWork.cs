@@ -577,7 +577,8 @@ public partial class Main
 
     void BuyOne(Person person, string id, int price)
     {
-        var cost = Shops.Charge(price, ShopMarkup);
+        if (!Serves(person)) return;
+        var cost = Shops.Charge(price, ShopMarkup * RepBuy(person));
         if (_player.Crowns < cost) { Sound.Ui("error"); Say(person, "Coin first, love."); return; }
         _player.Crowns -= cost;
         _player.Pack.Add(id);
@@ -639,7 +640,7 @@ public partial class Main
                 var taken = _city.Donate(ids, out var done);
                 Share(CityAction.Donate(ids.Take(taken).ToList()));
                 foreach (var id in ids.Take(taken)) _player.Pack.Take(id);
-                if (taken > 0) Did("donations");
+                if (taken > 0) { Did("donations"); WellDone(1); }
                 Sound.Ui("pickup");
                 _hud.Toast($"You give {taken} {CityEconomy.Info(good).Name} to the works.{(done is not null ? " " + done : "")}", 6);
                 Save();
@@ -652,7 +653,7 @@ public partial class Main
                 var taken = _city.DonateCrowns(Math.Min(gift, coin), out var done);
                 Share(CityAction.DonateCrowns(taken));
                 _player.Crowns -= taken;
-                if (taken > 0) Did("donations");
+                if (taken > 0) { Did("donations"); WellDone(1); }
                 Sound.Ui("coin");
                 if (done is not null) _hud.Toast(done, 8);
                 Save();
