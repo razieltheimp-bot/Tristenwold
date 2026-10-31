@@ -39,6 +39,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--legends-only")) { await TheLegends(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--quickkeys-only")) { await TheQuickKeys(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -2327,6 +2328,74 @@ public partial class SelfTest(Main main) : Node
         Check(hud.TalkText.Contains("coin's no good"), "and they won't serve you");
         hud.EndTalk();
         (r.Towns[ReputationBook.Capital], r.Country, r.People[keeper.Npc.Id]) = (0, 0, 0);
+    }
+
+    /// <summary>The quick keys: moves on 1 to 5, what's used up on 6 to 0, and swapping them about.</summary>
+    async Task TheQuickKeys()
+    {
+        var (p, hud) = (main.PlayerNode, main.HudNode);
+        async Task Drawn(int n) // keys are read once a drawn frame, and several physics frames can pass in one
+        {
+            for (var i = 0; i < n; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
+        async Task Press(int digit) // the same event a keyboard sends
+        {
+            var key = Key.Key0 + digit;
+            Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = true });
+            await Drawn(3);
+            Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = false });
+            await Drawn(3);
+        }
+        await Teleport(new Vector3(-400, 0, 120));
+        await Frames(30);
+        var bar = p.Hero.Bar;
+        Check(hud.SquareName(0) == p.Class.Primary.Name && hud.SquareName(1) == p.Class.Signature.Name && hud.SquareName(2) == p.Class.Utility.Name && hud.SquareName(3) == p.Class.Limit.Name, $"the class's moves are on 1 to 4: {hud.SquareName(0)}, {hud.SquareName(1)}, {hud.SquareName(2)}, {hud.SquareName(3)}");
+        Check(hud.SquareName(4) == "", "and 5 is free");
+
+        p.Pack.Add("healing_draught");
+        p.Pack.Add("healing_draught");
+        await Frames(90);
+        var draught = Items.Get("healing_draught")!;
+        Check(bar.Slots[5] == "healing_draught" && hud.SquareName(5) == draught.Name, $"a potion finds its own key: 6 is {hud.SquareName(5)}");
+        p.Stats.Lose(p.Stats.MaxHealth * 0.6);
+        var hurt = p.Stats.Health;
+        await Press(6);
+        await Frames(30);
+        Check(p.Pack.Count("healing_draught") == 1 && p.Stats.Health > hurt, $"pressing 6 drinks it: {hurt:0} to {p.Stats.Health:0} health, {p.Pack.Count("healing_draught")} left");
+
+        hud.Talk("Nobody", "A test.", ("Close", hud.EndTalk));
+        await Press(6);
+        Check(p.Pack.Count("healing_draught") == 1, "nothing goes off in the middle of a conversation");
+        hud.EndTalk();
+        await Frames(5);
+
+        p.Stats.Restore(1e9, 1e9);
+        await Press(3);
+        Check(p.Cooldown(p.Class.Utility.Id) > 0, $"pressing 3 does {p.Class.Utility.Name}");
+        Check(!p.Stats.LimitReady, "the limit isn't ready yet");
+        await Press(4);
+        Check(p.Cooldown(p.Class.Limit.Id) == 0, "so pressing 4 does nothing");
+
+        main.ShowSkills();
+        Check(hud.Choose("Quick keys") && hud.Choose("6:") && hud.Choose("Leave it empty") && bar.Slots[5] is null, "taken off from the skills window");
+        hud.EndTalk();
+        await Frames(90);
+        Check(bar.Slots[5] is null && hud.SquareName(5) == "", "and it stays off, though it's still in the pack");
+        main.ShowPack();
+        Check(hud.Choose("Quick keys") && hud.Choose("6:") && hud.Choose(draught.Name) && bar.Slots[5] == "healing_draught", "put back from the pack");
+        hud.EndTalk();
+
+        p.Join("Paladin");
+        await Frames(90);
+        p.Join("Wizard");
+        await Frames(90);
+        var wizard = Classes.Get("Wizard");
+        Check(hud.SquareName(0) == wizard.Primary.Name, $"a new class takes the keys: 1 is {hud.SquareName(0)}");
+        Check(bar.Slots[4] == "smite" && hud.SquareName(4) == "Smite", $"and what you learned before goes on the free key: 5 is {hud.SquareName(4)}");
+        p.Stats.Restore(1e9, 1e9);
+        await Press(5);
+        Check(p.Cooldown("smite") > 0, "and a Wizard can still Smite");
+        p.Stats.Heal(1e9);
     }
 
     /// <summary>The two great blades, Soren's siege, and armour that blasts people away.</summary>

@@ -707,6 +707,7 @@ public partial class Main
         foreach (var id in hero.Learned.Keys.Where(k => k != c.Id).ToList())
             options.Add(($"Take up the way of the {Classes.Get(id).Name} again", () => { _player.Join(id); _hud.Toast($"You are a {Classes.Get(id).Name} again, with every rank you had in it.", 8); Save(); ShowSkills(); }));
         options.Add(("Feats", ShowFeats));
+        options.Add(("Quick keys", () => ShowQuickBar(ShowSkills)));
         options.Add(("Close", _hud.EndTalk));
         _hud.Talk("Skills", text, [.. options]);
 

@@ -376,6 +376,9 @@ public partial class Player : Fighter
 
     public bool Swing() => Mount is not null ? DragonStrike() : Use(Class.Primary);
 
+    /// <summary>A move from the quick keys: the class's basic strike goes by way of <see cref="Swing"/>, so it's the dragon's breath in the saddle.</summary>
+    public bool UseMove(Ability a) => a == Class.Primary ? Swing() : Use(a);
+
     /// <summary>The signature move (right button).</summary>
     public bool Cast() => Use(Class.Signature);
 
@@ -438,7 +441,7 @@ public partial class Player : Fighter
         _ready[a.Id] = Now + a.Cooldown;
         _actingUntil = Now + Math.Min(0.6, Math.Max(0.3, a.Cooldown));
         Figure.Rotation = new Vector3(0, 0, 0);
-        var power = Hero.Power(a.Id);
+        var power = Hero.MovePower(a.Id);
         var dmg = a.Power * power;
         var near = InFront(a.Range > 0 ? a.Range : 2.4, a.Range > 6 ? 30 : 70).FirstOrDefault();
         if (a.Pays == AttackKind.Weapon && a.Range < 6 && a.Power > 1 && Class.Id != "Ranger") // a blade, an axe, a fist through the air
@@ -1030,8 +1033,8 @@ public partial class Player : Fighter
         if ((sureCrit || _smoke) && !crit) { damage *= 2; crit = true; }
         _smoke = false;
         if (Class.Id == "Assassin" && !target.FightingCompany) damage *= 1 + Class.Passive.Power * Hero.Power("backstab");
-        if (_rage > 0) damage *= 1 + 0.6 * Hero.Power("rage");
-        if (_merged > Now) damage *= 1 + Class.Utility.Power * Hero.Power("merge"); // the golem's weight behind every blow
+        if (_rage > 0) damage *= 1 + 0.6 * Hero.MovePower("rage");
+        if (_merged > Now) damage *= 1 + Classes.Move("merge")!.Power * Hero.MovePower("merge"); // the golem's weight behind every blow
         if (_overdrive > Now) damage *= 1 + Class.Limit.Power;
         if (Class.Id == "Scribe") // every weakness noted: each blow on the same foe hits harder
         {
@@ -1059,7 +1062,7 @@ public partial class Player : Fighter
             }
         }
         if (_poison > 0 && attack == AttackKind.Weapon && target.State != EnemyState.Dead)
-            Hit(target, Class.Utility.Power * Hero.Power("poison_blades"), DamageKind.Poison, AttackKind.Spell, false);
+            Hit(target, Classes.Move("poison_blades")!.Power * Hero.MovePower("poison_blades"), DamageKind.Poison, AttackKind.Spell, false);
         return result.Dealt;
     }
 

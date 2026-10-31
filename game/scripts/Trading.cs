@@ -99,6 +99,7 @@ public partial class Main
         }
         if (pack.Count("alchemist_kit") > 0) options.Add(("Brew potions (alchemist's kit)", () => ShowCraft(Job.Herbalism, ShowPack)));
         options.AddRange(PackPursuits());
+        options.Add(("Quick keys", () => ShowQuickBar(ShowPack)));
         options.Add(("Close", _hud.EndTalk));
         _hud.Talk("Your pack", text, [.. options]);
     }

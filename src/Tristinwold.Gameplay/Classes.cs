@@ -70,6 +70,9 @@ public sealed record Discipline(
 /// </summary>
 public static class Classes
 {
+    /// <summary>A move by its id, whichever class it belongs to.</summary>
+    public static Ability? Move(string id) => All.SelectMany(c => c.Skills).FirstOrDefault(a => a.Id == id);
+
     static Ability Attune => new("attune", "Attune", "Change element: fire, frost or shock.", AttackKind.Spell, 0, 0.2, 0, 0);
 
     public static IReadOnlyList<Discipline> All { get; } =

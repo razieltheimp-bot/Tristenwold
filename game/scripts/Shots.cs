@@ -674,6 +674,19 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--quickkeys"))
+        {
+            foreach (var id in new[] { "healing_draught", "healing_draught", "healing_draught", "greater_healing", "bread" }) p.Pack.Add(id);
+            p.Hero.Bar.Stock(["healing_draught", "greater_healing"]);
+            p.Hero.Bar.Set(7, "bread");
+            await Frames(100);
+            await From("quickkeys", p.GlobalPosition + new Vector3(0, 4, 8), p.GlobalPosition + Vector3.Up);
+            main.EnableTouch();
+            await Frames(10);
+            await From("quickkeys-touch", p.GlobalPosition + new Vector3(0, 4, 8), p.GlobalPosition + Vector3.Up);
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--forged"))
         {
             // A row of knights, each holding a sword off a different forge, so the differences show.

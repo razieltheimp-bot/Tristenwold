@@ -20,6 +20,9 @@ public sealed class Hero
     public int Points { get; set; }
     public Dictionary<string, int> Ranks { get; set; } = [];
 
+    /// <summary>What's on the quick keys, 1 to 0.</summary>
+    public QuickBar Bar { get; set; } = new();
+
     /// <summary>Experience needed to go from a level to the next.</summary>
     public static int XpToNext(int level) => (int)Math.Round(80 * Math.Pow(level, 1.4));
 
@@ -40,8 +43,20 @@ public sealed class Hero
 
     public int Rank(string skill) => Math.Clamp(Ranks.GetValueOrDefault(skill, 1), 1, MaxRank);
 
+    /// <summary>A move's rank wherever it was earned: one from a class left behind, on the quick keys, keeps what it had.</summary>
+    public int Earned(string skill)
+    {
+        if (Ranks.TryGetValue(skill, out var rank)) return Math.Clamp(rank, 1, MaxRank);
+        foreach (var kept in Learned.Values)
+            if (kept.TryGetValue(skill, out rank)) return Math.Clamp(rank, 1, MaxRank);
+        return 1;
+    }
+
     /// <summary>How much stronger a move is for its rank: 15% for each rank above the first.</summary>
     public double Power(string skill) => 1 + 0.15 * (Rank(skill) - 1);
+
+    /// <summary><see cref="Power"/>, by the rank it was earned at.</summary>
+    public double MovePower(string skill) => 1 + 0.15 * (Earned(skill) - 1);
 
     public bool CanRaise(string skill) => Points > 0 && Rank(skill) < MaxRank;
 

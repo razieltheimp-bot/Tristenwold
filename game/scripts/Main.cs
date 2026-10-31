@@ -779,6 +779,7 @@ public partial class Main : Node3D
         TendIndoors();
         TendStanding(delta);
         TendArtificer(delta);
+        TendBar();
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
 
         if (_player.Stats.LimitReady && !_limitWasReady)
@@ -806,7 +807,7 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("ride")) ToggleRide();
         if (Input.IsActionJustPressed("rest") && !_tracker.InFight) Rest();
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills   I: pack   H: heal   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}");
+        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills   I: pack   H: heal   1-0: quick keys   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}");
         var saga = _saga.Objective(Dragon, _player.Hero.Level) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
         if (StoryLine(pos) is { } story) saga = [story, .. saga];
         // The nearest lair that suits the hero, and the nearest deviant out roaming.
@@ -1169,6 +1170,8 @@ public partial class Main : Node3D
         Key("party", Godot.Key.P); Key("skills", Godot.Key.K); Key("ride", Godot.Key.V); Key("descend", Godot.Key.C);
         Key("pack", Godot.Key.I); Key("drink", Godot.Key.H);
         Key("save", Godot.Key.F5); Key("game_menu", Godot.Key.Escape);
+        foreach (var (name, key) in new[] { ("1", Godot.Key.Key1), ("2", Godot.Key.Key2), ("3", Godot.Key.Key3), ("4", Godot.Key.Key4), ("5", Godot.Key.Key5), ("6", Godot.Key.Key6), ("7", Godot.Key.Key7), ("8", Godot.Key.Key8), ("9", Godot.Key.Key9), ("0", Godot.Key.Key0) })
+            Key($"quick_{name}", key);
     }
 
     public override void _ExitTree()

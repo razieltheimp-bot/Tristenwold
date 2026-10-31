@@ -98,6 +98,7 @@ public partial class Hud : CanvasLayer
         var optionScroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         optionScroll.AddChild(_talkOptions = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
         talkBox.AddChild(optionScroll);
+        root.AddChild(_bar = MakeBar());
         root.AddChild(Touch);
         root.AddChild(_talk);
     }
