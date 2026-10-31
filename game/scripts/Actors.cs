@@ -434,6 +434,16 @@ public partial class Enemy : Fighter
     public DamageKind LastBlow { get; private set; }
     /// <summary>A hero's own rival: a deviant kept in their save, so what happens to it isn't the shared world's to record.</summary>
     public bool HeroesRival { get; set; }
+
+    /// <summary>Blown back from somewhere: a moment in the air, and it lands dazed.</summary>
+    public void Thrown(Vector3 from, float metres)
+    {
+        var away = GlobalPosition - from;
+        away = new Vector3(away.X, 0, away.Z);
+        var to = GlobalPosition + (away.LengthSquared() > 0.01f ? away.Normalized() : Vector3.Forward) * metres;
+        Stunned = Math.Max(Stunned, 1);
+        CreateTween().TweenProperty(this, "global_position", to with { Y = City.FloorAt(to) + 0.2f }, 0.3).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+    }
     public void HidePlate() => Plate.Visible = false;
 
     /// <summary>A lair boss that beat a company and took a name: it shows the name, stands taller and burns red.</summary>
@@ -891,8 +901,12 @@ public partial class Enemy : Fighter
         if (_altitude <= 0 && height < 1f) Airborne = false;
     }
 
+    /// <summary>How often it sees a blow coming and isn't there (Soren and the Web).</summary>
+    public double Foresees { get; set; }
+
     public HitResult TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Player by)
     {
+        if (Foresees > 0 && GD.Randf() < Foresees) { Provoke(by); return new HitResult(0, 0, 0, false, crit, false); }
         LastBlow = kind;
         var result = Stats.TakeHit(damage, kind, attack, crit, by.Stats);
         Struck?.Invoke(result.Dealt, kind, attack, by);

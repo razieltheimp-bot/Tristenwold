@@ -48,6 +48,7 @@ public partial class Main
         Sign(new Vector3((float)Northwood.CampX, 5, (float)Northwood.CampZ), "The Logging Camp");
         AddChild(_forestNode = new Forest(this));
         AddChild(_harbours = new Harbours(this));
+        AddLegends();
     }
 
     Harbours? _harbours;
@@ -55,6 +56,7 @@ public partial class Main
     (string Verb, Action Act)? ForestAction(Vector3 pos)
     {
         if (_harbours?.Pick(pos) is { } pick) return pick;
+        if (BladeAction(pos) is { } blade) return blade;
         if (_forestNode?.NearClue(pos) != true || _forest.Turlin.Current is not { } c) return null;
         return ("look at what's lying here", () =>
         {
@@ -849,6 +851,7 @@ public partial class Forest(Main main) : Node3D
         }
         if (victim == _dragon)
         {
+            main.ForestLog.DragonSlayer = true;
             main.DoCity(CityAction.Guardian("dragon"));
             main.PlayerNode.Crowns += 5000;
             main.HudNode.Toast($"{Northwood.DragonName} falls, and the wood breathes out. It's over. Nobody who was here will ever forget it.", 12);

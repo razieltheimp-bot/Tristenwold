@@ -103,7 +103,7 @@ public partial class Main
     void Scrap(Person nell, List<(Item Item, int N)> spare)
     {
         var crowns = 0;
-        foreach (var (item, n) in spare)
+        foreach (var (item, n) in spare.Where(x => !x.Item.Bound))
             for (var i = 0; i < n && _player.Pack.Take(item.Id); i++) crowns += (int)Math.Round(_city.Offer(item) * PerkSell * 1.2);
         _player.Crowns += crowns;
         Sound.Ui("coin", -2);

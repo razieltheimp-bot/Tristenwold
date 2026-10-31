@@ -276,7 +276,7 @@ public partial class Main
     {
         if (!Serves(person)) return;
         _sellingTo = person;
-        var options = _player.Pack.Contents.Where(c => c.Item.Id != "alchemist_kit" || c.N > 1).Select(c => ($"{c.Item.Name} ({c.N}): {(int)Math.Round(_city.Offer(c.Item) * PerkSell * RepSell(person))} crowns each{Dearness(c.Item.Id)}",
+        var options = _player.Pack.Contents.Where(c => !c.Item.Bound && (c.Item.Id != "alchemist_kit" || c.N > 1)).Select(c => ($"{c.Item.Name} ({c.N}): {(int)Math.Round(_city.Offer(c.Item) * PerkSell * RepSell(person))} crowns each{Dearness(c.Item.Id)}",
             (Action)(() =>
             {
                 SellOne(c.Item.Id);

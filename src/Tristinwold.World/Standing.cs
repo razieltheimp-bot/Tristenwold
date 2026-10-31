@@ -1,3 +1,4 @@
+using Tristinwold.Gameplay;
 using Tristinwold.Deviant;
 
 namespace Tristinwold.World;
@@ -9,7 +10,6 @@ public enum WatchRank { None, Recruit, Watchman, Sergeant, Captain }
 public enum ClanRank { None, Spearman, Raider, Champion, Warchief }
 
 /// <summary>How the world thinks of a hero: their honour set against their infamy.</summary>
-public enum Repute { Villain, Rough, Unknown, Decent, Trusted, Hero }
 
 /// <summary>A beat being walked for the Watch: the posts to visit, in order, and what happened on the way.</summary>
 public sealed class Patrol

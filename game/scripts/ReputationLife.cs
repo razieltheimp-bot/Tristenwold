@@ -62,6 +62,7 @@ public partial class Main
         if (_clock - _lastRepute < 0.5) return;
         _lastRepute = _clock;
         ShowRepute();
+        TendStone();
     }
 
     void ShowRepute()

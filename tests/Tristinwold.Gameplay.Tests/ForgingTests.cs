@@ -255,6 +255,72 @@ public class ForgingTests
     }
 
     [Fact]
+    public void Dice_abilities_reach_their_biggest_die()
+    {
+        var rng = new Rng(75);
+        var swords = Enumerable.Range(0, 20000).Select(_ => Piece(rng.NextULong())).ToList();
+        Assert.Equal(new[] { 4, 6, 8, 10 }, swords.Where(p => p.Powers!.ContainsKey("bleed")).Select(p => (int)p.Powers!["bleed"]).Distinct().OrderBy(d => d));
+    }
+
+    [Fact]
+    public void Armour_can_be_cut_with_runes_of_every_kind()
+    {
+        var rng = new Rng(76);
+        var pieces = Enumerable.Range(0, 20000).Select(_ => Piece(rng.NextULong(), "steel_plate")).ToList();
+        Assert.All(Forging.Runes, r => Assert.Contains(pieces, p => p.Powers!.ContainsKey(r.Key)));
+        Assert.Contains(pieces, p => p.Text.Contains("rune expulsion"));
+        Assert.DoesNotContain(Enumerable.Range(0, 3000).Select(_ => Piece(rng.NextULong())), p => p.Powers!.Keys.Any(k => k.StartsWith("rune_")));
+    }
+
+    [Fact]
+    public void The_great_blades_stay_with_who_earned_them()
+    {
+        Assert.Equal("excalibur", new string(Items.Get(Legend.Rubilacxe)!.Name.Reverse().ToArray()).ToLowerInvariant());
+        foreach (var id in new[] { Legend.Rubilacxe, Legend.RubilacxeScabbard, Legend.Arachnicalibur, Legend.ArachnicaliburScabbard }) Assert.True(Items.Get(id)!.Bound);
+        Assert.Equal((4, 4), (Items.Get(Legend.Rubilacxe)!.ToHit, Items.Get(Legend.Rubilacxe)!.Power));
+        Assert.Equal(30, Items.Get(Legend.ArachnicaliburScabbard)!.Powers!["dodge"]);
+    }
+
+    [Fact]
+    public void There_is_one_of_each_blade_on_a_server()
+    {
+        var city = CityEconomy.Start(1);
+        Assert.True(city.Apply(CityAction.Blade(Legend.Rubilacxe, "Ana")));
+        Assert.False(city.Apply(CityAction.Blade(Legend.Rubilacxe, "Bram")));
+        Assert.Equal("Ana", city.BladeHolder);
+        Assert.True(city.Apply(CityAction.Blade(Legend.Arachnicalibur, "Bram")));
+        Assert.Equal("Bram", city.WebHolder);
+    }
+
+    [Fact]
+    public void Soren_lays_siege_burns_a_town_and_leaves_it_for_the_carpenters()
+    {
+        var city = CityEconomy.Start(7);
+        city.Day = CityEconomy.SiegeEvery - 1;
+        city.NextDay();
+        var town = Assert.IsType<PirateSiege>(city.Siege).Town;
+        Assert.Contains(town, CityEconomy.SiegeTowns);
+        Assert.Equal(CityEconomy.SiegeBurns, city.FabricOf(town).Burnt);
+        for (var i = 0; i < CityEconomy.SiegeDays; i++) city.NextDay();
+        Assert.Null(city.Siege);
+        Assert.True(city.FabricOf(town).Burnt > CityEconomy.SackBurns);
+        var was = city.FabricOf(town).Burnt;
+        city.Stock[Good.Timber] = 100;
+        Assert.NotNull(city.Carpenters(new Rng(1)));
+        Assert.Equal(was - 1, city.FabricOf(town).Burnt);
+    }
+
+    [Fact]
+    public void Breaking_a_siege_saves_what_would_have_burned()
+    {
+        var city = CityEconomy.Start(7);
+        city.Siege = new PirateSiege { Town = "city:druitt", Ends = city.Day + 3 };
+        Assert.True(city.Apply(CityAction.SiegeBroken("Ana")));
+        Assert.Null(city.Siege);
+        Assert.False(city.Apply(CityAction.SiegeBroken("Ana")));
+    }
+
+    [Fact]
     public void Its_base_is_remembered()
     {
         Assert.Equal("steel_sword", Forging.BaseOf(Serial(9)));

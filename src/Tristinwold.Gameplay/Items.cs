@@ -2,6 +2,9 @@ using Tristinwold.Deviant;
 
 namespace Tristinwold.Gameplay;
 
+/// <summary>What people know a hero as: from a villain to a hero of the land.</summary>
+public enum Repute { Villain, Rough, Unknown, Decent, Trusted, Hero }
+
 /// <summary>What sort of thing an item is.</summary>
 public enum ItemKind { Material, Herb, Potion, Food, Gear, Trophy, Tool }
 
@@ -47,6 +50,8 @@ public sealed record Item(string Id, string Name, ItemKind Kind, int Value, stri
     public IReadOnlyDictionary<string, double>? Powers { get; init; }
     public int Power { get; init; }
     public bool Forged { get; init; }
+    /// <summary>One of a kind, and it stays with who earned it: no shop or scrapper will take it.</summary>
+    public bool Bound { get; init; }
     public ForgeGrade? Grade { get; init; }
     public string[]? Parts { get; init; }
     // How it shows: the blade's length and width, and the colours of the parts added to it.
@@ -59,6 +64,23 @@ public sealed record Item(string Id, string Name, ItemKind Kind, int Value, stri
 
     public bool Wearable => Slot != Slot.None;
     public bool Usable => Use is not null;
+}
+
+/// <summary>The two great blades, and what it takes to get them.</summary>
+public static class Legend
+{
+    public const string Rubilacxe = "rubilacxe", RubilacxeScabbard = "rubilacxe_scabbard", Arachnicalibur = "arachnicalibur", ArachnicaliburScabbard = "arachnicalibur_scabbard";
+    public const int SiegeBounty = 2000;
+    /// <summary>How often Soren sees a blow coming, while the black blade's still his.</summary>
+    public const double SorenForesees = 0.25;
+    /// <summary>What a hero's name must be: trusted, for the stone; rough or worse, to take the black blade from Soren.</summary>
+    public const Repute BladeRepute = Repute.Trusted, WebRepute = Repute.Rough;
+
+    public static Item Blade(string id, string name, string tint, string glow, double damage, Dictionary<string, double> powers, string text) =>
+        new(id, name, ItemKind.Gear, 9999, text) { Slot = Slot.Weapon, Grip = Grip.OneHand, Look = "Knight/1H_Sword", Damage = damage, ToHit = 4, Power = 4, Powers = powers, Tint = tint, Glow = glow, Metal = true, Bound = true };
+
+    public static Item Sheath(string id, string name, string tint, Dictionary<string, double> powers, string text) =>
+        new(id, name, ItemKind.Gear, 4999, text) { Slot = Slot.Neck, Powers = powers, Tint = tint, Bound = true };
 }
 
 /// <summary>Everything there is to carry, find, make and buy.</summary>
@@ -261,7 +283,15 @@ public static class Items
         Gear("mosswarden_staff", "Ulmoth's Living Staff", 1400, Slot.Weapon, Grip.Caster, "Mage/2H_Staff", damage: 0.5, tint: "#6aa04a", glow: "#a0ff60"),
         Gear("barkbreaker_maul", "Korrun's Heartwood Maul", 1400, Slot.Weapon, Grip.TwoHand, "Barbarian/2H_Axe", damage: 0.56, tint: "#8a6a44", glow: "#d070ff"),
         Gear("drowned_mantle", "Mantle of the Drowned Root", 1400, Slot.Body, Grip.None, null, armor: 66, tint: "#3f6a5a"),
-        Gear("sorens_reaver", "Soren's Reaver", 1500, Slot.Weapon, Grip.TwoHand, "Barbarian/2H_Axe", damage: 0.6, tint: "#1a1414", glow: "#ff5020"),
+        Legend.Blade(Legend.Rubilacxe, "Rubilacxe", "#c8d4e0", "#fff0c0", 0.75, new Dictionary<string, double> { ["smite"] = 4, ["sever"] = 0.05, ["undying"] = 1 },
+            "The sword from the stone. +4 to hit, +4 damage. On a critical blow, 4d6 more; and one such blow in twenty takes a limb. Once a day it holds you at the edge of death. It came only to one who was good, and who ended the fifth guardian."),
+        Legend.Sheath(Legend.RubilacxeScabbard, "Scabbard of Rubilacxe", "#6a4a2a", new Dictionary<string, double> { ["resist_physical"] = 25 },
+            "While you wear it, blades, points and blunt blows do a quarter less."),
+        Legend.Blade(Legend.Arachnicalibur, "Arachnicalibur", "#22202a", "#a080ff", 0.75, new Dictionary<string, double> { ["crit"] = 5, ["drain"] = 8 },
+            "The Web of Life connects all things, all stories, all lives. Those who worship the Web are said to see signs and their reverberations along the strands that connect us, allowing them a limited prescience of the future. This blade is their most sacred relic."),
+        Legend.Sheath(Legend.ArachnicaliburScabbard, "Scabbard of Arachnicalibur", "#2a2233", new Dictionary<string, double> { ["dodge"] = 30 },
+            "Arachnicalibur's connection to the Web lets its wielder avoid danger in battle, as they easily dodge most attacks. As long as they hold the scabbard, anyway."),
+        Gear("sorens_reaver", "Soren's Boarding Cutlass", 1500, Slot.Weapon, Grip.TwoHand, "Barbarian/2H_Axe", damage: 0.6, tint: "#1a1414", glow: "#ff5020"),
         Gear("wukongs_staff", "Lu Wukong's Chained Staff", 1200, Slot.Weapon, Grip.TwoHand, "Mage/Staff", damage: 0.5, tint: "#5a4030", glow: "#ffd040"),
         Gear("blightthorn", "Blightthorn", 1400, Slot.Weapon, Grip.OneHand, "Rogue/Knife", damage: 0.52, tint: "#2a3a22", glow: "#80ff40"),
         Gear("iron_hammer", "Iron Hammer", 45, Slot.Weapon, Grip.OneHand, "@hammer", damage: 0.12),
