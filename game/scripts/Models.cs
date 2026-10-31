@@ -428,6 +428,7 @@ public partial class Figure : Body
         // Turlin's always a real body, at any setting: he's built on one.
         if (look == "turlin" && Human(look, Tristinwold.Gameplay.Avatar.For("Barbarian") with { Race = "human", Sex = "Male", Skin = "Deep", Face = "Dark", Headwear = "none", Style = "None", Sleeves = "Long" }) is { } rival) return rival;
         if (look == "giant_ape" && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, new Color("#4a2e22")) is { } ape) return ape;
+        if (look.StartsWith("soren_") && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, new Color("#b08a70").Lerp(new Color("#5a6a68"), Tristinwold.Gameplay.Legend.FormOf(int.Parse(look[6..])).Sea)) is { } soren) return soren;
         // On a PC, people are real bodies (see Humans): a hero as they made themselves, anyone else cast for the part.
         if (Humans.Enabled && Humans.IsPerson(look))
         {

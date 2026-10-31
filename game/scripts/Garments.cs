@@ -47,6 +47,7 @@ public static class Garments
         "priest" => new("robe", "hood", Belt: false),
         "pirate" or "sailor" => new(null, "bandana", Bracers: true),
         "turlin" or "giant_ape" => new(null, null, Belt: false),
+        _ when look.StartsWith("soren_") => new(null, null, Bracers: true),
         "pirate_captain" or "dread_soren" => new("jerkin", "bandana", Bracers: true, Cloak: true),
         "MartialArtist" => new(null, null, Bracers: true),
         "captive" or "child" or "youth" => new(null, null, Belt: false),
@@ -268,6 +269,7 @@ public static class Garments
         }
         if (look == "turlin") Rival(sk, m, made);
         if (look == "giant_ape") GreatApe(sk, m, made);
+        if (look.StartsWith("soren_")) Soren(sk, m, int.Parse(look[6..]), made);
         if (cut is { } style && kit.Head is null && outfit.Cap is null) Hair(sk, m, style.Style, style.Colour, made);
         if (kin is { } people) Kin(sk, m, people.Race, people.Form, kit.Head is not null, made);
         return made;
@@ -371,6 +373,133 @@ public static class Garments
             }
         }
         Hair(sk, m, "Wildmane", new Color("#121014"), made);
+    }
+
+    /// <summary>
+    /// The Dread Pirate Soren, and what the sea has made of him: a long red coat open over a bare chest, a beard like a black
+    /// storm, a feathered tricorn, a spiked iron gauntlet and the black blade. The further gone he is, the more of it's
+    /// barnacle, coral and weed, grown on him and not hung about him, and by the end there's more sea than man.
+    /// </summary>
+    static void Soren(Skeleton3D sk, Measure m, int form, List<Node> made)
+    {
+        var sea = Tristinwold.Gameplay.Legend.FormOf(form).Sea;
+        var torsoH = m.Neck.Y - m.Hips.Y;
+        var (chest, hips, head) = (Hang(sk, "Chest", made), Hang(sk, "Hips", made), Hang(sk, "Head", made));
+        var coat = Cloth(new Color("#9a1f1a").Lerp(new Color("#3a2a2a"), sea * 0.7f));
+        var lining = Cloth(new Color("#e8e0d0").Lerp(new Color("#6a6a58"), sea));
+        var skin = Cloth(new Color("#b08a70").Lerp(new Color("#5a6a68"), sea));
+        var iron = Armoury.Metal(new Color("#3a3a40"), 0.5f);
+        var brass = Armoury.Brass;
+        var hair = new StandardMaterial3D { AlbedoColor = new Color("#121014").Lerp(new Color("#1f3a30"), sea), Roughness = 0.7f, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
+        var black = new StandardMaterial3D { AlbedoColor = new Color("#141216"), Metallic = 0.6f, Roughness = 0.35f };
+        var front = m.ShoulderHalf * 0.82f;
+        var length = m.Hips.Y * 0.86f;
+
+        // The coat: long tails behind and at the sides, broad lapels, and the chest bare between them.
+        chest.AddChild(Part(Drape(m.ShoulderHalf * 1.1f, torsoH * 0.78f, m.ShoulderHalf * 0.4f, 0.1f), skin, new Vector3(0, m.Hips.Y + torsoH * 0.9f, front + 0.01f)));
+        foreach (var side in new[] { -1f, 1f })
+        {
+            chest.AddChild(Part(Drape(m.ShoulderHalf * 0.5f, torsoH * 1.02f, m.ShoulderHalf * 0.16f, 0.12f), coat, new Vector3(side * m.ShoulderHalf * 0.82f, m.Hips.Y + torsoH * 0.92f, front + 0.02f), new Vector3(0, side * 20, 0)));
+            for (var i = 0; i < 3; i++)
+                chest.AddChild(Part(new SphereMesh { Radius = 0.016f, Height = 0.032f, RadialSegments = 8, Rings = 4 }, brass, new Vector3(side * m.ShoulderHalf * 0.72f, m.Hips.Y + torsoH * (0.3f + i * 0.2f), front + 0.05f)));
+            hips.AddChild(Part(Drape(m.HipHalf * 1.05f, length, m.HipHalf * 0.3f, 0.2f, 10, 14, lean: 0.06f), coat, new Vector3(side * (m.HipHalf + 0.05f), m.Hips.Y + 0.1f, -0.01f), new Vector3(0, side * 80, 0)));
+            hips.AddChild(Part(Drape(m.HipHalf * 0.6f, length * 0.92f, m.HipHalf * 0.18f, 0.22f, 8, 12, lean: 0.05f), lining, new Vector3(side * m.HipHalf * 0.72f, m.Hips.Y + 0.08f, m.HipHalf + 0.03f), new Vector3(0, side * 22, 0)));
+        }
+        chest.AddChild(Part(Drape(m.ShoulderHalf * 2.2f, torsoH * 1.02f, m.ShoulderHalf * 0.5f, 0.1f), coat, new Vector3(0, m.Hips.Y + torsoH * 0.95f, -front - 0.01f), new Vector3(0, 180, 0)));
+        hips.AddChild(Part(Drape(m.HipHalf * 2.6f, length, m.HipHalf * 0.5f, 0.24f, 12, 16, lean: 0.08f), coat, new Vector3(0, m.Hips.Y + 0.1f, -m.HipHalf - 0.05f), new Vector3(0, 180, 0)));
+        foreach (var side in new[] { "Left", "Right" })
+            if (sk.FindBone($"{side}UpperArm") is var ui && ui >= 0)
+            {
+                var rest = sk.GetBoneGlobalRest(ui);
+                var along = rest.Basis.Y.Normalized();
+                Hang(sk, $"{side}UpperArm", made).AddChild(Aim(Part(new CapsuleMesh { Radius = 0.072f, Height = 0.36f, RadialSegments = 12, Rings = 5 }, coat, rest.Origin + along * 0.13f), along));
+            }
+
+        // The beard, and the tricorn with its feathers. What was beard turns to weed.
+        var chin = new Vector3(0, m.Top - 0.17f, 0.085f);
+        for (var i = -4; i <= 4; i++)
+        {
+            var way = new Vector3(i * 0.1f, -1, 0.26f).Normalized();
+            var lockOf = Part(new CylinderMesh { TopRadius = 0.002f, BottomRadius = 0.045f, Height = 0.3f + (4 - Math.Abs(i)) * 0.03f + sea * 0.22f, RadialSegments = 7 }, hair, chin + new Vector3(i * 0.024f, 0.02f, 0) + way * 0.15f);
+            head.AddChild(lockOf);
+            Aim(lockOf, way);
+        }
+        head.AddChild(Part(new SphereMesh { Radius = 0.09f, Height = 0.15f, RadialSegments = 12, Rings = 6 }, hair, chin + new Vector3(0, 0.015f, -0.01f), scale: new Vector3(1.05f, 0.8f, 0.72f)));
+        var felt = Cloth(new Color("#2a1a18").Lerp(new Color("#1e2a26"), sea), span: 0);
+        var brim = new Vector3(0, m.Top - 0.035f, -0.01f);
+        head.AddChild(Part(new CylinderMesh { TopRadius = 0.115f, BottomRadius = 0.13f, Height = 0.12f, RadialSegments = 18 }, felt, brim + Vector3.Up * 0.05f));
+        for (var i = 0; i < 3; i++)
+        {
+            var a = i * Mathf.Tau / 3 + Mathf.Pi / 2;
+            head.AddChild(Part(new BoxMesh { Size = new Vector3(0.34f, 0.15f, 0.012f) }, felt, brim + new Vector3(Mathf.Cos(a) * 0.16f, 0.055f, Mathf.Sin(a) * 0.16f), new Vector3(-18, Mathf.RadToDeg(-a) + 90, 0)));
+        }
+        if (sea < 0.8f)
+        {
+            var plume = Cloth(new Color("#e8e4d8"));
+            head.AddChild(Part(new CylinderMesh { TopRadius = 0.003f, BottomRadius = 0.03f, Height = 0.42f, RadialSegments = 6 }, plume, brim + new Vector3(0.12f, 0.15f, -0.03f), new Vector3(35, 0, -68)));
+        }
+        if (sea < 0.4f)
+            head.AddChild(Part(new CylinderMesh { TopRadius = 0.008f, BottomRadius = 0.008f, Height = 0.14f, RadialSegments = 6 }, Armoury.Leather("#3a2418"), new Vector3(0.05f, m.Top - 0.165f, 0.16f), new Vector3(70, 0, 15))); // the pipe
+
+        // The iron fist on his left, and the black blade in his right.
+        if (sk.FindBone("LeftHand") >= 0)
+        {
+            var rest = sk.GetBoneGlobalRest(sk.FindBone("LeftHand"));
+            var hand = Hang(sk, "LeftHand", made);
+            hand.AddChild(Part(new SphereMesh { Radius = 0.1f, Height = 0.18f, RadialSegments = 12, Rings = 6 }, iron, rest.Origin + rest.Basis.Y.Normalized() * 0.07f));
+            for (var i = 0; i < 7; i++)
+            {
+                var way = new Vector3(Mathf.Cos(i * 2.4f), Mathf.Sin(i * 1.7f), Mathf.Sin(i * 2.4f)).Normalized();
+                hand.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.002f, BottomRadius = 0.022f, Height = 0.09f, RadialSegments = 6 }, iron, rest.Origin + rest.Basis.Y.Normalized() * 0.07f + way * 0.12f), way));
+            }
+        }
+        if (sk.FindBone("RightHand") >= 0)
+        {
+            var rest = sk.GetBoneGlobalRest(sk.FindBone("RightHand"));
+            var hand = Hang(sk, "RightHand", made);
+            var grip = rest.Origin + rest.Basis.Y.Normalized() * 0.08f;
+            var way = rest.Basis.Z.Normalized() * -1;
+            hand.AddChild(Aim(Part(new BoxMesh { Size = new Vector3(0.13f, 1.25f, 0.03f) }, black, grip + way * 0.68f), way));
+            hand.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.022f, BottomRadius = 0.022f, Height = 0.26f, RadialSegments = 8 }, Armoury.Leather("#2a1a14"), grip), way));
+            var across = way.Cross(rest.Basis.Y.Normalized()).Normalized();
+            for (var i = 0; i < 6; i++)
+            {
+                var hook = (across * (i % 2 == 0 ? 1 : -1) + way * 0.5f).Normalized();
+                hand.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.002f, BottomRadius = 0.05f, Height = 0.2f, RadialSegments = 5 }, black, grip + way * (0.2f + i * 0.2f) + across * (i % 2 == 0 ? 0.08f : -0.08f)), hook));
+            }
+        }
+
+        if (sea <= 0) return;
+        // What the sea's done: barnacles on the skin and coat, coral on the shoulders, weed trailing from him.
+        var rng = new Tristinwold.Deviant.Rng(1234);
+        var crust = new StandardMaterial3D { AlbedoColor = new Color("#8a8d80"), Roughness = 1 };
+        var coral = new StandardMaterial3D { AlbedoColor = new Color("#c0705a"), Roughness = 0.9f };
+        for (var i = 0; i < 46 * sea; i++)
+        {
+            var (a, y) = ((float)rng.NextDouble() * Mathf.Tau, m.Hips.Y + torsoH * (float)rng.NextDouble());
+            var at = new Vector3(Mathf.Cos(a) * m.ShoulderHalf * 0.9f, y, Mathf.Sin(a) * m.ShoulderHalf * 0.72f);
+            chest.AddChild(Part(new SphereMesh { Radius = 0.03f, Height = 0.036f, RadialSegments = 7, Rings = 3 }, sea > 0.4f && i % 3 == 0 ? coral : crust, at));
+        }
+        for (var i = 0; i < 30 * sea; i++)
+        {
+            var a = (float)rng.NextDouble() * Mathf.Tau;
+            var way = new Vector3(Mathf.Cos(a) * 0.2f, -1, Mathf.Sin(a) * 0.2f).Normalized();
+            var strand = Part(new CylinderMesh { TopRadius = 0.012f, BottomRadius = 0.002f, Height = 0.3f + 0.5f * sea, RadialSegments = 5 }, hair, new Vector3(Mathf.Cos(a) * m.HipHalf * 1.25f, m.Hips.Y - 0.05f - (float)rng.NextDouble() * 0.3f, Mathf.Sin(a) * m.HipHalf * 1.2f) + way * 0.2f);
+            hips.AddChild(strand);
+            Aim(strand, way);
+        }
+        if (sea >= 0.45f)
+            foreach (var side in new[] { -1f, 1f })
+                head.AddChild(Part(new SphereMesh { Radius = 0.018f, Height = 0.03f, RadialSegments = 8, Rings = 4 }, new StandardMaterial3D { AlbedoColor = new Color("#04080c"), Roughness = 0.05f }, new Vector3(side * 0.036f, m.Top - 0.115f, 0.118f)));
+        if (sea >= 0.65f)
+            foreach (var side in new[] { -1f, 1f })
+                for (var i = 0; i < 4; i++)
+                {
+                    var way = new Vector3(side * 0.6f, -0.8f, 0.2f + i * 0.1f).Normalized();
+                    var arm = Part(new CylinderMesh { TopRadius = 0.004f, BottomRadius = 0.03f, Height = 0.4f, RadialSegments = 6 }, hair, new Vector3(side * 0.08f, m.Top - 0.2f - i * 0.02f, 0.08f) + way * 0.2f);
+                    head.AddChild(arm);
+                    Aim(arm, way);
+                }
     }
 
     /// <summary>

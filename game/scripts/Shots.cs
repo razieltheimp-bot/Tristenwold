@@ -1,4 +1,4 @@
-﻿using Godot;
+using Godot;
 using Tristinwold.Shared;
 using Tristinwold.Gameplay;
 using Tristinwold.Deviant;
@@ -646,8 +646,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             {
                 main.Economy.SorenDeaths = i;
                 var at = stand with { Y = ground } + new Vector3((2.5f - i) * 2.1f, 0, 0);
-                var e = Enemy.Create(Bestiary.Get("dread_soren"), at);
-                Legends.Dress(e, main.Economy);
+                var e = Enemy.Create(Bestiary.Get("dread_soren"), at, look: Legends.Look(main.Economy));
                 e.Carried = true;
                 main.AddEnemy(e);
                 e.GlobalPosition = at;
@@ -656,7 +655,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                 e.HidePlate();
             }
             await Frames(40);
-            cam.GlobalPosition = stand with { Y = ground } + new Vector3(0, 1.9f, -7.5f);
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(0, 1.9f, -6.2f);
             cam.LookAt(stand with { Y = ground } + new Vector3(0, 1.3f, 0), Vector3.Up);
             cam.MakeCurrent();
             await Shot("soren-forms");

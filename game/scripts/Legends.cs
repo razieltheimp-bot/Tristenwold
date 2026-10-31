@@ -187,7 +187,7 @@ public partial class Legends(Main main) : Node
     {
         var form = Legend.FormOf(main.Economy.SorenDeaths);
         var danger = WorldGen.Danger(at.X, at.Z) * (1 + 0.08 * main.PlayerNode.Hero.Level);
-        _soren = Enemy.Create(Bestiary.Get("dread_soren"), at with { Y = City.FloorAt(at) + 0.5f }, danger * 1.4 * Legend.SorenStrength(main.Economy.SorenDeaths));
+        _soren = Enemy.Create(Bestiary.Get("dread_soren"), at with { Y = City.FloorAt(at) + 0.5f }, danger * 1.4 * Legend.SorenStrength(main.Economy.SorenDeaths), look: Look(main.Economy));
         Dress(_soren, main.Economy);
         _soren.Roam = 16;
         main.AddEnemy(_soren);
@@ -206,28 +206,11 @@ public partial class Legends(Main main) : Node
 
     public void HuntForTest() => Hunt();
 
-    /// <summary>Whatever the sea's done to him so far, wherever he turns up: on his own deck, too.</summary>
-    public static void Dress(Enemy soren, CityEconomy city)
-    {
-        soren.Foresees = city.WebHolder is null ? Legend.SorenForesees : 0;
-        var sea = Legend.FormOf(city.SorenDeaths).Sea;
-        if (sea <= 0) return;
-        var high = (float)soren.Kind.Height;
-        var crust = new StandardMaterial3D { AlbedoColor = new Color("#6f7468"), Roughness = 1 };
-        var weed = new StandardMaterial3D { AlbedoColor = new Color("#1f3a30"), Roughness = 0.8f };
-        var deep = new StandardMaterial3D { AlbedoColor = new Color("#050a10"), Roughness = 0.1f };
-        var rng = new Tristinwold.Deviant.Rng(1234);
-        for (var i = 0; i < 24 * sea; i++)
-        {
-            var (a, y) = (rng.NextDouble() * Mathf.Tau, 0.3 + rng.NextDouble() * 0.55);
-            soren.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = high * 0.04f, Height = high * 0.05f, RadialSegments = 7, Rings = 3 }, MaterialOverride = crust, Position = new Vector3(Mathf.Cos((float)a) * high * 0.15f, high * (float)y, Mathf.Sin((float)a) * high * 0.11f) });
-        }
-        for (var i = 0; i < 12 * sea; i++)
-            soren.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = high * 0.012f, BottomRadius = high * 0.002f, Height = high * (0.16f + 0.2f * sea), RadialSegments = 6, Rings = 1 }, MaterialOverride = weed, Position = new Vector3((i - 5) * high * 0.015f, high * (0.78f - 0.08f * sea), high * 0.1f), Rotation = new Vector3(0.15f, 0, (i - 5) * 0.04f) });
-        if (sea >= 0.45f)
-            foreach (var side in new[] { -1, 1 })
-                soren.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = high * 0.022f, Height = high * 0.044f }, MaterialOverride = deep, Position = new Vector3(side * high * 0.04f, high * 0.91f, high * 0.1f) });
-    }
+    /// <summary>The look of him as he is now: the sea's work is built into his body (see Garments.Soren).</summary>
+    public static string Look(CityEconomy city) => $"soren_{Math.Min(city.SorenDeaths, Legend.SorenForms.Count - 1)}";
+
+    /// <summary>He sees blows coming, while the blade and its scabbard are still his.</summary>
+    public static void Dress(Enemy soren, CityEconomy city) => soren.Foresees = city.WebHolder is null ? Legend.SorenForesees : 0;
 
     void Clear()
     {

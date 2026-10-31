@@ -941,7 +941,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
             var leader = i == 0 && !voyage.Raid && voyage.Pirates >= 5;
             var spot = new Vector3(Stage.X + side * 2.6f, DeckY + 0.8f, Stage.Z - 8 + i * 16f / Math.Max(1, voyage.Pirates - 1));
             var named = i == 0 && ReachedFlag ? Seas.Flag(voyage.Flag) : null;
-            var e = Enemy.Create(Bestiary.Get(named?.Kind ?? (leader ? "pirate_captain" : kind)), spot, danger);
+            var e = Enemy.Create(Bestiary.Get(named?.Kind ?? (leader ? "pirate_captain" : kind)), spot, danger, look: named?.Id == "soren" ? Legends.Look(main.Economy) : null);
             if (leader && named is null) e.Stats.Name = "Black Ysolde's bosun";
             if (named?.Id == "soren") Legends.Dress(e, main.Economy);
             e.Roam = 6;
