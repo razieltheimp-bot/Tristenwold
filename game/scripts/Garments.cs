@@ -426,12 +426,12 @@ public static class Garments
         }
         head.AddChild(Part(new SphereMesh { Radius = 0.09f, Height = 0.15f, RadialSegments = 12, Rings = 6 }, hair, chin + new Vector3(0, 0.015f, -0.01f), scale: new Vector3(1.05f, 0.8f, 0.72f)));
         var felt = Cloth(new Color("#2a1a18").Lerp(new Color("#1e2a26"), sea), span: 0);
-        var brim = new Vector3(0, m.Top - 0.035f, -0.01f);
+        var brim = new Vector3(0, m.Top + 0.03f, -0.03f);
         head.AddChild(Part(new CylinderMesh { TopRadius = 0.115f, BottomRadius = 0.13f, Height = 0.12f, RadialSegments = 18 }, felt, brim + Vector3.Up * 0.05f));
         for (var i = 0; i < 3; i++)
         {
             var a = i * Mathf.Tau / 3 + Mathf.Pi / 2;
-            head.AddChild(Part(new BoxMesh { Size = new Vector3(0.34f, 0.15f, 0.012f) }, felt, brim + new Vector3(Mathf.Cos(a) * 0.16f, 0.055f, Mathf.Sin(a) * 0.16f), new Vector3(-18, Mathf.RadToDeg(-a) + 90, 0)));
+            head.AddChild(Part(new BoxMesh { Size = new Vector3(0.34f, 0.1f, 0.012f) }, felt, brim + new Vector3(Mathf.Cos(a) * 0.15f, 0.04f, Mathf.Sin(a) * 0.15f), new Vector3(-30, Mathf.RadToDeg(-a) + 90, 0)));
         }
         if (sea < 0.8f)
         {

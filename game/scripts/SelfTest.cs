@@ -2426,7 +2426,7 @@ public partial class SelfTest(Main main) : Node
         var hunter = main.LegendsNode.Soren;
         Check(hunter is not null && hunter.GlobalPosition.DistanceTo(p.GlobalPosition) < 30 && f.SorenHuntAt > main.GuildBook.PlaySeconds, "he hunts down whoever took his blade");
         if (hunter is null) return;
-        p.TakeHit(1e9, DamageKind.Physical, AttackKind.Weapon, false, hunter);
+        for (var i = 0; i < 40 && !p.Downed; i++) p.TakeHit(1e9, DamageKind.Physical, AttackKind.Weapon, false, hunter); // the scabbard dodges three blows in ten
         await Frames(10);
         Check(city.WebHolder is null && p.Pack.Count(Legend.Arachnicalibur) == 0 && p.Pack.WornIn(Slot.Weapon)?.Id != Legend.Arachnicalibur && p.Pack.WornIn(Slot.Neck) is null && main.LegendsNode.Soren is null, "beaten, they lose it: blade and scabbard go back to him");
         Check(city.SorenDeaths == deaths, "and he didn't have to die for it");
