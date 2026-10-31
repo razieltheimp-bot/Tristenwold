@@ -2176,9 +2176,15 @@ public partial class SelfTest(Main main) : Node
     async Task TheFeud()
     {
         var f = main.FeudsNode;
-        await Teleport(new Vector3(-420, 0, 180));
+        await Teleport(new Vector3(-150, 0, -130));
         await Frames(60);
-        for (var i = 0; i < 8 && !f.Begin(); i++) main.PlayerNode.RotateY(0.8f);
+        var begun = false;
+        for (var i = 0; i < 8 && !begun; i++)
+        {
+            begun = f.Begin();
+            if (!begun) main.PlayerNode.RotateY(0.8f);
+        }
+        Check(begun, $"somewhere to have it, from {main.PlayerNode.GlobalPosition}");
         await Frames(120);
         Check(f.Fighters.Count >= 4 && f.Fighters.Count(e => e.Named) == 2, $"a feud: {f.Fighters.Count} fighters, two of them named");
         var fighting = f.Fighters.Count(e => e.Rival is not null);
