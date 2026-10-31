@@ -588,6 +588,15 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--stone"))
+        {
+            main.ForestLog.Turlin.Met = true;
+            main.HudNode.Visible = false;
+            await From("stone-near", Main.BladeStone + new Vector3(4, 2.2f, -5), Main.BladeStone + Vector3.Up * 1.5f);
+            await From("stone-town", Main.BladeStone + new Vector3(16, 10, -16), Main.BladeStone + Vector3.Up);
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--forged"))
         {
             // A row of knights, each holding a sword off a different forge, so the differences show.

@@ -144,6 +144,7 @@ public partial class Player : Fighter
         Stats.SpeedMult *= 1 + Pack.Speed + Pack.Ability("speed") + Pack.Ability("weapon_speed");
         Stats.CritChance += Pack.Crit + Pack.Ability("crit") + Pack.Ability("weapon_crit");
         Stats.MagicResist += Pack.Ability("ward");
+        Stats.Resist[DamageKind.Physical] = Stats.Resist.GetValueOrDefault(DamageKind.Physical) + Pack.Ability("resist_physical");
         foreach (var slot in Enum.GetValues<Slot>())
             if (slot != Slot.Weapon && Pack.WornIn(slot)?.Fire is { } fire) Stats.Resist[fire] = Stats.Resist.GetValueOrDefault(fire) + Forging.FireResist; // armour forged in a fire stands it
         // What they wear, and what they've drunk.
@@ -1018,6 +1019,15 @@ public partial class Player : Fighter
             if (Pack.Ability("stun") is > 0 and var stun && _rng.Chance(stun)) target.Stunned = 1.5;
         }
         if (attack == AttackKind.Weapon && Pack.Ability("drain") is > 0 and var drain) Stats.Heal(1 + _rng.Next((int)drain));
+        if (attack == AttackKind.Weapon && crit && Pack.Ability("smite") is > 0 and var smite && target.State != EnemyState.Dead)
+        {
+            Hit(target, Enumerable.Range(0, (int)smite).Sum(_ => 1 + _rng.Next(6)) * Stats.DamageMult, DamageKind.Sun, AttackKind.Spell, false);
+            if (_rng.Chance(Pack.Ability("sever")) && target.State != EnemyState.Dead)
+            {
+                Hit(target, Math.Min(target.Stats.MaxHealth * 0.25, damage * 6), DamageKind.Physical, AttackKind.Spell, false);
+                Said?.Invoke($"Rubilacxe takes a limb from {target.Stats.Name}!");
+            }
+        }
         if (_poison > 0 && attack == AttackKind.Weapon && target.State != EnemyState.Dead)
             Hit(target, Class.Utility.Power * Hero.Power("poison_blades"), DamageKind.Poison, AttackKind.Spell, false);
         return result.Dealt;
@@ -1055,12 +1065,41 @@ public partial class Player : Fighter
         damage *= 1 - Math.Min(Forging.MostBlock, Pack.Ability("block"));
         if (attack == AttackKind.Weapon && _rng.Chance(Math.Min(Forging.MostDeflect, Pack.Ability("deflect")) / 100)) damage *= Forging.GlanceDamage; // armour that turns a blow
         Stats.TakeHit(damage, kind, attack, crit, from.Stats);
+        if (Stats.Dead && Pack.Ability("undying") > 0 && Now >= _undyingAt) // the blade holds you at the edge, once a day
+        {
+            _undyingAt = Now + CityEconomy.DaySeconds;
+            Stats.Heal(1);
+            Said?.Invoke("Everything goes white, and quiet, and then you're still standing. Rubilacxe won't let you fall. Not today.");
+        }
+        Expel();
         if (Pack.Ability("thorns") is > 0 and var thorns && attack == AttackKind.Weapon && from.State != EnemyState.Dead)
             Hit(from, damage * Math.Min(Forging.MostThorns, thorns), DamageKind.Physical, AttackKind.Spell, false);
         if (_rng.Chance(0.35) || crit) Sound.At("creature/hurt_hero", GlobalPosition + Vector3.Up, -4, Appearance?.Size > 1.15 ? 0.8f : Appearance?.Size < 0.85 ? 1.25f : 1);
         if (attack == AttackKind.Weapon && GetParent() is { } world) Effects.Impact(world, GlobalPosition + Vector3.Up * 1.1f, GlobalPosition - from.GlobalPosition, DamageKind.Physical, crit);
         if (!Stats.Dead && Mount is null) Figure.Hurt();
         if (Stats.Dead) GoDown();
+    }
+
+    double _runeReady, _undyingAt;
+
+    /// <summary>Struck, armour cut with a rune lets it go: everything near takes three of its dice and is blown away, and the rune takes a while to gather again.</summary>
+    void Expel()
+    {
+        if (Now < _runeReady || Stats.Dead) return;
+        foreach (var (key, kind) in Forging.Runes)
+        {
+            var die = Pack.Ability(key);
+            if (die <= 0) continue;
+            _runeReady = Now + Forging.RuneSeconds;
+            if (GetParent() is { } world) Effects.Burst(world, GlobalPosition + Vector3.Up, kind, (float)Forging.RuneReach);
+            foreach (var e in Around(Forging.RuneReach).ToList())
+            {
+                Hit(e, Enumerable.Range(0, 3).Sum(_ => 1 + _rng.Next((int)die)) * Stats.DamageMult, kind, AttackKind.Spell, false);
+                if (e.State != EnemyState.Dead) e.Thrown(GlobalPosition, Forging.RuneThrow);
+            }
+            Said?.Invoke("The runes on your armour flare, and everything near you is flung back.");
+            return;
+        }
     }
 
     /// <summary>What this hero's moves do when a foe falls to the company: a warlock drinks its soul, a raging barbarian heals.</summary>

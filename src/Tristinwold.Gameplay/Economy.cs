@@ -14,6 +14,13 @@ public sealed class TownFabric
     public int Grown { get; set; }
 }
 
+/// <summary>The Dread Pirate Soren at a town's gates: which, and the day he'll have finished with it if nobody stops him.</summary>
+public sealed class PirateSiege
+{
+    public string Town { get; set; } = "";
+    public int Ends { get; set; }
+}
+
 /// <summary>
 /// One good in the city: how much it likes to keep (<paramref name="Target"/>), how much its own people make and use
 /// in a day, who makes it, who wants it, and what a unit of it is usually worth.
@@ -67,6 +74,9 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction Cleared(string trouble, string by) => new("cleared", Item: by, Contract: trouble);
     /// <summary>A guardian of the Northwood slain, or the dragon: everybody's business.</summary>
     public static CityAction Guardian(string id, bool corrupted = false) => new("guardian", Item: id, N: corrupted ? 1 : 0);
+    /// <summary>One of the two great blades claimed, for the whole server.</summary>
+    public static CityAction Blade(string blade, string by) => new("blade", Item: blade, Contract: by);
+    public static CityAction SiegeBroken(string by) => new("siege_broken", Item: by);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -164,6 +174,35 @@ public sealed class CityEconomy
     public double Slump { get; set; }
     /// <summary>Where the dragon went last.</summary>
     public string? DragonAt { get; set; }
+
+    /// <summary>Soren's siege of a town, if there is one; and who holds the two great blades, for everyone.</summary>
+    public PirateSiege? Siege { get; set; }
+    public string? BladeHolder { get; set; }
+    public string? WebHolder { get; set; }
+    public const int SiegeEvery = 24, SiegeDays = 3, SiegeBurns = 1, SackBurns = 2, SackTreasury = 200;
+    /// <summary>The towns his ships can reach.</summary>
+    public static readonly IReadOnlyList<string> SiegeTowns = ["city:druitt", "city:greywater", "city:tristinwold"];
+
+    /// <summary>Soren lands. Every day he's there, a town burns a little more, and its trade stops.</summary>
+    string BeginSiege(Rng rng)
+    {
+        Siege = new PirateSiege { Town = rng.Pick(SiegeTowns), Ends = Day + SiegeDays };
+        FabricOf(Siege.Town).Burnt += SiegeBurns;
+        Slump = Math.Min(MostSlump, Slump + SlumpBlow / 2);
+        return $"The Dread Pirate Soren has landed at {PlaceName(Siege.Town)} and laid siege to it. He'll be {SiegeDays} days at it, if nobody stops him.";
+    }
+
+    string? TendSiege()
+    {
+        if (Siege is not { } siege) return null;
+        FabricOf(siege.Town).Burnt += SiegeBurns;
+        foreach (var g in Goods) Stock[g.Good] = Stock.GetValueOrDefault(g.Good) * 0.95;
+        if (Day < siege.Ends) return $"{PlaceName(siege.Town)} burns under Soren's guns.";
+        FabricOf(siege.Town).Burnt += SackBurns;
+        Treasury = Math.Max(0, Treasury - SackTreasury);
+        Siege = null;
+        return $"Soren has sacked {PlaceName(siege.Town)} and sailed. The carpenters have their work cut out.";
+    }
 
     public const int RampageEvery = 3, CarpentersEvery = 5, BurnedAtOnce = 3, GrowthCap = 12, RebuildTimber = 12;
     public const double SlumpBlow = 0.3, MostSlump = 0.6;
@@ -416,6 +455,8 @@ public sealed class CityEconomy
         if (News.Count > 12) News.RemoveRange(0, News.Count - 12);
         Slump = Math.Max(0, Slump - 0.02);
         if (DragonFree && !DragonSlain && Day % RampageEvery == 0) told.Add(Rampage());
+        if (TendSiege() is { } siege) told.Add(siege);
+        else if (Siege is null && Day % SiegeEvery == 0) told.Add(BeginSiege(rng));
         if (Day % CarpentersEvery == 0 && Carpenters(rng) is { } built) told.Add(built);
         return told;
     }
@@ -505,6 +546,12 @@ public sealed class CityEconomy
             case "cargo" when a.Good is { } g && Enum.IsDefined(g): Stock[g] = Stock.GetValueOrDefault(g) + Math.Clamp(a.N, 0, 10); return true;
             case "treasury": Treasury += crowns; return true;
             case "guardian" when a.Item is { } guardian: Slain(guardian, a.N == 1); return true;
+            case "blade" when a.Item == Legend.Rubilacxe && BladeHolder is null && a.Contract is { Length: > 0 and <= 60 } holder: BladeHolder = holder; News.Add($"{holder} has drawn the sword from the stone."); return true;
+            case "blade" when a.Item == Legend.Arachnicalibur && WebHolder is null && a.Contract is { Length: > 0 and <= 60 } taker: WebHolder = taker; News.Add($"{taker} has taken Arachnicalibur from the Dread Pirate Soren."); return true;
+            case "siege_broken" when Siege is { } broken:
+                News.Add($"{(a.Item is { Length: > 0 and <= 60 } who2 ? who2 : "Someone")} has broken Soren's siege of {PlaceName(broken.Town)}.");
+                Siege = null;
+                return true;
             // The roads.
             case "know" when a.Market is { } m && m.Id.Length is > 0 and <= 80: return Roads.Know(m);
             case "town_stock" when a.Town is not null && a.Good is { } tg && Enum.IsDefined(tg): Roads.Adjust(a.Town, tg, Math.Clamp(a.N, -60, 60)); return true;

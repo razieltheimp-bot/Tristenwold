@@ -17,7 +17,7 @@ public class DragonRampageTests
     public void Nothing_burns_while_the_dragon_is_sealed()
     {
         var c = CityEconomy.Start(5);
-        Days(c, 30);
+        Days(c, CityEconomy.SiegeEvery - 2); // short of Soren's first landing
         Assert.All(c.Fabric.Values, f => Assert.Equal(0, f.Burnt));
         Assert.Equal(0, c.Slump);
     }

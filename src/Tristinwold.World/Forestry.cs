@@ -19,6 +19,8 @@ public sealed class ForestBook
     public bool Thorn { get; set; }
     /// <summary>The rot is in this hero's blood, and it stays there until a druid draws it out.</summary>
     public bool Blighted { get; set; }
+    /// <summary>This hero helped bring down the fifth guardian: the stone asks that much.</summary>
+    public bool DragonSlayer { get; set; }
     /// <summary>A shapeshifter's studies: how many of each beast they've fought and killed, and the shapes they've learned.</summary>
     public Dictionary<string, int> Studied { get; set; } = [];
     public List<string> Shapes { get; set; } = ["wolf"];

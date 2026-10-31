@@ -34,6 +34,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--rival-only")) { await TheRival(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--repute-only")) { await TheRepute(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--legends-only")) { await TheLegends(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -2209,6 +2210,57 @@ public partial class SelfTest(Main main) : Node
         Check(hud.TalkText.Contains("coin's no good"), "and they won't serve you");
         hud.EndTalk();
         (r.Towns[ReputationBook.Capital], r.Country, r.People[keeper.Npc.Id]) = (0, 0, 0);
+    }
+
+    /// <summary>The two great blades, Soren's siege, and armour that blasts people away.</summary>
+    async Task TheLegends()
+    {
+        var (p, hud, s, f, city) = (main.PlayerNode, main.HudNode, main.Standing, main.ForestLog, main.Economy);
+        await Teleport(Main.BladeStone + new Vector3(2.6f, 0, 0));
+        await Frames(20);
+        Check(main.WhyNotBlade() is { } a && a.Contains("fifth guardian"), "it won't come for someone who hasn't ended the dragon");
+        f.DragonSlayer = true;
+        s.Evil(60, "a test of being wicked");
+        Check(main.WhyNotBlade() is { } b && b.Contains("wants better"), "nor for a wicked hand, even a dragon-slayer's");
+        main.DrawBlade();
+        Check(city.BladeHolder is null, "and it stays put");
+        s.Good(200, "a test of being good");
+        Check(main.WhyNotBlade() is null, "good, and the dragon ended: it will come");
+        main.DrawBlade();
+        Check(city.BladeHolder == p.Company && p.Pack.Count(Legend.Rubilacxe) == 1 && p.Pack.Count(Legend.RubilacxeScabbard) == 1, "the sword and its scabbard come away");
+        await Frames(50);
+        Check(p.Pack.Equip(Legend.Rubilacxe), $"{Items.Get(Legend.Rubilacxe)!.Name} goes in the hand");
+        p.Dress();
+        await Frames(5);
+        Check(p.Pack.ToHit == 4 && p.Pack.Power == 4, "+4 to hit and +4 damage, as the book has it");
+
+        city.Siege = new PirateSiege { Town = "city:druitt", Ends = city.Day + 3 };
+        var spot = new Vector3(-900, 0, -262);
+        await Teleport(spot);
+        await Until(() => main.LegendsNode?.Soren is not null, 8);
+        var soren = main.LegendsNode?.Soren;
+        Check(soren is { Foresees: > 0 }, "Soren is at the gates of Druitt, and sees blows coming");
+        s.Evil(400, "a test of going bad");
+        if (soren is null) return;
+        soren.Foresees = 0;
+        soren.TakeHit(1e8, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => city.Siege is null, 5);
+        Check(city.Siege is null && city.WebHolder == p.Company && p.Pack.Count(Legend.Arachnicalibur) == 1, "a wicked hand breaks the siege, and takes Arachnicalibur");
+
+        // Rune armour: struck, it blows back whatever's close.
+        var plate = Enumerable.Range(1, 200000).Select(i => Forging.Serial("leather_armor", (ulong)i * 104729, "city:tristinwold", "The Anvil Gate", 6, 10, "Test")).First(id => Items.Get(id)!.Powers!.ContainsKey("rune_fire"));
+        p.Pack.Add(plate);
+        p.Pack.Equip(plate);
+        await Frames(10);
+        var foe = main.Enemies().Where(e => e.State != EnemyState.Dead).OrderBy(e => e.GlobalPosition.DistanceTo(p.GlobalPosition)).FirstOrDefault()!;
+        foe.GlobalPosition = p.GlobalPosition + new Vector3(2, 0, 0);
+        foe.Stats.Grow(1000); // it has to live through this, to show how far it flies
+        await Frames(2);
+        var (was, near) = (foe.Stats.Health, foe.GlobalPosition);
+        p.TakeHit(1, DamageKind.Physical, AttackKind.Weapon, false, foe);
+        await Frames(30);
+        Check(foe.State != EnemyState.Dead && foe.Stats.Health < was * 1000, "the rune lets go, and it burns what's near");
+        Check(foe.GlobalPosition.DistanceTo(p.GlobalPosition) > near.DistanceTo(p.GlobalPosition) + 3, $"and blasts it away: {near.DistanceTo(p.GlobalPosition):0.0}m to {foe.GlobalPosition.DistanceTo(p.GlobalPosition):0.0}m");
     }
 
     /// <summary>The forge's work: two swords off the same anvil are two different swords, and they show it in the hand and in the fight.</summary>

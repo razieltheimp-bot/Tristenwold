@@ -236,6 +236,12 @@ public static class Forging
         new("speed", "the Fleet", 0.02, 0.06, "+{0:P0} speed", LightOnly: true),
         new("block", "the Mountain", 0.02, 0.06, "takes {0:P0} less from every blow", HeavyOnly: true),
         new("deflect", "the Turned Blade", 4, 12, "{0:0.#}% of blows glance off you for half", HeavyOnly: true),
+        // Rune expulsion: struck, the armour lets go what's cut into it, and everything near is blasted back.
+        new("rune_fire", "the Flame Rune", 6, 12, "rune expulsion: blasts foes away with 3d{0:0} flame", Dice: true),
+        new("rune_shock", "the Storm Rune", 6, 12, "rune expulsion: blasts foes away with 3d{0:0} lightning", Dice: true),
+        new("rune_frost", "the Ice Rune", 6, 12, "rune expulsion: blasts foes away with 3d{0:0} ice", Dice: true),
+        new("rune_sun", "the Sun Rune", 6, 12, "rune expulsion: blasts foes away with 3d{0:0} holy light", Dice: true),
+        new("rune_poison", "the Blight Rune", 6, 12, "rune expulsion: blasts foes away with 3d{0:0} venom", Dice: true),
         // And what a weapon can do past its own damage: the dice roll on every blow.
         new("drain", "the Leech", 4, 8, "heals you d{0:0} on every blow", Weapon: true, Dice: true),
         new("bleed", "the Red Hand", 4, 10, "plus d{0:0} bleeding damage", Weapon: true, Dice: true),
@@ -244,6 +250,12 @@ public static class Forging
         new("weapon_speed", "the Swift Hand", 0.02, 0.06, "+{0:P0} speed", Weapon: true),
     ];
 
+    /// <summary>The runes armour can be cut with, what each lets go, how far it throws, and how long it takes to gather again.</summary>
+    public static readonly IReadOnlyList<(string Key, DamageKind Kind)> Runes =
+        [("rune_fire", DamageKind.Fire), ("rune_shock", DamageKind.Shock), ("rune_frost", DamageKind.Frost), ("rune_sun", DamageKind.Sun), ("rune_poison", DamageKind.Poison)];
+    public const double RuneReach = 5, RuneSeconds = 14;
+    public const float RuneThrow = 5;
+
     /// <summary>The most any of these can add up to across everything worn.</summary>
     public const double MostDeflect = 35, MostDodge = 30, MostJump = 1, MostBlock = 0.2, MostThorns = 0.3, MostRegen = 2;
 
@@ -251,7 +263,7 @@ public static class Forging
     static int HowMany(double luck) => luck switch { >= 0.95 => 3, >= 0.75 => 2, >= 0.4 => 1, _ => 0 };
 
     /// <summary>The die an ability rolls: the same steps as a fire, up from a d4.</summary>
-    static int DieIn(double low, double high, double luck) => (int)(low + Math.Floor((high - low) / 2 + 1) * Math.Min(luck, 0.999)) / 2 * 2 + (((int)low) % 2);
+    static int DieIn(double low, double high, double luck) => (int)(low + 2 * Math.Floor(((high - low) / 2 + 1) * Math.Min(luck, 0.999)));
 
     /// <summary>How many different pieces one base item can be by its parts alone, before the fire and the rolls.</summary>
     public static long PartCombinations(bool weapon) => (weapon ? WeaponSockets : ArmorSockets).Aggregate(1L, (n, s) => n * s.Parts.Length);
