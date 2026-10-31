@@ -132,7 +132,7 @@ public sealed record GroupView(string Player, string Area, IReadOnlyList<string>
 
 public static class Wire
 {
-    public const int ProtocolVersion = 6; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map
+    public const int ProtocolVersion = 7; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges
     public const int DefaultPort = 7777;
     public const int MaxLineBytes = 4 * 1024 * 1024; // a big deviant world is still well under this
 
