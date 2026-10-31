@@ -91,8 +91,9 @@ public class ForgingTests
     [Fact]
     public void Parts_alone_make_tens_of_thousands_of_one_piece()
     {
-        Assert.Equal(32768, Forging.PartCombinations(true));
-        Assert.Equal(32768, Forging.PartCombinations(false));
+        Assert.Equal(248832, Forging.PartCombinations(true));
+        Assert.Equal(248832, Forging.PartCombinations(false));
+        Assert.All(Forging.WeaponSockets.Concat(Forging.ArmorSockets), s => Assert.Equal(12, s.Parts.Length));
     }
 
     [Fact]
@@ -191,8 +192,8 @@ public class ForgingTests
     public void A_better_forge_shifts_the_dice_up()
     {
         Assert.Equal((6, 8, 10, 12), (Forging.FireDie(0.1, 0), Forging.FireDie(0.5, 0), Forging.FireDie(0.8, 0), Forging.FireDie(0.95, 0)));
-        Assert.Equal(8, Forging.FireDie(0.4, 2));
-        Assert.Equal(12, Forging.FireDie(0.85, 3));
+        Assert.Equal(8, Forging.FireDie(0.45, 2));
+        Assert.Equal(12, Forging.FireDie(0.9, 3));
     }
 
     [Fact]
@@ -201,6 +202,56 @@ public class ForgingTests
         var rng = new Rng(61);
         Assert.All(Enumerable.Range(0, 2000).Select(_ => Piece(rng.NextULong())).Where(p => p.Fire is null), p => Assert.Equal(0, p.FireDie));
         Assert.All(Enumerable.Range(0, 2000).Select(_ => Piece(rng.NextULong(), "steel_plate")), p => Assert.Equal(0, p.FireDie));
+    }
+
+    [Fact]
+    public void Armour_comes_out_with_abilities_and_only_some_do()
+    {
+        var rng = new Rng(71);
+        var pieces = Enumerable.Range(0, 5000).Select(_ => Piece(rng.NextULong(), "leather_armor")).ToList();
+        Assert.Contains(pieces, p => p.Powers!.Count == 0);
+        Assert.Contains(pieces, p => p.Powers!.Count == 3);
+        Assert.Contains(pieces, p => p.Powers!.ContainsKey("health"));
+        Assert.Contains(pieces, p => p.Powers!.ContainsKey("dodge"));
+        Assert.True(pieces.Where(p => p.Powers!.Count > 0).All(p => p.Name.Contains(" of ")));
+    }
+
+    [Fact]
+    public void Light_armour_leaps_and_heavy_armour_stands()
+    {
+        var rng = new Rng(72);
+        var light = Enumerable.Range(0, 5000).Select(_ => Piece(rng.NextULong(), "leather_armor")).ToList();
+        var heavy = Enumerable.Range(0, 5000).Select(_ => Piece(rng.NextULong(), "steel_plate")).ToList();
+        Assert.Contains(light, p => p.Powers!.ContainsKey("jump"));
+        Assert.DoesNotContain(heavy, p => p.Powers!.ContainsKey("jump"));
+        Assert.Contains(heavy, p => p.Powers!.ContainsKey("block"));
+        Assert.DoesNotContain(light, p => p.Powers!.ContainsKey("block"));
+        Assert.Contains(heavy, p => p.Powers!.ContainsKey("deflect"));
+        Assert.DoesNotContain(light, p => p.Powers!.ContainsKey("deflect"));
+    }
+
+    [Fact]
+    public void However_much_featherstep_you_wear_a_jump_is_at_most_double()
+    {
+        var rng = new Rng(73);
+        var leapers = Enumerable.Range(0, 20000).Select(_ => Piece(rng.NextULong(), "leather_armor")).Where(p => p.Powers!.ContainsKey("jump")).Take(1).ToList();
+        var capper = Enumerable.Range(0, 20000).Select(_ => Piece(rng.NextULong(), "leather_cap")).First(p => p.Powers!.GetValueOrDefault("jump") > 0.6);
+        var cloak = Enumerable.Range(0, 20000).Select(_ => Piece(rng.NextULong(), "traveller_cloak")).First(p => p.Powers!.GetValueOrDefault("jump") > 0.6);
+        var pack = new Pack();
+        foreach (var id in new[] { capper.Id, cloak.Id }) { pack.Add(id); pack.Equip(id); }
+        Assert.Equal(2, pack.JumpHeight);
+        Assert.NotEmpty(leapers);
+    }
+
+    [Fact]
+    public void Weapons_get_their_own_abilities_and_dice()
+    {
+        var rng = new Rng(74);
+        var swords = Enumerable.Range(0, 5000).Select(_ => Piece(rng.NextULong())).ToList();
+        Assert.Contains(swords, p => p.Powers!.ContainsKey("bleed"));
+        Assert.All(swords.Where(p => p.Powers!.ContainsKey("bleed")), p => Assert.Contains((int)p.Powers!["bleed"], new[] { 4, 6, 8, 10 }));
+        Assert.All(swords.Where(p => p.Powers!.ContainsKey("drain")), p => Assert.Contains((int)p.Powers!["drain"], new[] { 4, 6, 8 }));
+        Assert.DoesNotContain(swords, p => p.Powers!.ContainsKey("dodge"));
     }
 
     [Fact]

@@ -2337,7 +2337,7 @@ public partial class SelfTest(Main main) : Node
         Check(hud.Choose("Make Steel Sword"), "and another");
         var made = pack.Contents.Where(x => x.Item.Forged).Select(x => x.Item).ToList();
         Check(made.Count == 2 && made[0].Id != made[1].Id && made[0].Text != made[1].Text, $"two swords, not the same sword: {made[0].Name}, {made[1].Name}");
-        Check(made.All(x => x.Name.EndsWith("+2") && x.Text.Contains("The Anvil Gate") && x.Text.Contains(p.Company)), $"each carries its forge and its maker: {made[0].Text}");
+        Check(made.All(x => x.Name.Contains("+2") && x.Text.Contains("The Anvil Gate") && x.Text.Contains(p.Company)), $"each carries its forge and its maker: {made[0].Text}");
         hud.EndTalk();
         var fists = p.Stats.DamageMult;
         Check(pack.Equip(made[0].Id), "a forged sword goes in the hand");

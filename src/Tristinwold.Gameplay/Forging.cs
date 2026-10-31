@@ -10,6 +10,12 @@ public sealed record ForgePart(string Name, string Prefix, double Damage = 0, do
 /// <summary>A forge, and what working at it does to the math: its plus, what it leans to, and the fire it favours.</summary>
 public sealed record ForgeHouse(string Id, string Name, int Plus, double Damage = 0, double Armor = 0, double Speed = 0, double Crit = 0, double Health = 0, DamageKind? Fire = null);
 
+/// <summary>
+/// Something more than numbers that a piece can come out with. <paramref name="Key"/> is what the game adds up; the value
+/// is rolled between <paramref name="Low"/> and <paramref name="High"/>, or is a die if <paramref name="Dice"/> is set.
+/// </summary>
+public sealed record ForgeAbility(string Key, string Title, double Low, double High, string Says, bool Weapon = false, bool LightOnly = false, bool HeavyOnly = false, bool Dice = false);
+
 /// <summary>How good a forged piece came out, against an ordinary one of its kind.</summary>
 public enum ForgeGrade { Common, Fine, Masterwork, Legendary }
 
@@ -37,7 +43,7 @@ public static class Forging
     /// The die a weapon's fire rolls on every blow, on top of the weapon's own damage: a d6 most often, a d12 seldom,
     /// and a forge's plus moves the odds up. <paramref name="luck"/> is a roll from 0 to 1.
     /// </summary>
-    public static int FireDie(double luck, int plus) => (luck + plus * 0.05) switch { >= 0.95 => 12, >= 0.8 => 10, >= 0.5 => 8, _ => 6 };
+    public static int FireDie(double luck, int plus) => (luck + plus * 0.03) switch { >= 0.95 => 12, >= 0.8 => 10, >= 0.5 => 8, _ => 6 };
 
     /// <summary>The chance, from 0 to 1, that a blow glances for someone with this much plus to hit.</summary>
     public static double Glances(int toHit) => Math.Max(0, GlanceChance - toHit) / 100;
@@ -67,6 +73,10 @@ public static class Forging
             new("Short edge", "Quick", Damage: -0.02, Speed: 0.04, Length: 0.84),
             new("Heavy edge", "Crushing", Damage: 0.1, Speed: -0.04, Length: 1.05, Width: 1.42, Tint: "#6f747c"),
             new("Blackened edge", "Grim", Damage: 0.05, Crit: 2, Tint: "#3a3a42"),
+            new("Curved edge", "Curved", Damage: 0.03, Speed: 0.015, Length: 1.04, Width: 0.9),
+            new("Double edge", "Twin-Edged", Damage: 0.045, Crit: 1, Width: 1.08),
+            new("Waved edge", "Flamelike", Damage: 0.035, Crit: 1.5, Width: 1.16, Tint: "#b8c0cc"),
+            new("Hollow-ground edge", "Razor", Crit: 4, Damage: -0.01, Width: 0.7, Tint: "#e0e4ea"),
         ]),
         ("Guard",
         [
@@ -78,6 +88,10 @@ public static class Forging
             new("Ring guard", "Ringed", Health: 0.01, Width: 0.9, Tint: "#c8a040"),
             new("Spiked guard", "Spiked", Damage: 0.03, Width: 1.6, Tint: "#4a4a52"),
             new("Wide guard", "Wide", Armor: 4, Speed: -0.005, Width: 1.9, Tint: "#7a6048"),
+            new("Lugged guard", "Lugged", Damage: 0.015, Armor: 2, Width: 1.2),
+            new("Disc guard", "Round-Guarded", Armor: 5, Width: 0.8, Tint: "#9aa0a8"),
+            new("Winged guard", "Winged", Speed: 0.02, Crit: 0.5, Width: 1.75, Tint: "#c8ccd4"),
+            new("Thumb-ring guard", "Thumbed", Crit: 2, Width: 0.7, Tint: "#8a7a50"),
         ]),
         ("Grip",
         [
@@ -89,6 +103,10 @@ public static class Forging
             new("Short grip", "Close", Speed: 0.025, Length: 0.97, Tint: "#3a2a20"),
             new("Bone grip", "Boned", Crit: 2, Tint: "#e0d8c0"),
             new("Silk-wrapped grip", "Silken", Speed: 0.03, Damage: -0.01, Tint: "#7a2a3a"),
+            new("Cord grip", "Corded", Speed: 0.01, Crit: 0.5, Tint: "#8a7a5a"),
+            new("Sharkskin grip", "Rough-Bound", Crit: 1.5, Speed: 0.01, Tint: "#5a6a70"),
+            new("Horn grip", "Horned", Damage: 0.02, Crit: 0.5, Tint: "#2a2622"),
+            new("Blackthorn grip", "Thorned", Damage: 0.025, Speed: 0.005, Tint: "#1e1a18"),
         ]),
         ("Pommel",
         [
@@ -100,6 +118,10 @@ public static class Forging
             new("Disc pommel", "Steady", Armor: 2, Tint: "#8a8f98"),
             new("Wheel pommel", "Wheeled", Damage: 0.015, Crit: 0.5, Tint: "#6a6f78"),
             new("Stone pommel", "Stone-Set", Health: 0.015, Speed: -0.005, Tint: "#7a3030"),
+            new("Fishtail pommel", "Fishtailed", Speed: 0.015, Crit: 0.5, Tint: "#9a9ea6"),
+            new("Skull pommel", "Death-Headed", Damage: 0.02, Crit: 1, Tint: "#d8d0b8"),
+            new("Silver pommel", "Silver-Set", Value: 0.2, Health: 0.005, Tint: "#c8ccd4"),
+            new("Claw pommel", "Clawed", Crit: 2, Speed: -0.005, Tint: "#3a3028"),
         ]),
         ("Finish",
         [
@@ -111,6 +133,10 @@ public static class Forging
             new("Inlaid finish", "Inlaid", Value: 0.25, Tint: "#d0b060"),
             new("Blued finish", "Blued", Speed: 0.015, Value: 0.1, Tint: "#3a4a6a"),
             new("Folded finish", "Folded", Damage: 0.04, Speed: -0.005, Value: 0.15),
+            new("Acid-etched finish", "Patterned", Crit: 1.5, Value: 0.12),
+            new("Twice-tempered finish", "Twice-Tempered", Damage: 0.035, Speed: 0.005, Value: 0.1),
+            new("Charred finish", "Charred", Damage: 0.02, Crit: 1, Tint: "#2e2a2a"),
+            new("Mirror finish", "Mirrored", Speed: 0.02, Value: 0.2, Tint: "#e8ecf2"),
         ]),
     ];
 
@@ -127,6 +153,10 @@ public static class Forging
             new("Scaled shell", "Scaled", Armor: 0.05, Health: 0.01, Tint: "#6a7a70"),
             new("Studded shell", "Studded", Armor: 0.07, Speed: -0.005, Tint: "#5a4a3a"),
             new("Blackened shell", "Grim", Armor: 0.04, Crit: 1, Tint: "#35353c"),
+            new("Banded shell", "Banded", Armor: 0.09, Speed: -0.012, Tint: "#858a92"),
+            new("Boiled shell", "Boiled", Armor: 0.03, Speed: 0.01, Tint: "#6a4a30"),
+            new("Fluted shell", "Fluted", Armor: 0.05, Speed: 0.005, Tint: "#b0b4bc"),
+            new("Horn-plated shell", "Horn-Plated", Armor: 0.07, Health: 0.005, Tint: "#3a3228"),
         ]),
         ("Lining",
         [
@@ -138,6 +168,10 @@ public static class Forging
             new("Mail lining", "Mailed", Armor: 0.06, Speed: -0.01),
             new("Leather lining", "Hide-Backed", Armor: 0.02, Health: 0.005),
             new("Quilted lining", "Quilted", Armor: 0.03, Health: 0.005),
+            new("Moss lining", "Mossy", Health: 0.012, Speed: 0.003),
+            new("Linked lining", "Linked", Armor: 0.04, Health: 0.005),
+            new("Spidersilk lining", "Gossamer", Speed: 0.02, Armor: -0.005),
+            new("Sheepskin lining", "Fleeced", Health: 0.018, Speed: -0.003),
         ]),
         ("Strapping",
         [
@@ -149,6 +183,10 @@ public static class Forging
             new("Chain straps", "Chained", Armor: 0.04, Speed: -0.01),
             new("Broad straps", "Broad-Belted", Health: 0.01),
             new("Knotted straps", "Knotted", Crit: 0.5),
+            new("Hooked straps", "Hooked", Speed: 0.012, Armor: 0.005),
+            new("Studded straps", "Stud-Strapped", Armor: 0.025),
+            new("Wide straps", "Well-Hung", Armor: 0.01, Health: 0.006),
+            new("Quick-release straps", "Quick-Shed", Speed: 0.018, Health: -0.002),
         ]),
         ("Trim",
         [
@@ -160,6 +198,10 @@ public static class Forging
             new("Red trim", "Crimson", Health: 0.005, Tint: "#8a2020"),
             new("Blue trim", "Azure", Speed: 0.005, Tint: "#2a4a8a"),
             new("Gilt trim", "Gilded", Value: 0.3, Tint: "#d8b040"),
+            new("Fur trim", "Fur-Edged", Health: 0.008, Tint: "#6a5a48"),
+            new("Green trim", "Verdant", Value: 0.05, Tint: "#2f5a34"),
+            new("Bone trim", "Bone-Edged", Crit: 0.8, Tint: "#d8d0b8"),
+            new("Violet trim", "Royal", Value: 0.25, Tint: "#5a3a7a"),
         ]),
         ("Finish",
         [
@@ -171,8 +213,45 @@ public static class Forging
             new("Hardened finish", "Hardened", Armor: 0.05, Speed: -0.005),
             new("Lacquered finish", "Lacquered", Speed: 0.01, Value: 0.1),
             new("Runed finish", "Runed", Health: 0.015, Value: 0.2),
+            new("Scoured finish", "Scoured", Speed: 0.006, Armor: 0.01),
+            new("Blackened finish", "Sooted", Armor: 0.025, Crit: 0.5),
+            new("Case-hardened finish", "Case-Hardened", Armor: 0.04, Value: 0.05),
+            new("Blessed finish", "Blessed", Health: 0.01, Armor: 0.01, Value: 0.15),
         ]),
     ];
+
+    /// <summary>What armour can come out able to do. The light and the heavy each have their own.</summary>
+    public static readonly IReadOnlyList<ForgeAbility> Abilities =
+    [
+        new("health", "the Stout Heart", 0.02, 0.08, "+{0:P0} health"),
+        new("dodge", "the Slip", 2, 8, "{0:0.#}% harder to hit"),
+        new("bulwark", "the Bulwark", 3, 12, "+{0:0} armour"),
+        new("regen", "Mending", 0.2, 0.8, "heals {0:0.#}% of your health a second"),
+        new("thorns", "Thorns", 0.05, 0.15, "turns {0:P0} of each blow back on whoever struck it"),
+        new("mana", "the Wellspring", 0.05, 0.2, "+{0:P0} mana"),
+        new("stamina", "the Long Road", 0.05, 0.2, "+{0:P0} stamina"),
+        new("ward", "Warding", 3, 10, "+{0:0} magic resistance"),
+        new("crit", "Fortune", 1, 4, "+{0:0.#}% critical"),
+        new("jump", "the Featherstep", 0.2, 1, "jump up to {0:P0} higher", LightOnly: true),
+        new("speed", "the Fleet", 0.02, 0.06, "+{0:P0} speed", LightOnly: true),
+        new("block", "the Mountain", 0.02, 0.06, "takes {0:P0} less from every blow", HeavyOnly: true),
+        new("deflect", "the Turned Blade", 4, 12, "{0:0.#}% of blows glance off you for half", HeavyOnly: true),
+        // And what a weapon can do past its own damage: the dice roll on every blow.
+        new("drain", "the Leech", 4, 8, "heals you d{0:0} on every blow", Weapon: true, Dice: true),
+        new("bleed", "the Red Hand", 4, 10, "plus d{0:0} bleeding damage", Weapon: true, Dice: true),
+        new("stun", "the Hammerfall", 0.03, 0.1, "{0:P0} chance to stun", Weapon: true),
+        new("weapon_crit", "the Open Vein", 1, 5, "+{0:0.#}% critical", Weapon: true),
+        new("weapon_speed", "the Swift Hand", 0.02, 0.06, "+{0:P0} speed", Weapon: true),
+    ];
+
+    /// <summary>The most any of these can add up to across everything worn.</summary>
+    public const double MostDeflect = 35, MostDodge = 30, MostJump = 1, MostBlock = 0.2, MostThorns = 0.3, MostRegen = 2;
+
+    /// <summary>How many abilities a piece comes out with: more often none, seldom three.</summary>
+    static int HowMany(double luck) => luck switch { >= 0.95 => 3, >= 0.75 => 2, >= 0.4 => 1, _ => 0 };
+
+    /// <summary>The die an ability rolls: the same steps as a fire, up from a d4.</summary>
+    static int DieIn(double low, double high, double luck) => (int)(low + Math.Floor((high - low) / 2 + 1) * Math.Min(luck, 0.999)) / 2 * 2 + (((int)low) % 2);
 
     /// <summary>How many different pieces one base item can be by its parts alone, before the fire and the rolls.</summary>
     public static long PartCombinations(bool weapon) => (weapon ? WeaponSockets : ArmorSockets).Aggregate(1L, (n, s) => n * s.Parts.Length);
@@ -267,8 +346,23 @@ public static class Forging
         var power = weapon ? (int)Math.Round(1 + rng.NextDouble() * 2 + plain.Damage * 10 * (0.5 + rng.NextDouble() * 0.5) + parts.Count(p => p.Damage > 0) * 0.5 + forge.Plus * 0.5) : 0;
 
         var die = weapon && fire is not null ? FireDie(rng.NextDouble(), forge.Plus) : 0;
+        // Anything more than numbers. Light things and heavy things each have what suits them.
+        var light = !plain.Metal;
+        var pool = Abilities.Where(a => a.Weapon == weapon && (!a.LightOnly || light) && (!a.HeavyOnly || !light)).ToList();
+        var powers = new Dictionary<string, double>();
+        var saying = new List<string>();
+        string? title = null;
+        for (var n = HowMany(rng.NextDouble()); n > 0 && pool.Count > 0; n--)
+        {
+            var ability = pool[rng.Next(pool.Count)];
+            pool.Remove(ability);
+            var value = ability.Dice ? DieIn(ability.Low, ability.High, rng.NextDouble()) : Math.Round(ability.Low + rng.NextDouble() * (ability.High - ability.Low), 4);
+            powers[ability.Key] = value;
+            saying.Add(string.Format(ability.Says, value));
+            title ??= ability.Title;
+        }
         var damage = Math.Round(plain.Damage * damageBy, 4);
-        var armor = Math.Round(plain.Armor * armorBy + flatArmor, 1);
+        var armor = Math.Round(plain.Armor * armorBy + flatArmor + powers.GetValueOrDefault("bulwark"), 1);
 
         // Named for the best thing about it, that the plainest parts don't get to be.
         var main = weapon ? damageBy : armorBy;
@@ -276,7 +370,7 @@ public static class Forging
         var best = parts.Skip(1).Prepend(parts[0]).OrderByDescending(Score).First();
         var fireWord = fire is { } f ? FireWord(f) + " " : "";
         var plus = forge.Plus > 0 ? $" +{forge.Plus}" : "";
-        var name = $"{best.Prefix} {fireWord}{plain.Name}{plus}";
+        var name = $"{best.Prefix} {fireWord}{plain.Name}{plus}{(title is null ? "" : $" of {title}")}";
         var numberBits = bits[2][..4].ToUpperInvariant() + "-" + bits[2][4..8].ToUpperInvariant();
 
         var stats = new List<string>();
@@ -288,11 +382,12 @@ public static class Forging
         if (crit >= 0.05) stats.Add($"+{crit:0.#}% critical");
         if (health >= 0.0005) stats.Add($"+{health:P1} health");
         if (fire is { } hurt) stats.Add(weapon ? $"plus d{die} {hurt.ToString().ToLowerInvariant()} damage" : $"{FireResist:0}% {hurt.ToString().ToLowerInvariant()} resistance");
+        stats.AddRange(saying);
         var text = $"{grade} work. {string.Join(", ", stats)}. {string.Join(", ", parts.Select(p => p.Name.ToLowerInvariant()))}. Forged by {bits[7]} at {forge.Name}. No. {numberBits}.";
 
         return plain with
         {
-            Id = id, Name = name, Text = text, Damage = damage, Armor = armor, Speed = speed, Crit = crit, Health = health, Fire = fire, Forged = true, ToHit = toHit, Power = power, FireDie = die,
+            Id = id, Name = name, Text = text, Damage = damage, Armor = armor, Speed = speed, Crit = crit, Health = health, Fire = fire, Forged = true, ToHit = toHit, Power = power, FireDie = die, Powers = powers,
             Value = Math.Max(1, (int)Math.Round(plain.Value * main * (1 + parts.Sum(p => p.Value)))),
             Tint = parts[0].Tint ?? (plain.Slot == Slot.Weapon ? plain.Tint : plain.Tint ?? parts[3].Tint),
             Glow = fire is { } lit ? FireTint(lit) : plain.Glow, Metal = plain.Metal || weapon,
