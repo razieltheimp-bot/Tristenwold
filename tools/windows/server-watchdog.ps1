@@ -51,7 +51,7 @@ function Answers {
 }
 
 function Find-Cloudflared {
-    foreach ($place in "${env:ProgramFiles(x86)}\cloudflared\cloudflared.exe", "$env:ProgramFiles\cloudflared\cloudflared.exe") {
+    foreach ($place in (Join-Path $PSScriptRoot 'cloudflared.exe'), "${env:ProgramFiles(x86)}\cloudflared\cloudflared.exe", "$env:ProgramFiles\cloudflared\cloudflared.exe") {
         if (Test-Path -LiteralPath $place) { return $place }
     }
     (Get-Command cloudflared -ErrorAction SilentlyContinue).Source
