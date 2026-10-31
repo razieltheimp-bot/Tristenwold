@@ -33,6 +33,7 @@ public partial class SelfTest(Main main) : Node
             GD.PrintErr("[selftest] ten physics frames passed; starting");
             if (OS.GetCmdlineUserArgs().Contains("--rival-only")) { await TheRival(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--repute-only")) { await TheRepute(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -2208,6 +2209,32 @@ public partial class SelfTest(Main main) : Node
         Check(hud.TalkText.Contains("coin's no good"), "and they won't serve you");
         hud.EndTalk();
         (r.Towns[ReputationBook.Capital], r.Country, r.People[keeper.Npc.Id]) = (0, 0, 0);
+    }
+
+    /// <summary>The forge's work: two swords off the same anvil are two different swords, and they show it in the hand and in the fight.</summary>
+    async Task TheForge()
+    {
+        var (p, hud, pack) = (main.PlayerNode, main.HudNode, main.PlayerNode.Pack);
+        await Teleport(new Vector3(75, 0, 14) + new Vector3(1, 0, 1));
+        await Frames(30);
+        var hulda = main.Locals.First(x => x.Npc.Id == Shops.Smithy.Id);
+        foreach (var (id, n) in new[] { ("steel_ingot", 8), ("leather", 6), ("pine_log", 6) }) pack.Add(id, n);
+        pack.Practise(Job.Smithing, Pack.XpFor(6));
+        main.Talk(hulda);
+        Check(hud.Choose("Can I use your forge?"), "Hulda lets you at the fire");
+        Check(hud.Choose("Make Steel Sword"), "and you make a sword");
+        Check(hud.Choose("Make Steel Sword"), "and another");
+        var made = pack.Contents.Where(x => x.Item.Forged).Select(x => x.Item).ToList();
+        Check(made.Count == 2 && made[0].Id != made[1].Id && made[0].Text != made[1].Text, $"two swords, not the same sword: {made[0].Name}, {made[1].Name}");
+        Check(made.All(x => x.Name.EndsWith("+2") && x.Text.Contains("The Anvil Gate") && x.Text.Contains(p.Company)), $"each carries its forge and its maker: {made[0].Text}");
+        hud.EndTalk();
+        var fists = p.Stats.DamageMult;
+        Check(pack.Equip(made[0].Id), "a forged sword goes in the hand");
+        p.Fit();
+        p.Dress();
+        await Frames(10);
+        Check(p.Stats.DamageMult > fists, $"and it counts: {fists:0.00} to {p.Stats.DamageMult:0.00} damage");
+        Check(pack.Power >= 1 && pack.Power == made[0].Power && pack.ToHit == made[0].ToHit, $"with +{pack.ToHit} to hit and +{pack.Power} damage on every blow");
     }
 
     /// <summary>Turlin: the meeting at the edge of the wood, the fight, the wings at a quarter of his blood, and what each ending does.</summary>

@@ -588,6 +588,36 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--forged"))
+        {
+            // A row of knights, each holding a sword off a different forge, so the differences show.
+            var stand = new Vector3(-150, 0, -120);
+            main.TerrainNode.EnsureAround(stand, 1);
+            p.GlobalPosition = stand + new Vector3(0, 1, 12);
+            await Frames(30);
+            main.HudNode.Visible = false;
+            var ground = City.FloorAt(stand);
+            var forges = new[] { "city:tristinwold", "city:cinderhelm", "city:druitt", "city:argentdeep", "city:vespergate", "city:galeholt" };
+            for (var i = 0; i < forges.Length; i++)
+            {
+                var pack = new Tristinwold.Gameplay.Pack();
+                var serial = Tristinwold.Gameplay.Forging.Serial("steel_sword", (ulong)(i + 1) * 7919, forges[i], Tristinwold.Gameplay.Forging.ForgeAt(forges[i]).Name, 8, 20, "Shots");
+                pack.Add(serial);
+                pack.Equip(serial);
+                var f = Figure.Create("Barbarian", Tristinwold.Gameplay.Avatar.For("Barbarian") with { Headwear = "none" });
+                main.AddChild(f);
+                f.GlobalPosition = stand with { Y = ground } + new Vector3((i - 2.5f) * 1.5f, 0, 0);
+                Wardrobe.Wear(f, pack);
+                GD.Print(Tristinwold.Gameplay.Items.Get(serial)!.Name);
+            }
+            await Frames(40);
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(0, 1.3f, -4.2f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(0, 0.95f, 0), Vector3.Up);
+            cam.MakeCurrent();
+            await Shot("forged-row");
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--seasons"))
         {
             // The same view of the woods in each season.

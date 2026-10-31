@@ -131,7 +131,7 @@ public partial class Player : Fighter
         var (h, m, s) = Hero.Growth;
         var passive = Hero.Power(c.Passive.Id);
         var race = Race;
-        var health = (c.Health + h) * (c.Id == "Barbarian" ? 1.2 * passive : 1) * race.Health * RivalEdge;
+        var health = (c.Health + h) * (c.Id == "Barbarian" ? 1.2 * passive : 1) * race.Health * RivalEdge * (1 + Pack.Health);
         var mana = (c.Mana + m) * (c.Id == "Wizard" ? 1 + 0.25 * passive : 1) * race.Mana;
         Stats.SetPools(health, mana, (c.Stamina + s) * race.Stamina);
         Stats.Armor = c.Armor + (Hero.Level - 1) * 3;
@@ -141,6 +141,10 @@ public partial class Player : Fighter
         Stats.SpeedMult = (c.Id == "MartialArtist" ? 1.15 : 1) * Agility.Speed(Pack.Level(Job.Agility)); // quicker on their feet for every level of agility
         Stats.Name = Company;
         Races.Apply(Stats, race, Blood, Appearance?.PureDragon == true); // their people's gifts and costs, and a dragonkind's blood
+        Stats.SpeedMult *= 1 + Pack.Speed;
+        Stats.CritChance += Pack.Crit;
+        foreach (var slot in Enum.GetValues<Slot>())
+            if (slot != Slot.Weapon && Pack.WornIn(slot)?.Fire is { } fire) Stats.Resist[fire] = Stats.Resist.GetValueOrDefault(fire) + Forging.FireResist; // armour forged in a fire stands it
         // What they wear, and what they've drunk.
         Stats.Armor += Pack.Armor + (_wardLeft > 0 ? _ward : 0);
         var might = (1 + Pack.Damage) * (_mightLeft > 0 ? 1 + _might : 1) * Trophies * RivalEdge;
@@ -987,7 +991,9 @@ public partial class Player : Fighter
     double Strike(Enemy target, double baseDamage, DamageKind kind, AttackKind attack, bool sureCrit = false)
     {
         if (target.State == EnemyState.Dead) return 0;
+        if (attack == AttackKind.Weapon) baseDamage += Pack.Power; // a forged weapon's own bite
         var damage = Stats.Outgoing(attack, baseDamage, _rng, out var crit);
+        if (attack == AttackKind.Weapon && !crit && !sureCrit && _rng.Chance(Forging.Glances(Pack.ToHit))) damage *= Forging.GlanceDamage; // it only glances
         if ((sureCrit || _smoke) && !crit) { damage *= 2; crit = true; }
         _smoke = false;
         if (Class.Id == "Assassin" && !target.FightingCompany) damage *= 1 + Class.Passive.Power * Hero.Power("backstab");
@@ -1002,6 +1008,8 @@ public partial class Player : Fighter
         if (kind == DamageKind.Sun && Class.Id == "Paladin" && (target.Undead || target.Side == Tristinwold.World.Side.Corrupted))
             damage *= 1.3 + Class.Passive.Power * Hero.Power("devotion");
         var result = Hit(target, damage, kind, attack, crit);
+        if (attack == AttackKind.Weapon && Pack.WornIn(Slot.Weapon) is { Fire: { } fire, FireDie: > 0 and var die } && target.State != EnemyState.Dead)
+            Hit(target, (1 + _rng.Next(die)) * Stats.DamageMult, fire, AttackKind.Spell, false); // a blade forged in a fire carries it: its own die, on top of the blow
         if (_poison > 0 && attack == AttackKind.Weapon && target.State != EnemyState.Dead)
             Hit(target, Class.Utility.Power * Hero.Power("poison_blades"), DamageKind.Poison, AttackKind.Spell, false);
         return result.Dealt;
