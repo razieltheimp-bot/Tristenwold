@@ -20,6 +20,9 @@ public partial class StartScreen : CanvasLayer
     /// this computer starts out pointed at the server running here).</summary>
     public string? DefaultServer { get; init; }
 
+    /// <summary>The shared world's outside link, filled in for everyone. If the link's address changes, change it here and rebuild.</summary>
+    const string SharedWorld = "https://dem-caused-rarely-sewing.trycloudflare.com";
+
     const string SettingsPath = "user://settings.json";
     const string LocalCharactersPath = "user://characters.json";
 
@@ -379,7 +382,8 @@ public partial class StartScreen : CanvasLayer
                 _settings = JsonSerializer.Deserialize<Dictionary<string, string>>(Godot.FileAccess.GetFileAsString(SettingsPath)) ?? [];
         }
         catch (JsonException) { }
-        _server.Text = _settings.GetValueOrDefault("server", DefaultServer ?? "");
+        var saved = _settings.GetValueOrDefault("server", "");
+        _server.Text = saved.Length == 0 || saved.Contains("trycloudflare.com") ? DefaultServer ?? SharedWorld : saved; // an old outside link is a dead one
         _serverPassword.Text = _settings.GetValueOrDefault("serverPassword", "");
         _account.Text = _settings.GetValueOrDefault("account", "");
         _quality.Selected = (int)(Enum.TryParse<Graphics.Quality>(_settings.GetValueOrDefault("quality", ""), out var q) ? q : Graphics.Default);
