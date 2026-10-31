@@ -76,7 +76,12 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction Guardian(string id, bool corrupted = false) => new("guardian", Item: id, N: corrupted ? 1 : 0);
     /// <summary>One of the two great blades claimed, for the whole server.</summary>
     public static CityAction Blade(string blade, string by) => new("blade", Item: blade, Contract: by);
-    public static CityAction SiegeBroken(string by) => new("siege_broken", Item: by);
+    /// <summary>Soren driven off (he got to his ship) or killed (he'll be back, and less).</summary>
+    public static CityAction SiegeBroken(string by, bool killed) => new("siege_broken", Item: by, N: killed ? 1 : 0);
+    /// <summary>Soren killed out in the wilds, hunting whoever took his blade.</summary>
+    public static CityAction SorenKilled(string by) => new("soren_killed", Item: by);
+    /// <summary>Soren has his blade back from whoever held it.</summary>
+    public static CityAction WebLost(string holder) => new("web_lost", Item: holder);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -179,6 +184,8 @@ public sealed class CityEconomy
     public PirateSiege? Siege { get; set; }
     public string? BladeHolder { get; set; }
     public string? WebHolder { get; set; }
+    /// <summary>How many times Soren's been killed, by anyone. He came back from every one.</summary>
+    public int SorenDeaths { get; set; }
     public const int SiegeEvery = 24, SiegeDays = 3, SiegeBurns = 1, SackBurns = 2, SackTreasury = 200;
     /// <summary>The towns his ships can reach.</summary>
     public static readonly IReadOnlyList<string> SiegeTowns = ["city:druitt", "city:greywater", "city:tristinwold"];
@@ -548,8 +555,17 @@ public sealed class CityEconomy
             case "guardian" when a.Item is { } guardian: Slain(guardian, a.N == 1); return true;
             case "blade" when a.Item == Legend.Rubilacxe && BladeHolder is null && a.Contract is { Length: > 0 and <= 60 } holder: BladeHolder = holder; News.Add($"{holder} has drawn the sword from the stone."); return true;
             case "blade" when a.Item == Legend.Arachnicalibur && WebHolder is null && a.Contract is { Length: > 0 and <= 60 } taker: WebHolder = taker; News.Add($"{taker} has taken Arachnicalibur from the Dread Pirate Soren."); return true;
+            case "soren_killed" when a.Item is { Length: > 0 and <= 60 } slayer:
+                SorenDeaths++;
+                News.Add($"{slayer} has killed the Dread Pirate Soren. Nobody who knows the sea believes that's the end of it.");
+                return true;
+            case "web_lost" when a.Item is not null && WebHolder == a.Item:
+                WebHolder = null;
+                News.Add($"The Dread Pirate Soren has taken Arachnicalibur back from {a.Item}.");
+                return true;
             case "siege_broken" when Siege is { } broken:
-                News.Add($"{(a.Item is { Length: > 0 and <= 60 } who2 ? who2 : "Someone")} has broken Soren's siege of {PlaceName(broken.Town)}.");
+                News.Add($"{(a.Item is { Length: > 0 and <= 60 } who2 ? who2 : "Someone")} has broken Soren's siege of {PlaceName(broken.Town)}{(a.N == 1 ? ", and killed him. Nobody who knows the sea believes that's the end of it" : "")}.");
+                if (a.N == 1) SorenDeaths++;
                 Siege = null;
                 return true;
             // The roads.

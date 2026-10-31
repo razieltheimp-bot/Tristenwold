@@ -2240,12 +2240,38 @@ public partial class SelfTest(Main main) : Node
         await Until(() => main.LegendsNode?.Soren is not null, 8);
         var soren = main.LegendsNode?.Soren;
         Check(soren is { Foresees: > 0 }, "Soren is at the gates of Druitt, and sees blows coming");
-        s.Evil(400, "a test of going bad");
         if (soren is null) return;
         soren.Foresees = 0;
+        var gems = p.Pack.Contents.Count();
+        main.LegendsNode!.WebChance = 0;
         soren.TakeHit(1e8, DamageKind.Sun, AttackKind.Spell, false, p);
         await Until(() => city.Siege is null, 5);
-        Check(city.Siege is null && city.WebHolder == p.Company && p.Pack.Count(Legend.Arachnicalibur) == 1, "a wicked hand breaks the siege, and takes Arachnicalibur");
+        Check(city.Siege is null && city.SorenDeaths == 1 && city.WebHolder is null && p.Pack.Contents.Count() >= gems + 5, $"killed, he leaves a heap of rare things and no blade: {p.Pack.Contents.Count() - gems} new kinds of thing");
+        Check(p.Pack.Contents.Any(x => x.Item.Forged && x.Item.Text.Contains("The Red Reckoning")), "among them a piece off his own forge");
+
+        city.Siege = new PirateSiege { Town = "city:druitt", Ends = city.Day + 3 };
+        await Until(() => main.LegendsNode?.Soren is not null, 8);
+        soren = main.LegendsNode?.Soren;
+        Check(soren is not null && Mathf.IsEqualApprox(soren.Scale.X, Legend.FormOf(1).Size) && soren.GetChildren().OfType<MeshInstance3D>().Count() >= 8, $"he comes back, bigger, and with the sea on him: {soren?.Scale.X:0.00} times the size, {soren?.GetChildren().OfType<MeshInstance3D>().Count()} growths on him");
+        if (soren is null) return;
+        soren.Foresees = 0;
+        soren.Provoke(p);
+        await Frames(4);
+        soren.TakeHit(soren.Stats.MaxHealth * 0.8, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Frames(5);
+        soren.Provoke(p);
+        var low = soren.GlobalPosition.Y;
+        await Until(() => city.Siege is null, 12);
+        Check(city.Siege is null && city.SorenDeaths == 1, "at a quarter of his blood he makes for his ship: the siege is broken, but he isn't dead");
+
+        city.Siege = new PirateSiege { Town = "city:druitt", Ends = city.Day + 3 };
+        await Until(() => main.LegendsNode?.Soren is not null, 8);
+        soren = main.LegendsNode!.Soren!;
+        soren.Foresees = 0;
+        main.LegendsNode!.WebChance = 1;
+        soren.TakeHit(1e8, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => city.Siege is null, 5);
+        Check(city.WebHolder == p.Company && p.Pack.Count(Legend.Arachnicalibur) == 1 && p.Pack.Count(Legend.ArachnicaliburScabbard) == 1, "and once in a long while, the black blade itself");
 
         // Rune armour: struck, it blows back whatever's close.
         var plate = Enumerable.Range(1, 200000).Select(i => Forging.Serial("leather_armor", (ulong)i * 104729, "city:tristinwold", "The Anvil Gate", 6, 10, "Test")).First(id => Items.Get(id)!.Powers!.ContainsKey("rune_fire"));
@@ -2261,6 +2287,22 @@ public partial class SelfTest(Main main) : Node
         await Frames(30);
         Check(foe.State != EnemyState.Dead && foe.Stats.Health < was * 1000, "the rune lets go, and it burns what's near");
         Check(foe.GlobalPosition.DistanceTo(p.GlobalPosition) > near.DistanceTo(p.GlobalPosition) + 3, $"and blasts it away: {near.DistanceTo(p.GlobalPosition):0.0}m to {foe.GlobalPosition.DistanceTo(p.GlobalPosition):0.0}m");
+
+        // Whoever took his blade: he comes for them, and if he wins, he has it back.
+        p.Pack.Equip(Legend.Arachnicalibur);
+        p.Pack.Equip(Legend.ArachnicaliburScabbard);
+        await Teleport(new Vector3(-400, 0, 120));
+        await Frames(30);
+        var deaths = city.SorenDeaths;
+        main.LegendsNode.HuntForTest();
+        await Frames(5);
+        var hunter = main.LegendsNode.Soren;
+        Check(hunter is not null && hunter.GlobalPosition.DistanceTo(p.GlobalPosition) < 30 && f.SorenHuntAt > main.GuildBook.PlaySeconds, "he hunts down whoever took his blade");
+        if (hunter is null) return;
+        p.TakeHit(1e9, DamageKind.Physical, AttackKind.Weapon, false, hunter);
+        await Frames(10);
+        Check(city.WebHolder is null && p.Pack.Count(Legend.Arachnicalibur) == 0 && p.Pack.WornIn(Slot.Weapon)?.Id != Legend.Arachnicalibur && p.Pack.WornIn(Slot.Neck) is null && main.LegendsNode.Soren is null, "beaten, they lose it: blade and scabbard go back to him");
+        Check(city.SorenDeaths == deaths, "and he didn't have to die for it");
     }
 
     /// <summary>The forge's work: two swords off the same anvil are two different swords, and they show it in the hand and in the fight.</summary>

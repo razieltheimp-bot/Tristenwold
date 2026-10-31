@@ -268,9 +268,13 @@ public static class Forging
     /// <summary>How many different pieces one base item can be by its parts alone, before the fire and the rolls.</summary>
     public static long PartCombinations(bool weapon) => (weapon ? WeaponSockets : ArmorSockets).Aggregate(1L, (n, s) => n * s.Parts.Length);
 
+    /// <summary>The forge on Soren's flagship: what comes off it is only ever taken from him.</summary>
+    public const string RedReckoning = "ship:red_reckoning";
+
     /// <summary>The named forges, each with its own leanings. Anywhere else with a smith gets one of its own, made from its name.</summary>
     public static readonly IReadOnlyList<ForgeHouse> Forges =
     [
+        new(RedReckoning, "The Red Reckoning", 3, Damage: 0.04, Armor: 0.04, Crit: 2),
         new("city:tristinwold", "The Anvil Gate", 2, Damage: 0.03, Armor: 0.03),
         new("city:druitt", "The Sawpit Forge", 1, Damage: 0.05, Speed: -0.01),
         new("city:greywater", "The Orchard Forge", 1, Speed: 0.02, Health: 0.01, Fire: DamageKind.Poison),

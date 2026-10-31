@@ -796,6 +796,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
             var named = i == 0 && ReachedFlag ? Seas.Flag(voyage.Flag) : null;
             var e = Enemy.Create(Bestiary.Get(named?.Kind ?? (leader ? "pirate_captain" : kind)), spot, danger);
             if (leader && named is null) e.Stats.Name = "Black Ysolde's bosun";
+            if (named?.Id == "soren") Legends.Dress(e, main.Economy);
             e.Roam = 6;
             main.AddEnemy(e);
             e.Provoke(main.PlayerNode);
