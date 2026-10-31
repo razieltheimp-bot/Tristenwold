@@ -154,6 +154,7 @@ public static class Humans
 
     static readonly Dictionary<string, Outfit> Outfits = new()
     {
+        ["soren"] = new(new("#9a1f1a"), new("#1e2230"), new("#4a2c1c")), // the red coat's sleeves, dark breeches, sea boots
         ["giant_ape"] = new(new("#4a2e22"), new("#4a2e22"), new("#a98470")),
         ["turlin"] = new(new("#17151a"), new("#17151a"), new("#17151a")), // black fur, near enough all over
         ["guard"] = new(new("#6a6e74"), new("#3a3a44"), new("#2a2220"), Cap: new("#7a7e84")),
@@ -217,7 +218,7 @@ public static class Humans
         ["ghost_captain"] = new(new("#9ab0b8"), new("#5a6a70"), new("#3a3a40"), Cap: new("#8a9aa0")),
     };
 
-    public static Outfit OutfitFor(string look) => Outfits.GetValueOrDefault(look) ?? Outfits["townsfolk"];
+    public static Outfit OutfitFor(string look) => Outfits.GetValueOrDefault(look.StartsWith("soren_") ? "soren" : look) ?? Outfits["townsfolk"];
 
     const string TexFolder = Folder + "tex/";
     static readonly Dictionary<string, Texture2D?> Textures = [];
