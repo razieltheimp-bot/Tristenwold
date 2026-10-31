@@ -69,6 +69,9 @@ public sealed record Item(string Id, string Name, ItemKind Kind, int Value, stri
 /// <summary>What's left of Soren this time: how far the sea has got into him (0 to 1), and how he answers now.</summary>
 public sealed record SorenForm(string Is, float Size, float Sea, string Hail, string Retreat, string Lost);
 
+/// <summary>What's left of Lu Wukong this time: how far the beast has got into him (0 to 1), and how he talks now.</summary>
+public sealed record WukongForm(string Is, float Size, float Beast, string Hail, string Offer, string Retreat, string Lost);
+
 /// <summary>The two great blades, what it takes to get them, and the man who won't stay dead.</summary>
 public static class Legend
 {
@@ -112,6 +115,57 @@ public static class Legend
 
     public static SorenForm FormOf(int deaths) => SorenForms[Math.Min(deaths, SorenForms.Count - 1)];
     public static double SorenStrength(int deaths) => Math.Min(SorenMost, 1 + deaths * SorenPerDeath);
+
+    /// <summary>The chance Lu Wukong comes to a siege, and the chance it costs him his life if nobody's there to help him hold it.</summary>
+    public const double LuComes = 1.0 / 3, LuFalls = 0.25;
+    /// <summary>On a pirate's deck he doesn't stay to die: at this share of his blood he goes back over the rail, and you've this long to bring him down.</summary>
+    public const double WukongFleeAt = 0.25, WukongFlightSeconds = 6;
+    public const string WukongName = "Lu Wukong";
+    /// <summary>What he hands one of his own after a siege held.</summary>
+    public const int MonkeyShare = 300;
+
+    /// <summary>
+    /// The gourd at his hip holds the same spiked fruit Turlin eats, pressed and left to turn, and he's been drinking it for
+    /// forty years. So he comes back too, and he knows it, and he thinks that's funny. But every death costs him a verse of
+    /// every song he knows, and what comes in where the verses were is the ape. The last thing it can take is why he's there;
+    /// it hasn't managed that yet. He doesn't remember Soren's name at the end, but he still turns up.
+    /// </summary>
+    public static readonly IReadOnlyList<WukongForm> WukongForms =
+    [
+        new("a hooded ape with a gourd at his hip, singing", 1, 0,
+            "A patched sail comes round the headland with the whole crew singing, and an ape in a hood rides the chain down off her yard with a gourd in one hand and a staff in the other. \"Soren! You great wet disgrace! Who's robbing the poor now? I told you, that's my brother's job!\" Lu Wukong lands in the street and bows to the town. \"Evening. Don't get up.\"",
+            "He drops onto a barrel and offers you the gourd, then thinks better of it and has it himself. \"I only rob pirates. It's the one honest trade left, and I've forty hands who think so too. Nobody burns a town while we're about, and when they try, we come. There's a berth on the Drunken Monkey, if you fight like that on purpose.\"",
+            "He takes a long pull at the gourd, salutes you with it, and goes backward over the rail. \"Not today! I've a chorus to finish!\"",
+            "He sits down, quite gently, looks at the gourd and shakes it to hear what's left. \"Ah,\" he says. \"That's the second verse gone.\" He laughs, and stops, and the gourd rolls out of his hand. When you look back, there's nothing there but the smell of old fruit."),
+        new("a hooded ape, greyer than he was, who hums where the words should be", 1.06f, 0.2f,
+            "The patched sail's back. So's the singing, though it stops in a strange place, and the crew carry on past it without him. Lu Wukong lands in the street a little heavier than he used to. \"Soren! I died, you know. It's terrible. Everyone should try it.\" He looks at his hand as if it had said something. \"Who's first?\"",
+            "He offers you the gourd, and this time he means it, then takes it back. \"I had a whole speech for this. It rhymed. We only rob pirates, and we stand in the road when Soren comes. That's the short of it, and the short's all I've got. There's a berth, if you want one.\"",
+            "He goes for the rail on all fours and doesn't seem to notice. \"Tell my brother!\" he shouts, and then, from the other deck, \"Tell him something!\"",
+            "\"That's not funny,\" he says, in a small, puzzled voice, the first time you've heard him say so. Then the fruit smell, and nothing."),
+        new("an ape the size of a door, in a hood that doesn't fit him now", 1.14f, 0.4f,
+            "Something heavy comes down the chain and cracks the street. The hood's split at the seam. He takes a while to find his feet, and longer to find his grin, but it comes. \"Red coat. Bad. I know that one.\" He has a go at the song and gets four notes in. His crew finish it for him, very loudly, without looking at him.",
+            "He holds the gourd out at arm's length and watches you, the way you'd watch a dog you weren't sure of. \"Good pirate,\" he says, and thumps his own chest, and then yours. \"Boat. Yes? Bad ones, we take. Good ones, no. You come.\" It isn't quite a question.",
+            "He snatches up the staff and goes over the side in one long swing, and you hear him hit the water laughing, or something like it.",
+            "He looks at you, and for a moment he's all there, and he looks sorry for you. Then he isn't. The gourd cracks by itself."),
+        new("a great grey ape who drags his staff, and keeps the gourd in his teeth", 1.24f, 0.6f,
+            "You hear the crew before you see the ship. They've got him chained to the yard by the ankle now, for his own sake, and they let him go when they see the red coat. He comes through the smoke on his knuckles with the gourd in his teeth and the staff dragging behind him, and he stops in front of the town, and turns round, and stands there.",
+            "The first mate speaks for him now, a lean old woman with one hand on his arm. \"He won't know you tomorrow. He'll know you're ours, though. Ask me how, I couldn't tell you. There's a berth, if you'll have it. We rob pirates, and we stand in the road. He still does both.\" The ape looks at you. He holds out the gourd.",
+            "The crew get a line on him and he lets them, grumbling, and goes back over the rail like a sack of wet sand.",
+            "It takes four of them to get him off you, afterward, though he's already dead. His fist won't open. There's a tooth in it, and when you look again, there's only the tooth."),
+        new("something the size of a hay cart, with a rag of hood on one shoulder", 1.36f, 0.8f,
+            "The crew don't sing now. They haul in silence, and when the ship touches they open the rail and stand well back. It walks up the quay upright for the first few steps, the way it must remember walking. Then it sees the red coat, and every window on the street rattles.",
+            "It doesn't look at you. The old woman with one hand does. \"Nobody told him to come. We don't tell him anything. He wakes up, and he goes to where the fire is. The Monkey goes with him, and robs what it can on the way. There's a berth, if you've the stomach for it.\"",
+            "It stops, and sniffs, and turns its back on you, and walks into the sea as if it had remembered something, and the crew go after it with the boats.",
+            "It goes over slowly, a limb at a time, facing the town. It doesn't try to get away. Then there's a smell of old fruit, and a dent in the road."),
+        new("the ape, and nothing else: all grey hide and old iron chain, and no words left at all", 1.5f, 1,
+            "There's a shape in the bay, wading, with a broken yard-arm for a staff and a chain round its neck that goes back to a ship it's towing. There isn't a song in it, or a joke, or a name. But it gets between the red coat and the town, and it stands there. Nobody asked it to. Nobody could.",
+            "The crew's a dozen old hands now, and they don't look at it either. One of them tips the last of a gourd out on the stones for it, and it bends down, very carefully, and touches the wet place with one finger. \"There's a berth,\" the old hand says. \"There's always a berth. That's all that's left of what he told us.\"",
+            "It turns and wades out, and the ship follows it, because the ship has no choice.",
+            "It falls in the shallows, between the town and the fire, still facing the right way. The water runs brown and sweet for a while. It'll be back. It doesn't know how not to."),
+    ];
+
+    public static WukongForm WukongOf(int deaths) => WukongForms[Math.Min(deaths, WukongForms.Count - 1)];
+    public static double WukongStrength(int deaths) => Math.Min(SorenMost, 1 + deaths * SorenPerDeath);
 
     static readonly (string Id, int Most)[] Riches =
     [

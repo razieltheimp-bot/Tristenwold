@@ -18,7 +18,7 @@ public partial class Main
     AtSea? _atSea;
     (int Left, bool Holding, bool Building)? _planking;
     Node3D? _plank;
-    double _seaTick;
+    double _seaTick, _crewTick = 20;
 
     public SeaBook Sea => _sea;
     public AtSea? AtSeaNode => _atSea;
@@ -73,7 +73,8 @@ public partial class Main
     {
         var id = person.Npc.Id;
         if (id is HarbourMaster or Smuggler) yield return ("Who's the worst on the water?", () => Say(person,
-            "Black Ysolde's the one you'll meet. The Teeth are hers, and she's bad enough. But she answers to the Dread Pirate Soren of the Red Reckoning, and he's the worst name there is: a sword like a broken gate, and a fist of iron. After him it's Lu Wukong of the Drunken Monkey, the ape king's own brother, who'll rob you singing. They keep to the far water. Mostly."));
+            "Black Ysolde's the one you'll meet. The Teeth are hers, and she's bad enough. But she answers to the Dread Pirate Soren of the Red Reckoning, and he's the worst name there is: a sword like a broken gate, and a fist of iron. There's small fry too, crews of a dozen in a leaky hull, on one run this week and another the next. And there's Lu Wukong of the Drunken Monkey, the ape king's own brother. He's never touched a company ship. He robs pirates, singing, and when Soren lands he comes and stands in the road. The company says a pirate's a pirate. I've stopped arguing with people who've seen him do it."));
+        if (id is HarbourMaster or Smuggler) yield return ("Who's working the water just now?", () => Say(person, WaterNews()));
         if (id == HarbourMaster) foreach (var o in HarbourTalk(person)) yield return o;
         else if (id == Shipwright) foreach (var o in YardWork(person)) yield return o;
         else if (id == Smuggler) foreach (var o in SmugglerTalk(person)) yield return o;
@@ -91,6 +92,14 @@ public partial class Main
                 Save();
             });
         }
+    }
+
+    /// <summary>The small crews on the runs the hero knows, as the quays have it.</summary>
+    string WaterNews()
+    {
+        var t = _guilds.PlaySeconds;
+        var out_ = _sea.Ports.Select(p => (Port: p, Crew: _sea.Hunters(p, t))).Where(x => x.Crew is not null).Select(x => $"{x.Crew!.Name} on the {x.Port.Name} run, in {x.Crew.Ship} under {x.Crew.Captain}").ToList();
+        return out_.Count == 0 ? "Nothing small about, that I've heard. That just leaves the Teeth." : $"This week it's {string.Join("; ", out_)}. They'll be somewhere else by the next tide.";
     }
 
     IEnumerable<(string, Action)> HarbourTalk(Person person)
@@ -135,7 +144,7 @@ public partial class Main
     {
         var s = _sea;
         if (s.OwnShip && s.Hull < SeaBook.Seaworthy) { Say(person, $"{s.ShipName} won't swim with her hull like that. Get her to Osric's yard."); return; }
-        var options = s.Ports.Select(p => ($"{p.Name}: {p.Leagues} day{(p.Leagues == 1 ? "" : "s")} out, {(p.Pirates < 0.3 ? "quiet water" : p.Pirates < 0.6 ? "pirates about" : "the pirates' own water")}{(s.PayFor(p) > 0 ? $", {s.PayFor(p)} crowns" : "")}",
+        var options = s.Ports.Select(p => ($"{p.Name}: {p.Leagues} day{(p.Leagues == 1 ? "" : "s")} out, {(p.Pirates < 0.3 ? "quiet water" : p.Pirates < 0.6 ? "pirates about" : "the pirates' own water")}{(s.Hunters(p, _guilds.PlaySeconds) is { } crew ? $", {crew.Name} on that run" : "")}{(s.PayFor(p) > 0 ? $", {s.PayFor(p)} crowns" : "")}",
             (Action)(() => Embark(person, p)))).ToList();
         options.Add(("Not today.", () => Say(person, "The sea'll wait. It always does.")));
         _hud.Talk(Who(person.Npc), s.Rank == SeaRank.Captain
@@ -154,7 +163,7 @@ public partial class Main
 
     void Embark(Person? person, SeaPort port, bool explore = false)
     {
-        if (_sea.Sail(port, _lootRng, explore) is not { } v) { if (person is not null) Say(person, "Not with that ship, you're not."); return; }
+        if (_sea.Sail(port, _lootRng, explore, _sea.Hunters(port, _guilds.PlaySeconds)) is not { } v) { if (person is not null) Say(person, "Not with that ship, you're not."); return; }
         _hud.EndTalk();
         _hud.Toast(explore ? $"Aboard {_sea.Ship}, past the last line on the chart: {v.Leagues} days of open water." : $"Aboard {_sea.Ship}, bound for {port.Name}: {v.Leagues} day{(v.Leagues == 1 ? "" : "s")} out, {v.Danger}.", 7);
         GoToSea(v);
@@ -191,6 +200,21 @@ public partial class Main
         if (_sea.Voyage is { } v && _atSea is null && !_player.Downed) GoToSea(v);
         if (_sea.Voyage is null && _atSea is not null) Ashore(HarbourPost + new Vector3(2, 0, 2));
         _atSea?.Tend(0.25);
+        TendCrews(0.25);
+    }
+
+    /// <summary>A small crew on a run the hero trades: word comes to the quay, and that port's market pays for it.</summary>
+    void TendCrews(double delta)
+    {
+        if ((_crewTick -= delta) > 0) return;
+        _crewTick = 20;
+        var t = _guilds.PlaySeconds;
+        foreach (var m in _sea.Markets.Values)
+        {
+            if (Seas.Get(m.Id) is not { } port || _sea.Voyage?.Port == m.Id || _sea.Hunters(port, t) is not { } crew || !_sea.Hear(crew, crew.Where(t).Round) || !_lootRng.Chance(0.3)) continue;
+            var loads = m.Plundered(_city.Day);
+            _hud.Log($"Word on the quay: {crew.Name} took {crew.Ship} into {port.Name} and carried off {loads} loads.");
+        }
     }
 
     /// <summary>The ring brought the hero back to the Gallows Perch: whatever was happening at sea went on without them.</summary>
@@ -212,11 +236,12 @@ public partial class Main
         if (_sea.Voyage is not { } v) return;
         if (v.Raid)
         {
+            var crew = _sea.Sworn;
             var (share, made) = _sea.Plunder(_player.Hero.Level);
             _player.Crowns += share;
             Ashore(Smugglers + new Vector3(1, 0, -2));
-            _hud.Toast(share > 0 ? $"Back at the Teeth with the prize. Your share: {share} crowns. Nell rows you ashore before dawn." : "Back at the Teeth with nothing to show for it. Nell rows you ashore.", 8);
-            if (made is { } p) _hud.Toast($"The crew vote you {SeaBook.Title(p)} of {SeaBook.PirateShip}.", 8);
+            _hud.Toast(share > 0 ? $"Back at {crew.Haven} with the prize. Your share: {share} crowns. Nell rows you ashore before dawn." : $"Back at {crew.Haven} with nothing to show for it. Nell rows you ashore.", 8);
+            if (made is { } p) _hud.Toast($"The crew vote you {SeaBook.Title(p)} of {crew.Ship}.", 8);
         }
         else
         {
@@ -237,26 +262,29 @@ public partial class Main
     public void ShipTaken()
     {
         if (_sea.Voyage is not { } v) return;
-        if (v.Raid)
+        var ship = v.Raid ? _sea.Sworn.Ship : _sea.Ship;
+        if (v.Marines)
         {
             _sea.Taken();
-            _hud.Toast("The company's marines take the Widow's Tooth. They hang the crew at the Gallows Perch, you with them; and the ring brings you back.", 10);
+            _hud.Toast($"The company's marines take {ship}. They hang the crew at the Gallows Perch, you with them; and the ring brings you back.", 10);
             Ashore(City.PlayerStart);
             Save();
             return;
         }
-        var ship = _sea.Ship;
-        var flag = Seas.Flag(v.Flag);
+        var flag = v.Raid && !v.Homeward ? null : Seas.Flag(v.Flag);
+        var taker = flag is { HuntsPirates: true } ? PirateCrew.DrunkenMonkey : flag is null ? PirateCrew.Get(v.Crew) ?? PirateCrew.WidowsTooth : PirateCrew.WidowsTooth;
+        var title = _sea.Outlaw ? SeaBook.Title(_sea.Pirate) : _sea.Rank == SeaRank.Landsman ? "landsman" : SeaBook.Title(_sea.Rank);
         _sea.Taken();
         _atSea?.ClearDeck();
-        _hud.Talk(flag is { } f ? $"{char.ToUpperInvariant(f.Captain[0])}{f.Captain[1..]}, of {f.Ship}" : "Black Ysolde, captain of the Widow's Tooth",
-            flag?.Offer ?? $"\"You fought well for a {(_sea.Rank == SeaRank.Landsman ? "landsman" : SeaBook.Title(_sea.Rank))}. {ship}'s ours now, and her cargo. There's a place in my crew for someone who can fight. Or there's the sea.\"",
+        _hud.Talk(flag is { } f ? $"{char.ToUpperInvariant(f.Captain[0])}{f.Captain[1..]}, of {f.Ship}" : $"{taker.Captain}, captain of {taker.Ship}",
+            flag?.Offer ?? $"\"You fought well for {Article(title)}, and you're still on your feet, which is more than most. {char.ToUpperInvariant(ship[0])}{ship[1..]}'s ours now, and her cargo. There's a place in {taker.Name} for someone who can fight. Or there's the sea.\"",
             ("Join the pirates.", () =>
             {
-                _sea.JoinPirates();
-                _standing.Evil(5, "turned pirate aboard the Widow's Tooth");
+                _sea.JoinCrew(taker);
+                if (taker.Good) _standing.Good(5, "signed aboard the Drunken Monkey");
+                else _standing.Evil(5, $"turned pirate aboard {taker.Ship}");
                 Ashore(Smugglers + new Vector3(1, 0, -2));
-                _hud.Toast("You're a swab of the Widow's Tooth now. When you want to go out on the account, find Nell Corran by the south pier.", 10);
+                _hud.Toast($"You're a swab of {taker.Ship} now. When you want to go out on the account, find Nell Corran by the south pier.", 10);
                 Save();
             }),
             ("Over the side, then.", () =>
@@ -270,11 +298,23 @@ public partial class Main
 
     public void Repelled()
     {
-        if (_sea.Voyage is { Raid: true, Homeward: false })
+        var crew = PirateCrew.Get(_sea.Voyage?.Crew);
+        var t = _guilds.PlaySeconds;
+        if (_sea.Voyage is { Raid: true, Homeward: false } v)
         {
+            var sworn = _sea.Sworn;
             _sea.TakePrize();
-            _standing.Evil(4, $"took {_sea.Voyage!.PortName} as a prize for the Widow's Tooth");
-            _hud.Toast($"She strikes her colours: {_sea.Voyage!.PortName.Replace("a ", "the ").Replace("an ", "the ")} is a prize. Hands to the plunder, then home to the Teeth.", 8);
+            if (sworn.Good)
+            {
+                if (crew is not null) _sea.Break(crew, t);
+                _standing.Good(3, $"took {v.PortName} off the pirates");
+                _hud.Toast($"She strikes her colours: {v.PortName} is a prize, and that's one less crew on the water. Hands to the plunder, then home to {sworn.Haven}.", 8);
+            }
+            else
+            {
+                _standing.Evil(4, $"took {v.PortName} as a prize for {sworn.Ship}");
+                _hud.Toast($"She strikes her colours: {v.PortName.Replace("a ", "the ").Replace("an ", "the ")} is a prize. Hands to the plunder, then home to {sworn.Haven}.", 8);
+            }
         }
         else
         {
@@ -284,12 +324,18 @@ public partial class Main
                 var price = _sea.Humble(f);
                 _player.Crowns += price;
                 if (first) Take([(f.Loot, 1)]);
-                _hud.Toast($"{f.Escape} {(first ? $"The price on {f.Captain}: {price} crowns, and {Items.Get(f.Loot)!.Name} left behind on your deck." : $"+{price} crowns.")}", 12);
+                _hud.Toast($"{(_atSea.FlagSlain ? "" : f.Escape + " ")}{(first ? $"The price on {f.Captain}: {price} crowns, and {Items.Get(f.Loot)!.Name} left behind on your deck." : $"+{price} crowns.")}", 12);
             }
             _sea.Repel();
             var bounty = _sea.Rank >= SeaRank.FirstMate ? 15 + _sea.Voyage!.Leagues * 10 : 0;
+            if (crew is not null)
+            {
+                _sea.Break(crew, t);
+                bounty += crew.Bounty;
+                _standing.Good(2, $"beat off {crew.Name}");
+            }
             _player.Crowns += bounty;
-            _hud.Toast($"Beaten off! The pirates cut their grapples and run.{(bounty > 0 ? $" Their purses: +{bounty} crowns." : "")}", 7);
+            _hud.Toast($"{(crew is not null ? $"Beaten off! {char.ToUpperInvariant(crew.Name[0])}{crew.Name[1..]} cut their grapples and run, and they'll keep their heads down for a while." : "Beaten off! The pirates cut their grapples and run.")}{(bounty > 0 ? $" Their purses: +{bounty} crowns." : "")}", 7);
         }
         Save();
     }
@@ -400,12 +446,13 @@ public partial class Main
             yield return ("Who are you rowing out to?", () => Say(person, "Nobody. Fish. Mind your own business, or the Teeth will mind it for you."));
             yield break;
         }
+        var crew = _sea.Sworn;
         if (_sea.Voyage is null)
-            yield return ($"Row me out to the Widow's Tooth. ({SeaBook.Title(_sea.Pirate)})", () =>
+            yield return ($"Row me out to {crew.Ship}. ({SeaBook.Title(_sea.Pirate)})", () =>
             {
-                if (_sea.Prowl(_lootRng) is not { } v) return;
+                if (_sea.Prowl(_lootRng, _guilds.PlaySeconds) is not { } v) return;
                 _hud.EndTalk();
-                _hud.Toast($"Out on the account aboard {SeaBook.PirateShip}, hunting {v.PortName}.", 7);
+                _hud.Toast($"Out on the account aboard {crew.Ship}, hunting {v.PortName}.", 7);
                 GoToSea(v);
                 Save();
             });
@@ -413,7 +460,7 @@ public partial class Main
         {
             PirateRank.Swab => $"Take prizes. {SeaBook.ToCutthroat} and they'll call you cutthroat ({_sea.Prizes} so far).",
             PirateRank.Cutthroat => $"{SeaBook.ToQuartermaster} prizes and the crew trust you with the shares ({_sea.Prizes} so far).",
-            PirateRank.Quartermaster => $"{SeaBook.ToPirateCaptain} prizes and the years for it (level {SeaBook.CaptainLevel}) and Ysolde gives you her chair ({_sea.Prizes} so far).",
+            PirateRank.Quartermaster => $"{SeaBook.ToPirateCaptain} prizes and the years for it (level {SeaBook.CaptainLevel}) and {crew.Captain} gives you a deck of your own to answer for ({_sea.Prizes} so far).",
             _ => "You're the captain. Rise any higher and you'll be a legend, or a corpse.",
         }));
     }
@@ -848,18 +895,18 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         _boarders.RemoveAll(e => !IsInstanceValid(e) || e.State == EnemyState.Dead || e.GlobalPosition.Y < DeckY - 6);
         if (_raider is not null)
         {
+            WatchLu();
             if (_boarders.Count == 0 && !_closing)
             {
                 SailAway(_raider);
                 _raider = null;
                 main.Repelled();
-                if (voyage.Raid && voyage.Homeward) ResetLeg();
             }
             else
             {
-                // Boarders on deck hack at the rigging and hole her.
+                // Boarders on deck hack at the rigging and hole her. If they win with the hero still on their feet, there's an offer.
                 main.Sea.Damage(_boarders.Count * 0.35 * delta);
-                if (main.Sea.Hull <= 0) { main.ShipTaken(); return; }
+                if (main.Sea.Hull <= 0 && !p.Downed) { main.ShipTaken(); return; }
             }
             return; // nobody makes way while they're fighting
         }
@@ -913,6 +960,25 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
 
     /// <summary>This boarding is a named captain's, come in person.</summary>
     public bool ReachedFlag { get; private set; }
+    /// <summary>The named captain was brought down, and didn't get away.</summary>
+    public bool FlagSlain { get; set; }
+    bool _vaulting;
+
+    /// <summary>Lu Wukong on a pirate's deck, badly hurt: he goes back over the rail to his own ship, and you've a few seconds to finish him.</summary>
+    void WatchLu()
+    {
+        if (_vaulting || _raider is null || _boarders.FirstOrDefault(e => e.Kind.Id == "lu_wukong") is not { } lu || lu.Stats.Health > lu.Stats.MaxHealth * Legend.WukongFleeAt) return;
+        _vaulting = true;
+        lu.Carried = true;
+        main.HudNode.Toast($"{Legend.WukongOf(main.Economy.WukongDeaths).Retreat} Bring him down now, or he's away!", 7);
+        var away = lu.CreateTween();
+        away.TweenProperty(lu, "global_position", _raider.GlobalPosition + Vector3.Up * 6, Legend.WukongFlightSeconds);
+        away.TweenCallback(Callable.From(() =>
+        {
+            _boarders.Remove(lu);
+            lu.QueueFree();
+        }));
+    }
 
     /// <summary>A sail on the horizon, then she's alongside and they're over the rail.</summary>
     void Attack()
@@ -925,25 +991,31 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         var tween = _raider.CreateTween();
         tween.TweenProperty(_raider, "position", to, 9).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
         tween.TweenCallback(Callable.From(() => Board(side)));
-        var named = voyage.Raid ? null : Seas.Flag(voyage.Flag);
+        var named = voyage.Raid && !voyage.Homeward ? null : Seas.Flag(voyage.Flag);
         ReachedFlag = named is not null;
-        var foe = voyage.Raid ? (voyage.Homeward ? "A company patrol! Marines over the rail" : $"There she is: {voyage.PortName}. Grapples! Her crew's coming to meet you") : named?.Hail ?? "Pirates! A ship out of the Teeth is closing";
+        var crew = PirateCrew.Get(voyage.Crew);
+        var foe = named?.Hail ?? (voyage.Raid
+            ? (voyage.Homeward ? (crew is null ? "A company patrol! Marines over the rail" : $"Pirates! Friends of {crew.Name} have come looking for you") : $"There she is: {voyage.PortName}. Grapples! Her crew's coming to meet you")
+            : crew is null ? "Pirates! A ship out of the Teeth is closing" : $"Pirates! {char.ToUpperInvariant(crew.Ship[0])}{crew.Ship[1..]} is closing, {crew.Name} under {crew.Captain}");
         main.HudNode.Toast($"{foe}. All hands!", 7);
     }
 
     void Board(int side)
     {
         _closing = false;
-        var kind = voyage.Raid ? "marine" : "pirate";
+        var kind = voyage.Marines ? "marine" : voyage.Flag == "wukong" ? "monkey_hand" : "pirate";
+        var crew = PirateCrew.Get(voyage.Crew);
         var danger = WorldGen.Danger(voyage.Leagues * 900, 0) * (1 + 0.05 * main.PlayerNode.Hero.Level);
         for (var i = 0; i < voyage.Pirates; i++)
         {
-            var leader = i == 0 && !voyage.Raid && voyage.Pirates >= 5;
+            var leader = i == 0 && !voyage.Marines && kind == "pirate" && (crew is not null || voyage.Pirates >= 5);
             var spot = new Vector3(Stage.X + side * 2.6f, DeckY + 0.8f, Stage.Z - 8 + i * 16f / Math.Max(1, voyage.Pirates - 1));
             var named = i == 0 && ReachedFlag ? Seas.Flag(voyage.Flag) : null;
-            var e = Enemy.Create(Bestiary.Get(named?.Kind ?? (leader ? "pirate_captain" : kind)), spot, danger, look: named?.Id == "soren" ? Legends.Look(main.Economy) : null);
-            if (leader && named is null) e.Stats.Name = "Black Ysolde's bosun";
+            var lu = named?.Id == "wukong";
+            var e = Enemy.Create(Bestiary.Get(named?.Kind ?? (leader ? "pirate_captain" : kind)), spot, danger * (lu ? Legend.WukongStrength(main.Economy.WukongDeaths) : 1), look: named?.Id == "soren" ? Legends.Look(main.Economy) : lu ? Legends.LuLook(main.Economy) : null);
+            if (leader && named is null) e.Stats.Name = crew?.Captain ?? "Black Ysolde's bosun";
             if (named?.Id == "soren") Legends.Dress(e, main.Economy);
+            if (lu) e.Scale = Vector3.One * Legend.WukongOf(main.Economy.WukongDeaths).Size;
             e.Roam = 6;
             main.AddEnemy(e);
             e.Provoke(main.PlayerNode);
@@ -996,13 +1068,13 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         var s = main.Sea;
         var where = voyage.Raid ? $"hunting {voyage.PortName}" : voyage.Homeward ? "homeward bound" : voyage.InPort ? $"in port at {voyage.PortName}" : $"bound for {voyage.PortName}";
         var hull = s.Hull < 100 ? $", hull {s.Hull:0}%" : "";
-        if (_helm) return $"At the helm of {(s.Outlaw ? SeaBook.PirateShip : s.Ship)}: {Helm.Steer(_heading, Bearing)}. {voyage.PortName} {Along:P0} of the way, sail {_sail:P0}, hull {s.Hull:0}%";
-        if (_raider is not null) return $"At sea aboard {(s.Outlaw ? SeaBook.PirateShip : s.Ship)}: boarders on deck! {_boarders.Count} left{hull}";
+        if (_helm) return $"At the helm of {(s.Outlaw ? s.Sworn.Ship : s.Ship)}: {Helm.Steer(_heading, Bearing)}. {voyage.PortName} {Along:P0} of the way, sail {_sail:P0}, hull {s.Hull:0}%";
+        if (_raider is not null) return $"At sea aboard {(s.Outlaw ? s.Sworn.Ship : s.Ship)}: boarders on deck! {_boarders.Count} left{hull}";
         var left = (int)Math.Ceiling((1 - Along) * voyage.LegSeconds / 60);
         var next = _jobs.OrderBy(j => j.Posted).FirstOrDefault();
         var work = next is null || voyage.InPort ? "" : $". On deck: {next.Verb}{(next.Watch ? $" (stand there {Math.Ceiling(next.Stand)}s)" : "")}{(_jobs.Count > 1 ? $", and {_jobs.Count - 1} more waiting" : "")}";
         var slow = _jobs.Count(j => _clock - j.Posted > 45) >= 2 ? ", losing way" : "";
-        return $"At sea aboard {(s.Outlaw ? SeaBook.PirateShip : s.Ship)}, {where}{(voyage.InPort ? "" : $" ({Along:P0}, about {left} min to go{slow})")}{hull}{work}";
+        return $"At sea aboard {(s.Outlaw ? s.Sworn.Ship : s.Ship)}, {where}{(voyage.InPort ? "" : $" ({Along:P0}, about {left} min to go{slow})")}{hull}{work}";
     }
 
     public override void _ExitTree()

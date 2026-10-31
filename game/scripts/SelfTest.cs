@@ -40,6 +40,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--legends-only")) { await TheLegends(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--quickkeys-only")) { await TheQuickKeys(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--pirates-only")) { await ThePirates(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -2503,6 +2504,171 @@ public partial class SelfTest(Main main) : Node
         Check(!rep.Marked && rep.CountryView == rep.Country && rep.CountryView >= 4, $"with it gone, people remember who they were: {rep.CountryView:0.0} again");
     }
 
+    /// <summary>Lu Wukong at the siege, his berth, his deaths, and the small crews on the water.</summary>
+    async Task ThePirates()
+    {
+        var (p, hud, s, city, sea, legends) = (main.PlayerNode, main.HudNode, main.Standing, main.Economy, main.Sea, main.LegendsNode!);
+        p.Stats.Heal(1e9);
+        var spot = new Vector3(-900, 0, -262);
+
+        // A siege he comes to: he and his crew are on the town's side, and the two crews go for each other.
+        city.Siege = new PirateSiege { Town = "city:druitt", Ends = city.Day + 3, Lu = true };
+        await Teleport(spot);
+        await Until(() => legends.Lu is not null, 8);
+        var lu = legends.Lu;
+        Check(lu is { Friendly: true } && legends.Hands.Count == 5 && legends.Hands.All(e => e.Friendly), $"Lu Wukong lands at Druitt with {legends.Hands.Count} hands, on the town's side");
+        if (lu is null) return;
+        Check(hud.Heard("Who's robbing the poor now"), "and he says so");
+        var soren = legends.Soren!;
+        soren.Foresees = 0;
+        foreach (var e in legends.Hands.Append(lu)) { e.Stats.Grow(1000); e.GlobalPosition = soren.GlobalPosition + new Vector3(2, 0, 0); }
+        await Until(() => soren.Rival is not null || legends.Crew.Any(c => c.Rival is not null), 12);
+        Check(soren.Rival is not null || legends.Crew.Any(c => c.Rival is not null), "Soren's crew and Lu's go for each other, with no hero in it");
+        var was = p.Stats.Health;
+        var left = lu.Stats.Health;
+        p.Swing();
+        await Frames(30);
+        Check(lu.Stats.Health <= left, "your blows pass him by");
+
+        // Lu's blows drive Soren off: the siege is broken, and no pay for a hero who did nothing.
+        var purse = p.Crowns;
+        soren.Stats.Heal(1e9);
+        foreach (var e in legends.Hands.ToList().Append(lu)) e.LoseTrack(0);
+        for (var i = 0; i < 30 && soren.Stats.Health > soren.Stats.MaxHealth * 0.2; i++) soren.TakeHitFrom(lu, soren.Stats.MaxHealth * 0.2, false);
+        await Until(() => city.Siege is null, 14);
+        Check(city.Siege is null && city.SorenDeaths == 0 && p.Crowns == purse, $"Lu drives Soren off on his own, and it pays you nothing (siege {city.Siege?.Town}, deaths {city.SorenDeaths}, paid {p.Crowns - purse}, blood {soren.Stats.Health / soren.Stats.MaxHealth:P0})");
+        await Until(() => hud.Talking, 6);
+        Check(hud.Talking && hud.TalkTitle.Contains("Lu Wukong"), "with the town safe, Lu has a word with you");
+        sea.Rank = SeaRank.Bosun;
+        var good = s.Honour;
+        Check(hud.Choose("I'll sail with you"), "and you take the berth");
+        await Frames(10);
+        Check(sea.Outlaw && sea.Sworn.Good && sea.Sworn == PirateCrew.DrunkenMonkey && sea.Pirate == PirateRank.Swab && sea.Rank == SeaRank.Landsman, "a swab of the Drunken Monkey, off the company's books");
+        Check(s.Honour > good && !s.Outlaw, "and it's a good name to have, not a price on your head");
+        await Until(() => legends.Lu is null, 4);
+        Check(legends.Lu is null && legends.Hands.Count == 0, "and he sails");
+
+        // Out with Lu's crew: the prey is other pirates.
+        await Teleport(Main.Smugglers + new Vector3(1, 0, -1.5f));
+        main.Talk(main.Locals.First(x => x.Npc.Id == "tristinwold/smuggler"));
+        Check(hud.Choose("Row me out to the Drunken Monkey"), "Nell Corran rows you out to the Drunken Monkey");
+        await Frames(20);
+        var at = main.AtSeaNode!;
+        var v = sea.Voyage!;
+        Check(v.Crew is not null && PirateCrew.Get(v.Crew) is { Good: false }, $"hunting {v.PortName}: another crew, not a merchantman");
+        (v.Out, v.Home) = ([0.05], []);
+        at.Along = 0.049;
+        await Until(() => at.Boarders.Count > 0, 20);
+        Check(at.Boarders.All(e => e.Kind.Id.StartsWith("pirate")), "it's pirates who come to meet you, not marines");
+        var hunted = PirateCrew.Get(v.Crew)!;
+        foreach (var e in at.Boarders.ToList()) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => sea.Prizes == 1, 8);
+        Check(sea.Prizes == 1 && sea.IsBroken(hunted, main.GuildBook.PlaySeconds), $"a prize taken, and {hunted.Name} are broken for it");
+        at.Along = 0.999;
+        await Until(() => sea.Voyage is null, 8);
+        await Frames(10);
+        Check(hud.Heard(PirateCrew.DrunkenMonkey.Haven), "home to Monkey's Rest");
+
+        // A company voyage: the small crew on the lane boards, and if it wins with you on your feet, it offers a place.
+        sea.Pardon();
+        sea.Rank = SeaRank.Bosun;
+        sea.Broken.Clear();
+        var port = Seas.Get("port:greywater")!;
+        var crew = PirateCrew.Small[0];
+        await Teleport(Main.HarbourPost + new Vector3(1.5f, 0, 1.5f));
+        main.SailForTest("port:greywater");
+        await Frames(20);
+        at = main.AtSeaNode!;
+        v = sea.Voyage!;
+        v.Crew = crew.Id;
+        v.Pirates = crew.Hands;
+        (v.Out, v.Home, v.Flag) = ([0.05], [], null);
+        at.Along = 0.049;
+        await Until(() => at.Boarders.Count > 0, 20);
+        Check(hud.Heard(crew.Captain) && at.Boarders.Any(e => e.Stats.Name == crew.Captain) && at.Boarders.Count == crew.Hands, $"{crew.Ship} comes alongside: {crew.Hands} of {crew.Name} under {crew.Captain}");
+        sea.Hull = 0.5;
+        await Until(() => hud.Talking, 6);
+        Check(hud.TalkTitle.Contains(crew.Captain), "they take the ship with you still on your feet, and their captain makes an offer");
+        Check(hud.Choose("Join the pirates") && sea.Sworn == crew && sea.Outlaw, $"you're one of {crew.Name}");
+        await Frames(20);
+        Check(main.AtSeaNode is null, "and ashore");
+
+        // Beat one off, and it goes quiet; and no offer comes to a hero who's down.
+        sea.Pardon();
+        sea.Rank = SeaRank.Bosun;
+        await Teleport(Main.HarbourPost + new Vector3(1.5f, 0, 1.5f));
+        main.SailForTest("port:greywater");
+        await Frames(20);
+        at = main.AtSeaNode!;
+        v = sea.Voyage!;
+        v.Crew = crew.Id;
+        (v.Out, v.Home, v.Flag) = ([0.05, 0.1], [], null);
+        at.Along = 0.049;
+        await Until(() => at.Boarders.Count > 0, 20);
+        purse = p.Crowns;
+        foreach (var e in at.Boarders.ToList()) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => sea.IsBroken(crew, main.GuildBook.PlaySeconds), 8);
+        Check(sea.IsBroken(crew, main.GuildBook.PlaySeconds) && p.Crowns >= purse + crew.Bounty, $"beaten off, {crew.Name} keep their heads down, and their purses are yours: {p.Crowns - purse} crowns");
+        v.Crew = null;
+        v.Sprung = 1;
+        at.Along = 0.11;
+        await Until(() => at.Boarders.Count > 0, 20);
+        var boarder = at.Boarders[0];
+        for (var i = 0; i < 40 && !p.Downed; i++) p.TakeHit(1e9, DamageKind.Physical, AttackKind.Weapon, false, boarder);
+        sea.Hull = 0.5;
+        await Frames(30);
+        Check(p.Downed && !hud.Talking, "with the hero down, nobody offers anything");
+        await Until(() => !p.Downed, 15);
+        await Frames(30);
+        Check(sea.Voyage is null, "the ring brings them back, and the ship's gone without them");
+
+        // Lu on a pirate's deck: a wicked crew's cruise home, and he dies for it, and comes back less.
+        p.Stats.Heal(1e9);
+        sea.JoinPirates();
+        main.ProwlForTest();
+        await Frames(20);
+        at = main.AtSeaNode!;
+        v = sea.Voyage!;
+        (v.Out, v.Home, v.Homeward, v.Flag, v.Along, v.Sprung) = ([], [0.05], true, "wukong", 0, 0);
+        await Frames(2);
+        at.Along = 0.049;
+        await Until(() => at.Boarders.Count > 0, 20);
+        var ape = at.Boarders.FirstOrDefault(e => e.Kind.Id == "lu_wukong");
+        Check(ape is not null && at.Boarders.Where(e => e != ape).All(e => e.Kind.Id == "monkey_hand"), $"Lu Wukong comes aboard a wicked crew's ship, with his hands behind him ({string.Join(", ", at.Boarders.Select(e => e.Kind.Id))}; along {at.Along:0.000}, sprung {v.Sprung}, flag {v.Flag}, homeward {v.Homeward}, pirates {v.Pirates}, marines {v.Marines}, voyage same {sea.Voyage == v})");
+        if (ape is null) return;
+        Check(!ape.Friendly, "and here he's no friend of yours");
+        foreach (var e in at.Boarders.Where(e => e != ape).ToList()) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        ape.Stats.Grow(100000);
+        ape.Stats.Heal(1e9);
+        ape.TakeHit(ape.Stats.MaxHealth * 0.8, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => ape.Carried, 3);
+        Check(ape.Carried && hud.Heard("Bring him down now"), "at a quarter of his blood he goes for the rail");
+        var pay = p.Crowns;
+        ape.TakeHit(1e8, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => city.WukongDeaths == 1, 4);
+        Check(city.WukongDeaths == 1 && hud.Heard("second verse"), "caught, he dies, and it costs him a verse");
+        await Until(() => sea.Voyage?.Sprung != 0 || at.Boarders.Count == 0, 10);
+        await Frames(30);
+        Check(p.Pack.Count("wukongs_staff") == 1 && p.Crowns > pay, $"the price on him, and his staff: {p.Crowns - pay} crowns");
+        await Frames(20);
+        at.Along = 0.999;
+        await Until(() => sea.Voyage is null, 10);
+        Check(sea.Voyage is null, "and that cruise does come home: a boarding on the way back only happens once");
+
+        // He comes back bigger; and if he falls at a siege, there's nobody holding the town.
+        city.Siege = new PirateSiege { Town = "city:druitt", Ends = city.Day + 3, Lu = true };
+        await Teleport(spot);
+        await Until(() => legends.Lu is not null, 8);
+        lu = legends.Lu!;
+        Check(Mathf.IsEqualApprox(lu.Scale.X, Legend.WukongOf(1).Size) && hud.Heard("I died, you know"), $"he comes back, greyer and bigger: {lu.Scale.X:0.00} times the size");
+        lu.TakeHitFrom(legends.Soren!, 1e9, false);
+        await Until(() => city.WukongDeaths == 2, 4);
+        Check(city.WukongDeaths == 2 && city.Siege is { Lu: false } && legends.Lu is null && legends.Hands.Count == 0, "Soren kills him, and his crew carry him off: nobody's holding the town now");
+        Check(legends.Soren is not null, "and Soren's still at the gates");
+        city.Siege = null;
+        await Frames(90);
+    }
+
     /// <summary>The forge's work: two swords off the same anvil are two different swords, and they show it in the hand and in the fight.</summary>
     async Task TheForge()
     {
@@ -2807,6 +2973,7 @@ public partial class SelfTest(Main main) : Node
         at = main.AtSeaNode!;
         (sea.Voyage!.Out, sea.Voyage!.Home) = ([0.05], []);
         at.Along = 0.049;
+        sea.Voyage!.Crew = null; // nobody small on this run: it's the Teeth
         await Until(() => at.Boarders.Count > 0, 20);
         sea.Hull = 0.5;
         await Until(() => hud.Talking, 6);

@@ -45,9 +45,10 @@ public static class Garments
         "Shapeshifter" => new("fur", null, Bracers: true),
         "Warlock" or "Sorcerer" or "scholar" or "laureate" or "Poet" or "Scribe" => new("robe", null, Belt: false),
         "priest" => new("robe", "hood", Belt: false),
-        "pirate" or "sailor" => new(null, "bandana", Bracers: true),
+        "pirate" or "sailor" or "monkey_hand" => new(null, "bandana", Bracers: true),
         "turlin" or "giant_ape" => new(null, null, Belt: false),
         _ when look.StartsWith("soren_") => new(null, null, Bracers: true),
+        _ when look.StartsWith("lu_") => new(null, null, Belt: false),
         "pirate_captain" or "dread_soren" => new("jerkin", "bandana", Bracers: true, Cloak: true),
         "MartialArtist" => new(null, null, Bracers: true),
         "captive" or "child" or "youth" => new(null, null, Belt: false),
@@ -270,6 +271,7 @@ public static class Garments
         if (look == "turlin") Rival(sk, m, made);
         if (look == "giant_ape") GreatApe(sk, m, made);
         if (look.StartsWith("soren_")) Soren(sk, m, int.Parse(look[6..]), made);
+        if (look.StartsWith("lu_")) Wukong(sk, m, int.Parse(look[3..]), made);
         if (cut is { } style && kit.Head is null && outfit.Cap is null) Hair(sk, m, style.Style, style.Colour, made);
         if (kin is { } people) Kin(sk, m, people.Race, people.Form, kit.Head is not null, made);
         return made;
@@ -601,11 +603,12 @@ public static class Garments
     /// What Turlin comes back as: a great ape stood up on a man's frame, all brown fur and muscle with a bare, lined face
     /// and a short crest. The frame is a person's, so it stands on its own feet, walks and swings like one.
     /// </summary>
-    static void GreatApe(Skeleton3D sk, Measure m, List<Node> made)
+    static void GreatApe(Skeleton3D sk, Measure m, List<Node> made, Color? coat = null, Color? eyes = null)
     {
+        var turlin = coat is null;
         var fur = new StandardMaterial3D
         {
-            AlbedoColor = new Color("#57362a"), Roughness = 0.9f, CullMode = BaseMaterial3D.CullModeEnum.Disabled, Uv1Scale = new Vector3(5, 7, 1),
+            AlbedoColor = coat ?? new Color("#57362a"), Roughness = 0.9f, CullMode = BaseMaterial3D.CullModeEnum.Disabled, Uv1Scale = new Vector3(5, 7, 1),
             AlbedoTexture = new NoiseTexture2D { Width = 256, Height = 256, Seamless = true, Noise = new FastNoiseLite { Frequency = 0.09f }, ColorRamp = new Gradient { Offsets = [0, 1], Colors = [new Color(0.45f, 0.42f, 0.4f), new Color(1.3f, 1.25f, 1.2f)] } },
             NormalEnabled = true, NormalScale = 1.1f,
             NormalTexture = new NoiseTexture2D { Width = 256, Height = 256, Seamless = true, AsNormalMap = true, BumpStrength = 9, Noise = new FastNoiseLite { Frequency = 0.14f } },
@@ -654,9 +657,9 @@ public static class Garments
         var hips = Hang(sk, "Hips", made);
         Mass(hips, new Vector3(0, m.Hips.Y + 0.02f, -0.01f), m.HipHalf * 1.15f, 0.32f, new Vector3(1, 1, 0.9f));
         var r0 = m.HipHalf * 1.15f;
-        hips.AddChild(Part(new TorusMesh { InnerRadius = r0 - 0.025f, OuterRadius = r0 + 0.03f, Rings = 36, RingSegments = 10 }, edge, new Vector3(0, m.Hips.Y + 0.13f, 0), scale: new Vector3(1, 0.8f, 0.92f)));
+        if (turlin) hips.AddChild(Part(new TorusMesh { InnerRadius = r0 - 0.025f, OuterRadius = r0 + 0.03f, Rings = 36, RingSegments = 10 }, edge, new Vector3(0, m.Hips.Y + 0.13f, 0), scale: new Vector3(1, 0.8f, 0.92f)));
         var flap = Drape(m.HipHalf * 0.72f, m.Hips.Y * 0.5f, m.HipHalf * 0.2f, 0.14f, 8, 12, lean: 0.04f);
-        foreach (var side in new[] { -1f, 1f })
+        foreach (var side in turlin ? new[] { -1f, 1f } : [])
         {
             hips.AddChild(Part(flap, plate, new Vector3(side * m.HipHalf * 0.6f, m.Hips.Y + 0.1f, r0 * 0.96f), new Vector3(0, side * 14, side * 5)));
             hips.AddChild(Part(new BoxMesh { Size = new Vector3(0.02f, m.Hips.Y * 0.48f, 0.02f) }, edge, new Vector3(side * m.HipHalf * 0.3f, m.Hips.Y * 0.84f, r0 * 1.08f), new Vector3(0, 0, side * 5)));
@@ -670,7 +673,7 @@ public static class Garments
         Face(new Vector3(0, -0.045f, 0.125f), 0.09f, new Vector3(1.15f, 0.8f, 0.95f), bare); // the muzzle
         Face(new Vector3(0, 0.03f, 0.128f), 0.075f, new Vector3(1.25f, 0.62f, 0.5f), bare); // round the eyes
         Face(new Vector3(0, 0.075f, 0.13f), 0.07f, new Vector3(1.5f, 0.3f, 0.5f), fur); // the brow
-        var eye = new StandardMaterial3D { AlbedoColor = new Color("#c81a20"), Roughness = 0.2f };
+        var eye = new StandardMaterial3D { AlbedoColor = eyes ?? new Color("#c81a20"), Roughness = 0.2f };
         var dark = new StandardMaterial3D { AlbedoColor = new Color("#1c1210"), Roughness = 0.7f };
         foreach (var side in new[] { -1f, 1f })
         {
@@ -680,15 +683,96 @@ public static class Garments
         }
         Face(new Vector3(0, -0.09f, 0.19f), 0.06f, new Vector3(1, 0.1f, 0.5f), dark); // the mouth
         // The same hair he had as a man, made for a bigger head.
-        Mane(head, new Vector3(0, m.Top - 0.075f, -0.016f) + new Vector3(0, 0.02f, 0), new Color("#121014"), 1.3f);
+        if (turlin) Mane(head, new Vector3(0, m.Top - 0.075f, -0.016f) + new Vector3(0, 0.02f, 0), new Color("#121014"), 1.3f);
         // His tail, loose and long, out behind him and curling up at the end.
         var (root, tail) = (new Vector3(0, m.Hips.Y, -m.HipHalf * 1.2f), new Vector3(0.25f, -0.55f, -1).Normalized());
-        for (var i = 0; i < 20; i++)
+        var (links, thin) = turlin ? (20, 1f) : (11, 0.7f); // a shorter tail on a smaller ape
+        for (var i = 0; i < links; i++)
         {
-            hips.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.052f - i * 0.002f, BottomRadius = 0.055f - i * 0.002f, Height = 0.16f, RadialSegments = 10 }, fur, root + tail * 0.08f), tail));
+            hips.AddChild(Aim(Part(new CylinderMesh { TopRadius = (0.052f - i * 0.002f) * thin, BottomRadius = (0.055f - i * 0.002f) * thin, Height = 0.16f, RadialSegments = 10 }, fur, root + tail * 0.08f), tail));
             root += tail * 0.14f;
-            tail = (tail + new Vector3(i > 8 ? 0.12f : 0.02f, i > 8 ? 0.26f : 0.08f, i > 14 ? 0.24f : 0)).Normalized();
+            tail = (tail + new Vector3(i > links * 0.4f ? 0.12f : 0.02f, i > links * 0.4f ? 0.26f : 0.08f, i > links * 0.7f ? 0.24f : 0)).Normalized();
         }
+    }
+
+    /// <summary>
+    /// Lu Wukong, and what the gourd has left of him: a brown ape with amber eyes, in a patched blue hood and a red-and-gold
+    /// sash, the gourd at his hip and a chained staff in his hand. The further gone he is, the greyer and the bigger he is:
+    /// the hood splits and comes down to a rag, the gourd goes to his teeth and then it's gone, the sash goes, and the staff
+    /// gives way to a broken yard-arm with the ship's chain round his neck.
+    /// </summary>
+    static void Wukong(Skeleton3D sk, Measure m, int form, List<Node> made)
+    {
+        var beast = Tristinwold.Gameplay.Legend.WukongOf(form).Beast;
+        GreatApe(sk, m, made, new Color("#6e5238").Lerp(new Color("#77767a"), beast), new Color("#e8a020").Lerp(new Color("#a02818"), beast));
+        var (chest, hips, head) = (Hang(sk, "Chest", made), Hang(sk, "Hips", made), Hang(sk, "Head", made));
+        var torsoH = m.Neck.Y - m.Hips.Y;
+        var at = new Vector3(0, m.Top - 0.11f, 0.01f);
+        var hood = Armoury.Cloth("#" + new Color("#2a3a58").Lerp(new Color("#34343a"), beast).ToHtml(false));
+        var patches = new[] { Cloth(new Color("#a8853a")), Cloth(new Color("#8a2f24")), Cloth(new Color("#5a6e4a")) };
+        var (red, gold) = (Cloth(new Color("#8a2418")), new StandardMaterial3D { AlbedoColor = new Color("#c9a040"), Metallic = 0.7f, Roughness = 0.4f });
+        var iron = Armoury.Metal(new Color("#4a4a50"), 0.6f);
+        var gourd = new StandardMaterial3D { AlbedoColor = new Color("#b5893c"), Roughness = 0.55f };
+
+        // The hood, thrown round his head and over his shoulders, open at the face, with its patches.
+        if (beast < 0.5f)
+        {
+            var torn = beast > 0.3f ? 0.92f : 1;
+            head.AddChild(Part(new SphereMesh { Radius = 0.195f * torn, Height = 0.2f * torn, IsHemisphere = true, RadialSegments = 24, Rings = 10 }, hood, at + new Vector3(0, 0.015f, 0.012f), new Vector3(-62, 0, 0), new Vector3(1, 1.25f, 1)));
+            for (var i = 0; i < 6; i++)
+            {
+                var a = -1.25f + i * 0.5f;
+                head.AddChild(Part(new BoxMesh { Size = new Vector3(0.08f, 0.07f, 0.012f) }, patches[i % patches.Length], at + new Vector3(Mathf.Sin(a) * 0.19f, 0.06f + (i % 2) * 0.07f, 0.012f - Mathf.Cos(a) * 0.18f), new Vector3(-24, Mathf.RadToDeg(a), i * 13)));
+            }
+            chest.AddChild(Part(new TorusMesh { InnerRadius = 0.11f, OuterRadius = 0.22f, Rings = 28, RingSegments = 12 }, hood, m.Neck + new Vector3(0, -0.05f, -0.03f), scale: new Vector3(1.2f, 0.75f, 1)));
+            chest.AddChild(Part(Drape(m.ShoulderHalf * 2.1f, torsoH * 0.85f, m.ShoulderHalf * 0.5f, 0.14f), hood, m.Neck + new Vector3(0, 0, -m.ShoulderHalf * 0.86f), new Vector3(0, 180, 0)));
+        }
+        else if (beast < 0.9f)
+            chest.AddChild(Part(Drape(m.ShoulderHalf * 0.8f, torsoH * 0.5f, m.ShoulderHalf * 0.3f, 0.2f), hood, new Vector3(m.ShoulderHalf + 0.17f, m.Neck.Y + 0.08f, -0.03f), new Vector3(0, 100, -10))); // the rag of it on one shoulder
+
+        // The sash, its end hanging down one hip.
+        var r0 = m.HipHalf * 1.15f;
+        if (beast < 0.7f)
+        {
+            hips.AddChild(Part(new TorusMesh { InnerRadius = r0 * 0.74f, OuterRadius = r0 * 0.96f, Rings = 36, RingSegments = 10 }, red, new Vector3(0, m.Hips.Y + 0.12f, 0), scale: new Vector3(1, 1.1f, 0.86f)));
+            hips.AddChild(Part(Drape(m.HipHalf * 0.4f, m.Hips.Y * 0.5f, m.HipHalf * 0.1f, 0.1f, 6, 10), red, new Vector3(-m.HipHalf * 0.72f, m.Hips.Y + 0.08f, r0 * 0.84f), new Vector3(0, -18, 3)));
+        }
+
+        // The gourd: at his hip on a cord, then in his teeth, and at the end, gone.
+        void Gourd(Node3D on, Vector3 where, float size)
+        {
+            on.AddChild(Part(new SphereMesh { Radius = 0.1f * size, Height = 0.2f * size, RadialSegments = 16, Rings = 10 }, gourd, where));
+            on.AddChild(Part(new SphereMesh { Radius = 0.062f * size, Height = 0.124f * size, RadialSegments = 14, Rings = 8 }, gourd, where + Vector3.Up * 0.135f * size));
+            on.AddChild(Part(new CylinderMesh { TopRadius = 0.022f * size, BottomRadius = 0.026f * size, Height = 0.06f * size, RadialSegments = 8 }, Armoury.Leather("#3a2418"), where + Vector3.Up * 0.21f * size));
+        }
+        if (beast < 0.5f) Gourd(hips, new Vector3(r0 + 0.07f, m.Hips.Y - 0.1f, 0.05f), 1);
+        else if (beast < 0.9f) Gourd(head, at + new Vector3(0, -0.1f, 0.25f), 0.7f);
+
+        // The staff in his right hand, chain wrapped round its head; at the end, a broken yard-arm, and the ship's chain on him.
+        if (sk.FindBone("RightHand") >= 0)
+        {
+            var rest = sk.GetBoneGlobalRest(sk.FindBone("RightHand"));
+            var hand = Hang(sk, "RightHand", made);
+            var grip = rest.Origin + rest.Basis.Y.Normalized() * 0.08f;
+            var way = rest.Basis.Y.Normalized() * -1; // planted like a walking stick: down the arm, up past the shoulder
+            var yard = beast >= 0.9f;
+            var wood = yard ? Armoury.Leather("#4a3626") : Armoury.Leather("#6a3a24");
+            hand.AddChild(Aim(Part(new CylinderMesh { TopRadius = yard ? 0.05f : 0.026f, BottomRadius = yard ? 0.07f : 0.03f, Height = yard ? 2.6f : 2.1f, RadialSegments = 10 }, wood, grip + way * (yard ? 0.42f : 0.3f)), way));
+            if (!yard)
+            {
+                foreach (var along in new[] { -0.74f, 0.02f, 1.34f })
+                    hand.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.036f, BottomRadius = 0.036f, Height = 0.05f, RadialSegments = 10 }, gold, grip + way * along), way));
+                var across = way.Cross(rest.Basis.Y.Normalized()).Normalized();
+                for (var i = 0; i < 9; i++)
+                    hand.AddChild(Part(new TorusMesh { InnerRadius = 0.022f, OuterRadius = 0.04f, Rings = 12, RingSegments = 6 }, iron, grip + way * (0.94f + i * 0.04f) + across * (i % 2 == 0 ? 0.03f : -0.03f)));
+            }
+        }
+        if (beast >= 0.8f)
+            for (var i = 0; i < 16; i++)
+            {
+                var a = i * Mathf.Tau / 16;
+                chest.AddChild(Part(new TorusMesh { InnerRadius = 0.022f, OuterRadius = 0.044f, Rings = 12, RingSegments = 6 }, iron, m.Neck + new Vector3(Mathf.Cos(a) * 0.3f, -0.06f - Math.Max(0, Mathf.Sin(a)) * 0.12f, 0.02f + Mathf.Sin(a) * 0.27f), new Vector3(i % 2 == 0 ? 0 : 90, Mathf.RadToDeg(a), 0)));
+            }
     }
 
     /// <summary>What a people grows that isn't a body's: an ape's muzzle and tail, a plant person's leaves or branches and roots, a shroomie's cap.</summary>

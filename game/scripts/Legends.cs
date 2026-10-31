@@ -74,16 +74,22 @@ public partial class Main
 /// The Dread Pirate Soren ashore: while a town's under siege, he and his crew are at its gates for whoever comes. Like
 /// Turlin, he won't stay dead, and each time less of the man comes back. He's the whole server's enemy, so what's left of
 /// him is too. At a quarter of his blood he goes for his ship, and that only drives him off; killing him takes catching him.
+/// One siege in three, Lu Wukong comes with him, on the town's side: another who won't stay dead, and doesn't leave when he's
+/// hurt. Help him hold, and when it's over he'll offer you a berth (see <see cref="PirateCrew.DrunkenMonkey"/>).
 /// </summary>
 public partial class Legends(Main main) : Node
 {
-    Enemy? _soren;
-    readonly List<Enemy> _crew = [];
+    const string Reckoning = "reckoning", Monkey = "monkey";
+    Enemy? _soren, _lu;
+    readonly List<Enemy> _crew = [], _hands = [];
     double _tick, _leaving;
     Vector3 _away;
-    bool _hunting;
+    bool _hunting, _struck, _lingering, _offered;
 
     public Enemy? Soren => _soren;
+    public Enemy? Lu => _lu;
+    public IReadOnlyList<Enemy> Hands => _hands;
+    public IReadOnlyList<Enemy> Crew => _crew;
     /// <summary>The chance the black blade drops (the self-test sets it, to see it happen).</summary>
     public double WebChance { get; set; } = Legend.WebChance;
 
@@ -105,12 +111,19 @@ public partial class Legends(Main main) : Node
         if ((_tick -= delta) > 0) return;
         _tick = 1;
         var city = main.Economy;
+        if (_lingering) { TendOffer(); return; }
         if (_hunting)
         {
             if (_soren is null || new Vector2(main.PlayerNode.GlobalPosition.X - _soren.GlobalPosition.X, main.PlayerNode.GlobalPosition.Z - _soren.GlobalPosition.Z).Length() > 220) Clear();
             return;
         }
-        if (city.Siege is not { } siege) { Clear(); TendHunt(); return; }
+        if (city.Siege is not { } siege)
+        {
+            if (LuStanding) { SorenGone(); return; }
+            Clear();
+            TendHunt();
+            return;
+        }
         if (_soren is not null) return;
         var (x, z) = siege.Town == ReputationBook.Capital ? (150.0, 0.0) : main.World.Find(siege.Town) is { } town ? (town.X, town.Z) : (double.NaN, 0);
         if (double.IsNaN(x)) return;
@@ -167,15 +180,19 @@ public partial class Legends(Main main) : Node
         {
             e.GlobalPosition += (_away * 12 + Vector3.Up * 3) * (float)delta;
             if ((_leaving -= delta) > 0) return;
-            if (!_hunting) main.DoCity(CityAction.SiegeBroken(main.PlayerNode.Company, false));
-            main.PlayerNode.Crowns += Legend.SiegeBounty / 2;
-            main.HudNode.Toast(_hunting ? $"He's gone, for now, and the blade's still yours. He'll be back for it. +{Legend.SiegeBounty / 2} crowns." : $"He's gone, and the siege with him: the town's safe for now. He wasn't killed, so he'll be back as he was. +{Legend.SiegeBounty / 2} crowns.", 9);
+            var earned = _hunting || _struck;
+            if (!_hunting) main.DoCity(CityAction.SiegeBroken(earned ? main.PlayerNode.Company : Legend.WukongName, false));
+            if (earned) main.PlayerNode.Crowns += Legend.SiegeBounty / 2;
+            main.HudNode.Toast(_hunting ? $"He's gone, for now, and the blade's still yours. He'll be back for it. +{Legend.SiegeBounty / 2} crowns."
+                : earned ? $"He's gone, and the siege with him: the town's safe for now. He wasn't killed, so he'll be back as he was. +{Legend.SiegeBounty / 2} crowns."
+                : "Lu Wukong has driven him off, and the siege with him. The town's safe for now.", 9);
             e.QueueFree();
             (_soren, _leaving, _hunting) = (null, 0, false);
+            SorenGone();
             main.Save();
             return;
         }
-        if (e.Stats.Health > e.Stats.MaxHealth * Legend.SorenFleeAt || !e.FightingCompany) return;
+        if (e.Stats.Health > e.Stats.MaxHealth * Legend.SorenFleeAt || !e.FightingCompany && !LuStanding) return;
         _leaving = Legend.SorenFlightSeconds;
         e.Carried = true;
         var away = e.GlobalPosition - main.PlayerNode.GlobalPosition;
@@ -190,6 +207,7 @@ public partial class Legends(Main main) : Node
         _soren = Enemy.Create(Bestiary.Get("dread_soren"), at with { Y = City.FloorAt(at) + 0.5f }, danger * 1.4 * Legend.SorenStrength(main.Economy.SorenDeaths), look: Look(main.Economy));
         Dress(_soren, main.Economy);
         _soren.Roam = 16;
+        _soren.Struck = (_, _, _, _) => _struck = true;
         main.AddEnemy(_soren);
         _soren.Scale = Vector3.One * form.Size;
         for (var i = 0; i < 6; i++)
@@ -202,6 +220,87 @@ public partial class Legends(Main main) : Node
         }
         main.HudNode.Toast(form.Hail, 11);
         main.HudNode.Log($"Soren: {form.Hail}");
+        if (!_hunting && main.Economy.Siege is { Lu: true }) MusterLu(at, danger);
+    }
+
+    bool LuStanding => _lu is not null && IsInstanceValid(_lu) && _lu.State != EnemyState.Dead;
+
+    /// <summary>He lands between Soren and the town with his crew about him, and the two crews go for each other.</summary>
+    void MusterLu(Vector3 soren, double danger)
+    {
+        var deaths = main.Economy.WukongDeaths;
+        var form = Legend.WukongOf(deaths);
+        foreach (var e in _crew.Append(_soren!)) (e.Faction, e.Foe) = (Reckoning, Monkey);
+        var at = soren + new Vector3(0, 0, -16);
+        _lu = Enemy.Create(Bestiary.Get("lu_wukong"), at with { Y = City.FloorAt(at) + 0.5f }, danger * 1.2 * Legend.WukongStrength(deaths), look: LuLook(main.Economy));
+        Stand(_lu);
+        _lu.Scale = Vector3.One * form.Size;
+        for (var i = 0; i < 5; i++)
+        {
+            var spot = at + new Vector3(Mathf.Cos(i * 1.26f) * 5, 0, Mathf.Sin(i * 1.26f) * 5);
+            var e = Enemy.Create(Bestiary.Get("monkey_hand"), spot with { Y = City.FloorAt(spot) + 0.5f }, danger);
+            Stand(e);
+            _hands.Add(e);
+        }
+        main.HudNode.Toast(form.Hail, 11);
+        main.HudNode.Log($"Lu Wukong: {form.Hail}");
+    }
+
+    void Stand(Enemy e)
+    {
+        (e.Allied, e.Faction, e.Foe, e.Roam) = (true, Monkey, Reckoning, 16);
+        main.AddEnemy(e);
+        e.RefreshPlate();
+    }
+
+    /// <summary>Soren's gone: his crew go with him, and if Lu's still on his feet he has a word with whoever fought beside him.</summary>
+    void SorenGone()
+    {
+        foreach (var e in _crew.Where(IsInstanceValid)) e.QueueFree();
+        _crew.Clear();
+        if (_soren is not null && IsInstanceValid(_soren)) _soren.QueueFree();
+        _soren = null;
+        if (LuStanding) _lingering = true;
+    }
+
+    void TendOffer()
+    {
+        var hero = main.PlayerNode;
+        if (!LuStanding || hero.Downed || _lu!.GlobalPosition.DistanceTo(hero.GlobalPosition) > 100) { LuSails(); return; }
+        if (_offered || main.HudNode.Talking) return;
+        _offered = true;
+        foreach (var e in _hands.Where(IsInstanceValid).Append(_lu)) e.LoseTrack(30);
+        if (main.Sea.Outlaw && main.Sea.Sworn.Good)
+        {
+            hero.Crowns += Legend.MonkeyShare;
+            main.HudNode.Toast($"{Legend.WukongName} tosses you a purse off the top of what Soren dropped: a hand's share, +{Legend.MonkeyShare} crowns. The patched sail stands out of the bay.", 9);
+            LuSails();
+            main.Save();
+            return;
+        }
+        var rank = main.Sea.Rank == SeaRank.Landsman ? "" : " (the Brine Company will strike you off its books)";
+        main.HudNode.Talk($"{Legend.WukongName}, of {PirateCrew.DrunkenMonkey.Ship}", Legend.WukongOf(main.Economy.WukongDeaths).Offer,
+            ($"I'll sail with you.{rank}", () =>
+            {
+                main.Sea.JoinCrew(PirateCrew.DrunkenMonkey);
+                main.Standing.Good(5, "signed aboard the Drunken Monkey");
+                main.HudNode.EndTalk();
+                main.HudNode.Toast($"You're a swab of {PirateCrew.DrunkenMonkey.Ship} now. When you want to go out after pirates, find Nell Corran by the south pier.", 10);
+                LuSails();
+                main.Save();
+            }),
+            ("Not today.", () =>
+            {
+                main.HudNode.EndTalk();
+                main.HudNode.Toast("The patched sail stands out of the bay, and the singing goes with it. The berth will keep till next time.", 7);
+                LuSails();
+            }));
+    }
+
+    void LuSails()
+    {
+        (_lingering, _offered) = (false, false);
+        Clear();
     }
 
     public void HuntForTest() => Hunt();
@@ -212,20 +311,50 @@ public partial class Legends(Main main) : Node
     /// <summary>He sees blows coming, while the blade and its scabbard are still his.</summary>
     public static void Dress(Enemy soren, CityEconomy city) => soren.Foresees = city.WebHolder is null ? Legend.SorenForesees : 0;
 
+    /// <summary>The look of Lu as he is now: how much of him is ape (see Garments.Wukong).</summary>
+    public static string LuLook(CityEconomy city) => $"lu_{Math.Min(city.WukongDeaths, Legend.WukongForms.Count - 1)}";
+
     void Clear()
     {
-        foreach (var e in _crew.Where(IsInstanceValid)) e.QueueFree();
+        foreach (var e in _crew.Concat(_hands).Where(IsInstanceValid)) e.QueueFree();
         _crew.Clear();
-        if (_soren is not null && IsInstanceValid(_soren)) _soren.QueueFree();
-        (_soren, _leaving, _hunting) = (null, 0, false);
+        _hands.Clear();
+        foreach (var e in new[] { _soren, _lu })
+            if (e is not null && IsInstanceValid(e)) e.QueueFree();
+        (_soren, _lu, _leaving, _hunting, _struck) = (null, null, 0, false, false);
+    }
+
+    /// <summary>Lu's down, at a siege or on a pirate's deck. It isn't the end of him, and each time it costs him more.</summary>
+    void LuFell(Enemy lu, Enemy? killer, bool byCompany)
+    {
+        var form = Legend.WukongOf(main.Economy.WukongDeaths);
+        main.DoCity(CityAction.WukongKilled(byCompany ? main.PlayerNode.Company : killer?.Stats.Name ?? "The Dread Pirate Soren"));
+        main.HudNode.Toast(form.Lost, 11);
+        main.HudNode.Log($"Lu Wukong: {form.Lost}");
+        if (main.AtSeaNode is { } at) at.FlagSlain = true;
+        if (byCompany) main.Standing.Evil(10, "killed Lu Wukong");
+        if (lu != _lu) return;
+        _lu = null;
+        foreach (var e in _hands.Where(IsInstanceValid)) e.QueueFree();
+        _hands.Clear();
+        main.HudNode.Toast("His crew get him onto their shoulders and go down to the boats, singing the part he's forgotten. There's nobody between Soren and the town now.", 9);
     }
 
     void OnSlain(Enemy victim, Enemy? killer, bool byCompany)
     {
+        if (victim.Kind.Id == "lu_wukong") { LuFell(victim, killer, byCompany); return; }
         if (victim != _soren) return;
         var form = Legend.FormOf(main.Economy.SorenDeaths);
-        main.DoCity(_hunting ? CityAction.SorenKilled(main.PlayerNode.Company) : CityAction.SiegeBroken(main.PlayerNode.Company, true));
+        var earned = byCompany || _struck || _hunting;
+        main.DoCity(_hunting ? CityAction.SorenKilled(main.PlayerNode.Company) : CityAction.SiegeBroken(earned ? main.PlayerNode.Company : Legend.WukongName, true));
         (_soren, _leaving, _hunting) = (null, 0, false);
+        SorenGone();
+        if (!earned)
+        {
+            main.HudNode.Toast(form.Lost, 11);
+            main.Save();
+            return;
+        }
         main.PlayerNode.Crowns += Legend.SiegeBounty;
         var rng = new Tristinwold.Deviant.Rng((ulong)GD.Randi() << 32 | GD.Randi());
         var plunder = Legend.Plunder(rng);

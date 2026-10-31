@@ -6,7 +6,7 @@ namespace Tristinwold.World;
 /// <summary>Where a sailor stands aboard: not signed on, then the four ranks from the bottom of the deck to the top.</summary>
 public enum SeaRank { Landsman, Deckhand, Bosun, FirstMate, Captain }
 
-/// <summary>Where a pirate stands in the crew of the Widow's Tooth: none, then up from the bottom to the captain's chair.</summary>
+/// <summary>Where a pirate stands in their crew: none, then up from the bottom to the captain's chair.</summary>
 public enum PirateRank { None, Swab, Cutthroat, Quartermaster, Captain }
 
 /// <summary>Where a shipwright stands in the yard.</summary>
@@ -38,15 +38,16 @@ public static class Seas
             "Soren laughs round his pipe with your blood on his gauntlet, and steps backward off the rail. A rope takes him up. \"Again sometime,\" he calls.",
             "\"Not one in a hundred stays standing that long. I've Black Ysolde and a dozen like her who answer to me; go and swab her deck till you've earned mine. Or there's the sea.\""),
         new("wukong", "Lu Wukong", "the Drunken Monkey", "lu_wukong", 2, 0.22, 1200, "wukongs_staff",
-            "A patched sail and somebody singing. A hooded ape swings across on a chain with a gourd at his hip: Lu Wukong himself",
+            "A patched sail and somebody singing. He doesn't rob the honest, and you aren't. A hooded ape swings across on a chain with a gourd at his hip: Lu Wukong has come for your plunder",
             "Lu Wukong vaults the rail on his staff, takes a pull at his gourd and bows from the other deck. \"Tell my brother I said hello!\"",
-            "\"You fight like someone who's been told they can't. I like that. Ysolde's short of hands. Go and be a pirate; it's better than this. Or there's the sea, which is also fine.\""),
+            "\"You fight like someone who's been told they can't. I like that. Your ship's mine, and your plunder goes back where it came from. But I've a berth on the Drunken Monkey for anyone who'd sooner rob your sort than be one. Or there's the sea, which is also fine.\"",
+            HuntsPirates: true),
     ];
 
     public static Flagship? Flag(string? id) => Flagships.FirstOrDefault(f => f.Id == id);
 
     /// <summary>Whether a voyage this far out crosses a named captain: the worst of them only sail the far water.</summary>
-    public static Flagship? Flies(int leagues, Rng rng) => Flagships.FirstOrDefault(f => leagues >= f.MinLeagues && rng.Chance(f.Chance));
+    public static Flagship? Flies(int leagues, Rng rng) => Flagships.FirstOrDefault(f => !f.HuntsPirates && leagues >= f.MinLeagues && rng.Chance(f.Chance));
 
     public static readonly IReadOnlyList<SeaPort> Ports =
     [
@@ -94,10 +95,10 @@ public static class Seas
 
 /// <summary>
 /// A name on the water: a pirate captain who comes over the rail in person. The Dread Pirate Soren is the worst of them,
-/// and Lu Wukong, brother to the ape king of Hollowheart, the next. A big enough name gets away over the side, so they can
-/// be met again.
+/// and Lu Wukong, brother to the ape king of Hollowheart, the next, though he only comes aboard pirates. A big enough name
+/// gets away over the side, so they can be met again.
 /// </summary>
-public sealed record Flagship(string Id, string Captain, string Ship, string Kind, int MinLeagues, double Chance, int Bounty, string Loot, string Hail, string Escape, string Offer);
+public sealed record Flagship(string Id, string Captain, string Ship, string Kind, int MinLeagues, double Chance, int Bounty, string Loot, string Hail, string Escape, string Offer, bool HuntsPirates = false);
 
 /// <summary>A voyage under way: out to a port, a call there, and home again; and the pirates waiting on each leg.</summary>
 public sealed class Voyage
@@ -118,6 +119,8 @@ public sealed class Voyage
     public int Pirates { get; set; }
     /// <summary>A named captain hunting these waters this voyage (see <see cref="Seas.Flagships"/>): whoever boards first.</summary>
     public string? Flag { get; set; }
+    /// <summary>The crew in it (see <see cref="PirateCrew"/>): the one working these waters, or on a cruise of a good crew's, the pirates being hunted.</summary>
+    public string? Crew { get; set; }
     public int Pay { get; set; }
     /// <summary>The hero has command (a captain), rather than serving under someone.</summary>
     public bool Command { get; set; }
@@ -139,6 +142,8 @@ public sealed class Voyage
     public double LegSeconds => Leagues * CityEconomy.DaySeconds / Math.Max(0.5, Pace);
 
     public List<double> Leg => Homeward ? Home : Out;
+    /// <summary>What's boarding on this cruise is the law, and not other pirates.</summary>
+    public bool Marines => Raid && Crew is null && !(Homeward && Flag is not null);
     public bool AttackDue(double along) => !InPort && Sprung < Leg.Count && along >= Leg[Sprung];
     public string Danger => (Out.Count + Home.Count) switch { 0 => "calm water", 1 => "a sail or two on the horizon", 2 => "pirate water", _ => "the worst of the pirate water" };
 }
@@ -200,10 +205,17 @@ public sealed class SeaBook
 
     /// <summary>How fast a ship sails with what's fitted.</summary>
     public double Pace => HasModule("light_sails") ? 1.33 : 1;
-    public const string CompanyShip = "the Gull", PirateShip = "the Widow's Tooth";
+    public const string CompanyShip = "the Gull";
 
     // The other side of the law: a hero whose ship was taken may join the pirates who took it.
     public PirateRank Pirate { get; set; }
+    /// <summary>The crew they're sworn to, by its id; none means the Widow's Tooth (saves from before there were others).</summary>
+    public string? Crew { get; set; }
+    public PirateCrew Sworn => PirateCrew.Get(Crew) ?? PirateCrew.WidowsTooth;
+    /// <summary>Crews the hero has beaten, and the play time until which they're keeping their heads down.</summary>
+    public Dictionary<string, double> Broken { get; set; } = [];
+    /// <summary>"crew:3#41": a round of a crew's that's already been heard of ashore.</summary>
+    public HashSet<string> Heard { get; set; } = [];
     public int Raids { get; set; }
     public int Prizes { get; set; }
     public const int ToCutthroat = 2, ToQuartermaster = 5, ToPirateCaptain = 9, PardonPrice = 400;
@@ -265,7 +277,8 @@ public sealed class SeaBook
 
     /// <summary>Sets sail for a port: where the pirates lie in wait on each leg, and the deck work there'll be.</summary>
     /// <param name="explore">Out past the charts: it's the port that's the prize, and the company pays more for the risk.</param>
-    public Voyage? Sail(SeaPort port, Rng rng, bool explore = false)
+    /// <param name="crew">The small crew working that lane just now, if any: it's them who board, and not the Teeth.</param>
+    public Voyage? Sail(SeaPort port, Rng rng, bool explore = false, PirateCrew? crew = null)
     {
         var allowed = explore ? NextChart == port : Ports.Contains(port);
         if (Rank == SeaRank.Landsman || Outlaw || Voyage is not null || !allowed || OwnShip && Hull < Seaworthy) return null;
@@ -281,10 +294,27 @@ public sealed class SeaBook
         {
             Pace = Pace,
             Port = port.Id, PortName = port.Name, Leagues = port.Leagues, Out = Leg(), Home = Leg(),
-            Pirates = 2 + port.Leagues + rng.Next(2) + (Rank >= SeaRank.FirstMate ? 1 : 0),
+            Pirates = (crew?.Hands ?? 2 + port.Leagues + rng.Next(2)) + (Rank >= SeaRank.FirstMate ? 1 : 0),
             Pay = (int)Math.Round(PayFor(port) * (explore ? ExplorePay : 1)), Command = Rank == SeaRank.Captain, Explore = explore,
-            Flag = Seas.Flies(port.Leagues, rng)?.Id,
+            Flag = Seas.Flies(port.Leagues, rng)?.Id, Crew = crew?.Id,
         };
+    }
+
+    /// <summary>The small crew working the run to a port just now, if one's out and not licking its wounds.</summary>
+    public PirateCrew? Hunters(SeaPort port, double playSeconds) =>
+        PirateCrew.Small.FirstOrDefault(c => !IsBroken(c, playSeconds) && c.Where(playSeconds).Lane?.Id == port.Id);
+
+    public bool IsBroken(PirateCrew c, double playSeconds) => Broken.GetValueOrDefault(c.Id) > playSeconds;
+
+    /// <summary>A crew beaten: it keeps its head down for an hour.</summary>
+    public void Break(PirateCrew c, double playSeconds) => Broken[c.Id] = playSeconds + PirateCrew.BrokenSeconds;
+
+    /// <summary>The first this company's heard of a crew's round on a lane. Keeps only the latest few hundred.</summary>
+    public bool Hear(PirateCrew c, int round)
+    {
+        if (!Heard.Add($"{c.Id}#{round}")) return false;
+        if (Heard.Count > 400) Heard = [.. Heard.Skip(200)];
+        return true;
     }
 
     /// <summary>A named captain beaten off: the price on them the first time, a purse after that. The flag's gone for this voyage.</summary>
@@ -367,24 +397,34 @@ public sealed class SeaBook
     /// Taken, and offered a place among the pirates who took the ship (better than going over the side): struck off the
     /// company's books, and a swab aboard the Widow's Tooth.
     /// </summary>
-    public bool JoinPirates()
+    public bool JoinPirates() => JoinCrew(PirateCrew.WidowsTooth);
+
+    /// <summary>A place taken in a crew: off the company's books, or off another crew's, and a swab at the bottom of this one.</summary>
+    public bool JoinCrew(PirateCrew crew)
     {
-        if (Outlaw) return false;
-        (Pirate, Rank, Voyage) = (PirateRank.Swab, SeaRank.Landsman, null);
+        if (Outlaw && Sworn == crew) return false;
+        (Pirate, Rank, Voyage, Crew, Prizes) = (PirateRank.Swab, SeaRank.Landsman, null, crew.Id, 0);
         return true;
     }
 
-    /// <summary>A cruise after a merchantman: her crew to beat on the way out, maybe a company patrol on the way home.</summary>
-    public Voyage? Prowl(Rng rng)
+    /// <summary>
+    /// A cruise. Most crews go after a merchantman: her crew to beat on the way out, maybe a company patrol on the way home,
+    /// or Lu Wukong, who hunts their sort. A good crew hunts another pirate crew, and has that crew's friends to fear.
+    /// </summary>
+    public Voyage? Prowl(Rng rng, double playSeconds = 0)
     {
         if (!Outlaw || Voyage is not null) return null;
+        Hull = 100; // she's the crew's ship, and the crew keep her sound
         var port = Seas.Ports[Math.Min(Seas.Ports.Count - 1, (int)Pirate)];
+        var hunted = Sworn.Good ? rng.Pick(PirateCrew.Small.Where(c => !IsBroken(c, playSeconds)).DefaultIfEmpty(PirateCrew.Small[0]).ToList()) : null;
+        var hunter = Sworn.Good ? null : Seas.Flagships.FirstOrDefault(f => f.HuntsPirates && Pirate >= PirateRank.Cutthroat && rng.Chance(f.Chance));
         return Voyage = new Voyage
         {
             Pace = Pace,
-            Port = "raid", PortName = rng.Pick(Prey[..((int)Pirate + 1)]),
-            Leagues = port.Leagues, Raid = true, Out = [0.5], Home = rng.Chance(0.35) ? [0.4 + 0.3 * rng.NextDouble()] : [],
-            Pirates = 2 + port.Leagues + rng.Next(2), Pay = 40 + 30 * (int)Pirate, Command = Pirate == PirateRank.Captain,
+            Port = "raid", PortName = hunted is { } c ? $"{c.Ship} of {c.Name}" : rng.Pick(Prey[..((int)Pirate + 1)]),
+            Leagues = port.Leagues, Raid = true, Out = [0.5], Home = hunter is not null || rng.Chance(0.35) ? [0.4 + 0.3 * rng.NextDouble()] : [],
+            Pirates = hunted?.Hands ?? 2 + port.Leagues + rng.Next(2), Pay = 40 + 30 * (int)Pirate, Command = Pirate == PirateRank.Captain,
+            Flag = hunter?.Id, Crew = hunted?.Id,
         };
     }
 
@@ -420,7 +460,7 @@ public sealed class SeaBook
     public bool Pardon()
     {
         if (!Outlaw || Voyage is not null) return false;
-        (Pirate, Rank) = (PirateRank.None, SeaRank.Deckhand);
+        (Pirate, Rank, Crew) = (PirateRank.None, SeaRank.Deckhand, null);
         return true;
     }
 

@@ -273,7 +273,8 @@ public abstract partial class Body : Node3D
         "guardian_elder" => (Body?)Creature.Create("forest_monster.glb", 8.5f, new Color("#5a8a78")) ?? Figure.Create(look),
         "guardian_blight" => (Body?)Creature.Create("forest_monster.glb", 8f, new Color("#3a3a2a")) ?? Figure.Create(look),
         "ape_elder" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
-        "lu_wukong" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
+        "lu_wukong" => Figure.Create("lu_0"),
+        _ when look.StartsWith("lu_") => Figure.Create(look),
         "giant_ape" => Figure.Create(look),
         "spirit_beast" => (Body?)Creature.Create("wolf.glb", 1.1f, new Color(0.7f, 0.95f, 1f)) ?? Figure.Create("familiar"),
         "ape_warrior" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
@@ -381,6 +382,7 @@ public partial class Figure : Body
         ["bandit_chief"] = new("Barbarian", ["2H_Axe", "Barbarian_Hat"], 0.84f, new Color("#e0a090")),
         ["pirate"] = new("Rogue", ["1H_Sword"], 0.74f, new Color("#a8bce0")),
         ["pirate_captain"] = new("Rogue_Hooded", ["1H_Sword", "1H_Crossbow"], 0.84f, new Color("#e08888")),
+        ["monkey_hand"] = new("Rogue", ["1H_Sword"], 0.74f, new Color("#e0c888")),
         ["turlin"] = new("Barbarian", [], 0.92f, null, Unarmed: true),
         ["giant_ape"] = new("Barbarian", [], 3f, null, Unarmed: true),
         ["dread_soren"] = new("Barbarian", ["2H_Axe"], 1.05f, new Color("#e05040")),
@@ -429,6 +431,7 @@ public partial class Figure : Body
         if (look == "turlin" && Human(look, Tristinwold.Gameplay.Avatar.For("Barbarian") with { Race = "human", Sex = "Male", Skin = "Deep", Face = "Dark", Headwear = "none", Style = "None", Sleeves = "Long" }) is { } rival) return rival;
         if (look == "giant_ape" && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, new Color("#4a2e22")) is { } ape) return ape;
         if (look.StartsWith("soren_") && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, new Color("#b08a70").Lerp(new Color("#5a6a68"), Tristinwold.Gameplay.Legend.FormOf(int.Parse(look[6..])).Sea)) is { } soren) return soren;
+        if (look.StartsWith("lu_") && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, Humans.LuFur(look)) is { } lu) return lu;
         // On a PC, people are real bodies (see Humans): a hero as they made themselves, anyone else cast for the part.
         if (Humans.Enabled && Humans.IsPerson(look))
         {

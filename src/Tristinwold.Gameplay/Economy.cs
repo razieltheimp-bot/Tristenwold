@@ -14,11 +14,12 @@ public sealed class TownFabric
     public int Grown { get; set; }
 }
 
-/// <summary>The Dread Pirate Soren at a town's gates: which, and the day he'll have finished with it if nobody stops him.</summary>
+/// <summary>The Dread Pirate Soren at a town's gates: which, the day he'll have finished with it if nobody stops him, and whether Lu Wukong has come to stand against him.</summary>
 public sealed class PirateSiege
 {
     public string Town { get; set; } = "";
     public int Ends { get; set; }
+    public bool Lu { get; set; }
 }
 
 /// <summary>
@@ -82,6 +83,8 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction SorenKilled(string by) => new("soren_killed", Item: by);
     /// <summary>Soren has his blade back from whoever held it.</summary>
     public static CityAction WebLost(string holder) => new("web_lost", Item: holder);
+    /// <summary>Lu Wukong killed (he'll be back, and less), and who did it.</summary>
+    public static CityAction WukongKilled(string by) => new("wukong_killed", Item: by);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -186,6 +189,8 @@ public sealed class CityEconomy
     public string? WebHolder { get; set; }
     /// <summary>How many times Soren's been killed, by anyone. He came back from every one.</summary>
     public int SorenDeaths { get; set; }
+    /// <summary>How many times Lu Wukong's been killed, by anyone. He came back from every one.</summary>
+    public int WukongDeaths { get; set; }
     public const int SiegeEvery = 24, SiegeDays = 3, SiegeBurns = 1, SackBurns = 2, SackTreasury = 200;
     /// <summary>The towns his ships can reach.</summary>
     public static readonly IReadOnlyList<string> SiegeTowns = ["city:druitt", "city:greywater", "city:tristinwold"];
@@ -193,15 +198,25 @@ public sealed class CityEconomy
     /// <summary>Soren lands. Every day he's there, a town burns a little more, and its trade stops.</summary>
     string BeginSiege(Rng rng)
     {
-        Siege = new PirateSiege { Town = rng.Pick(SiegeTowns), Ends = Day + SiegeDays };
+        Siege = new PirateSiege { Town = rng.Pick(SiegeTowns), Ends = Day + SiegeDays, Lu = rng.Chance(Legend.LuComes) };
         FabricOf(Siege.Town).Burnt += SiegeBurns;
         Slump = Math.Min(MostSlump, Slump + SlumpBlow / 2);
-        return $"The Dread Pirate Soren has landed at {PlaceName(Siege.Town)} and laid siege to it. He'll be {SiegeDays} days at it, if nobody stops him.";
+        return $"The Dread Pirate Soren has landed at {PlaceName(Siege.Town)} and laid siege to it. He'll be {SiegeDays} days at it, if nobody stops him."
+            + (Siege.Lu ? " But there's a patched sail in the bay and somebody singing: Lu Wukong has come to stand against him." : "");
     }
 
-    string? TendSiege()
+    /// <summary>A day of the siege. While Lu holds, nothing more burns; if he's still holding at the end, Soren sails with nothing, and it may have cost Lu his life.</summary>
+    string? TendSiege(Rng rng)
     {
         if (Siege is not { } siege) return null;
+        if (siege.Lu)
+        {
+            if (Day < siege.Ends) return $"Lu Wukong's crew are holding the streets of {PlaceName(siege.Town)} against Soren.";
+            Siege = null;
+            if (!rng.Chance(Legend.LuFalls)) return $"Lu Wukong held {PlaceName(siege.Town)} to the end, and Soren has sailed with nothing.";
+            WukongDeaths++;
+            return $"Soren has sailed from {PlaceName(siege.Town)} with nothing, but Lu Wukong fell holding it. Nobody who knows the sea believes that's the end of him.";
+        }
         FabricOf(siege.Town).Burnt += SiegeBurns;
         foreach (var g in Goods) Stock[g.Good] = Stock.GetValueOrDefault(g.Good) * 0.95;
         if (Day < siege.Ends) return $"{PlaceName(siege.Town)} burns under Soren's guns.";
@@ -462,7 +477,7 @@ public sealed class CityEconomy
         if (News.Count > 12) News.RemoveRange(0, News.Count - 12);
         Slump = Math.Max(0, Slump - 0.02);
         if (DragonFree && !DragonSlain && Day % RampageEvery == 0) told.Add(Rampage());
-        if (TendSiege() is { } siege) told.Add(siege);
+        if (TendSiege(rng) is { } siege) told.Add(siege);
         else if (Siege is null && Day % SiegeEvery == 0) told.Add(BeginSiege(rng));
         if (Day % CarpentersEvery == 0 && Carpenters(rng) is { } built) told.Add(built);
         return told;
@@ -558,6 +573,11 @@ public sealed class CityEconomy
             case "soren_killed" when a.Item is { Length: > 0 and <= 60 } slayer:
                 SorenDeaths++;
                 News.Add($"{slayer} has killed the Dread Pirate Soren. Nobody who knows the sea believes that's the end of it.");
+                return true;
+            case "wukong_killed" when a.Item is { Length: > 0 and <= 60 } killer:
+                WukongDeaths++;
+                if (Siege is { Lu: true } held) held.Lu = false; // there's nobody holding the town now
+                News.Add($"{killer} has killed Lu Wukong. Nobody who knows the sea believes that's the end of him.");
                 return true;
             case "web_lost" when a.Item is not null && WebHolder == a.Item:
                 WebHolder = null;

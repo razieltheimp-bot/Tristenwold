@@ -665,6 +665,52 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--wukong"))
+        {
+            // Lu as he comes back: from the singing ape to the one with no words left, and a hand of his crew.
+            var stand = new Vector3(-700, 0, -300);
+            main.TerrainNode.EnsureAround(stand, 1);
+            p.GlobalPosition = stand + new Vector3(0, 1, 26);
+            main.ForestLog.Turlin.Met = true;
+            await Frames(60);
+            main.HudNode.Visible = false;
+            var ground = City.FloorAt(stand);
+            for (var i = 0; i < 6; i++)
+            {
+                main.Economy.WukongDeaths = i;
+                var at = stand with { Y = ground } + new Vector3((2.5f - i) * 2.3f, 0, 0);
+                var e = Enemy.Create(Bestiary.Get("lu_wukong"), at, look: Legends.LuLook(main.Economy));
+                e.Carried = true;
+                main.AddEnemy(e);
+                e.GlobalPosition = at;
+                e.Scale = Vector3.One * Legend.WukongOf(i).Size;
+                e.Rotation = Vector3.Zero;
+                e.HidePlate();
+            }
+            var hand = stand with { Y = ground } + new Vector3(8.2f, 0, 0);
+            var mate = Enemy.Create(Bestiary.Get("monkey_hand"), hand);
+            mate.Carried = true;
+            main.AddEnemy(mate);
+            mate.GlobalPosition = hand;
+            mate.Rotation = Vector3.Zero;
+            mate.HidePlate();
+            await Frames(40);
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(1.2f, 2.1f, -7.6f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(1.2f, 1.3f, 0), Vector3.Up);
+            cam.MakeCurrent();
+            await Shot("wukong-forms");
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(5.75f, 1.75f, -3f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(5.75f, 1.35f, 0), Vector3.Up);
+            await Shot("wukong-first");
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(5.75f, 1.75f, 3f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(5.75f, 1.35f, 0), Vector3.Up);
+            await Shot("wukong-back");
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(-3.5f, 2.2f, -4.2f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(-3.5f, 1.5f, 0), Vector3.Up);
+            await Shot("wukong-last");
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--stone"))
         {
             main.ForestLog.Turlin.Met = true;

@@ -152,7 +152,9 @@ public partial class Main
                 _hud.Log($"The den: {Direction(person.GlobalPosition, (Northwood.DenX, Northwood.DenZ))} of Hollowheart.");
                 Save();
             });
-        if (id == Leader) yield return ("Who is the pirate with your face?", () => Say(person, "My brother. Lu Wukong went down to the sea to prove the world was bigger than this wood, and now he's the second most hated name on the water and thinks that's a joke. Only the Dread Pirate Soren is worse. I don't speak to him. He sends me pipe-weed."));
+        if (id == Leader) yield return ("Who is the pirate with your face?", () => Say(person, _city.WukongDeaths == 0
+            ? "My brother. Lu Wukong went down to the sea with a gourd of what grows at the foot of the Maw, to prove the world was bigger than this wood. He robs pirates and sings about it, and he stands in Soren's road, and he thinks that's a joke. I don't speak to him. He sends me pipe-weed."
+            : $"My brother. He's died {(_city.WukongDeaths == 1 ? "once" : $"{_city.WukongDeaths} times")} now, that I've heard of. It's the gourd brings him back, and it takes a verse each time. The pipe-weed still comes. The notes don't, any more."));
         if (id == Druid) yield return ("How do I find my way through the wood?", () => Say(person, "Keep to the road and nothing older than a bear will trouble you. Leave it and the paths will turn you round: they're meant to. The guardians are at the ends of the small ones."));
         if (id == Sprout) yield return ("Who do your people pray to?", () => Say(person, string.Join(", ", Northwood.Guardians.Select(g => g.Name)) + ". We'd thank you not to kill them. It wouldn't feel like thanks."));
     }

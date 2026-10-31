@@ -69,7 +69,7 @@ public static class Humans
         {
             "raider" or "raider_chief" or "warmaster" => ["human", "orc", "half_giant", "human"],
             "bandit" or "bandit_chief" or "dock_thug" or "drowned_hand" => ["human", "human", "dwarf", "orc"],
-            "pirate" or "pirate_captain" or "dread_soren" or "sailor" => ["human", "human", "elf", "dwarf"],
+            "pirate" or "pirate_captain" or "dread_soren" or "sailor" or "monkey_hand" => ["human", "human", "elf", "dwarf"],
             "guard" or "marine" or "squire" or "hollow_soldier" or "ghost_captain" => ["human", "human", "dwarf"],
             "dragon_knight" or "aldric" or "laureate" => ["human"],
             _ => ["human", "human", "human", "elf", "dwarf"],
@@ -169,6 +169,7 @@ public static class Humans
         ["sailor"] = new(new("#c8d0e0"), new("#3a4a6a"), new("#3a2a20")),
         ["pirate"] = new(new("#a83a3a"), new("#2a2a3a"), new("#2a2220"), Cap: new("#8a2a2a")),
         ["pirate_captain"] = new(new("#5a1a2a"), new("#2a2a3a"), new("#2a2220"), Cap: new("#2a1a2a")),
+        ["monkey_hand"] = new(new("#b8903a"), new("#3a3026"), new("#2a2220"), Cap: new("#8a2f24")), // patched gold and a red rag: Lu's colours
         ["bandit"] = new(new("#6a5a3a"), new("#4a3a2a"), new("#2a2220"), Cap: new("#4a3a2a")),
         ["bandit_chief"] = new(new("#8a2a1a"), new("#4a3a2a"), new("#2a2220")),
         ["raider"] = new(new("#7a4a2a"), new("#5a3a2a"), new("#3a2a20"), Sleeves: false),
@@ -218,7 +219,10 @@ public static class Humans
         ["ghost_captain"] = new(new("#9ab0b8"), new("#5a6a70"), new("#3a3a40"), Cap: new("#8a9aa0")),
     };
 
-    public static Outfit OutfitFor(string look) => Outfits.GetValueOrDefault(look.StartsWith("soren_") ? "soren" : look) ?? Outfits["townsfolk"];
+    public static Outfit OutfitFor(string look) => look.StartsWith("lu_") ? new(LuFur(look), LuFur(look), LuFur(look)) : Outfits.GetValueOrDefault(look.StartsWith("soren_") ? "soren" : look) ?? Outfits["townsfolk"];
+
+    /// <summary>The colour of Lu's body under his fur, greying as he goes.</summary>
+    public static Color LuFur(string look) => new Color("#5a432e").Lerp(new Color("#67666a"), Tristinwold.Gameplay.Legend.WukongOf(int.Parse(look[3..])).Beast);
 
     const string TexFolder = Folder + "tex/";
     static readonly Dictionary<string, Texture2D?> Textures = [];
@@ -405,7 +409,7 @@ public partial class Figure
         if (skeleton is null || mesh is null) { f.Free(); return null; }
         var moves = Humans.Moves(skeleton);
         if (moves is null) { f.Free(); return null; }
-        if (look == "giant_ape") skeleton.AddChild(new ApeStance());
+        if (look == "giant_ape" || look.StartsWith("lu_")) skeleton.AddChild(new ApeStance());
         skeleton.Name = "GeneralSkeleton";
         skeleton.Owner = model;
         skeleton.UniqueNameInOwner = true;
