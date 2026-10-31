@@ -13,12 +13,38 @@ public sealed class ForestBook
     public ForestStage Stage { get; set; }
     public int Ended { get; set; }
     public int TreesCut { get; set; }
-    /// <summary>Rafikki has told this hero where the true guardians are.</summary>
+    /// <summary>Raffkin has told this hero where the true guardians are.</summary>
     public bool Told { get; set; }
     /// <summary>This hero has taken Blightthorn from the turned guardian: the first kill always gives it, later ones seldom.</summary>
     public bool Thorn { get; set; }
     /// <summary>The rot is in this hero's blood, and it stays there until a druid draws it out.</summary>
     public bool Blighted { get; set; }
+    /// <summary>A shapeshifter's studies: how many of each beast they've fought and killed, and the shapes they've learned.</summary>
+    public Dictionary<string, int> Studied { get; set; } = [];
+    public List<string> Shapes { get; set; } = ["wolf"];
+    /// <summary>What this hero's had to do with Turlin.</summary>
+    public TurlinBook Turlin { get; set; } = new();
+
+    /// <summary>How many of a beast it takes to learn its shape.</summary>
+    public const int StudyKills = 8;
+    /// <summary>What can be studied: beasts, and nothing undead, nothing dragon, nothing that thinks.</summary>
+    public static readonly IReadOnlyList<string> Beasts = ["wolf", "ice_wolf", "bear", "boar", "giant_rat", "fox", "mud_crab", "deathcrest_ape"];
+
+    public static string ShapeName(string kind) => kind switch
+    {
+        "wolf" => "Werewolf", "ice_wolf" => "Frost Werewolf", "bear" => "War Bear", "boar" => "Great Boar", "giant_rat" => "Wererat", "fox" => "Fox Spirit",
+        "mud_crab" => "Shellback", "deathcrest_ape" => "Deathcrest", _ => kind,
+    };
+
+    /// <summary>One more of a beast fought and killed. The shape's name when that's enough to learn it.</summary>
+    public string? Study(string kind)
+    {
+        if (!Beasts.Contains(kind) || Shapes.Contains(kind)) return null;
+        Studied[kind] = Studied.GetValueOrDefault(kind) + 1;
+        if (Studied[kind] < StudyKills) return null;
+        Shapes.Add(kind);
+        return ShapeName(kind);
+    }
 
     public const int Pay = 400;
     /// <summary>The crowns found on a true guardian, and how often the turned one's thorn turns up.</summary>

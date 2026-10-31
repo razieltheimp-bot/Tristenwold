@@ -50,6 +50,7 @@ public partial class Hud : CanvasLayer
         _mana = Bar(bars, "#2e5cb0");
         _stamina = Bar(bars, "#3e9a4a");
         _limit = Bar(bars, "#d8b25a");
+        bars.AddChild(ReputeMeter());
         bars.AddChild(_crowns);
         root.AddChild(_area = new Label { Position = new Vector2(24, 140) });
         root.AddChild(_status = new Label { Position = new Vector2(24, 166), Modulate = new Color(1, 1, 1, 0.6f) });
@@ -71,6 +72,9 @@ public partial class Hud : CanvasLayer
         tabs.AddChild(Scroll("Board", _board));
         tabs.AddChild(Scroll("Companies", _companies));
         tabs.AddChild(Scroll("Deviants", _deviants));
+        var reputeScroll = new ScrollContainer { Name = "Reputation", SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        reputeScroll.AddChild(_reputeSheet = new Label { AutowrapMode = TextServer.AutowrapMode.Word, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        tabs.AddChild(reputeScroll);
         var chronicle = new VBoxContainer { Name = "Chronicle" };
         var logScroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         logScroll.AddChild(_log = new Label { AutowrapMode = TextServer.AutowrapMode.Word, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
@@ -231,6 +235,42 @@ public partial class Hud : CanvasLayer
         Input.MouseMode = _window.Visible || Talking || MapOpen ? Input.MouseModeEnum.Visible : Input.MouseModeEnum.Captured;
     }
 
+    Label _reputeSheet = new(), _reputeNumber = new();
+    ColorRect _reputeFill = new();
+
+    /// <summary>The reputation meter: 0 in the middle, a short bar out to the right for good standing and to the left for bad.</summary>
+    Control ReputeMeter()
+    {
+        var meter = new Control { CustomMinimumSize = new Vector2(260, 16), TooltipText = "Your reputation here, from -5 to +5", MouseFilter = Control.MouseFilterEnum.Ignore };
+        var back = new ColorRect { Color = new Color(0, 0, 0, 0.55f), MouseFilter = Control.MouseFilterEnum.Ignore };
+        back.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        meter.AddChild(back);
+        meter.AddChild(_reputeFill = new ColorRect { AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0, AnchorBottom = 1, MouseFilter = Control.MouseFilterEnum.Ignore });
+        meter.AddChild(new ColorRect { Color = new Color(1, 1, 1, 0.5f), AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorBottom = 1, OffsetLeft = -1, OffsetRight = 1, MouseFilter = Control.MouseFilterEnum.Ignore });
+        meter.AddChild(_reputeNumber = new Label { Text = "0", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MouseFilter = Control.MouseFilterEnum.Ignore });
+        _reputeNumber.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _reputeNumber.AddThemeFontSizeOverride("font_size", 12);
+        _reputeNumber.AddThemeColorOverride("font_outline_color", Colors.Black);
+        _reputeNumber.AddThemeConstantOverride("outline_size", 4);
+        return meter;
+    }
+
+    /// <summary>The number on the meter (for the self-test), and how far its bar reaches from the middle, as a share of the meter.</summary>
+    public string ReputeNumber => _reputeNumber.Text;
+    public float ReputeReach => _reputeFill.AnchorRight - _reputeFill.AnchorLeft;
+
+    /// <summary>How the hero stands where they are, from -5 to +5.</summary>
+    public void ShowReputeMeter(double view, string where)
+    {
+        _reputeNumber.Text = Tristinwold.World.ReputationBook.Number(view);
+        var reach = (float)(view / 10);
+        (_reputeFill.AnchorLeft, _reputeFill.AnchorRight) = reach < 0 ? (0.5f + reach, 0.5f) : (0.5f, 0.5f + reach);
+        _reputeFill.Color = reach < 0 ? new Color("#b03a3a") : new Color("#3e9a6a");
+        _reputeNumber.GetParent<Control>().TooltipText = $"Your reputation in {where}, from -5 to +5";
+    }
+
+    public void ShowRepute(string text) => _reputeSheet.Text = text;
+
     static ProgressBar Bar(Container parent, string colour)
     {
         var bar = new ProgressBar { MaxValue = 100, ShowPercentage = false, CustomMinimumSize = new Vector2(260, 14) };
@@ -382,9 +422,22 @@ public partial class Hud : CanvasLayer
             _companies.AddChild(new Label { Text = $"{g.Player}'s company {(g.Online ? "- " + (g.Area.Length > 0 ? g.Area : "somewhere") : "(resting)")}\n   {string.Join(", ", g.Party)}" });
     }
 
+    string? _rival;
+    Label? _rivalLabel;
+
+    /// <summary>The hero's own rival, at the head of the deviants tab.</summary>
+    public void ShowRival(string text)
+    {
+        _rival = text;
+        if (_rivalLabel is not null && IsInstanceValid(_rivalLabel) && !_rivalLabel.IsQueuedForDeletion()) { _rivalLabel.Text = text; return; }
+        _deviants.AddChild(_rivalLabel = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.Word, Modulate = new Color("#ff9a7a") });
+        _deviants.MoveChild(_rivalLabel, 0);
+    }
+
     public void ShowDeviants(string worldJson)
     {
         Clear(_deviants);
+        if (_rival is not null) { _rivalLabel = null; ShowRival(_rival); }
         try
         {
             var world = Deviant.DeviantWorld.FromJson(worldJson);

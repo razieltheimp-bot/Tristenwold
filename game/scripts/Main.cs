@@ -399,7 +399,7 @@ public partial class Main : Node3D
         _player.WentDown += () => { _tracker.Downed(); _hud.Center("You have fallen."); };
         _player.Struck += (enemy, hit, kind) =>
         {
-            if (enemy.Sparring || enemy.Yielded) return; // a duel in the yard isn't a battle
+            if (enemy.Sparring || enemy.Yielded || enemy.HeroesRival) return; // a duel in the yard isn't a battle
             _tracker.Engaged(enemy.Id, enemy.Kind.Id, enemy.Kind.Name, enemy.Stats.MaxHealth, ToNumerics(enemy.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, enemy.DeviantId);
             _tracker.Hit(enemy.Id, kind, _player.Company, _clock);
             if (hit.Killed) _tracker.Died(enemy.Id, _player.Company, _clock);
@@ -629,6 +629,9 @@ public partial class Main : Node3D
     public event Action<Message>? Received;
     public event Action<BattleReport>? FightEnded;
     public Hud HudNode => _hud;
+    public bool InTownForTurlin(Vector3 at) => _roamers.InTown(at);
+    /// <summary>For the self-test: Turlin's fight, brought on now.</summary>
+    public void MeetTurlinForTest() => _forestNode?.MeetForTest();
     public WorldGen World => _world;
     public ExploredMap Explored => _explored;
     public QuestLog Journal => _journal;
@@ -728,6 +731,7 @@ public partial class Main : Node3D
         if (_clock - _lastReveal > 0.2) { _lastReveal = _clock; Explore(pos); }
 
         _area = City.AreaAt(pos);
+        TendRepute();
         if (_clock - _lastScore > 0.5) { _lastScore = _clock; Score(pos); }
         if (_client?.Status == ClientStatus.Connected && _area != _sentArea)
         {
@@ -747,7 +751,7 @@ public partial class Main : Node3D
             }
         }
 
-        foreach (var e in Enemies().Where(e => e.FightingCompany && !e.Sparring && !e.Yielded))
+        foreach (var e in Enemies().Where(e => e.FightingCompany && !e.Sparring && !e.Yielded && !e.HeroesRival))
             _tracker.Engaged(e.Id, e.Kind.Id, e.Kind.Name, e.Stats.MaxHealth, ToNumerics(e.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, e.DeviantId);
         _tracker.Tick(_clock, ToNumerics(_player.GlobalPosition),
             id => FindEnemy(id) is { FightingCompany: true } e && e.GlobalPosition.DistanceTo(_player.GlobalPosition) < 40,
@@ -857,7 +861,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return IndoorAction(pos) ?? MineAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
+        return IndoorAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>
@@ -873,7 +877,8 @@ public partial class Main : Node3D
             person.QueueFree();
             return;
         }
-        Say(person, news.Count > 0 ? news[^1].Text : Greeting(person));
+        var said = news.Count > 0 ? news[^1].Text : Greeting(person);
+        Say(person, ReputationBook.Manner(RegardOf(person), person.Npc.First) is { } manner ? $"{manner} {said}" : said);
     }
 
     void Say(Person person, string text)
@@ -884,9 +889,10 @@ public partial class Main : Node3D
         (string, Action) work = (quest, entry) switch
         {
             (null, _) => ("Any work for me?", () => Say(person, "Nothing I'd trust to a stranger.")),
+            (_, null) when ReputationBook.RefusesWork(RegardOf(person)) => ("Any work for me?", () => Say(person, "For you? No. I'd sooner do it myself. Put things right round here first.")),
             (_, null) => ("Any work for me?", () => _hud.Talk(Who(npc), quest.Pitch,
                 ("I'll do it.", () => { Accept(quest); Say(person, "Good. The gods keep you."); }),
-                ("Not now.", () => Say(person, "Suit yourself.")))),
+                ("Not now.", () => { Repute.Refused(npc.Id, npc.Name); ShowRepute(); Say(person, "Suit yourself."); }))),
             (_, { Stage: QuestStage.Done }) => ("Any work for me?", () => Say(person, "You've done enough for me already. Thank you.")),
             _ => ("About the job...", () => Say(person, $"Still waiting. {entry.Objective}.")),
         };
@@ -942,9 +948,11 @@ public partial class Main : Node3D
     void Apply(QuestUpdate u)
     {
         _hud.Toast(u.Text);
-        if (u.Reward > 0) _player.Crowns += _player.Class.Id == "Thief" ? (int)Math.Round(u.Reward * (1 + _player.Class.Passive.Power * _player.Hero.Power("light_fingers"))) : u.Reward;
+        var reward = ReputationBook.Reward(u.Reward, Repute.Regard(u.Quest.GiverHomeId, u.Quest.GiverId));
+        if (reward > 0) _player.Crowns += _player.Class.Id == "Thief" ? (int)Math.Round(reward * (1 + _player.Class.Passive.Power * _player.Hero.Power("light_fingers"))) : reward;
         if (u.Stage == QuestStage.Done) GainXp(40 + u.Quest.Reward / 2);
         if (u.Stage == QuestStage.Done) _standing.Good(1, $"saw to {u.Quest.Title.ToLowerInvariant()}");
+        if (u.Stage == QuestStage.Done) Repute.Helped(u.Quest.GiverId, u.Quest.GiverName);
         if (u.Stage == QuestStage.Done && ClassQuests.IsClassQuest(u.Quest.Id, out var discipline, out var step)) ClassTrialDone(discipline, step);
         if (u.Stage == QuestStage.Done) { _hud.Toast($"Quest complete: {u.Quest.Title}."); Sound.Ui("quest"); }
         _hud.ShowJournal(_journal);
@@ -1018,6 +1026,7 @@ public partial class Main : Node3D
                 _mine = save.Mine ?? new MineBook();
                 _forest = save.Forest ?? new ForestBook();
                 _standing = save.Standing ?? new Standing();
+                _standing.Told = OnDeed;
                 _guilds = save.Guilds ?? new GuildBook();
                 _raids = save.Raids ?? new RaidBook();
                 _city = save.City ?? CityEconomy.Start(_world.Seed);

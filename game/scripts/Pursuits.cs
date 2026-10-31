@@ -210,6 +210,7 @@ public partial class Main
     void Made(Recipe r)
     {
         if (r.Job == Job.Cooking) Did("meals");
+        if (r.Job == Job.Smithing) WellDone(1); // a smith's good work is seen and talked about
         if (r.Item.Slot is Slot.Ring or Slot.Neck) Did("jewellery");
     }
 
@@ -481,6 +482,7 @@ public partial class Main
             _player.Crowns -= fine;
             _city.Renown = Math.Max(0, _city.Renown - 3);
             _standing.Evil(2, $"were caught with a hand in {npc.Name}'s purse");
+            Repute.Robbed(npc.Id, npc.Name);
             _pursuits.WaryUntil[npc.Id] = _guilds.PlaySeconds + Thieving.WarySeconds;
             _player.Pack.Practise(Job.Thieving, Thieving.Xp(mark) / 4);
             Sound.Ui("error");

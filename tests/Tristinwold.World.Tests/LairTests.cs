@@ -128,7 +128,7 @@ public class LairTests
             }
         }
         // Further out, harder: a hero who's outgrown everything near home has somewhere to go.
-        var near = FarLairs.Near(w, 3500, 0, 2000).Min(r => r.MinLevel);
+        var near = FarLairs.Near(w, 0, -3500, 2000).Min(r => r.MinLevel); // north: the ocean lies east
         var far = FarLairs.Near(w, 40_000, 0, 3000).Min(r => r.MinLevel);
         Assert.True(far > near + 20, $"{near} near, {far} far");
         Assert.True(FarLairs.Near(w, 40_000, 0, 3000).All(r => r.MaxLevel > Raids.All.Max(o => o.MaxLevel)));

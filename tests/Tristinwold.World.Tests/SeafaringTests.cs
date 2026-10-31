@@ -7,6 +7,9 @@ namespace Tristinwold.World.Tests;
 /// <summary>Sailing to the ports over the sea, the pirates on the way, the ranks up to captain, and the shipyard.</summary>
 public class SeafaringTests
 {
+    /// <summary>A sailor whose company has charted every old port: these tests are about the voyages, not the finding.</summary>
+    static HashSet<string> Everywhere() => [.. Seas.Ports.Select(p => p.Id)];
+
     static SeaPort Port(string id) => Seas.Get(id)!;
 
     [Fact]
@@ -23,7 +26,7 @@ public class SeafaringTests
     [Fact]
     public void A_deckhand_sails_the_near_ports_and_a_voyage_runs_out_in_port_and_home()
     {
-        var sea = new SeaBook();
+        var sea = new SeaBook { Charted = Everywhere() };
         Assert.Null(sea.Sail(Port("port:saltmere"), new Rng(1))); // sign on first
         Assert.True(sea.SignOn());
         Assert.Equal(SeaRank.Deckhand, sea.Rank);
@@ -57,7 +60,7 @@ public class SeafaringTests
             var total = 0;
             for (var s = 1UL; s <= 200; s++)
             {
-                var sea = new SeaBook { Rank = SeaRank.FirstMate };
+                var sea = new SeaBook { Charted = Everywhere(), Rank = SeaRank.FirstMate };
                 var v = sea.Sail(Port(id), new Rng(s))!;
                 Assert.All(v.Out.Concat(v.Home), a => Assert.InRange(a, 0.3, 0.8));
                 total += v.Out.Count + v.Home.Count;
@@ -66,7 +69,7 @@ public class SeafaringTests
         }
         Assert.True(Attacks("port:ambermouth") > Attacks("port:saltmere") * 3);
 
-        var lazy = new SeaBook { Rank = SeaRank.Deckhand };
+        var lazy = new SeaBook { Charted = Everywhere(), Rank = SeaRank.Deckhand };
         var trip = lazy.Sail(Port("port:saltmere"), new Rng(3))!;
         trip.ChoresDue = 12;
         trip.Chores = 3;
@@ -78,7 +81,7 @@ public class SeafaringTests
     [Fact]
     public void The_company_promotes_by_voyages_and_fights_all_the_way_to_captain()
     {
-        var sea = new SeaBook();
+        var sea = new SeaBook { Charted = Everywhere() };
         sea.SignOn();
         var promotions = new List<SeaRank>();
         for (var i = 0; i < 20 && sea.Rank < SeaRank.Captain; i++)
@@ -101,7 +104,7 @@ public class SeafaringTests
     [Fact]
     public void Command_waits_for_the_years_on_a_first_mate()
     {
-        var sea = new SeaBook { Rank = SeaRank.FirstMate, Voyages = 20, Repelled = 10 };
+        var sea = new SeaBook { Charted = Everywhere(), Rank = SeaRank.FirstMate, Voyages = 20, Repelled = 10 };
         Assert.Null(sea.Promote(SeaBook.CaptainLevel - 1));
         Assert.Contains("level", sea.NextStep(SeaBook.CaptainLevel - 1));
         Assert.Equal(SeaRank.Captain, sea.Promote(SeaBook.CaptainLevel));
@@ -110,7 +113,7 @@ public class SeafaringTests
     [Fact]
     public void Pirates_hole_the_hull_a_holed_ship_stays_in_port_and_a_taken_one_loses_its_hold()
     {
-        var sea = new SeaBook { Rank = SeaRank.Captain, OwnShip = true, ShipName = "the Gannet" };
+        var sea = new SeaBook { Charted = Everywhere(), Rank = SeaRank.Captain, OwnShip = true, ShipName = "the Gannet" };
         sea.Hold[Good.Iron] = 12;
         sea.Sail(Port("port:corrow"), new Rng(5));
         sea.Damage(30);
@@ -128,7 +131,7 @@ public class SeafaringTests
     [Fact]
     public void The_yard_promotes_its_shipwrights_and_a_master_builds_a_ship_of_their_own()
     {
-        var sea = new SeaBook();
+        var sea = new SeaBook { Charted = Everywhere() };
         Assert.Equal(WrightRank.None, sea.Wright);
         sea.FitPlank(ownShip: false);
         Assert.Equal(WrightRank.Apprentice, sea.Wright);
@@ -152,7 +155,7 @@ public class SeafaringTests
     [Fact]
     public void A_life_at_sea_is_saved()
     {
-        var sea = new SeaBook { Rank = SeaRank.Bosun, Voyages = 4, Repelled = 1, Wright = WrightRank.Journeyman, Repairs = 5 };
+        var sea = new SeaBook { Charted = Everywhere(), Rank = SeaRank.Bosun, Voyages = 4, Repelled = 1, Wright = WrightRank.Journeyman, Repairs = 5 };
         sea.Sail(Port("port:vosk"), new Rng(9));
         sea.Damage(38);
         sea.Arrive();
@@ -166,7 +169,7 @@ public class SeafaringTests
     [Fact]
     public void A_hero_whose_ship_is_taken_can_turn_pirate_and_rise_to_pirate_captain_or_buy_a_pardon()
     {
-        var sea = new SeaBook { Rank = SeaRank.Bosun, Voyages = 5 };
+        var sea = new SeaBook { Charted = Everywhere(), Rank = SeaRank.Bosun, Voyages = 5 };
         sea.Sail(Port("port:vosk"), new Rng(2));
         sea.Taken();
         Assert.True(sea.JoinPirates());

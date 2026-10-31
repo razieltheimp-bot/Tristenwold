@@ -327,7 +327,7 @@ public partial class Roamers(Main main) : Node
 
     /// <summary>Whether what put the hero down takes a name for it: a foe of the wilds, not a lair's, a town's or a friend.</summary>
     bool Becomes(Enemy e) =>
-        IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly && !e.Young && !e.Kind.Timid && !e.InLair && !e.Sparring
+        IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly && !e.Young && !e.Kind.Timid && !e.InLair && !e.Sparring && !e.HeroesRival
         && e.Bond is null && _out.All(o => o.Body != e) && !InTown(e.GlobalPosition);
 
     /// <summary>Something out in the wilds beat the hero: it takes a name, and from now on it roams, and hunts.</summary>

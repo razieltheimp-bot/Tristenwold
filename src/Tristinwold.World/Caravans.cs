@@ -167,12 +167,11 @@ public sealed class TradeBook
     public IEnumerable<TownMarket> Routes => Roads.Known;
 
     /// <summary>
-    /// The routes Tristinwold has always run: its nearest market towns and villages, two of them, known to every hero
-    /// from the start. Everything further out is for the hero to find.
+    /// The routes Tristinwold has always run, known to every hero from the start: the only partners the wood and the
+    /// mountains have ever left it, the treetop village and the two dock towns. Everything further out is for the hero to find.
     /// </summary>
     public static IEnumerable<Settlement> OldRoutes(WorldGen world) =>
-        world.SettlementsNear(0, 0, 2500).Where(s => TownMarkets.Trades(s) && s.Kind is SettlementKind.Town or SettlementKind.Hamlet or SettlementKind.Farmstead or SettlementKind.Inn)
-            .OrderBy(s => s.DistanceTo(0, 0)).Take(2);
+        new[] { "city:hollowheart", "city:druitt", "city:greywater" }.Select(world.Find).OfType<Settlement>();
 
     /// <summary>Opens Tristinwold's old routes, if the book has none yet. Returns the places.</summary>
     public List<Settlement> OpenOldRoutes(WorldGen world, int day)

@@ -83,7 +83,7 @@ public sealed class WorldGen
     static readonly Dictionary<string, double> CitySizes = new()
     {
         ["tristinwold"] = 110, ["galeholt"] = 75, ["vespergate"] = 80, ["cinderhelm"] = 75, ["argentdeep"] = 70,
-        ["gravenmoor"] = 50, ["mirewatch"] = 50, ["duskwake"] = 55, ["hollowreach"] = 55,
+        ["gravenmoor"] = 50, ["mirewatch"] = 50, ["duskwake"] = 55, ["hollowreach"] = 55, ["druitt"] = 68, ["greywater"] = 66, ["hollowheart"] = 20,
     };
 
     public WorldGen(Atlas? atlas = null, ulong? seed = null)
@@ -116,7 +116,7 @@ public sealed class WorldGen
         // Tristinwold stands on flat ground at height 0, its harbor to the east.
         h = Noise.Lerp(h, 0, 1 - Noise.SmoothStep(130, 420, d));
         var harbor = Sq((x - 260) / 165) + Sq(z / 230);
-        return Noise.Lerp(h, -4, 1 - Noise.SmoothStep(0.7, 1.0, harbor));
+        return Noise.Lerp(h, -11, 1 - Noise.SmoothStep(0.7, 1.0, harbor));
     }
 
     /// <summary>Ground height, with every settlement's ground levelled.</summary>
@@ -298,6 +298,7 @@ public sealed class WorldGen
         var z = (j + 0.5) * SiteCell + (rng.NextDouble() * 2 - 1) * 110;
         var fromHome = Math.Sqrt(x * x + z * z);
         if (fromHome < 480) return null; // Tristinwold's own lairs are close enough
+        if (Northwood.CutOff(x, z)) return null; // the peninsula behind the forest and the mountains has hardly anyone in it
         if (CitiesNear(x, z, 300).Any(c => c.DistanceTo(x, z) < c.Radius + 260)) return null;
         var raw = RawHeight(x, z);
         if (raw < WaterLevel + 0.8) return null;

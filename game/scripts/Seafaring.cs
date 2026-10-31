@@ -72,6 +72,8 @@ public partial class Main
     IEnumerable<(string, Action)> SeaTalk(Person person)
     {
         var id = person.Npc.Id;
+        if (id is HarbourMaster or Smuggler) yield return ("Who's the worst on the water?", () => Say(person,
+            "Black Ysolde's the one you'll meet. The Teeth are hers, and she's bad enough. But she answers to the Dread Pirate Soren of the Red Reckoning, and he's the worst name there is: a sword like a broken gate, and a fist of iron. After him it's Lu Wukong of the Drunken Monkey, the ape king's own brother, who'll rob you singing. They keep to the far water. Mostly."));
         if (id == HarbourMaster) foreach (var o in HarbourTalk(person)) yield return o;
         else if (id == Shipwright) foreach (var o in YardWork(person)) yield return o;
         else if (id == Smuggler) foreach (var o in SmugglerTalk(person)) yield return o;
@@ -104,7 +106,7 @@ public partial class Main
             yield return ("Sign me on.", () =>
             {
                 s.SignOn();
-                Say(person, $"Deckhand, then. You haul what the bosun says, you sleep where he says, and you're paid when we're home: {s.PayFor(Seas.Ports[0])} crowns for the Saltmere run, more for the long ones. Come and see me when you want a ship.");
+                Say(person, $"Deckhand, then. You haul what the bosun says, you sleep where he says, and you're paid when we're home: {s.PayFor(Seas.Ports[0])} crowns for the Druitt run, more for the long ones. Come and see me when you want a ship.");
                 Save();
             });
             yield break;
@@ -244,10 +246,11 @@ public partial class Main
             return;
         }
         var ship = _sea.Ship;
+        var flag = Seas.Flag(v.Flag);
         _sea.Taken();
         _atSea?.ClearDeck();
-        _hud.Talk("Black Ysolde, captain of the Widow's Tooth",
-            $"\"You fought well for a {(_sea.Rank == SeaRank.Landsman ? "landsman" : SeaBook.Title(_sea.Rank))}. {ship}'s ours now, and her cargo. There's a place in my crew for someone who can fight. Or there's the sea.\"",
+        _hud.Talk(flag is { } f ? $"{char.ToUpperInvariant(f.Captain[0])}{f.Captain[1..]}, of {f.Ship}" : "Black Ysolde, captain of the Widow's Tooth",
+            flag?.Offer ?? $"\"You fought well for a {(_sea.Rank == SeaRank.Landsman ? "landsman" : SeaBook.Title(_sea.Rank))}. {ship}'s ours now, and her cargo. There's a place in my crew for someone who can fight. Or there's the sea.\"",
             ("Join the pirates.", () =>
             {
                 _sea.JoinPirates();
@@ -275,6 +278,14 @@ public partial class Main
         }
         else
         {
+            if (Seas.Flag(_sea.Voyage?.Flag) is { } f && _atSea?.ReachedFlag == true)
+            {
+                var first = !_sea.Humbled.Contains(f.Id);
+                var price = _sea.Humble(f);
+                _player.Crowns += price;
+                if (first) Take([(f.Loot, 1)]);
+                _hud.Toast($"{f.Escape} {(first ? $"The price on {f.Captain}: {price} crowns, and {Items.Get(f.Loot)!.Name} left behind on your deck." : $"+{price} crowns.")}", 12);
+            }
             _sea.Repel();
             var bounty = _sea.Rank >= SeaRank.FirstMate ? 15 + _sea.Voyage!.Leagues * 10 : 0;
             _player.Crowns += bounty;
@@ -332,10 +343,11 @@ public partial class Main
         foreach (var (g, n) in _sea.Hold.Where(c => c.Value > 0).ToList())
             options.Add(($"Sell {n} {CityEconomy.Info(g).Name} (they pay {m.Pays(g)} a load{(m.Wants.Contains(g) ? ", and they want it" : "")})", () =>
             {
-                var crowns = (int)Math.Round(m.Sell(g, n) * PerkTrade);
+                var crowns = (int)Math.Round(m.Sell(g, n) * PerkTrade * RepSellAt(m.Id));
                 _sea.Hold.Remove(g);
                 _player.Crowns += crowns;
                 _sea.Profit += crowns;
+                TradedAt(m.Id, m.Name);
                 Sound.Ui("coin", -2);
                 Save();
                 TradeAtPort(person, m);
@@ -343,11 +355,12 @@ public partial class Main
         foreach (var g in m.Makes.Where(g => m.ForSale(g) > 0 && _sea.Room > 0))
         {
             var n = Math.Min(Math.Min(_sea.Room, m.ForSale(g)), 8);
-            options.Add(($"Buy {n} {CityEconomy.Info(g).Name} ({m.Cost(g, n)} crowns; Tristinwold pays about {ExchangePays(g)} a load)", () =>
+            options.Add(($"Buy {n} {CityEconomy.Info(g).Name} ({(int)Math.Round(m.Cost(g, n) * RepBuyAt(m.Id))} crowns; Tristinwold pays about {ExchangePays(g)} a load)", () =>
             {
-                var cost = m.Cost(g, n);
+                var cost = (int)Math.Round(m.Cost(g, n) * RepBuyAt(m.Id));
                 if (_player.Crowns < cost) { _hud.Toast("You can't afford it.", 3); return; }
-                _player.Crowns -= m.Buy(g, n);
+                m.Buy(g, n);
+                _player.Crowns -= cost;
                 _sea.Profit -= cost;
                 _sea.Hold[g] = _sea.Hold.GetValueOrDefault(g) + n;
                 Save();
@@ -751,6 +764,9 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         voyage.Sprung = 0;
     }
 
+    /// <summary>This boarding is a named captain's, come in person.</summary>
+    public bool ReachedFlag { get; private set; }
+
     /// <summary>A sail on the horizon, then she's alongside and they're over the rail.</summary>
     void Attack()
     {
@@ -762,7 +778,9 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         var tween = _raider.CreateTween();
         tween.TweenProperty(_raider, "position", to, 9).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
         tween.TweenCallback(Callable.From(() => Board(side)));
-        var foe = voyage.Raid ? (voyage.Homeward ? "A company patrol! Marines over the rail" : $"There she is: {voyage.PortName}. Grapples! Her crew's coming to meet you") : "Pirates! A ship out of the Teeth is closing";
+        var named = voyage.Raid ? null : Seas.Flag(voyage.Flag);
+        ReachedFlag = named is not null;
+        var foe = voyage.Raid ? (voyage.Homeward ? "A company patrol! Marines over the rail" : $"There she is: {voyage.PortName}. Grapples! Her crew's coming to meet you") : named?.Hail ?? "Pirates! A ship out of the Teeth is closing";
         main.HudNode.Toast($"{foe}. All hands!", 7);
     }
 
@@ -775,8 +793,9 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         {
             var leader = i == 0 && !voyage.Raid && voyage.Pirates >= 5;
             var spot = new Vector3(Stage.X + side * 2.6f, DeckY + 0.8f, Stage.Z - 8 + i * 16f / Math.Max(1, voyage.Pirates - 1));
-            var e = Enemy.Create(Bestiary.Get(leader ? "pirate_captain" : kind), spot, danger);
-            if (leader) e.Stats.Name = "Black Ysolde's bosun";
+            var named = i == 0 && ReachedFlag ? Seas.Flag(voyage.Flag) : null;
+            var e = Enemy.Create(Bestiary.Get(named?.Kind ?? (leader ? "pirate_captain" : kind)), spot, danger);
+            if (leader && named is null) e.Stats.Name = "Black Ysolde's bosun";
             e.Roam = 6;
             main.AddEnemy(e);
             e.Provoke(main.PlayerNode);

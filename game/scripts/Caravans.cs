@@ -396,6 +396,8 @@ public partial class Main
             var news = _trade.Delivered(_city, _city.Day, _lootRng);
             _player.Crowns += e.Pay + bonus;
             _city.Renown += 3;
+            _standing.Good(2, $"brought a caravan safe to {e.ToName}");
+            TradedAt(e.To, e.ToName);
             Sound.Ui("coin", -2);
             _hud.Toast($"The caravan reaches {e.ToName} safe{(bonus > 0 ? ", hardly a scratch on it" : "")}. +{e.Pay + bonus} crowns.{(news is null ? "" : " " + news)}", 9);
             if (news is not null) _hud.Log($"Tristinwold: {news}");
@@ -506,10 +508,11 @@ public partial class Main
         foreach (var (g, n) in _trade.Cargo.Where(c => c.Value > 0).ToList())
             options.Add(($"Sell {n} {CityEconomy.Info(g).Name} (they pay {m.Pays(g)} a load{(m.Wants.Contains(g) ? ", and they want it" : "")})", () =>
             {
-                var crowns = (int)Math.Round(_trade.SellAt(m, g, n) * PerkTrade);
+                var crowns = (int)Math.Round(_trade.SellAt(m, g, n) * PerkTrade * RepSellAt(m.Id));
                 _trade.Cargo.Remove(g);
                 _player.Crowns += crowns;
                 _trade.Profit += crowns;
+                TradedAt(m.Id, m.Name);
                 Sound.Ui("coin", -2);
                 _hud.Toast($"+{crowns} crowns for {CityEconomy.Info(g).Name} at {m.Name}.", 4);
                 Save();
@@ -518,13 +521,13 @@ public partial class Main
         foreach (var g in m.Makes.Concat(Enum.GetValues<Good>().Where(m.Glut)).Distinct().Where(g => m.ForSale(g) > 0 && _trade.Room > 0))
         {
             var n = Math.Min(Math.Min(_trade.Room, m.ForSale(g)), 6);
-            options.Add(($"Buy {n} {CityEconomy.Info(g).Name} ({m.Cost(g, n)} crowns; Tristinwold pays about {ExchangePays(g)} a load)", () =>
+            options.Add(($"Buy {n} {CityEconomy.Info(g).Name} ({(int)Math.Round(m.Cost(g, n) * RepBuyAt(m.Id))} crowns; Tristinwold pays about {ExchangePays(g)} a load)", () =>
             {
-                var cost = m.Cost(g, n);
+                var cost = (int)Math.Round(m.Cost(g, n) * RepBuyAt(m.Id));
                 if (_player.Crowns < cost) { _hud.Toast("You can't afford it.", 3); return; }
-                var (paid, got) = _trade.BuyAt(m, g, n);
-                _player.Crowns -= paid;
-                _trade.Profit -= paid;
+                var (_, got) = _trade.BuyAt(m, g, n);
+                _player.Crowns -= cost;
+                _trade.Profit -= cost;
                 _trade.Cargo[g] = _trade.Cargo.GetValueOrDefault(g) + got;
                 _hud.Toast($"{cost} crowns for {n} {CityEconomy.Info(g).Name} ({_trade.Loaded}/{_trade.Capacity} aboard).", 4);
                 Save();

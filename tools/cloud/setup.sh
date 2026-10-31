@@ -23,6 +23,10 @@ id tristinwold >/dev/null 2>&1 || useradd --system --home-dir "$home" --shell /u
 mkdir -p "$home"
 systemctl stop tristinwold 2>/dev/null || true
 install -m 755 "$here/Tristinwold.Server" "$home/Tristinwold.Server"
+# Bring a world along: if the save files are next to this script and there's no world here yet, they become it.
+for save in tristinwold.json tristinwold.accounts.json; do
+    if [ -f "$here/$save" ] && [ ! -f "$home/$save" ]; then install -m 600 "$here/$save" "$home/$save"; fi
+done
 chown -R tristinwold:tristinwold "$home"
 
 # Settings: written once, then yours to edit (the password, and the keys for Claude's voice and Telegram).
@@ -47,6 +51,13 @@ systemctl enable --now tristinwold
 if command -v ufw >/dev/null 2>&1 && ufw status | grep -q active; then
     ufw allow 7777/tcp >/dev/null
     ufw allow 7778/tcp >/dev/null
+fi
+# Oracle's Ubuntu machines block everything but SSH with iptables rules of their own, and ufw doesn't show it.
+if command -v iptables >/dev/null 2>&1 && iptables -S INPUT | grep -q REJECT; then
+    for game_port in 7778 7777; do
+        iptables -C INPUT -p tcp --dport "$game_port" -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp --dport "$game_port" -j ACCEPT
+    done
+    if command -v netfilter-persistent >/dev/null 2>&1; then netfilter-persistent save >/dev/null 2>&1 || true; fi
 fi
 
 address=$(curl -fsS --max-time 5 https://api.ipify.org 2>/dev/null || hostname -I | cut -d' ' -f1)

@@ -56,6 +56,8 @@ public static class Northwood
     /// <summary>The land as this corner of the world has it: the mountains raised, and the bay of the Strand let in.</summary>
     public static double Shape(double x, double z, double h)
     {
+        var sea = Sea(x, z);
+        if (sea > 0) h += (-18 - h) * sea;
         if (x < -300 && z > -1900)
         {
             var off = ToLine(Ridge, x, z);
@@ -69,6 +71,42 @@ public static class Northwood
         }
         return h;
     }
+
+    /// <summary>
+    /// How far a point is out to sea (0 on land, 1 in deep water). The land south of the wood is a peninsula: ocean to the
+    /// east, south and west, and the tip of it hooks back up to the east round a great cove. That cove is Tristinwold's
+    /// harbour: a ship passing outside sees nothing but headland, which is why so few know it's there.
+    /// </summary>
+    public static double Sea(double x, double z)
+    {
+        if (x is > -1000 and < 150 && z is > -1500 and < 1500) return 0;
+        // The ocean is a great ring round the peninsula, and past it there's land again: other continents, for whoever sails that far.
+        var east = Ease((x - 1180) / 120) * Ease((z + 1950) / 200) * (1 - Ease((x - OceanFar) / 300));
+        var south = Ease((z - 1780) / 160) * (1 - Ease((z - OceanFar) / 300));
+        var west = Ease((-2960 - x) / 140) * Ease((z + 1950) / 200) * (1 - Ease((-x - OceanFar) / 300));
+        var open = Math.Min(Math.Max(east, Math.Max(south, west)), 1 - Island(x, z));
+        var cove = 1 - Ease((Math.Sqrt(Sq((x - 560) / 400) + Sq((z - 150) / 460)) - 0.86) / 0.14);
+        var mouth = 1 - Ease((ToSegment(x, z, (720, -240), (1240, -470)) - 62) / 26);
+        var strait = 1 - Ease((ToSegment(x, z, (-1500, 120), (-1540, 1900)) - 96) / 40);
+        var inlet = 1 - Ease((ToSegment(x, z, (770, -250), (800, -640)) - 40) / 24); // up from the cove's mouth to Greywater's quay
+        return Math.Max(open, Math.Max(cove, Math.Max(mouth, Math.Max(strait, inlet))));
+    }
+
+    public const double OceanFar = 5600;
+
+    /// <summary>The islands scattered over the ocean: 1 on an island, and nothing near home waters.</summary>
+    public static double Island(double x, double z)
+    {
+        if (Math.Sqrt(x * x + z * z) < 2400) return 0;
+        var (cx, cz) = (Math.Floor(x / 900), Math.Floor(z / 900));
+        var dice = Math.Abs(Math.Sin(cx * 12.9898 + cz * 78.233) * 43758.5453) % 1;
+        if (dice > 0.34) return 0;
+        var (ix, iz) = ((cx + 0.3 + dice * 1.1) * 900, (cz + 0.7 - dice) * 900);
+        return 1 - Ease((Math.Sqrt(Sq(x - ix) + Sq(z - iz)) - 90 - dice * 500) / 90);
+    }
+
+    /// <summary>The peninsula behind the wood and the mountains: cut off, and with few villages but those on the roads and the coast.</summary>
+    public static bool CutOff(double x, double z) => z > -1320 && x > -3000 && x < 1300;
 
     // ---- the roads and the maze -----------------------------------------------------------------------------------
 
@@ -206,8 +244,8 @@ public static class Northwood
     public const double LairX = -640, LairZ = -1190;
     public const string DragonName = "Verdaxis, the Fifth Guardian";
 
-    /// <summary>Rafikki's perch, off the road where a hero looking for trouble will find it.</summary>
-    public const double RafikkiX = -262, RafikkiZ = -470;
+    /// <summary>Raffkin's perch, off the road where a hero looking for trouble will find it.</summary>
+    public const double RaffkinX = -262, RaffkinZ = -470;
 
     /// <summary>The logging camp at the wood's edge.</summary>
     public const double CampX = 40, CampZ = -222;
@@ -219,6 +257,18 @@ public static class Northwood
 
     /// <summary>How hard the things of the wood hit, for a level (<see cref="WorldGen.Danger"/>'s scale).</summary>
     public static double DangerFor(double level) => 1 + (level - 1) * 0.12;
+
+    /// <summary>Turlin's den, under the same hill as the lair, and the grove at its foot where his fruit grows.</summary>
+    public const double DenX = -520, DenZ = -1060, GroveX = -618, GroveZ = -1158;
+    /// <summary>Where he sets up to be helpful, and where a clue he's left lies: out from the guardian, on the wood side of its ground.</summary>
+    public const double TurlinX = 52, TurlinZ = -214;
+    public static (double X, double Z) ClueFor(string guardian)
+    {
+        var g = Guardians.First(x => x.Id == guardian);
+        var (dx, dz) = (VillageX - g.X, VillageZ - g.Z);
+        var way = Math.Max(1, Math.Sqrt(dx * dx + dz * dz));
+        return (g.X + dx / way * 70, g.Z + dz / way * 70);
+    }
 
     public static bool NearVillage(double x, double z) => Math.Sqrt(Sq(x - VillageX) + Sq(z - VillageZ)) < 95;
 

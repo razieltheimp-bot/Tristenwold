@@ -29,6 +29,77 @@
       "contracts": []
     },
     {
+      "id": "hollowheart",
+      "at": [
+        -140,
+        -640
+      ],
+      "name": "Hollowheart",
+      "epithet": "the Village in the Trees",
+      "story": "The ape people's village, grown up through and round the Heartwood's greatest trees and never once cutting them. Hollowheart buys iron, ale and bread, and sells what the wood gives freely. It's the oldest friend Tristinwold has, and it has never quite decided whether it's a friend.",
+      "places": [
+        "The Heartwood",
+        "Morel's Hollow",
+        "The Root Stair",
+        "The Canopy Walk"
+      ],
+      "contracts": []
+    },
+    {
+      "id": "druitt",
+      "at": [
+        -900,
+        -262
+      ],
+      "name": "Druitt",
+      "epithet": "the Timber Port",
+      "story": "A hard, sawdust-smelling port at the foot of the western mountains, where the forest meets the Strand. Everything Druitt owns was once a tree. Its log-rafts float round the coast to Tristinwold, and it has never once asked what the forest thinks of that.",
+      "places": [
+        "The Sawpit",
+        "The Log Quay",
+        "The Reeve's Hall",
+        "The Bark and Barrel",
+        "The Felling Stones"
+      ],
+      "contracts": [
+        {
+          "id": "druitt-logjam",
+          "title": "Find out who keeps cutting Druitt's rafts loose in the night",
+          "postedBy": "The Reeve of Druitt",
+          "pay": 30,
+          "inDanger": "the raftsmen",
+          "secret": "Nobody human is cutting them."
+        }
+      ]
+    },
+    {
+      "id": "greywater",
+      "at": [
+        640,
+        -600
+      ],
+      "name": "Greywater",
+      "epithet": "the Orchard Port",
+      "story": "A farming and fruit town on the forest's eastern edge, all orchards, berry terraces and drying sheds running down to a quiet quay. It feeds half the peninsula, and passing ships don't know it's there. Greywater has learned to like it that way.",
+      "places": [
+        "The Long Orchard",
+        "The Berry Terraces",
+        "The Press House",
+        "The Harvest Hall",
+        "The Lamp Quay"
+      ],
+      "contracts": [
+        {
+          "id": "greywater-lights",
+          "title": "Find what's been showing false lights off the Greywater shoals",
+          "postedBy": "The Harbourmaster of Greywater",
+          "pay": 30,
+          "inDanger": "the next boat in",
+          "secret": "The lights are older than the town."
+        }
+      ]
+    },
+    {
       "id": "galeholt",
       "at": [
         -1900,

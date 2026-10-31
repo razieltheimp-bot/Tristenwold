@@ -68,7 +68,7 @@ public partial class Terrain(WorldGen world) : Node3D
     bool _cardGrass; // photographed grass on cards, rather than plain blades
 
     readonly Dictionary<(int, int), Node3D> _chunks = [];
-    readonly MeshInstance3D _water = new();
+    readonly MeshInstance3D _water = new(), _ocean = new();
     Material _ground = new StandardMaterial3D { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 1, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
     readonly StandardMaterial3D _leaves = new() { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 0.9f };
 
@@ -81,6 +81,11 @@ public partial class Terrain(WorldGen world) : Node3D
             : new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.25f, 0.33f, 0.85f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.1f, Metallic = 0.3f };
         _water.GIMode = GeometryInstance3D.GIModeEnum.Disabled; // see-through: global illumination would take it for a bright solid floor
         AddChild(_water);
+        // The open sea to the horizon: only when there's sea to be seen, or it'd show through the land that hasn't streamed in.
+        _ocean.Mesh = new PlaneMesh { Size = new Vector2(16000, 16000) };
+        _ocean.MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.1f, 0.24f, 0.32f), Roughness = 0.18f, Metallic = 0.25f };
+        _ocean.Visible = false;
+        AddChild(_ocean);
         if (Photographic) _ground = Graphics.Ground();
         // The simple renderer (old devices) draws the wind shader's grass black, so it gets plain grass.
         var sways = Fancy && RenderingServer.GetCurrentRenderingMethod() != "gl_compatibility";
@@ -171,6 +176,8 @@ public partial class Terrain(WorldGen world) : Node3D
         DriftClouds(player, GetProcessDeltaTime());
         var (pcx, pcz) = ChunkOf(player);
         _water.Position = new Vector3(Mathf.Round(player.X / ChunkSize) * ChunkSize, (float)WorldGen.WaterLevel, Mathf.Round(player.Z / ChunkSize) * ChunkSize);
+        _ocean.Position = _water.Position + Vector3.Down * 0.12f;
+        _ocean.Visible = Northwood.Sea(player.X, player.Z) > 0.5f;
 
         for (var ring = 0; ring <= ViewChunks && budget > 0; ring++)
             for (var i = -ring; i <= ring && budget > 0; i++)
@@ -539,16 +546,41 @@ public partial class Terrain(WorldGen world) : Node3D
     void Giants(Node3D chunk, float x0, float z0, Action<Plant, Band, Transform3D, Color, float> add, Func<double, double, float> ground)
     {
         var (shape, body) = (new CylinderShape3D { Radius = 1.7f, Height = 14 }, (StaticBody3D?)null);
+        var trunks = new List<Transform3D>();
         foreach (var (x, z) in Northwood.GiantsIn(x0, z0, ChunkSize))
         {
             if (Northwood.Clearing(x, z)) continue;
             var dice = Math.Abs(WorldGen.StableHash($"{x:0}/{z:0}"));
-            var scale = 3.6f + dice % 100 / 100f * 2.4f;
+            var (high, girth) = (34 + dice % 100 / 100f * 22, 1.05f + dice % 37 / 37f * 0.6f);
             var at = new Vector3((float)x - x0, ground(x, z) - 0.4f, (float)z - z0);
-            add(Firs[dice % Firs.Length], Band.All, new Transform3D(Basis.Identity.Scaled(Vector3.One * scale).Rotated(Vector3.Up, dice % 628 / 100f), at), new Color(0.74f, 0.7f, 0.66f), 0);
+            // A redwood: a great bare trunk, with its crown far overhead where it can't get in anyone's way.
+            trunks.Add(new Transform3D(Basis.Identity.Scaled(new Vector3(girth, high, girth)).Rotated(Vector3.Up, dice % 628 / 100f), at + Vector3.Up * high / 2));
+            add(Firs[dice % Firs.Length], Band.All, new Transform3D(Basis.Identity.Scaled(Vector3.One * 3.2f).Rotated(Vector3.Up, dice % 628 / 100f), at + Vector3.Up * (high * 0.72f)), new Color(0.74f, 0.7f, 0.66f), 0);
             if (body is null) chunk.AddChild(body = new StaticBody3D());
             body.AddChild(new CollisionShape3D { Shape = shape, Position = at + Vector3.Up * 6 });
         }
+        if (trunks.Count == 0) return;
+        var many = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, Mesh = Redwood, InstanceCount = trunks.Count };
+        for (var i = 0; i < trunks.Count; i++) many.SetInstanceTransform(i, trunks[i]);
+        chunk.AddChild(new MultiMeshInstance3D { Multimesh = many });
+    }
+
+    /// <summary>One redwood trunk, a unit tall: broad at the foot, narrowing away up into the canopy.</summary>
+    static Mesh Redwood => _redwood ??= new CylinderMesh
+    {
+        TopRadius = 0.42f, BottomRadius = 1.5f, Height = 1, RadialSegments = 12, Rings = 3,
+        Material = RedwoodBark(),
+    };
+    static Mesh? _redwood;
+
+    static Material RedwoodBark()
+    {
+        var m = (BuildingMaterials.For(Surface.Timber).Duplicate() as StandardMaterial3D) ?? new StandardMaterial3D();
+        m.Uv1Triplanar = true;
+        m.Uv1WorldTriplanar = true;
+        m.Uv1Scale = Vector3.One * 0.3f;
+        m.AlbedoColor = new Color("#a2694a");
+        return m;
     }
 
     /// <summary>Drawn at any distance, only near, or only far (where a stand-in takes over from a heavy scan).</summary>

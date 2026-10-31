@@ -12,9 +12,9 @@ public class WorldTests(ITestOutputHelper output)
     public void Tristinwold_is_at_the_centre_and_four_neighbours_are_known_from_the_start()
     {
         Assert.Equal((0.0, 0.0), (World.Tristinwold.X, World.Tristinwold.Z));
-        Assert.Equal(9, World.AuthoredCities.Count);
+        Assert.Equal(12, World.AuthoredCities.Count);
         var known = World.AuthoredCities.Where(c => c.StartsKnown).Select(c => c.Name).ToList();
-        Assert.Equal(5, known.Count);
+        Assert.Equal(8, known.Count);
         Assert.Contains("Tristinwold", known);
         Assert.Equal(0, World.Height(0, 0), 3);
         Assert.True(World.Height(260, 0) < WorldGen.WaterLevel, "the harbor is under water");

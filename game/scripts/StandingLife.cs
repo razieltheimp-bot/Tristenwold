@@ -63,6 +63,7 @@ public partial class Main
     {
         if (_standing.WhyNotWatch is { } why) { Say(captain, $"No. {char.ToUpper(why[0])}{why[1..]}, and the Watch doesn't take your kind."); return; }
         _standing.Watch.Join();
+        WellDone(2); // the city likes a recruit
         _hud.Toast("You're a recruit of the Tristinwold Watch. Ask Captain Vale for a beat to walk: post to post about the city, and whatever trouble you meet on the way is yours to collar.", 10);
         Say(captain, "Good. The pay's bad and the hours are worse. You walk the beat I give you, post to post, and anything you find on the way, you bring in. Come back here when it's walked.");
         Save();

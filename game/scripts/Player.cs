@@ -122,13 +122,16 @@ public partial class Player : Fighter
     }
 
     /// <summary>Sets health, mana, stamina and the rest from the class, its passive, and the hero's level.</summary>
+    /// <summary>What beating Turlin has made of the hero: a share more health and damage, for good.</summary>
+    public double RivalEdge { get; set; } = 1;
+
     public void Fit()
     {
         var c = Class;
         var (h, m, s) = Hero.Growth;
         var passive = Hero.Power(c.Passive.Id);
         var race = Race;
-        var health = (c.Health + h) * (c.Id == "Barbarian" ? 1.2 * passive : 1) * race.Health;
+        var health = (c.Health + h) * (c.Id == "Barbarian" ? 1.2 * passive : 1) * race.Health * RivalEdge;
         var mana = (c.Mana + m) * (c.Id == "Wizard" ? 1 + 0.25 * passive : 1) * race.Mana;
         Stats.SetPools(health, mana, (c.Stamina + s) * race.Stamina);
         Stats.Armor = c.Armor + (Hero.Level - 1) * 3;
@@ -140,7 +143,7 @@ public partial class Player : Fighter
         Races.Apply(Stats, race, Blood, Appearance?.PureDragon == true); // their people's gifts and costs, and a dragonkind's blood
         // What they wear, and what they've drunk.
         Stats.Armor += Pack.Armor + (_wardLeft > 0 ? _ward : 0);
-        var might = (1 + Pack.Damage) * (_mightLeft > 0 ? 1 + _might : 1) * Trophies;
+        var might = (1 + Pack.Damage) * (_mightLeft > 0 ? 1 + _might : 1) * Trophies * RivalEdge;
         Stats.DamageMult *= might;
         Stats.SpellPower *= might;
     }
@@ -494,6 +497,11 @@ public partial class Player : Fighter
                     Strike(e, dmg, a.Kind, AttackKind.Weapon);
                     Push(e, 5f);
                 }
+                break;
+
+            // ---- the shapeshifter ----
+            case "shift":
+                Shift(a.Power);
                 break;
 
             // ---- the martial artist ----

@@ -9,9 +9,9 @@ public class GuildTests
     static readonly WorldGen World = WorldGen.Default;
 
     [Fact]
-    public void Four_guilds_each_with_a_leader_a_teacher_for_every_class_members_and_a_rival()
+    public void Six_guilds_each_with_a_leader_a_teacher_for_every_class_members_and_a_rival()
     {
-        Assert.Equal(5, Guilds.All.Count);
+        Assert.Equal(6, Guilds.All.Count);
         foreach (var g in Guilds.All)
         {
             Assert.Equal(Classes.Of(g.Calling).Select(d => d.Id).OrderBy(x => x), g.Teachers.Select(t => t.Teaches!).OrderBy(x => x));

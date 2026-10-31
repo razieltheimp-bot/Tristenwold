@@ -64,7 +64,7 @@ public class AvatarTests
     [Fact]
     public void Every_people_has_a_gift_and_a_cost_and_dragonkind_mixes_half_with_any()
     {
-        Assert.Equal(["human", "orc", "goblin", "elf", "dwarf", "half_giant", "dragonkind"], Races.All.Select(r => r.Id));
+        Assert.Equal(["human", "orc", "goblin", "elf", "dwarf", "half_giant", "ape", "plant", "shroomie", "lizard", "dragonkind"], Races.All.Select(r => r.Id));
         Assert.All(Races.All, r => { Assert.NotEmpty(r.Good); Assert.NotEmpty(r.Bad); });
         Assert.True(Races.Get("half_giant").Size > Races.Get("human").Size && Races.Get("goblin").Size < Races.Get("dwarf").Size);
 
