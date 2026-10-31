@@ -131,9 +131,9 @@ public partial class Player : Fighter
         var (h, m, s) = Hero.Growth;
         var passive = Hero.Power(c.Passive.Id);
         var race = Race;
-        var health = (c.Health + h) * (c.Id == "Barbarian" ? 1.2 * passive : 1) * race.Health * RivalEdge * (1 + Pack.Health);
-        var mana = (c.Mana + m) * (c.Id == "Wizard" ? 1 + 0.25 * passive : 1) * race.Mana;
-        Stats.SetPools(health, mana, (c.Stamina + s) * race.Stamina);
+        var health = (c.Health + h) * (c.Id == "Barbarian" ? 1.2 * passive : 1) * race.Health * RivalEdge * (1 + Pack.Health + Pack.Ability("health"));
+        var mana = (c.Mana + m) * (c.Id == "Wizard" ? 1 + 0.25 * passive : 1) * race.Mana * (1 + Pack.Ability("mana"));
+        Stats.SetPools(health, mana, (c.Stamina + s) * race.Stamina * (1 + Pack.Ability("stamina")));
         Stats.Armor = c.Armor + (Hero.Level - 1) * 3;
         Stats.SpellPower = (1 + (Hero.Level - 1) * 0.04 + (c.Id == "Wizard" ? c.Passive.Power * passive : 0)) * (c.Id == "Poet" ? 1 + c.Passive.Power * passive : 1);
         Stats.DamageMult = 1 + (Hero.Level - 1) * 0.04;
@@ -141,8 +141,9 @@ public partial class Player : Fighter
         Stats.SpeedMult = (c.Id == "MartialArtist" ? 1.15 : 1) * Agility.Speed(Pack.Level(Job.Agility)); // quicker on their feet for every level of agility
         Stats.Name = Company;
         Races.Apply(Stats, race, Blood, Appearance?.PureDragon == true); // their people's gifts and costs, and a dragonkind's blood
-        Stats.SpeedMult *= 1 + Pack.Speed;
-        Stats.CritChance += Pack.Crit;
+        Stats.SpeedMult *= 1 + Pack.Speed + Pack.Ability("speed") + Pack.Ability("weapon_speed");
+        Stats.CritChance += Pack.Crit + Pack.Ability("crit") + Pack.Ability("weapon_crit");
+        Stats.MagicResist += Pack.Ability("ward");
         foreach (var slot in Enum.GetValues<Slot>())
             if (slot != Slot.Weapon && Pack.WornIn(slot)?.Fire is { } fire) Stats.Resist[fire] = Stats.Resist.GetValueOrDefault(fire) + Forging.FireResist; // armour forged in a fire stands it
         // What they wear, and what they've drunk.
@@ -260,6 +261,7 @@ public partial class Player : Fighter
         // Passives that work over time: a barbarian's hide closes wounds; a sorcerer's well refills fast.
         if (Class.Id == "Barbarian" && InFight) Stats.Heal(Stats.MaxHealth * Class.Passive.Power * Hero.Power("thick_hide") * delta);
         if (Class.Id == "Sorcerer") Stats.Restore(Stats.MaxMana * 0.02 * delta);
+        if (Pack.Ability("regen") is > 0 and var mending) Stats.Heal(Stats.MaxHealth * Math.Min(Forging.MostRegen, mending) / 100 * delta);
         if (Class.Id == "Musician") Stats.Restore(Stats.MaxMana * Class.Passive.Power * Hero.Power("perfect_pitch") * delta, Stats.MaxStamina * Class.Passive.Power * Hero.Power("perfect_pitch") * delta);
         if (Scripted)
         {
@@ -286,7 +288,7 @@ public partial class Player : Fighter
             if (sprint && input != Vector2.Zero && Class.Id != "Thief") Stats.Spend(AttackKind.Weapon, 15 * delta);
             if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming))
             {
-                Velocity = Velocity with { Y = JumpSpeed };
+                Velocity = Velocity with { Y = JumpSpeed * (float)Math.Sqrt(Pack.JumpHeight) }; // twice the speed would be four times the height
                 if (!Swimming) { Figure.Perform("Jump_Start", 0.22, 1.5f); Sound.At("move/jump", GlobalPosition, -6); } // a crouch and a spring
             }
             FallAndSlide(delta, dir * speed);
@@ -1010,6 +1012,12 @@ public partial class Player : Fighter
         var result = Hit(target, damage, kind, attack, crit);
         if (attack == AttackKind.Weapon && Pack.WornIn(Slot.Weapon) is { Fire: { } fire, FireDie: > 0 and var die } && target.State != EnemyState.Dead)
             Hit(target, (1 + _rng.Next(die)) * Stats.DamageMult, fire, AttackKind.Spell, false); // a blade forged in a fire carries it: its own die, on top of the blow
+        if (attack == AttackKind.Weapon && target.State != EnemyState.Dead)
+        {
+            if (Pack.Ability("bleed") is > 0 and var bleed) Hit(target, (1 + _rng.Next((int)bleed)) * Stats.DamageMult, DamageKind.Physical, AttackKind.Spell, false);
+            if (Pack.Ability("stun") is > 0 and var stun && _rng.Chance(stun)) target.Stunned = 1.5;
+        }
+        if (attack == AttackKind.Weapon && Pack.Ability("drain") is > 0 and var drain) Stats.Heal(1 + _rng.Next((int)drain));
         if (_poison > 0 && attack == AttackKind.Weapon && target.State != EnemyState.Dead)
             Hit(target, Class.Utility.Power * Hero.Power("poison_blades"), DamageKind.Poison, AttackKind.Spell, false);
         return result.Dealt;
@@ -1037,9 +1045,18 @@ public partial class Player : Fighter
             Figure.Perform("Dodge_Left", 0.4, 1.6f);
             return;
         }
+        if (_rng.Chance(Math.Min(Forging.MostDodge, Pack.Ability("dodge")) / 100)) // armour that makes you harder to hit
+        {
+            Figure.Perform("Dodge_Left", 0.4, 1.6f);
+            return;
+        }
         if (_rage > 0) damage *= 1.2;
         if (Class.Id == "Paladin") damage *= 1 - Class.Passive.Power * Hero.Power("devotion");
+        damage *= 1 - Math.Min(Forging.MostBlock, Pack.Ability("block"));
+        if (attack == AttackKind.Weapon && _rng.Chance(Math.Min(Forging.MostDeflect, Pack.Ability("deflect")) / 100)) damage *= Forging.GlanceDamage; // armour that turns a blow
         Stats.TakeHit(damage, kind, attack, crit, from.Stats);
+        if (Pack.Ability("thorns") is > 0 and var thorns && attack == AttackKind.Weapon && from.State != EnemyState.Dead)
+            Hit(from, damage * Math.Min(Forging.MostThorns, thorns), DamageKind.Physical, AttackKind.Spell, false);
         if (_rng.Chance(0.35) || crit) Sound.At("creature/hurt_hero", GlobalPosition + Vector3.Up, -4, Appearance?.Size > 1.15 ? 0.8f : Appearance?.Size < 0.85 ? 1.25f : 1);
         if (attack == AttackKind.Weapon && GetParent() is { } world) Effects.Impact(world, GlobalPosition + Vector3.Up * 1.1f, GlobalPosition - from.GlobalPosition, DamageKind.Physical, crit);
         if (!Stats.Dead && Mount is null) Figure.Hurt();

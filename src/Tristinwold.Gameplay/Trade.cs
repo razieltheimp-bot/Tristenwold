@@ -65,6 +65,10 @@ public sealed class Pack
     public double Speed => Worn.Values.Sum(id => Gameplay.Items.Get(id)?.Speed ?? 0);
     public double Crit => Worn.Values.Sum(id => Gameplay.Items.Get(id)?.Crit ?? 0);
     public double Health => Worn.Values.Sum(id => Gameplay.Items.Get(id)?.Health ?? 0);
+    /// <summary>What everything worn adds up to of one forged ability.</summary>
+    public double Ability(string key) => Worn.Values.Sum(id => Gameplay.Items.Get(id)?.Powers?.GetValueOrDefault(key) ?? 0);
+    /// <summary>What a piece of forged armour's featherstep does to the height of a jump: at most double.</summary>
+    public double JumpHeight => 1 + Math.Min(Forging.MostJump, Ability("jump"));
     public int ToHit => WornIn(Slot.Weapon)?.ToHit ?? 0;
     public int Power => WornIn(Slot.Weapon)?.Power ?? 0;
 

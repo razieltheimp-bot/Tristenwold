@@ -43,6 +43,8 @@ public sealed record Item(string Id, string Name, ItemKind Kind, int Value, stri
     public int ToHit { get; init; }
     /// <summary>The die a forged weapon's fire rolls on every blow: 6, 8, 10 or 12, or 0 if it has none.</summary>
     public int FireDie { get; init; }
+    /// <summary>The abilities it came out with, by what they add to (see Forging.Abilities).</summary>
+    public IReadOnlyDictionary<string, double>? Powers { get; init; }
     public int Power { get; init; }
     public bool Forged { get; init; }
     public ForgeGrade? Grade { get; init; }
