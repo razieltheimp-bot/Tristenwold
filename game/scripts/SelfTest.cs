@@ -41,6 +41,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--legends-only")) { await TheLegends(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--quickkeys-only")) { await TheQuickKeys(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pirates-only")) { await ThePirates(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--isle-only")) { await TheIsleTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -2667,6 +2668,223 @@ public partial class SelfTest(Main main) : Node
         Check(legends.Soren is not null, "and Soren's still at the gates");
         city.Siege = null;
         await Frames(90);
+    }
+
+    /// <summary>Brasswake: finding it, going stale, being let aboard, the lifts, the valves, the closed market, flying, and leaving it all behind.</summary>
+    async Task TheIsleTest()
+    {
+        var (p, hud, sea, isle) = (main.PlayerNode, main.HudNode, main.Sea, main.Sea.Isle);
+        Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
+        p.Crowns += 1000;
+
+        // Known to everyone, always moving: Marit will ship you, and the Factor knows how far.
+        await Teleport(Main.BrassFactorAt + new Vector3(1.5f, 0, 1.5f));
+        main.Talk(Who("tristinwold/brassfactor"));
+        Check(hud.Choose("Where's Brasswake today?"), "the Brass Factor keeps the board on the harbour road");
+        hud.EndTalk();
+        await Teleport(Main.HarbourPost + new Vector3(1.5f, 0, 1.5f));
+        sea.Rank = SeaRank.Bosun;
+        main.Talk(Who("tristinwold/harbourmaster"));
+        Check(hud.Choose("Ship me out to Brasswake") && sea.Voyage?.Port == Brasswake.Port, "Marit Hale ships you out on the trade route");
+        await Frames(20);
+        var at = main.AtSeaNode!;
+        at.Along = 0.999;
+        await Until(() => main.IsleNode is not null, 8);
+        await Frames(40);
+        var node = main.IsleNode;
+        Check(node is not null && hud.Talking && hud.TalkTitle.Contains("Warden"), "the island comes out of the steam, and the warden has terms");
+        if (node is null) return;
+        Check(isle.Aboard && isle.Berthed && isle.Rank == IsleRank.Guest && isle.Visits == 1, "aboard, a guest, your ship tied up at the Strangers' Dock");
+        Check(hud.Choose("I understand"), "you take the terms");
+        await Frames(30);
+        Check(Mathf.Abs(p.GlobalPosition.Y - node.TierFloor(0)) < 3 && main.AtSeaNode is null, $"standing on the gangway ({p.GlobalPosition.Y - node.TierFloor(0):0.0} m above the deck), not falling through it");
+        Check(City.Afloat is not null, "and the game knows it's afloat");
+        Check(node.Flyers >= 5, $"{node.Flyers} ships flying round it");
+
+        // The dock: the trade route, and the way home by sea.
+        var dockmaster = Who("isle/dockmaster");
+        Check(City.FloorAt(dockmaster.GlobalPosition) >= node.TierFloor(0) - 12, "the dockmaster's on the dock");
+        main.Talk(dockmaster);
+        Check(hud.Options.Any(o => o.StartsWith("What do you buy")) && hud.Options.Any(o => o.StartsWith("Cast off for home")), "the dockmaster trades, and will cast you off");
+        hud.EndTalk();
+
+        // The closed market.
+        main.Talk(Who("isle/stores"));
+        var crowns = p.Crowns;
+        Check(hud.Choose("Steamweave Coat") && p.Pack.Count("steamweave_coat") == 0 && p.Crowns == crowns, "no marks, no coat, and crowns don't come into it");
+        hud.EndTalk();
+
+        // The valves.
+        main.Talk(Who("isle/engineer"));
+        Check(hud.Choose("Put me on the valves") && node.OnShift, "Dorrin Pike puts you on the valves");
+        for (var i = 0; i < IsleBook.Valves; i++)
+        {
+            p.GlobalPosition = node.LitValve + Vector3.Up * 1.2f;
+            await Frames(3);
+            var near = main.NearestForTest();
+            Check(near?.Verb == "ease the valve", $"valve {i + 1} wants easing");
+            near?.Act();
+        }
+        Check(!node.OnShift && isle.Marks == IsleBook.Valves * IsleBook.VentPay + IsleBook.ShiftPay && isle.Shifts == 1, $"a shift worked: {isle.Marks} marks");
+
+        // Up the lifts.
+        for (var i = 0; i < 3; i++)
+        {
+            p.GlobalPosition = node.LiftFoots[i] + Vector3.Up * 1.2f;
+            await Frames(3);
+            var near = main.NearestForTest();
+            Check(near?.Verb == "ride the steam lift up", $"lift {i + 1}");
+            near?.Act();
+            await Until(() => p.Seat is null, 9);
+            await Frames(20);
+            Check(Mathf.Abs(p.GlobalPosition.Y - node.TierFloor(i + 1)) < 3, $"up to tier {i + 2}: {p.GlobalPosition.Y - node.TierFloor(i + 1):0.0} m above its floor");
+        }
+
+        // Flying.
+        await Frames(5);
+        p.GlobalPosition = Who("isle/skymaster").GlobalPosition + new Vector3(1, 1, 1);
+        main.Talk(Who("isle/skymaster"));
+        Check(hud.Choose("Teach me to fly") && isle.Pilot, "Aune Rook teaches you to fly");
+        hud.EndTalk();
+        main.Talk(Who("isle/skymaster"));
+        Check(hud.Choose("Give me a skiff") && node.Flying, "and gives you a skiff");
+        var from = node.SkiffAt;
+        await Frames(60);
+        Check(node.SkiffAt.DistanceTo(from) > 3 && p.Seat is not null, $"she flies: {node.SkiffAt.DistanceTo(from):0} m already");
+        (await Near())?.Act();
+        await Frames(10);
+        Check(!node.Flying && p.Seat is null, "E brings her home");
+
+        // The air war: the fleet goes for what comes, on its own, and the hero can man a gun.
+        var flock = Brasswake.Raids.First(r => r.Id == "stormwings");
+        main.RaidForTest("stormwings");
+        await Frames(10);
+        Check(node.Foes.Count == 9 && hud.Heard("stormwings"), $"the horns go: {node.Foes.Count} stormwings over the island");
+        var gun = node.DeckGunsAt[0];
+        p.GlobalPosition = gun + Vector3.Up * 1.2f;
+        await Frames(3);
+        var manning = main.NearestForTest();
+        Check(manning?.Verb == "man the deck gun", "there's a deck gun to man");
+        manning?.Act();
+        Check(node.Manning && p.Seat is not null, "you take the gun");
+        var inTheSky = node.Foes.Count;
+        await Until(() => node.Foes.Count < inTheSky, 40);
+        Check(node.Foes.Count < inTheSky && isle.AirKills == 0, $"the fleet's guns bring them down without you: {inTheSky - node.Foes.Count} so far, in the time it took");
+        var (kills, marks) = (isle.AirKills, isle.Marks);
+        for (var i = 0; i < 40 && isle.AirKills == kills && node.Foes.Count > 0; i++)
+        {
+            var f = node.Foes[0];
+            p.Face(f.GlobalPosition);
+            p.Camera.LookAt(f.GlobalPosition);
+            await Frames(2);
+            node.ShootForTest();
+            await Frames(45);
+        }
+        Check(isle.AirKills > kills && isle.Marks > marks, $"a shell of yours brings one down: {isle.AirKills} kills, {isle.Marks - marks} marks");
+        p.Camera.Rotation = Vector3.Zero;
+        (await Near())?.Act();
+        await Frames(5);
+        Check(!node.Manning && p.Seat is null, "and you leave the gun");
+        await Until(() => !node.RaidOn, 60);
+        Check(!node.RaidOn, "the sky's clear");
+
+        // A dragon that fights back: it goes for the ships, and they feel it.
+        p.Stats.Heal(1e9);
+        main.RaidForTest("young");
+        await Frames(10);
+        Check(node.Foes.All(e => e.IsDragon && e.Rival is not null), "young dragons come in, each going for a ship");
+        foreach (var f in node.Foes) f.Stats.Grow(6); // long enough to reach one
+        var shipHurt = node.FleetHullLost;
+        await Until(() => node.FleetHullLost > shipHurt || !node.RaidOn, 70);
+        Check(node.FleetHullLost > shipHurt, $"their teeth reach the ships in the air: {node.FleetHullLost - shipHurt:0} damage to the fleet ({string.Join("; ", node.Foes.Select(e => $"{e.Stats.Health:0}/{e.Stats.MaxHealth:0} at {e.GlobalPosition.Y - AtSea.Stage.Y:0} up, rival {e.Rival?.Stats.Name} {(e.Rival is null ? 0 : new Vector2(e.GlobalPosition.X - e.Rival.GlobalPosition.X, e.GlobalPosition.Z - e.Rival.GlobalPosition.Z).Length()):0} m off, state {e.State}, airborne {e.Airborne}"))}; {node.FlyersUp} up)");
+        var dragons = node.Foes.Sum(e => e.Stats.Health);
+        await Until(() => node.Foes.Sum(e => e.Stats.Health) < dragons || !node.RaidOn, 30);
+        Check(!node.RaidOn || node.Foes.Sum(e => e.Stats.Health) < dragons, $"and the fleet gives it back: {node.FlyersUp} ships up");
+        foreach (var f in node.Foes.ToList()) f.Shelled(1e9, false);
+        await Until(() => !node.RaidOn, 4);
+
+        // Riders of the Eyrie get the guns too: on their own, the island's guns start falling on them.
+        main.RaidForTest("riders");
+        await Frames(10);
+        Check(node.Foes.Count == 4 && node.Foes.All(e => e.Stats.Name == "Rider of the Eyrie") && hud.Heard("Nobody who rides a dragon"), "riders on gold and silver come to look, and every gun swings round");
+        var blood = node.Foes.Sum(e => e.Stats.Health);
+        await Until(() => node.Foes.Sum(e => e.Stats.Health) < blood || !node.RaidOn, 45);
+        Check(node.Foes.Sum(e => e.Stats.Health) < blood, "the guns hit them, with nobody at them");
+        foreach (var f in node.Foes.ToList()) f.Shelled(1e9, false);
+        await Until(() => !node.RaidOn, 4);
+
+        // The air crews.
+        p.GlobalPosition = Who("isle/skymaster").GlobalPosition + new Vector3(1, 1, 1);
+        await Frames(5);
+        main.Talk(Who("isle/skymaster"));
+        Check(hud.Choose("Sign me on with the air crews") && isle.Air == AirRank.Hand, "Aune Rook signs you on with the air crews");
+        hud.EndTalk();
+        main.Talk(Who("isle/skymaster"));
+        Check(hud.Choose("Take me up on patrol") && node.OnPatrol && p.Seat is not null, "and takes you up on patrol");
+        await Until(() => node.RaidOn, 10);
+        Check(node.RaidOn, "something's sighted");
+        var homeMarks = isle.Marks;
+        foreach (var f in node.Foes.ToList()) f.Shelled(1e9, false);
+        await Until(() => !node.OnPatrol, 6);
+        await Frames(10);
+        Check(!node.OnPatrol && p.Seat is null && isle.Sorties == 1 && isle.Marks > homeMarks, $"sky clear, back on the dock and paid: {isle.Marks - homeMarks} marks");
+        isle.Sorties = IsleBook.ToHelmsman;
+        isle.AirKills = IsleBook.HelmsmanKills;
+        isle.Air = AirRank.Helmsman;
+        main.Talk(Who("isle/skymaster"));
+        Check(hud.Choose("Take me up on patrol") && node.OnPatrol && node.Flying, "a helmsman takes the wheel on patrol");
+        await Frames(10);
+        (await Near())?.Act();
+        await Frames(10);
+        Check(!node.OnPatrol && !node.Flying && p.Seat is null, "and can go down the wire if it goes badly");
+        foreach (var f in node.Foes.ToList()) f.Shelled(1e9, false);
+        await Until(() => !node.RaidOn, 4);
+
+        // What they made stays behind.
+        isle.Marks += 18;
+        main.Talk(Who("isle/stores"));
+        Check(hud.Choose("Steamweave Coat") && p.Pack.Count("steamweave_coat") == 1, "marks buy the coat");
+        hud.EndTalk();
+        main.Talk(Who("isle/warden"));
+        Check(hud.Choose("Fly me back to the mainland"), "you ask to go");
+        await Until(() => main.IsleNode is null, 12);
+        await Frames(30);
+        Check(!isle.Aboard && p.Pack.Count("steamweave_coat") == 0 && isle.Locker.Contains("steamweave_coat"), "the coat stays at the gangway");
+        Check(p.GlobalPosition.Y < 100 && City.Afloat is null, "and you're on the south pier, with no idea where you've been");
+
+        // Home by sea, from the dock.
+        await Teleport(Main.HarbourPost + new Vector3(1.5f, 0, 1.5f));
+        main.Talk(Who("tristinwold/harbourmaster"));
+        Check(hud.Choose("Ship me out to Brasswake"), "back out on the route");
+        await Frames(20);
+        main.AtSeaNode!.Along = 0.999;
+        await Until(() => main.IsleNode is not null, 8);
+        await Frames(30);
+        hud.EndTalk();
+        Check(p.Pack.Count("steamweave_coat") == 1, "the coat's handed back at the gangway");
+        main.Talk(Who("isle/dockmaster"));
+        Check(hud.Choose("Cast off for home") && sea.Voyage?.Homeward == true && !isle.Berthed, "you cast off from the Strangers' Dock");
+        await Frames(20);
+        Check(main.AtSeaNode is not null && main.IsleNode is null && p.Pack.Count("steamweave_coat") == 0, "at sea on your own ship, with the coat left behind");
+        main.AtSeaNode!.Along = 0.999;
+        await Until(() => sea.Voyage is null, 8);
+        await Frames(20);
+
+        // A citizen's beacon.
+        isle.Rank = IsleRank.Citizen;
+        await Teleport(Main.Smugglers + new Vector3(1, 0, -1.5f));
+        main.Talk(Who("tristinwold/smuggler"));
+        Check(hud.Choose("Light the brass beacon"), "a citizen lights the beacon");
+        await Frames(20);
+        Check(main.IsleNode is not null && p.Pack.Count("steamweave_coat") == 1 && isle.Locker.Count == 0, "and a skiff takes them back, and the coat's handed over");
+        main.LeaveIsleForTest();
+        await Frames(20);
+    }
+
+    async Task<(string Verb, Action Act)?> Near()
+    {
+        await Frames(2);
+        return main.NearestForTest();
     }
 
     /// <summary>The forge's work: two swords off the same anvil are two different swords, and they show it in the hand and in the fight.</summary>

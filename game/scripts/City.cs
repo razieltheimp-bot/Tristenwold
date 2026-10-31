@@ -68,7 +68,8 @@ public static class City
     /// <summary>Ground height at a point: the city's ring platforms, or the land outside them.</summary>
     /// <summary>Where the piers run out into the harbour (their centre lines), and how far.</summary>
     public static readonly float[] Piers = [-30, -15, 0, 15, 30];
-    public const float PierFrom = 102, PierTo = 142;
+    /// <summary>They start well up the shore, where the land's level with their boards, so there's no step on or off them.</summary>
+    public const float PierFrom = 94, PierTo = 142;
 
     public static bool OnPier(Vector3 p) => p.X is > PierFrom and < PierTo && Piers.Any(z => Math.Abs(p.Z - z) < 2.5f);
 

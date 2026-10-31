@@ -37,6 +37,7 @@ public partial class Main
     void OnWoke()
     {
         SeaWoke();
+        IsleWoke();
         _hud.Toast(_story.Returned(_storyRng), 12);
         Save();
     }

@@ -21,16 +21,18 @@ public static class Buildings
     public static Surface RoofFor(string colour) => colour switch { "red" => Surface.ClayTile, "blue" => Surface.Slate, _ => Surface.Shingle };
 
     /// <summary>Places a building. <paramref name="seed"/> picks the variant; the same seed gives the same building.</summary>
-    public static Node3D Place(Node3D parent, string kind, Vector3 at, float yaw, int seed, Surface roof = Surface.Slate, float scale = 1)
+    /// <param name="door">Whether it can be walked into.</param>
+    /// <param name="solid">Whether anything can bump into it (not one hung up out of reach).</param>
+    public static Node3D Place(Node3D parent, string kind, Vector3 at, float yaw, int seed, Surface roof = Surface.Slate, float scale = 1, bool door = true, bool solid = true)
     {
         var design = Get(kind, Math.Abs(seed) % Variants, roof);
         var body = new StaticBody3D { Position = at, Rotation = new Vector3(0, yaw, 0), Scale = Vector3.One * scale };
         body.AddChild(new MeshInstance3D { Mesh = design.Mesh });
-        foreach (var (centre, size) in design.Solids)
+        foreach (var (centre, size) in design.Solids.Where(_ => solid))
             body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size }, Position = centre });
         body.SetMeta("height", design.Height * scale);
         parent.AddChild(body);
-        if (HasInside(KindFor(kind)))
+        if (door && HasInside(KindFor(kind)))
             Doors.Add((body, KindFor(kind), seed, design.Solids.Max(s => s.Centre.Z + s.Size.Z / 2) * scale));
         return body;
     }
@@ -360,12 +362,12 @@ public static class Buildings
     /// <summary>A plank pier on timber piles, 40 m along X and 5 m wide, deck at height 0.</summary>
     static void Pier(Builder b)
     {
-        b.Box(Surface.Planks, new Vector3(-20, -0.35f, -2.5f), new Vector3(20, 0, 2.5f));
-        for (var x = -19f; x <= 19; x += 4.75f)
+        b.Box(Surface.Planks, new Vector3(-24, -0.35f, -2.5f), new Vector3(24, 0, 2.5f));
+        for (var x = -23f; x <= 23; x += 4.75f)
             foreach (var z in new[] { -2.3f, 2.3f })
-                b.Beam(new Vector3(x, -4.5f, z), new Vector3(x, 0.6f, z), 0.32f, Surface.Timber);
-        b.Beam(new Vector3(-20, 0.55f, 2.4f), new Vector3(20, 0.55f, 2.4f), 0.14f, Surface.Timber);
-        b.Solid(new Vector3(0, -0.2f, 0), new Vector3(40, 0.4f, 5));
+                b.Beam(new Vector3(x, -4.5f, z), new Vector3(x, x < -16 ? 0 : 0.6f, z), 0.32f, Surface.Timber);
+        b.Beam(new Vector3(-16, 0.55f, 2.4f), new Vector3(24, 0.55f, 2.4f), 0.14f, Surface.Timber);
+        b.Solid(new Vector3(0, -0.2f, 0), new Vector3(48, 0.4f, 5));
     }
 
     static void MineEntrance(Builder b)

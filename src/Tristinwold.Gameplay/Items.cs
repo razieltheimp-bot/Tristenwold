@@ -415,6 +415,11 @@ public static class Items
             "Arachnicalibur's connection to the Web lets its wielder avoid danger in battle, as they easily dodge most attacks. As long as they hold the scabbard, anyway."),
         Gear("sorens_reaver", "Soren's Boarding Cutlass", 1500, Slot.Weapon, Grip.TwoHand, "Barbarian/2H_Axe", damage: 0.6, tint: "#1a1414", glow: "#ff5020"),
         Gear("wukongs_staff", "Lu Wukong's Chained Staff", 1200, Slot.Weapon, Grip.TwoHand, "Mage/Staff", damage: 0.5, tint: "#5a4030", glow: "#ffd040"),
+        // ---- what Brasswake makes for its own: it doesn't leave the island ----------------------------------------
+        Isle(Gear("aether_gauntlet", "Aether Gauntlet", 0, Slot.Weapon, Grip.OneHand, "Knight/1H_Sword", damage: 0.55, tint: "#c9a040", metal: true, glow: "#7fd8ff"), "A brass fist that hits with the steam behind it. Made on Brasswake, and it stays on Brasswake."),
+        Isle(Gear("steamweave_coat", "Steamweave Coat", 0, Slot.Body, Grip.OneHand, "Rogue", armor: 0.3, tint: "#6a4a2c"), "Wired cloth with warm pipes in the lining. Made on Brasswake, and it stays on Brasswake."),
+        Isle(Gear("spring_buckler", "Spring Buckler", 0, Slot.Offhand, Grip.OneHand, "Knight/Round_Shield", armor: 0.25, tint: "#b88a3a", metal: true), "A shield that gives, and gives back. Made on Brasswake, and it stays on Brasswake."),
+        Isle(Gear("orrery_ring", "Orrery Ring", 0, Slot.Ring, Grip.OneHand, null, armor: 0.1, tint: "#d8b050", metal: true, glow: "#ffd27a"), "Seven tiny rings, turning round each other, keeping the island's time. Made on Brasswake, and it stays on Brasswake."),
         Gear("blightthorn", "Blightthorn", 1400, Slot.Weapon, Grip.OneHand, "Rogue/Knife", damage: 0.52, tint: "#2a3a22", glow: "#80ff40"),
         Gear("iron_hammer", "Iron Hammer", 45, Slot.Weapon, Grip.OneHand, "@hammer", damage: 0.12),
         Gear("steel_hammer", "Steel Hammer", 115, Slot.Weapon, Grip.OneHand, "@hammer", damage: 0.22, tint: "#e4ecf4", metal: true),
@@ -479,6 +484,9 @@ public static class Items
         Trophy("dusk_pelt", "Duskprowler's Pelt", 300, "Black fur that drinks the light."),
         Trophy("thunder_plume", "Thunderhawk's Plume", 320, "It crackles. Your hair stands on end."),
     ];
+
+    /// <summary>One of Brasswake's own: it can't be sold, and it's left at the gangway.</summary>
+    static Item Isle(Item made, string text) => made with { Text = text, Bound = true };
 
     static Item Gear(string id, string name, int value, Slot slot, Grip grip, string? look, double damage = 0, double armor = 0,
         string? tint = null, bool metal = false, string? glow = null) =>

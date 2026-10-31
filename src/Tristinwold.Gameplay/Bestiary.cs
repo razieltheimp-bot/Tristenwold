@@ -58,6 +58,7 @@ public static class Bestiary
         new("dread_soren", "The Dread Pirate Soren", 1500, 44, 5.0, 240, 2.8, 1.3, DamageKind.Physical, "#8a1a1a", 2.4),
         new("lu_wukong", "Lu Wukong", 1000, 30, 7.0, 130, 3.0, 0.9, DamageKind.Physical, "#4a4038", 2.0),
         new("monkey_hand", "Hand of the Drunken Monkey", 130, 13, 4.8, 60, 1.8, 1.2, DamageKind.Physical, "#b08a3a", 1.8),
+        new("sky_hull", "Sky Junk", 900, 0, 0.1, 0, 6, 1.4, DamageKind.Physical, "#c8703a", 2),
         new("marine", "Company Marine", 150, 14, 4.4, 70, 1.9, 1.3, DamageKind.Physical, "#8a3a2a", 1.85),
         // The barbarian clans that raid the frontier: big, painted, and they hit hard.
         new("raider", "Barbarian Raider", 140, 14, 4.6, 70, 1.9, 1.4, DamageKind.Physical, "#7a4a2a", 1.95),

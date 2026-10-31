@@ -936,6 +936,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         {
             LeaveHelm();
             if (voyage.Homeward) main.HomePort();
+            else if (voyage.Port == Brasswake.Port) main.ReachIsle();
             else if (voyage.Raid) { } // she got away: nothing to do but wait for the ship to turn
             else
             {
@@ -1043,7 +1044,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         _port.AddChild(new Label3D { Text = port.Name, Position = new Vector3(0, 9, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 72, OutlineSize = 12, PixelSize = 0.02f, Modulate = new Color("#ffd27a") });
         Agent = main.MeetAt(new Npc($"{port.Id}/harbour", $"the harbour master of {port.Name}", Sex.Other, 50, $"harbour master of {port.Name}", port.Id, port.Name,
             $"Keeps the quays of {port.Name} and takes the dues of every ship that ties up.", ["the sea"], "brisk", "Dues paid? Then welcome.",
-            Stage.X + 2, Stage.Z + 4), "guard");
+            Stage.X + 2, Stage.Z + 4), "guard", DeckY);
     }
 
     public void LeavePort()
@@ -1081,6 +1082,6 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
     {
         foreach (var e in _boarders.Where(IsInstanceValid)) e.QueueFree();
         if (Agent is not null) main.Dismiss(Agent);
-        City.Afloat = null;
+        if (main.IsleNode is null) City.Afloat = null;
     }
 }

@@ -711,6 +711,54 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--docks"))
+        {
+            main.ForestLog.Turlin.Met = true;
+            await Frames(60);
+            for (var x = 88; x <= 112; x += 2) GD.Print($"[docks] x {x}: land {WorldGen.Default.Height(x, 0):0.00}, floor {City.FloorAt(new Vector3(x, 0, 0)):0.00}, off the pier {WorldGen.Default.Height(x, 7.5):0.00}");
+            main.HudNode.Visible = false;
+            await From("docks-root", new Vector3(92, 3.2f, 6), new Vector3(112, 0, 0));
+            await From("docks-side", new Vector3(96, 2.2f, -8), new Vector3(106, 0, 0));
+            await From("docks-steam", new Vector3(84, 3.5f, -24), new Vector3(92, 5, -13));
+            await From("docks-crane", new Vector3(108, 2.2f, -3), new Vector3(122, 7, 7.5f));
+            GetTree().Quit();
+            return;
+        }
+        if (OS.GetCmdlineUserArgs().Contains("--isle"))
+        {
+            main.ForestLog.Turlin.Met = true;
+            main.BoardForTest();
+            await Frames(90);
+            main.HudNode.EndTalk();
+            main.HudNode.Visible = false;
+            var s = AtSea.Stage;
+            cam.MakeCurrent();
+            async Task View(string name, Vector3 from, Vector3 to)
+            {
+                cam.GlobalPosition = s + from;
+                cam.LookAt(s + to, Vector3.Up);
+                await Frames(30);
+                await Shot(name);
+            }
+            await View("isle-sea", new Vector3(240, 70, 220), new Vector3(0, 45, -10));
+            await View("isle-bow", new Vector3(30, 40, 290), new Vector3(0, 50, 0));
+            await View("isle-stern", new Vector3(-130, 60, -280), new Vector3(0, 40, -40));
+            await View("isle-west", new Vector3(-200, 40, -10), new Vector3(-30, 50, 0));
+            await View("isle-east", new Vector3(170, 30, 40), new Vector3(0, 55, 0));
+            await View("isle-street", new Vector3(70, 12, 64), new Vector3(30, 34, -6));
+            await View("isle-market", new Vector3(74, 11.5f, -38), new Vector3(58, 16, 34));
+            await View("isle-top", new Vector3(-30, 96, 60), new Vector3(10, 70, 170));
+            main.RaidForTest("flight");
+            main.HudNode.Visible = false;
+            for (var i = 0; i < 400 && main.IsleNode!.Foes.All(e => e.GlobalPosition.DistanceTo(main.IsleNode.ShipAt(0)!.Value) > 60); i++) await Frames(4);
+            await Frames(40);
+            var near = main.IsleNode!.ShipAt(0)!.Value - s;
+            await View("isle-battle", near + new Vector3(70, 14, 70), near);
+            var foe = main.IsleNode!.Foes.FirstOrDefault();
+            if (foe is not null) await View("isle-battle2", foe.GlobalPosition - s + new Vector3(30, 8, 40), foe.GlobalPosition - s);
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--stone"))
         {
             main.ForestLog.Turlin.Met = true;

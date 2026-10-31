@@ -483,6 +483,7 @@ public partial class Main
         foreach (var o in StoryTalk(person)) yield return o;
         foreach (var o in CaravanTalk(person)) yield return o;
         foreach (var o in SeaTalk(person)) yield return o;
+        foreach (var o in IsleTalk(person)) yield return o;
         foreach (var o in StandingTalk(person)) yield return o;
         foreach (var o in ArtificerTalk(person)) yield return o;
         foreach (var o in ShadowTalk(person)) yield return o;

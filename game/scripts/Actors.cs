@@ -904,6 +904,21 @@ public partial class Enemy : Fighter
     /// <summary>How often it sees a blow coming and isn't there (Soren and the Web).</summary>
     public double Foresees { get; set; }
 
+    /// <summary>A flying ship's hull: put where the ship is, and it counts as in the air, so what's fighting it goes up to it.</summary>
+    public void HoldAloft() => Airborne = true;
+
+    /// <summary>Hit by a shell from a long way off: it hurts, but it doesn't tell the thing who fired.</summary>
+    public HitResult Shelled(double damage, bool byHero)
+    {
+        if (State == EnemyState.Dead) return default;
+        LastBlow = DamageKind.Fire;
+        var result = Stats.TakeHit(damage, DamageKind.Fire, AttackKind.Weapon);
+        RefreshPlate();
+        if (result.Killed) Die(null, byHero);
+        else Figure.Hurt();
+        return result;
+    }
+
     public HitResult TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Player by)
     {
         if (Foresees > 0 && GD.Randf() < Foresees) { Provoke(by); return new HitResult(0, 0, 0, false, crit, false); }

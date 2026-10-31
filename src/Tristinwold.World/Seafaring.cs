@@ -90,7 +90,7 @@ public static class Seas
     /// <summary>What there is to find, nearest first.</summary>
     public static IEnumerable<SeaPort> ToChart => Ports.Where(p => !Home.Contains(p.Id)).Concat(Uncharted);
 
-    public static SeaPort? Get(string id) => Ports.Concat(Uncharted).FirstOrDefault(p => p.Id == id);
+    public static SeaPort? Get(string id) => id == Brasswake.Market.Id ? Brasswake.Market : Ports.Concat(Uncharted).FirstOrDefault(p => p.Id == id);
 }
 
 /// <summary>
@@ -234,6 +234,8 @@ public sealed class SeaBook
 
     /// <summary>The ports the hero has found past the old charts; open to them for good.</summary>
     public HashSet<string> Charted { get; set; } = [];
+    /// <summary>What the hero knows of the moving island, and what they are there.</summary>
+    public IsleBook Isle { get; set; } = new();
     /// <summary>The named captains this hero has driven off their deck.</summary>
     public HashSet<string> Humbled { get; set; } = [];
     /// <summary>A bosun can be trusted with a chart. The next place past the edge of it, if there's one left.</summary>
@@ -333,8 +335,57 @@ public sealed class SeaBook
     {
         if (Voyage is not { InPort: false, Homeward: false } v) return false;
         v.InPort = true;
-        if (v.Explore) Charted.Add(v.Port);
+        if (v.Explore && v.Port != Brasswake.Port) Charted.Add(v.Port);
         return true;
+    }
+
+    /// <summary>
+    /// Bound for the island: how far depends on where it's got to. The company pays its people for the run; a hero with
+    /// no berth has bought passage.
+    /// </summary>
+    public Voyage? SeekIsle(double playSeconds)
+    {
+        if (Voyage is not null || OwnShip && Hull < Seaworthy) return null;
+        if (!OwnShip) Hull = 100;
+        return Voyage = IsleRun(playSeconds);
+    }
+
+    Voyage IsleRun(double playSeconds) => new()
+    {
+        Pace = Pace, Port = Brasswake.Port, PortName = Brasswake.Name, Leagues = Brasswake.Leagues(playSeconds), Command = Rank == SeaRank.Captain,
+        Pay = Rank == SeaRank.Landsman ? 0 : PayFor(Brasswake.Market),
+    };
+
+    /// <summary>Lines in at the Strangers' Dock, and she stands away for home.</summary>
+    public Voyage? SailFromIsle(double playSeconds)
+    {
+        if (Voyage is not null || !Isle.Berthed) return null;
+        Isle.Berthed = false;
+        Voyage = IsleRun(playSeconds);
+        Voyage.Homeward = true;
+        return Voyage;
+    }
+
+    /// <summary>Off the island: what it made stays behind at the gangway. How many things were left.</summary>
+    public int LeaveIsle(Pack pack)
+    {
+        var left = 0;
+        foreach (var (slot, id) in pack.Worn.Where(w => Brasswake.Made(w.Value)).ToList()) pack.Unequip(slot);
+        foreach (var (id, _) in Brasswake.Wares)
+            while (pack.Take(id))
+            {
+                Isle.Locker.Add(id);
+                left++;
+            }
+        Isle.Aboard = false;
+        return left;
+    }
+
+    /// <summary>Back aboard: what was left at the gangway is handed back.</summary>
+    public void BackOnIsle(Pack pack)
+    {
+        foreach (var id in Isle.Locker) pack.Add(id);
+        Isle.Locker.Clear();
     }
 
     /// <summary>Cast off for home.</summary>

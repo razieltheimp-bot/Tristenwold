@@ -422,6 +422,7 @@ public partial class Main : Node3D
         AddTownWork();
         AddCaravanYard();
         AddShipyard();
+        AddSteamworks();
         AddWatchHouse();
         AddShadows();
         AddPursuits();
@@ -775,6 +776,7 @@ public partial class Main : Node3D
         TendCaravans(delta);
         TendRide();
         TendSea(delta);
+        TendIsle();
         TendMine(delta);
         TendIndoors();
         TendStanding(delta);
@@ -814,7 +816,7 @@ public partial class Main : Node3D
         if (_suited is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
         if (_raiders.Tracker(pos, Direction) is { } clanLine) saga = [.. saga, clanLine];
-        saga = [.. saga, .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. StandingLines(pos), .. ArtificerLines(pos), .. ShadowLines(pos), .. PursuitLines(pos)];
+        saga = [.. saga, .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. IsleLines(pos), .. StandingLines(pos), .. ArtificerLines(pos), .. ShadowLines(pos), .. PursuitLines(pos)];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
     }
@@ -863,7 +865,7 @@ public partial class Main : Node3D
     (string Verb, Action Act)? Nearest()
     {
         var pos = _player.GlobalPosition;
-        if (_player.Seat is not null) return _ridden is not null ? ("jump down", ClimbDown) : _atSea?.HelmAction();
+        if (_player.Seat is not null) return _ridden is not null ? ("jump down", ClimbDown) : _isle?.SeatAction() ?? _atSea?.HelmAction();
         if (FishingAction() is { } fishing) return fishing;
         var person = _places.People.Concat(_townsfolk).Where(p => p.GlobalPosition.DistanceTo(pos) < 3.5f).MinBy(p => p.GlobalPosition.DistanceTo(pos));
         if (person is not null) return ($"talk to {person.Npc.Name}", () => Talk(person));
@@ -871,7 +873,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return TavernAction(pos) ?? IndoorAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
+        return TavernAction(pos) ?? IndoorAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? IsleAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>
@@ -1084,9 +1086,10 @@ public partial class Main : Node3D
     public Rng LootRng => _lootRng;
 
     /// <summary>Someone met away from home (a port's harbour master come aboard), who can be talked to until they go.</summary>
-    public Person MeetAt(Npc npc, string? look = null)
+    /// <param name="floor">How high they stand, on anything that isn't the land (a deck, the moving island).</param>
+    public Person MeetAt(Npc npc, string? look = null, float? floor = null)
     {
-        Townsfolk(npc, look);
+        Townsfolk(npc, look, floor);
         return _townsfolk[^1];
     }
 
@@ -1096,10 +1099,10 @@ public partial class Main : Node3D
         if (IsInstanceValid(person)) person.QueueFree();
     }
 
-    void Townsfolk(Npc npc, string? look = null)
+    void Townsfolk(Npc npc, string? look = null, float? floor = null)
     {
         var at = new Vector3((float)npc.X, 0, (float)npc.Z);
-        var person = new Person { Npc = npc, Look = look, Position = at with { Y = City.FloorAt(at) } };
+        var person = new Person { Npc = npc, Look = look, Position = at with { Y = floor ?? City.FloorAt(at) } };
         AddChild(person);
         _townsfolk.Add(person);
     }
