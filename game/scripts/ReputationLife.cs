@@ -61,6 +61,9 @@ public partial class Main
     {
         if (_clock - _lastRepute < 0.5) return;
         _lastRepute = _clock;
+        var marked = _player.Pack.WornIn(Slot.Weapon)?.Id == Legend.Arachnicalibur;
+        if (marked != Repute.Marked) _hud.Toast(marked ? "The strands of the Web pull tight round your hand. However good you've been, nobody who sees that blade thinks so now." : "The black blade's put away, and the Web lets go of you. People remember who you were.", 8);
+        Repute.Marked = marked;
         ShowRepute();
         TendStone();
     }
@@ -68,14 +71,14 @@ public partial class Main
     void ShowRepute()
     {
         var town = TownHere(_player.GlobalPosition);
-        _hud.ShowReputeMeter(town is null ? Repute.Country : Repute.Town(town), town is null ? "the country" : _world.Find(town)?.Name ?? "here");
+        _hud.ShowReputeMeter(town is null ? Repute.CountryView : Repute.Town(town), town is null ? "the country" : _world.Find(town)?.Name ?? "here");
         _hud.ShowRepute(RepSheet());
     }
 
     /// <summary>The whole of it, for the Reputation tab.</summary>
     string RepSheet()
     {
-        var lines = new List<string> { $"THE COUNTRY  {ReputationBook.Number(Repute.Country)}: {ReputationBook.Word(Repute.Country)}", "", "TOWNS" };
+        var lines = new List<string> { $"THE COUNTRY  {ReputationBook.Number(Repute.CountryView)}: {ReputationBook.Word(Repute.CountryView)}", "", "TOWNS" };
         var towns = Repute.Towns.Keys.Concat(Repute.Links.Keys).Append(ReputationBook.Capital).Distinct().OrderByDescending(Repute.Town);
         lines.AddRange(towns.Select(t => $"   {_world.Find(t)?.Name ?? t}  {ReputationBook.Number(Repute.Town(t))}: {ReputationBook.Word(Repute.Town(t))}{(Repute.Link(t) >= 0.75 ? " (well connected)" : Repute.Link(t) <= 0 ? " (out of touch)" : "")}"));
         if (Repute.People.Count > 0)
