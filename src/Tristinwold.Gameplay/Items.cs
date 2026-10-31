@@ -66,9 +66,77 @@ public sealed record Item(string Id, string Name, ItemKind Kind, int Value, stri
     public bool Usable => Use is not null;
 }
 
-/// <summary>The two great blades, and what it takes to get them.</summary>
+/// <summary>What's left of Soren this time: how far the sea has got into him (0 to 1), and how he answers now.</summary>
+public sealed record SorenForm(string Is, float Size, float Sea, string Hail, string Retreat, string Lost);
+
+/// <summary>The two great blades, what it takes to get them, and the man who won't stay dead.</summary>
 public static class Legend
 {
+    /// <summary>The chance the black blade drops when Soren's killed, and what he leaves otherwise.</summary>
+    public const double WebChance = 0.015;
+    /// <summary>At this share of his blood he goes for his ship, and you've this long to bring him down.</summary>
+    public const double SorenFleeAt = 0.25, SorenFlightSeconds = 8;
+    /// <summary>He's stronger every time he comes back, up to a point.</summary>
+    public const double SorenPerDeath = 0.2, SorenMost = 2.2;
+    /// <summary>How long between his hunts for whoever took his blade: seconds of play.</summary>
+    public const double SorenHuntEvery = 30 * 60;
+
+    /// <summary>He drowned once, long ago, and it didn't take. He keeps coming back from the sea, and it keeps a little more of him each time.</summary>
+    public static readonly IReadOnlyList<SorenForm> SorenForms =
+    [
+        new("a huge man in a red coat, with a beard like a black storm", 1, 0,
+            "The Dread Pirate Soren walks up through the smoke with his pipe lit and a black blade at his hip. \"Yours, is it? It was. Stand aside, or don't. I've no quarrel with the dead, and that's what you are.\"",
+            "\"Enough. You'll keep.\" A chain comes rattling over the wall and takes him round the waist, and his ship starts to haul.",
+            "He looks down at the wound and takes the pipe from his mouth, and for the first time he looks his age. \"Well,\" he says. \"That's new.\" He goes down, and the tide comes up the street to fetch him."),
+        new("a big man gone grey, barnacles at his collar", 1.08f, 0.25f,
+            "Soren's back, and the coat's still wet. There are barnacles at his throat he doesn't seem to feel. \"I've been somewhere. I can't think where. It was very quiet. You'll pay for the quiet.\"",
+            "\"Not yet. Not here.\" He says it to something that isn't you. The chain takes him.",
+            "\"It's cold,\" he says, quite surprised. \"Why's it so...\" Then salt water runs out of his mouth, more than a man could hold."),
+        new("something in a red coat, crusted with coral", 1.16f, 0.45f,
+            "He comes up the quay with the tide behind him. He doesn't smoke now; he's forgotten what the pipe's for, and carries it anyway. His eyes have gone the flat black of deep water. \"Soren,\" he says, as if checking. \"Yes. Town. Burn it.\"",
+            "He stops and tilts his head, listening to the water. Then he walks backward off the wall, and the chain does the rest.",
+            "It doesn't say anything. It looks at the sea, the way a dog looks at a door."),
+        new("a shape that was a man, with weed for a beard", 1.26f, 0.65f,
+            "The smell gets there first. What's in the coat moves wrong now, too many joints in it, weed where the beard was, and when it opens its mouth the sound comes a moment after. \"Sooo. Ren.\" It raises the black blade, and it still knows how.",
+            "It folds up, all at once, and goes over the wall like something being poured.",
+            "It falls apart at the seams, and small things run out of it and make for the water."),
+        new("a drowned thing, wearing the rags of a coat", 1.38f, 0.85f,
+            "Nobody who sees it now would call it a pirate. It stands at the gate with the tide round its knees, on a street a mile from the shore. There's no word in what it says, only a long low sound, like a ship's timbers working in a swell.",
+            "The sound stops. The water goes out of the street, and takes it along.",
+            "It sinks into the stones, and the stones are wet for a week."),
+        new("the sea, wearing a red coat", 1.5f, 1,
+            "The sea has come to town, and it's wearing a red coat. It has no face to speak of, and doesn't need one. It remembers one thing: that this was all once its to take.",
+            "It goes out, like a tide.",
+            "It breaks, and runs away down the gutters, and every well in town tastes of salt. It will be back. The sea always is."),
+    ];
+
+    public static SorenForm FormOf(int deaths) => SorenForms[Math.Min(deaths, SorenForms.Count - 1)];
+    public static double SorenStrength(int deaths) => Math.Min(SorenMost, 1 + deaths * SorenPerDeath);
+
+    static readonly (string Id, int Most)[] Riches =
+    [
+        ("dragon_bone", 2), ("gold_ingot", 4), ("silver_ingot", 6), ("rough_sapphire", 3), ("rough_garnet", 4), ("pearl", 5), ("ancient_coin", 10),
+        ("amethyst_shard", 4), ("storm_feather", 3), ("dragon_heart", 1), ("shadow_essence", 4),
+    ];
+    static readonly string[] Prizes = ["steel_greatsword", "steel_greataxe", "dragonbone_sword", "heavy_crossbow", "steel_plate", "steel_helm", "kipine_cloak", "steel_shield"];
+
+    /// <summary>The plunder of a dozen towns, when he goes down: four to six kinds of rich things, and a piece or two off the Red Reckoning's own forge.</summary>
+    public static List<(string Id, int N)> Plunder(Rng rng)
+    {
+        var pool = Riches.ToList();
+        var loot = new List<(string, int)>();
+        for (var n = 4 + rng.Next(3); n > 0; n--)
+        {
+            var (id, most) = rng.Pick(pool);
+            pool.Remove((id, most));
+            loot.Add((id, 1 + rng.Next(most)));
+        }
+        var forge = Forging.Forges.First(f => f.Id == Forging.RedReckoning);
+        for (var n = rng.Chance(0.4) ? 2 : 1; n > 0; n--)
+            loot.Add((Forging.Serial(rng.Pick(Prizes), rng.NextULong(), forge.Id, forge.Name, 10, 30, "the Dread Pirate Soren"), 1));
+        return loot;
+    }
+
     public const string Rubilacxe = "rubilacxe", RubilacxeScabbard = "rubilacxe_scabbard", Arachnicalibur = "arachnicalibur", ArachnicaliburScabbard = "arachnicalibur_scabbard";
     public const int SiegeBounty = 2000;
     /// <summary>How often Soren sees a blow coming, while the black blade's still his.</summary>

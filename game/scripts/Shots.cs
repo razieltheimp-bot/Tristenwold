@@ -632,6 +632,37 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--soren"))
+        {
+            // Soren as he comes back: from the man to the sea in a red coat, side by side.
+            var stand = new Vector3(-700, 0, -300);
+            main.TerrainNode.EnsureAround(stand, 1);
+            p.GlobalPosition = stand + new Vector3(0, 1, 26);
+            main.ForestLog.Turlin.Met = true;
+            await Frames(60);
+            main.HudNode.Visible = false;
+            var ground = City.FloorAt(stand);
+            for (var i = 0; i < 6; i++)
+            {
+                main.Economy.SorenDeaths = i;
+                var at = stand with { Y = ground } + new Vector3((2.5f - i) * 2.1f, 0, 0);
+                var e = Enemy.Create(Bestiary.Get("dread_soren"), at);
+                Legends.Dress(e, main.Economy);
+                e.Carried = true;
+                main.AddEnemy(e);
+                e.GlobalPosition = at;
+                e.Scale = Vector3.One * Legend.FormOf(i).Size;
+                e.Rotation = Vector3.Zero;
+                e.HidePlate();
+            }
+            await Frames(40);
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(0, 1.9f, -7.5f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(0, 1.3f, 0), Vector3.Up);
+            cam.MakeCurrent();
+            await Shot("soren-forms");
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--stone"))
         {
             main.ForestLog.Turlin.Met = true;

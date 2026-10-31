@@ -70,24 +70,47 @@ public partial class Main
     }
 }
 
-/// <summary>The Dread Pirate Soren ashore: while a town's under siege, he and his crew are at its gates for whoever comes.</summary>
+/// <summary>
+/// The Dread Pirate Soren ashore: while a town's under siege, he and his crew are at its gates for whoever comes. Like
+/// Turlin, he won't stay dead, and each time less of the man comes back. He's the whole server's enemy, so what's left of
+/// him is too. At a quarter of his blood he goes for his ship, and that only drives him off; killing him takes catching him.
+/// </summary>
 public partial class Legends(Main main) : Node
 {
     Enemy? _soren;
     readonly List<Enemy> _crew = [];
-    double _tick;
+    double _tick, _leaving;
+    Vector3 _away;
+    bool _hunting;
 
     public Enemy? Soren => _soren;
+    /// <summary>The chance the black blade drops (the self-test sets it, to see it happen).</summary>
+    public double WebChance { get; set; } = Legend.WebChance;
 
-    public override void _Ready() => Enemy.Slain += OnSlain;
-    public override void _ExitTree() => Enemy.Slain -= OnSlain;
+    public override void _Ready()
+    {
+        Enemy.Slain += OnSlain;
+        main.PlayerNode.WentDown += OnHeroDown;
+    }
+
+    public override void _ExitTree()
+    {
+        Enemy.Slain -= OnSlain;
+        main.PlayerNode.WentDown -= OnHeroDown;
+    }
 
     public override void _Process(double delta)
     {
+        WatchSoren(delta);
         if ((_tick -= delta) > 0) return;
         _tick = 1;
         var city = main.Economy;
-        if (city.Siege is not { } siege) { Clear(); return; }
+        if (_hunting)
+        {
+            if (_soren is null || new Vector2(main.PlayerNode.GlobalPosition.X - _soren.GlobalPosition.X, main.PlayerNode.GlobalPosition.Z - _soren.GlobalPosition.Z).Length() > 220) Clear();
+            return;
+        }
+        if (city.Siege is not { } siege) { Clear(); TendHunt(); return; }
         if (_soren is not null) return;
         var (x, z) = siege.Town == ReputationBook.Capital ? (150.0, 0.0) : main.World.Find(siege.Town) is { } town ? (town.X, town.Z) : (double.NaN, 0);
         if (double.IsNaN(x)) return;
@@ -97,13 +120,78 @@ public partial class Legends(Main main) : Node
         Muster(at + new Vector3(0, 0, 40));
     }
 
+    /// <summary>Whoever took his blade doesn't get to keep it in peace: he comes for them, out where there are no walls.</summary>
+    void TendHunt()
+    {
+        var hero = main.PlayerNode;
+        if (main.Economy.WebHolder != hero.Company || main.GuildBook.PlaySeconds < main.ForestLog.SorenHuntAt) return;
+        var p = hero.GlobalPosition;
+        if (hero.Downed || hero.InFight || main.HudNode.Talking || City.Below is not null || City.Afloat is not null || main.InTownForTurlin(p) || GD.Randf() >= 1f / 45) return;
+        Hunt();
+    }
+
+    void Hunt()
+    {
+        var hero = main.PlayerNode;
+        main.ForestLog.SorenHuntAt = main.GuildBook.PlaySeconds + Legend.SorenHuntEvery;
+        _hunting = true;
+        Muster(hero.GlobalPosition + (-hero.GlobalBasis.Z with { Y = 0 }).Normalized() * 18);
+        main.HudNode.Toast("He's come for what's his. The blade at your hip starts to hum, and the strands of the Web all pull one way. Lose to him, and he'll take it back.", 10);
+        _soren?.Provoke(hero);
+    }
+
+    /// <summary>He beat the one who took it: he takes his blade and his scabbard back, and the Web is his again.</summary>
+    void OnHeroDown()
+    {
+        if (!_hunting || _soren is not { } e || !IsInstanceValid(e) || e.State == EnemyState.Dead) return;
+        var hero = main.PlayerNode;
+        if (e.GlobalPosition.DistanceTo(hero.GlobalPosition) > 60 || main.Economy.WebHolder != hero.Company) return;
+        foreach (var (slot, id) in new[] { (Slot.Weapon, Legend.Arachnicalibur), (Slot.Neck, Legend.ArachnicaliburScabbard) })
+        {
+            if (hero.Pack.WornIn(slot)?.Id == id) hero.Pack.Unequip(slot);
+            hero.Pack.Take(id);
+        }
+        hero.Fit();
+        hero.Dress();
+        main.DoCity(CityAction.WebLost(hero.Company));
+        main.HudNode.Toast("Soren stands over you and takes the black blade from your hand, and the scabbard from your back, without any hurry at all. It was only ever on loan.", 11);
+        Clear();
+        main.Save();
+    }
+
+    /// <summary>He isn't reckless: hurt badly, he makes for his ship, and you've a few seconds to finish him.</summary>
+    void WatchSoren(double delta)
+    {
+        if (_soren is not { } e || !IsInstanceValid(e) || e.State == EnemyState.Dead) return;
+        if (_leaving > 0)
+        {
+            e.GlobalPosition += (_away * 12 + Vector3.Up * 3) * (float)delta;
+            if ((_leaving -= delta) > 0) return;
+            if (!_hunting) main.DoCity(CityAction.SiegeBroken(main.PlayerNode.Company, false));
+            main.PlayerNode.Crowns += Legend.SiegeBounty / 2;
+            main.HudNode.Toast(_hunting ? $"He's gone, for now, and the blade's still yours. He'll be back for it. +{Legend.SiegeBounty / 2} crowns." : $"He's gone, and the siege with him: the town's safe for now. He wasn't killed, so he'll be back as he was. +{Legend.SiegeBounty / 2} crowns.", 9);
+            e.QueueFree();
+            (_soren, _leaving, _hunting) = (null, 0, false);
+            main.Save();
+            return;
+        }
+        if (e.Stats.Health > e.Stats.MaxHealth * Legend.SorenFleeAt || !e.FightingCompany) return;
+        _leaving = Legend.SorenFlightSeconds;
+        e.Carried = true;
+        var away = e.GlobalPosition - main.PlayerNode.GlobalPosition;
+        _away = new Vector3(away.X, 0, away.Z).Normalized();
+        main.HudNode.Toast($"{Legend.FormOf(main.Economy.SorenDeaths).Retreat} Bring him down now, or he's away!", 7);
+    }
+
     void Muster(Vector3 at)
     {
+        var form = Legend.FormOf(main.Economy.SorenDeaths);
         var danger = WorldGen.Danger(at.X, at.Z) * (1 + 0.08 * main.PlayerNode.Hero.Level);
-        _soren = Enemy.Create(Bestiary.Get("dread_soren"), at with { Y = City.FloorAt(at) + 0.5f }, danger * 1.4);
-        _soren.Foresees = main.Economy.WebHolder is null ? Legend.SorenForesees : 0;
+        _soren = Enemy.Create(Bestiary.Get("dread_soren"), at with { Y = City.FloorAt(at) + 0.5f }, danger * 1.4 * Legend.SorenStrength(main.Economy.SorenDeaths));
+        Dress(_soren, main.Economy);
         _soren.Roam = 16;
         main.AddEnemy(_soren);
+        _soren.Scale = Vector3.One * form.Size;
         for (var i = 0; i < 6; i++)
         {
             var spot = at + new Vector3(Mathf.Cos(i * 1.05f) * 7, 0, Mathf.Sin(i * 1.05f) * 7);
@@ -112,7 +200,33 @@ public partial class Legends(Main main) : Node
             main.AddEnemy(e);
             _crew.Add(e);
         }
-        main.HudNode.Toast("The Dread Pirate Soren is at the gates, and his crew with him. His blade drips with a light like dew on a web.", 8);
+        main.HudNode.Toast(form.Hail, 11);
+        main.HudNode.Log($"Soren: {form.Hail}");
+    }
+
+    public void HuntForTest() => Hunt();
+
+    /// <summary>Whatever the sea's done to him so far, wherever he turns up: on his own deck, too.</summary>
+    public static void Dress(Enemy soren, CityEconomy city)
+    {
+        soren.Foresees = city.WebHolder is null ? Legend.SorenForesees : 0;
+        var sea = Legend.FormOf(city.SorenDeaths).Sea;
+        if (sea <= 0) return;
+        var high = (float)soren.Kind.Height;
+        var crust = new StandardMaterial3D { AlbedoColor = new Color("#6f7468"), Roughness = 1 };
+        var weed = new StandardMaterial3D { AlbedoColor = new Color("#1f3a30"), Roughness = 0.8f };
+        var deep = new StandardMaterial3D { AlbedoColor = new Color("#050a10"), Roughness = 0.1f };
+        var rng = new Tristinwold.Deviant.Rng(1234);
+        for (var i = 0; i < 24 * sea; i++)
+        {
+            var (a, y) = (rng.NextDouble() * Mathf.Tau, 0.3 + rng.NextDouble() * 0.55);
+            soren.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = high * 0.04f, Height = high * 0.05f, RadialSegments = 7, Rings = 3 }, MaterialOverride = crust, Position = new Vector3(Mathf.Cos((float)a) * high * 0.15f, high * (float)y, Mathf.Sin((float)a) * high * 0.11f) });
+        }
+        for (var i = 0; i < 12 * sea; i++)
+            soren.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = high * 0.012f, BottomRadius = high * 0.002f, Height = high * (0.16f + 0.2f * sea), RadialSegments = 6, Rings = 1 }, MaterialOverride = weed, Position = new Vector3((i - 5) * high * 0.015f, high * (0.78f - 0.08f * sea), high * 0.1f), Rotation = new Vector3(0.15f, 0, (i - 5) * 0.04f) });
+        if (sea >= 0.45f)
+            foreach (var side in new[] { -1, 1 })
+                soren.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = high * 0.022f, Height = high * 0.044f }, MaterialOverride = deep, Position = new Vector3(side * high * 0.04f, high * 0.91f, high * 0.1f) });
     }
 
     void Clear()
@@ -120,27 +234,31 @@ public partial class Legends(Main main) : Node
         foreach (var e in _crew.Where(IsInstanceValid)) e.QueueFree();
         _crew.Clear();
         if (_soren is not null && IsInstanceValid(_soren)) _soren.QueueFree();
-        _soren = null;
+        (_soren, _leaving, _hunting) = (null, 0, false);
     }
 
     void OnSlain(Enemy victim, Enemy? killer, bool byCompany)
     {
         if (victim != _soren) return;
-        _soren = null;
-        main.DoCity(CityAction.SiegeBroken(main.PlayerNode.Company));
+        var form = Legend.FormOf(main.Economy.SorenDeaths);
+        main.DoCity(_hunting ? CityAction.SorenKilled(main.PlayerNode.Company) : CityAction.SiegeBroken(main.PlayerNode.Company, true));
+        (_soren, _leaving, _hunting) = (null, 0, false);
         main.PlayerNode.Crowns += Legend.SiegeBounty;
-        var wicked = main.Standing.Repute <= Legend.WebRepute;
-        if (wicked && main.Economy.WebHolder is null)
+        var rng = new Tristinwold.Deviant.Rng((ulong)GD.Randi() << 32 | GD.Randi());
+        var plunder = Legend.Plunder(rng);
+        var blade = main.Economy.WebHolder is null && rng.Chance(WebChance);
+        if (blade)
         {
             main.DoCity(CityAction.Blade(Legend.Arachnicalibur, main.PlayerNode.Company));
-            main.Take([(Legend.Arachnicalibur, 1), (Legend.ArachnicaliburScabbard, 1)]);
-            main.HudNode.Toast($"Soren falls, and the whole web shivers. Arachnicalibur and its scabbard are yours. It seems to have known you were coming. +{Legend.SiegeBounty} crowns.", 12);
+            main.ForestLog.SorenHuntAt = main.GuildBook.PlaySeconds + Legend.SorenHuntEvery;
+            plunder.AddRange([(Legend.Arachnicalibur, 1), (Legend.ArachnicaliburScabbard, 1)]);
         }
-        else main.HudNode.Toast(main.Economy.WebHolder is null
-            ? $"The siege is broken: Soren goes down, and his bosun cuts the black blade from his belt and is over the wall before you can follow. It won't come to clean hands. +{Legend.SiegeBounty} crowns."
-            : $"The siege is broken, and Soren is carried back to his boats. +{Legend.SiegeBounty} crowns.", 11);
+        main.Take(plunder);
+        main.HudNode.Toast(form.Lost, 11);
+        main.HudNode.Toast(blade
+            ? $"And there, in the wet: Arachnicalibur and its scabbard. It lets you take it, the way a web lets a fly land. +{Legend.SiegeBounty} crowns, and the plunder of a dozen towns."
+            : $"The plunder of a dozen towns spills across the stones, and +{Legend.SiegeBounty} crowns. His blade went with him.", 10);
+        main.HudNode.Log($"Taken from Soren: {string.Join(", ", plunder.Select(x => Items.Count(x.Id, x.N)))}.");
         main.Save();
     }
-
-    public void MusterForTest(Vector3 at) => Muster(at);
 }

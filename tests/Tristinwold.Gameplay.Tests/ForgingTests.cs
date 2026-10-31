@@ -315,9 +315,62 @@ public class ForgingTests
     {
         var city = CityEconomy.Start(7);
         city.Siege = new PirateSiege { Town = "city:druitt", Ends = city.Day + 3 };
-        Assert.True(city.Apply(CityAction.SiegeBroken("Ana")));
+        Assert.True(city.Apply(CityAction.SiegeBroken("Ana", killed: false)));
         Assert.Null(city.Siege);
-        Assert.False(city.Apply(CityAction.SiegeBroken("Ana")));
+        Assert.Equal(0, city.SorenDeaths); // driven off isn't dead
+        Assert.False(city.Apply(CityAction.SiegeBroken("Ana", killed: false)));
+    }
+
+    [Fact]
+    public void Killing_Soren_counts_for_the_whole_server_and_he_comes_back_less_each_time()
+    {
+        var city = CityEconomy.Start(7);
+        for (var i = 1; i <= 8; i++)
+        {
+            city.Siege = new PirateSiege { Town = "city:druitt", Ends = city.Day + 3 };
+            Assert.True(city.Apply(CityAction.SiegeBroken("Ana", killed: true)));
+            Assert.Equal(i, city.SorenDeaths);
+        }
+        var seas = Legend.SorenForms.Select(f => f.Sea).ToList();
+        Assert.Equal(seas.OrderBy(s => s), seas);
+        Assert.Equal(Legend.SorenForms[^1], Legend.FormOf(99));
+        Assert.Equal(Legend.SorenMost, Legend.SorenStrength(99));
+        Assert.True(Legend.SorenStrength(1) > Legend.SorenStrength(0));
+    }
+
+    [Fact]
+    public void He_leaves_a_lot_of_rare_things_and_a_piece_off_his_own_forge()
+    {
+        var rng = new Rng(81);
+        for (var i = 0; i < 500; i++)
+        {
+            var loot = Legend.Plunder(rng);
+            Assert.InRange(loot.Count, 5, 8);
+            Assert.All(loot, l => Assert.NotNull(Items.Get(l.Id)));
+            Assert.All(loot, l => Assert.True(l.N >= 1));
+            Assert.Contains(loot, l => Items.Get(l.Id)!.Forged && Items.Get(l.Id)!.Name.Contains("+3"));
+            Assert.Equal(loot.Count, loot.Select(l => l.Id).Distinct().Count());
+            Assert.DoesNotContain(loot, l => l.Id is Legend.Arachnicalibur or Legend.ArachnicaliburScabbard);
+        }
+    }
+
+    [Fact]
+    public void Soren_can_take_his_blade_back_and_then_it_can_be_won_again()
+    {
+        var city = CityEconomy.Start(7);
+        Assert.True(city.Apply(CityAction.Blade(Legend.Arachnicalibur, "Ana")));
+        Assert.False(city.Apply(CityAction.WebLost("Bram"))); // only from who has it
+        Assert.True(city.Apply(CityAction.WebLost("Ana")));
+        Assert.Null(city.WebHolder);
+        Assert.True(city.Apply(CityAction.Blade(Legend.Arachnicalibur, "Bram")));
+        Assert.True(city.Apply(CityAction.SorenKilled("Bram")));
+        Assert.Equal(1, city.SorenDeaths);
+    }
+
+    [Fact]
+    public void His_blade_is_a_one_and_a_half_percent_drop()
+    {
+        Assert.Equal(0.015, Legend.WebChance);
     }
 
     [Fact]

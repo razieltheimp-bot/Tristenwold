@@ -21,6 +21,8 @@ public sealed class ForestBook
     public bool Blighted { get; set; }
     /// <summary>This hero helped bring down the fifth guardian: the stone asks that much.</summary>
     public bool DragonSlayer { get; set; }
+    /// <summary>When Soren next comes after this hero, if they hold his blade: seconds of play.</summary>
+    public double SorenHuntAt { get; set; }
     /// <summary>A shapeshifter's studies: how many of each beast they've fought and killed, and the shapes they've learned.</summary>
     public Dictionary<string, int> Studied { get; set; } = [];
     public List<string> Shapes { get; set; } = ["wolf"];
