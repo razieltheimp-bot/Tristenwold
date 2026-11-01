@@ -1335,7 +1335,7 @@ public partial class SelfTest(Main main) : Node
         var found = main.RoamersNode.Near.FirstOrDefault();
         var roamerHealth = found.Body?.Stats.MaxHealth ?? 0;
         Check(found.Body is { Named: true } && found.Body.FightingCompany, found.Body is null
-            ? $"found, {roamer.Title} comes for you (nothing out: ground at it {main.TerrainNode.HasGround(new Vector3((float)x, 0, (float)z))}, hero in town {main.RoamersNode.InTown(p.GlobalPosition)}, downed {p.Downed}, at {x:0},{z:0} in {main.World.AreaAt(x, z)}, height {main.World.Height(x, z):0.0})"
+            ? $"found, {roamer.Title} comes for you (nothing out: still in the log {main.RaidLog.Roamers.Contains(roamer)} of {main.RaidLog.Roamers.Count}, hunting {roamer.Hunting}, ground at it {main.TerrainNode.HasGround(new Vector3((float)x, 0, (float)z))}, hero in town {main.RoamersNode.InTown(p.GlobalPosition)}, downed {p.Downed}, hero {p.GlobalPosition.X:0},{p.GlobalPosition.Z:0}, it {x:0},{z:0} in {main.World.AreaAt(x, z)}, height {main.World.Height(x, z):0.0})"
             : $"found, {found.Roamer?.Title} comes for you (fighting {found.Body.FightingCompany}, named {found.Body.Named}, {found.Body.GlobalPosition.DistanceTo(p.GlobalPosition):0} m off)");
 
         // A new nameless boss has moved into the lair, no stronger than its kind.
