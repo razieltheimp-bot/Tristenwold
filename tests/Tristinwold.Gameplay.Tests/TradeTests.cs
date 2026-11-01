@@ -7,14 +7,23 @@ namespace Tristinwold.Gameplay.Tests;
 public class TradeTests
 {
     [Fact]
+    public void Every_class_has_a_limit_break_of_its_own()
+    {
+        var ids = Classes.All.Select(c => c.Limit.Id).ToList();
+        Assert.Equal(ids.Count, ids.Distinct().Count());
+        var names = Classes.All.Select(c => c.Limit.Name).ToList();
+        Assert.Equal(names.Count, names.Distinct().Count());
+    }
+
+    [Fact]
     public void Every_class_grows_three_more_moves_that_are_all_different_and_a_level_makes_them_stronger()
     {
         foreach (var c in Classes.All)
         {
             var moves = Advances.Of(c.Id);
-            Assert.Equal(c.Id == "Shapeshifter" ? [Advances.First, Advances.Second, Advances.Third, Advances.HalfFormLevel] : [Advances.First, Advances.Second, Advances.Third], moves.Select(a => a.Level));
+            Assert.Equal([Advances.First, Advances.Second, Advances.Third], moves.Select(a => a.Level));
             Assert.Empty(Advances.Known(c.Id, 5));
-            Assert.Equal(c.Id == "Shapeshifter" ? 4 : 3, Advances.Known(c.Id, 18).Count()); // the shapeshifter's half-form besides
+            Assert.Equal(3, Advances.Known(c.Id, 18).Count());
         }
         var ids = Advances.Everything.Select(a => a.Move.Id).ToList();
         Assert.Equal(ids.Count, ids.Distinct().Count());

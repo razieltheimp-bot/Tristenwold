@@ -517,18 +517,20 @@ public partial class Main : Node3D
         for (var y = 0; y < n; y++)
             for (var x = 0; x < n; x++)
                 image.SetPixel(x, y, modules[y][x] ? Colors.Black : Colors.White);
+        // Up beside the corner map, three pixels to a module: small, and still sharp enough for a phone's camera to read.
+        var side = n * 3;
         var box = new VBoxContainer { Name = "RemoteQr" };
         box.SetAnchorsPreset(Control.LayoutPreset.TopRight);
-        (box.OffsetLeft, box.OffsetTop, box.OffsetRight) = (-250, 236, -24);
+        (box.OffsetLeft, box.OffsetTop, box.OffsetRight) = (-232 - side, 24, -232);
         box.AddChild(new TextureRect
         {
-            Texture = ImageTexture.CreateFromImage(image), CustomMinimumSize = new Vector2(226, 226),
+            Texture = ImageTexture.CreateFromImage(image), CustomMinimumSize = new Vector2(side, side),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale, TextureFilter = CanvasItem.TextureFilterEnum.Nearest,
         });
         box.AddChild(new Label
         {
-            Text = "Scan with the iPhone's camera", HorizontalAlignment = HorizontalAlignment.Center,
-            LabelSettings = new LabelSettings { FontSize = 14, OutlineSize = 4, OutlineColor = Colors.Black },
+            Text = "Scan to play on a phone", HorizontalAlignment = HorizontalAlignment.Center,
+            LabelSettings = new LabelSettings { FontSize = 11, OutlineSize = 3, OutlineColor = Colors.Black },
         });
         layer.AddChild(box);
         box.Visible = RemotePlay.Current is not { Viewers: > 0 };

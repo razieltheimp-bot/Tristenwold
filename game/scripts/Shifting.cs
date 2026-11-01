@@ -8,6 +8,15 @@ public partial class Player
     /// <summary>The shapes this hero knows (see <see cref="Tristinwold.World.ForestBook"/>): the game fills this in.</summary>
     public Func<IReadOnlyList<string>>? Shapes { get; set; }
 
+    /// <summary>The shape they've worn the most (the game fills this in): what a half-form reaches for out of beast form.</summary>
+    public Func<string?>? FavouriteShape { get; set; }
+
+    /// <summary>What a half-form would merge them with right now, or is merged with: the beast they're wearing, else their favourite.</summary>
+    public string? HalfFormKind => _hybrid ?? _form ?? FavouriteShape?.Invoke() ?? Shapes?.Invoke().FirstOrDefault();
+
+    string? _hybrid;
+    double _hybridMight = 1;
+
     string? _form;
     Body? _own, _beast;
     double _formMight = 1;
@@ -17,6 +26,7 @@ public partial class Player
     /// <summary>On to the next shape studied, and after the last, back to their own body.</summary>
     void Shift(double might)
     {
+        if (_possessing) return; // in a half-form: one body at a time
         var shapes = Shapes?.Invoke() ?? [];
         var next = _form is null ? shapes.FirstOrDefault() : shapes.SkipWhile(s => s != _form).Skip(1).FirstOrDefault();
         Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, Tristinwold.Deviant.DamageKind.Poison, 1.6f);
@@ -55,26 +65,25 @@ public partial class Player
     }
 
     /// <summary>
-    /// The half-form: the beast they wear (or the first they learned) and their own people in one body, standing tall,
-    /// furred, with the beast's head and tail, stronger than either, for a while; then back to themselves, with the
-    /// long rest the move asks between. The beast forms stay as long as they like; this one doesn't.
+    /// The shapeshifter's limit break: the beast they're wearing as they call it, or else the one they've worn the most,
+    /// and their own people in one body, standing tall, furred, with the beast's head and tail, stronger than either,
+    /// for a while; then back to themselves, and the gauge to fill again. The beast forms stay as long as they like;
+    /// this one doesn't.
     /// </summary>
     bool HalfForm(double seconds, double might)
     {
-        if (_possessing) return false;
-        var kind = _form ?? Shapes?.Invoke().FirstOrDefault();
-        if (kind is null) { Said?.Invoke("You know no beast's shape yet."); return false; }
+        if (HalfFormKind is not { } kind) { Said?.Invoke("You know no beast's shape yet."); return false; }
         LeaveBeastForm();
+        _hybrid = kind;
         var (race, sex) = (Appearance?.Race ?? "human", Appearance?.Sex == "Female" ? Tristinwold.World.Sex.Female : Tristinwold.World.Sex.Male);
         var seed = (ulong)Company.GetHashCode();
-        var boost = 1 + might * 1.6;
-        Stats.DamageMult *= boost;
-        Stats.Armor += 30;
+        _hybridMight = 1 + might;
+        Fit();
         Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, Tristinwold.Deviant.DamageKind.Poison, 2.2f);
         Possess(() => (Body?)Tristinwold.Game.Figure.Human($"hybrid:{kind}", race, sex, Tristinwold.World.LifeStage.Adult, seed, Hybrids.Fur(kind)) ?? Body.For(kind), 1.12f, seconds, () =>
         {
-            Stats.DamageMult /= boost;
-            Stats.Armor -= 30;
+            _hybrid = null;
+            Fit();
             Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, Tristinwold.Deviant.DamageKind.Poison, 1.6f);
             Said?.Invoke("You come back to yourself.");
         });

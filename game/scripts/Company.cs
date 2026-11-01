@@ -274,6 +274,7 @@ public partial class Main
         TendGolem();
         Regather(delta);
         StudyCompanions(delta);
+        if (_player.Form is { } worn) _forest.Worn[worn] = _forest.Worn.GetValueOrDefault(worn) + delta;
         foreach (var bond in _bonds.Where(b => b.Following && b.Eats))
         {
             var body = BodyOf(bond);

@@ -177,6 +177,9 @@ public partial class Player : Fighter
         var might = (1 + Pack.Damage) * (_mightLeft > 0 ? 1 + _might : 1) * Trophies * RivalEdge;
         Stats.DamageMult *= might;
         Stats.SpellPower *= might;
+        // What a body lends lasts through anything that works the numbers out again (a level, a potion, new gear).
+        if (_form is not null) { Stats.DamageMult *= _formMight; Stats.Armor += 20; }
+        if (_hybrid is not null) { Stats.DamageMult *= _hybridMight; Stats.Armor += 30; }
     }
 
     /// <summary>What the hero carries and wears (the game hands it over on loading).</summary>
@@ -485,6 +488,7 @@ public partial class Player : Fighter
         if (Downed) return false;
         var limit = a == Class.Limit;
         if (limit ? !Stats.LimitReady : Cooldown(a.Id) > 0) return false;
+        if (a.Id == "half_form" && _possessing) return false; // the gauge isn't spent on a body they're already in
         var cost = a.Cost * (Class.Id == "Sorcerer" && a.Pays == AttackKind.Spell ? 0.85 : 1);
         if (!limit && !Stats.Spend(a.Pays, cost)) return false;
         if (limit) { Stats.UseLimit(); LimitMoment(a); }
@@ -497,6 +501,7 @@ public partial class Player : Fighter
         if (a.Pays == AttackKind.Weapon && a.Range < 6 && a.Power > 1 && Class.Id != "Ranger") // a blade, an axe, a fist through the air
             Sound.At(Class.Id == "MartialArtist" ? "melee/punch" : "melee/swing", GlobalPosition + Vector3.Up, -6);
         if (Class.Calling == Calling.Bard) Play(a);
+        if (a.Id == "half_form") return HalfForm(a.Seconds * Hero.MovePower(a.Id), dmg);
         if (Advances.For(a.Id) is { } advance) return Advanced(advance, a, dmg, power, near);
         switch (a.Id)
         {
@@ -794,6 +799,23 @@ public partial class Player : Fighter
                 Figure.Perform("Spellcast_Raise", 0.8);
                 Summoned?.Invoke(a.Seconds * power);
                 break;
+            case "heart_of_the_storm":
+                Figure.Perform("Spellcast_Raise", 1, 1);
+                Said?.Invoke("LIMIT BREAK: Heart of the Storm!");
+                foreach (var e in Around(a.Range).ToList())
+                {
+                    Effects.Bolt(GetParent(), e.GlobalPosition + new Vector3(2, 30, 2), e.GlobalPosition, DamageKind.Shock, 0.5f);
+                    Strike(e, dmg, a.Kind, AttackKind.Spell);
+                }
+                Hazard(GlobalPosition, a.Range * 0.5, dmg * 0.2, DamageKind.Shock, a.Seconds);
+                break;
+            case "pack_returns":
+                Figure.Perform("Spellcast_Long", 1.2, 1);
+                Said?.Invoke("LIMIT BREAK: The Pack Returns!");
+                Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Frost, (float)a.Range * 0.6f);
+                foreach (var e in Around(a.Range).ToList()) Strike(e, dmg, a.Kind, AttackKind.Spell);
+                for (var i = 0; i < 3; i++) Summoned?.Invoke(a.Seconds);
+                break;
             case "soul_harvest":
                 Figure.Perform("Spellcast_Long", 1.2, 1);
                 Said?.Invoke("LIMIT BREAK: Soul Harvest!");
@@ -858,8 +880,13 @@ public partial class Player : Fighter
                 Said?.Invoke("LIMIT BREAK: Epic of Ages!");
                 Effects.Song(GetParent(), GlobalPosition, LimitColour, (float)a.Range, 16);
                 Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Sun, (float)a.Range);
-                foreach (var e in Around(a.Range).ToList()) Strike(e, dmg, a.Kind, AttackKind.Spell);
+                foreach (var e in Around(a.Range).ToList())
+                {
+                    Strike(e, dmg, a.Kind, AttackKind.Spell);
+                    if (e.State != EnemyState.Dead) e.Stunned = 3; // nobody moves till the verse is done
+                }
                 Heal(0.4);
+                For(12, AutoStatus.Haste);
                 foreach (var c in Companions()) { c.Revive(); c.Stats.Heal(1e9); c.RefreshPlate(); }
                 break;
 
@@ -1010,7 +1037,6 @@ public partial class Player : Fighter
     /// <summary>A move a class came into as it levelled: they're all one of a few shapes.</summary>
     bool Advanced(Advance advance, Ability a, double dmg, double power, Enemy? near)
     {
-        if (a.Id == "half_form") { if (HalfForm(a.Seconds * power, a.Power * power)) return true; Refund(a); return false; }
         var spell = a.Pays == AttackKind.Spell;
         switch (advance.Style)
         {

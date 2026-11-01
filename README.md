@@ -948,10 +948,10 @@ Everything is saved with your company. `--selftest --pursuits-only` walks throug
 - Up to four follow you at once; the rest wait at the Gallows Perch. A Ranger and a Shapeshifter have no such limit:
   every beast they own follows. A Shapeshifter studies the beasts that travel with them, too: every three quarters
   of a minute at a following wolf's or bear's heels counts as a kill towards learning its shape (eight, as ever).
-  From level 8 a Shapeshifter has a *Half-Form* besides the beast forms: the beast they wear (or the first they
-  learned) and their own people in one body, standing tall and furred with the beast's head, claws and tail,
-  stronger than either, for twenty-five seconds, with a minute and a half's rest after; the beast forms themselves
-  still last as long as you like. A companion knocked down gets up when the
+  A Shapeshifter's limit break (R) is the *Half-Form*: the beast they're wearing when they call it, or else the
+  beast they've worn the most, and their own people in one body, standing tall and furred with the beast's head,
+  claws and tail, stronger than either, for twenty-five seconds, and then the gauge to fill again; the beast forms
+  themselves still last as long as you like. A companion knocked down gets up when the
   fight is over, and resting heals them all.
 
 ### Hollowheart's heart-trees

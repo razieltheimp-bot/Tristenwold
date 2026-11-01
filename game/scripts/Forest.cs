@@ -239,6 +239,7 @@ public partial class Forest(Main main) : Node3D
         main.PlayerNode.RivalEdge = main.ForestLog.Turlin.EdgeBonus;
         main.PlayerNode.Fit();
         main.PlayerNode.Shapes = () => main.ForestLog.Shapes;
+        main.PlayerNode.FavouriteShape = () => main.ForestLog.Favourite;
         BuildVillage();
         var lair = new Vector3((float)Northwood.LairX, 0, (float)Northwood.LairZ);
         Buildings.Place(this, "mine_portal", lair with { Y = City.FloorAt(lair) }, 0.7f, 3);

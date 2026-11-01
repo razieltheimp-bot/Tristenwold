@@ -17,8 +17,6 @@ public static class Advances
     public const int First = 6, Second = 12, Third = 18;
     /// <summary>The level an Ether-Aeronaut's construct takes to the air.</summary>
     public const int FlightLevel = First;
-    /// <summary>The level a Shapeshifter can hold a half-form: the beast and their own people in one body.</summary>
-    public const int HalfFormLevel = 8;
 
     static Advance[] Three(Ability first, MoveStyle firstStyle, Ability second, MoveStyle secondStyle, Ability third, MoveStyle thirdStyle) =>
         [new(First, firstStyle, first), new(Second, secondStyle, second), new(Third, thirdStyle, third)];
@@ -96,12 +94,10 @@ public static class Advances
             Shot("thorn_lash", "Thorn Lash", "The nearest brambles do as they're told.", 28, 7, 36, 24, DamageKind.Poison), MoveStyle.Strike,
             Mend("rejuvenate", "Rejuvenate", "The green comes back into you: a third of your wounds close.", 38, 32, 0.33), MoveStyle.Mend,
             Round("earthquake", "Earthquake", "The ground under everything near you remembers it can move.", 52, 18, 60, 11, DamageKind.Physical), MoveStyle.Burst),
-        ["Shapeshifter"] = [.. Three(
+        ["Shapeshifter"] = Three(
             Blow("rending_bite", "Rending Bite", "All the teeth you've got.", 28, 8, 38), MoveStyle.Strike,
             Mend("wild_mending", "Wild Mending", "Beasts heal fast: a third of your wounds close.", 38, 32, 0.33, AttackKind.Weapon), MoveStyle.Mend,
             Round("primal_roar", "Primal Roar", "A sound from before there were words, and it hurts.", 45, 16, 54, 8, DamageKind.Physical, AttackKind.Weapon), MoveStyle.Burst),
-            // A fourth, between the first and the second: the beast and the hero's own people in one body, for a while, with a long rest after.
-            new Advance(HalfFormLevel, MoveStyle.Ward, new Ability("half_form", "Half-Form", "For a while the beast and your own people in one body, stronger than either, standing tall: then back to yourself. Takes the shape of the beast you wear, or the first you learned.", AttackKind.Weapon, 30, 90, 0.6, 0, Seconds: 25))],
         ["Spiritcaller"] = Three(
             Shot("ghost_lance", "Ghost Lance", "A cold spear of what's left of something.", 28, 7, 36, 26, DamageKind.Frost), MoveStyle.Strike,
             Guard("spirit_shield", "Spirit Shield", "The dead stand round you for a while: Protect and Shell.", 38, 30, 10), MoveStyle.Ward,

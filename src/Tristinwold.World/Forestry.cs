@@ -26,6 +26,10 @@ public sealed class ForestBook
     /// <summary>A shapeshifter's studies: how many of each beast they've fought and killed, and the shapes they've learned.</summary>
     public Dictionary<string, int> Studied { get; set; } = [];
     public List<string> Shapes { get; set; } = ["wolf"];
+    /// <summary>How long they've spent in each shape, in seconds: the one they've used most is the one a half-form reaches for.</summary>
+    public Dictionary<string, double> Worn { get; set; } = [];
+    /// <summary>The shape they've worn the most, or the first they learned if they've worn none.</summary>
+    public string Favourite => Worn.Where(w => Shapes.Contains(w.Key)).OrderByDescending(w => w.Value).ThenBy(w => w.Key, StringComparer.Ordinal).Select(w => w.Key).FirstOrDefault() ?? Shapes[0];
     /// <summary>What this hero's had to do with Turlin.</summary>
     public TurlinBook Turlin { get; set; } = new();
 

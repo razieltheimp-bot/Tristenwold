@@ -46,6 +46,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--growth-only")) { await TheGrowth(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--lair-only")) { await DeviantLairTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--village-only")) { await TheVillageDeck(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -2303,6 +2304,44 @@ public partial class SelfTest(Main main) : Node
         Check(main.Standing.Bounty > bounty && main.Bonds.Count == bonds + 1 && trade.Banned(main.Economy.Day) && !main.MayStealForTest,
             $"and a price on your head ({main.Standing.Bounty} crowns), the horse your own, and no work at the yard for {TradeBook.BanDays} days");
         main.ClimbDownForTest();
+    }
+
+    /// <summary>A shapeshifter's limit break merges them with the beast they wear, or the one they've worn most; timed, stronger, and each beast lends its own body.</summary>
+    async Task TheHalfForm()
+    {
+        var p = main.PlayerNode;
+        p.Join("Shapeshifter");
+        p.Fit();
+        main.ForestLog.Shapes = ["wolf", "bear", "fox"];
+        main.ForestLog.Worn = new() { ["wolf"] = 5, ["bear"] = 90 };
+        Check(p.Class.Limit.Id == "half_form", $"a shapeshifter's limit break is {p.Class.Limit.Name}");
+        var (might, armor) = (p.Stats.DamageMult, p.Stats.Armor);
+        p.Stats.GainLimit(100);
+        Check(p.HalfFormKind == "bear" && p.LimitBreak() && p.Possessing, $"out of beast form it reaches for the beast worn most: {p.HalfFormKind}, {p.SuitLeft:0} s of it");
+        await Frames(10);
+        Check(p.Figure is Figure { IsHuman: true } && p.Stats.DamageMult > might && p.Stats.Armor > armor, $"on a real body, stronger and tougher: x{p.Stats.DamageMult / might:0.00}");
+        p.Stats.GainLimit(100);
+        Check(!p.LimitBreak() && p.Stats.LimitReady, "a second call while it's on is refused, and doesn't spend the gauge");
+        p.Unpossess();
+        await Frames(10);
+        Check(!p.Possessing && Math.Abs(p.Stats.DamageMult - might) < 0.001 && p.Stats.Armor == armor, "it passes, and they're themselves, no stronger than before");
+        await Until(() => p.Cooldown("shift") <= 0, 4);
+        Check(p.UseMove(p.Class.Utility) && p.Form == "wolf", $"a beast form, as long as they like: {p.Form}");
+        await Frames(10);
+        p.Stats.GainLimit(100);
+        Check(p.LimitBreak() && p.HalfFormKind == "wolf" && p.Form is null, "called in beast form, it merges with that beast and not the favourite");
+        p.Unpossess();
+        await Frames(10);
+        Check(p.Form is null && Math.Abs(p.Stats.DamageMult - might) < 0.001, "and comes back to their own body");
+        foreach (var kind in ForestBook.Beasts)
+        {
+            var f = Figure.Human($"hybrid:{kind}", "human", Tristinwold.World.Sex.Male, LifeStage.Adult, 7, Hybrids.Fur(kind));
+            Check(f is not null, $"{Hybrids.Name(kind)} has a body");
+            if (f is null) continue;
+            main.AddChild(f);
+            await Frames(5);
+            f.QueueFree();
+        }
     }
 
     /// <summary>Hollowheart's heart-trees: walk up each ramp and you come out on the deck, which is wide and solid all the way round.</summary>
