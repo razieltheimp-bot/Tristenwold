@@ -449,7 +449,9 @@ public partial class Main : Node3D
         _life = new TownLife(this);
         AddChild(_life);
         SetUpCompany();
-        _hud.AttachMap(_world, _explored, () => _player.GlobalPosition, () => -_player.GlobalTransform.Basis.Z, QuestGoals,
+        // On the map you're where you are; at sea, where the ship is on her leg, heading the way she's sailing.
+        _hud.AttachMap(_world, _explored, () => _atSea is { } sea ? new Vector3(sea.ChartPosition.X, 0, sea.ChartPosition.Y) : _player.GlobalPosition,
+            () => _atSea is { } sea ? new Vector3(sea.ChartHeading.X, 0, sea.ChartHeading.Y) : -_player.GlobalTransform.Basis.Z, QuestGoals,
             () => _raids.Seen.Select(Raids.Get).OfType<Raid>().Select(r => (r.X, r.Z, r.Name)));
 
         _tracker = new EncounterTracker(
@@ -754,7 +756,7 @@ public partial class Main : Node3D
 
         _terrain.Update(pos, 2);
         if (_clock - _lastPlaces > 0.5) { _lastPlaces = _clock; _places.Update(pos); _wilds.Update(pos, _clock); }
-        if (_clock - _lastReveal > 0.2) { _lastReveal = _clock; Explore(pos); }
+        if (_clock - _lastReveal > 0.2) { _lastReveal = _clock; Explore(_atSea is { } sea ? new Vector3(sea.ChartPosition.X, 0, sea.ChartPosition.Y) : pos); } // a voyage charts the sea it crosses
 
         _area = City.AreaAt(pos);
         TendRepute();

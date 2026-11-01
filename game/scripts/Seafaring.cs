@@ -738,6 +738,48 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
     public bool AtHelm => _helm;
     public double Heading { get => _heading; set => _heading = value; }
     public Vector2 SeaPosition => _at;
+
+    /// <summary>The mouth of Tristinwold's cove, where every voyage puts to sea, and how far a league of it is on the chart.</summary>
+    public static readonly Vector2 HarbourMouth = new(980, -350);
+    const float LeagueOnChart = 900;
+
+    /// <summary>
+    /// Where the ship is on the map: along the line from the harbour mouth to the port (a home port's own quay; a far
+    /// port out on its bearing, a league at a time), as far as the leg has come, and back again on the way home; plus
+    /// wherever the helm has taken her off that line.
+    /// </summary>
+    public Vector2 ChartPosition
+    {
+        get
+        {
+            var port = Seas.Get(voyage.Port);
+            var end = voyage.Port switch
+            {
+                "port:druitt" => new Vector2(-900 + 60, -262 + 40),
+                "port:greywater" => new Vector2(640 + 60, -600 + 30),
+                _ => HarbourMouth + new Vector2((float)Math.Cos(Helm.Bearing(voyage.Port)), (float)Math.Sin(Helm.Bearing(voyage.Port))) * LeagueOnChart * Math.Max(1, port?.Leagues ?? voyage.Leagues),
+            };
+            var t = voyage.InPort ? 1 : voyage.Homeward ? 1 - Along : Along;
+            return HarbourMouth.Lerp(end, (float)t) + _at;
+        }
+    }
+
+    /// <summary>Which way she's heading on the map.</summary>
+    public Vector2 ChartHeading
+    {
+        get
+        {
+            var port = Seas.Get(voyage.Port);
+            var end = voyage.Port switch
+            {
+                "port:druitt" => new Vector2(-840, -222),
+                "port:greywater" => new Vector2(700, -570),
+                _ => HarbourMouth + new Vector2((float)Math.Cos(Helm.Bearing(voyage.Port)), (float)Math.Sin(Helm.Bearing(voyage.Port))) * LeagueOnChart * Math.Max(1, port?.Leagues ?? voyage.Leagues),
+            };
+            var way = (end - HarbourMouth).Normalized();
+            return voyage.Homeward ? -way : way;
+        }
+    }
     double Bearing => Helm.Bearing(voyage.Port);
     static Vector3 WheelAt => new(Stage.X, DeckY, Stage.Z - 8);
 
