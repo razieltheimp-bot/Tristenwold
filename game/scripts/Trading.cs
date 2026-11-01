@@ -255,7 +255,7 @@ public partial class Main
         options.Add(("Not today.", () => Say(person, "They'll be here. Most of them.")));
         _hud.Talk($"Wren's Menagerie ({_player.Crowns} crowns)",
             $"Danger is what it grows into; training is how much patience it takes. Your beast taming: {level}" +
-            $"{(level > 1 ? $", so {3 * (level - 1)}% off" : "")}. They follow you (up to {MaxFollowing} at a time; the rest wait at the Gallows Perch) " +
+            $"{(level > 1 ? $", so {3 * (level - 1)}% off" : "")}. They follow you ({(FollowLimit == int.MaxValue ? "as many as you like, for one of your calling" : $"up to {MaxFollowing} at a time")}; the rest wait at the Gallows Perch) " +
             "and grow up at your side. Dragons aren't for sale: no one sells a dragon.", [.. options]);
     }
 

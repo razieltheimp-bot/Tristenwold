@@ -101,7 +101,9 @@ public class NorthwoodTests
     {
         var bands = Northwood.Near(Northwood.CentreX, Northwood.CentreZ, 700).ToList();
         Assert.True(bands.Count > 20);
-        Assert.All(bands, h => { Assert.NotNull(Bestiary.Get(h.KindId)); Assert.False(Northwood.NearVillage(h.X, h.Z)); });
+        // Near the village only what grazes: deer and foxes, never a band.
+        Assert.All(bands, h => { Assert.NotNull(Bestiary.Get(h.KindId)); Assert.True(!Northwood.NearVillage(h.X, h.Z) || Wildlife.Timid.Contains(h.KindId), $"{h.KindId} at {h.X:0},{h.Z:0} is too near the village"); });
+        Assert.Contains(bands, h => Northwood.NearVillage(h.X, h.Z) && h.KindId == "deer" && h.Young > 0);
         Assert.Equal(bands.Count, bands.Select(h => h.Id).Distinct().Count());
     }
 

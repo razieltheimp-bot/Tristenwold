@@ -78,6 +78,8 @@ public static class City
 
     /// <summary>Down the mine (see <see cref="Cave"/>): the rock floor, and the name of the chamber, where there's a cave instead of land.</summary>
     public static Func<Vector3, float?>? Below { get; set; }
+    /// <summary>Whether the land under a point has been built yet (the game says): until it has, nothing is let fall through where it will be.</summary>
+    public static Func<Vector3, bool>? GroundBuilt { get; set; }
     public static Func<Vector3, string?>? BelowName { get; set; }
 
     static Action? _letIn;

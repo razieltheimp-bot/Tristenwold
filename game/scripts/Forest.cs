@@ -303,6 +303,29 @@ public partial class Forest(Main main) : Node3D
         return st.Commit();
     }
 
+    /// <summary>A heart-tree's deck: its height over the tree's foot, how wide it is, and how high its railing stands.</summary>
+    public const float DeckY = Northwood.DeckHeight + 0.5f, DeckWide = 6f, Rail = 1.05f;
+
+    static float Clear(float a, IEnumerable<float> from) => from.Select(b => Mathf.Abs(Mathf.AngleDifference(a, b))).DefaultIfEmpty(Mathf.Pi).Min();
+
+    /// <summary>Where the bridges leave a heart-tree's deck, as angles round it (every tree is bridged to the Heartwood).</summary>
+    static List<float> BridgesFrom(Northwood.HeartTree tree) =>
+        Northwood.Hearts.Where(o => o != tree && (tree == Northwood.Hearts[0] || o == Northwood.Hearts[0])).Select(o => Mathf.Atan2((float)(o.Z - tree.Z), (float)(o.X - tree.X))).ToList();
+
+    /// <summary>The angle round a heart-tree at which its ramp sets out and, two turns later, arrives on the deck: as far from the bridges as it can be. The seed is the tree's number from one.</summary>
+    public static float RampTop(Northwood.HeartTree tree, int seed) =>
+        Enumerable.Range(0, 21).Select(i => i * Mathf.Tau / 21 + seed * 0.37f).OrderByDescending(a => Clear(a, BridgesFrom(tree))).First();
+
+    /// <summary>How far from a heart-tree's centre its deck runs, inner edge to rim.</summary>
+    public static (float In, float Out) DeckSpan(Northwood.HeartTree tree)
+    {
+        var deckIn = Girth((float)tree.Radius, DeckY / (float)tree.Height, 0) - 0.5f;
+        return (deckIn, deckIn + DeckWide);
+    }
+
+    /// <summary>The height of a heart-tree's deck, in the world.</summary>
+    public static float DeckLevel(Northwood.HeartTree tree) => City.FloorAt(new Vector3((float)tree.X, 0, (float)tree.Z)) - 0.5f + DeckY;
+
     /// <summary>
     /// A heart-tree and everything grown from it: the trunk, a ramp of living root wrapping up it from the ground, a deck
     /// grown round it, hollows bulging from its sides with their doors, and a crown of leaves over all of it.
@@ -318,31 +341,57 @@ public partial class Forest(Main main) : Node3D
             var g = Girth(radius, t, a);
             return new Vector3(Mathf.Cos(a) * g, t * high, Mathf.Sin(a) * g);
         }), bark, at);
-        // The ramp goes round as it climbs, always just out from the trunk, from the roots to the deck.
-        var climb = Northwood.DeckHeight + 0.5f;
-        var turns = Mathf.Ceil(climb / (Mathf.Tau * radius * 1.3f * 0.16f));
+        // Where the bridges leave this tree's deck: the ramp, the hollows and the railing all keep clear of them.
+        var bridges = BridgesFrom(tree);
+        // The ramp goes round the trunk twice as it climbs, hugging it, with a parapet of root along its outer edge. Near
+        // the top it swings out round the deck, comes up level with the deck just outside its railing, then turns in over
+        // the rim through an opening in the railing and lands on the deck: you walk straight up and on. It sets out, and
+        // arrives, as far from the bridges as it can.
+        const float climb = Northwood.DeckHeight, deckY = DeckY, rail = Rail, turns = 2;
+        var top = RampTop(tree, seed);
+        var (deckIn, deckOut) = DeckSpan(tree);
         Solid(this, Grid((int)(turns * 44), 3, (r, c) =>
         {
             var t = r / (turns * 44);
-            var a = t * turns * Mathf.Tau + seed;
-            var y = t * climb;
-            var inner = Girth(radius, y / high, a) - 0.3f;
+            var a = t * turns * Mathf.Tau + top;
+            var below = climb - t * climb;
+            var swing = Mathf.SmoothStep(0, 1, Mathf.Clamp((4.5f - below) / 2.2f, 0, 1)); // out past the deck's rim
+            var lift = Mathf.SmoothStep(0, 1, Mathf.Clamp((0.7f - below) / 0.3f, 0, 1)); // up level with the deck
+            var landing = Mathf.SmoothStep(0, 1, Mathf.Clamp((0.4f - below) / 0.4f, 0, 1)); // and in over the rim onto it
+            var inner = Mathf.Lerp(Mathf.Lerp(Girth(radius, t * climb / high, a) - 0.3f, deckOut + 0.4f, swing), deckIn + 1.5f, landing);
+            var y = Mathf.Lerp(t * climb + 0.5f, deckY + 0.04f, lift);
             var way = c <= 1 ? inner + c * 2.9f : inner + 3.1f;
-            return new Vector3(Mathf.Cos(a) * way, y + 0.5f + (c == 2 ? 0.55f : c == 3 ? 0.55f : 0), Mathf.Sin(a) * way);
+            return new Vector3(Mathf.Cos(a) * way, y + (c >= 2 ? rail * (1 - landing) : 0), Mathf.Sin(a) * way);
         }), bark, at);
-        // A deck grown round the trunk: the village's upper street.
-        var deckIn = Girth(radius, Northwood.DeckHeight / high, 0) - 0.5f;
-        Solid(this, Grid(2, 40, (r, c) =>
+        // A deck grown round the trunk: the village's upper street, six metres wide, with a railing of root round its rim
+        // except where the ramp comes in and where the bridges leave.
+        Solid(this, Grid(3, 40, (r, c) =>
         {
             var a = c * Mathf.Tau / 40;
-            var way = deckIn + r * 2.4f + (r == 2 ? 0.8f * Mathf.Sin(a * 3) : 0);
-            return new Vector3(Mathf.Cos(a) * way, Northwood.DeckHeight + 0.5f - (r == 2 ? 0.25f : 0), Mathf.Sin(a) * way);
+            var way = deckIn + r * (DeckWide / 3);
+            return new Vector3(Mathf.Cos(a) * way, deckY, Mathf.Sin(a) * way);
         }), bark, at);
-        // Hollows bulging from the trunk: homes and shops, each with a round door and a warm light.
+        Fence(this, 80, a => Mathf.Abs(Mathf.AngleDifference(a, top + 0.1f)) < 0.75f || Clear(a, bridges) < 0.34f,
+            a => new Vector3(Mathf.Cos(a) * deckOut, deckY, Mathf.Sin(a) * deckOut),
+            a => new Vector3(Mathf.Cos(a) * (deckOut + 0.22f), deckY + rail, Mathf.Sin(a) * (deckOut + 0.22f)), bark, at);
+        // Hollows bulging from the trunk: homes and shops, each with a round door and a warm light. The two on the ground
+        // sit where the ramp has already climbed clear over them; the two on the deck keep clear of the ramp's arrival,
+        // of the stretch where it passes under the deck, and of the bridges.
+        var rise = climb / (turns * Mathf.Tau);
+        var under = new[] { top - 4.2f, top - 3.2f, top - 2.2f };
+        var taken = new List<float> { top };
+        taken.AddRange(bridges);
+        float Pod()
+        {
+            var a = Enumerable.Range(0, 24).Select(i => i * Mathf.Tau / 24 + 0.13f).OrderByDescending(a => Mathf.Min(Clear(a, taken), Clear(a, under) * 1.5f)).First();
+            taken.Add(a);
+            return a;
+        }
+        float[] podAngles = [top + 4.9f / rise * 1.035f, top + 4.9f / rise * 1.035f + 0.78f, Pod(), Pod()];
         for (var i = 0; i < 4; i++)
         {
-            var a = i * Mathf.Tau / 4 + seed * 0.9f;
-            var y = i % 2 == 0 ? 1.0f : Northwood.DeckHeight + 0.7f;
+            var a = podAngles[i];
+            var y = i < 2 ? 1.0f : Northwood.DeckHeight + 0.7f;
             var out_ = Girth(radius, y / high, a) + (y > 2 ? 0.2f : 0);
             var dir = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
             var pod = at + dir * out_ + Vector3.Up * (y + 1.4f);
@@ -353,7 +402,7 @@ public partial class Forest(Main main) : Node3D
             door.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.75f, BottomRadius = 0.75f, Height = 0.14f, RadialSegments = 20 }, MaterialOverride = BuildingMaterials.For(Surface.Planks), Position = new Vector3(0, 1.0f, 0), Rotation = new Vector3(Mathf.Pi / 2, 0, 0), Scale = new Vector3(1, 1, 1.45f) });
             door.AddChild(new OmniLight3D { Position = new Vector3(0, 2.3f, 0.6f), LightColor = new Color("#ffd28a"), LightEnergy = 1.3f, OmniRange = 8 });
             door.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.16f, Height = 0.32f }, MaterialOverride = glow, Position = new Vector3(0.9f, 2.1f, 0.3f) });
-            Buildings.Door(door, seed == 1 && i == 1 ? "tavern" : "hollow", seed * 7 + i); // the village's one tavern, up on the deck of the Heartwood
+            Buildings.Door(door, seed == 1 && i == 2 ? "tavern" : "hollow", seed * 7 + i); // the village's one tavern, up on the deck of the Heartwood
         }
         // Leaves, in great overlapping banks: the canopy the village lives under.
         for (var i = 0; i < 9; i++)
@@ -375,11 +424,32 @@ public partial class Forest(Main main) : Node3D
         var way = (to - from).Normalized();
         var (p, q) = (from + way * (float)a.Radius * 0.7f, to - way * (float)b.Radius * 0.7f);
         var side = way.Cross(Vector3.Up);
-        Solid(this, Grid(24, 2, (r, c) =>
+        // A walkway of root, flat underfoot, with a railing of root grown up along either side.
+        Solid(this, Grid(24, 4, (r, c) =>
         {
             var t = r / 24f;
-            return p.Lerp(q, t) + side * (c - 1) * 1.4f + Vector3.Up * (floor - 0.9f * Mathf.Sin(t * Mathf.Pi) + (c != 1 ? 0.3f : 0));
+            var (lateral, lift) = c switch { 0 => (-1.5f, 1.0f), 1 => (-1.3f, 0f), 2 => (0f, 0f), 3 => (1.3f, 0f), _ => (1.5f, 1.0f) };
+            return p.Lerp(q, t) + side * lateral + Vector3.Up * (floor - 0.9f * Mathf.Sin(t * Mathf.Pi) + lift);
         }), bark, Vector3.Zero);
+    }
+
+    /// <summary>A railing round a rim (a low wall of living root): a ring of short pieces, left out wherever <paramref name="open"/> says, from <paramref name="foot"/> up to <paramref name="head"/>.</summary>
+    static void Fence(Node3D parent, int pieces, Func<float, bool> open, Func<float, Vector3> foot, Func<float, Vector3> head, Material m, Vector3 at)
+    {
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        var any = false;
+        for (var i = 0; i < pieces; i++)
+        {
+            var (a0, a1) = (i * Mathf.Tau / pieces, (i + 1) * Mathf.Tau / pieces);
+            if (open((a0 + a1) / 2)) continue;
+            var (f0, f1, h0, h1) = (foot(a0), foot(a1), head(a0), head(a1));
+            foreach (var v in new[] { f0, f1, h1, f0, h1, h0 }) st.AddVertex(v);
+            any = true;
+        }
+        if (!any) return;
+        st.GenerateNormals();
+        Solid(parent, st.Commit(), m, at);
     }
 
     void BuildVillage()

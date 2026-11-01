@@ -14,10 +14,19 @@ public class HighwaysTests
         foreach (var r in roads)
         {
             var s = W.Find(r.To)!;
-            Assert.True(r.Length > 100, r.ToName);
-            Assert.True(Highways.Starts.Any(p => Math.Abs(p.X - r.Line[0].X) < 1 && Math.Abs(p.Z - r.Line[0].Z) < 1), $"the road to {r.ToName} sets out from a gate");
+            Assert.True(r.Length > 30, r.ToName);
+            var (x0, z0) = r.Line[0];
+            if (r.Spur) Assert.True(roads.Where(o => o != r).Any(o => o.Nearest(x0, z0).Distance < 1), $"the spur to {r.ToName} leaves another road");
+            else Assert.True(Highways.Starts.Any(p => Math.Abs(p.X - x0) < 1 && Math.Abs(p.Z - z0) < 1), $"the road to {r.ToName} sets out from a gate");
             Assert.True(s.DistanceTo(r.Line[^1].X, r.Line[^1].Z) < s.Radius + 2, $"the road to {r.ToName} ends at the town's edge");
         }
+        // Every smaller place a wagon trades with has its road too, unless it sits on one already.
+        var spurs = roads.Count(r => r.Spur);
+        var trading = W.SitesNear(0, 0, Highways.Reach).Count(TownMarkets.Trades);
+        Assert.True(spurs >= 10, $"{spurs} spurs for {trading} trading places");
+        // (The generator also names places out in the ocean ring and on the far shores past it; no road goes to those.)
+        foreach (var s in W.SitesNear(0, 0, Highways.Reach).Where(s => TownMarkets.Trades(s) && W.Lie(s.X, s.Z) >= WorldGen.WaterLevel + 1 && Northwood.Sea(s.X, s.Z) < 0.25 && s.X is > -2960 and < 1180 && s.Z < 1780))
+            Assert.True(W.Highways.Near(s.X, s.Z) < s.Radius + 45 || W.Highways.To(s.Id) is not null, $"no road reaches {s.Name} ({s.What}) at {s.X:0},{s.Z:0}");
     }
 
     [Fact]

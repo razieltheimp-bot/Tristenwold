@@ -15,6 +15,9 @@ public partial class Main
     /// <summary>How many companions can follow at once; the rest wait at the Gallows Perch.</summary>
     public const int MaxFollowing = 4;
 
+    /// <summary>How many may follow this hero: four, or as many as they like for a Ranger (the beastmaster's way) or a Shapeshifter (who runs with the pack).</summary>
+    public int FollowLimit => _player.Class.Id is "Ranger" or "Shapeshifter" ? int.MaxValue : MaxFollowing;
+
     readonly List<Bond> _bonds = [];
     readonly List<Enemy> _companions = [];
     DragonSaga _saga = new();
@@ -443,7 +446,7 @@ public partial class Main
         var up = _player.Pack.Practise(Job.Taming, 40);
         _hud.Toast((bond.Following
             ? young.IsDragon ? $"The {young.Stats.Name} looks at you a long moment, and lowers its head to your hand. It has chosen you. You call it {bond.Name}." : $"The {young.Stats.Name} sniffs your hand and decides you'll do. You call it {bond.Name}."
-            : $"The {young.Stats.Name} is yours: you call it {bond.Name}. With {MaxFollowing} already at your heels, it goes to wait at the Gallows Perch.")
+            : $"The {young.Stats.Name} is yours: you call it {bond.Name}. With {FollowLimit} already at your heels, it goes to wait at the Gallows Perch.")
             + (up is { } level ? $" Beast taming rises to {level}!" : ""), 9);
         Save();
         return true;
@@ -458,7 +461,7 @@ public partial class Main
             Name = dragon ? Dragons.NameFor(_companyRng) : _companyRng.Pick(PetNames.Where(n => _bonds.All(b => b.Name != n)).DefaultIfEmpty("Scrap").ToList()),
         };
         _bonds.Add(bond);
-        bond.Following = _bonds.Count(b => b.Following) <= MaxFollowing;
+        bond.Following = _bonds.Count(b => b.Following) <= FollowLimit;
         if (bond.Following) BringCompanion(bond, at);
         return bond;
     }
@@ -473,7 +476,7 @@ public partial class Main
         var up = _player.Pack.Practise(Job.Taming, 15);
         _hud.Toast((bond.Following
             ? $"Wren hands you the {offer.Name.ToLowerInvariant()}. It already knows its name: {bond.Name}."
-            : $"The {offer.Name.ToLowerInvariant()} is yours ({bond.Name}). With {MaxFollowing} at your heels, Wren sends it to wait at the Gallows Perch.")
+            : $"The {offer.Name.ToLowerInvariant()} is yours ({bond.Name}). With {FollowLimit} at your heels, Wren sends it to wait at the Gallows Perch.")
             + (up is { } level ? $" Beast taming rises to {level}!" : ""), 8);
         Save();
         return bond;
@@ -501,7 +504,7 @@ public partial class Main
         _player.Crowns -= RecruitFee;
         var bond = new Bond { Id = npc.Id, KindId = kind, Role = role, Name = npc.First };
         _bonds.Add(bond);
-        bond.Following = _bonds.Count(b => b.Following) <= MaxFollowing;
+        bond.Following = _bonds.Count(b => b.Following) <= FollowLimit;
         var at = person.GlobalPosition;
         person.QueueFree();
         if (bond.Following) BringCompanion(bond, at);
@@ -736,7 +739,7 @@ public partial class Main
         {
             var bond = b;
             if (bond.Following) options.Add(($"Send {bond.Name} home", () => { bond.Following = false; var body = BodyOf(bond); if (body is not null) { _companions.Remove(body); body.QueueFree(); } Save(); ShowParty(); }));
-            else if (_bonds.Count(x => x.Following) < MaxFollowing) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
+            else if (_bonds.Count(x => x.Following) < FollowLimit) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
         }
         options.Add(("Close", _hud.EndTalk));
         _hud.Talk("Your company", string.Join("\n", lines), [.. options]);

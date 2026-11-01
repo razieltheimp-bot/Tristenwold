@@ -420,7 +420,7 @@ public partial class Figure
         if (a is not null)
         {
             f._wear = a.Wear;
-            f._cut = Tristinwold.Gameplay.Avatar.IsCut(a.Style) ? (a.Style, new Color(a.HairHex)) : null;
+            f._cut = Tristinwold.Gameplay.Avatar.IsCut(a.Style) && a.Race is not ("plant" or "shroomie" or "lizard") ? (a.Style, new Color(a.HairHex)) : null; // leaves, a cap or a crest: never hair
             f._kin = a.Race is "ape" or "plant" or "shroomie" or "lizard" ? (a.Race, a.Form) : null;
         }
         if (f._source is { } src && src.GetSurfaceCount() > 0) { var vs = src.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array(); if (vs.Length > 0) f._top = vs.Max(v => v.Y); }

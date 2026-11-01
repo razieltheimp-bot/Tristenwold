@@ -310,7 +310,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
                 case SettlementKind.City or SettlementKind.Town: Town(root, s, rng, colour); break;
                 case SettlementKind.Hamlet: Hamlet(root, s, rng, colour); break;
                 case SettlementKind.Farmstead: Farm(root, s, rng, colour); break;
-                case SettlementKind.HuntingCamp: Camp(root, s, rng, 2, null); Prop(root, s, "medieval/props/weaponrack.gltf", 4, -3, 5); Prop(root, s, "medieval/props/target.gltf", -5, 4, 5); break;
+                case SettlementKind.HuntingCamp: Camp(root, s, rng, 2, null); Building(root, s, "longhall", colour, -s.Radius * 0.5, s.Radius * 0.35, 0.8f, 6); /* the hunters' hall, where they drink and skin */ Prop(root, s, "medieval/props/weaponrack.gltf", 4, -3, 5); Prop(root, s, "medieval/props/target.gltf", -5, 4, 5); break;
                 case SettlementKind.Inn: Inn(root, s, rng, colour); break;
                 case SettlementKind.Shrine: Shrine(root, s, rng); break;
                 case SettlementKind.Mine: Mine(root, s, rng, colour); break;
@@ -557,6 +557,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
     {
         Ring(parent, s, rng, colour, 4 + rng.Next(4), 0.6, 0.9, ["cottage", "cottage", "house", "barn"]);
         Building(parent, s, "well", colour, 0, 0, 0, 5);
+        Building(parent, s, "tavern", colour, Math.Cos(0.5) * s.Radius * 0.42, Math.Sin(0.5) * s.Radius * 0.42, -0.5f + Mathf.Pi / 2, 6); // every hamlet has its alehouse
         Clutter(parent, s, rng, 5, 0.3);
         Lanterns(parent, s, rng, 3);
     }
@@ -598,6 +599,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
     {
         Building(parent, s, "mine", colour, 0, -s.Radius * 0.1, 0, 9);
         Building(parent, s, "cottage", colour, s.Radius * 0.6, s.Radius * 0.4, -0.6f, 6.5f);
+        Building(parent, s, "tavern", colour, -s.Radius * 0.58, s.Radius * 0.28, 0.9f, 6); // the miners' tap
         Prop(parent, s, "medieval/props/resource_stone.gltf", 4, -6, 6);
         Prop(parent, s, "medieval/props/wheelbarrow.gltf", 2, 5, 5, 0.8f);
         Clutter(parent, s, rng, 3, 0.4);

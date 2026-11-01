@@ -45,6 +45,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--isle-only")) { await TheIsleTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--growth-only")) { await TheGrowth(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--lair-only")) { await DeviantLairTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--village-only")) { await TheVillageDeck(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -1335,7 +1336,7 @@ public partial class SelfTest(Main main) : Node
         var found = main.RoamersNode.Near.FirstOrDefault();
         var roamerHealth = found.Body?.Stats.MaxHealth ?? 0;
         Check(found.Body is { Named: true } && found.Body.FightingCompany, found.Body is null
-            ? $"found, {roamer.Title} comes for you (nothing out: still in the log {main.RaidLog.Roamers.Contains(roamer)} of {main.RaidLog.Roamers.Count}, hunting {roamer.Hunting}, ground at it {main.TerrainNode.HasGround(new Vector3((float)x, 0, (float)z))}, hero in town {main.RoamersNode.InTown(p.GlobalPosition)}, downed {p.Downed}, hero {p.GlobalPosition.X:0},{p.GlobalPosition.Z:0}, it {x:0},{z:0} in {main.World.AreaAt(x, z)}, height {main.World.Height(x, z):0.0})"
+            ? $"found, {roamer.Title} comes for you (nothing out: still in the log {main.RaidLog.Roamers.Contains(roamer)} of {main.RaidLog.Roamers.Count}, hunting {roamer.Hunting}, ground at it {main.TerrainNode.HasGround(new Vector3((float)x, 0, (float)z))}, hero in town {main.RoamersNode.InTown(p.GlobalPosition)}, downed {p.Downed}, hero {p.GlobalPosition.X:0},{p.GlobalPosition.Z:0}, it {x:0},{z:0} in {main.World.AreaAt(x, z)}, height {main.World.Height(x, z):0.0}; lately: {main.HudNode.Recent(5)})"
             : $"found, {found.Roamer?.Title} comes for you (fighting {found.Body.FightingCompany}, named {found.Body.Named}, {found.Body.GlobalPosition.DistanceTo(p.GlobalPosition):0} m off)");
 
         // A new nameless boss has moved into the lair, no stronger than its kind.
@@ -2301,6 +2302,49 @@ public partial class SelfTest(Main main) : Node
         Check(main.Standing.Bounty > bounty && main.Bonds.Count == bonds + 1 && trade.Banned(main.Economy.Day) && !main.MayStealForTest,
             $"and a price on your head ({main.Standing.Bounty} crowns), the horse your own, and no work at the yard for {TradeBook.BanDays} days");
         main.ClimbDownForTest();
+    }
+
+    /// <summary>Hollowheart's heart-trees: walk up each ramp and you come out on the deck, which is wide and solid all the way round.</summary>
+    async Task TheVillageDeck()
+    {
+        var p = main.PlayerNode;
+        for (var i = 0; i < Northwood.Hearts.Count; i++)
+        {
+            var tree = Northwood.Hearts[i];
+            var centre = new Vector3((float)tree.X, 0, (float)tree.Z);
+            var top = Forest.RampTop(tree, i + 1);
+            var (deckIn, deckOut) = Forest.DeckSpan(tree);
+            var level = Forest.DeckLevel(tree);
+            // Onto the ramp a little below the top, where it runs outside the deck's rim.
+            var a = top - 1.0f;
+            var rampY = level - 1.0f * (Northwood.DeckHeight / (2 * Mathf.Tau));
+            var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * (deckOut + 0.4f + 1.4f);
+            await Teleport(at);
+            p.GlobalPosition = at with { Y = rampY + 0.7f };
+            p.Velocity = Vector3.Zero;
+            await Frames(20);
+            Check(Mathf.Abs(p.GlobalPosition.Y - rampY) < 0.9f, $"tree {i + 1}: standing on the ramp near its top ({p.GlobalPosition.Y - rampY:0.0} m off its surface, on the floor {p.IsOnFloor()})");
+            // Walk up and round, keeping to the ramp, until past the top.
+            float Round() => Mathf.Atan2(p.GlobalPosition.Z - centre.Z, p.GlobalPosition.X - centre.X);
+            Input.ActionPress("move_forward");
+            for (var f = 0; f < 360 && Mathf.AngleDifference(Round(), top) > -0.02f; f++)
+            {
+                p.Rotation = new Vector3(0, Mathf.Pi - Round(), 0);
+                await Frames(1);
+            }
+            Input.ActionRelease("move_forward");
+            await Frames(10);
+            var r = new Vector2(p.GlobalPosition.X - centre.X, p.GlobalPosition.Z - centre.Z).Length();
+            Check(Mathf.AngleDifference(Round(), top) <= 0 && Mathf.Abs(p.GlobalPosition.Y - level) < 0.6f && r < deckOut + 0.5f && r > deckIn,
+                $"tree {i + 1}: up the ramp and straight onto the deck, nothing in the way ({Mathf.AngleDifference(Round(), top):0.00} rad past the top, {p.GlobalPosition.Y - level:0.0} m off the deck, {r:0.0} m out of {deckIn:0.0} to {deckOut:0.0})");
+            // The deck is solid and wide, right round.
+            var b = top + 2.5f;
+            var on = centre + new Vector3(Mathf.Cos(b), 0, Mathf.Sin(b)) * (deckIn + 5.2f);
+            p.GlobalPosition = on with { Y = level + 0.8f };
+            p.Velocity = Vector3.Zero;
+            await Frames(25);
+            Check(p.IsOnFloor() && Mathf.Abs(p.GlobalPosition.Y - level) < 0.6f, $"tree {i + 1}: the deck holds you near its railing, {deckIn + 5.2f - deckIn:0.0} m out ({p.GlobalPosition.Y - level:0.0} m off)");
+        }
     }
 
     /// <summary>A voyage of exploration: take the wheel, turn her, and the sea comes past with a compass to steer by.</summary>

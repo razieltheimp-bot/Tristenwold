@@ -33,8 +33,24 @@ public static class Herbs
         _ => [("thistle", 3), ("silverthorn", 1.5), ("frostbloom", 0.4), ("bluebell", 0.6)],
     };
 
+    /// <summary>
+    /// What grows under Hollowheart's trees, always, though nothing grows in other towns: emberleaf and lady's mantle on
+    /// the forest floor, bloodcap and penny buns in the damp between the roots, wild garlic and raspberries by the paths.
+    /// The village picks them too, and they grow back like anything else.
+    /// </summary>
+    public static readonly IReadOnlyList<Plant> Village = [.. new (string Herb, double X, double Z)[]
+    {
+        ("emberleaf", -42, -36), ("emberleaf", -39, -32), ("ladys_mantle", -45, -30),
+        ("bloodcap", 58, 12), ("bloodcap", 61, 16), ("penny_bun", 55, 16),
+        ("penny_bun", 2, -46), ("wild_garlic", 6, -43), ("wild_garlic", -1, -41),
+        ("ladys_mantle", 8, 62), ("emberleaf", 12, 58), ("raspberries", 4, 59),
+        ("bloodcap", -58, 18), ("penny_bun", -55, 24), ("flax", -60, 24),
+    }.Select((p, i) => new Plant($"herb_hollowheart_{i}", p.Herb, Northwood.VillageX + p.X, Northwood.VillageZ + p.Z))];
+
     public static IEnumerable<Plant> Near(WorldGen world, double x, double z, double radius)
     {
+        foreach (var p in Village)
+            if (p.DistanceTo(x, z) <= radius) yield return p;
         var (c0, c1) = ((long)Math.Floor((x - radius) / Cell), (long)Math.Floor((x + radius) / Cell));
         var (r0, r1) = ((long)Math.Floor((z - radius) / Cell), (long)Math.Floor((z + radius) / Cell));
         for (var cx = c0; cx <= c1; cx++)

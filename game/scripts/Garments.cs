@@ -795,11 +795,13 @@ public static class Garments
                 Blob(head, face + new Vector3(0, -0.02f, 0.015f), 0.058f, bare, new Vector3(1.05f, 0.82f, 0.9f)); // the muzzle
                 Blob(head, face + new Vector3(0, 0.075f, -0.01f), 0.07f, fur, new Vector3(1.3f, 0.32f, 0.5f)); // the brow
                 foreach (var side in new[] { -1f, 1f }) Blob(head, new Vector3(side * 0.112f, m.Top - 0.11f, -0.015f), 0.04f, bare, new Vector3(0.45f, 1, 0.9f)); // round ears
-                var at = new Vector3(0, m.Hips.Y - 0.02f, -m.HipHalf * 0.85f);
+                // The tail grows out of the small of the back: a root of fur sunk into the body, then the tail, curling up at the end.
+                var at = new Vector3(0, m.Hips.Y - 0.01f, -m.HipHalf * 0.6f);
                 var way = new Vector3(0, -0.55f, -1).Normalized();
-                for (var i = 0; i < 7; i++) // the tail, curling up at the end
+                Blob(hips, at, 0.045f, fur, new Vector3(1.3f, 0.9f, 1.1f));
+                for (var i = 0; i < 7; i++)
                 {
-                    hips.AddChild(Limb(at, way, 0.15f, 0.028f - i * 0.002f, 0.026f - i * 0.002f, fur));
+                    hips.AddChild(Limb(at, way, 0.15f, 0.03f - i * 0.0022f, 0.028f - i * 0.0022f, fur));
                     at += way * 0.14f;
                     way = (way + new Vector3(0, 0.3f, 0)).Normalized();
                 }
@@ -807,17 +809,27 @@ public static class Garments
             }
             case "lizard":
             {
-                var (scale, belly) = (Armoury.Leather("#4f7a3e"), Armoury.Leather("#c8bc7a"));
-                Blob(head, face + new Vector3(0, -0.02f, 0.11f), 0.06f, scale, new Vector3(0.8f, 0.52f, 2.3f)); // the long snout
-                Blob(head, face + new Vector3(0, -0.05f, 0.1f), 0.05f, belly, new Vector3(0.8f, 0.3f, 2.4f)); // and its pale jaw
+                var (scale, belly, dark) = (Armoury.Leather("#4f7a3e"), Armoury.Leather("#c8bc7a"), Armoury.Leather("#1e2a18"));
+                // The snout is the mouth: it grows from the whole lower face, so there's no human mouth under it, the upper jaw over
+                // the pale lower one with the dark line of the lips between, and the nostrils at its tip.
+                Blob(head, face + new Vector3(0, -0.015f, 0.055f), 0.065f, scale, new Vector3(0.9f, 0.6f, 2.6f)); // the upper jaw
+                Blob(head, face + new Vector3(0, -0.055f, 0.05f), 0.055f, belly, new Vector3(0.84f, 0.34f, 2.6f)); // the lower jaw
+                head.AddChild(Part(new BoxMesh { Size = new Vector3(0.1f, 0.006f, 0.26f) }, dark, face + new Vector3(0, -0.042f, 0.08f))); // the mouth, a line from the hinge to the tip
+                foreach (var side in new[] { -1f, 1f }) Blob(head, face + new Vector3(side * 0.018f, 0.005f, 0.21f), 0.008f, dark, Vector3.One); // nostrils
                 foreach (var side in new[] { -1f, 1f }) Blob(head, new Vector3(side * 0.07f, m.Top - 0.085f, 0.075f), 0.024f, belly, Vector3.One); // the eye-ridges
+                // Scales rather than skin: a scaled hood over the whole scalp and down the neck, with the crest along its ridge.
+                Blob(head, new Vector3(0, m.Top - 0.09f, -0.02f), 0.125f, scale, new Vector3(1.02f, 0.9f, 1.04f));
+                Blob(head, new Vector3(0, m.Top - 0.2f, -0.05f), 0.07f, scale, new Vector3(1.2f, 1, 0.9f));
                 for (var i = 0; i < 6; i++) // the crest, down the back of the skull
                     head.AddChild(Limb(new Vector3(0, m.Top - 0.02f - i * 0.03f, -0.03f - i * 0.022f), new Vector3(0, 0.7f, -1), 0.06f, 0.016f, 0.002f, scale));
-                var at = new Vector3(0, m.Hips.Y + 0.02f, -m.HipHalf * 0.8f);
+                // Bony plates down the spine to the tail, and the tail sunk into the hips so it grows out of the body rather than off it.
+                for (var i = 0; i < 5; i++) hips.AddChild(Limb(new Vector3(0, m.Hips.Y + 0.3f - i * 0.065f, -m.HipHalf * 0.55f - i * 0.004f), new Vector3(0, 0.5f, -1), 0.05f, 0.02f, 0.003f, scale));
+                var at = new Vector3(0, m.Hips.Y + 0.02f, -m.HipHalf * 0.55f);
                 var way = new Vector3(0, -0.5f, -1).Normalized();
+                Blob(hips, at, 0.095f, scale, new Vector3(1.25f, 0.9f, 1.1f));
                 for (var i = 0; i < 9; i++) // the heavy tail, tapering to the ground
                 {
-                    hips.AddChild(Limb(at, way, 0.17f, 0.085f - i * 0.0085f, 0.077f - i * 0.0085f, scale));
+                    hips.AddChild(Limb(at, way, 0.17f, 0.09f - i * 0.009f, 0.082f - i * 0.009f, scale));
                     at += way * 0.15f;
                     way = (way + new Vector3(0, 0.05f, 0)).Normalized();
                 }
@@ -827,6 +839,7 @@ public static class Garments
             {
                 var spring = form != "Fall";
                 var (wood, leaf) = (Armoury.Leather(spring ? "#4a3c22" : "#3e3024"), Armoury.Leather("#4f8a30"));
+                Blob(head, new Vector3(0, m.Top - 0.08f, -0.016f), 0.123f, wood, new Vector3(1.02f, 0.88f, 1.06f)); // bark over the whole scalp: no hair, ever; the leaves grow from it
                 for (var i = 0; i < 12; i++) // the roots, spreading from the hips to the ground
                 {
                     var a = i * Mathf.Tau / 12 + 0.2f;
@@ -846,8 +859,10 @@ public static class Garments
             }
             case "shroomie":
             {
+                // No hair at all: the whole scalp is the stalk's pale flesh under the cap, dusted white with spore.
+                var (cap, gills, spot, flesh) = (Armoury.Leather("#a85a3a"), Armoury.Leather("#e4d4b8"), Armoury.Leather("#f0e4cc"), Armoury.Leather("#e8dcc4"));
+                Blob(head, new Vector3(0, m.Top - 0.08f, -0.016f), 0.123f, flesh, new Vector3(1.02f, 0.88f, 1.06f));
                 if (covered) break;
-                var (cap, gills, spot) = (Armoury.Leather("#a85a3a"), Armoury.Leather("#e4d4b8"), Armoury.Leather("#f0e4cc"));
                 var top = new Vector3(0, m.Top + 0.005f, -0.01f);
                 head.AddChild(Part(new SphereMesh { Radius = 0.27f, Height = 0.54f, IsHemisphere = true, RadialSegments = 24, Rings = 10 }, cap, top, scale: new Vector3(1, 0.62f, 1)));
                 head.AddChild(Part(new CylinderMesh { TopRadius = 0.265f, BottomRadius = 0.2f, Height = 0.03f, RadialSegments = 24 }, gills, top + Vector3.Down * 0.012f));
@@ -855,6 +870,12 @@ public static class Garments
                 {
                     var (a, out_) = (i * 2.4f, i == 0 ? 0 : 0.11f + i % 3 * 0.05f);
                     Blob(head, top + new Vector3(Mathf.Cos(a) * out_, 0.16f - out_ * 0.5f - out_ * out_, Mathf.Sin(a) * out_), 0.03f, spot, new Vector3(1, 0.5f, 1));
+                }
+                for (var i = 0; i < 14; i++) // spore, white, drifting off the cap's rim and settled on the shoulders
+                {
+                    var a = i * 1.7f + 0.4f;
+                    var r = 0.2f + i % 3 * 0.035f;
+                    Blob(head, top + new Vector3(Mathf.Cos(a) * r, -0.06f - i % 4 * 0.03f, Mathf.Sin(a) * r), 0.009f + i % 3 * 0.003f, spot, Vector3.One);
                 }
                 break;
             }

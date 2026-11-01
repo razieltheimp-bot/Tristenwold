@@ -20,6 +20,8 @@ public sealed class Highways
     {
         public required string To { get; init; }
         public required string ToName { get; init; }
+        /// <summary>A spur off another road to a smaller place, rather than a road from a gate.</summary>
+        public bool Spur { get; init; }
         public required (double X, double Z)[] Line { get; init; }
         public required double[] Along { get; init; }
         public required double[] Heights { get; init; }
@@ -106,7 +108,11 @@ public sealed class Highways
 
     // ---- laying them ----------------------------------------------------------------------------------------------
 
-    /// <summary>Lays the roads of a world: to every city and town within reach, nearest first, each from whichever start the land makes nearest.</summary>
+    /// <summary>
+    /// Lays the roads of a world: first to every city and town within reach, nearest first, each from whichever start the
+    /// land makes nearest; then a spur off the nearest road to every smaller place that trades (a hamlet, a farm, an inn,
+    /// a mine, a camp, a shrine), so that whenever the yard opens a route somewhere, its road is already there, and stays.
+    /// </summary>
     public static Highways Lay(WorldGen world)
     {
         var roads = new List<Road>();
@@ -115,21 +121,32 @@ public sealed class Highways
         {
             if (!seen.Add(s.Id)) continue;
             if (Starts.Any(p => s.DistanceTo(p.X, p.Z) < s.Radius + 60)) continue; // a road already comes to its gate (Druitt, at the end of the west road)
-            if (Route(world, roads, s) is { } line) roads.Add(Build(world, s, line));
+            if (Route(world, roads, s, Starts, Margin) is { } line) roads.Add(Build(world, s, line));
+        }
+        foreach (var s in world.SitesNear(0, 0, Reach).Where(TownMarkets.Trades).OrderBy(s => s.DistanceTo(0, 0)).ThenBy(s => s.Id, StringComparer.Ordinal))
+        {
+            if (!seen.Add(s.Id) || roads.Count == 0) continue;
+            var (road, d, along, height) = roads.Select(r => { var (dd, aa, hh) = r.Nearest(s.X, s.Z); return (r, dd, aa, hh); }).MinBy(t => t.dd);
+            if (d < s.Radius + 40) continue; // it's on a road already
+            var from = road.At(along);
+            if (Route(world, roads, s, [from], SpurMargin) is { } line) roads.Add(Build(world, s, line, height, spur: true));
         }
         return new Highways(roads);
     }
 
+    /// <summary>The grid's margin round a spur: it needn't wander far from the straight way.</summary>
+    const double SpurMargin = 250;
+
     /// <summary>
-    /// The road-builder's way from the nearest start to a place: over a grid of the country, the cheapest path by distance
-    /// and climb, never through water or the Northwood, and glad of a road already laid. Null if water cuts the place off.
+    /// The road-builder's way from the nearest of some starts to a place: over a grid of the country, the cheapest path by
+    /// distance and climb, never through water or the Northwood, and glad of a road already laid. Null if water cuts the place off.
     /// </summary>
-    static (double X, double Z)[]? Route(WorldGen world, IReadOnlyList<Road> laid, Settlement to)
+    static (double X, double Z)[]? Route(WorldGen world, IReadOnlyList<Road> laid, Settlement to, IReadOnlyList<(double X, double Z)> starts, double margin)
     {
-        var xs = Starts.Select(p => p.X).Append(to.X).ToList();
-        var zs = Starts.Select(p => p.Z).Append(to.Z).ToList();
-        var (x0, z0) = (xs.Min() - Margin, zs.Min() - Margin);
-        var (nx, nz) = ((int)Math.Ceiling((xs.Max() + Margin - x0) / Cell) + 1, (int)Math.Ceiling((zs.Max() + Margin - z0) / Cell) + 1);
+        var xs = starts.Select(p => p.X).Append(to.X).ToList();
+        var zs = starts.Select(p => p.Z).Append(to.Z).ToList();
+        var (x0, z0) = (xs.Min() - margin, zs.Min() - margin);
+        var (nx, nz) = ((int)Math.Ceiling((xs.Max() + margin - x0) / Cell) + 1, (int)Math.Ceiling((zs.Max() + margin - z0) / Cell) + 1);
         double X(int i) => x0 + (i + 0.5) * Cell;
         double Z(int j) => z0 + (j + 0.5) * Cell;
         int Node(double x, double z) => Math.Clamp((int)((z - z0) / Cell), 0, nz - 1) * nx + Math.Clamp((int)((x - x0) / Cell), 0, nx - 1);
@@ -154,7 +171,7 @@ public sealed class Highways
         Array.Fill(dist, double.MaxValue);
         Array.Fill(prev, -1);
         var queue = new PriorityQueue<int, double>();
-        foreach (var p in Starts)
+        foreach (var p in starts)
         {
             var k = Node(p.X, p.Z);
             blocked[k] = false;
@@ -188,14 +205,14 @@ public sealed class Highways
         for (var k = end; k >= 0; k = prev[k]) cells.Add(k);
         cells.Reverse();
         var first = cells[0];
-        var start = Starts.MinBy(p => Math.Abs(X(first % nx) - p.X) + Math.Abs(Z(first / nx) - p.Z));
+        var start = starts.MinBy(p => Math.Abs(X(first % nx) - p.X) + Math.Abs(Z(first / nx) - p.Z));
         var line = new List<(double X, double Z)> { start };
         line.AddRange(cells.Skip(1).Select(k => (X(k % nx), Z(k / nx))));
         return [.. line];
     }
 
-    /// <summary>A found way made a road: ended at the town's edge, its corners eased, sampled every few metres, and its surface worked out.</summary>
-    static Road Build(WorldGen world, Settlement to, (double X, double Z)[] way)
+    /// <summary>A found way made a road: ended at the town's edge, its corners eased, sampled every few metres, and its surface worked out (a spur's start held to the road it leaves).</summary>
+    static Road Build(WorldGen world, Settlement to, (double X, double Z)[] way, double? startHeight = null, bool spur = false)
     {
         // It ends at the town's edge, not its square: the town's own ground takes over there.
         var kept = way.TakeWhile(p => to.DistanceTo(p.X, p.Z) > to.Radius).ToList();
@@ -218,11 +235,12 @@ public sealed class Highways
                 if (Math.Abs(along[j] - along[i]) <= Smooth) { sum += raw[j]; count++; }
             heights[i] = Math.Max(sum / count, WorldGen.WaterLevel + 1.5);
         }
+        if (startHeight is { } sh) heights[0] = sh;
         for (var i = 1; i < line.Length; i++) heights[i] = Math.Clamp(heights[i], heights[i - 1] - MaxGrade * (along[i] - along[i - 1]), heights[i - 1] + MaxGrade * (along[i] - along[i - 1]));
         for (var i = line.Length - 2; i >= 0; i--) heights[i] = Math.Clamp(heights[i], heights[i + 1] - MaxGrade * (along[i + 1] - along[i]), heights[i + 1] + MaxGrade * (along[i + 1] - along[i]));
         return new Road
         {
-            To = to.Id, ToName = to.Name, Line = line, Along = along, Heights = heights,
+            To = to.Id, ToName = to.Name, Spur = spur, Line = line, Along = along, Heights = heights,
             MinX = line.Min(p => p.X), MaxX = line.Max(p => p.X), MinZ = line.Min(p => p.Z), MaxZ = line.Max(p => p.Z),
         };
     }

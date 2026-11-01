@@ -79,6 +79,15 @@ public abstract partial class Fighter : CharacterBody3D
 
     protected void FallAndSlide(double delta, Vector3 horizontal)
     {
+        // The land here isn't built yet (right after a long jump across the map, or a wake at home): stand on top of where
+        // it will be until it is, rather than fall through it.
+        if (City.GroundBuilt?.Invoke(GlobalPosition) == false && City.Below?.Invoke(GlobalPosition) is null && City.Afloat?.Invoke(GlobalPosition) is null)
+        {
+            var ground = City.FloorAt(GlobalPosition);
+            if (GlobalPosition.Y < ground + 0.5f) { GlobalPosition = GlobalPosition with { Y = ground + 0.5f }; ResetPhysicsInterpolation(); }
+            Velocity = Vector3.Zero;
+            return;
+        }
         var v = Velocity;
         var swimming = Depth > SwimDepth - 0.1f;
         var want = new Vector2(horizontal.X, horizontal.Z) * (swimming ? 0.55f : 1);

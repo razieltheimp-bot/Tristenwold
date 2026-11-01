@@ -277,9 +277,20 @@ public static class Northwood
         Math.Sqrt(Sq(x - VillageX) + Sq(z - VillageZ)) < 62 || Math.Sqrt(Sq(x - CampX) + Sq(z - CampZ)) < 36 ||
         Math.Sqrt(Sq(x - LairX) + Sq(z - LairZ)) < 20 || Guardians.Any(g => Math.Sqrt(Sq(x - g.X) + Sq(z - g.Z)) < 26);
 
-    /// <summary>What lives in the wood: a band in about one cell of three, harder the further north, and none near the village.</summary>
+    /// <summary>What grazes round Hollowheart, always: deer with their fawns and a pair of foxes, tame enough to hunt, and the only wild life the village lets near.</summary>
+    public static readonly IReadOnlyList<Herd> VillageHerds =
+    [
+        new("northwood:village:deer", "deer", VillageX - 50, VillageZ + 22, 3, 26, Young: 2),
+        new("northwood:village:deer2", "deer", VillageX + 54, VillageZ + 18, 2, 24, Young: 1),
+        new("northwood:village:fox", "fox", VillageX + 4, VillageZ - 48, 2, 22, Young: 1),
+        new("northwood:village:deer3", "deer", VillageX + 6, VillageZ + 64, 2, 24, Young: 1),
+    ];
+
+    /// <summary>What lives in the wood: a band in about one cell of three, harder the further north, and round the village only what grazes.</summary>
     public static IEnumerable<Herd> Near(double x, double z, double radius)
     {
+        foreach (var h in VillageHerds)
+            if (h.DistanceTo(x, z) <= radius) yield return h;
         const double step = Cell * 2;
         for (var cx = Math.Floor((x - radius) / step); cx * step <= x + radius; cx++)
             for (var cz = Math.Floor((z - radius) / step); cz * step <= z + radius; cz++)

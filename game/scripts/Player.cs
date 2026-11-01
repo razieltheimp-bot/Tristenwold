@@ -240,27 +240,48 @@ public partial class Player : Fighter
     {
         if (_possessing) return;
         _possessing = true;
+        _suitLeft = seconds;
         var own = Appearance?.Size ?? 1;
         Restyle(Class.Look, make);
         Resize(1.8f * own * size, 0.4f * Math.Max(1, size * 0.8f));
         _pivot.Position = new Vector3(0, 1.6f * own * size, 0);
         _arm.SpringLength = 5 * Math.Max(1, own * size * 0.9f);
-        Action? out_ = null;
-        out_ = () =>
+        _stepOut = () =>
         {
             _stepOut = null;
             _possessing = false;
+            _jetting = false;
             Dress();
             Resize(1.8f * own, 0.4f);
             _pivot.Position = new Vector3(0, 1.6f * own, 0);
             _arm.SpringLength = 5 * Math.Max(1, own);
             then?.Invoke();
         };
-        _stepOut = out_;
-        GetTree().CreateTimer(seconds).Timeout += () =>
+    }
+
+    double _suitLeft;
+
+    /// <summary>How fast flying burns the construct's power, against standing in it.</summary>
+    public const double FlightBurn = 3;
+
+    /// <summary>How much longer the construct runs, in seconds (flying burns it three times as fast), and how much of that could be spent aloft and still leave enough to come down on.</summary>
+    public double SuitLeft => _possessing ? Math.Max(0, _suitLeft) : 0;
+    public double FlightSecondsLeft => _possessing ? Math.Max(0, (_suitLeft - LandingReserve) / FlightBurn) : 0;
+
+    /// <summary>Seconds of power kept back to come down on: the drop at a controlled fall, and a moment more. Flight is cut off at this, so the suit never opens in the air.</summary>
+    double LandingReserve => Math.Max(0, GlobalPosition.Y - City.FloorAt(GlobalPosition)) / 8 + 2;
+
+    /// <summary>The engine running down: three times as fast aloft; flight is cut while there's still power to land on; and when it's spent, the plates open.</summary>
+    void TickSuit(double delta)
+    {
+        if (!_possessing) return;
+        _suitLeft -= delta * (_jetting ? FlightBurn : 1);
+        if (_jetting && _suitLeft <= LandingReserve)
         {
-            if (IsInstanceValid(this) && _stepOut == out_) out_();
-        };
+            _jetting = false;
+            Said?.Invoke("The furnace gutters: down!");
+        }
+        if (_suitLeft <= 0) Unpossess();
     }
 
     /// <summary>Out of the other body now, before its time is up.</summary>
@@ -297,6 +318,7 @@ public partial class Player : Fighter
             return;
         }
         Stats.Tick(delta, InFight);
+        TickSuit(delta);
         _rage -= delta;
         if (_mightLeft > 0 && (_mightLeft -= delta) <= 0) Fit();
         if (_wardLeft > 0 && (_wardLeft -= delta) <= 0) Fit();
@@ -334,11 +356,14 @@ public partial class Player : Fighter
         {
             var speed = (sprint ? SprintSpeed : WalkSpeed) * (float)Stats.SpeedMult * (Burdened ? 0.7f : 1);
             if (sprint && input != Vector2.Zero && Class.Id != "Thief") Stats.Spend(AttackKind.Weapon, 15 * delta);
-            if (Input.IsActionJustPressed("jump") && !IsOnFloor() && !Swimming && CanJet && !_jetting)
+            if (Input.IsActionJustPressed("jump") && !IsOnFloor() && !Swimming && CanJet && !_jetting && _suitLeft > LandingReserve + 2)
             {
+                // Ignition: the furnace roars, the construct kicks off the air, and from here every second aloft burns three of the suit's.
                 _jetting = true;
-                Sound.At("move/jump", GlobalPosition, 0, 0.6f);
-                Effects.Burst(GetParent(), GlobalPosition, DamageKind.Fire, 1.4f);
+                Velocity = Velocity with { Y = Math.Max(Velocity.Y, 11) };
+                Sound.At("move/jump", GlobalPosition, 4, 0.5f);
+                for (var i = 0; i < 3; i++) Effects.Burst(GetParent(), GlobalPosition + new Vector3((i - 1) * 0.7f, 0.3f, 0), DamageKind.Fire, 2.2f);
+                Said?.Invoke($"Ignition! {FlightSecondsLeft:0}s of flight in her.");
             }
             else if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming))
             {
@@ -1029,7 +1054,9 @@ public partial class Player : Fighter
     public bool Jetting => _jetting;
     public void JetForTest() => _jetting = CanJet;
 
-    /// <summary>The construct in the air: where you're heading, as fast as it'll go, with jump to climb and descend to sink.</summary>
+    double _thrust;
+
+    /// <summary>The construct in the air: where you're heading, as fast as it'll go, with jump to climb and descend to sink, and fire under it the whole while.</summary>
     void Jet(Vector3 dir, float speed, double delta)
     {
         var climb = Input.IsActionPressed("jump") ? 1 : Input.IsActionPressed("descend") ? -1 : 0;
@@ -1037,6 +1064,11 @@ public partial class Player : Fighter
         if (GlobalPosition.Y > top) climb = Math.Min(climb, 0);
         Velocity = dir * speed * 1.7f + Vector3.Up * climb * 9;
         MoveAndSlide();
+        if ((_thrust -= delta) <= 0)
+        {
+            _thrust = 0.2;
+            Effects.Burst(GetParent(), GlobalPosition + Vector3.Up * 0.2f, DamageKind.Fire, 1.1f);
+        }
         if (!CanJet || IsOnFloor() && climb <= 0) _jetting = false;
     }
 

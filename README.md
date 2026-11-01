@@ -304,7 +304,10 @@ the way back to the usual), and their preserving salts get a tenth more for ever
 for its maker (and the tougher for its size); the aeronaut harpoons foes to them and pins them, *merges* with the
 golem (climbs inside and drives it: for a while the machine's body is yours, you walk and swing and cast as the
 golem at its full size, with Protect, Shell and its weight behind every blow, and when the engine winds down you
-step out and it stands beside you again), and at the shipyard fits ships with **modules** that sail with
+step out and it stands beside you again; from level 12 it flies: jump again in the air and the furnace *ignites*
+with a kick and a roar, and every second aloft burns three of the suit's, so the power left in the suit is the
+flight you have in her; it cuts off while there's still power to come down on, and the suit never opens in the
+air; the status line shows the suit's seconds and the flight in them), and at the shipyard fits ships with **modules** that sail with
 them on any ship: an automated bilge pump (boarders hole her half as fast) and light sails (a quarter off every leg);
 their limit, *Overdrive*, puts a ship under them to four times her pace. The **Saboteur** stuns with a wrench, hobbles
 with smoke caltrops and bites with spring traps; breaks spare gear down into parts Nell Corran pays the black market's
@@ -750,7 +753,9 @@ to every city and town within a wagon's reach: Greywater round the cove, Galehol
 Mirewatch over the mountains behind the wood. Each was laid the way a road-builder would lay it, over the low ground,
 round the water, through a pass where there's no way round, then **cut through the forest and the hills**: the
 trees are cleared off it, the ground is trodden to dirt, a hill is cut and a dip is banked so no stretch is steeper
-than a cart can take. They're on the map (M) for everyone, found or not, and the yard's carters keep to them.
+than a cart can take. They're on the map (M) for everyone, found or not, and the yard's carters keep to them. From
+those roads a spur runs to every hamlet, farm, inn, mine, camp and shrine a wagon trades with, laid once with the world
+and permanent: whenever the yard opens a new route, its road is already there, and the forest never closes over it.
 
 **On the box, the reins are yours.** Driving a caravan for Garrick (or your own wagon, or a run for the yard: climb up
 with E), W pushes the horse on, S pulls her up, and **A and D steer her** wherever you like, off the road, round
@@ -933,8 +938,20 @@ Everything is saved with your company. `--selftest --pursuits-only` walks throug
   Wren, feeding your beasts and their levelling up all teach it. Each level past the first makes a wild
   youngling 3% likelier to take to you, your beasts learn 5% faster, and Wren charges 3% less. It shows in
   your pack (I).
-- Up to four follow you at once; the rest wait at the Gallows Perch. A companion knocked down gets up when the
+- Up to four follow you at once; the rest wait at the Gallows Perch. A Ranger and a Shapeshifter have no such limit:
+  every beast they own follows. A companion knocked down gets up when the
   fight is over, and resting heals them all.
+
+### Hollowheart's heart-trees
+
+Each heart-tree's ramp of living root goes twice round the trunk, with a parapet along its outer edge, swings out
+round the deck near the top, comes up level with it and turns in through an opening in the railing onto the deck: you
+walk straight up and on, never through anyone's hollow. The decks are six metres wide with a railing of root round the
+rim, open only where the ramp comes in and where the bridges leave, and the bridges have railings of their own. The
+hollows sit where the ramp has climbed clear of them. Under the trees deer graze with their fawns and foxes slip between
+the roots (hunt them; nobody minds), and emberleaf, lady's mantle, bloodcap, penny buns, wild garlic and raspberries
+grow between the roots for anyone to pick. Out in the world, every hamlet has its alehouse, every mine its tap and every
+hunting camp its longhall, with a bar, cards and dice inside.
 
 ### The Dragon Knight
 

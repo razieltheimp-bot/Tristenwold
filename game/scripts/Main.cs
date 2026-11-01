@@ -370,6 +370,7 @@ public partial class Main : Node3D
         DefineInputs(mouseButtons: !TouchMode);
         City.Build(this);
         _terrain = new Terrain(_world);
+        City.GroundBuilt = p => _terrain.HasGround(p); // nothing falls through land that isn't built yet
         Graphics.Apply(choice.Quality, GetViewport(), City.Sky, City.Sun, _terrain);
         AddChild(_skies = new Skies(this));
         AddChild(_terrain);
@@ -579,6 +580,7 @@ public partial class Main : Node3D
     {
         _phonePad = on;
         if (_hud is not null) _hud.PhonePad = on;
+        GetWindow().ContentScaleFactor = on ? 1.3f : 1f; // the words read bigger on a phone's small picture
     }
 
     bool _phonePad;
@@ -598,6 +600,8 @@ public partial class Main : Node3D
         {
             ["labels"] = moves.Where(a => _hud.Touch.LabelFor?.Invoke(a) is not null).ToDictionary(a => a, a => _hud.Touch.LabelFor!(a)!),
             ["lit"] = moves.Where(a => _hud.Touch.Lit?.Invoke(a) == true).ToDictionary(a => a, _ => true),
+            // The quick keys, 1 to 0: what's on each, and which are empty.
+            ["quick"] = Enumerable.Range(0, QuickBar.Size).Select(s => new { k = QuickBar.Key(s), n = _player.Hero.Bar.Slots[s] is null ? "" : BarName(s), e = _player.Hero.Bar.Slots[s] is null }).ToList(),
         };
     }
 
@@ -824,7 +828,7 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("ride")) ToggleRide();
         if (Input.IsActionJustPressed("rest") && !_tracker.InFight) Rest();
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills   I: pack   H: heal   1-0: quick keys   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}");
+        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills   I: pack   H: heal   1-0: quick keys   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}{(_player.Possessing ? $"   Suit: {_player.SuitLeft:0}s ({_player.FlightSecondsLeft:0}s of flight)" : "")}");
         var saga = _saga.Objective(Dragon, _player.Hero.Level) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
         if (StoryLine(pos) is { } story) saga = [story, .. saga];
         // The nearest lair that suits the hero, and the nearest deviant out roaming.

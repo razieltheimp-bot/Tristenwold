@@ -241,6 +241,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
     [
         "attack", "spell", "limit", "jump", "interact", "cycle_element", "sprint", "ride", "descend",
         "map", "journal", "pack", "party", "skills", "drink", "rest", "menu", "game_menu",
+        "quick_1", "quick_2", "quick_3", "quick_4", "quick_5", "quick_6", "quick_7", "quick_8", "quick_9", "quick_0",
     ];
 
     /// <summary>Radians of turn for each point the thumb drags across the phone's picture.</summary>

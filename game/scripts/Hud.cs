@@ -338,6 +338,8 @@ public partial class Hud : CanvasLayer
 
     /// <summary>Whether the chronicle has heard something lately (for the self-test).</summary>
     public bool Heard(string part) => _chronicle.Any(c => c.Contains(part));
+    /// <summary>The last few lines of the chronicle, for the self-test's failure messages.</summary>
+    public string Recent(int lines) => string.Join(" | ", _chronicle.TakeLast(lines));
 
     public void Log(string text)
     {

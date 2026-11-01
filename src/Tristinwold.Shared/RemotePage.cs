@@ -45,23 +45,33 @@ public static class RemotePage
             box-sizing: border-box; flex-direction: column; gap: 8px; }
           body.upright #pad { display: flex; }
           body.upright #keys { display: none; }
-          #menus { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-          #menus button { height: 34px; font-size: 13px; border-radius: 8px; }
-          #play { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 0; }
-          #right { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+          /* The top strip: one Menu button on the left that drops down the map, quests, pack and the rest, and the quick keys 1 to 0 beside it. */
+          #top { position: relative; display: grid; grid-template-columns: 68px repeat(5, 1fr); grid-template-rows: 40px 40px; gap: 6px; }
+          #top button { border-radius: 8px; font-size: 15px; }
+          #menu { grid-row: 1 / span 2; font-size: 16px; }
+          #drop { display: none; position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 5; grid-template-columns: repeat(2, 128px); gap: 6px;
+            background: #1b1813; border: 1px solid #3a3226; border-radius: 12px; padding: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .6); }
+          #drop.open { display: grid; }
+          #drop button { height: 44px; font-size: 16px; }
+          .q { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; padding: 0 1px; }
+          .q b { font-size: 15px; }
+          .q i { font-style: normal; font-size: 10px; opacity: .85; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .q.empty { opacity: .4; }
+          #play { flex: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; min-height: 0; padding-bottom: 22px; }
+          #right { display: flex; flex-direction: column; align-items: center; gap: 10px; }
           .stick { position: relative; aspect-ratio: 1; border-radius: 50%; flex: none;
             background: radial-gradient(circle, rgba(232,220,196,.10), rgba(232,220,196,.04)); border: 2px solid rgba(232,220,196,.25); }
-          #stick { width: min(40vw, 160px); }
+          #stick { width: min(34vw, 136px); }
           #look { width: min(26vw, 104px); }
           .knob { position: absolute; left: 50%; top: 50%; width: 38%; height: 38%; margin: -19% 0 0 -19%; border-radius: 50%;
             background: rgba(255, 210, 122, .55); border: 2px solid #ffd27a; pointer-events: none; }
           #look .knob { background: rgba(154, 200, 255, .5); border-color: #9ac8ff; }
-          .stick span { position: absolute; left: 0; right: 0; bottom: -18px; text-align: center; font-size: 11px; opacity: .6; }
+          .stick span { position: absolute; left: 0; right: 0; bottom: -18px; text-align: center; font-size: 12px; opacity: .6; }
           #moves { display: grid; grid-template-columns: repeat(3, min(15vw, 62px)); grid-auto-rows: min(15vw, 62px); gap: 8px; }
           #pad button { background: rgba(58, 50, 38, .85); color: #e8dcc4; border: 1px solid rgba(232, 220, 196, .3);
-            font: 600 12px -apple-system, system-ui, sans-serif; padding: 0 2px; touch-action: none; overflow: hidden; }
-          #moves button { border-radius: 50%; line-height: 1.1; }
-          #moves .big { background: rgba(140, 50, 36, .9); border-color: #ff9a7a; font-size: 14px; }
+            font: 600 14px -apple-system, system-ui, sans-serif; padding: 0 2px; touch-action: none; overflow: hidden; }
+          #moves button { border-radius: 50%; line-height: 1.1; font-size: 13px; }
+          #moves .big { background: rgba(140, 50, 36, .9); border-color: #ff9a7a; font-size: 15px; }
           #pad button.on { background: #ffd27a; color: #1b1813; }
           #pad button.lit { border: 2px solid #ffd27a; box-shadow: 0 0 10px #ffd27a; }
         </style>
@@ -74,21 +84,26 @@ public static class RemotePage
         <div id="probe"></div>
         <input id="type" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">
         <div id="pad">
-          <div id="menus">
-            <button data-a="map">Map</button><button data-a="journal">Quests</button><button data-a="pack">Pack</button>
-            <button data-a="party">Party</button><button data-a="skills">Skills</button>
-            <button data-a="drink">Heal</button><button data-a="rest">Rest</button><button data-a="menu">World</button>
-            <button data-a="game_menu">Menu</button><button id="keys2">⌨︎ Type</button>
+          <div id="top">
+            <button id="menu">Menu ▾</button>
+            <div id="drop">
+              <button data-a="map">Map</button><button data-a="journal">Quests</button><button data-a="pack">Pack</button>
+              <button data-a="party">Party</button><button data-a="skills">Skills</button><button data-a="drink">Heal</button>
+              <button data-a="rest">Rest</button><button data-a="menu">World</button><button data-a="game_menu">Menu</button>
+              <button id="keys2">⌨︎ Type</button>
+            </div>
+            <button class="q" data-a="quick_1"><b>1</b><i></i></button><button class="q" data-a="quick_2"><b>2</b><i></i></button><button class="q" data-a="quick_3"><b>3</b><i></i></button><button class="q" data-a="quick_4"><b>4</b><i></i></button><button class="q" data-a="quick_5"><b>5</b><i></i></button>
+            <button class="q" data-a="quick_6"><b>6</b><i></i></button><button class="q" data-a="quick_7"><b>7</b><i></i></button><button class="q" data-a="quick_8"><b>8</b><i></i></button><button class="q" data-a="quick_9"><b>9</b><i></i></button><button class="q" data-a="quick_0"><b>0</b><i></i></button>
           </div>
           <div id="play">
             <div id="stick" class="stick"><div class="knob"></div><span>move</span></div>
             <div id="right">
+              <div id="look" class="stick"><div class="knob"></div><span>camera</span></div>
               <div id="moves">
                 <button data-a="ride">Ride</button><button data-a="descend">Dive</button><button data-a="jump">Jump</button>
                 <button data-a="interact">Use</button><button data-a="limit">Limit</button><button data-a="cycle_element">Q</button>
                 <button data-a="sprint" data-toggle="1">Run</button><button data-a="spell">Spell</button><button data-a="attack" class="big">Strike</button>
               </div>
-              <div id="look" class="stick"><div class="knob"></div><span>camera</span></div>
             </div>
           </div>
         </div>
@@ -109,9 +124,10 @@ public static class RemotePage
           document.body.classList.toggle("upright", upright);
           canvas.width = Math.round(innerWidth * dpr); canvas.height = Math.round(innerHeight * dpr);
           if (upright) {
+            // The picture is shown a little bigger than the screen is wide, its edges cropped, so what's in it reads larger.
             const top = document.getElementById("probe").getBoundingClientRect().height || 0;
-            const w = canvas.width, h = w * frame.h / frame.w;
-            box = { w, h, x: 0, y: top * dpr };
+            const w = canvas.width * 1.15, h = w * frame.h / frame.w;
+            box = { w, h, x: (canvas.width - w) / 2, y: top * dpr };
             document.documentElement.style.setProperty("--top", `${(box.y + box.h) / dpr}px`);
           } else {
             const s = Math.min(canvas.width / frame.w, canvas.height / frame.h);
@@ -228,8 +244,12 @@ public static class RemotePage
             b.classList.add("on"); send({ t: "act", a, p: true });
           });
           for (const ev of ["pointerup", "pointercancel"])
-            b.addEventListener(ev, (e) => { e.preventDefault(); if (b.dataset.toggle) return; b.classList.remove("on"); send({ t: "act", a, p: false }); });
+            b.addEventListener(ev, (e) => { e.preventDefault(); if (b.closest("#drop")) drop.classList.remove("open"); if (b.dataset.toggle) return; b.classList.remove("on"); send({ t: "act", a, p: false }); });
         }
+        // The Menu button drops the map, quests, pack and the rest down over the controller; a tap anywhere else puts them away.
+        const menuButton = document.getElementById("menu"), drop = document.getElementById("drop");
+        menuButton.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); drop.classList.toggle("open"); });
+        document.addEventListener("pointerdown", (e) => { if (!drop.contains(e.target) && e.target !== menuButton) drop.classList.remove("open"); }, true);
 
         // The joysticks: how far and which way the thumb is from the middle, -1 to 1 each way. The big one walks;
         // the small one turns the camera, faster the further it's pushed, for as long as it's held.
@@ -259,10 +279,17 @@ public static class RemotePage
             if (pad.labels && pad.labels[a]) b.textContent = pad.labels[a];
             b.classList.toggle("lit", !!(pad.lit && pad.lit[a]));
           }
+          // The quick keys: what's on each, and which are empty.
+          for (const q of pad.quick || []) {
+            const b = document.querySelector(`#top button[data-a="quick_${q.k}"]`);
+            if (!b) continue;
+            b.querySelector("i").textContent = q.n || "";
+            b.classList.toggle("empty", !!q.e);
+          }
         }
 
         // Typing: the keyboard buttons open the phone's keyboard; letters go to whatever box has focus in the game.
-        for (const id of ["keys", "keys2"]) document.getElementById(id).addEventListener("click", () => { typer.value = " "; typer.focus(); });
+        for (const id of ["keys", "keys2"]) document.getElementById(id).addEventListener("click", () => { drop.classList.remove("open"); typer.value = " "; typer.focus(); });
         typer.addEventListener("input", (e) => {
           if (e.inputType === "deleteContentBackward") send({ t: "key", k: "Backspace" });
           else if (e.data) send({ t: "text", s: e.data });
