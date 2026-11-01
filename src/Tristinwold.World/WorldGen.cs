@@ -92,7 +92,13 @@ public sealed class WorldGen
         Seed = seed ?? (Atlas.Seed != 0 ? Atlas.Seed : 1777);
         AuthoredCities = Atlas.Cities.Select(MakeAuthored).ToList();
         Tristinwold = AuthoredCities.First(c => c.Id == "city:tristinwold");
+        _highways = new Lazy<Highways>(() => Highways.Lay(this), System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
     }
+
+    readonly Lazy<Highways> _highways;
+
+    /// <summary>The roads from Tristinwold's gates to the cities and towns about it, laid once the first time anyone asks after the land.</summary>
+    public Highways Highways => _highways.Value;
 
     static WorldGen? _default;
     public static WorldGen Default => _default ??= new WorldGen();
@@ -119,8 +125,11 @@ public sealed class WorldGen
         return Noise.Lerp(h, -11, 1 - Noise.SmoothStep(0.7, 1.0, harbor));
     }
 
-    /// <summary>Ground height, with every settlement's ground levelled.</summary>
-    public double Height(double x, double z) => Level(x, z, RawHeight(x, z), Affecting(x, z, 0));
+    /// <summary>The land as it lies before anyone built on it or cut a road through it: the raw ground with the wood's mountains and bay, and the mine's mound. What the roads are laid over.</summary>
+    public double Lie(double x, double z) => Northwood.Shape(x, z, RawHeight(x, z)) + Greyhollow.Hill(x, z);
+
+    /// <summary>Ground height, with the roads cut and every settlement's ground levelled.</summary>
+    public double Height(double x, double z) => Level(x, z, Affecting(x, z, 0));
 
     /// <summary>
     /// Heights for a square patch, (n x n) samples <paramref name="step"/> apart starting at
@@ -135,14 +144,14 @@ public sealed class WorldGen
             for (var c = 0; c < n; c++)
             {
                 var (x, z) = (x0 + c * step, z0 + r * step);
-                heights[r * n + c] = (float)Level(x, z, RawHeight(x, z), near);
+                heights[r * n + c] = (float)Level(x, z, near);
             }
         return heights;
     }
 
-    static double Level(double x, double z, double h, IEnumerable<Settlement> near)
+    double Level(double x, double z, IEnumerable<Settlement> near)
     {
-        h = Northwood.Shape(x, z, h) + Greyhollow.Hill(x, z);
+        var h = Highways.Shape(x, z, Lie(x, z));
         foreach (var s in near)
         {
             if (s.Id == "city:tristinwold") continue; // built into the raw land

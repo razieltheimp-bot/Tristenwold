@@ -328,6 +328,37 @@ public sealed class TradeBook
         Lost++;
     }
 
+    // ---- a wagon stolen -------------------------------------------------------------------------------------------
+
+    /// <summary>How long the yard's gate stays shut to someone who drove off with its wagon.</summary>
+    public const int BanDays = 15;
+    public int Stolen { get; set; }
+    /// <summary>The day the yard will deal with them again.</summary>
+    public int BannedUntil { get; set; }
+    public bool Banned(int day) => day < BannedUntil;
+
+    /// <summary>
+    /// The hero drove off with the yard's wagon and what was on it: theirs now, horse and all (a trader, by the back
+    /// door), the job over, and the yard shut to them for a while. Returns how many loads came with it.
+    /// </summary>
+    public int Stole(int day, IReadOnlyDictionary<Good, int> load)
+    {
+        (Guarding, Run) = (null, null);
+        Stolen++;
+        BannedUntil = day + BanDays;
+        (OwnWagon, WagonOut) = (true, true);
+        Horses = Math.Max(Horses, 1);
+        var took = 0;
+        foreach (var (g, n) in load)
+        {
+            var fit = Math.Min(n, Room);
+            if (fit <= 0) continue;
+            Cargo[g] = Cargo.GetValueOrDefault(g) + fit;
+            took += fit;
+        }
+        return took;
+    }
+
     // ---- gluts --------------------------------------------------------------------------------------------------
 
     public const string CityId = "city:tristinwold";

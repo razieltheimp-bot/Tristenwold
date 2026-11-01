@@ -745,6 +745,21 @@ price falls; left alone, its stores drift back each day. Once a place is known, 
 with Tristinwold's own economy (on a server, everyone's: a place one company finds is on every company's map), and
 **Tristinwold's own caravans start trading with it**.
 
+**The king's roads.** Real roads now run from Tristinwold's gates (and from where the Northwood's own roads come out)
+to every city and town within a wagon's reach: Greywater round the cove, Galeholt past the Strand, Cinderhelm and
+Mirewatch over the mountains behind the wood. Each was laid the way a road-builder would lay it, over the low ground,
+round the water, through a pass where there's no way round, then **cut through the forest and the hills**: the
+trees are cleared off it, the ground is trodden to dirt, a hill is cut and a dip is banked so no stretch is steeper
+than a cart can take. They're on the map (M) for everyone, found or not, and the yard's carters keep to them.
+
+**On the box, the reins are yours.** Driving a caravan for Garrick (or your own wagon, or a run for the yard: climb up
+with E), W pushes the horse on, S pulls her up, and **A and D steer her** wherever you like, off the road, round
+trouble, or away from it; let go of the reins and she finds her road again by herself. She won't be driven into water.
+And someone with no good name in Tristinwold (nobody in particular, a rough sort, a villain; never a member of the
+Watch) can press E out on the road and **keep the yard's wagon**: the job is over, the wagon, the horse in the shafts
+and the load are theirs to sell in any town that'll take it, and Tristinwold hears of it by nightfall: a price on
+their head, and no work at the yard for fifteen days.
+
 **The roads run by the prices.** Every day the city's caravans go wherever the gap is worth the trip: a wagon for
 each good a place sells cheaper than the Exchange pays, or pays more for than the Exchange asks (three at most to a
 place), and one to each of the three places that have waited longest regardless. On a server the server runs them,

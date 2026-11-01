@@ -102,6 +102,12 @@ public partial class MapView : Control
                 DrawTextureRect(Texture((tx, tz)), new Rect2(tl, Vector2.One * tileMetres / MetresPerPixel), false);
             }
 
+        // The roads, as every carter knows them.
+        var road = new Color("#8a6a48", 0.9f);
+        var width = Mini ? 1.5f : 2f;
+        foreach (var r in World.Highways.Roads) DrawPolyline([.. r.Line.Select(p => ToScreen(p.X, p.Z))], road, width);
+        foreach (var line in new[] { Northwood.NorthRoad, Northwood.WestRoad }) DrawPolyline([.. line.Select(p => ToScreen(p.X, p.Z))], road, width);
+
         // Places found, and places only heard of.
         var font = ThemeDB.FallbackFont;
         foreach (var id in Explored.Discovered.Concat(Explored.Rumored.Except(Explored.Discovered)))

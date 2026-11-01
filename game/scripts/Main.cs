@@ -880,7 +880,7 @@ public partial class Main : Node3D
     (string Verb, Action Act)? Nearest()
     {
         var pos = _player.GlobalPosition;
-        if (_player.Seat is not null) return _ridden is not null ? ("jump down", ClimbDown) : _isle?.SeatAction() ?? _atSea?.HelmAction();
+        if (_player.Seat is not null) return _ridden is not null ? ("jump down", LeaveWagon) : _isle?.SeatAction() ?? _atSea?.HelmAction();
         if (FishingAction() is { } fishing) return fishing;
         var person = _places.People.Concat(_townsfolk).Where(p => p.GlobalPosition.DistanceTo(pos) < 3.5f).MinBy(p => p.GlobalPosition.DistanceTo(pos));
         if (person is not null) return ($"talk to {person.Npc.Name}", () => Talk(person));

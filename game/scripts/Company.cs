@@ -22,6 +22,7 @@ public partial class Main
     bool _nestRaided;
     readonly HashSet<string> _hungerSaid = [];
     readonly Rng _companyRng = new((ulong)Random.Shared.NextInt64());
+    double _regather = 2;
 
     public IReadOnlyList<Bond> Bonds => _bonds;
     public IEnumerable<Person> Locals => _townsfolk.Where(IsInstanceValid);
@@ -162,7 +163,7 @@ public partial class Main
                     ? $"{golem.Name}, your golem, stamps out of the Foundry yard after you: a hull of brass with room inside for you, head and shoulders over the Foundry's other work. It fights beside you, and grows as you do."
                     : $"{golem.Name}, your golem, stamps out of the Foundry yard after you. It fights beside you, and grows as you do.", 10);
             }
-            else if (golem.Level != level || golem.Build != build || golem.Name != GolemName(_player.Class.Id))
+            else if ((_worn is null || BodyOf(golem) != _worn) && (golem.Level != level || golem.Build != build || golem.Name != GolemName(_player.Class.Id))) // refitted once you've stepped out, never round you
             {
                 if (golem.Name != GolemName(_player.Class.Id)) // another artificer's way: the Foundry refits the machine to its design
                 {
@@ -204,6 +205,7 @@ public partial class Main
     void Merge(double seconds)
     {
         if (_bonds.FirstOrDefault(b => b.Role == BondRole.Golem) is not { } golem || BodyOf(golem) is not { } body) return;
+        if (_player.Possessing) return; // already inside it: a second press mustn't hide the machine again with no way back out
         if (body.State == EnemyState.Dead) { _hud.Toast($"{golem.Name} is down, and there's nothing to climb into.", 4); return; }
         body.Visible = false;
         body.ProcessMode = ProcessModeEnum.Disabled; // the machine is you now
@@ -248,6 +250,7 @@ public partial class Main
     void TendCompany(double delta)
     {
         TendGolem();
+        Regather(delta);
         foreach (var bond in _bonds.Where(b => b.Following && b.Eats))
         {
             var body = BodyOf(bond);
@@ -266,6 +269,32 @@ public partial class Main
         // The road to Dragon Knight: the egg keeps warm as you carry it, and hatches.
         if (_saga.Warm(delta, resting: false)) Hatch();
         if (_saga.Stage == SagaStage.SeekEgg) TendNest();
+    }
+
+    /// <summary>
+    /// Nobody gets left behind. Every so often, a companion that should be following is looked for: one whose body is
+    /// gone is brought back to your heels; one hidden and stopped with no hero inside it is woken; one far behind you is
+    /// brought up; and one knocked out and left far back gets up and comes on, once the fighting's over.
+    /// </summary>
+    void Regather(double delta)
+    {
+        if ((_regather -= delta) > 0) return;
+        _regather = 2;
+        foreach (var bond in _bonds.Where(b => b.Following).ToList())
+        {
+            var body = BodyOf(bond);
+            if (body is null) { BringCompanion(bond); _hud.Log($"{bond.Name} finds you again."); continue; }
+            if (body == _worn || body.Leader != _player || body.Carried || body == _player.Mount) continue;
+            if (body.ProcessMode == ProcessModeEnum.Disabled || !body.Visible) { body.ProcessMode = ProcessModeEnum.Inherit; body.Visible = true; }
+            var far = body.GlobalPosition.DistanceTo(_player.GlobalPosition);
+            var down = body.State == EnemyState.Dead;
+            if (down ? far < 60 || _player.InFight : far < 120) continue;
+            if (down) body.Revive();
+            var at = _player.GlobalPosition + _player.GlobalTransform.Basis.Z * (4 + 2 * body.Figure.Scale.X);
+            body.GlobalPosition = at with { Y = City.FloorAt(at) + 0.5f };
+            body.ResetPhysicsInterpolation();
+            _hud.Log($"{bond.Name} catches you up.");
+        }
     }
 
     public void Feed(Bond bond)

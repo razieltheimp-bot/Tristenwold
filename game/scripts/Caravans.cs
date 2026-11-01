@@ -107,6 +107,11 @@ public partial class Main
     IEnumerable<(string, Action)> YardTalk(Person person)
     {
         var t = _trade;
+        if (t.Banned(_city.Day))
+        {
+            yield return ("About that wagon...", () => Say(person, $"You've a nerve, showing your face in my yard. You took my wagon, my horse and my load. Come back in {t.BannedUntil - _city.Day} days, if the Watch hasn't had you by then, and we'll see."));
+            yield break;
+        }
         if (_loading is null && t.Run is null)
             yield return (t.Rank <= CaravanRank.Loader ? $"Any loading work? ({TradeBook.LoadWage} crowns a load)" : "I'll load a wagon.", () => StartLoading(person));
         if (t.Rank >= CaravanRank.Driver && t.Run is null && !t.WagonOut && t.Guarding is null)
@@ -337,7 +342,7 @@ public partial class Main
     {
         _trade.Guarding = e;
         _guarded?.QueueFree();
-        _guarded = new Wagon(this, "horse") { Goal = new Vector3((float)e.X, 0, (float)e.Z), Hold = GuardHold };
+        _guarded = new Wagon(this, "horse") { Goal = new Vector3((float)e.X, 0, (float)e.Z), Hold = GuardHold, Path = _world.Highways.To(e.To) };
         AddChild(_guarded);
         _guarded.GlobalPosition = YardWagon with { Y = City.FloorAt(YardWagon) };
         Say(master, e.Driver ? $"She's yours to drive to {e.ToName}. Climb up on the box when you're ready: she'll hold the road by herself, and you set the pace. Bring the wagon through and the {(int)Math.Round(e.Pay * (1 + TradeBook.DriverShare))} crowns are yours." : $"The carter leaves for {e.ToName} when you do. Walk beside her, or climb up on the load for the ride. Stay close: she won't drive on without her guard, and she pulls up when there's trouble. Bring the wagon through and the {e.Pay} crowns are yours.");
@@ -359,17 +364,19 @@ public partial class Main
     float _riddenYaw;
     public Wagon? RiddenWagon => _ridden;
 
-    /// <summary>Up on the wagon, seeing the road through your own eyes.</summary>
-    void ClimbAboard()
+    /// <summary>Up on the wagon, seeing the road through your own eyes: the yard's caravan (as its guard, or with its reins), or a wagon of your own run.</summary>
+    void ClimbAboard(Wagon wagon)
     {
-        if (_guarded is not { } wagon || _trade.Guarding is not { } job) return;
+        if (wagon == _guarded && _trade.Guarding is null) return;
         _ridden = wagon;
         _riddenYaw = wagon.Rotation.Y;
         _player.Rotation = new Vector3(0, wagon.Rotation.Y, 0);
-        var driver = job.Driver;
+        var driver = wagon != _guarded || _trade.Guarding!.Driver;
         _player.SitAt(() => wagon.SeatAt(driver));
         wagon.HoldReins(driver);
-        _hud.Toast(driver ? "You've the reins. W to push the horse on, S to pull up, the mouse to look about. E to jump down." : "You settle on the load. The mouse looks about. E to jump down.", 7);
+        _hud.Toast(driver
+            ? $"You've the reins. W to push the horse on, S to pull up, A and D to steer her wherever you like (let go, and she finds her own road again), the mouse to look about. E to jump down{(MayStealWagon ? ", or to keep the wagon" : "")}."
+            : "You settle on the load. The mouse looks about. E to jump down.", 9);
     }
 
     void ClimbDown()
@@ -381,20 +388,72 @@ public partial class Main
         _player.StandUp(at with { Y = City.FloorAt(at) + 0.3f });
     }
 
-    /// <summary>Riding: the view turns with the wagon, and a driver sets the pace.</summary>
+    /// <summary>
+    /// Whether the one on the box could drive off with the yard's wagon: it's the yard's (a caravan, or a run for Garrick),
+    /// they hold the reins, and they've no good name in Tristinwold to lose by it.
+    /// </summary>
+    bool MayStealWagon => _ridden is { Reins: true } w && (w == _guarded || (w == _wagon && _trade.Run is not null)) && _standing.Repute <= Tristinwold.Gameplay.Repute.Unknown && !_standing.Watch.In;
+
+    /// <summary>E on the box: down to the road; or, for someone with no good name to lose, the yard's wagon kept.</summary>
+    void LeaveWagon()
+    {
+        if (!MayStealWagon) { ClimbDown(); return; }
+        _hud.Talk("The reins in your hands", "The yard's wagon, the yard's horse, the yard's load, and nobody out here but you.",
+            ("Jump down.", () => { _hud.EndTalk(); ClimbDown(); }),
+            ("Keep the wagon, and the load.", () => { _hud.EndTalk(); StealWagon(); }),
+            ("Drive on.", _hud.EndTalk));
+    }
+
+    /// <summary>
+    /// The yard's wagon taken for your own, horse and load and all: a villain's start in trade. The job is over, the load is
+    /// yours to sell in any town that'll take it, and Tristinwold hears of it: a price on your head, and the yard's gate
+    /// shut to you for a while.
+    /// </summary>
+    void StealWagon()
+    {
+        if (_ridden is not { } wagon) return;
+        var load = new Dictionary<Good, int>();
+        if (wagon == _guarded && _trade.Guarding is not null)
+        {
+            foreach (var g in _city.Stock.OrderByDescending(s => s.Value).Take(2).Select(s => s.Key)) load[g] = 5; // Tristinwold's goods for the town: what the city has most of
+            _guarded = null;
+            StableWagon();
+            _wagon = wagon;
+            wagon.Goal = null;
+            wagon.Hold = null;
+        }
+        else if (_trade.Run is { } r) load[r.Returning ? r.Back : r.Out] = r.Load;
+        var took = _trade.Stole(_city.Day, load);
+        var horse = Adopt("horse", dragon: false, wagon.GlobalPosition + new Vector3(2, 0, 0), level: 6);
+        Hitch();
+        var bounty = 40 + 2 * took;
+        _standing.Evil(4, "stole a caravan from Tristinwold's yard");
+        _standing.Wanted(bounty);
+        _city.Renown = Math.Max(0, _city.Renown - 2);
+        wagon.Urge = Wagon.RidePace;
+        Sound.Ui("coin", -2);
+        _hud.Toast($"The wagon's yours, and {took} loads with it; the horse in the shafts is {horse.Name} now. Garrick will hear of it by nightfall: {bounty} crowns on your head in Tristinwold, and no work at the yard for {TradeBook.BanDays} days. Sell the load in any town that'll take it.", 12);
+        _hud.Log("Roads: you stole a caravan from the yard.");
+        Save();
+    }
+
+    /// <summary>Riding: the view turns with the wagon, and whoever holds the reins sets the pace and steers.</summary>
     void TendRide()
     {
         if (_ridden is not { } wagon) return;
-        if (!IsInstanceValid(wagon) || wagon != _guarded || _player.Downed) { ClimbDown(); return; }
+        if (!IsInstanceValid(wagon) || (wagon != _guarded && wagon != _wagon) || _player.Downed) { ClimbDown(); return; }
         _player.RotateY(Mathf.AngleDifference(_riddenYaw, wagon.Rotation.Y));
         _riddenYaw = wagon.Rotation.Y;
-        var driving = _trade.Guarding?.Driver == true && !_hud.Talking;
-        wagon.Urge = !driving ? Wagon.RidePace : Input.IsActionPressed("move_back") ? 0 : Input.IsActionPressed("move_forward") ? Wagon.PushPace : Wagon.RidePace;
+        var driving = wagon.Reins && !_hud.Talking;
+        wagon.Steer = driving ? Input.GetAxis("move_left", "move_right") : 0;
+        wagon.Urge = !driving ? (wagon.Goal is null ? 0 : Wagon.RidePace) : Input.IsActionPressed("move_back") ? 0 : Input.IsActionPressed("move_forward") ? Wagon.PushPace : Wagon.RidePace;
     }
 
     /// <summary>For the self-test.</summary>
-    public void ClimbForTest() => ClimbAboard();
+    public void ClimbForTest() { if ((_guarded ?? _wagon) is { } w) ClimbAboard(w); }
     public void ClimbDownForTest() => ClimbDown();
+    public void StealForTest() => StealWagon();
+    public bool MayStealForTest => MayStealWagon;
 
     /// <summary>The guarded wagon on the road: ambushes as it gets far enough along, the bandits at the wagon, and the end of the road.</summary>
     void TendGuarding(double delta)
@@ -725,6 +784,8 @@ public partial class Main
             yield return $"Starter work: the caravan yard by the west gate is hiring guards for the city's caravans. Ask Garrick Wain ({Direction(pos, (YardAt.X, YardAt.Z))})";
         if (_trade.Guarding is { } g && _guarded is not null)
             yield return $"Caravan guard: see the wagon safe to {g.ToName} ({Direction(pos, (g.X, g.Z))}), {g.Wagon:0}% of the load, {g.Pay} crowns";
+        if (_ridden is { Reins: true })
+            yield return $"On the box: W on, S pull up, A and D steer, E down{(MayStealWagon ? " (or keep the wagon)" : "")}";
         if (_trade.Hunting is { } hunting && _city.Roads.Troubles.FirstOrDefault(x => x.Id == hunting) is { } camp)
             yield return $"Garrick's bounty: clear {(camp.Clan ? camp.By : "the bandits")} camped off the road to {camp.TownName} ({Direction(pos, (camp.X, camp.Z))}), {camp.Bounty} crowns";
         if (_loading is { } l)
@@ -745,9 +806,10 @@ public partial class Main
 
     (string Verb, Action Act)? CaravanAction(Vector3 pos)
     {
-        if (_guarded is { } wagon && _trade.Guarding is { } job && _player.Mount is null && pos.DistanceTo(wagon.GlobalPosition with { Y = pos.Y }) < 6) return (job.Driver ? "climb up and take the reins" : "climb up on the wagon", ClimbAboard);
+        if (_guarded is { } wagon && _trade.Guarding is { } job && _player.Mount is null && pos.DistanceTo(wagon.GlobalPosition with { Y = pos.Y }) < 6) return (job.Driver ? "climb up and take the reins" : "climb up on the wagon", () => ClimbAboard(wagon));
         if (_loading is { Holding: false } && pos.DistanceTo(YardStack with { Y = pos.Y }) < 3.5f) return ("lift a load", LiftSack);
         if (_loading is { Holding: true } && pos.DistanceTo(YardWagon with { Y = pos.Y }) < 4.5f) return ("load the wagon", LoadWagon);
+        if (_wagon is { } own && (_trade.Run is not null || _trade.WagonOut) && _player.Mount is null && pos.DistanceTo(own.GlobalPosition with { Y = pos.Y }) < 6) return ("climb up and take the reins", () => ClimbAboard(own));
         return null;
     }
 
@@ -776,13 +838,22 @@ public partial class Main
 public partial class Wagon(Main main, string? horse) : Node3D
 {
     public bool Parked { get; set; }
-    /// <summary>Driven by its own carter, to here (a guarded caravan), rather than led by the hero.</summary>
-    public Vector3? Goal { get; init; }
+    /// <summary>Driven by its own carter, to here (a guarded caravan), rather than led by the hero. Stolen, it has none.</summary>
+    public Vector3? Goal { get; set; }
     /// <summary>When the carter pulls up.</summary>
-    public Func<bool>? Hold { get; init; }
+    public Func<bool>? Hold { get; set; }
+    /// <summary>The road to where she's going, if one's laid: the carter keeps to it.</summary>
+    public Highways.Road? Path { get; set; }
     /// <summary>How hard she's driven: 1 at a walk; a little more with someone riding, more again if a driver pushes on, and 0 pulls her up.</summary>
     public float Urge { get; set; } = 1;
     public const float RidePace = 1.7f, PushPace = 3f;
+    /// <summary>Someone on the box holds the reins: the horse goes where they steer (-1 left to 1 right), at the pace they set.</summary>
+    public bool Reins { get; private set; }
+    public float Steer { get; set; }
+    /// <summary>How fast she turns her head to the reins (radians a second, at speed), and how long she holds the driver's line after they let go before finding her own road again.</summary>
+    const float TurnRate = 0.9f;
+    const double HoldsLine = 4;
+    double _freeFor = HoldsLine;
     Body? _horse;
 
     Node3D? _reins;
@@ -790,6 +861,8 @@ public partial class Wagon(Main main, string? horse) : Node3D
     /// <summary>What a driver sees of themselves: their hands out in front, and the reins running down to the horse.</summary>
     public void HoldReins(bool holding)
     {
+        Reins = holding;
+        Steer = 0;
         _reins?.QueueFree();
         _reins = null;
         if (!holding) return;
@@ -847,6 +920,7 @@ public partial class Wagon(Main main, string? horse) : Node3D
     public override void _Process(double delta)
     {
         if (Parked) { _horse?.Move(0, true, false); return; }
+        if (Reins && Goal is null) { DriveFree(delta); return; }
         if (Goal is { } goal) { Drive(goal, delta); return; }
         var lead = main.PlayerNode.GlobalPosition;
         // The horse walks a few metres behind the hero; the wagon trails it.
@@ -872,23 +946,62 @@ public partial class Wagon(Main main, string? horse) : Node3D
         _horse?.Move(_speed, true, false);
     }
 
-    /// <summary>The carter drives on toward the goal at a walk, round water, and pulls up when told to.</summary>
+    /// <summary>Whether the driver is steering her, or has within the last little while: her head stays where they put it.</summary>
+    bool Steered => Reins && (Steer != 0 || _freeFor < HoldsLine);
+
+    /// <summary>Whether the ground a few metres ahead is under water: she won't be driven into it.</summary>
+    bool WaterAhead()
+    {
+        var probe = GlobalPosition - GlobalTransform.Basis.Z * 8;
+        return main.World.Height(probe.X, probe.Z) <= WorldGen.WaterLevel + 0.3;
+    }
+
+    /// <summary>
+    /// The carter drives on toward the goal at a walk, round water, and pulls up when told to. A driver with the reins
+    /// steers her off that line wherever they like, and she holds their line a while after they let go, then finds the
+    /// road to the goal again herself.
+    /// </summary>
     void Drive(Vector3 goal, double delta)
     {
+        _freeFor = Steer != 0 ? 0 : _freeFor + delta;
         var to = new Vector3(goal.X - GlobalPosition.X, 0, goal.Z - GlobalPosition.Z);
-        var want = Hold?.Invoke() == true || to.Length() < 2 ? 0 : 3.2f * Urge;
+        var want = Hold?.Invoke() == true || (!Steered && to.Length() < 2) || (Steered && WaterAhead()) ? 0 : 3.2f * Urge;
         _speed = Mathf.Lerp(_speed, want, (float)Math.Min(1, delta * 2));
         if (_speed > 0.05f)
         {
-            // Straight for it, unless that's into water: then the nearest way round.
-            var heading = Mathf.Atan2(-to.X, -to.Z);
-            foreach (var turn in new[] { 0f, 0.5f, -0.5f, 1f, -1f, 1.5f, -1.5f })
+            if (Steered) Rotation = new Vector3(0, Rotation.Y - Steer * TurnRate * (float)delta * Math.Min(1, _speed / 1.5f), 0);
+            else
             {
-                var dir = new Vector3(-Mathf.Sin(heading + turn), 0, -Mathf.Cos(heading + turn));
-                var probe = GlobalPosition + dir * 8;
-                if (main.World.Height(probe.X, probe.Z) > WorldGen.WaterLevel + 0.3) { heading += turn; break; }
+                // Along the road where one's laid, a little way ahead of her; straight for the goal otherwise, or near the end. Never into water: then the nearest way round.
+                var aim = to;
+                if (Path is { } road && to.Length() > 80)
+                {
+                    var (off, along, _) = road.Nearest(GlobalPosition.X, GlobalPosition.Z);
+                    if (off < 60) { var (px, pz) = road.At(along + 45); aim = new Vector3((float)px - GlobalPosition.X, 0, (float)pz - GlobalPosition.Z); }
+                }
+                var heading = Mathf.Atan2(-aim.X, -aim.Z);
+                foreach (var turn in new[] { 0f, 0.5f, -0.5f, 1f, -1f, 1.5f, -1.5f })
+                {
+                    var dir = new Vector3(-Mathf.Sin(heading + turn), 0, -Mathf.Cos(heading + turn));
+                    var probe = GlobalPosition + dir * 8;
+                    if (main.World.Height(probe.X, probe.Z) > WorldGen.WaterLevel + 0.3) { heading += turn; break; }
+                }
+                Rotation = new Vector3(0, Mathf.LerpAngle(Rotation.Y, heading, (float)Math.Min(1, delta * 2)), 0);
             }
-            Rotation = new Vector3(0, Mathf.LerpAngle(Rotation.Y, heading, (float)Math.Min(1, delta * 2)), 0);
+            var next = GlobalPosition - GlobalTransform.Basis.Z * _speed * (float)delta;
+            GlobalPosition = next with { Y = Mathf.Lerp(GlobalPosition.Y, City.FloorAt(next), (float)Math.Min(1, delta * 8)) };
+        }
+        _horse?.Move(_speed, true, false);
+    }
+
+    /// <summary>A wagon with no carter and no goal, driven from the box: where the reins say, at the pace the driver sets, and never into the water.</summary>
+    void DriveFree(double delta)
+    {
+        var want = Urge <= 0 || WaterAhead() ? 0 : 3.2f * Urge;
+        _speed = Mathf.Lerp(_speed, want, (float)Math.Min(1, delta * 2));
+        if (_speed > 0.05f)
+        {
+            Rotation = new Vector3(0, Rotation.Y - Steer * TurnRate * (float)delta * Math.Min(1, _speed / 1.5f), 0);
             var next = GlobalPosition - GlobalTransform.Basis.Z * _speed * (float)delta;
             GlobalPosition = next with { Y = Mathf.Lerp(GlobalPosition.Y, City.FloorAt(next), (float)Math.Min(1, delta * 8)) };
         }

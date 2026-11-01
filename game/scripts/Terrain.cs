@@ -341,7 +341,7 @@ public partial class Terrain(WorldGen world) : Node3D
         var dirt = 0.0;
         foreach (var s in places)
             dirt = Math.Max(dirt, 1 - Noise.SmoothStep(s.Radius * 0.55, s.Radius * 0.95, s.DistanceTo(x, z)));
-        if (x < 400 && z < 60 && Northwood.OnPath(x, z)) dirt = 1.15;
+        if ((x < 400 && z < 60 && Northwood.OnPath(x, z)) || world.Highways.OnRoad(x, z)) dirt = 1.15;
         Blend(w, Dirt, dirt * 0.85);
         Blend(w, Shore, 1 - Noise.SmoothStep(WorldGen.WaterLevel + 0.1, WorldGen.WaterLevel + 1.1, y));
         return (new Color(w[0], w[1], w[2], w[3]), new Color(w[4], w[5], w[6], w[7]));
@@ -500,6 +500,7 @@ public partial class Terrain(WorldGen world) : Node3D
             if (lairs.Any(r => r.DistanceTo(wx, wz) < 26)) continue; // a lair stands in a clearing
             if (Clearings.Any(c => new Vector2((float)wx - c.At.X, (float)wz - c.At.Z).Length() < c.Radius)) continue;
             if (wx < 400 && wz < 60 && (Northwood.OnPath(wx, wz) || Northwood.Clearing(wx, wz))) continue;
+            if (world.Highways.Near(wx, wz) < Highways.Half + 2.5) continue; // the roads are kept clear to their edges
             var (ix, iz) = ((int)Math.Round(lx / Step), (int)Math.Round(lz / Step));
             float At(int x, int z) => h[Math.Clamp(z, 0, Steps) * (Steps + 1) + Math.Clamp(x, 0, Steps)];
             var y = At(ix, iz);

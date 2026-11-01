@@ -44,6 +44,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--pirates-only")) { await ThePirates(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--isle-only")) { await TheIsleTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--growth-only")) { await TheGrowth(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--lair-only")) { await DeviantLairTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -1333,7 +1334,9 @@ public partial class SelfTest(Main main) : Node
         await Until(() => main.RoamersNode.Near.Any(n => n.Body.FightingCompany), 10);
         var found = main.RoamersNode.Near.FirstOrDefault();
         var roamerHealth = found.Body?.Stats.MaxHealth ?? 0;
-        Check(found.Body is { Named: true } && found.Body.FightingCompany, $"found, {found.Roamer?.Title} comes for you");
+        Check(found.Body is { Named: true } && found.Body.FightingCompany, found.Body is null
+            ? $"found, {roamer.Title} comes for you (nothing out: ground at it {main.TerrainNode.HasGround(new Vector3((float)x, 0, (float)z))}, hero in town {main.RoamersNode.InTown(p.GlobalPosition)}, downed {p.Downed}, at {x:0},{z:0} in {main.World.AreaAt(x, z)}, height {main.World.Height(x, z):0.0})"
+            : $"found, {found.Roamer?.Title} comes for you (fighting {found.Body.FightingCompany}, named {found.Body.Named}, {found.Body.GlobalPosition.DistanceTo(p.GlobalPosition):0} m off)");
 
         // A new nameless boss has moved into the lair, no stronger than its kind.
         main.GuildBook.PlaySeconds += RaidBook.MoveInSeconds;
@@ -2273,10 +2276,31 @@ public partial class SelfTest(Main main) : Node
         var start = w.GlobalPosition;
         await Frames(180);
         Check(w.GlobalPosition.DistanceTo(start) > 3 && p.GlobalPosition.DistanceTo(w.SeatAt(true)) < 1.5f, $"the wagon rolls, and you with it: {w.GlobalPosition.DistanceTo(start):0.0}m");
+        // The reins are yours: haul her right and she goes right, off the carter's line; let go, and she finds her road again.
+        var yaw = w.Rotation.Y;
+        Input.ActionPress("move_right");
+        await Frames(90);
+        Input.ActionRelease("move_right");
+        var turned = Mathf.AngleDifference(yaw, w.Rotation.Y);
+        Check(turned < -0.4f, $"haul right and she turns right, off the carter's line ({turned:0.00} rad)");
+        await Frames(420);
+        Check(Math.Abs(Mathf.AngleDifference(yaw, w.Rotation.Y)) < 0.6f, $"let go, and she finds her road again ({Mathf.AngleDifference(yaw, w.Rotation.Y):0.00} rad off her old line)");
         Check(main.ActionForTest()?.Verb == "jump down", "and E gets you down");
+        Check(main.MayStealForTest, "a nobody on the box could keep the yard's wagon");
         main.ClimbDownForTest();
         await Frames(5);
         Check(p.Seat is null && p.Figure.Visible && p.GlobalPosition.DistanceTo(w.GlobalPosition) < 6, "down beside the wagon, ready to fight");
+        // Back up, and off with it: the yard's wagon, horse and load are yours, and Tristinwold wants you for it.
+        await Teleport(w.GlobalPosition + new Vector3(3, 0, 0));
+        main.ClimbForTest();
+        await Frames(5);
+        var (bounty, bonds, trade) = (main.Standing.Bounty, main.Bonds.Count, main.TradeLog);
+        main.StealForTest();
+        Check(trade is { Guarding: null, OwnWagon: true, WagonOut: true, Stolen: 1 } && trade.Loaded > 0 && main.WagonNode == w && main.GuardedWagon is null && main.RiddenWagon == w,
+            $"you keep the wagon, still up on its box: {trade.Loaded} loads aboard, yours to sell in any town");
+        Check(main.Standing.Bounty > bounty && main.Bonds.Count == bonds + 1 && trade.Banned(main.Economy.Day) && !main.MayStealForTest,
+            $"and a price on your head ({main.Standing.Bounty} crowns), the horse your own, and no work at the yard for {TradeBook.BanDays} days");
+        main.ClimbDownForTest();
     }
 
     /// <summary>A voyage of exploration: take the wheel, turn her, and the sea comes past with a compass to steer by.</summary>
