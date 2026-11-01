@@ -197,24 +197,45 @@ public partial class Main
     /// <summary>
     /// An ether-aeronaut climbs inside their golem and drives it: for the while, the golem's body is the hero's own
     /// (you walk, swing and cast as the machine, at its size), the hero's body is inside it, and the golem that
-    /// followed you is where you are. When the engine winds down you step out, and it stands beside you again.
+    /// followed you is where you are. Every blow lands on the machine and not on you, so it's the machine's own health that
+    /// runs down. When the engine winds down you step out, and it stands beside you again; if it's beaten to scrap first,
+    /// it throws you clear, unhurt, and lies where it fell until the fighting's done.
     /// </summary>
     void Merge(double seconds)
     {
         if (_bonds.FirstOrDefault(b => b.Role == BondRole.Golem) is not { } golem || BodyOf(golem) is not { } body) return;
+        if (body.State == EnemyState.Dead) { _hud.Toast($"{golem.Name} is down, and there's nothing to climb into.", 4); return; }
         body.Visible = false;
         body.ProcessMode = ProcessModeEnum.Disabled; // the machine is you now
         var size = (float)Math.Max(1.25, body.Figure.Scale.X * 1.12);
+        _worn = body;
+        _player.Hull = (damage, kind, attack, crit, from) =>
+        {
+            body.Stats.TakeHit(damage, kind, attack, crit, from.Stats);
+            if (body.Stats.Dead) _player.Unpossess();
+        };
         _player.Possess(() => { var shell = Clockwork.For(golem.Name); shell.Scale = Vector3.One * (float)golem.Size; return shell; }, size, seconds, () =>
         {
+            _player.Hull = null;
+            _worn = null;
             if (!IsInstanceValid(body)) return;
             body.ProcessMode = ProcessModeEnum.Inherit;
             body.Visible = true;
             body.GlobalPosition = _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 1.5f;
-            _hud.Toast($"The engine winds down and the plates open: you step out of {golem.Name}, and it stands beside you again.", 5);
+            if (body.Stats.Dead)
+            {
+                body.Collapse();
+                _hud.Toast($"{golem.Name}'s plates burst open and throw you clear. You're unhurt, but the machine's done for this fight.", 6);
+            }
+            else _hud.Toast($"The engine winds down and the plates open: you step out of {golem.Name}, and it stands beside you again.", 5);
         });
         _hud.Toast($"You climb inside {golem.Name} and the plates close round you: you drive the machine now, its weight behind every blow and its brass between you and theirs.", 7);
     }
+
+    Enemy? _worn;
+
+    /// <summary>The golem the hero's inside, for the tracker.</summary>
+    public Enemy? WornGolem => _worn;
 
     /// <summary>The engine opened wide: the golem fights harder, and a ship under the hero surges ahead.</summary>
     void Overdrive(double seconds)
@@ -291,7 +312,7 @@ public partial class Main
         GainXp(xp);
         var meat = victim.Kind.Id switch
         {
-            "deer" or "boar" or "frost_troll" => 2,
+            "deer" or "boar" or "frost_troll" or "horse" or "wild_horse" or "cow" => 2,
             "bear" => 3,
             "wolf" or "ice_wolf" or "fox" or "giant_rat" or "mud_crab" or "goblin" => 1,
             _ when victim.IsDragon => 4,
@@ -316,6 +337,7 @@ public partial class Main
             _player.Fit();
             _player.Stats.Heal(_player.Stats.MaxHealth);
             Sound.Ui("levelup");
+            foreach (var a in Advances.Between(_player.Class.Id, hero.Level - 1, hero.Level)) _hud.Toast($"New ability: {a.Move.Name}. {a.Move.Text} Open your skills (K) to see it.", 10);
             _hud.Toast($"Level {hero.Level}! You have {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend (K).", 8);
         }
         var beastmaster = _player.Class.Id == "Ranger" ? 1 + _player.Class.Passive.Power * _player.Hero.Power("beastmaster") : 1;
@@ -698,19 +720,32 @@ public partial class Main
         var c = _player.Class;
         var titles = _guilds.Titles.Count > 0 ? $" {string.Join(", ", _guilds.Titles)}." : "";
         var text = $"Today is {Calendar.Date(_city.Day)}. You are {Ageing.Describe(hero, _player.Race.Id, _player.Race.Name, _city.Day)}.\n" +
-            $"{c.Name}, level {hero.Level} ({hero.Xp}/{Hero.XpToNext(hero.Level)} xp), {_player.GuildTitle}.{titles} {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend.\n" +
-            string.Join("\n", c.Skills.Where(a => a.Id != "attune").Select(a => $"{Slot(a)} {a.Name} (rank {hero.Rank(a.Id)}/{Hero.MaxRank}): {a.Text}")) +
-            $"\nTrades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j)} {_player.Pack.Level(j)}"))}. The Exchange knows you as {_city.RenownTitle}. Feats: {_pursuits.Feats.Count} ({_pursuits.Points} points).\n" +
+            $"{c.Name}, level {hero.Level} ({hero.Xp}/{Hero.XpToNext(hero.Level)} xp), {_player.GuildTitle}.{titles} {hero.Points} skill point{(hero.Points == 1 ? "" : "s")} to spend: click a switch to raise an ability.";
+        var more =
+            $"Trades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j)} {_player.Pack.Level(j)}"))}. The Exchange knows you as {_city.RenownTitle}. Feats: {_pursuits.Feats.Count} ({_pursuits.Points} points).\n" +
             $"Your trade as a {c.Name}, {Perks.Of(c.Id).Name}: {Perks.Of(c.Id).Text}\n{_standing.Summary()}" +
             (hero.Learned.Count > 0 ? $"\nWays you have learned (an immortal keeps them all): {string.Join(", ", hero.Classes.Select(id => Classes.Get(id).Name + (id == c.Id ? " (now)" : "")))}." : "");
-        var options = c.Skills.Where(a => a.Id != "attune" && hero.CanRaise(a.Id))
-            .Select(a => ($"Raise {a.Name} to rank {hero.Rank(a.Id) + 1}", (Action)(() => { hero.Raise(a.Id); _player.Fit(); Save(); ShowSkills(); }))).ToList();
+        text += $"\nHometown: {_story.Home?.Name ?? "Tristinwold"}. {(_sea.OnACrew ? $"As one of a ship's people you wake on the quay at {WakeDock.Town}." : "The ring brings you back here.")}";
+        var options = new List<(string, Action)>();
+        options.Add(("My trades and standing", () => _hud.Talk("Trades and standing", more, ("Back", ShowSkills))));
         foreach (var id in hero.Learned.Keys.Where(k => k != c.Id).ToList())
             options.Add(($"Take up the way of the {Classes.Get(id).Name} again", () => { _player.Join(id); _hud.Toast($"You are a {Classes.Get(id).Name} again, with every rank you had in it.", 8); Save(); ShowSkills(); }));
         options.Add(("Feats", ShowFeats));
         options.Add(("Quick keys", () => ShowQuickBar(ShowSkills)));
         options.Add(("Close", _hud.EndTalk));
         _hud.Talk("Skills", text, [.. options]);
+        _hud.TallTalk();
+        void Add(Ability a, string name, string? locked = null)
+        {
+            var raise = locked is null && hero.CanRaise(a.Id) ? (Action)(() => { hero.Raise(a.Id); _player.Fit(); Save(); ShowSkills(); }) : null;
+            _hud.AddSkill(name, a.Text, hero.Rank(a.Id), Hero.MaxRank, locked, raise);
+        }
+        foreach (var a in c.Skills.Where(a => a.Id != "attune")) Add(a, $"{Slot(a)} {a.Name}");
+        foreach (var a in Advances.Of(c.Id))
+        {
+            if (a.Style == MoveStyle.Passive) _hud.AddSkill($"[Always] {a.Move.Name}", a.Move.Text, 0, 0, a.Level <= hero.Level ? null : $"Level {a.Level}", null);
+            else Add(a.Move, a.Move.Name, a.Level <= hero.Level ? null : $"Level {a.Level}");
+        }
 
         string Slot(Ability a) => a == c.Primary ? "[Left]" : a == c.Signature ? "[Right]" : a == c.Utility ? "[Q]" : a == c.Limit ? "[R]" : "[Always]";
     }

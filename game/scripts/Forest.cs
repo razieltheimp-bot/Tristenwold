@@ -27,16 +27,16 @@ public partial class Main
         Townsfolk(new Npc(Elder, "Oruun Greybrow", Sex.Male, 70, "elder of Hollowheart", "hollowheart", "Hollowheart",
             "Oruun has sat at the root of the Heartwood longer than anyone can say. He has a top-knot gone grey, a string of river-pearls, and a way of looking at you until you remember your manners.",
             ["the forest", "old battles"], "dry", "Sit. The tree isn't going anywhere, and neither are you.", vx + 16, vz + 14), "ape_elder");
-        Townsfolk(new Npc(Leader, "Lu Wukang", Sex.Male, 41, "king of the ape people", "hollowheart", "Hollowheart",
+        Townsfolk(new Npc(Leader, "Lu Wukang", Sex.Male, 41, "king of the Apekin", "hollowheart", "Hollowheart",
             "Lu Wukang sits at the top of every argument in Hollowheart with his red-and-gold staff across his knees. He has broken more jaws than treaties, and he guards the wood's secrets better than either.",
             ["old battles", "the forest"], "proud", "You're a long way from your walls, little cousin.", vx + 24, vz + 6), "ape_warrior");
         Townsfolk(new Npc(Raffkin, "Raffkin", Sex.Male, 66, "a druid nobody speaks of", "northwood", "the Northwood",
-            "A baboon-faced ape in a nest of old branches, staff wrapped in rag, butterflies coming and going from his fur. The apes of Hollowheart drove him out and won't say his name. He says the wood has a lord, and the lord is sleeping.",
+            "A baboon-faced ape in a nest of old branches, staff wrapped in rag, butterflies coming and going from his fur. The Apekin of Hollowheart drove him out and won't say his name. He says the wood has a lord, and the lord is sleeping.",
             ["the forest", "dreams"], "sly", "Ah! Somebody with an axe in their eyes. Come up, come up.", Northwood.RaffkinX, Northwood.RaffkinZ), "ape_elder");
         Townsfolk(new Npc(Druid, "Maren of the Roots", Sex.Female, 52, "druid of the Northwood", "hollowheart", "Hollowheart",
             "Maren came to the wood to study it and was, she says, studied back. She tends what the guardians can't reach.",
             ["the forest", "herbs"], "kindly", "Mind where you step. Most of it's listening.", vx - 18, vz + 12), "priest");
-        Townsfolk(new Npc(Sprout, "Thistle-in-Spring", Sex.Female, 30, "speaker of the plant folk", "hollowheart", "Hollowheart",
+        Townsfolk(new Npc(Sprout, "Thistle-in-Spring", Sex.Female, 30, "speaker of the Photosynthens", "hollowheart", "Hollowheart",
             "Thistle grew up, in the most exact sense, at the foot of the guardian she prays to. She doesn't blink, and asks a lot of questions about fire.",
             ["the forest", "dreams"], "warm", "You smell of the road. Is it nice, the road?", vx + 5, vz + 22), "spriggan");
         Townsfolk(new Npc(Shroomie, "Old Morel", Sex.Male, 40, "keeper of the undergrowth", "hollowheart", "Hollowheart",
@@ -101,7 +101,7 @@ public partial class Main
                     Say(person, $"Not done. Never done. It'll stand up again, and we'll ask again. {ForestBook.Pay} crowns, and our thanks, such as they are.");
                     Save();
                 });
-            else yield return ("Tell me about the guardians.", () => Say(person, "Four. They mended this wood before there was a Tristinwold. The plant folk pray to them. They'll leave you be, unless you've taken an axe to the trees. Then don't walk their ground."));
+            else yield return ("Tell me about the guardians.", () => Say(person, "Four. They mended this wood before there was a Tristinwold. The Photosynthens pray to them. They'll leave you be, unless you've taken an axe to the trees. Then don't walk their ground."));
             if (c.LairOpen) yield return ("Something opened in the west.", () => Say(person, c.DragonFree ? "It's out. Everything we were afraid of is out." : "We felt it. There's a barrier on that place. The guardians ARE the barrier. Do not kill another. Do you hear me? Not one."));
         }
         if (id == Leader)
@@ -195,7 +195,7 @@ public partial class Main
             {
                 t.Report();
                 var name = TurlinBook.Blame(c, slain, trueOnes) is { } g ? Northwood.Guardians.First(x => x.Id == g).Name : "the wood";
-                Say(person, $"Gods. No. That's {name}'s ground, and everyone says nothing else is that strong. So much for the plant folk's holy trees. It takes our people and we pray to it? The gentleman said if it came to this he'd give {(t.Knows ? TurlinBook.ImmortalPay : TurlinBook.BlamePay)} crowns to the hero who brought it down. For {c.Victim}.");
+                Say(person, $"Gods. No. That's {name}'s ground, and everyone says nothing else is that strong. So much for the Photosynthens' holy trees. It takes our people and we pray to it? The gentleman said if it came to this he'd give {(t.Knows ? TurlinBook.ImmortalPay : TurlinBook.BlamePay)} crowns to the hero who brought it down. For {c.Victim}.");
                 Save();
             });
         else if (t.Stage == TurlinStage.Blamed)

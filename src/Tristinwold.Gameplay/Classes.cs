@@ -71,7 +71,7 @@ public sealed record Discipline(
 public static class Classes
 {
     /// <summary>A move by its id, whichever class it belongs to.</summary>
-    public static Ability? Move(string id) => All.SelectMany(c => c.Skills).FirstOrDefault(a => a.Id == id);
+    public static Ability? Move(string id) => All.SelectMany(c => c.Skills).FirstOrDefault(a => a.Id == id) ?? Advances.For(id)?.Move;
 
     static Ability Attune => new("attune", "Attune", "Change element: fire, frost or shock.", AttackKind.Spell, 0, 0.2, 0, 0);
 
@@ -194,7 +194,7 @@ public static class Classes
             150, 90, 130, 55,
             new("harpoon", "Ether Harpoon", "A harpoon at the foe you face, up to 18 m, that drags them to you.", AttackKind.Weapon, 12, 0.8, 18, 18, DamageKind.Shock),
             new("anchor", "Anchor Shot", "A charged harpoon that pins a foe where it stands for a while.", AttackKind.Weapon, 25, 8, 22, 18, DamageKind.Shock, 5),
-            new("merge", "Merge", "Climb inside your golem and wear it: Protect and Shell, and your blows carry its weight, for a while.", AttackKind.Spell, 40, 30, 0.5, 0, Seconds: 14),
+            new("merge", "Merge", "Climb inside your golem and drive it: every blow lands on the machine and not on you, and your blows carry its weight, for a while. If it's wrecked, it throws you clear.", AttackKind.Spell, 40, 30, 0.5, 0, Seconds: 14),
             new("overdrive", "Overdrive", "The engine opened wide: you and your golem move and strike like lightning for a while, and a ship under you surges ahead.", AttackKind.Spell, 0, 0, 0.6, 0, Seconds: 12),
             new("tinker", "Tinker", "You fit ships with modules at the shipyard (a bilge pump that halves what boarders hole; light sails that cut a quarter off every leg), and your golem is sturdier.", AttackKind.Spell, 0, 0, 0.25, 0)),
         // ---- druids ----

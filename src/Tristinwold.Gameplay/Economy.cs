@@ -344,7 +344,7 @@ public sealed class CityEconomy
         "iron_ore" or "silver_ore" or "gold_ore" or "scrap_iron" => Good.Ore,
         "coal" => Good.Coal,
         "iron_ingot" or "steel_ingot" or "iron_nails" => Good.Iron,
-        "leather" or "wool" or "cow_hide" or "wolf_pelt" or "frost_pelt" or "bear_pelt" or "boar_hide" or "deer_hide" or "fox_pelt" or "troll_hide" or "ape_hide" or "rabbit_pelt" or "marten_pelt" or "snow_hare_pelt" => Good.Leather,
+        "leather" or "wool" or "cow_hide" or "horse_hide" or "scruffy_pelt" or "wolf_pelt" or "frost_pelt" or "bear_pelt" or "boar_hide" or "deer_hide" or "fox_pelt" or "troll_hide" or "ape_hide" or "rabbit_pelt" or "marten_pelt" or "snow_hare_pelt" => Good.Leather,
         "silver_ingot" or "gold_ingot" or "rough_garnet" or "rough_sapphire" or "pearl" or "garnet" or "sapphire" => Good.Precious,
         _ => Items.Get(itemId)?.Kind switch { ItemKind.Herb => Good.Herbs, ItemKind.Potion => Good.Potions, _ => null },
     };

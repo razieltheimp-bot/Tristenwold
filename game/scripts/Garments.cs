@@ -775,7 +775,7 @@ public static class Garments
             }
     }
 
-    /// <summary>What a people grows that isn't a body's: an ape's muzzle and tail, a plant person's leaves or branches and roots, a shroomie's cap.</summary>
+    /// <summary>What a people grows that isn't a body's: an ape's muzzle and tail, a Photosynthen's leaves or branches and roots, a shroomie's cap.</summary>
     static void Kin(Skeleton3D sk, Measure m, string race, string form, bool covered, List<Node> made)
     {
         var (head, hips) = (Hang(sk, "Head", made), Hang(sk, "Hips", made));

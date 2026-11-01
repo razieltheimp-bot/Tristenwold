@@ -653,7 +653,7 @@ public partial class Figure : Body
                 }
             }
         }
-        // The forest peoples, on a figure: an ape's muzzle and tail, a plant person's leaves or branches, a shroomie's cap.
+        // The forest peoples, on a figure: an ape's muzzle and tail, a Photosynthen's leaves or branches, a shroomie's cap.
         if (a.Race is "ape" or "plant" or "shroomie" or "lizard" && Box("head") is { } brow && Hang("head") is { } crown)
         {
             var (c, sz) = (brow.GetCenter(), brow.Size);

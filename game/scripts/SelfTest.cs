@@ -24,6 +24,7 @@ public partial class SelfTest(Main main) : Node
     {
         main.FightEnded += _reports.Add;
         main.Received += m => { if (m is DeviantAppears a) _appearances.Add(a); };
+        main.RoamersNode.Patient = false; // the scripted fights get on with it
         main.RoamersNode.WildDeviants = false; // the scripted fights below lose on purpose: only the hunt's own test makes deviants
         main.TownLifeNode.Stirring = false; // no young thief lifts the scripted hero's purse mid-test: the town's own test turns it on
         try
@@ -42,6 +43,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--quickkeys-only")) { await TheQuickKeys(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pirates-only")) { await ThePirates(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--isle-only")) { await TheIsleTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--growth-only")) { await TheGrowth(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -1984,8 +1986,28 @@ public partial class SelfTest(Main main) : Node
         Check(p.Use(p.Class.Utility) && !body.Visible && p.Stats.Statuses.Contains(AutoStatus.Protect), "you climb inside the golem: it's gone from the field, and you wear its plate (Protect, Shell)");
         await Frames(2);
         Check(p.Possessing && p.Figure is Clockwork { Design: "Ballast" }, "and you drive the machine: the golem's body is yours for the while, at its full size");
+        var biter = Enemy.Create(Bestiary.Get("wolf"), p.GlobalPosition + new Vector3(3, 0, 0));
+        main.AddEnemy(biter);
+        biter.Carried = true; // it stands still: the test does the biting
+        await Frames(2);
+        var (hero, hull) = (p.Stats.Health, body.Stats.Health);
+        for (var i = 0; i < 12 && body.Stats.Health >= hull; i++) p.TakeHit(40, DamageKind.Physical, AttackKind.Weapon, false, biter);
+        Check(p.Stats.Health == hero && body.Stats.Health < hull, $"a blow lands on the machine and not on you: you {hero:0} to {p.Stats.Health:0}, its hull {hull:0} to {body.Stats.Health:0}");
+        Check(hud.Tracked.Any(t => t.Contains("hull")) || main.WornGolem is not null, "and its hull shows while you're inside");
         await Until(() => body.Visible, 20);
-        Check(body.Visible, "and it steps back out beside you after");
+        Check(body.Visible && !p.Possessing && p.Hull is null, "and it steps back out beside you after");
+        body.Stats.Heal(1e9);
+        p.Stats.Restore(1e9, 1e9);
+        await Frames(10);
+        p.CoolForTest();
+        Check(p.Use(p.Class.Utility) && p.Possessing, "back inside the machine");
+        await Frames(2);
+        for (var i = 0; i < 60 && p.Possessing; i++) p.TakeHit(1e7, DamageKind.Physical, AttackKind.Weapon, false, biter);
+        await Frames(4);
+        Check(!p.Possessing && body.State == EnemyState.Dead && body.Visible && p.Stats.Health == hero, "beaten to scrap, it throws you clear, unhurt, and lies where it fell");
+        Check(hud.Heard("throw you clear"), "and it says so");
+        biter.QueueFree();
+        body.Revive();
         await Teleport(Main.ShipyardAt + new Vector3(0, 0, 1));
         p.Crowns = Math.Max(p.Crowns, 600);
         main.Talk(Who("tristinwold/shipwright"));
@@ -2885,6 +2907,143 @@ public partial class SelfTest(Main main) : Node
     {
         await Frames(2);
         return main.NearestForTest();
+    }
+
+    /// <summary>What was running away with itself: a deviant's band, how a hunter comes; and what a hero grows into.</summary>
+    async Task TheGrowth()
+    {
+        var (p, hud, feuds) = (main.PlayerNode, main.HudNode, main.FeudsNode);
+        await Teleport(new Vector3(-400, 0, 120));
+        await Frames(20);
+        // A band: lesser folk, a few at a time, and only the one.
+        var at = p.GlobalPosition + new Vector3(30, 0, 0);
+        var mother = Enemy.Create(Bestiary.Get("briar_mother"), at with { Y = City.FloorAt(at) + 0.5f });
+        main.AddEnemy(mother);
+        mother.Carried = true;
+        Check(Bands.Soldiers(Tristinwold.Deviant.Rank.Stray) == 0, "a new deviant stands alone");
+        feuds.Soldiers(mother, Tristinwold.Deviant.Rank.Ringleader, wait: 0.5);
+        feuds.Soldiers(mother, Tristinwold.Deviant.Rank.Ringleader, wait: 0.5);
+        feuds.Soldiers(mother, Tristinwold.Deviant.Rank.Ringleader, wait: 0.5);
+        Check(feuds.BandOf(mother) == 0, "its soldiers don't appear out of the air");
+        await Until(() => feuds.BandOf(mother) >= Bands.Soldiers(Tristinwold.Deviant.Rank.Ringleader), 6);
+        await Frames(120);
+        Check(feuds.BandOf(mother) == Bands.Soldiers(Tristinwold.Deviant.Rank.Ringleader), $"seen three times, it still has the one band: {feuds.BandOf(mother)}");
+        var kinds = GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => e != mother && e.GlobalPosition.DistanceTo(mother.GlobalPosition) < 16).Select(e => e.Kind.Id).Distinct().ToList();
+        Check(kinds.Contains("spriggan") && !kinds.Contains("briar_mother"), $"they're her thralls, not more of her ({string.Join(", ", kinds)})");
+        Check(Feuds.Underling("dock_thug") == "lantern_boy", "and a dock thug's are lantern boys");
+        feuds.Disband(mother);
+        await Frames(4);
+        Check(feuds.BandOf(mother) == 0, "and they go when it goes");
+        mother.QueueFree();
+        var town = Main.BladeStone;
+        var thug = Enemy.Create(Bestiary.Get("dock_thug"), town with { Y = City.FloorAt(town) + 0.5f });
+        main.AddEnemy(thug);
+        await Frames(3);
+        feuds.Soldiers(thug, Tristinwold.Deviant.Rank.Tyrant, wait: 0.1);
+        await Frames(40);
+        Check(feuds.BandOf(thug) == 0 && !feuds.HasBand(thug), "and nothing raises an army inside the town");
+        thug.QueueFree();
+
+        // A deviant takes its time.
+        var hero = p.Hero;
+        p.Join("EtherAeronaut");
+        await Frames(10);
+        while (hero.Level < Advances.Third) hero.Gain(Hero.XpToNext(hero.Level));
+        p.Fit();
+        p.Stats.Heal(1e9);
+        p.Stats.Restore(1e9, 1e9);
+        Check(hero.LevelPower(true) > hero.LevelPower(false) && hero.LevelPower(false) > 1, $"a limit break grows fastest: x{hero.LevelPower(true):0.00} against x{hero.LevelPower(false):0.00}");
+        await Frames(4);
+        Check(QuickBar.Moves(hero).Any(a => a.Id == "ether_lance") && QuickBar.Moves(hero).Any(a => a.Id == "boiler_burst"), "the new moves can go on the keys");
+
+        // The skills window: what each does, and a switch for each rank.
+        hero.Points = 2;
+        main.ShowSkills();
+        Check(hud.Talking && hud.TalkText.Contains("click a switch"), "K shows the abilities");
+        var rank = hero.Rank("ether_lance");
+        Check(hud.Choose("Raise Ether Lance") && hero.Rank("ether_lance") == rank + 1 && hero.Points == 1, "a switch raises it, for a point");
+        hud.EndTalk();
+
+        var foe = Enemy.Create(Bestiary.Get("wolf"), p.GlobalPosition + new Vector3(0, 0.5f, -6));
+        main.AddEnemy(foe);
+        foe.Carried = true;
+        foe.Stats.Grow(50);
+        await Frames(5);
+        p.Face(foe.GlobalPosition);
+        await Frames(3);
+        var was = foe.Stats.Health;
+        Check(p.Use(Classes.Move("ether_lance")!) && foe.Stats.Health < was, $"Ether Lance strikes what's in front: {was - foe.Stats.Health:0} damage");
+        p.CoolForTest();
+        await Frames(30);
+        was = foe.Stats.Health;
+        Check(p.Use(Classes.Move("boiler_burst")!) && foe.Stats.Health < was, $"Boiler Burst hits what's around: {was - foe.Stats.Health:0} damage");
+        foe.QueueFree();
+        foreach (var advance in Advances.Everything.Where(a => a.Style is MoveStyle.Mend or MoveStyle.Ward or MoveStyle.Haste))
+            Check(advance.Move.Seconds > 0 || advance.Move.Power > 0, $"{advance.Move.Name} does something");
+
+        // A home: wake there, and on the quay if you're one of a ship's people.
+        var saga = main.SagaForTest;
+        Check(saga.Home is null && main.WakeSpotForTest().DistanceTo(City.PlayerStart) < 2, "with no home chosen, the ring brings you back to the Perch");
+        var greywater = main.World.Find("city:greywater")!;
+        main.ShowSkills();
+        Check(!hud.Options.Any(o => o.Contains("my hometown")), "you can't change your hometown just anywhere");
+        hud.EndTalk();
+        await Teleport(new Vector3((float)greywater.X, 0, (float)greywater.Z));
+        main.EnterTavernForTest();
+        await Frames(10);
+        main.ShowBarForTest();
+        Check(hud.Choose($"Make {greywater.Name} my hometown") && saga.Home?.Id == greywater.Id, $"at the bar of a tavern in {greywater.Name}, you make it your hometown");
+        hud.EndTalk();
+        main.ShowBarForTest();
+        Check(!hud.Options.Any(o => o.Contains("my hometown")), "and the bar doesn't ask again");
+        hud.EndTalk();
+        main.LeaveTavernForTest();
+        await Frames(10);
+        Check(new Vector2(main.WakeSpotForTest().X - (float)greywater.X, main.WakeSpotForTest().Z - (float)greywater.Z).Length() < 10, "and that's where the ring brings you now");
+        Check(hero.Discipline == "EtherAeronaut", "still an aeronaut");
+        var sea = main.Sea;
+        sea.Rank = SeaRank.Deckhand;
+        Check(main.WakeDockForTest() == "Greywater Quay", $"one of a ship's people wakes on their home town's quay: {main.WakeDockForTest()}");
+        main.SailForTest("port:greywater");
+        await Frames(20);
+        sea.Voyage!.Out = [];
+        sea.Voyage!.Home = [];
+        p.Stats.Heal(1e9);
+        var ship = sea.Ship;
+        var boarder = Enemy.Create(Bestiary.Get("wolf"), p.GlobalPosition + new Vector3(2, 0, 0));
+        main.AddEnemy(boarder);
+        boarder.Carried = true;
+        await Frames(2);
+        for (var i = 0; i < 40 && !p.Downed; i++) p.TakeHit(1e9, DamageKind.Physical, AttackKind.Weapon, false, boarder);
+        await Until(() => !p.Downed, 12);
+        await Frames(20);
+        boarder.QueueFree();
+        Check(sea.Voyage is null && main.AtSeaNode is null && hud.Heard("ties up at the quay"), $"killed at sea, you wake at the dock and {ship} comes in with you");
+        Check(p.GlobalPosition.Y < 60 && new Vector2(p.GlobalPosition.X - (float)greywater.X, p.GlobalPosition.Z - (float)greywater.Z).Length() < 400, $"on the quay at {greywater.Name} ({p.GlobalPosition.Y:0.0} m up)");
+        await Frames(60);
+        Check(!p.Downed && p.GlobalPosition.Y > -2, "and standing on it, not in the water");
+        sea.Rank = SeaRank.Landsman;
+        saga.Home = null;
+        await Teleport(new Vector3(-400, 0, 120));
+
+        // The construct takes to the air.
+        p.Stats.Restore(1e9, 1e9);
+        p.CoolForTest();
+        var ground = p.GlobalPosition.Y;
+        Check(p.Use(p.Class.Utility), "inside the construct");
+        await Frames(4);
+        p.JetForTest();
+        Check(p.Jetting, "at level 6 and up, it can fly");
+        Input.ActionPress("jump");
+        await Frames(50);
+        Input.ActionRelease("jump");
+        Check(p.GlobalPosition.Y > ground + 5, $"holding jump climbs: {p.GlobalPosition.Y - ground:0.0} m up");
+        var high = p.GlobalPosition.Y;
+        await Frames(30);
+        Check(Mathf.Abs(p.GlobalPosition.Y - high) < 1, "and it holds its height with nothing pressed, no falling");
+        await Until(() => !p.Possessing, 60);
+        await Frames(10);
+        Check(!p.Jetting, "when the engine winds down, the flight's over");
     }
 
     /// <summary>The forge's work: two swords off the same anvil are two different swords, and they show it in the hand and in the fight.</summary>

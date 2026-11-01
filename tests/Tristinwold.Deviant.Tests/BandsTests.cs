@@ -9,8 +9,8 @@ public class BandsTests
     [Fact]
     public void Each_rank_has_more_soldiers_than_the_last()
     {
-        Assert.Equal(1, Bands.Soldiers(Rank.Stray));
-        Assert.True(Bands.Soldiers(Rank.Ringleader) > 1 && Bands.Soldiers(Rank.Scourge) > Bands.Soldiers(Rank.Ringleader) && Bands.Soldiers(Rank.Tyrant) > Bands.Soldiers(Rank.Scourge));
+        Assert.Equal(0, Bands.Soldiers(Rank.Stray)); // a new deviant is on its own
+        Assert.True(Bands.Soldiers(Rank.Ringleader) > 0 && Bands.Soldiers(Rank.Scourge) > Bands.Soldiers(Rank.Ringleader) && Bands.Soldiers(Rank.Tyrant) > Bands.Soldiers(Rank.Scourge));
     }
 
     [Fact]

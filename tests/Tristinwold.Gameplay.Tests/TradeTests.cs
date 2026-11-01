@@ -7,6 +7,49 @@ namespace Tristinwold.Gameplay.Tests;
 public class TradeTests
 {
     [Fact]
+    public void Every_class_grows_three_more_moves_that_are_all_different_and_a_level_makes_them_stronger()
+    {
+        foreach (var c in Classes.All)
+        {
+            var moves = Advances.Of(c.Id);
+            Assert.Equal([Advances.First, Advances.Second, Advances.Third], moves.Select(a => a.Level));
+            Assert.Empty(Advances.Known(c.Id, 5));
+            Assert.Equal(3, Advances.Known(c.Id, 18).Count());
+        }
+        var ids = Advances.Everything.Select(a => a.Move.Id).ToList();
+        Assert.Equal(ids.Count, ids.Distinct().Count());
+        Assert.DoesNotContain(ids, id => Classes.All.SelectMany(c => c.Skills).Any(s => s.Id == id));
+        Assert.Equal("Ether Lance", Classes.Move("ether_lance")!.Name);
+        Assert.Equal(MoveStyle.Passive, Advances.Of("EtherAeronaut")[0].Style);
+        Assert.Equal(6, Advances.FlightLevel);
+        var (young, old) = (new Hero { Level = 1 }, new Hero { Level = 20 });
+        Assert.Equal(1, young.LevelPower(true));
+        Assert.True(old.LevelPower(true) > old.LevelPower(false));
+        Assert.True(old.LevelPower(false) > 1);
+    }
+
+    [Fact]
+    public void Everything_that_can_be_killed_leaves_something_every_time()
+    {
+        foreach (var kind in Bestiary.All.Select(k => k.Id).Where(k => k != "sky_hull")) // a flying ship's hull is the ship
+            for (var seed = 1UL; seed < 200; seed++)
+            {
+                var drop = Loot.Roll(kind, new Rng(seed));
+                Assert.True(drop.Items.Count > 0 || drop.Crowns > 0, $"{kind} left nothing");
+                Assert.NotEmpty(Loot.Roll(kind, new Rng(seed), young: true).Items);
+            }
+    }
+
+    [Fact]
+    public void A_horse_leaves_its_hide_or_its_meat_and_the_hide_makes_leather()
+    {
+        var drops = Enumerable.Range(1, 40).SelectMany(i => Loot.Roll("wild_horse", new Rng((ulong)i)).Items).ToList();
+        Assert.Contains(drops, i => i.Id == "horse_hide");
+        Assert.Contains(drops, i => i.Id == "raw_meat");
+        Assert.Contains(Recipes.All, r => r.Makes == "leather" && r.Needs.Any(n => n.Id == "horse_hide"));
+    }
+
+    [Fact]
     public void Every_recipe_shop_and_drop_names_real_items()
     {
         foreach (var r in Recipes.All)
@@ -28,7 +71,7 @@ public class TradeTests
         var wolf = Enumerable.Range(0, 20).SelectMany(_ => Loot.Roll("wolf", rng).Items).ToList();
         Assert.Contains(wolf, i => i.Id == "wolf_pelt");
         Assert.DoesNotContain(wolf, i => i.Id.StartsWith("dragon"));
-        Assert.Empty(Loot.Roll("wolf", rng, young: true).Items);
+        Assert.Equal(("wolf_pelt", 1), Assert.Single(Loot.Roll("wolf", rng, young: true).Items));
         var dragon = Loot.Roll("dragon_red", rng);
         Assert.Contains(dragon.Items, i => i.Id == "dragon_scale_red" && i.N >= 4);
         Assert.Contains(dragon.Items, i => i.Id == "dragon_bone");

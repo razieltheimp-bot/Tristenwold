@@ -136,6 +136,7 @@ public static class Recipes
         new(Job.Smithing, 1, "leather", 1, [("deer_hide", 1)]),
         new(Job.Smithing, 1, "leather", 1, [("boar_hide", 1)]),
         new(Job.Smithing, 1, "leather", 1, [("cow_hide", 1)]),
+        new(Job.Smithing, 1, "leather", 1, [("horse_hide", 1)]),
         new(Job.Smithing, 2, "leather", 2, [("ape_hide", 1)]),
         new(Job.Smithing, 2, "leather", 3, [("troll_hide", 1)]),
         // Iron.
@@ -230,7 +231,8 @@ public static class Recipes
 }
 
 /// <summary>What a creature leaves when it dies: things it would (pelts from wolves, scales from dragons), and coin
-/// from anything that carries it. Dragons leave a great deal; the bosses of the lairs, their trophies and gear.</summary>
+/// from anything that carries it. Dragons leave a great deal; the bosses of the lairs, their trophies and gear. Nothing
+/// that's killed leaves nothing: the first thing on its list is what it always has.</summary>
 public static class Loot
 {
     public sealed record Drop(List<(string Id, int N)> Items, int Crowns);
@@ -248,7 +250,10 @@ public static class Loot
         "sheep" => [("wool", 0.95, 1, 3), ("raw_meat", 0.8, 1, 2)],
         "pig" => [("raw_meat", 0.95, 2, 3)],
         "hen" => [("feather", 0.9, 1, 3), ("raw_meat", 0.5, 1, 1)],
-        "horse" or "wild_horse" => [("cow_hide", 0.8, 1, 1)],
+        "horse" or "wild_horse" => [("horse_hide", 0.95, 1, 1), ("raw_meat", 0.9, 1, 3)],
+        "dog" => [("scruffy_pelt", 0.9, 1, 1), ("raw_meat", 0.5, 1, 1)],
+        "cat" => [("scruffy_pelt", 0.9, 1, 1)],
+        "hawk" => [("feather", 0.95, 2, 4)],
         "giant_rat" => [("rat_tail", 0.8, 1, 1)],
         "crystal_rat" => [("amethyst_shard", 0.6, 1, 1), ("rat_tail", 0.5, 1, 1)],
         "mud_crab" => [("crab_chitin", 0.9, 1, 2)],
@@ -272,15 +277,40 @@ public static class Loot
         "winged_ape" => [("black_feather", 0.9, 2, 3), ("ape_hide", 0.6, 1, 1), ("iron_greatsword", 0.12, 1, 1)],
         "stormwing" => [("storm_feather", 0.6, 1, 1)],
         "velvet_assassin" => [("iron_dagger", 0.4, 1, 1), ("healing_draught", 0.3, 1, 1), ("linen", 0.3, 1, 1)],
+        "watchman" or "squire" => [("bread", 0.6, 1, 2), ("leather", 0.4, 1, 1), ("iron_dagger", 0.08, 1, 1)],
+        "young_thief" or "initiate" or "protege" or "understudy" => [("bread", 0.6, 1, 1), ("linen", 0.5, 1, 1)],
+        "apprentice" => [("linen", 0.6, 1, 2), ("healing_draught", 0.15, 1, 1)],
+        "monkey_hand" => [("ale", 0.6, 1, 2), ("linen", 0.4, 1, 2), ("ancient_coin", 0.4, 1, 2), ("healing_draught", 0.15, 1, 1)],
+        "dread_soren" => [("ancient_coin", 1, 3, 6), ("linen", 0.5, 1, 2)],
+        "lu_wukong" => [("cracked_gourd", 1, 1, 1), ("ancient_coin", 0.8, 2, 4)],
+        "turlin" or "giant_ape" => [("fruit_rind", 1, 1, 1), ("ape_hide", 0.7, 1, 1)],
+        "golem" => [("scrap_iron", 0.9, 1, 3), ("iron_nails", 0.7, 2, 4)],
+        "forge_golem" => [("scrap_iron", 1, 3, 5), ("iron_ingot", 0.8, 1, 2), ("coal", 0.8, 2, 4)],
+        "cinder_warden" => [("ember_ash", 1, 2, 4), ("bone_dust", 0.8, 1, 3), ("ancient_coin", 0.7, 2, 4)],
+        "goblin_king" => [("goblin_trinket", 1, 2, 4), ("scrap_iron", 0.9, 2, 4), ("ancient_coin", 0.6, 1, 3)],
+        "briar_mother" => [("heartwood", 1, 2, 3), ("ladys_mantle", 0.9, 2, 4)],
+        "ghost_captain" => [("ectoplasm", 1, 2, 3), ("ancient_coin", 0.9, 2, 5)],
+        "crystal_basilisk" => [("amethyst_shard", 1, 2, 4)],
+        "duskprowler" => [("shadow_essence", 1, 1, 3), ("wolf_fang", 0.7, 2, 3)],
+        "thunderhawk" => [("storm_feather", 1, 2, 3), ("feather", 0.9, 2, 4)],
+        "guardian_moss" or "guardian_elder" => [("heartwood", 1, 2, 4), ("ladys_mantle", 0.9, 2, 4)],
+        "guardian_bark" => [("heartwood", 1, 3, 5), ("oak_log", 0.9, 2, 4)],
+        "guardian_blight" => [("shadow_essence", 1, 1, 3), ("heartwood", 0.8, 1, 2)],
         _ => [],
     };
 
-    /// <summary>What a creature of this kind drops. A youngling leaves nothing worth taking.</summary>
+    /// <summary>What a creature of this kind drops. A youngling doesn't leave much: only the one thing, small.</summary>
     public static Drop Roll(string kind, Rng rng, bool young = false)
     {
         var items = new List<(string, int)>();
-        if (young) return new(items, 0);
-        foreach (var (id, chance, min, max) in Table(kind))
+        var table = Table(kind);
+        if (young)
+        {
+            if (DragonColour(kind) is { } scale) items.Add(($"dragon_scale_{scale}", 1));
+            else if (table.Length > 0) items.Add((table[0].Id, 1));
+            return new(items, 0);
+        }
+        foreach (var (id, chance, min, max) in table)
             if (rng.Chance(chance)) items.Add((id, min + rng.Next(max - min + 1)));
         var crowns = kind switch
         {
@@ -294,6 +324,7 @@ public static class Loot
             _ => 0,
         };
         if (DragonColour(kind) is { } colour) (items, crowns) = Dragon(kind, colour, rng);
+        if (items.Count == 0 && crowns == 0 && table.Length > 0) items.Add((table[0].Id, table[0].Min));
         return new(Merge(items), crowns);
     }
 

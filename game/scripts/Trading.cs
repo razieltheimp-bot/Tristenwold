@@ -35,8 +35,8 @@ public partial class Main
         _player.Crowns += drop.Crowns;
         Sound.Ui(drop.Crowns > 0 ? "coin" : "pickup", -4);
         var what = Loot.Describe(drop.Items) + (drop.Crowns > 0 ? $"{(drop.Items.Count > 0 ? ", " : "")}{drop.Crowns} crowns" : "");
-        _hud.Log($"Looted: {what}");
         if (victim.IsDragon) _hud.Toast($"The dragon's hoard and body: {what}.", 9);
+        else _hud.Toast($"Looted: {what}", 3.5);
     }
 
     /// <summary>Into the pack, all of it.</summary>

@@ -226,6 +226,10 @@ public partial class Player : Fighter
     }
 
     bool _possessing;
+    Action? _stepOut;
+
+    /// <summary>What takes the blows while the hero's inside it (an aeronaut's golem): they don't reach the hero.</summary>
+    public Action<double, DamageKind, AttackKind, bool, Enemy>? Hull { get; set; }
 
     /// <summary>
     /// Another body for a while (an aeronaut inside their golem): the hero's own figure is put away and this one worn
@@ -241,9 +245,10 @@ public partial class Player : Fighter
         Resize(1.8f * own * size, 0.4f * Math.Max(1, size * 0.8f));
         _pivot.Position = new Vector3(0, 1.6f * own * size, 0);
         _arm.SpringLength = 5 * Math.Max(1, own * size * 0.9f);
-        GetTree().CreateTimer(seconds).Timeout += () =>
+        Action? out_ = null;
+        out_ = () =>
         {
-            if (!IsInstanceValid(this)) return;
+            _stepOut = null;
             _possessing = false;
             Dress();
             Resize(1.8f * own, 0.4f);
@@ -251,6 +256,18 @@ public partial class Player : Fighter
             _arm.SpringLength = 5 * Math.Max(1, own);
             then?.Invoke();
         };
+        _stepOut = out_;
+        GetTree().CreateTimer(seconds).Timeout += () =>
+        {
+            if (IsInstanceValid(this) && _stepOut == out_) out_();
+        };
+    }
+
+    /// <summary>Out of the other body now, before its time is up.</summary>
+    public void Unpossess()
+    {
+        _merged = 0;
+        _stepOut?.Invoke();
     }
 
     /// <summary>Inside another body (the golem) for the while.</summary>
@@ -317,12 +334,19 @@ public partial class Player : Fighter
         {
             var speed = (sprint ? SprintSpeed : WalkSpeed) * (float)Stats.SpeedMult * (Burdened ? 0.7f : 1);
             if (sprint && input != Vector2.Zero && Class.Id != "Thief") Stats.Spend(AttackKind.Weapon, 15 * delta);
-            if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming))
+            if (Input.IsActionJustPressed("jump") && !IsOnFloor() && !Swimming && CanJet && !_jetting)
+            {
+                _jetting = true;
+                Sound.At("move/jump", GlobalPosition, 0, 0.6f);
+                Effects.Burst(GetParent(), GlobalPosition, DamageKind.Fire, 1.4f);
+            }
+            else if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming))
             {
                 Velocity = Velocity with { Y = JumpSpeed * (float)Math.Sqrt(Pack.JumpHeight) }; // twice the speed would be four times the height
                 if (!Swimming) { Figure.Perform("Jump_Start", 0.22, 1.5f); Sound.At("move/jump", GlobalPosition, -6); } // a crouch and a spring
             }
-            FallAndSlide(delta, dir * speed);
+            if (_jetting) Jet(dir, speed, delta);
+            else FallAndSlide(delta, dir * speed);
             Steps(delta);
 
             // The body turns to run the way you're going; it faces forward to strike or cast.
@@ -427,6 +451,7 @@ public partial class Player : Fighter
     }
 
     /// <summary>How long until a move can be used again (0: ready).</summary>
+    public void CoolForTest() => _ready.Clear();
     public double Cooldown(string id) => Math.Max(0, _ready.GetValueOrDefault(id) - Now);
 
     /// <summary>Uses one of the class's moves, if it's ready and there's the stamina or mana for it.</summary>
@@ -441,12 +466,13 @@ public partial class Player : Fighter
         _ready[a.Id] = Now + a.Cooldown;
         _actingUntil = Now + Math.Min(0.6, Math.Max(0.3, a.Cooldown));
         Figure.Rotation = new Vector3(0, 0, 0);
-        var power = Hero.MovePower(a.Id);
+        var power = Hero.MovePower(a.Id) * Hero.LevelPower(limit);
         var dmg = a.Power * power;
         var near = InFront(a.Range > 0 ? a.Range : 2.4, a.Range > 6 ? 30 : 70).FirstOrDefault();
         if (a.Pays == AttackKind.Weapon && a.Range < 6 && a.Power > 1 && Class.Id != "Ranger") // a blade, an axe, a fist through the air
             Sound.At(Class.Id == "MartialArtist" ? "melee/punch" : "melee/swing", GlobalPosition + Vector3.Up, -6);
         if (Class.Calling == Calling.Bard) Play(a);
+        if (Advances.For(a.Id) is { } advance) return Advanced(advance, a, dmg, power, near);
         switch (a.Id)
         {
             // ---- the alchemist ----
@@ -956,6 +982,64 @@ public partial class Player : Fighter
         }
     }
 
+    /// <summary>A move a class came into as it levelled: they're all one of a few shapes.</summary>
+    bool Advanced(Advance advance, Ability a, double dmg, double power, Enemy? near)
+    {
+        var spell = a.Pays == AttackKind.Spell;
+        switch (advance.Style)
+        {
+            case MoveStyle.Strike:
+                if (near is null) { Refund(a); return false; }
+                if (spell) { Figure.Cast(); Spell(near, dmg, a.Kind, 0.16f); }
+                else { Figure.Attack(); Strike(near, dmg, a.Kind, AttackKind.Weapon); }
+                return true;
+            case MoveStyle.Burst:
+                var around = Foes().Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < a.Range).ToList();
+                if (around.Count == 0) { Refund(a); return false; }
+                if (spell) Figure.Cast(); else Figure.Attack();
+                Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, a.Kind, (float)a.Range * 0.5f);
+                foreach (var e in around)
+                    if (spell) Spell(e, dmg, a.Kind, 0.1f);
+                    else Strike(e, dmg, a.Kind, AttackKind.Weapon);
+                return true;
+            case MoveStyle.Mend:
+                Figure.Cast();
+                Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Sun, 1.4f);
+                Stats.Heal(Stats.MaxHealth * a.Power);
+                return true;
+            case MoveStyle.Ward:
+                Figure.Cast();
+                For(a.Seconds * power, AutoStatus.Protect, AutoStatus.Shell);
+                return true;
+            case MoveStyle.Haste:
+                Figure.Cast();
+                For(a.Seconds * power, AutoStatus.Haste);
+                return true;
+            default:
+                Refund(a);
+                return false;
+        }
+    }
+
+    /// <summary>A hero inside their construct, far enough along for it to fly.</summary>
+    bool CanJet => Possessing && Class.Id == "EtherAeronaut" && Hero.Level >= Advances.FlightLevel;
+    bool _jetting;
+
+    /// <summary>Up in the construct: for the self-test.</summary>
+    public bool Jetting => _jetting;
+    public void JetForTest() => _jetting = CanJet;
+
+    /// <summary>The construct in the air: where you're heading, as fast as it'll go, with jump to climb and descend to sink.</summary>
+    void Jet(Vector3 dir, float speed, double delta)
+    {
+        var climb = Input.IsActionPressed("jump") ? 1 : Input.IsActionPressed("descend") ? -1 : 0;
+        var top = City.FloorAt(GlobalPosition) + 70;
+        if (GlobalPosition.Y > top) climb = Math.Min(climb, 0);
+        Velocity = dir * speed * 1.7f + Vector3.Up * climb * 9;
+        MoveAndSlide();
+        if (!CanJet || IsOnFloor() && climb <= 0) _jetting = false;
+    }
+
     void Refund(Ability a)
     {
         _ready[a.Id] = 0;
@@ -1097,7 +1181,8 @@ public partial class Player : Fighter
         if (Class.Id == "Paladin") damage *= 1 - Class.Passive.Power * Hero.Power("devotion");
         damage *= 1 - Math.Min(Forging.MostBlock, Pack.Ability("block"));
         if (attack == AttackKind.Weapon && _rng.Chance(Math.Min(Forging.MostDeflect, Pack.Ability("deflect")) / 100)) damage *= Forging.GlanceDamage; // armour that turns a blow
-        Stats.TakeHit(damage, kind, attack, crit, from.Stats);
+        if (Hull is { } hull) hull(damage, kind, attack, crit, from); // the plates take it, and the hero's only shaken
+        else Stats.TakeHit(damage, kind, attack, crit, from.Stats);
         if (Stats.Dead && Pack.Ability("undying") > 0 && Now >= _undyingAt) // the blade holds you at the edge, once a day
         {
             _undyingAt = Now + CityEconomy.DaySeconds;
@@ -1162,13 +1247,18 @@ public partial class Player : Fighter
         WentDown?.Invoke();
     }
 
-    /// <summary>Waking up at the Gallows Perch. Mother Corva doesn't ask.</summary>
+    /// <summary>Where the ring brings the hero back: the game says, for a hero with a home or a ship.</summary>
+    public Func<Vector3>? WakesAt { get; set; }
+
+    /// <summary>Waking up at the Gallows Perch, or wherever home is now. Mother Corva doesn't ask.</summary>
     void Rise()
     {
         Downed = false;
         Figure.Rise();
         Stats.Heal(Stats.MaxHealth);
-        GlobalPosition = City.PlayerStart;
+        GlobalPosition = WakesAt?.Invoke() ?? City.PlayerStart;
+        Velocity = Vector3.Zero;
+        ResetPhysicsInterpolation();
         Woke?.Invoke();
     }
 

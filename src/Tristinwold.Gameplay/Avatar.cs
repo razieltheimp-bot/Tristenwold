@@ -38,7 +38,7 @@ public sealed record Avatar(string Head, string Body, string Arms, string Legs, 
     public string Sleeves { get; init; } = "Class";
     /// <summary>What's worn over the clothes that isn't armour: "Class" (the class's own kit) or one of <see cref="Wears"/>.</summary>
     public string Wear { get; init; } = "Class";
-    /// <summary>The plant people's two looks: leaf and root in their "Spring", bare wood and branch in their "Fall".</summary>
+    /// <summary>The Photosynthens' two looks: leaf and root in their "Spring", bare wood and branch in their "Fall".</summary>
     public string Form { get; init; } = "Spring";
 
     public static readonly (string Name, float Width)[] Builds = [("Slim", 0.9f), ("Average", 1f), ("Broad", 1.12f)];

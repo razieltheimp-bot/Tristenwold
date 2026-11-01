@@ -29,6 +29,8 @@ public partial class Roamers(Main main) : Node
         public Counter Applied = Counter.None;
         public double BaseDamage = 1, BaseArmor, BaseWard, BaseSpeed = 1;
         public double LungeIn;
+        /// <summary>It has seen the hero, and is watching them till then.</summary>
+        public double WatchingUntil;
         /// <summary>It has come into a town after the hero.</summary>
         public bool Inside;
     }
@@ -44,6 +46,8 @@ public partial class Roamers(Main main) : Node
 
     /// <summary>Whether anything that beats the hero in the wilds takes a name (the self-test turns it off for its own fights).</summary>
     public bool WildDeviants { get; set; } = true;
+    /// <summary>Whether a deviant takes its time (the self-test turns it off, to get on with things).</summary>
+    public bool Patient { get; set; } = true;
 
     /// <summary>Roamers out walking near the hero now, with their bodies.</summary>
     public IEnumerable<(Roamer Roamer, Enemy Body)> Near => _out.Where(o => IsInstanceValid(o.Body)).Select(o => (o.Roamer, o.Body));
@@ -110,7 +114,7 @@ public partial class Roamers(Main main) : Node
                     Pursue(o, d);
                 }
             }
-            else if (!p.Downed && !heroInTown && d < Tactics.NoticeRange) TakeUpTrail(o);
+            else if (!p.Downed && !heroInTown && d < Tactics.NoticeRange) Stalk(o);
             if (!r.Hunting)
             {
                 if (d > DespawnRange || p.Downed && d > 60)
@@ -127,12 +131,31 @@ public partial class Roamers(Main main) : Node
 
     void Despawn(Out o)
     {
+        main.FeudsNode.Disband(o.Body);
         foreach (var add in o.Adds.Where(IsInstanceValid)) add.QueueFree();
         o.Body.QueueFree();
         _out.Remove(o);
     }
 
     // ---- the hunt -------------------------------------------------------------------------------
+
+    /// <summary>It's seen the hero. It doesn't come at once: if it has plans it keeps to them, and otherwise it watches a while first.</summary>
+    void Stalk(Out o)
+    {
+        var now = main.GuildBook.PlaySeconds;
+        if (!Patient) { TakeUpTrail(o); return; }
+        if (now < o.Roamer.PlansUntil) return;
+        if (o.WatchingUntil <= 0)
+        {
+            o.WatchingUntil = Tactics.Watch(now, _rng);
+            main.HudNode.Log($"Something's watching you from a long way off, and it isn't in any hurry.");
+        }
+        else if (now >= o.WatchingUntil)
+        {
+            o.WatchingUntil = 0;
+            TakeUpTrail(o);
+        }
+    }
 
     /// <summary>It has seen the hero: it says so, and comes, ready for how they fought it last time.</summary>
     void TakeUpTrail(Out o)
@@ -191,6 +214,7 @@ public partial class Roamers(Main main) : Node
     {
         var r = o.Roamer;
         r.Hunting = false;
+        r.PlansUntil = Tactics.Plan(main.GuildBook.PlaySeconds, _rng);
         if (heroInTown && o.Inside)
             main.HudNode.Toast($"{r.Title} sees the Watch closing in around you, and thinks better of it. It breaks off and makes for the walls.", 7);
         else if (heroInTown)
@@ -320,6 +344,7 @@ public partial class Roamers(Main main) : Node
         {
             o.Roamer.Wins++;
             o.Roamer.Hunting = false;
+            o.Roamer.PlansUntil = Tactics.Plan(main.GuildBook.PlaySeconds, _rng);
             Strengthen(o);
             main.HudNode.Toast($"{o.Roamer.Title} stands over you. That's {o.Roamer.Wins} times it has beaten you, and it grows stronger every time.", 10);
         }
@@ -337,6 +362,7 @@ public partial class Roamers(Main main) : Node
         var at = killer.GlobalPosition;
         var was = killer.Stats.Name;
         var r = main.RaidLog.Took(killer.Kind.Id, at.X, at.Z, main.GuildBook.PlaySeconds, (ulong)GD.Randi() << 32 | GD.Randi());
+        r.PlansUntil = Tactics.Plan(main.GuildBook.PlaySeconds, _rng);
         if (killer.DeviantId is { } id) (r.DeviantId, r.Name) = (id, was); // the shared world named it already
         killer.Think = null;
         Spawn(r, at, killer);

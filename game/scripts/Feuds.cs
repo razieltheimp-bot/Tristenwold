@@ -16,7 +16,10 @@ public partial class Feuds(Main main) : Node
     const double Chance = 0.08, Between = 240;
     static readonly string[] Bandfolk = ["bandit", "raider", "goblin"];
 
+    /// <summary>How long between one of a deviant's soldiers turning up and the next: a band gathers, it doesn't appear.</summary>
+    const double Gathers = 10;
     readonly List<Enemy> _fighters = [];
+    readonly Dictionary<Enemy, List<Enemy>> _bands = [];
     double _tick = 30, _nextAt;
 
     public IReadOnlyList<Enemy> Fighters => _fighters;
@@ -26,6 +29,16 @@ public partial class Feuds(Main main) : Node
         if ((_tick -= delta) > 0) return;
         _tick = 30;
         var p = main.PlayerNode;
+        foreach (var (leader, band) in _bands.ToList())
+        {
+            band.RemoveAll(e => !IsInstanceValid(e) || e.State == EnemyState.Dead);
+            if (!IsInstanceValid(leader) || leader.State == EnemyState.Dead)
+            {
+                foreach (var e in band.Where(e => !e.FightingCompany)) e.QueueFree(); // with nobody to follow, they drift off
+                band.RemoveAll(e => !e.FightingCompany);
+                if (band.Count == 0) _bands.Remove(leader);
+            }
+        }
         _fighters.RemoveAll(e => !IsInstanceValid(e) || e.State == EnemyState.Dead);
         if (_fighters.Count > 0)
         {
@@ -100,19 +113,58 @@ public partial class Feuds(Main main) : Node
         }
     }
 
-    /// <summary>A deviant's soldiers, round it where it stands. A dragon has none: nothing follows a dragon.</summary>
-    public void Soldiers(Enemy leader, Rank rank, string? kind = null)
+    /// <summary>Who serves a kind of leader: a lair boss's own thralls, a chief's own people, or else a lesser one of its kind.</summary>
+    public static string Underling(string kind) => Raids.All.FirstOrDefault(r => r.BossKind == kind)?.ThrallKind ?? kind switch
     {
-        if (leader.IsDragon) return;
+        "dock_thug" => "lantern_boy",
+        "bandit_chief" => "bandit",
+        "raider_chief" => "raider",
+        "pirate_captain" => "pirate",
+        "draugr_overlord" => "draugr",
+        "goblin_king" => "goblin",
+        _ => kind,
+    };
+
+    /// <summary>The soldiers a leader has round it now (for the self-test).</summary>
+    public int BandOf(Enemy leader) => _bands.TryGetValue(leader, out var band) ? band.Count(IsInstanceValid) : 0;
+    public bool HasBand(Enemy leader) => _bands.ContainsKey(leader);
+
+    /// <summary>
+    /// A deviant's soldiers. They come to it one at a time, and a leader only ever has the one band, however often it's
+    /// seen. A dragon has none: nothing follows a dragon. Nor does anything gather inside a town.
+    /// </summary>
+    public void Soldiers(Enemy leader, Rank rank, string? kind = null, double wait = Gathers)
+    {
         var count = Bands.Soldiers(rank);
+        if (count == 0 || leader.IsDragon || _bands.ContainsKey(leader) || main.RoamersNode.InTown(leader.GlobalPosition)) return;
+        var band = new List<Enemy>();
+        _bands[leader] = band;
+        var who = kind ?? Underling(leader.Kind.Id);
         for (var i = 0; i < count; i++)
         {
             var a = i * Mathf.Tau / count;
-            var at = leader.GlobalPosition + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 3.2f;
-            var e = Enemy.Create(Bestiary.Get(kind ?? leader.Kind.Id), at with { Y = City.FloorAt(at) + 0.5f }, WorldGen.Danger(at.X, at.Z));
-            e.Roam = 12;
-            main.AddEnemy(e);
-            if (leader.FightingCompany) e.Provoke(main.PlayerNode);
+            GetTree().CreateTimer(wait * (i + 1)).Timeout += () =>
+            {
+                if (!IsInstanceValid(leader) || leader.State == EnemyState.Dead || !_bands.ContainsKey(leader)) return;
+                var at = leader.GlobalPosition + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 6;
+                var e = Enemy.Create(Bestiary.Get(who), at with { Y = City.FloorAt(at) + 0.5f }, WorldGen.Danger(at.X, at.Z));
+                if (who == leader.Kind.Id) // a lesser one of its kind, not another of the same
+                {
+                    e.Stats.Grow(0.5);
+                    e.Stats.DamageMult *= 0.6;
+                }
+                e.Roam = 12;
+                main.AddEnemy(e);
+                band.Add(e);
+                if (leader.FightingCompany) e.Provoke(main.PlayerNode);
+            };
         }
+    }
+
+    /// <summary>A leader's gone from the world for now: its band goes with it.</summary>
+    public void Disband(Enemy leader)
+    {
+        if (!_bands.Remove(leader, out var band)) return;
+        foreach (var e in band.Where(IsInstanceValid)) e.QueueFree();
     }
 }

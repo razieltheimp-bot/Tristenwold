@@ -425,6 +425,8 @@ public sealed class Roamer
     public Lessons Lessons { get; set; } = new();
     /// <summary>It has the hero's trail, and is coming after them.</summary>
     public bool Hunting { get; set; }
+    /// <summary>It won't come for anyone before this (seconds of play): it's making its plans.</summary>
+    public double PlansUntil { get; set; }
     /// <summary>"Mokak the Grinning".</summary>
     public string Name { get; set; } = "";
     /// <summary>How many times it has beaten the company.</summary>

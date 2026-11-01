@@ -199,6 +199,7 @@ public partial class Main
 
     IEnumerable<string> ArtificerLines(Vector3 pos)
     {
+        if (_worn is { } hull) yield return $"Inside {hull.Stats.Name}: hull {hull.Stats.Health / hull.Stats.MaxHealth:P0}. It takes the blows, not you";
         if (_standing.Tracker is not { } t || t.Lost(_guilds.PlaySeconds)) yield break;
         var (x, z) = t.Where(_guilds.PlaySeconds);
         var d = new Vector2((float)x - pos.X, (float)z - pos.Z).Length();

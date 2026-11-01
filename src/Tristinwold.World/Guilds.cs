@@ -200,7 +200,7 @@ public static class Guilds
                 "The wood has noticed you. That's not a compliment, yet.", -128, -612, "kindly", "the forest", "herbs"), GuildRole.Leader, "priest"),
             [
                 new(Person("circle_sekh", "Sekh Marshtongue", Sex.Male, 46, "teacher of the elements",
-                    "A lizard druid from the deep marsh, Sekh talks to rain the way others talk to dogs.",
+                    "A Scalkin druid from the deep marsh, Sekh talks to rain the way others talk to dogs.",
                     "Weather isn't a thing that happens. It's a thing that decides.", -116, -606, "dry", "the forest", "the sea"), GuildRole.Teacher, "Stormdruid", "Stormdruid"),
                 new(Person("circle_hask", "Hask Nine-Hides", Sex.Male, 39, "teacher of the shapes",
                     "Hask has spent more of his life on four legs than on two, and is still getting used to chairs.",
@@ -381,7 +381,7 @@ public static class Guilds
         new("wardens_of_the_maw", Calling.Druid, GuildRank.Veteran, "guild/circle_ilmara", "The Wardens of the Maw",
             "Ilmara takes you to the oldest stone and tells you what the Circle has kept for a thousand years. The guardians were druids: the greatest there ever were. They merged with the treants for power, and never knew the spell couldn't be undone. The fifth went wrong, and came to see every house and every cut branch as a sickness. The four turned on it and sealed it in the earth, and they are the seal. They aren't protecting the wood from the axe. They're protecting the world from what's under it.",
             [
-                new("\"Then nobody must ever touch them. Tell the village.\"", "You stand up in Hollowheart and say it aloud for the first time in a thousand years. Lu Wukang looks at you for a long while. Oruun closes his eyes. Some of the plant folk weep. They'd always known, they say. They'd only never been told.", 30, Flag: "told_mythos", Honour: 5, Deed: "told Hollowheart what the guardians truly are"),
+                new("\"Then nobody must ever touch them. Tell the village.\"", "You stand up in Hollowheart and say it aloud for the first time in a thousand years. Lu Wukang looks at you for a long while. Oruun closes his eyes. Some of the Photosynthens weep. They'd always known, they say. They'd only never been told.", 30, Flag: "told_mythos", Honour: 5, Deed: "told Hollowheart what the guardians truly are"),
                 new("\"Keep it. It's held this long.\"", "Ilmara names you her heir, and you carry it as she has, in the dark, alone. It's heavier than it looks.", 30, Flag: "kept_mythos", Honour: 2, Deed: "took up the Circle's oldest secret"),
                 new("\"So who's cracking the seal?\"", "She shows you the light in the east of the wood, spreading into Ashvael like a stain. It isn't sickness, she says. It's aimed. Something wants the wardens killed, and it's made sure somebody will have to.", 25, Flag: "saw_the_light", Honour: 1, Deed: "learned what the Foul Light is"),
                 new("\"How much would Raffkin pay to know that?\"", "He pays in old gold, and laughs until the butterflies leave him. Ilmara names no heir that year, and the stones go cold under your feet.", 10, 0, 300, "sold_mythos", Infamy: 9, Deed: "sold the Circle's oldest secret to Raffkin"),

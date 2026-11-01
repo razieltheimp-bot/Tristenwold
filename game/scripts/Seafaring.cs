@@ -73,7 +73,7 @@ public partial class Main
     {
         var id = person.Npc.Id;
         if (id is HarbourMaster or Smuggler) yield return ("Who's the worst on the water?", () => Say(person,
-            "Black Ysolde's the one you'll meet. The Teeth are hers, and she's bad enough. But she answers to the Dread Pirate Soren of the Red Reckoning, and he's the worst name there is: a sword like a broken gate, and a fist of iron. There's small fry too, crews of a dozen in a leaky hull, on one run this week and another the next. And there's Lu Wukong of the Drunken Monkey, the ape king's own brother. He's never touched a company ship. He robs pirates, singing, and when Soren lands he comes and stands in the road. The company says a pirate's a pirate. I've stopped arguing with people who've seen him do it."));
+            "Black Ysolde's the one you'll meet. The Teeth are hers, and she's bad enough. But she answers to the Dread Pirate Soren of the Red Reckoning, and he's the worst name there is: a sword like a broken gate, and a fist of iron. There's small fry too, crews of a dozen in a leaky hull, on one run this week and another the next. And there's Lu Wukong of the Drunken Monkey, the Apekin king's own brother. He's never touched a company ship. He robs pirates, singing, and when Soren lands he comes and stands in the road. The company says a pirate's a pirate. I've stopped arguing with people who've seen him do it."));
         if (id is HarbourMaster or Smuggler) yield return ("Who's working the water just now?", () => Say(person, WaterNews()));
         if (id == HarbourMaster) foreach (var o in HarbourTalk(person)) yield return o;
         else if (id == Shipwright) foreach (var o in YardWork(person)) yield return o;
@@ -225,7 +225,7 @@ public partial class Main
         _atSea?.QueueFree();
         _atSea = null;
         City.Afloat = null;
-        _hud.Toast($"{_sea.Ship} came home without you. No wage for a voyage you didn't finish.", 7);
+        _hud.Toast($"{(_sea.Outlaw ? _sea.Sworn.Ship : _sea.Ship)} comes in behind you and ties up at the quay at {WakeDock.Town}, none the worse. No wage for a voyage you didn't finish.", 8);
     }
 
     // ---- what happens at sea ------------------------------------------------------------------------------------

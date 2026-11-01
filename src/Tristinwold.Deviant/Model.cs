@@ -8,7 +8,7 @@ public enum Rank { Stray = 0, Ringleader = 1, Scourge = 2, Tyrant = 3 }
 /// <summary>The soldiers of its own kind each rank has at its back.</summary>
 public static class Bands
 {
-    public static int Soldiers(Rank rank) => rank switch { Rank.Stray => 1, Rank.Ringleader => 3, Rank.Scourge => 6, _ => 10 };
+    public static int Soldiers(Rank rank) => rank switch { Rank.Stray => 0, Rank.Ringleader => 2, Rank.Scourge => 4, _ => 6 };
 }
 
 /// <summary>What an enemy remembers about the party, across sessions.</summary>

@@ -152,7 +152,7 @@ public sealed partial class ServerCore
             .FirstOrDefault();
         if (hunter is null) return Omen(g);
 
-        var events = World.Empower(hunter.Id, 20, $"A grey-robed man whispered to it where {g.Player}'s company would be.");
+        var events = World.Empower(hunter.Id, 5, $"A grey-robed man whispered to it where {g.Player}'s company would be.");
         var outgoing = new List<Outgoing>
         {
             Whisper(g, "set_deviant",

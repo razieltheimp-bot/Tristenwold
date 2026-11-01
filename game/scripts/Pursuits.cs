@@ -588,6 +588,7 @@ public partial class Main
         if (_player.Crowns < Housing.PlotPrice) { Sound.Ui("error"); Say(factor, $"{Housing.PlotPrice} crowns, and not a copper less. The Crown sets the price of land."); return; }
         _player.Crowns -= Housing.PlotPrice;
         _pursuits.House.Owned = true;
+        if (_story.Home is not null) { _story.Home = null; Settled("Tristinwold", bar: false); }
         _city.Treasury += Housing.PlotPrice;
         Share(CityAction.Treasury(Housing.PlotPrice));
         Sound.Ui("coin");

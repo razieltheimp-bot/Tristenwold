@@ -6,6 +6,33 @@ namespace Tristinwold.World.Tests;
 /// <summary>The main story: the hero is an Immortal, made under the Needle, brought back by their ring.</summary>
 public class ImmortalTests
 {
+    static Settlement Place(SettlementKind kind, bool hostile = false) =>
+        new WorldGen(seed: 7).SettlementsNear(0, 0, 40000).First(s => s.Kind == kind && s.Hostile == hostile);
+
+    [Fact]
+    public void A_hero_can_make_a_home_of_a_town_but_not_of_somewhere_that_wants_them_dead()
+    {
+        var (saga, town) = (new ImmortalSaga(), Place(SettlementKind.Town));
+        Assert.Null(saga.Home);
+        Assert.True(saga.Settle(town));
+        Assert.False(saga.Settle(town));
+        Assert.Equal((town.Id, town.Name), (saga.Home!.Id, saga.Home.Name));
+        var copy = System.Text.Json.JsonSerializer.Deserialize<ImmortalSaga>(System.Text.Json.JsonSerializer.Serialize(saga))!;
+        Assert.Equal(saga.Home, copy.Home);
+    }
+
+    [Fact]
+    public void A_sailor_wakes_on_the_quay_nearest_home()
+    {
+        var saga = new ImmortalSaga();
+        var docks = new List<(double X, double Z)> { (97, -36), (-900, -262), (640, -600) };
+        Assert.Equal(0, saga.NearestDock(docks, (78, -6)));
+        saga.Home = new Hometown("a", "Eastward", 700, -500);
+        Assert.Equal(2, saga.NearestDock(docks, (78, -6)));
+        saga.Home = new Hometown("b", "Westward", -1200, 0);
+        Assert.Equal(1, saga.NearestDock(docks, (78, -6)));
+    }
+
     [Fact]
     public void The_road_runs_from_waking_to_warden_of_the_rings()
     {

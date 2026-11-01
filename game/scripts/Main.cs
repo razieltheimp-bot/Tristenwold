@@ -645,6 +645,29 @@ public partial class Main : Node3D
     public Wilds WildsNode => _wilds;
     public Terrain TerrainNode => _terrain;
 
+    (DeviantHunts Hunt, double At)? _hunted;
+
+    /// <summary>A deviant that's been set on the hero makes its move once it's ready, and never into a town or at someone just back from the dead.</summary>
+    void TendHunted()
+    {
+        if (_hunted is not { } h || _guilds.PlaySeconds < h.At || _player.Downed || _player.Seat is not null || City.Afloat is not null || City.Below is not null
+            || _roamers.InTown(_player.GlobalPosition) || _hud.Talking) return;
+        _hunted = null;
+        var hunt = h.Hunt;
+        var behind = _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 60;
+        var hunter = Enemy.Create(Bestiary.Get(hunt.BaseForm), behind with { Y = City.FloorAt(behind) + 0.5f }, WorldGen.Danger(behind.X, behind.Z));
+        AddEnemy(hunter);
+        hunter.MakeDeviant(hunt.DeviantId, hunt.Modifiers, hunt.Taunt);
+        hunter.Provoke(_player);
+        _feuds.Soldiers(hunter, hunt.Modifiers.Rank);
+        _tracker.Engaged(hunter.Id, hunter.Kind.Id, hunter.Kind.Name, hunter.Stats.MaxHealth, ToNumerics(hunter.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, hunt.DeviantId);
+        _hud.Toast($"{hunter.Stats.Name} has been waiting for you to leave the road.");
+    }
+
+    /// <summary>For the self-test: a hunter comes the moment nothing's in its way.</summary>
+    public void HurryHunterForTest() { if (_hunted is { } h) _hunted = (h.Hunt, 0); }
+    public bool HunterWaiting => _hunted is not null;
+
     void Handle(Message m)
     {
         Received?.Invoke(m);
@@ -665,18 +688,9 @@ public partial class Main : Node3D
                 }
                 break;
             case DeviantHunts h:
-            {
-                // Out of sight behind the player, then it comes for them.
-                var behind = _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 25;
-                var hunter = Enemy.Create(Bestiary.Get(h.BaseForm), behind with { Y = City.FloorAt(behind) + 0.5f }, WorldGen.Danger(behind.X, behind.Z));
-                AddEnemy(hunter);
-                hunter.MakeDeviant(h.DeviantId, h.Modifiers, h.Taunt);
-                hunter.Provoke(_player);
-                _feuds.Soldiers(hunter, h.Modifiers.Rank);
-                _tracker.Engaged(hunter.Id, hunter.Kind.Id, hunter.Kind.Name, hunter.Stats.MaxHealth, ToNumerics(hunter.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, h.DeviantId);
-                _hud.Toast($"{hunter.Stats.Name} has found you.");
+                // It's been told where to look. It doesn't drop out of the sky: it plans, and finds the hero out in the open.
+                _hunted ??= (h, Tactics.Plan(_guilds.PlaySeconds, _lootRng));
                 break;
-            }
             case Reward r: _player.Crowns += r.Coppers / 100; _hud.Toast($"Contract paid: {r.Coppers / 100} crowns."); break;
             case Board b: _hud.ShowBoard(b.Contracts); break;
             case CitySnapshot c: TakeCity(c); break;
@@ -777,6 +791,7 @@ public partial class Main : Node3D
         TendRide();
         TendSea(delta);
         TendIsle();
+        TendHunted();
         TendMine(delta);
         TendIndoors();
         TendStanding(delta);

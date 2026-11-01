@@ -31,6 +31,7 @@ public sealed class QuickBar
     /// </summary>
     public static IReadOnlyList<Ability> Moves(Hero hero) =>
         Own(Classes.Get(hero.Discipline))
+            .Concat(Advances.Known(hero.Discipline, hero.Level).Where(a => a.Style != MoveStyle.Passive).Select(a => a.Move))
             .Concat(hero.Classes.Skip(1).Select(Classes.Get).SelectMany(c => new[] { c.Primary, c.Signature, c.Utility }))
             .DistinctBy(a => a.Id).ToList();
 

@@ -95,7 +95,7 @@ public static class Seas
 
 /// <summary>
 /// A name on the water: a pirate captain who comes over the rail in person. The Dread Pirate Soren is the worst of them,
-/// and Lu Wukong, brother to the ape king of Hollowheart, the next, though he only comes aboard pirates. A big enough name
+/// and Lu Wukong, brother to the Apekin king of Hollowheart, the next, though he only comes aboard pirates. A big enough name
 /// gets away over the side, so they can be met again.
 /// </summary>
 public sealed record Flagship(string Id, string Captain, string Ship, string Kind, int MinLeagues, double Chance, int Bounty, string Loot, string Hail, string Escape, string Offer, bool HuntsPirates = false);
@@ -220,6 +220,8 @@ public sealed class SeaBook
     public int Prizes { get; set; }
     public const int ToCutthroat = 2, ToQuartermaster = 5, ToPirateCaptain = 9, PardonPrice = 400;
     public bool Outlaw => Pirate != PirateRank.None;
+    /// <summary>One of a ship's people, of any flag or none: they wake on the quay, and their ship comes in to it.</summary>
+    public bool OnACrew => Outlaw || OwnShip || Rank != SeaRank.Landsman;
     static readonly string[] Prey = ["a Saltmere herring boat", "a Brinehollow tanner", "a Vosk ore-carrier", "a Corrow pearl-trader", "an Ambermouth spice ship"];
 
     /// <summary>How many loads the hold takes: a captain's private venture on the company's ship, or a whole hold of their own.</summary>

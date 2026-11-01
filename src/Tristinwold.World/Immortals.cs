@@ -2,6 +2,9 @@ using Tristinwold.Deviant;
 
 namespace Tristinwold.World;
 
+/// <summary>The place a hero has made their home: the ring brings them back there, and not to the Perch.</summary>
+public sealed record Hometown(string Id, string Name, double X, double Z);
+
 /// <summary>Where the hero is in the main story, The Rings of Tristinwold.</summary>
 public enum Chapter { NotStarted, Waking, Archive, Proving, Breach, Dragonfire, Warden, Done }
 
@@ -44,6 +47,32 @@ public sealed class ImmortalSaga
     public int Returns { get; set; }
     /// <summary>Of the Host, slain at the breach (or anywhere, once the breach is open).</summary>
     public int HostSlain { get; set; }
+    /// <summary>Where the ring brings them back; none means Tristinwold and the Gallows Perch.</summary>
+    public Hometown? Home { get; set; }
+
+    /// <summary>Somewhere a hero can make a home: a place with people in it, and not one that would rather they were dead.</summary>
+    public static bool Homely(Settlement s) => !s.Hostile && s.Kind is SettlementKind.City or SettlementKind.Town or SettlementKind.Hamlet or SettlementKind.Inn;
+
+    /// <summary>The ring is tied to a new home, if it's somewhere that can be one. True if that changed anything.</summary>
+    public bool Settle(Settlement s)
+    {
+        if (!Homely(s) || Home?.Id == s.Id) return false;
+        Home = new Hometown(s.Id, s.Name, s.X, s.Z);
+        return true;
+    }
+
+    /// <summary>The nearest of some docks to the hero's home: a sailor wakes on the quay.</summary>
+    public int NearestDock(IReadOnlyList<(double X, double Z)> docks, (double X, double Z) tristinwold)
+    {
+        var (x, z) = Home is { } h ? (h.X, h.Z) : tristinwold;
+        var (best, nearest) = (0, double.MaxValue);
+        for (var i = 0; i < docks.Count; i++)
+        {
+            var d = Math.Sqrt(Math.Pow(docks[i].X - x, 2) + Math.Pow(docks[i].Z - z, 2));
+            if (d < nearest) (best, nearest) = (i, d);
+        }
+        return best;
+    }
 
     /// <summary>What every new hero hears as they first open their eyes.</summary>
     public const string Opening =

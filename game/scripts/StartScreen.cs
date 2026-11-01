@@ -221,7 +221,7 @@ public partial class StartScreen : CanvasLayer
         var figures = Avatar.Figures;
         var races = Races.All.Select(r => r.Id).ToArray();
         Row(rows, "People", () => Races.Get(_avatar.Race).Name, d => _avatar = _avatar with { Race = Step(races, _avatar.Race, d) });
-        Row(rows, "Form", () => _avatar.Race == "plant" ? _avatar.Form : "(plant people only)",
+        Row(rows, "Form", () => _avatar.Race == "plant" ? _avatar.Form : "(Photosynthens only)",
             d => { if (_avatar.Race == "plant") _avatar = _avatar with { Form = Step(Avatar.Forms, _avatar.Form, d) }; });
         Row(rows, "Dragon", () => _avatar.IsDragonkind ? _avatar.Dragon : "(dragonkind only)",
             d => { if (_avatar.IsDragonkind) _avatar = _avatar with { Dragon = Step([.. Races.Dragons.Select(x => x.Colour)], _avatar.Dragon, d) }; });

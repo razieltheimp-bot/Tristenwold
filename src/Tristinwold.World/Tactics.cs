@@ -66,6 +66,8 @@ public static class Tactics
 {
     /// <summary>How close the hero must come for a deviant to see them and take up the hunt (metres).</summary>
     public const double NoticeRange = 85;
+    /// <summary>How long it takes over the next move, in seconds of play: it's in no hurry. It watches a while before it comes.</summary>
+    public const double FewestToPlan = 180, MostToPlan = 420, FewestToWatch = 30, MostToWatch = 90;
     /// <summary>How far ahead the hero must get for it to lose the trail.</summary>
     public const double LoseRange = 360;
     /// <summary>A blow struck from this close is close work; any further off, the hero is keeping their distance.</summary>
@@ -145,6 +147,12 @@ public static class Tactics
     /// Whether it keeps after the hero: not once they're well clear of it, and into a town only if it dares (see
     /// <see cref="Dares"/>).
     /// </summary>
+    /// <summary>When it'll be ready again, having beaten the hero or lost them: it plans, and it takes its time.</summary>
+    public static double Plan(double now, Tristinwold.Deviant.Rng rng) => now + FewestToPlan + rng.NextDouble() * (MostToPlan - FewestToPlan);
+
+    /// <summary>When it'll make its move, having caught sight of the hero: it watches them first.</summary>
+    public static double Watch(double now, Tristinwold.Deviant.Rng rng) => now + FewestToWatch + rng.NextDouble() * (MostToWatch - FewestToWatch);
+
     public static bool StillHunting(double metresApart, bool heroInTown, bool dares = false) => (!heroInTown || dares) && metresApart < LoseRange;
 
     /// <summary>

@@ -56,6 +56,9 @@ public sealed class Hero
     public double Power(string skill) => 1 + 0.15 * (Rank(skill) - 1);
 
     /// <summary><see cref="Power"/>, by the rank it was earned at.</summary>
+    /// <summary>What the years add to every move: a little to each one, and a good deal to a limit break.</summary>
+    public double LevelPower(bool limit) => 1 + (limit ? 0.05 : 0.02) * (Level - 1);
+
     public double MovePower(string skill) => 1 + 0.15 * (Earned(skill) - 1);
 
     public bool CanRaise(string skill) => Points > 0 && Rank(skill) < MaxRank;

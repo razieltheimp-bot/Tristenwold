@@ -20,6 +20,7 @@ public partial class Main
     }
 
     public void LeaveTavernForTest() => GoOutside();
+    public void ShowBarForTest() => ShowBar();
 
     public void AbandonCaravanForTest()
     {
@@ -65,8 +66,10 @@ public partial class Main
                 Save();
                 ShowBar();
             }));
-        }).Append(("That's all.", (Action)_hud.EndTalk)).ToArray();
-        _hud.Talk("The bar", "\"What'll it be?\"", options);
+        }).ToList();
+        if (TavernHome() is { } home) options.Add(home);
+        options.Add(("That's all.", _hud.EndTalk));
+        _hud.Talk("The bar", "\"What'll it be?\"", [.. options]);
     }
 
     void PickStake(string game, string rules, Action<int> play)

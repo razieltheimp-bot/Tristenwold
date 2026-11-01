@@ -29,6 +29,7 @@ public partial class Main
     void BeginStory()
     {
         _player.Woke += OnWoke;
+        _player.WakesAt = WakeSpot;
         Ageing.Wake(_player.Hero, _player.Race.Id, _city.Day); // they woke at about twenty, in their people's years
         if (_story.Begin()) _hud.Toast(ImmortalSaga.Opening, 16);
     }
@@ -38,9 +39,58 @@ public partial class Main
     {
         SeaWoke();
         IsleWoke();
-        _hud.Toast(_story.Returned(_storyRng), 12);
+        var chapter = _story.Chapter;
+        var said = _story.Returned(_storyRng);
+        var away = _sea.OnACrew ? $"on the quay at {WakeDock.Town}" : _story.Home is { } home ? $"in {home.Name}" : null;
+        _hud.Toast(away is null || _story.Chapter != chapter ? said : $"You wake {away}, gasping, with the ring warm on your finger. It knows where home is.", 12);
         Save();
     }
+
+    /// <summary>The town's name and the spot on the quay nearest the hero's home: a sailor's dock.</summary>
+    (string Town, Vector3 At) WakeDock
+    {
+        get
+        {
+            var quays = new List<(string Town, Vector3 At)> { ("Tristinwold", HarbourPost + new Vector3(2, 0.5f, 2)) };
+            if (_harbours is not null) quays.AddRange(_harbours.Quays);
+            return quays[_story.NearestDock([.. quays.Select(q => ((double)q.At.X, (double)q.At.Z))], (City.PlayerStart.X, City.PlayerStart.Z))];
+        }
+    }
+
+    /// <summary>Where the ring brings the hero back: the quay for a sailor, home for anyone with one, and the Perch for the rest.</summary>
+    Vector3 WakeSpot()
+    {
+        var at = _sea.OnACrew ? WakeDock.At : _story.Home is { } home ? new Vector3((float)home.X + 3, 0, (float)home.Z + 3) : City.PlayerStart;
+        _terrain.EnsureAround(at, 1);
+        return _sea.OnACrew ? at : at with { Y = City.FloorAt(at) + 1 };
+    }
+
+    /// <summary>
+    /// Everyone's home is Tristinwold to begin with. It changes in one of two ways: at the bar of a town's tavern, standing
+    /// in that town, or by buying a home there.
+    /// </summary>
+    (string, Action)? TavernHome()
+    {
+        if (TownHere(_player.GlobalPosition) is not { } id) return null;
+        if (id == ReputationBook.Capital)
+            return _story.Home is null ? null : ("Make Tristinwold my hometown", () => { _story.Home = null; Settled("Tristinwold"); });
+        return _world.Find(id) is { } town && ImmortalSaga.Homely(town) && _story.Home?.Id != id
+            ? ($"Make {town.Name} my hometown", () => { _story.Settle(town); Settled(town.Name); })
+            : null;
+    }
+
+    void Settled(string town, bool bar = true)
+    {
+        Sound.Ui("quest", -4);
+        _hud.Toast($"You turn the ring on your finger, and it settles. {town} is home now: this is where it will bring you back.{(_sea.OnACrew ? $" You sail from the quay at {WakeDock.Town}, and your ship will come in there with you." : "")}", 10);
+        Save();
+        if (bar) ShowBar();
+    }
+
+    /// <summary>For the self-test.</summary>
+    public Vector3 WakeSpotForTest() => WakeSpot();
+    public string WakeDockForTest() => WakeDock.Town;
+    public ImmortalSaga SagaForTest => _story;
 
     void StorySlain(Enemy victim)
     {

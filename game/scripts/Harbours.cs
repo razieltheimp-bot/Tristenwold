@@ -15,6 +15,10 @@ public partial class Harbours(Main main) : Node3D
     static readonly string[] Fruit = ["apple", "pear", "plum", "brambleberries"];
 
     double _pickedAt = -PickEvery;
+    readonly List<(string Town, Vector3 At)> _quays = [];
+
+    /// <summary>Where a sailor stands on each town's quay.</summary>
+    public IReadOnlyList<(string Town, Vector3 At)> Quays => _quays;
 
     public override void _Ready()
     {
@@ -42,6 +46,7 @@ public partial class Harbours(Main main) : Node3D
         }
         var deck = (float)WorldGen.WaterLevel + 1.8f;
         var (start, length) = (shore - way * 10, 54f);
+        _quays.Add((name, start + way * 6 + Vector3.Up * (deck + 1)));
         var side = way.Cross(Vector3.Up);
         var timber = BuildingMaterials.For(Surface.Planks);
         var body = new StaticBody3D { Position = start + way * length / 2 + Vector3.Up * deck, Rotation = new Vector3(0, Mathf.Atan2(way.X, way.Z), 0) };

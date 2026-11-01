@@ -166,6 +166,8 @@ public partial class Hud : CanvasLayer
     public void Talk(string who, string text, params (string Label, Action Then)[] options)
     {
         _talk.Visible = true;
+        _talk.AnchorTop = 0.4f;
+        _skillRows = 0;
         _talkWho.Text = who;
         _talkText.Text = text;
         Clear(_talkOptions);
@@ -185,6 +187,36 @@ public partial class Hud : CanvasLayer
     {
         _talkOptions.AddChild(c);
         _talkOptions.MoveChild(c, 0);
+    }
+
+    int _skillRows;
+
+    /// <summary>The window gets the height of the screen, for a long list.</summary>
+    public void TallTalk() => _talk.AnchorTop = 0.06f;
+
+    /// <summary>
+    /// An ability in the skills window, above the replies: its name, what it does, and a row of switches, one for each rank,
+    /// lit up to the rank it's at. The next one along is the one that can be clicked, for a skill point.
+    /// </summary>
+    public void AddSkill(string name, string what, int rank, int most, string? locked, Action? raise)
+    {
+        var row = new VBoxContainer();
+        var top = new HBoxContainer();
+        top.AddChild(new Label { Text = name, Modulate = locked is null ? new Color("#ffd27a") : new Color("#9a948a"), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        if (locked is not null) top.AddChild(new Label { Text = locked, Modulate = new Color("#9a948a") });
+        for (var i = 0; locked is null && i < most; i++)
+        {
+            var next = i == rank && raise is not null;
+            var on = new CheckButton { ButtonPressed = i < rank, Disabled = !next, TooltipText = $"Rank {i + 1}" };
+            if (next) on.Pressed += raise!;
+            top.AddChild(on);
+        }
+        row.AddChild(top);
+        row.AddChild(new Label { Text = what, AutowrapMode = TextServer.AutowrapMode.Word, Modulate = locked is null ? Colors.White : new Color("#9a948a") });
+        row.AddChild(new HSeparator());
+        _talkOptions.AddChild(row);
+        _talkOptions.MoveChild(row, _skillRows++);
+        if (raise is not null) _options.Insert(0, ($"Raise {name}", raise));
     }
 
     public void EndTalk()

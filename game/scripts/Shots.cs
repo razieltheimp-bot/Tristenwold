@@ -711,6 +711,20 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--skills"))
+        {
+            main.ForestLog.Turlin.Met = true;
+            p.Join("EtherAeronaut");
+            await Frames(20);
+            while (p.Hero.Level < 12) p.Hero.Gain(Hero.XpToNext(p.Hero.Level));
+            p.Hero.Raise("harpoon");
+            p.Hero.Raise("harpoon");
+            main.ShowSkills();
+            await Frames(30);
+            await Shot("skills");
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--docks"))
         {
             main.ForestLog.Turlin.Met = true;
