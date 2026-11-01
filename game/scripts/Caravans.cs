@@ -342,7 +342,7 @@ public partial class Main
     {
         _trade.Guarding = e;
         _guarded?.QueueFree();
-        _guarded = new Wagon(this, "horse") { Goal = new Vector3((float)e.X, 0, (float)e.Z), Hold = GuardHold, Path = _world.Highways.To(e.To) };
+        _guarded = new Wagon(this, "horse") { Goal = new Vector3((float)e.X, 0, (float)e.Z), Hold = GuardHold, Path = _world.Highways.WayTo(e.To, e.X, e.Z) };
         AddChild(_guarded);
         _guarded.GlobalPosition = YardWagon with { Y = City.FloorAt(YardWagon) };
         Say(master, e.Driver ? $"She's yours to drive to {e.ToName}. Climb up on the box when you're ready: she'll hold the road by herself, and you set the pace. Bring the wagon through and the {(int)Math.Round(e.Pay * (1 + TradeBook.DriverShare))} crowns are yours." : $"The carter leaves for {e.ToName} when you do. Walk beside her, or climb up on the load for the ride. Stay close: she won't drive on without her guard, and she pulls up when there's trouble. Bring the wagon through and the {e.Pay} crowns are yours.");
@@ -424,7 +424,9 @@ public partial class Main
         }
         else if (_trade.Run is { } r) load[r.Returning ? r.Back : r.Out] = r.Load;
         var took = _trade.Stole(_city.Day, load);
+        // The horse in the shafts is yours too: it stays hitched to the wagon (the party menu unhitches it when you want to ride).
         var horse = Adopt("horse", dragon: false, wagon.GlobalPosition + new Vector3(2, 0, 0), level: 6);
+        HitchToWagon(horse);
         Hitch();
         var bounty = 40 + 2 * took;
         _standing.Evil(4, "stole a caravan from Tristinwold's yard");
@@ -432,7 +434,7 @@ public partial class Main
         _city.Renown = Math.Max(0, _city.Renown - 2);
         wagon.Urge = Wagon.RidePace;
         Sound.Ui("coin", -2);
-        _hud.Toast($"The wagon's yours, and {took} loads with it; the horse in the shafts is {horse.Name} now. Garrick will hear of it by nightfall: {bounty} crowns on your head in Tristinwold, and no work at the yard for {TradeBook.BanDays} days. Sell the load in any town that'll take it.", 12);
+        _hud.Toast($"The wagon's yours, and {took} loads with it; the horse in the shafts is {horse.Name} now, and stays hitched (unhitch {horse.Name} from the party menu, P, to ride). Garrick will hear of it by nightfall: {bounty} crowns on your head in Tristinwold, and no work at the yard for {TradeBook.BanDays} days. Sell the load in any town that'll take it.", 12);
         _hud.Log("Roads: you stole a caravan from the yard.");
         Save();
     }
@@ -538,8 +540,24 @@ public partial class Main
         Save();
     }
 
-    /// <summary>The horses that pull your wagon: your own grown ones, two at most.</summary>
+    /// <summary>The horses that pull your wagon: your own grown ones, two at most, hitched or at your heels.</summary>
     void Hitch() => _trade.Horses = Math.Min(TradeBook.MaxHorses, _bonds.Count(b => b.Steed && b.Rideable));
+
+    /// <summary>A steed put to the wagon: it leaves your heels and goes with the wagon.</summary>
+    void HitchToWagon(Bond horse)
+    {
+        horse.Hitched = true;
+        horse.Following = false;
+        if (BodyOf(horse) is { } body) { _companions.Remove(body); body.QueueFree(); }
+    }
+
+    /// <summary>A steed taken off the wagon to ride: at your heels again, and the wagon still yours.</summary>
+    void Unhitch(Bond horse)
+    {
+        horse.Hitched = false;
+        horse.Following = true;
+        BringCompanion(horse);
+    }
 
     void HitchUp(Person master)
     {
@@ -654,7 +672,9 @@ public partial class Main
         StableWagon();
         _wagon = new Wagon(this, horse);
         AddChild(_wagon);
-        var setOff = YardAt + new Vector3(6, 0, 6);
+        // At the yard when you take it there; otherwise (a game loaded, a thief's wagon) it's wherever you are: its home is where yours is.
+        var hero = _player.GlobalPosition;
+        var setOff = hero.DistanceTo(YardAt with { Y = hero.Y }) < 60 ? YardAt + new Vector3(6, 0, 6) : hero + _player.GlobalTransform.Basis.Z * 5;
         _wagon.GlobalPosition = setOff with { Y = City.FloorAt(setOff) };
     }
 
@@ -964,6 +984,7 @@ public partial class Wagon(Main main, string? horse) : Node3D
     void Drive(Vector3 goal, double delta)
     {
         _freeFor = Steer != 0 ? 0 : _freeFor + delta;
+        if (Steered && Steer == 0 && WaterAhead()) _freeFor = HoldsLine; // left pointed at water, she finds her own road again at once rather than standing
         var to = new Vector3(goal.X - GlobalPosition.X, 0, goal.Z - GlobalPosition.Z);
         var want = Hold?.Invoke() == true || (!Steered && to.Length() < 2) || (Steered && WaterAhead()) ? 0 : 3.2f * Urge;
         _speed = Mathf.Lerp(_speed, want, (float)Math.Min(1, delta * 2));
@@ -972,12 +993,13 @@ public partial class Wagon(Main main, string? horse) : Node3D
             if (Steered) Rotation = new Vector3(0, Rotation.Y - Steer * TurnRate * (float)delta * Math.Min(1, _speed / 1.5f), 0);
             else
             {
-                // Along the road where one's laid, a little way ahead of her; straight for the goal otherwise, or near the end. Never into water: then the nearest way round.
+                // Along her way by road, a little ahead of where she is, or back to it if she's been driven off it; straight for the goal only where no road goes, or near the end. Never into water: then the nearest way round.
                 var aim = to;
                 if (Path is { } road && to.Length() > 80)
                 {
                     var (off, along, _) = road.Nearest(GlobalPosition.X, GlobalPosition.Z);
-                    if (off < 60) { var (px, pz) = road.At(along + 45); aim = new Vector3((float)px - GlobalPosition.X, 0, (float)pz - GlobalPosition.Z); }
+                    var (px, pz) = road.At(along + (off < 40 ? 45 : 8));
+                    aim = new Vector3((float)px - GlobalPosition.X, 0, (float)pz - GlobalPosition.Z);
                 }
                 var heading = Mathf.Atan2(-aim.X, -aim.Z);
                 foreach (var turn in new[] { 0f, 0.5f, -0.5f, 1f, -1f, 1.5f, -1.5f })

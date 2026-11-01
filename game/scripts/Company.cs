@@ -730,7 +730,7 @@ public partial class Main
         {
             var body = BodyOf(b);
             var kind = Bestiary.Get(b.KindId).Name.ToLowerInvariant();
-            var state = !b.Following ? "waiting at the Gallows Perch" : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
+            var state = !b.Following ? (b.Hitched ? "hitched to your wagon" : "waiting at the Gallows Perch") : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
             return $"{b.Name}: {b.Stage} {(b.Role is BondRole.Pet or BondRole.Dragon ? kind : "")}, level {b.Level} ({b.Xp}/{Bond.XpToNext(b.Level)} xp), {state}{(b.Eats ? $", {b.Fed:0}% fed" : "")}. Knows: {(b.Skills.Any() ? string.Join(", ", b.Skills.Select(s => s.Name)) : "nothing yet")}.";
         });
         var options = new List<(string, Action)>();
@@ -738,6 +738,14 @@ public partial class Main
         foreach (var b in _bonds)
         {
             var bond = b;
+            // A grown horse with a wagon of yours is hitched to it or unhitched to ride, rather than sent home and called.
+            if (bond.Steed && bond.Rideable && _trade.OwnWagon)
+            {
+                if (bond.Hitched) { if (_bonds.Count(x => x.Following) < FollowLimit) options.Add(($"Unhitch {bond.Name} to ride", () => { Unhitch(bond); Save(); ShowParty(); })); }
+                else if (bond.Following) options.Add(($"Hitch {bond.Name} to the wagon", () => { HitchToWagon(bond); Save(); ShowParty(); }));
+                else if (_bonds.Count(x => x.Following) < FollowLimit) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
+                continue;
+            }
             if (bond.Following) options.Add(($"Send {bond.Name} home", () => { bond.Following = false; var body = BodyOf(bond); if (body is not null) { _companions.Remove(body); body.QueueFree(); } Save(); ShowParty(); }));
             else if (_bonds.Count(x => x.Following) < FollowLimit) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
         }

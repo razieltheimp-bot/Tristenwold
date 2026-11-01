@@ -69,6 +69,35 @@ public class HighwaysTests
     }
 
     [Fact]
+    public void A_carter_has_a_way_by_road_from_the_yard_to_every_place_a_road_reaches()
+    {
+        foreach (var r in W.Highways.Roads)
+        {
+            var way = W.Highways.WayTo(r.To);
+            Assert.NotNull(way);
+            Assert.Equal(Highways.Yard, way!.Line[0]);
+            Assert.Equal(r.Line[^1], way.Line[^1]);
+            Assert.True(way.Length >= r.Length, $"the way to {r.ToName} is shorter than its own road");
+            // Every point of the way is on some road, or on the yard's approach to one.
+            for (var i = 0; i < way.Line.Length; i++)
+            {
+                var (x, z) = way.Line[i];
+                var onRoad = W.Highways.Near(x, z) < Highways.Half + 1 || Northwood.OnRoad(x, z) || Math.Sqrt(x * x + z * z) < 125;
+                Assert.True(onRoad, $"the way to {r.ToName} leaves the roads at {x:0},{z:0}");
+            }
+            if (r.Spur) Assert.True(way.Line.Any(p => Math.Abs(p.X - r.Line[0].X) < 1 && Math.Abs(p.Z - r.Line[0].Z) < 1), $"the way to {r.ToName} never reaches its spur's junction");
+        }
+        Assert.Null(W.Highways.WayTo("nowhere"));
+        // The village up the wood's own road, and Druitt at the end of the west road, have ways too.
+        var village = W.Highways.WayTo("city:hollowheart")!;
+        Assert.Equal((Northwood.VillageX, Northwood.VillageZ), village.Line[^1]);
+        Assert.All(village.Line.Skip(1), p => Assert.True(Northwood.OnRoad(p.X, p.Z)));
+        var druitt = W.Find("city:druitt")!;
+        var toDruitt = W.Highways.WayTo(druitt.Id, druitt.X, druitt.Z)!;
+        Assert.Equal(Northwood.WestRoad[^1], toDruitt.Line[^1]);
+    }
+
+    [Fact]
     public void A_road_knows_where_along_it_you_are_and_the_point_any_distance_along()
     {
         var road = W.Highways.Roads.OrderByDescending(r => r.Length).First();

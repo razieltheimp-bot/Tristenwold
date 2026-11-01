@@ -46,7 +46,7 @@ public static class Garments
         "Warlock" or "Sorcerer" or "scholar" or "laureate" or "Poet" or "Scribe" => new("robe", null, Belt: false),
         "priest" => new("robe", "hood", Belt: false),
         "pirate" or "sailor" or "monkey_hand" => new(null, "bandana", Bracers: true),
-        "turlin" or "giant_ape" => new(null, null, Belt: false),
+        "turlin" or "giant_ape" or "ape_elder" or "ape_warrior" => new(null, null, Belt: false),
         _ when look.StartsWith("soren_") => new(null, null, Bracers: true),
         _ when look.StartsWith("lu_") => new(null, null, Belt: false),
         "pirate_captain" or "dread_soren" => new("jerkin", "bandana", Bracers: true, Cloak: true),
@@ -270,6 +270,7 @@ public static class Garments
         }
         if (look == "turlin") Rival(sk, m, made);
         if (look == "giant_ape") GreatApe(sk, m, made);
+        if (look is "ape_elder" or "ape_warrior") Kin(sk, m, "ape", "", false, made); // an Apekin's muzzle, brow, ears and tail on the furred body
         if (look.StartsWith("soren_")) Soren(sk, m, int.Parse(look[6..]), made);
         if (look.StartsWith("lu_")) Wukong(sk, m, int.Parse(look[3..]), made);
         if (cut is { } style && kit.Head is null && outfit.Cap is null) Hair(sk, m, style.Style, style.Colour, made);

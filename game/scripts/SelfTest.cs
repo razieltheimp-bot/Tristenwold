@@ -2274,6 +2274,7 @@ public partial class SelfTest(Main main) : Node
         main.ClimbForTest();
         await Frames(10);
         Check(p.Seat is not null && !p.Figure.Visible && main.RiddenWagon == w, "up on the box, seeing the road through your own eyes");
+        Check(w.Path is { } way && way.Line[0] == Highways.Yard && way.Length > 100, $"the carter has her way by road from the yard ({w.Path?.Length:0} m, {w.Path?.Line.Length} points)");
         var start = w.GlobalPosition;
         await Frames(180);
         Check(w.GlobalPosition.DistanceTo(start) > 3 && p.GlobalPosition.DistanceTo(w.SeatAt(true)) < 1.5f, $"the wagon rolls, and you with it: {w.GlobalPosition.DistanceTo(start):0.0}m");

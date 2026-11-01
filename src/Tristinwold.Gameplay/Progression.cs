@@ -140,6 +140,8 @@ public sealed class Bond
 
     /// <summary>Following you now, or waiting at home (the Gallows Perch).</summary>
     public bool Following { get; set; } = true;
+    /// <summary>A steed hitched to your wagon: it goes where the wagon goes, not at your heels, until you unhitch it to ride.</summary>
+    public bool Hitched { get; set; }
 
     /// <summary>A dragon too young to fly is lost for good if it falls; anything else is only knocked out.</summary>
     [JsonIgnore]

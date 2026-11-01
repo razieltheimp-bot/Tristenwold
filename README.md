@@ -763,7 +763,10 @@ trouble, or away from it; let go of the reins and she finds her road again by he
 And someone with no good name in Tristinwold (nobody in particular, a rough sort, a villain; never a member of the
 Watch) can press E out on the road and **keep the yard's wagon**: the job is over, the wagon, the horse in the shafts
 and the load are theirs to sell in any town that'll take it, and Tristinwold hears of it by nightfall: a price on
-their head, and no work at the yard for fifteen days.
+their head, and no work at the yard for fifteen days. The horse stays hitched to the wagon, which goes where you
+go; the party menu (P) unhitches it when you want to ride it, and hitches it back. The yard's own carters keep to
+the roads the whole way: out of the yard by the Northwood's road or round the walls, down the main road and up the
+spur to the place.
 
 **The roads run by the prices.** Every day the city's caravans go wherever the gap is worth the trip: a wagon for
 each good a place sells cheaper than the Exchange pays, or pays more for than the Exchange asks (three at most to a

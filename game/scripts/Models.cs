@@ -272,12 +272,11 @@ public abstract partial class Body : Node3D
         "guardian_bark" => (Body?)Creature.Create("forest_monster.glb", 7.5f, new Color("#a98a64")) ?? Figure.Create(look),
         "guardian_elder" => (Body?)Creature.Create("forest_monster.glb", 8.5f, new Color("#5a8a78")) ?? Figure.Create(look),
         "guardian_blight" => (Body?)Creature.Create("forest_monster.glb", 8f, new Color("#3a3a2a")) ?? Figure.Create(look),
-        "ape_elder" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
+        "ape_elder" or "ape_warrior" => Figure.Create(look), // the Apekin: fur-covered people, built like Turlin and Lu
         "lu_wukong" => Figure.Create("lu_0"),
         _ when look.StartsWith("lu_") => Figure.Create(look),
         "giant_ape" => Figure.Create(look),
         "spirit_beast" => (Body?)Creature.Create("wolf.glb", 1.1f, new Color(0.7f, 0.95f, 1f)) ?? Figure.Create("familiar"),
-        "ape_warrior" => Wildfolk.For("deathcrest_ape") ?? Figure.Create(look),
         "shroomie" => (Body?)Creature.Create("forest_monster.glb", 1.5f, new Color("#c89070")) ?? Figure.Create(look),
         "frost_troll" => (Body?)Wildfolk.Troll(2.4f, new Color("#9ec0e4")) ?? Figure.Create(look),
         "goblin" => (Body?)Creature.Create("goblin.glb", 1.3f) ?? Figure.Create(look),
@@ -432,6 +431,8 @@ public partial class Figure : Body
         if (look == "giant_ape" && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, new Color("#4a2e22")) is { } ape) return ape;
         if (look.StartsWith("soren_") && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, new Color("#b08a70").Lerp(new Color("#5a6a68"), Tristinwold.Gameplay.Legend.FormOf(int.Parse(look[6..])).Sea)) is { } soren) return soren;
         if (look.StartsWith("lu_") && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, Humans.LuFur(look)) is { } lu) return lu;
+        // The Apekin of Hollowheart: fur-covered people on a real body, an ape's muzzle, ears and tail, grey with age for the elder.
+        if (look is "ape_elder" or "ape_warrior" && Human(look, "human", Tristinwold.World.Sex.Male, look == "ape_elder" ? Tristinwold.World.LifeStage.Elder : Tristinwold.World.LifeStage.Adult, 7, new Color(look == "ape_elder" ? "#6e6660" : "#3e2c20")) is { } apekin) return apekin;
         // On a PC, people are real bodies (see Humans): a hero as they made themselves, anyone else cast for the part.
         if (Humans.Enabled && Humans.IsPerson(look))
         {

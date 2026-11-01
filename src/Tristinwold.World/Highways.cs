@@ -20,8 +20,20 @@ public sealed class Highways
     {
         public required string To { get; init; }
         public required string ToName { get; init; }
-        /// <summary>A spur off another road to a smaller place, rather than a road from a gate.</summary>
+        /// <summary>A spur off another road to a smaller place, rather than a road from a gate: which road, and how far along it the spur leaves.</summary>
         public bool Spur { get; init; }
+        public string? ParentId { get; init; }
+        public double ParentAlong { get; init; }
+
+        /// <summary>The road's line from its start to this far along it.</summary>
+        public (double X, double Z)[] UpTo(double along)
+        {
+            var last = Array.FindLastIndex(Along, a => a <= along);
+            var points = Line.Take(last + 1).ToList();
+            var end = At(along);
+            if (points.Count == 0 || Math.Abs(points[^1].X - end.X) + Math.Abs(points[^1].Z - end.Z) > 0.5) points.Add(end);
+            return [.. points];
+        }
         public required (double X, double Z)[] Line { get; init; }
         public required double[] Along { get; init; }
         public required double[] Heights { get; init; }
@@ -74,6 +86,57 @@ public sealed class Highways
 
     /// <summary>The road to a place, if one was laid.</summary>
     public Road? To(string id) => Roads.FirstOrDefault(r => r.To == id);
+
+    /// <summary>The caravan yard, outside the west gate, where every carter sets out from.</summary>
+    public static readonly (double X, double Z) Yard = (-108, 34);
+
+    /// <summary>
+    /// A carter's whole way from the yard to a place, by road: out of the yard to where the first road starts (the west
+    /// gate is right there; the east gate is round the walls; the Northwood's own roads lead to its north exit and to the
+    /// Strand), along that road to the spur's junction, along the spur (and any spur off it) to the place. As a road of
+    /// its own, so a wagon can keep to it. Null if no road reaches the place.
+    /// </summary>
+    public Road? WayTo(string id, double x = double.NaN, double z = double.NaN)
+    {
+        var legs = new List<(double X, double Z)[]>();
+        if (To(id) is { } road)
+        {
+            legs.Add(road.Line);
+            var r = road;
+            for (var guard = 0; r.Spur && r.ParentId is { } pid && To(pid) is { } parent && guard < 12; guard++)
+            {
+                legs.Insert(0, parent.UpTo(r.ParentAlong));
+                r = parent;
+            }
+            legs.Insert(0, Approach(r.Line[0]));
+        }
+        else if (id == "city:hollowheart")
+            legs.Add([Yard, .. Northwood.NorthRoad.TakeWhile(p => !(p.X == Northwood.VillageX && p.Z == Northwood.VillageZ)), (Northwood.VillageX, Northwood.VillageZ)]); // up the wood's own road to the village
+        else if (!double.IsNaN(x) && Starts.Select((p, i) => (p, i)).Where(s => Math.Sqrt(Sq(s.p.X - x) + Sq(s.p.Z - z)) < 140).Select(s => (int?)s.i).FirstOrDefault() is { } near)
+            legs.Add(Approach(Starts[near])); // a place at a road's very start (Druitt, at the end of the west road)
+        else return null;
+        var name = To(id)?.ToName ?? id;
+        var line = new List<(double X, double Z)>();
+        foreach (var p in legs.SelectMany(l => l))
+            if (line.Count == 0 || Math.Abs(line[^1].X - p.X) + Math.Abs(line[^1].Z - p.Z) > 0.5) line.Add(p);
+        var along = new double[line.Count];
+        for (var i = 1; i < line.Count; i++) along[i] = along[i - 1] + Math.Sqrt(Sq(line[i].X - line[i - 1].X) + Sq(line[i].Z - line[i - 1].Z));
+        return new Road
+        {
+            To = id, ToName = name, Line = [.. line], Along = along, Heights = new double[line.Count],
+            MinX = line.Min(p => p.X), MaxX = line.Max(p => p.X), MinZ = line.Min(p => p.Z), MaxZ = line.Max(p => p.Z),
+        };
+    }
+
+    /// <summary>From the yard to where a road from the city starts.</summary>
+    static (double X, double Z)[] Approach((double X, double Z) start)
+    {
+        static bool Same((double X, double Z) a, (double X, double Z) b) => Math.Abs(a.X - b.X) < 1 && Math.Abs(a.Z - b.Z) < 1;
+        if (Same(start, Starts[1])) return [Yard, (-112, 60), (-98, 88), (-62, 108), (0, 116), (60, 106), (98, 72), (110, 32), start]; // round the south wall to the east gate, short of the harbour
+        if (Same(start, Starts[2])) return [Yard, .. Northwood.NorthRoad]; // through the wood on its own road, to the north exit
+        if (Same(start, Starts[3])) return [Yard, .. Northwood.WestRoad]; // along the west road to the Strand
+        return [Yard, start];
+    }
 
     /// <summary>How far a point is from the nearest road's line, and the road's surface there; nothing if no road comes within <paramref name="margin"/>.</summary>
     public (double Distance, double Height)? Nearest(double x, double z, double margin)
@@ -129,7 +192,7 @@ public sealed class Highways
             var (road, d, along, height) = roads.Select(r => { var (dd, aa, hh) = r.Nearest(s.X, s.Z); return (r, dd, aa, hh); }).MinBy(t => t.dd);
             if (d < s.Radius + 40) continue; // it's on a road already
             var from = road.At(along);
-            if (Route(world, roads, s, [from], SpurMargin) is { } line) roads.Add(Build(world, s, line, height, spur: true));
+            if (Route(world, roads, s, [from], SpurMargin) is { } line) roads.Add(Build(world, s, line, height, spur: true, parentId: road.To, parentAlong: along));
         }
         return new Highways(roads);
     }
@@ -212,7 +275,7 @@ public sealed class Highways
     }
 
     /// <summary>A found way made a road: ended at the town's edge, its corners eased, sampled every few metres, and its surface worked out (a spur's start held to the road it leaves).</summary>
-    static Road Build(WorldGen world, Settlement to, (double X, double Z)[] way, double? startHeight = null, bool spur = false)
+    static Road Build(WorldGen world, Settlement to, (double X, double Z)[] way, double? startHeight = null, bool spur = false, string? parentId = null, double parentAlong = 0)
     {
         // It ends at the town's edge, not its square: the town's own ground takes over there.
         var kept = way.TakeWhile(p => to.DistanceTo(p.X, p.Z) > to.Radius).ToList();
@@ -240,7 +303,7 @@ public sealed class Highways
         for (var i = line.Length - 2; i >= 0; i--) heights[i] = Math.Clamp(heights[i], heights[i + 1] - MaxGrade * (along[i + 1] - along[i]), heights[i + 1] + MaxGrade * (along[i + 1] - along[i]));
         return new Road
         {
-            To = to.Id, ToName = to.Name, Spur = spur, Line = line, Along = along, Heights = heights,
+            To = to.Id, ToName = to.Name, Spur = spur, ParentId = parentId, ParentAlong = parentAlong, Line = line, Along = along, Heights = heights,
             MinX = line.Min(p => p.X), MaxX = line.Max(p => p.X), MinZ = line.Min(p => p.Z), MaxZ = line.Max(p => p.Z),
         };
     }

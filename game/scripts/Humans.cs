@@ -157,6 +157,8 @@ public static class Humans
         ["soren"] = new(new("#9a1f1a"), new("#1e2230"), new("#4a2c1c")), // the red coat's sleeves, dark breeches, sea boots
         ["giant_ape"] = new(new("#4a2e22"), new("#4a2e22"), new("#a98470")),
         ["turlin"] = new(new("#17151a"), new("#17151a"), new("#17151a")), // black fur, near enough all over
+        ["ape_elder"] = new(new("#6e6660"), new("#6e6660"), new("#6e6660")), // the Apekin: fur all over, grey on the elder
+        ["ape_warrior"] = new(new("#3e2c20"), new("#3e2c20"), new("#3e2c20")),
         ["guard"] = new(new("#6a6e74"), new("#3a3a44"), new("#2a2220"), Cap: new("#7a7e84")),
         ["marine"] = new(new("#8a3a2a"), new("#3a3a44"), new("#2a2220"), Cap: new("#6a6e74")),
         ["scholar"] = new(new("#4a5a8a"), new("#3a3a4a"), new("#3a2a20")),

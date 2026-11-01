@@ -107,7 +107,8 @@ public abstract partial class Fighter : CharacterBody3D
         // Fell through land that wasn't built yet (after a long flight or a jump across the map), or was flung into
         // the sky by the physics for standing inside something: back on top of the land.
         var floor = City.FloorAt(GlobalPosition);
-        if (GlobalPosition.Y < floor - 4 || (GlobalPosition.Y > floor + 30 && Velocity.Y > 0))
+        var give = City.Afloat?.Invoke(GlobalPosition) is null ? 4 : 8; // a ship's decks go down a way below her waist deck
+        if (GlobalPosition.Y < floor - give || (GlobalPosition.Y > floor + 30 && Velocity.Y > 0))
         {
             GlobalPosition = GlobalPosition with { Y = floor + 0.5f };
             Velocity = Vector3.Zero;

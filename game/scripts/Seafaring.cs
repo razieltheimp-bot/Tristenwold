@@ -673,10 +673,11 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
             hold.AddChild(model);
             if (solid)
             {
-                // Walk her real deck and fetch up against her real rails: her own shape, made solid.
+                // Walk her real deck, her cabin and her hold, and fetch up against her real sides: her own shape, made solid.
+                // Her small gear (the boat on its chocks, casks, coils of rope) isn't: nobody gets wedged on a lifeboat.
                 var body = new StaticBody3D();
                 hold.AddChild(body);
-                foreach (var m in model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().Where(m => !m.Name.ToString().Contains("rigging") && !m.Name.ToString().Contains("sails")))
+                foreach (var m in model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().Where(m => !m.Name.ToString().Contains("rigging") && !m.Name.ToString().Contains("sails") && !m.Name.ToString().Contains("details")))
                     body.AddChild(new CollisionShape3D { Shape = m.Mesh.CreateTrimeshShape(), Transform = hold.GlobalTransform.AffineInverse() * m.GlobalTransform });
             }
             var t = model.CreateTween().SetLoops();
@@ -885,7 +886,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         _clock += delta;
         var p = main.PlayerNode;
         // Over the side: the crew haul you back.
-        if (p.GlobalPosition.Y < DeckY - 6 || new Vector2(p.GlobalPosition.X - Stage.X, p.GlobalPosition.Z - Stage.Z).Length() > 60)
+        if (p.GlobalPosition.Y < DeckY - 8 || new Vector2(p.GlobalPosition.X - Stage.X, p.GlobalPosition.Z - Stage.Z).Length() > 60) // below her keel, or well clear of her: not merely below decks
         {
             p.GlobalPosition = Aboard;
             p.Velocity = Vector3.Zero;
