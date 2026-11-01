@@ -47,6 +47,7 @@ public static class Garments
         "priest" => new("robe", "hood", Belt: false),
         "pirate" or "sailor" or "monkey_hand" => new(null, "bandana", Bracers: true),
         "turlin" or "giant_ape" or "ape_elder" or "ape_warrior" => new(null, null, Belt: false),
+        _ when look.StartsWith("hybrid:") => new(null, null, Belt: false),
         _ when look.StartsWith("soren_") => new(null, null, Bracers: true),
         _ when look.StartsWith("lu_") => new(null, null, Belt: false),
         "pirate_captain" or "dread_soren" => new("jerkin", "bandana", Bracers: true, Cloak: true),
@@ -271,6 +272,7 @@ public static class Garments
         if (look == "turlin") Rival(sk, m, made);
         if (look == "giant_ape") GreatApe(sk, m, made);
         if (look is "ape_elder" or "ape_warrior") Kin(sk, m, "ape", "", false, made); // an Apekin's muzzle, brow, ears and tail on the furred body
+        if (look.StartsWith("hybrid:")) Hybrid(sk, m, look[7..], made);
         if (look.StartsWith("soren_")) Soren(sk, m, int.Parse(look[6..]), made);
         if (look.StartsWith("lu_")) Wukong(sk, m, int.Parse(look[3..]), made);
         if (cut is { } style && kit.Head is null && outfit.Cap is null) Hair(sk, m, style.Style, style.Colour, made);
@@ -880,6 +882,68 @@ public static class Garments
                 }
                 break;
             }
+        }
+    }
+
+    /// <summary>
+    /// A shapeshifter's half-form: the beast's head on the furred human body (a snout or a muzzle, its ears, a crest or
+    /// tusks where it has them), claws on the hands, and its tail grown from the small of the back.
+    /// </summary>
+    static void Hybrid(Skeleton3D sk, Measure m, string kind, List<Node> made)
+    {
+        var (head, hips) = (Hang(sk, "Head", made), Hang(sk, "Hips", made));
+        var fur = Armoury.Leather("#" + Hybrids.Fur(kind).ToHtml(false));
+        var pale = Armoury.Leather("#" + Hybrids.Fur(kind).Lightened(0.35f).ToHtml(false));
+        var dark = Armoury.Leather("#1e1a16");
+        var face = new Vector3(0, m.Top - 0.13f, 0.1f);
+        MeshInstance3D Limb(Vector3 from, Vector3 way, float length, float r0, float r1, Material paint)
+        {
+            var part = Part(new CylinderMesh { TopRadius = r1, BottomRadius = r0, Height = length, RadialSegments = 10 }, paint, from + way.Normalized() * length / 2);
+            return Aim(part, way.Normalized());
+        }
+        void Blob(Node3D on, Vector3 at, float r, Material paint, Vector3 scale) =>
+            on.AddChild(Part(new SphereMesh { Radius = r, Height = r * 2, RadialSegments = 14, Rings = 8 }, paint, at, scale: scale));
+        // Fur over the whole scalp: the beast's head starts there.
+        Blob(head, new Vector3(0, m.Top - 0.08f, -0.016f), 0.124f, fur, new Vector3(1.02f, 0.9f, 1.06f));
+        // The snout, long or short, with the dark nose at its tip.
+        var (snout, drop) = kind switch { "bear" or "deathcrest_ape" => (1.5f, 0.02f), "boar" => (1.7f, 0.05f), "giant_rat" => (2.4f, 0.03f), "mud_crab" => (0.9f, 0f), _ => (2.1f, 0.03f) };
+        if (kind != "mud_crab")
+        {
+            Blob(head, face + new Vector3(0, -0.02f - drop, 0.03f * snout), 0.06f, fur, new Vector3(0.9f, 0.6f, snout));
+            Blob(head, face + new Vector3(0, -0.055f - drop, 0.03f * snout), 0.05f, pale, new Vector3(0.85f, 0.35f, snout));
+            Blob(head, face + new Vector3(0, -0.005f - drop, 0.06f * snout + 0.03f), 0.016f, dark, Vector3.One);
+        }
+        // Ears: pointed for the hunters, round for the bear, the rat and the ape; a crest for the crested; tusks for the boar.
+        foreach (var side in new[] { -1f, 1f })
+        {
+            if (kind is "wolf" or "ice_wolf" or "fox")
+                head.AddChild(Limb(new Vector3(side * 0.075f, m.Top - 0.04f, -0.02f), new Vector3(side * 0.35f, 1, -0.1f), 0.1f, 0.035f, 0.004f, fur));
+            else if (kind is "bear" or "giant_rat" or "deathcrest_ape")
+                Blob(head, new Vector3(side * 0.1f, m.Top - 0.05f, -0.02f), 0.038f, kind == "giant_rat" ? pale : fur, new Vector3(0.5f, 1, 1));
+            if (kind == "boar") head.AddChild(Limb(face + new Vector3(side * 0.035f, -0.06f, 0.11f), new Vector3(side * 0.3f, 1, 0.5f), 0.07f, 0.012f, 0.002f, Armoury.Leather("#e8dcc4")));
+        }
+        if (kind == "deathcrest_ape")
+            for (var i = 0; i < 5; i++) head.AddChild(Limb(new Vector3(0, m.Top - 0.01f - i * 0.03f, -0.02f - i * 0.025f), new Vector3(0, 0.8f, -0.6f), 0.08f, 0.014f, 0.002f, Armoury.Leather("#b03030")));
+        // Claws on both hands.
+        foreach (var hand in new[] { "LeftHand", "RightHand" })
+            if (sk.FindBone(hand) is var b && b >= 0)
+            {
+                var at = Hang(sk, hand, made);
+                for (var i = 0; i < 3; i++) at.AddChild(Limb(new Vector3((i - 1) * 0.022f, -0.02f, 0.04f), new Vector3(0, -0.4f, 1), 0.05f, 0.007f, 0.001f, Armoury.Leather("#e8dcc4")));
+            }
+        // The tail, from a root sunk into the hips: bushy for the hunters, bare and pink for the rat, a stub for the bear, none for the shellback.
+        if (kind == "mud_crab") return;
+        var tailAt = new Vector3(0, m.Hips.Y, -m.HipHalf * 0.55f);
+        var way = new Vector3(0, -0.5f, -1).Normalized();
+        var segments = kind switch { "bear" => 2, "boar" => 3, _ => 7 };
+        var thick = kind switch { "wolf" or "ice_wolf" or "fox" => 0.04f, "giant_rat" => 0.014f, _ => 0.03f };
+        var coat = kind == "giant_rat" ? Armoury.Leather("#c89a90") : fur;
+        Blob(hips, tailAt, thick * 1.6f, coat, new Vector3(1.3f, 0.9f, 1.1f));
+        for (var i = 0; i < segments; i++)
+        {
+            hips.AddChild(Limb(tailAt, way, 0.14f, thick - i * thick * 0.08f, thick - (i + 1) * thick * 0.08f, i == segments - 1 && kind == "fox" ? pale : coat));
+            tailAt += way * 0.13f;
+            way = (way + new Vector3(0, kind == "giant_rat" ? 0.05f : 0.25f, 0)).Normalized();
         }
     }
 

@@ -12,9 +12,9 @@ public class TradeTests
         foreach (var c in Classes.All)
         {
             var moves = Advances.Of(c.Id);
-            Assert.Equal([Advances.First, Advances.Second, Advances.Third], moves.Select(a => a.Level));
+            Assert.Equal(c.Id == "Shapeshifter" ? [Advances.First, Advances.Second, Advances.Third, Advances.HalfFormLevel] : [Advances.First, Advances.Second, Advances.Third], moves.Select(a => a.Level));
             Assert.Empty(Advances.Known(c.Id, 5));
-            Assert.Equal(3, Advances.Known(c.Id, 18).Count());
+            Assert.Equal(c.Id == "Shapeshifter" ? 4 : 3, Advances.Known(c.Id, 18).Count()); // the shapeshifter's half-form besides
         }
         var ids = Advances.Everything.Select(a => a.Move.Id).ToList();
         Assert.Equal(ids.Count, ids.Distinct().Count());

@@ -221,7 +221,7 @@ public static class Humans
         ["ghost_captain"] = new(new("#9ab0b8"), new("#5a6a70"), new("#3a3a40"), Cap: new("#8a9aa0")),
     };
 
-    public static Outfit OutfitFor(string look) => look.StartsWith("lu_") ? new(LuFur(look), LuFur(look), LuFur(look)) : Outfits.GetValueOrDefault(look.StartsWith("soren_") ? "soren" : look) ?? Outfits["townsfolk"];
+    public static Outfit OutfitFor(string look) => look.StartsWith("hybrid:") ? new(Hybrids.Fur(look[7..]), Hybrids.Fur(look[7..]), Hybrids.Fur(look[7..])) : look.StartsWith("lu_") ? new(LuFur(look), LuFur(look), LuFur(look)) :Outfits.GetValueOrDefault(look.StartsWith("soren_") ? "soren" : look) ?? Outfits["townsfolk"];
 
     /// <summary>The colour of Lu's body under his fur, greying as he goes.</summary>
     public static Color LuFur(string look) => new Color("#5a432e").Lerp(new Color("#67666a"), Tristinwold.Gameplay.Legend.WukongOf(int.Parse(look[3..])).Beast);

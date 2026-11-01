@@ -756,6 +756,10 @@ trees are cleared off it, the ground is trodden to dirt, a hill is cut and a dip
 than a cart can take. They're on the map (M) for everyone, found or not, and the yard's carters keep to them. From
 those roads a spur runs to every hamlet, farm, inn, mine, camp and shrine a wagon trades with, laid once with the world
 and permanent: whenever the yard opens a new route, its road is already there, and the forest never closes over it.
+Inside something, the map (the corner map and M alike) shows that thing's own plan instead of the world: down the
+Greyhollow mine, the chambers you've stood in and the drifts between them, with a faint ring for each chamber a known
+drift leads on to, and the deep only once the old face is broken; aboard ship, her hull from above with the helm, the
+mast and the bow, and you on her deck.
 
 **On the box, the reins are yours.** Driving a caravan for Garrick (or your own wagon, or a run for the yard: climb up
 with E), W pushes the horse on, S pulls her up, and **A and D steer her** wherever you like, off the road, round
@@ -942,7 +946,12 @@ Everything is saved with your company. `--selftest --pursuits-only` walks throug
   youngling 3% likelier to take to you, your beasts learn 5% faster, and Wren charges 3% less. It shows in
   your pack (I).
 - Up to four follow you at once; the rest wait at the Gallows Perch. A Ranger and a Shapeshifter have no such limit:
-  every beast they own follows. A companion knocked down gets up when the
+  every beast they own follows. A Shapeshifter studies the beasts that travel with them, too: every three quarters
+  of a minute at a following wolf's or bear's heels counts as a kill towards learning its shape (eight, as ever).
+  From level 8 a Shapeshifter has a *Half-Form* besides the beast forms: the beast they wear (or the first they
+  learned) and their own people in one body, standing tall and furred with the beast's head, claws and tail,
+  stronger than either, for twenty-five seconds, with a minute and a half's rest after; the beast forms themselves
+  still last as long as you like. A companion knocked down gets up when the
   fight is over, and resting heals them all.
 
 ### Hollowheart's heart-trees

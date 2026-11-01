@@ -250,10 +250,30 @@ public partial class Main
     }
 
     /// <summary>Time passes for the company: beasts and dragons get hungry, and starve if never fed.</summary>
+    readonly Dictionary<string, double> _studiedWith = [];
+
+    /// <summary>A shapeshifter learns a beast's shape by travelling with one too: every so long at the heels of a following beast counts as a study of it.</summary>
+    void StudyCompanions(double delta)
+    {
+        if (_player.Class.Id != "Shapeshifter") return;
+        foreach (var kind in _bonds.Where(b => b.Following && b.Role == BondRole.Pet && ForestBook.Beasts.Contains(b.KindId) && !_forest.Shapes.Contains(b.KindId)).Select(b => b.KindId).Distinct())
+        {
+            _studiedWith[kind] = _studiedWith.GetValueOrDefault(kind) + delta;
+            if (_studiedWith[kind] < StudySeconds) continue;
+            _studiedWith[kind] = 0;
+            if (_forest.Study(kind) is { } shape) { _hud.Toast($"You've watched your {Bestiary.Get(kind).Name.ToLowerInvariant()} long enough to know it from the inside: {shape} is yours (Beast Form).", 9); Save(); }
+            else _hud.Log($"You learn something of the {Bestiary.Get(kind).Name.ToLowerInvariant()} from yours ({_forest.Studied.GetValueOrDefault(kind)}/{ForestBook.StudyKills}).");
+        }
+    }
+
+    /// <summary>How long at a following beast's side counts as one study of it, against one kill.</summary>
+    public const double StudySeconds = 45;
+
     void TendCompany(double delta)
     {
         TendGolem();
         Regather(delta);
+        StudyCompanions(delta);
         foreach (var bond in _bonds.Where(b => b.Following && b.Eats))
         {
             var body = BodyOf(bond);

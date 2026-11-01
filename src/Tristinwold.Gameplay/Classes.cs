@@ -207,7 +207,7 @@ public static class Classes
             new("meteor", "Heart of the Storm", "The sky falls on the foe you face and all around it.", AttackKind.Spell, 0, 0, 105, 30, DamageKind.Shock),
             new("arcane_mastery", "Old Weather", "Stronger spells and a deeper well of mana.", AttackKind.Spell, 0, 0, 0.3, 0)),
         new("Shapeshifter", "Shapeshifter", Calling.Druid,
-            "Fights as the beasts fight. Starts with the wolf, and learns any beast it studies by fighting enough of them: bear, boar, rat and on and on. Nothing undead, and no dragons.",
+            "Fights as the beasts fight. Starts with the wolf, and learns any beast it studies, by fighting enough of them or by travelling with one as a companion: bear, boar, rat and on and on. Nothing undead, and no dragons. From level 8, a half-form: the beast and your own people in one body, for a while.",
             160, 90, 150, 40,
             new("flurry", "Claw and Fang", "Quick blows; every third one hits twice as hard.", AttackKind.Weapon, 0, 0.45, 15, 2.2),
             new("flying_kick", "Pounce", "Leap at a foe up to 10 m away and bring them down hard.", AttackKind.Weapon, 25, 6, 24, 10),

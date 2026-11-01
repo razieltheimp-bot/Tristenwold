@@ -1010,6 +1010,7 @@ public partial class Player : Fighter
     /// <summary>A move a class came into as it levelled: they're all one of a few shapes.</summary>
     bool Advanced(Advance advance, Ability a, double dmg, double power, Enemy? near)
     {
+        if (a.Id == "half_form") { if (HalfForm(a.Seconds * power, a.Power * power)) return true; Refund(a); return false; }
         var spell = a.Pays == AttackKind.Spell;
         switch (advance.Style)
         {
