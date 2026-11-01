@@ -285,6 +285,7 @@ public static class Loot
         "lu_wukong" => [("cracked_gourd", 1, 1, 1), ("ancient_coin", 0.8, 2, 4)],
         "turlin" or "giant_ape" => [("fruit_rind", 1, 1, 1), ("ape_hide", 0.7, 1, 1)],
         "golem" => [("scrap_iron", 0.9, 1, 3), ("iron_nails", 0.7, 2, 4)],
+        "clockwork_mite" => [("scrap_iron", 1, 1, 1), ("iron_nails", 0.7, 1, 2)],
         "forge_golem" => [("scrap_iron", 1, 3, 5), ("iron_ingot", 0.8, 1, 2), ("coal", 0.8, 2, 4)],
         "cinder_warden" => [("ember_ash", 1, 2, 4), ("bone_dust", 0.8, 1, 3), ("ancient_coin", 0.7, 2, 4)],
         "goblin_king" => [("goblin_trinket", 1, 2, 4), ("scrap_iron", 0.9, 2, 4), ("ancient_coin", 0.6, 1, 3)],

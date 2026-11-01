@@ -189,9 +189,17 @@ public static class Housing
         new("garden", "A garden", 1, [("plank", 4)], 25, "Two beds of good soil by the house, for anything you'd grow in the allotments."),
         new("hearth", "A hearth", 3, [("stone_block", 12), ("iron_ingot", 2)], 50, "Cook at home."),
         new("trophy_wall", "A trophy wall", 4, [("plank", 6), ("iron_nails", 6)], 50, "Hang the trophies of the lairs: each makes your arm a little surer (a percent more harm, up to ten)."),
+        new("farm_plot", "A farm plot", 1, [("plank", 6)], 25, "A companion at home keeps it, and what it grows goes in the chest."),
+        new("home_forge", "A forge", 3, [("stone_block", 12), ("iron_ingot", 3)], 50, "A companion at home works what's in the chest at it: ore to ingots, hides to leather."),
+        new("shop_counter", "A shop counter", 2, [("plank", 12), ("iron_nails", 8)], 40, "Tell a companion at home what to sell from the chest and what to buy for it, and your house is a shop. Tell them nothing, and it's a counter."),
+        new("alchemy_bench", "An alchemy bench", 3, [("plank", 10), ("iron_nails", 6), ("linen", 2)], 50, "A companion at home brews from the herbs in the chest."),
     ];
 
     public static BuildStep Step(string id) => Stages.Concat(Furniture).First(s => s.Id == id);
+
+    /// <summary>The next wing on a finished house: there's no end to them, as long as the timber holds out, and each is bigger work than the last.</summary>
+    public static BuildStep Room(int built) => new("room", built == 0 ? "Add a wing" : $"Add wing {built + 1}", Math.Min(10, 4 + built / 2),
+        [("plank", 20 + 4 * built), ("stone_block", 15 + 3 * built), ("iron_nails", 15 + 3 * built), ("iron_ingot", 2 + built / 2)], 60, "More house. There's always room for more house.");
 
     /// <summary>How long well rested lasts (seconds of play), and what it's worth.</summary>
     public const double RestedSeconds = 30 * 60, RestedXp = 1.1;

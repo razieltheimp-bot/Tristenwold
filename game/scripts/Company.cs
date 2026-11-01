@@ -12,11 +12,32 @@ namespace Tristinwold.Game;
 /// </summary>
 public partial class Main
 {
-    /// <summary>How many companions can follow at once; the rest wait at the Gallows Perch.</summary>
-    public const int MaxFollowing = 4;
+    /// <summary>A Ranger (the beastmaster's way) and a Shapeshifter (who runs with the pack) can have as many pets at their heels as they like.</summary>
+    bool FreePets => _player.Class.Id is "Ranger" or "Shapeshifter";
 
-    /// <summary>How many may follow this hero: four, or as many as they like for a Ranger (the beastmaster's way) or a Shapeshifter (who runs with the pack).</summary>
-    public int FollowLimit => _player.Class.Id is "Ranger" or "Shapeshifter" ? int.MaxValue : MaxFollowing;
+    /// <summary>Whether there's room for this one with the hero (see <see cref="PartyRules"/>).</summary>
+    bool MayFollow(Bond bond) => PartyRules.MayFollow(_bonds, bond, FreePets);
+
+    /// <summary>Where a companion not with the hero stays: their house, once they've listed it as home, or the Perch.</summary>
+    string WaitsAt => _pursuits.House.IsHome ? "your house" : "the Gallows Perch";
+
+    /// <summary>Companions at home get on with the work there; the chronicle says what's come of it.</summary>
+    void HomeWork(double seconds)
+    {
+        foreach (var (id, n) in Homestead.Tick(_pursuits.House, _bonds.Count(Homestead.Free), seconds))
+            _hud.Log($"At home: {Items.Count(id, n).ToLowerInvariant()} in the chest.");
+    }
+
+    /// <summary>Mounts past the number of riders go to the Gallows Perch.</summary>
+    void StableSpareMounts()
+    {
+        foreach (var spare in PartyRules.SpareMounts(_bonds, _player.Mount?.Bond).ToList())
+        {
+            spare.Following = false;
+            if (BodyOf(spare) is { } body) { _companions.Remove(body); body.QueueFree(); }
+            _hud.Log($"{spare.Name} goes back to {WaitsAt}: no rider for {spare.Name} just now.");
+        }
+    }
 
     readonly List<Bond> _bonds = [];
     readonly List<Enemy> _companions = [];
@@ -25,7 +46,7 @@ public partial class Main
     bool _nestRaided;
     readonly HashSet<string> _hungerSaid = [];
     readonly Rng _companyRng = new((ulong)Random.Shared.NextInt64());
-    double _regather = 2;
+    double _regather = 2, _agedAt = 30;
 
     public IReadOnlyList<Bond> Bonds => _bonds;
     public IEnumerable<Person> Locals => _townsfolk.Where(IsInstanceValid);
@@ -52,6 +73,7 @@ public partial class Main
         _player.Summoned += Summon;
         _player.Merged += Merge;
         _player.Overdriven += Overdrive;
+        foreach (var spare in PartyRules.SpareMounts(_bonds)) spare.Following = false;
         foreach (var bond in _bonds.Where(b => b.Following)) BringCompanion(bond);
     }
 
@@ -68,7 +90,7 @@ public partial class Main
     Enemy BringCompanion(Bond bond, Vector3? at = null)
     {
         var spot = at ?? _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 3 + new Vector3((float)GD.RandRange(-2, 2), 0, 0);
-        var e = Enemy.Create(Bestiary.Get(bond.KindId), spot with { Y = City.FloorAt(spot) + 0.5f }, bond: bond, look: bond.Role == BondRole.Golem ? $"golem:{bond.Name}" : null);
+        var e = Enemy.Create(Bestiary.Get(bond.KindId), spot with { Y = City.FloorAt(spot) + 0.5f }, bond: bond, look: bond.Machine ? $"golem:{GolemName(_player.Class.Id)}" : null);
         e.Leader = _player;
         AddEnemy(e);
         _companions.Add(e);
@@ -142,8 +164,32 @@ public partial class Main
             _saga.Lose();
             _hud.Toast($"{bond.Name} is dead. Too young, too small. Ser Aldric will find you another egg, if you have the heart for it.", 12);
         }
+        else if (PartyRules.IsApprentice(bond))
+        {
+            _hud.Toast($"{bond.Name} is dead. They followed you here, and they don't get up.", 12);
+            _hud.Log($"{bond.Name}, your {(bond.Role == BondRole.Squire ? "squire" : "apprentice")}, fell in battle.");
+            StableSpareMounts();
+        }
+        else if (bond.Role == BondRole.Mite) _hud.Log($"{bond.Name} is scrap.");
         else _hud.Toast($"{bond.Name} is dead.", 10);
         Save();
+    }
+
+    /// <summary>Apprentices grow old with the days, and in the end, like anyone, they die of it.</summary>
+    void AgeApprentices()
+    {
+        foreach (var bond in _bonds.Where(PartyRules.IsApprentice).ToList())
+        {
+            if (bond.JoinAge <= 0) (bond.JoinAge, bond.JoinDay) = (15, _city.Day); // taken on before they kept count
+            var age = bond.JoinAge + Math.Max(0, _city.Day - bond.JoinDay) / (double)Calendar.DaysPerYear;
+            if (age < Ageing.Of(bond.Race).Dies) continue;
+            if (BodyOf(bond) is { } body) { _companions.Remove(body); body.QueueFree(); }
+            _bonds.Remove(bond);
+            _hud.Toast($"{bond.Name} dies in their sleep, old, at {age:0}. They were with you a long road.", 12);
+            _hud.Log($"{bond.Name} died of old age.");
+            StableSpareMounts();
+            Save();
+        }
     }
 
     /// <summary>
@@ -152,44 +198,81 @@ public partial class Main
     /// </summary>
     void TendGolem()
     {
-        var golem = _bonds.FirstOrDefault(b => b.Role == BondRole.Golem);
-        if (_player.Class.Calling == Calling.Artificer)
+        var golems = _bonds.Where(b => b.Role == BondRole.Golem).ToList();
+        var id = _player.Class.Id;
+        foreach (var mite in _bonds.Where(b => b.Role == BondRole.Mite && id != "Saboteur").ToList()) // a saboteur's work, and nobody else can keep it wound
         {
-            var level = _player.Hero.Level + (_player.Class.Id == "EtherAeronaut" ? 2 : 0); // a tinker's golem is sturdier
-            var build = Bond.GolemBuild(_player.Class.Id); // and a hull you can climb inside is built bigger
-            if (golem is null)
-            {
-                golem = new Bond { KindId = "golem", Name = GolemName(_player.Class.Id), Role = BondRole.Golem, Level = level, Build = build, Following = true };
-                _bonds.Add(golem);
-                BringCompanion(golem);
-                _hud.Toast(build > 1
-                    ? $"{golem.Name}, your golem, stamps out of the Foundry yard after you: a hull of brass with room inside for you, head and shoulders over the Foundry's other work. It fights beside you, and grows as you do."
-                    : $"{golem.Name}, your golem, stamps out of the Foundry yard after you. It fights beside you, and grows as you do.", 10);
-            }
-            else if ((_worn is null || BodyOf(golem) != _worn) && (golem.Level != level || golem.Build != build || golem.Name != GolemName(_player.Class.Id))) // refitted once you've stepped out, never round you
-            {
-                if (golem.Name != GolemName(_player.Class.Id)) // another artificer's way: the Foundry refits the machine to its design
-                {
-                    _hud.Toast($"The Foundry refits {golem.Name} to a {_player.Class.Name}'s design: it's {GolemName(_player.Class.Id)} now.", 8);
-                    golem.Name = GolemName(_player.Class.Id);
-                }
-                (golem.Level, golem.Build) = (level, build);
-                if (BodyOf(golem) is { } body && body.State != EnemyState.Dead && golem.Following)
-                {
-                    var at = body.GlobalPosition;
-                    _companions.Remove(body);
-                    body.QueueFree();
-                    BringCompanion(golem, at);
-                }
-            }
+            if (BodyOf(mite) is { } body) { _companions.Remove(body); body.QueueFree(); }
+            _bonds.Remove(mite);
+            _hud.Toast($"{mite.Name} runs down: a mite needs a saboteur's hand on the key.", 6);
         }
-        else if (golem is not null)
+        var wanted = PartyRules.Constructs(_player.Class.Calling, id, _player.Hero.Level);
+        foreach (var spare in golems.Skip(wanted).ToList())
         {
-            if (BodyOf(golem) is { } body) { _companions.Remove(body); body.QueueFree(); }
-            _bonds.Remove(golem);
-            _hud.Toast($"{golem.Name} winds down and stands in the Foundry yard: a golem follows an artificer.", 8);
+            if (BodyOf(spare) is { } body) { _companions.Remove(body); body.QueueFree(); }
+            _bonds.Remove(spare);
+            golems.Remove(spare);
+            _hud.Toast(wanted > 0 ? $"{spare.Name} stays in the Foundry yard: an aeronaut keeps one hull, and climbs inside it." : $"{spare.Name} winds down and stands in the Foundry yard: a golem follows an artificer.", 8);
+        }
+        if (wanted == 0) return;
+        var level = _player.Hero.Level + (id == "EtherAeronaut" ? 2 : 0); // a tinker's golem is sturdier
+        var build = Bond.GolemBuild(id); // and a hull you can climb inside is built bigger
+        for (var i = golems.Count; i < wanted; i++)
+        {
+            var made = new Bond { KindId = "golem", Name = i == 0 ? GolemName(id) : SecondGolemName(id), Role = BondRole.Golem, Level = level, Build = build, Following = true };
+            _bonds.Add(made);
+            golems.Add(made);
+            BringCompanion(made);
+            _hud.Toast(i > 0 ? $"{made.Name}, your second construct, stamps out of the Foundry yard after {golems[0].Name}. Nobody but an artificer has one; nobody but you has two."
+                : build > 1 ? $"{made.Name}, your golem, stamps out of the Foundry yard after you: a hull of brass with room inside for you, head and shoulders over the Foundry's other work. It fights beside you, and grows as you do."
+                : $"{made.Name}, your golem, stamps out of the Foundry yard after you. It fights beside you, and grows as you do.", 10);
+        }
+        for (var i = 0; i < golems.Count; i++)
+        {
+            var golem = golems[i];
+            var name = i == 0 ? GolemName(id) : SecondGolemName(id);
+            var refit = !golem.Renamed && golem.Name != name;
+            if ((_worn is not null && BodyOf(golem) == _worn) || (golem.Level == level && golem.Build == build && !refit)) continue; // refitted once you've stepped out, never round you
+            if (refit) // another artificer's way: the Foundry refits the machine to its design
+            {
+                _hud.Toast($"The Foundry refits {golem.Name} to a {_player.Class.Name}'s design: it's {name} now.", 8);
+                golem.Name = name;
+            }
+            (golem.Level, golem.Build) = (level, build);
+            if (BodyOf(golem) is { } body && body.State != EnemyState.Dead && golem.Following)
+            {
+                var at = body.GlobalPosition;
+                _companions.Remove(body);
+                body.QueueFree();
+                BringCompanion(golem, at);
+            }
         }
     }
+
+    /// <summary>A Saboteur's mite, forged by hand: the makings and a log go on the fire, and it walks off the anvil to join the rest.</summary>
+    void ForgeMite(Action back)
+    {
+        var pack = _player.Pack;
+        var fuel = Recipes.Fuels.FirstOrDefault(f => pack.Count(f) > 0);
+        if (fuel is null) { Sound.Ui("error"); _hud.Toast("A forge won't get hot on nothing: you need a log to burn.", 5); return; }
+        if (!pack.Has(PartyRules.MiteNeeds)) { Sound.Ui("error"); _hud.Toast("You don't have the makings for a mite.", 4); return; }
+        foreach (var (item, n) in PartyRules.MiteNeeds) pack.Take(item, n);
+        pack.Take(fuel);
+        var mite = new Bond { KindId = "clockwork_mite", Name = PartyRules.MiteName(_trade.MitesMade++), Role = BondRole.Mite, Level = _player.Hero.Level, Following = true };
+        _bonds.Add(mite);
+        BringCompanion(mite);
+        Sound.Ui("anvil");
+        _hud.Toast($"You wind {mite.Name} and set it down. It ticks off after the others.", 5);
+        Save();
+        back();
+    }
+
+    /// <summary>A second construct's name, of the same design as the first.</summary>
+    static string SecondGolemName(string discipline) => discipline switch
+    {
+        "Alchemist" => "Retort",
+        _ => "Rivet",
+    };
 
     static string GolemName(string discipline) => discipline switch
     {
@@ -274,6 +357,7 @@ public partial class Main
         TendGolem();
         Regather(delta);
         StudyCompanions(delta);
+        if ((_agedAt -= delta) <= 0) { _agedAt = 30; AgeApprentices(); HomeWork(30); }
         if (_player.Form is { } worn) _forest.Worn[worn] = _forest.Worn.GetValueOrDefault(worn) + delta;
         foreach (var bond in _bonds.Where(b => b.Following && b.Eats))
         {
@@ -467,7 +551,7 @@ public partial class Main
         var up = _player.Pack.Practise(Job.Taming, 40);
         _hud.Toast((bond.Following
             ? young.IsDragon ? $"The {young.Stats.Name} looks at you a long moment, and lowers its head to your hand. It has chosen you. You call it {bond.Name}." : $"The {young.Stats.Name} sniffs your hand and decides you'll do. You call it {bond.Name}."
-            : $"The {young.Stats.Name} is yours: you call it {bond.Name}. With {FollowLimit} already at your heels, it goes to wait at the Gallows Perch.")
+            : $"The {young.Stats.Name} is yours: you call it {bond.Name}. With no room at your heels, it goes to wait at {WaitsAt}.")
             + (up is { } level ? $" Beast taming rises to {level}!" : ""), 9);
         Save();
         return true;
@@ -482,7 +566,7 @@ public partial class Main
             Name = dragon ? Dragons.NameFor(_companyRng) : _companyRng.Pick(PetNames.Where(n => _bonds.All(b => b.Name != n)).DefaultIfEmpty("Scrap").ToList()),
         };
         _bonds.Add(bond);
-        bond.Following = _bonds.Count(b => b.Following) <= FollowLimit;
+        bond.Following = MayFollow(bond);
         if (bond.Following) BringCompanion(bond, at);
         return bond;
     }
@@ -497,7 +581,7 @@ public partial class Main
         var up = _player.Pack.Practise(Job.Taming, 15);
         _hud.Toast((bond.Following
             ? $"Wren hands you the {offer.Name.ToLowerInvariant()}. It already knows its name: {bond.Name}."
-            : $"The {offer.Name.ToLowerInvariant()} is yours ({bond.Name}). With {FollowLimit} at your heels, Wren sends it to wait at the Gallows Perch.")
+            : $"The {offer.Name.ToLowerInvariant()} is yours ({bond.Name}). With no room at your heels, Wren sends it to wait at {WaitsAt}.")
             + (up is { } level ? $" Beast taming rises to {level}!" : ""), 8);
         Save();
         return bond;
@@ -521,11 +605,12 @@ public partial class Main
         var npc = person.Npc;
         var (role, kind, word) = Follower;
         if (_player.Hero.Level < RecruitLevel) { Say(person, $"You? You're nobody yet. Come back when you've made a name (level {RecruitLevel})."); return false; }
+        if (_bonds.Count(PartyRules.IsApprentice) >= PartyRules.MaxApprentices) { Say(person, $"You've {PartyRules.MaxApprentices} already. Who'd teach me?"); return false; }
         if (_player.Crowns < RecruitFee) { Say(person, $"My family can't spare me for nothing. {RecruitFee} crowns, for their trouble."); return false; }
         _player.Crowns -= RecruitFee;
-        var bond = new Bond { Id = npc.Id, KindId = kind, Role = role, Name = npc.First };
+        var bond = new Bond { Id = npc.Id, KindId = kind, Role = role, Name = npc.First, Race = npc.Race, JoinAge = npc.Age, JoinDay = _city.Day };
         _bonds.Add(bond);
-        bond.Following = _bonds.Count(b => b.Following) <= FollowLimit;
+        bond.Following = MayFollow(bond);
         var at = person.GlobalPosition;
         person.QueueFree();
         if (bond.Following) BringCompanion(bond, at);
@@ -751,7 +836,7 @@ public partial class Main
         {
             var body = BodyOf(b);
             var kind = Bestiary.Get(b.KindId).Name.ToLowerInvariant();
-            var state = !b.Following ? (b.Hitched ? "hitched to your wagon" : "waiting at the Gallows Perch") : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
+            var state = !b.Following ? (b.Hitched ? "hitched to your wagon" : _pursuits.House.IsHome ? "at home" : "waiting at the Gallows Perch") : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
             return $"{b.Name}: {b.Stage} {(b.Role is BondRole.Pet or BondRole.Dragon ? kind : "")}, level {b.Level} ({b.Xp}/{Bond.XpToNext(b.Level)} xp), {state}{(b.Eats ? $", {b.Fed:0}% fed" : "")}. Knows: {(b.Skills.Any() ? string.Join(", ", b.Skills.Select(s => s.Name)) : "nothing yet")}.";
         });
         var options = new List<(string, Action)>();
@@ -759,19 +844,41 @@ public partial class Main
         foreach (var b in _bonds)
         {
             var bond = b;
+            if (!PartyRules.IsApprentice(bond)) options.Add(($"Rename {bond.Name}", () => AskName(bond))); // a person comes with a name of their own
             // A grown horse with a wagon of yours is hitched to it or unhitched to ride, rather than sent home and called.
             if (bond.Steed && bond.Rideable && _trade.OwnWagon)
             {
-                if (bond.Hitched) { if (_bonds.Count(x => x.Following) < FollowLimit) options.Add(($"Unhitch {bond.Name} to ride", () => { Unhitch(bond); Save(); ShowParty(); })); }
+                if (bond.Hitched) { if (MayFollow(bond)) options.Add(($"Unhitch {bond.Name} to ride", () => { Unhitch(bond); Save(); ShowParty(); })); }
                 else if (bond.Following) options.Add(($"Hitch {bond.Name} to the wagon", () => { HitchToWagon(bond); Save(); ShowParty(); }));
-                else if (_bonds.Count(x => x.Following) < FollowLimit) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
+                else if (MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
                 continue;
             }
-            if (bond.Following) options.Add(($"Send {bond.Name} home", () => { bond.Following = false; var body = BodyOf(bond); if (body is not null) { _companions.Remove(body); body.QueueFree(); } Save(); ShowParty(); }));
-            else if (_bonds.Count(x => x.Following) < FollowLimit) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
+            if (bond.Following) options.Add(($"Send {bond.Name} home", () => { bond.Following = false; var body = BodyOf(bond); if (body is not null) { _companions.Remove(body); body.QueueFree(); } StableSpareMounts(); Save(); ShowParty(); }));
+            else if (MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
         }
         options.Add(("Close", _hud.EndTalk));
         _hud.Talk("Your company", string.Join("\n", lines), [.. options]);
+    }
+
+    /// <summary>A name for a pet, a mount or a machine, typed in by the hero.</summary>
+    void AskName(Bond bond)
+    {
+        var box = new LineEdit { Text = bond.Name, MaxLength = 24, SelectAllOnFocus = true };
+        void Done() { if (Rename(bond, box.Text)) Save(); ShowParty(); }
+        box.TextSubmitted += _ => Done();
+        _hud.Talk($"Rename {bond.Name}", "What will you call them?", ("That's the name", Done), ("Leave it", ShowParty));
+        _hud.AddToTalk(box);
+        box.GrabFocus();
+    }
+
+    /// <summary>Gives a companion the name the hero chose, on its plate too. People already have theirs.</summary>
+    public bool Rename(Bond bond, string name)
+    {
+        name = name.Trim();
+        if (name.Length == 0 || PartyRules.IsApprentice(bond)) return false;
+        (bond.Name, bond.Renamed) = (name, true);
+        if (BodyOf(bond) is { } body) { body.Stats.Name = name; body.RefreshPlate(); }
+        return true;
     }
 
     /// <summary>The skills (K): the class's moves, their ranks, and points to spend.</summary>

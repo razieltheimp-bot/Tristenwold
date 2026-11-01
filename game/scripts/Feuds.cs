@@ -154,6 +154,7 @@ public partial class Feuds(Main main) : Node
                     e.Stats.DamageMult *= 0.6;
                 }
                 e.Roam = 12;
+                if (leader.Named) { e.Stats.Name = Roaming.MinionOf(leader.Stats.Name); e.RefreshPlate(); }
                 main.AddEnemy(e);
                 band.Add(e);
                 if (leader.FightingCompany) e.Provoke(main.PlayerNode);

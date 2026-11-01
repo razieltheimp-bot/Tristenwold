@@ -41,7 +41,7 @@ public partial class Main
         IsleWoke();
         var chapter = _story.Chapter;
         var said = _story.Returned(_storyRng);
-        var away = _sea.OnACrew ? $"on the quay at {WakeDock.Town}" : _story.Home is { } home ? $"in {home.Name}" : null;
+        var away = _sea.OnACrew ? $"on the quay at {WakeDock.Town}" : _pursuits.House.IsHome ? "in your own house" : _story.Home is { } home ? $"in {home.Name}" : null;
         _hud.Toast(away is null || _story.Chapter != chapter ? said : $"You wake {away}, gasping, with the ring warm on your finger. It knows where home is.", 12);
         Save();
     }
@@ -60,7 +60,7 @@ public partial class Main
     /// <summary>Where the ring brings the hero back: the quay for a sailor, home for anyone with one, and the Perch for the rest.</summary>
     Vector3 WakeSpot()
     {
-        var at = _sea.OnACrew ? WakeDock.At : _story.Home is { } home ? new Vector3((float)home.X + 3, 0, (float)home.Z + 3) : City.PlayerStart;
+        var at = _sea.OnACrew ? WakeDock.At : _pursuits.House.IsHome ? HousePlotAt + new Vector3(0, 0, 8) : _story.Home is { } home ? new Vector3((float)home.X + 3, 0, (float)home.Z + 3) : City.PlayerStart;
         _terrain.EnsureAround(at, 1);
         return _sea.OnACrew ? at : at with { Y = City.FloorAt(at) + 1 };
     }
@@ -81,6 +81,7 @@ public partial class Main
 
     void Settled(string town, bool bar = true)
     {
+        _pursuits.House.IsHome = false; // a hometown elsewhere: the ring has one home at a time
         Sound.Ui("quest", -4);
         _hud.Toast($"You turn the ring on your finger, and it settles. {town} is home now: this is where it will bring you back.{(_sea.OnACrew ? $" You sail from the quay at {WakeDock.Town}, and your ship will come in there with you." : "")}", 10);
         Save();

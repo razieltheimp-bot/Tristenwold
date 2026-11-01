@@ -446,7 +446,8 @@ public sealed class Roamer
 
     /// <summary>"Mokak the Grinning, the Goblin King"; "Vorn the Patient, Frost Troll".</summary>
     [JsonIgnore]
-    public string Title => $"{Name}, {Lair?.Boss ?? Bestiary.Get(KindId).Name}";
+    /// <summary>What it's called now: its own name and its own kind, not the boss or the beast it was.</summary>
+    public string Title => $"{Name}, the {Roaming.FormFor(Seed)}";
 
     /// <summary>Where it set out from: its lair, or where it beat the company.</summary>
     [JsonIgnore]
@@ -507,6 +508,14 @@ public static class Roaming
     public const double NearestToCity = 240, FarthestOut = 1400;
 
     /// <summary>A name in the deviant roster's own style: "Mokak the Grinning".</summary>
+    /// <summary>What a deviant has become: a creature of its own, never the thing it rose from.</summary>
+    public static string FormFor(ulong seed) => Forms[(int)(seed % (ulong)Forms.Length)];
+
+    static readonly string[] Forms = ["Ravager", "Dreadmaw", "Harrower", "Ruinbringer", "Gloomfiend", "Hollow Tyrant", "Blightlord", "Gravewalker", "Skullreaver", "Nightbane", "Bonecaller", "Ashen Scourge"];
+
+    /// <summary>What a deviant's followers go by: "Dorval's Minion", by the first of its name, never the name itself.</summary>
+    public static string MinionOf(string leader) => $"{leader.Split(' ', ',')[0]}'s Minion";
+
     public static string NameFor(ulong seed)
     {
         var rng = new Rng(seed);

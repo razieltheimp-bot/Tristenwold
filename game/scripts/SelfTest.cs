@@ -2333,6 +2333,26 @@ public partial class SelfTest(Main main) : Node
         p.Unpossess();
         await Frames(10);
         Check(p.Form is null && Math.Abs(p.Stats.DamageMult - might) < 0.001, "and comes back to their own body");
+        // A fall hurts by the metre, and a strong enough hero lives through it.
+        await Frames(5);
+        p.Stats.Heal(1e9);
+        var whole = p.Stats.Health;
+        p.FallForTest(Flight.SafeFall + 5);
+        await Frames(3);
+        Check(Math.Abs(whole - p.Stats.Health - Flight.FallDamage(Flight.SafeFall + 5)) < 1 && !p.Downed, $"a fall of 11 m costs {whole - p.Stats.Health:0} health");
+        p.Stats.Heal(1e9);
+        p.FallForTest(Flight.SafeFall);
+        await Frames(3);
+        Check(p.Stats.Health == p.Stats.MaxHealth, "and a short drop costs nothing");
+        // Pets and machines take the names their hero gives them; a person keeps their own.
+        p.Join("Alchemist");
+        p.Hero.Level = PartyRules.SecondConstructLevel;
+        await Until(() => main.Bonds.Count(b => b.Role == BondRole.Golem) == 2, 6);
+        var made = main.Bonds.First(b => b.Role == BondRole.Golem);
+        Check(main.Bonds.Count(b => b.Role == BondRole.Golem) == 2 && main.Rename(made, "  Bessie "), "an alchemist at level 6 has two constructs, and can name them");
+        await Frames(30);
+        Check(made.Name == "Bessie" && main.CompanionBodies.First(e => e.Bond == made).Stats.Name == "Bessie", $"and the name stays, on its plate too: {made.Name}");
+        Check(!main.Rename(new Bond { Role = BondRole.Apprentice, Name = "Tobin" }, "Fred"), "an apprentice keeps the name they came with");
         foreach (var kind in ForestBook.Beasts)
         {
             var f = Figure.Human($"hybrid:{kind}", "human", Tristinwold.World.Sex.Male, LifeStage.Adult, 7, Hybrids.Fur(kind));

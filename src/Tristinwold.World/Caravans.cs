@@ -333,6 +333,8 @@ public sealed class TradeBook
     /// <summary>How long the yard's gate stays shut to someone who drove off with its wagon.</summary>
     public const int BanDays = 15;
     public int Stolen { get; set; }
+    /// <summary>How many clockwork mites this hero has forged, all told: they're named in order.</summary>
+    public int MitesMade { get; set; }
     /// <summary>The day the yard will deal with them again.</summary>
     public int BannedUntil { get; set; }
     public bool Banned(int day) => day < BannedUntil;

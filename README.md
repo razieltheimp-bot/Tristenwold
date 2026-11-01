@@ -307,7 +307,8 @@ golem at its full size, with Protect, Shell and its weight behind every blow, an
 step out and it stands beside you again; from level 12 it flies: jump again in the air and the furnace *ignites*
 with a kick and a roar, and every second aloft burns three of the suit's, so the power left in the suit is the
 flight you have in her; it cuts off while there's still power to come down on, and the suit never opens in the
-air; the status line shows the suit's seconds and the flight in them), and at the shipyard fits ships with **modules** that sail with
+air by itself, though a hull beaten to scrap will throw you out, and then the fall is yours; the more levels you
+have, the longer you can stay inside; the status line shows the suit's seconds and the flight in them), and at the shipyard fits ships with **modules** that sail with
 them on any ship: an automated bilge pump (boarders hole her half as fast) and light sails (a quarter off every leg);
 their limit, *Overdrive*, puts a ship under them to four times her pace. The **Saboteur** stuns with a wrench, hobbles
 with smoke caltrops and bites with spring traps; breaks spare gear down into parts Nell Corran pays the black market's
@@ -911,7 +912,14 @@ more trades, levelling 1 to 10 like the rest, and things to do that aren't fight
   windows. You can watch it go up. Then furnish it: a bed (sleep in it to wake healed and well rested, a tenth more
   experience for half an hour), a chest to keep things in, a garden of two more beds, a hearth to cook at, and a
   trophy wall (each lair trophy hung makes your blows a percent harder, up to ten). Carve a home charm to come home
-  from anywhere, every five minutes.
+  from anywhere, every five minutes. Once it's finished you can list it as your home: the ring brings you back to it
+  (a sailor still wakes on the quay), and companions not with you wait there and work. Add a farm plot, a forge and an
+  alchemy bench to the hearth, and each companion at home takes a station, a job every minute and a half: the plot
+  grows food, and the others work what you leave in the chest and put what they make back in it, while you're playing.
+  Build a shop counter, tell your company what to sell from the chest and what to buy for it, and your house is a
+  shop, with the takings in the till; if you don't, it's a house.
+  And a finished house can keep growing: add wings as long as you like, three to a
+  row going back from the road, each a little more work than the last.
 - **Treasure hunts.** Bandits and thugs sometimes carry a torn map. Read it, and it names a landmark (a village, a
   farmstead, the gates of a city) and how far from it to dig, and which way; dig there with a spade for the next
   scrap, two to four of them, and a chest at the end. Dig in the wrong place and you're told how warm you are.
@@ -945,14 +953,43 @@ Everything is saved with your company. `--selftest --pursuits-only` walks throug
   Wren, feeding your beasts and their levelling up all teach it. Each level past the first makes a wild
   youngling 3% likelier to take to you, your beasts learn 5% faster, and Wren charges 3% less. It shows in
   your pack (I).
-- Up to four follow you at once; the rest wait at the Gallows Perch. A Ranger and a Shapeshifter have no such limit:
-  every beast they own follows. A Shapeshifter studies the beasts that travel with them, too: every three quarters
+- Who travels with you is counted kind by kind. Up to three apprentices or squires. Four pets at your heels (a Ranger
+  and a Shapeshifter have no such limit: every beast they own follows), and the rest wait at the Gallows Perch. As many
+  mounts as you like, kept and fed at the Perch, but only as many with you as there are riders: you, and each apprentice
+  with you. A golem is a machine and doesn't count, and a foal or a dragon too small to ride counts as a pet until it's grown.
+  Apprentices and squires are mortal: one who falls in a fight is dead, and they grow old with the days and die of it.
+  Only artificers have constructs. From level 6 an Alchemist has two (Alembic and Retort); the Ether-Aeronaut, who
+  climbs inside theirs, keeps the one. A Saboteur keeps Scrap and forges *clockwork mites* besides, knee-high machines,
+  as many as they have the makings for: at any forge, from two iron ingots, four iron nails, two scrap iron and a log.
+  They walk with you, don't count against anything, and a mite that's wrecked is scrap. A Shapeshifter studies the beasts that travel with them, too: every three quarters
   of a minute at a following wolf's or bear's heels counts as a kill towards learning its shape (eight, as ever).
   A Shapeshifter's limit break (R) is the *Half-Form*: the beast they're wearing when they call it, or else the
   beast they've worn the most, and their own people in one body, standing tall and furred with the beast's head,
   claws and tail, stronger than either, for twenty-five seconds, and then the gauge to fill again; the beast forms
   themselves still last as long as you like. A companion knocked down gets up when the
   fight is over, and resting heals them all.
+
+### Ships at the yard
+
+Osric Tarr sells three hulls to anyone with the crowns: a sloop (2,500, thirty loads, quick, and feels every blow), a
+pinnace (6,000, fifty loads) and a galleon (15,000, 120 loads, slow, and takes a lot of killing). Half the price of the
+ship you have comes off the next, and she keeps her name. He'll also fit your own ship with iron strakes, a deepened
+hold or fine canvas. They all sail as the same ship on the water for now. And he'll always pay for planks on a holed hull.
+
+### Names
+
+Anything that follows you that isn't a person takes the name you give it: pets, mounts, constructs and mites, with
+Rename in the party menu (P). Apprentices and squires came with names of their own.
+
+### Falling
+
+A fall costs 8 health for every metre past the first 6, the same for everyone, so a strong enough hero can walk away
+from a sky battle and a green one can't. Water, a saddle and a machine's plates take it for you.
+
+### What a deviant is called
+
+A boss that beats you and walks off isn't that boss any more: it takes a name and a kind of its own ("Ashk Bone-Biter,
+the Ruinbringer"), and whatever follows it goes by its name ("Ashk's Minion"), never the name itself.
 
 ### Hollowheart's heart-trees
 

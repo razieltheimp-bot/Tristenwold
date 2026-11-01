@@ -428,6 +428,28 @@ public partial class Main
         Save();
     }
 
+    void BuyHull(Person master, ShipSize size)
+    {
+        var hull = SeaBook.Hulls[size];
+        var (crowns, had) = (_player.Crowns, _sea.OwnShip);
+        if (_sea.BuyHull(size, SeaBook.NameShip(_lootRng), ref crowns) is not { } paid) { Say(master, $"{_sea.HullCost(size)} crowns for a {hull.Name}. I don't build on credit."); return; }
+        _player.Crowns = crowns;
+        Sound.Ui("coin", -2);
+        Say(master, had ? $"Done. {_sea.ShipName} goes out as a {hull.Name} now, {paid} crowns on top of the old hull, with a hold for {_sea.Capacity} loads." : $"She's yours: {_sea.ShipName}, a {hull.Name} with a hold for {_sea.Capacity} loads. {paid} crowns, and every one of them worth it.");
+        Save();
+    }
+
+    void FitUpgrade(Person master, string id)
+    {
+        var kind = SeaBook.UpgradeKinds[id];
+        var crowns = _player.Crowns;
+        if (_sea.Upgrade(id, ref crowns) is null) { Say(master, $"{kind.Price} crowns for {kind.Name}. Come back when you have them."); return; }
+        _player.Crowns = crowns;
+        Sound.Ui("anvil");
+        Say(master, $"{kind.Name} on {_sea.ShipName}: {kind.Text}.");
+        Save();
+    }
+
     void BuyPardon(Person master)
     {
         if (_player.Crowns < SeaBook.PardonPrice) { Say(master, $"I know what you are. The company's pardon is {SeaBook.PardonPrice} crowns, and not a copper less."); return; }
@@ -475,6 +497,15 @@ public partial class Main
             yield return ($"Any work in the yard? ({s.PlankPay} crowns a plank)", () => StartPlanking(master, building: false));
             if (s.KeelLaid) yield return ($"Work on my ship. ({s.Keel}/{SeaBook.KeelJobs} done)", () => StartPlanking(master, building: true));
         }
+        // The yard's hulls, for anyone with the crowns, and what he'll fit to one.
+        foreach (var size in Enum.GetValues<ShipSize>().Where(z => !s.OwnShip || z != s.Size))
+        {
+            var hull = SeaBook.Hulls[size];
+            yield return ($"{(s.OwnShip ? "Trade her in for" : "Sell me")} a {hull.Name}. ({s.HullCost(size)} crowns; {hull.Hold} loads)", () => BuyHull(master, size));
+        }
+        if (s.OwnShip)
+            foreach (var (id, kind) in SeaBook.UpgradeKinds.Where(k => !s.HasUpgrade(k.Key)))
+                yield return ($"Fit {kind.Name} to {s.ShipName}. ({kind.Price} crowns: {kind.Text})", () => FitUpgrade(master, id));
         if (s.MayLayKeel) yield return ($"Lay down a keel for a ship of my own. ({SeaBook.KeelPrice} crowns of timber)", () => LayKeel(master));
         if (s.OwnShip && s.Hull < 100)
         {

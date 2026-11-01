@@ -113,7 +113,7 @@ public class TacticsTests
         var r = book.Took("frost_troll", 600, -900, 1000, 77);
         Assert.Null(r.Lair);
         Assert.Equal("frost_troll", r.KindId);
-        Assert.EndsWith(", Frost Troll", r.Title);
+        Assert.DoesNotContain("Troll", r.Title); // a creature of its own now, not the thing it was
         Assert.Equal((600, -900), r.Where(WorldGen.Default, 1000)); // standing over the hero, at first
         Assert.NotEqual((600.0, -900.0), r.Where(WorldGen.Default, 1000 + 3600));
 

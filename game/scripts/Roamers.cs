@@ -297,7 +297,7 @@ public partial class Roamers(Main main) : Node
             main.FeudsNode.Soldiers(body, (Tristinwold.Deviant.Rank)Math.Min(3, (r.Wins - 1) / 2), raid?.ThrallKind);
         }
         Out? o = null;
-        var brain = raid is null ? null : new BossBrain(main, raid, r.Name, spot => o?.Adds.Add(Add(raid, spot)));
+        var brain = raid is null ? null : new BossBrain(main, raid, r.Name, spot => o?.Adds.Add(Add(raid, spot, r.Name)));
         o = new Out(r, body, brain);
         Strengthen(o);
         body.Think = (e, delta) => { brain?.Think(e, delta); Hunt(o, e, delta); };
@@ -307,11 +307,12 @@ public partial class Roamers(Main main) : Node
         return o;
     }
 
-    Enemy Add(Raid raid, Vector3 at)
+    Enemy Add(Raid raid, Vector3 at, string? leader = null)
     {
         var e = Enemy.Create(Bestiary.Get(raid.ThrallKind), at with { Y = City.FloorAt(at) + 0.4f }, look: raid.ThrallKind);
         var (health, damage) = Raids.Thrall(raid, main.PlayerNode.Hero.Level);
         e.Tune(health * 1.2, damage * 1.1);
+        if (leader is not null) { e.Stats.Name = Roaming.MinionOf(leader); e.RefreshPlate(); }
         main.AddEnemy(e);
         e.Provoke(main.PlayerNode);
         return e;
@@ -379,6 +380,7 @@ public partial class Roamers(Main main) : Node
         main.RaidLog.Slain(r);
         _out.Remove(o);
         foreach (var add in o.Adds.Where(a => IsInstanceValid(a) && a.State != EnemyState.Dead)) add.Collapse();
+        main.HudNode.Log($"{r.Title} fell to {killer?.Stats.Name ?? "your own hand"} at {victim.GlobalPosition.X:0},{victim.GlobalPosition.Z:0}.");
         var watch = killer is { Watch: true };
         if (!byCompany && !watch)
         {

@@ -223,6 +223,8 @@ public partial class Player : Fighter
     /// <summary>Joins another class: a new look, new moves, the same hero.</summary>
     public void Join(string discipline)
     {
+        Unpossess(); // out of a construct or a half-form, and any beast's shape, before taking up another calling
+        LeaveBeastForm();
         Hero.Join(discipline);
         Dress();
         Stats.Heal(1e9);
@@ -322,6 +324,7 @@ public partial class Player : Fighter
         }
         Stats.Tick(delta, InFight);
         TickSuit(delta);
+        TrackFall(delta);
         _rage -= delta;
         if (_mightLeft > 0 && (_mightLeft -= delta) <= 0) Fit();
         if (_wardLeft > 0 && (_wardLeft -= delta) <= 0) Fit();
@@ -547,9 +550,10 @@ public partial class Player : Fighter
             case "merge":
                 Figure.Perform("Spellcast_Raise", 0.8);
                 Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Shock, 2);
-                For(a.Seconds * power, AutoStatus.Protect, AutoStatus.Shell);
-                _merged = Now + a.Seconds * power;
-                Merged?.Invoke(a.Seconds * power);
+                var inside = a.Seconds * power + Flight.SuitSeconds(Hero.Level); // a better maker stays in longer
+                For(inside, AutoStatus.Protect, AutoStatus.Shell);
+                _merged = Now + inside;
+                Merged?.Invoke(inside);
                 break;
             case "overdrive":
                 Figure.Perform("Spellcast_Raise", 0.8);
@@ -1081,7 +1085,29 @@ public partial class Player : Fighter
     public bool Jetting => _jetting;
     public void JetForTest() => _jetting = CanJet;
 
-    double _thrust;
+    double _thrust, _fallen;
+
+    /// <summary>The fall counted by how far they've actually come down, so a teleport or a door is no fall; on landing it's paid for. Water, a saddle, a seat or a machine's plates take it instead.</summary>
+    void TrackFall(double delta)
+    {
+        if (Seat is not null || Mount is not null || _jetting || Swimming || Hull is not null) { _fallen = 0; return; }
+        if (IsOnFloor())
+        {
+            var hurt = Flight.FallDamage(_fallen);
+            _fallen = 0;
+            if (hurt <= 0) return;
+            Stats.Lose(hurt);
+            Figure.Hurt();
+            Sound.At("move/land", GlobalPosition, 2, 0.7f);
+            Said?.Invoke($"The ground comes up hard: {hurt:0} damage.");
+            if (Stats.Dead) { LastHitBy = null; GoDown(); }
+            return;
+        }
+        if (Velocity.Y < 0) _fallen -= Velocity.Y * delta;
+    }
+
+    /// <summary>For the self-test: a fall of so many metres, as if just landed.</summary>
+    public void FallForTest(double metres) => _fallen = metres;
 
     /// <summary>The construct in the air: where you're heading, as fast as it'll go, with jump to climb and descend to sink, and fire under it the whole while.</summary>
     void Jet(Vector3 dir, float speed, double delta)

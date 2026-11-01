@@ -613,17 +613,49 @@ public partial class Main
             options.Insert(0, ($"{stage.Name}: {Needs(stage)}{(stage.Level > level ? $" [building {stage.Level}]" : "")}", () => Build(stage)));
         else
         {
+            if (!h.IsHome) options.Insert(0, ("List this house as my home", ListHome));
+            var wing = Housing.Room(h.Rooms);
+            options.Insert(0, ($"{wing.Name}: {Needs(wing)}{(wing.Level > level ? $" [building {wing.Level}]" : "")}", () => Build(wing)));
             foreach (var f in Housing.Furniture.Where(f => !h.Furniture.Contains(f.Id)))
                 options.Add(($"Make {f.Name.ToLowerInvariant()}: {Needs(f)}{(f.Level > level ? $" [building {f.Level}]" : "")}. {f.Text}", () => Build(f)));
             if (h.Furniture.Contains("bed")) options.Add(("Sleep in your own bed", Sleep));
             if (h.Furniture.Contains("chest")) options.Add(($"Open the chest ({h.Chest.Values.Sum()} things in it)", Chest));
             if (h.Furniture.Contains("hearth")) options.Add(("Cook at the hearth", () => ShowCraft(Job.Cooking, HouseMenu)));
             if (h.Furniture.Contains("trophy_wall")) options.Add(($"The trophy wall ({h.Trophies.Count} hung)", TrophyWall));
+            if (h.Furniture.Contains("shop_counter")) options.Add(($"The shop counter ({h.Till} crowns in the till)", ShopCounter));
         }
         options.Add(("Leave it", _hud.EndTalk));
         var built = h.Built == 0 ? "A staked-out plot, yours." : h.Finished ? $"Your house, finished.{(h.Furniture.Count > 0 ? $" In it: {string.Join(", ", h.Furniture.Select(f => Housing.Step(f).Name.ToLowerInvariant()))}." : " Bare as yet.")}"
             : $"Building: {string.Join(", ", Housing.Stages.Take(h.Built).Select(s => s.Name.ToLowerInvariant()))}, done.";
-        _hud.Talk("Hearthside", $"{built} Building {level}.", [.. options]);
+        var working = Homestead.Stations.Count(s => h.Furniture.Contains(s.Station));
+        var home = !h.IsHome ? "" : $" Your home. {_bonds.Count(Homestead.Free)} of your company here, {Math.Min(working, _bonds.Count(Homestead.Free))} of {working} stations worked.";
+        _hud.Talk("Hearthside", $"{built}{home} Building {level}.", [.. options]);
+    }
+
+    /// <summary>The shop, if the hero wants one: what goes on sale from the chest, what's wanted for it, and the till. Nothing's sold or bought unless they say so.</summary>
+    void ShopCounter()
+    {
+        var h = _pursuits.House;
+        var options = new List<(string, Action)>();
+        if (h.Till > 0) options.Add(($"Empty the till ({h.Till} crowns)", () => { _player.Crowns += h.Till; h.Till = 0; Sound.Ui("coin"); Save(); ShopCounter(); }));
+        foreach (var id in h.Chest.Keys.Concat(h.ForSale).Distinct().Order())
+            options.Add(($"{(h.ForSale.Contains(id) ? "Stop selling" : "Sell")} {Items.Get(id)?.Name ?? id} ({Homestead.SellsFor(id)} crowns each, {h.Chest.GetValueOrDefault(id)} in the chest)", () => { if (!h.ForSale.Remove(id)) h.ForSale.Add(id); Save(); ShopCounter(); }));
+        foreach (var id in _player.Pack.Contents.Where(c => c.Item.Kind is not ItemKind.Tool).Select(c => c.Item.Id).Concat(h.Buying).Distinct().Order())
+            options.Add(($"{(h.Buying.Contains(id) ? "Stop buying" : "Buy in")} {Items.Get(id)?.Name ?? id} (pays {Homestead.BuysFor(id)} crowns)", () => { if (!h.Buying.Remove(id)) h.Buying.Add(id); Save(); ShopCounter(); }));
+        options.Add(("Back", HouseMenu));
+        var open = h.ForSale.Count + h.Buying.Count == 0 ? "Nothing's on sale and nobody's buying: it's just a counter." : _bonds.Any(Homestead.Free) ? "Your company at home serves whoever comes." : "Nobody's home to serve: leave a companion here.";
+        _hud.Talk("The shop counter", $"{open} {h.Till} crowns in the till.", [.. options]);
+    }
+
+    /// <summary>This house is home now: the ring brings the hero here, and whoever isn't with them waits and works here.</summary>
+    void ListHome()
+    {
+        _pursuits.House.IsHome = true;
+        _story.Home = null;
+        Sound.Ui("quest", -4);
+        _hud.Toast("You turn the ring on your finger, and it settles. This house is home: this is where it will bring you back, and where your company waits for you.", 10);
+        Save();
+        HouseMenu();
     }
 
     void Build(BuildStep s)
@@ -634,6 +666,7 @@ public partial class Main
         foreach (var (id, n) in s.Needs) pack.Take(id, n);
         var stage = Housing.Stages.Contains(s);
         if (stage) _pursuits.House.Built++;
+        else if (s.Id == "room") _pursuits.House.Rooms++;
         else _pursuits.House.Furniture.Add(s.Id);
         ShowHouse(); // it goes up as you build it
         var up = pack.Practise(Job.Building, s.Xp);
@@ -709,7 +742,7 @@ public partial class Main
         Save();
     }
 
-    string HouseKey => $"{_pursuits.House.Owned}:{_pursuits.House.Built}:{string.Join(",", _pursuits.House.Furniture.Order())}";
+    string HouseKey => $"{_pursuits.House.Owned}:{_pursuits.House.Built}:{_pursuits.House.Rooms}:{string.Join(",", _pursuits.House.Furniture.Order())}";
 
     /// <summary>The house as it stands: stakes on an empty plot, then the foundation, the frame, the walls, the roof, and the house.</summary>
     void ShowHouse()
@@ -750,7 +783,13 @@ public partial class Main
             Box(new Vector3(2.2f, 2.2f, 3.1f), new Vector3(3, 3.6f, 0.3f), stone);
         }
         if (h.Built >= 4) Buildings.Place(root, h.Finished ? "house" : "cottage", Vector3.Zero, 0, 11);
+        // The wings, three to a row, going back from the road as far as the hero cares to build.
+        for (var i = 0; i < h.Rooms; i++)
+            Buildings.Place(root, i % 2 == 0 ? "house" : "cottage", new Vector3((i % 3 - 1) * 11, 0, -(i / 3 + 1) * 11), 0, 12 + i);
         // The yard, as it's furnished.
+        if (h.Furniture.Contains("home_forge")) { Box(new Vector3(-8.5f, 0.6f, 6), new Vector3(1.6f, 1.2f, 1.2f), stone); Models.Place(root, "ph:fire_pit.glb", new Vector3(-8.5f, 1.2f, 6), 0.6f, 0); }
+        if (h.Furniture.Contains("alchemy_bench")) { Box(new Vector3(8.5f, 0.5f, 6.5f), new Vector3(2.2f, 1, 0.9f), wood); Models.Place(root, Cargo + "barrel_apples.glb", new Vector3(10, 0, 6.5f), 0.9f, 0.4f, solid: false); }
+        if (h.Furniture.Contains("farm_plot")) Box(new Vector3(0, 0.1f, 11), new Vector3(9, 0.2f, 4), new StandardMaterial3D { AlbedoColor = new Color("#4a3522"), Roughness = 1 });
         if (h.Furniture.Contains("chest")) Models.Place(root, "ph:chest.glb", new Vector3(-3, 0, 6), 0.7f, 0.3f);
         if (h.Furniture.Contains("hearth")) Models.Place(root, "ph:fire_pit.glb", new Vector3(3.5f, 0, 6.5f), 1, 0);
         if (h.Furniture.Contains("trophy_wall")) Models.Place(root, "medieval/props/weaponrack.gltf", new Vector3(-5.5f, 0, 4), 5, 1.57f);

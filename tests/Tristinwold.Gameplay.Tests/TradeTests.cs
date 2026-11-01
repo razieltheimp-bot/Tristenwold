@@ -7,6 +7,98 @@ namespace Tristinwold.Gameplay.Tests;
 public class TradeTests
 {
     [Fact]
+    public void A_mount_jumps_by_its_speed_and_its_growth()
+    {
+        var (horse, wild) = (Bestiary.Get("horse").Speed, Bestiary.Get("wild_horse").Speed);
+        Assert.True(Taming.MountJump(wild, 6) > Taming.MountJump(horse, 6));
+        Assert.True(Taming.MountJump(horse, 20) > Taming.MountJump(horse, 6));
+        var height = Math.Pow(Taming.MountJump(horse, 6), 2) / (2 * 9.8);
+        Assert.InRange(height, 1.3, 2.2);
+    }
+
+    static Bond Horse() => new() { KindId = "horse", Role = BondRole.Pet, Level = 6 };
+    static Bond Wolf() => new() { KindId = "wolf", Role = BondRole.Pet, Level = 2 };
+    static Bond Youth() => new() { KindId = "squire", Role = BondRole.Squire, Level = 2 };
+
+    [Fact]
+    public void Apprentices_pets_mounts_and_the_golem_are_counted_apart()
+    {
+        var party = new List<Bond> { new() { KindId = "golem", Role = BondRole.Golem, Level = 5 } };
+        party.AddRange([Wolf(), Wolf(), Wolf(), Wolf()]);
+        Assert.False(PartyRules.MayFollow(party, Wolf(), freePets: false)); // four pets, and the golem didn't take a place
+        Assert.True(PartyRules.MayFollow(party, Wolf(), freePets: true)); // a Ranger or a Shapeshifter
+        var foal = new Bond { KindId = "horse", Role = BondRole.Pet, Level = 1 };
+        Assert.True(PartyRules.IsPet(foal) && !PartyRules.IsMount(foal));
+        party.Add(Horse());
+        Assert.False(PartyRules.MayFollow(party, Horse(), freePets: false)); // one rider, one mount
+        party.Add(Youth());
+        Assert.Equal(2, PartyRules.Riders(party));
+        Assert.True(PartyRules.MayFollow(party, Horse(), freePets: false)); // an apprentice brings a place for a mount
+        party.AddRange([Youth(), Youth()]);
+        Assert.False(PartyRules.MayFollow(party, Youth(), freePets: false)); // three apprentices at most
+    }
+
+    [Fact]
+    public void Only_artificers_have_constructs_and_the_one_who_climbs_inside_has_one()
+    {
+        Assert.Equal(0, PartyRules.Constructs(Calling.Warrior, "Paladin", 20));
+        Assert.Equal(1, PartyRules.Constructs(Calling.Artificer, "Alchemist", 5));
+        Assert.Equal(2, PartyRules.Constructs(Calling.Artificer, "Alchemist", 6));
+        Assert.Equal(1, PartyRules.Constructs(Calling.Artificer, "Saboteur", 20)); // a saboteur forges mites instead
+        Assert.Equal(1, PartyRules.Constructs(Calling.Artificer, "EtherAeronaut", 20));
+    }
+
+    [Fact]
+    public void Mites_are_unlimited_named_in_turn_and_break_for_good()
+    {
+        var mites = Enumerable.Range(0, 40).Select(i => new Bond { KindId = "clockwork_mite", Role = BondRole.Mite, Level = 3, Name = PartyRules.MiteName(i) }).ToList();
+        Assert.True(PartyRules.MayFollow(mites, new Bond { Role = BondRole.Mite }, freePets: false));
+        Assert.Equal(40, mites.Select(m => m.Name).Distinct().Count());
+        Assert.All(mites, m => Assert.True(m.Machine && m.DiesIfFelled && !m.Eats && !PartyRules.IsPet(m)));
+        Assert.Equal("clockwork_mite", Bestiary.Get("clockwork_mite").Id);
+    }
+
+    [Fact]
+    public void A_fall_costs_by_the_metre_and_a_maker_stays_in_the_machine_longer_with_levels()
+    {
+        Assert.Equal(0, Flight.FallDamage(Flight.SafeFall));
+        Assert.Equal(Flight.FallPerMetre * 10, Flight.FallDamage(Flight.SafeFall + 10));
+        Assert.True(Flight.SuitSeconds(20) > Flight.SuitSeconds(6));
+        Assert.Equal(0, Flight.SuitSeconds(1));
+    }
+
+    [Fact]
+    public void A_house_can_grow_for_ever_and_every_wing_is_more_work()
+    {
+        var (first, fiftieth) = (Housing.Room(0), Housing.Room(49));
+        Assert.Equal("Add a wing", first.Name);
+        Assert.Equal("Add wing 50", fiftieth.Name);
+        Assert.True(fiftieth.Needs.Sum(n => n.N) > first.Needs.Sum(n => n.N));
+        Assert.Equal(10, fiftieth.Level);
+        Assert.All(first.Needs.Concat(fiftieth.Needs), n => Assert.NotNull(Items.Get(n.Id)));
+    }
+
+    [Fact]
+    public void An_apprentice_can_die_and_a_pet_cannot()
+    {
+        Assert.True(Youth().DiesIfFelled);
+        Assert.True(new Bond { Role = BondRole.Apprentice }.DiesIfFelled);
+        Assert.False(Wolf().DiesIfFelled);
+        Assert.False(new Bond { Role = BondRole.Golem }.DiesIfFelled);
+    }
+
+    [Fact]
+    public void An_apprentice_sent_home_leaves_a_mount_with_no_rider()
+    {
+        var (first, second, youth) = (Horse(), Horse(), Youth());
+        var party = new List<Bond> { first, second, youth };
+        Assert.Empty(PartyRules.SpareMounts(party));
+        youth.Following = false;
+        Assert.Equal([second], PartyRules.SpareMounts(party));
+        Assert.Equal([first], PartyRules.SpareMounts(party, ridden: second)); // never the one under the hero
+    }
+
+    [Fact]
     public void Every_class_has_a_limit_break_of_its_own()
     {
         var ids = Classes.All.Select(c => c.Limit.Id).ToList();

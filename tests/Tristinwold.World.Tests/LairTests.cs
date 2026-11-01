@@ -57,7 +57,9 @@ public class LairTests
         var roamer = book.Escaped(r, 1000, 42);
 
         Assert.False(string.IsNullOrWhiteSpace(roamer.Name));
-        Assert.Contains(r.Boss, roamer.Title);
+        Assert.DoesNotContain(r.Boss, roamer.Title, StringComparison.OrdinalIgnoreCase); // it's a creature of its own now
+        Assert.StartsWith(roamer.Name, roamer.Title);
+        Assert.Equal("Dorval's Minion", Roaming.MinionOf("Dorval the Grinning, the Ravager"));
         Assert.Equal(Roaming.NameFor(42), roamer.Name); // the same seed, the same name
         // A moment later a new one has moved in (long before the lair's usual cooldown).
         Assert.False(book.Ready(r, 1000 + RaidBook.MoveInSeconds - 1));

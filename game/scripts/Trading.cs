@@ -177,6 +177,11 @@ public partial class Main
                 ShowCraft(job, back);
             }));
         }).ToList();
+        if (job == Job.Smithing && _player.Class.Id == "Saboteur")
+        {
+            var makings = string.Join(", ", PartyRules.MiteNeeds.Select(n => $"{Items.Count(n.Id, n.N)} ({pack.Count(n.Id)})"));
+            options.Insert(0, (pack.Has(PartyRules.MiteNeeds) ? $"Forge a clockwork mite from {makings}" : $"(A clockwork mite: needs {makings})", () => ForgeMite(() => ShowCraft(job, back))));
+        }
         options.Add(("Back", back));
         _hud.Talk(job switch { Job.Smithing => "The forge", Job.Cooking => "Cooking", Job.Crafting => "The bench and loom", Job.Building => "The sawhorse", _ => "Brewing" }, text, [.. options]);
     }
@@ -255,7 +260,7 @@ public partial class Main
         options.Add(("Not today.", () => Say(person, "They'll be here. Most of them.")));
         _hud.Talk($"Wren's Menagerie ({_player.Crowns} crowns)",
             $"Danger is what it grows into; training is how much patience it takes. Your beast taming: {level}" +
-            $"{(level > 1 ? $", so {3 * (level - 1)}% off" : "")}. They follow you ({(FollowLimit == int.MaxValue ? "as many as you like, for one of your calling" : $"up to {MaxFollowing} at a time")}; the rest wait at the Gallows Perch) " +
+            $"{(level > 1 ? $", so {3 * (level - 1)}% off" : "")}. They follow you ({(FreePets ? "as many as you like, for one of your calling" : $"up to {PartyRules.MaxPets} at a time")}; the rest wait at the Gallows Perch) " +
             "and grow up at your side. Dragons aren't for sale: no one sells a dragon.", [.. options]);
     }
 

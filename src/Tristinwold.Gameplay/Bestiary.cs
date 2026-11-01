@@ -94,6 +94,7 @@ public static class Bestiary
         new("protege", "Protege", 100, 12, 5.6, 40, 1.8, 0.9, DamageKind.Physical, "#5a4a3a", 1.55),
         new("understudy", "Understudy", 95, 12, 5.2, 35, 10, 1.4, DamageKind.Physical, "#c8a040", 1.55),
         new("familiar", "Familiar", 110, 14, 5.5, 40, 1.8, 1.1, DamageKind.Poison, "#8a5ad0", 1.4),
+        new("clockwork_mite", "Clockwork Mite", 70, 7, 5.5, 150, 1.4, 1.4, DamageKind.Physical, "#8a6a3a", 0.5), // a saboteur's little machine, knee-high, forged by hand
         new("golem", "Brass Golem", 240, 16, 4.4, 150, 2.0, 1.9, DamageKind.Physical, "#c8a048", 1.15), // an artificer's machine, at their side
         // The Ashen Crypt: the burned warden and the thralls he raises (their numbers are set by the raid).
         new("cinder_warden", "Cinder Warden", 600, 18, 4.2, 120, 2.6, 1.6, DamageKind.Fire, "#2e241c", 2.6),

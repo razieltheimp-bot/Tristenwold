@@ -840,6 +840,8 @@ public partial class Enemy : Fighter
         var speed = (float)Kind.Speed * MathF.Pow(Bulk, 0.35f) * (fast ? 1.7f : 1.1f) * (Airborne ? 2.4f : 1);
         var move = steer * speed;
         FaceAlong(move, delta);
+        // A mount that can't fly jumps, as high as its speed and its growth carry it.
+        if (!CanFly && climb > 0 && IsOnFloor()) Velocity = Velocity with { Y = (float)Taming.MountJump(Kind.Speed * Stats.SpeedMult, Bond?.Level ?? 1) };
         if (Airborne || _altitude > 0) Hover(delta, move);
         else FallAndSlide(delta, move);
         Figure.Move(GroundSpeed, IsOnFloor() && !Airborne, Swimming);

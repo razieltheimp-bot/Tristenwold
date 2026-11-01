@@ -108,7 +108,7 @@ public sealed class Hero
 
 /// <summary>What a companion is to you: a tamed beast, a squire or apprentice from a town, or your own dragon.</summary>
 /// <summary>What a companion is to its hero. A golem is an artificer's machine: it doesn't eat, and it's as grown as its maker is.</summary>
-public enum BondRole { Pet, Squire, Apprentice, Dragon, Golem }
+public enum BondRole { Pet, Squire, Apprentice, Dragon, Golem, Mite }
 
 /// <summary>A move a companion learns as it grows: <paramref name="Level"/> is when.</summary>
 public sealed record BondSkill(string Id, string Name, int Level, string Text, double Cooldown, double Power);
@@ -140,12 +140,19 @@ public sealed class Bond
 
     /// <summary>Following you now, or waiting at home (the Gallows Perch).</summary>
     public bool Following { get; set; } = true;
+    /// <summary>The hero named this one themselves: the name stays, whatever a Foundry refit might otherwise call it.</summary>
+    public bool Renamed { get; set; }
     /// <summary>A steed hitched to your wagon: it goes where the wagon goes, not at your heels, until you unhitch it to ride.</summary>
     public bool Hitched { get; set; }
 
     /// <summary>A dragon too young to fly is lost for good if it falls; anything else is only knocked out.</summary>
     [JsonIgnore]
-    public bool DiesIfFelled => Role == BondRole.Dragon && Level < 10;
+    public bool DiesIfFelled => Role == BondRole.Dragon && Level < 10 || Role is BondRole.Squire or BondRole.Apprentice or BondRole.Mite; // apprentices are mortal, and a mite wrecked is scrap: no getting up after the fight
+
+    /// <summary>An apprentice's people, how old they were when they joined, and the day they did: they age, and in the end they die of it.</summary>
+    public string? Race { get; set; }
+    public double JoinAge { get; set; }
+    public int JoinDay { get; set; }
 
     public const double HungerSeconds = 1500; // a full belly lasts 25 minutes of play
 
@@ -171,12 +178,12 @@ public sealed class Bond
     [JsonIgnore]
     public double Growth => Role == BondRole.Dragon
         ? Math.Min(1, 0.12 + 0.88 * (Level - 1) / 9.0)
-        : Role == BondRole.Golem ? 1
+        : Role is BondRole.Golem or BondRole.Mite ? 1
         : Math.Min(1, 0.35 + 0.65 * (Level - 1) / 5.0);
 
     /// <summary>An artificer's golem: built, not born; its level is its maker's.</summary>
     [JsonIgnore]
-    public bool Machine => Role == BondRole.Golem;
+    public bool Machine => Role is BondRole.Golem or BondRole.Mite;
 
     /// <summary>
     /// How big a golem is built, compared with the Foundry's pattern: an ether-aeronaut's is a hull with room for
@@ -200,6 +207,7 @@ public sealed class Bond
         BondRole.Dragon => Level >= 30 ? 10.5 / 4.5 : Level >= 20 ? 7 / 4.5 : Growth,
         BondRole.Pet => Math.Min(1, 0.4 + 0.12 * (Level - 1)),
         BondRole.Golem => Build,
+        BondRole.Mite => 0.45, // knee-high
         _ => 0.82 + 0.18 * Growth, // a youth grows into a squire's or apprentice's full height
     };
 
@@ -219,6 +227,7 @@ public sealed class Bond
         BondRole.Dragon => Level < 5 ? "hatchling" : Level < 10 ? "wyrmling" : Level < 20 ? "young dragon" : Level < 30 ? "large dragon" : "giant dragon",
         BondRole.Pet => Growth < 1 ? "young" : "grown",
         BondRole.Squire => Level < 10 ? "squire" : "sworn squire",
+        BondRole.Mite => "clockwork mite",
         _ => Level < 10 ? "apprentice" : "journeyman",
     };
 
@@ -244,6 +253,7 @@ public sealed class Bond
     /// <summary>What a companion learns as it grows, by what it is.</summary>
     public static IEnumerable<BondSkill> SkillsFor(BondRole role, string kindId) => role switch
     {
+        BondRole.Mite => [],
         BondRole.Squire =>
         [
             new("guard", "Shield Your Master", 3, "Draws a foe that is hurting you onto itself.", 8, 0),
@@ -287,6 +297,9 @@ public sealed class Bond
 /// <summary>Finding and taming the young of the wilds.</summary>
 public static class Taming
 {
+    /// <summary>How hard a mount that can't fly leaps (metres a second upward), by how fast it is and how grown: a good horse clears about its own height.</summary>
+    public static double MountJump(double speed, int level) => 2.2 + speed * 0.35 + Math.Min(level, 30) * 0.06;
+
     /// <summary>The young of these can be raised: beasts and monsters (not people, and not the dead).</summary>
     public static bool Tameable(string kindId) => kindId is "giant_rat" or "wolf" or "ice_wolf" or "bear" or "frost_troll" or "mud_crab"
         or "spriggan" or "goblin" or "boar" or "deer" or "fox" or "kipine" or "deathcrest_ape" or "winged_ape" or "hawk" or "wild_horse"
@@ -348,4 +361,68 @@ public static class Taming
 
     /// <summary>How much faster a tamer's beasts learn: 5% for each level of beast taming past the first.</summary>
     public static double Training(int tamingLevel) => 1 + 0.05 * (tamingLevel - 1);
+}
+
+/// <summary>
+/// Who may travel with a hero, counted kind by kind. Up to three apprentices or squires. Pets by the class's limit (four,
+/// or as many as they like for a Ranger or a Shapeshifter). As many mounts as they own, kept and fed at the Gallows Perch,
+/// but only as many with them as there are riders: the hero and each apprentice at their side. A golem is a machine and
+/// doesn't count, and a foal or a dragon too small to ride is a pet until it's grown.
+/// </summary>
+public static class PartyRules
+{
+    public const int MaxApprentices = 3, MaxPets = 4;
+    /// <summary>The level an artificer who works beside their construct builds a second. The Ether-Aeronaut climbs inside theirs, and has only the one.</summary>
+    public const int SecondConstructLevel = 6;
+
+    /// <summary>How many full-size constructs this class can keep at this level: none but for an artificer, and a second only for an Alchemist. A Saboteur forges mites instead.</summary>
+    public static int Constructs(Calling calling, string classId, int level) =>
+        calling != Calling.Artificer ? 0 : classId == "Alchemist" && level >= SecondConstructLevel ? 2 : 1;
+
+    /// <summary>What a Saboteur needs at a forge to make one clockwork mite, a log for the fire besides. As many as they have the makings for.</summary>
+    public static readonly (string Id, int N)[] MiteNeeds = [("iron_ingot", 2), ("iron_nails", 4), ("scrap_iron", 2)];
+    public static readonly string[] MiteNames = ["Cog", "Sprocket", "Washer", "Tack", "Ratchet", "Spindle", "Grommet", "Shim", "Pawl", "Burr", "Clevis", "Bodkin"];
+
+    /// <summary>A name for the next mite: the list, then round again with a number.</summary>
+    public static string MiteName(int made) => made < MiteNames.Length ? MiteNames[made] : $"{MiteNames[made % MiteNames.Length]} the {made / MiteNames.Length + 1}{(made / MiteNames.Length + 1) switch { 2 => "nd", 3 => "rd", _ => "th" }}";
+
+    public static bool IsApprentice(Bond b) => b.Role is BondRole.Squire or BondRole.Apprentice;
+    public static bool IsMount(Bond b) => b.Role == BondRole.Dragon ? b.Rideable : b.Steed && b.Rideable;
+    public static bool IsPet(Bond b) => !IsApprentice(b) && !IsMount(b) && !b.Machine;
+
+    /// <summary>The hero, and every apprentice at their side.</summary>
+    public static int Riders(IEnumerable<Bond> bonds) => 1 + bonds.Count(b => b.Following && IsApprentice(b));
+
+    /// <summary>Whether this one can join those following, as things stand (it isn't counted itself).</summary>
+    public static bool MayFollow(IReadOnlyCollection<Bond> bonds, Bond who, bool freePets)
+    {
+        if (who.Machine) return true;
+        var others = bonds.Where(b => b != who && b.Following).ToList();
+        if (IsApprentice(who)) return others.Count(IsApprentice) < MaxApprentices;
+        if (IsMount(who)) return others.Count(IsMount) < Riders(others);
+        return freePets || others.Count(IsPet) < MaxPets;
+    }
+
+    /// <summary>The mounts following over and above the riders, last first: an apprentice sent home leaves their mount at the Perch too.</summary>
+    public static IEnumerable<Bond> SpareMounts(IReadOnlyCollection<Bond> bonds, Bond? ridden = null)
+    {
+        var mounts = bonds.Where(b => b.Following && IsMount(b) && b != ridden).ToList();
+        var room = Math.Max(0, Riders(bonds) - (ridden is null ? 0 : 1));
+        return mounts.Skip(room);
+    }
+}
+
+/// <summary>
+/// What the air costs. A fall hurts by the metre past the first few, the same for everyone, so a strong enough hero lives
+/// through a drop that would kill a green one. A maker stays in their machine longer the more levels they have.
+/// </summary>
+public static class Flight
+{
+    /// <summary>How far anyone can drop unhurt, and what every metre past it costs.</summary>
+    public const double SafeFall = 6, FallPerMetre = 8;
+
+    public static double FallDamage(double metres) => Math.Max(0, metres - SafeFall) * FallPerMetre;
+
+    /// <summary>Seconds more inside the machine for every level.</summary>
+    public static double SuitSeconds(int level) => 2.0 * Math.Max(0, level - 1);
 }

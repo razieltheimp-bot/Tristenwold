@@ -197,4 +197,42 @@ public class SeafaringTests
         Assert.Equal((PirateRank.None, SeaRank.Deckhand), (sea.Pirate, sea.Rank));
         Assert.NotNull(sea.Sail(Port("port:saltmere"), new Rng(1)));
     }
+
+    [Fact]
+    public void The_yard_sells_three_sizes_of_ship_and_upgrades_and_a_ship_trades_in_for_half()
+    {
+        var book = new SeaBook();
+        var crowns = 100;
+        Assert.Null(book.BuyHull(ShipSize.Small, "Wren", ref crowns)); // expensive
+        crowns = 50000;
+        Assert.Equal(SeaBook.Hulls[ShipSize.Small].Price, book.BuyHull(ShipSize.Small, "Wren", ref crowns));
+        Assert.True(book.OwnShip);
+        Assert.Equal(30, book.Capacity);
+        Assert.Null(book.BuyHull(ShipSize.Small, "Wren", ref crowns)); // she's got one
+        var (slow, bought) = (book.Pace, book.HullCost(ShipSize.Large));
+        Assert.Equal(SeaBook.Hulls[ShipSize.Large].Price - SeaBook.Hulls[ShipSize.Small].Price / 2, bought);
+        Assert.Equal(bought, book.BuyHull(ShipSize.Large, "Wren", ref crowns));
+        Assert.Equal("Wren", book.ShipName);
+        Assert.Equal(120, book.Capacity);
+        Assert.True(book.Pace < slow);
+        Assert.NotNull(book.Upgrade("deep_hold", ref crowns));
+        Assert.Null(book.Upgrade("deep_hold", ref crowns));
+        Assert.Equal(140, book.Capacity);
+        var before = book.Hull;
+        book.Damage(10);
+        var taken = before - book.Hull;
+        book.Hull = 100;
+        Assert.NotNull(book.Upgrade("iron_strakes", ref crowns));
+        book.Damage(10);
+        Assert.True(100 - book.Hull < taken);
+    }
+
+    [Fact]
+    public void Nobody_fits_an_upgrade_to_a_ship_they_dont_own_and_old_ships_are_pinnaces()
+    {
+        var (book, crowns) = (new SeaBook(), 50000);
+        Assert.Null(book.Upgrade("iron_strakes", ref crowns));
+        Assert.Equal(ShipSize.Medium, book.Size);
+        Assert.Equal(1, new SeaBook().Pace);
+    }
 }

@@ -156,6 +156,8 @@ public sealed class Voyage
 /// hulls pirates have holed, a journeyman for better pay, and a master shipwright can lay down a keel and build a ship
 /// of their own for the price of the timber.
 /// </summary>
+public enum ShipSize { Small, Medium, Large }
+
 public sealed class SeaBook
 {
     public SeaRank Rank { get; set; }
@@ -194,6 +196,53 @@ public sealed class SeaBook
 
     public bool HasModule(string id) => Modules.Contains(id);
 
+    /// <summary>The hulls Osric sells at the yard, to anyone with the crowns: how much hold, how fast, and how much of a blow she feels.</summary>
+    public static readonly IReadOnlyDictionary<ShipSize, (string Name, int Price, int Hold, double Pace, double Takes)> Hulls = new Dictionary<ShipSize, (string, int, int, double, double)>
+    {
+        [ShipSize.Small] = ("sloop", 2500, 30, 1.15, 1.25),
+        [ShipSize.Medium] = ("pinnace", 6000, 50, 1, 1),
+        [ShipSize.Large] = ("galleon", 15000, 120, 0.85, 0.65),
+    };
+
+    /// <summary>What a ship of the hero's own is: every ship launched before there were sizes is a pinnace.</summary>
+    public ShipSize Size { get; set; } = ShipSize.Medium;
+
+    /// <summary>What Osric has fitted to the hero's own ship. They're the ship's, and go with her when she's traded in for another.</summary>
+    public HashSet<string> Upgrades { get; set; } = [];
+
+    public static readonly IReadOnlyDictionary<string, (string Name, int Price, string Text)> UpgradeKinds = new Dictionary<string, (string, int, string)>
+    {
+        ["iron_strakes"] = ("iron strakes", 1200, "a quarter less from every blow to the hull"),
+        ["deep_hold"] = ("a deepened hold", 900, "twenty more loads"),
+        ["fine_canvas"] = ("fine canvas", 1000, "a tenth faster on every leg"),
+    };
+
+    public bool HasUpgrade(string id) => Upgrades.Contains(id);
+
+    /// <summary>What a hull costs this hero: half the price of the one they own comes off, traded in.</summary>
+    public int HullCost(ShipSize size) => Math.Max(0, Hulls[size].Price - (OwnShip ? Hulls[Size].Price / 2 : 0));
+
+    /// <summary>Buys a hull: the crowns it took, or null if it's the one they've got or they can't pay.</summary>
+    public int? BuyHull(ShipSize size, string name, ref int crowns)
+    {
+        if (OwnShip && size == Size) return null;
+        var cost = HullCost(size);
+        if (crowns < cost) return null;
+        crowns -= cost;
+        if (OwnShip) Hull = 100; else Launch(name);
+        Size = size;
+        return cost;
+    }
+
+    /// <summary>Fits an upgrade to their own ship: the crowns it took, or null.</summary>
+    public int? Upgrade(string id, ref int crowns)
+    {
+        if (!OwnShip || !UpgradeKinds.TryGetValue(id, out var kind) || Upgrades.Contains(id) || crowns < kind.Price) return null;
+        crowns -= kind.Price;
+        Upgrades.Add(id);
+        return kind.Price;
+    }
+
     /// <summary>Fits a module, if it's one and it isn't fitted: the price paid, or null.</summary>
     public int? Fit(string id, ref int crowns)
     {
@@ -204,7 +253,7 @@ public sealed class SeaBook
     }
 
     /// <summary>How fast a ship sails with what's fitted.</summary>
-    public double Pace => HasModule("light_sails") ? 1.33 : 1;
+    public double Pace => (HasModule("light_sails") ? 1.33 : 1) * (OwnShip ? Hulls[Size].Pace * (HasUpgrade("fine_canvas") ? 1.1 : 1) : 1);
     public const string CompanyShip = "the Gull";
 
     // The other side of the law: a hero whose ship was taken may join the pirates who took it.
@@ -225,7 +274,7 @@ public sealed class SeaBook
     static readonly string[] Prey = ["a Saltmere herring boat", "a Brinehollow tanner", "a Vosk ore-carrier", "a Corrow pearl-trader", "an Ambermouth spice ship"];
 
     /// <summary>How many loads the hold takes: a captain's private venture on the company's ship, or a whole hold of their own.</summary>
-    public int Capacity => OwnShip ? 50 : Rank == SeaRank.Captain ? 20 : 0;
+    public int Capacity => OwnShip ? Hulls[Size].Hold + (HasUpgrade("deep_hold") ? 20 : 0) : Rank == SeaRank.Captain ? 20 : 0;
     public int Loaded => Hold.Values.Sum();
     public int Room => Math.Max(0, Capacity - Loaded);
     public string Ship => OwnShip ? ShipName : CompanyShip;
@@ -406,7 +455,7 @@ public sealed class SeaBook
     }
 
     /// <summary>Pirates aboard hole the ship while they're on her.</summary>
-    public void Damage(double amount) => Hull = Math.Max(0, Hull - amount * (HasModule("bilge_pump") ? 0.5 : 1));
+    public void Damage(double amount) => Hull = Math.Max(0, Hull - amount * (HasModule("bilge_pump") ? 0.5 : 1) * Hulls[Size].Takes * (HasUpgrade("iron_strakes") ? 0.75 : 1));
 
     /// <summary>
     /// Home again, the voyage done: the wage (less if the deck work wasn't done), the count, and any promotion the

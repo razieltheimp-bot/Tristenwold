@@ -53,9 +53,9 @@ public partial class Hud : CanvasLayer
         bars.AddChild(ReputeMeter());
         bars.AddChild(_crowns);
         root.AddChild(_area = new Label { Position = new Vector2(24, 140) });
-        root.AddChild(_status = new Label { Position = new Vector2(24, 166), Modulate = new Color(1, 1, 1, 0.6f) });
+        root.AddChild(_status = new Label { Position = new Vector2(24, 166), Modulate = new Color(1, 1, 1, 0.92f), LabelSettings = new LabelSettings { FontSize = 15, OutlineSize = 4, OutlineColor = Colors.Black } }); // the controls, two rows, outlined so they read over anything
         root.AddChild(_toastLabel = new Label { AnchorLeft = 1, AnchorRight = 1, OffsetLeft = -520, OffsetTop = 300, OffsetRight = -24, AutowrapMode = TextServer.AutowrapMode.Word, HorizontalAlignment = HorizontalAlignment.Right });
-        root.AddChild(_tracker = new Label { Position = new Vector2(24, 200), Modulate = new Color("#ffd27a"), CustomMinimumSize = new Vector2(480, 0), AutowrapMode = TextServer.AutowrapMode.Word });
+        root.AddChild(_tracker = new Label { Position = new Vector2(24, 214), Modulate = new Color("#ffd27a"), CustomMinimumSize = new Vector2(480, 0), AutowrapMode = TextServer.AutowrapMode.Word });
         root.AddChild(_party = new Label { Modulate = new Color("#a8e0a0"), HorizontalAlignment = HorizontalAlignment.Right });
         PlaceParty();
         root.AddChild(_center = new Label { AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0.68f, OffsetLeft = -300, OffsetRight = 300, HorizontalAlignment = HorizontalAlignment.Center });
