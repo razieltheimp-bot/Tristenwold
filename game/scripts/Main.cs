@@ -452,7 +452,8 @@ public partial class Main : Node3D
         // On the map you're where you are; at sea, where the ship is on her leg, heading the way she's sailing.
         _hud.AttachMap(_world, _explored, () => _atSea is { } sea ? new Vector3(sea.ChartPosition.X, 0, sea.ChartPosition.Y) : _player.GlobalPosition,
             () => _atSea is { } sea ? new Vector3(sea.ChartHeading.X, 0, sea.ChartHeading.Y) : -_player.GlobalTransform.Basis.Z, QuestGoals,
-            () => _raids.Seen.Select(Raids.Get).OfType<Raid>().Select(r => (r.X, r.Z, r.Name)));
+            () => _raids.Seen.Select(Raids.Get).OfType<Raid>().Select(r => (r.X, r.Z, r.Name)),
+            () => _cave is { } cave ? cave.Chart(_player) : _atSea is { } sea ? sea.DeckChart(_player) : null); // inside something, the map is its plan
 
         _tracker = new EncounterTracker(
             (area, enemies) => _client?.Send(new EncounterStarted(area, enemies)),

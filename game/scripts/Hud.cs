@@ -114,14 +114,14 @@ public partial class Hud : CanvasLayer
     // ---- the map ---------------------------------------------------------------------------
 
     public void AttachMap(WorldGen world, ExploredMap explored, Func<Vector3> player, Func<Vector3> facing, Func<IEnumerable<(double X, double Z)>> goals,
-        Func<IEnumerable<(double X, double Z, string Name)>>? lairs = null)
+        Func<IEnumerable<(double X, double Z, string Name)>>? lairs = null, Func<StructureChart?>? structure = null)
     {
         lairs ??= () => [];
-        _mini = new MapView { World = world, Explored = explored, Player = player, Facing = facing, Goals = goals, Lairs = lairs, Mini = true, MetresPerPixel = 3 };
+        _mini = new MapView { World = world, Explored = explored, Player = player, Facing = facing, Goals = goals, Lairs = lairs, Structure = structure, Mini = true, MetresPerPixel = 3 };
         _mini.SetAnchorsPreset(Control.LayoutPreset.TopRight);
         (_mini.OffsetLeft, _mini.OffsetTop, _mini.OffsetRight, _mini.OffsetBottom) = (-224, 24, -24, 224);
         _root.AddChild(_mini);
-        _full = new MapView { World = world, Explored = explored, Player = player, Facing = facing, Goals = goals, Lairs = lairs, Visible = false, MetresPerPixel = 6 };
+        _full = new MapView { World = world, Explored = explored, Player = player, Facing = facing, Goals = goals, Lairs = lairs, Structure = structure, Visible = false, MetresPerPixel = 6 };
         _full.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         _root.AddChild(_full);
         // Buttons for zooming and closing with a finger.

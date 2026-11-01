@@ -764,6 +764,16 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         }
     }
 
+    /// <summary>The ship's own plan for the map while you're aboard: her hull from above (bow up), the helm and the mast, and where you stand on her deck.</summary>
+    public StructureChart DeckChart(Player p)
+    {
+        Vector2[] hull = [new(0, 17), new(2.6f, 14.5f), new(3.8f, 10), new(4.3f, 0), new(4f, -11), new(3f, -16.5f), new(1.2f, -18), new(-1.2f, -18), new(-3f, -16.5f), new(-4f, -11), new(-4.3f, 0), new(-3.8f, 10), new(-2.6f, 14.5f)];
+        var facing = -p.GlobalTransform.Basis.Z;
+        return new StructureChart(voyage.InPort ? $"Alongside at {voyage.PortName}" : voyage.Homeward ? "Homeward" : $"Bound for {voyage.PortName}", [], [], hull,
+            [(new Vector2(0, -8), "helm"), (new Vector2(0, 0), "mainmast"), (new Vector2(0, 13), "bow")],
+            new Vector2(p.GlobalPosition.X - Stage.X, p.GlobalPosition.Z - Stage.Z), new Vector2(facing.X, facing.Z), 0.22f);
+    }
+
     /// <summary>Which way she's heading on the map.</summary>
     public Vector2 ChartHeading
     {

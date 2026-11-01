@@ -18,6 +18,8 @@ public partial class MapView : Control
     /// <summary>The lairs found, near home and out in the far country.</summary>
     public Func<IEnumerable<(double X, double Z, string Name)>> Lairs { get; init; } = () => [];
     public bool Mini { get; init; }
+    /// <summary>The plan of whatever the hero is inside (the mine, a ship), drawn in place of the world while they are; null out of doors.</summary>
+    public Func<StructureChart?>? Structure { get; init; }
 
     /// <summary>Metres per pixel.</summary>
     public float MetresPerPixel { get; set; } = 4;
@@ -80,10 +82,56 @@ public partial class MapView : Control
         }
     }
 
+    /// <summary>Inside something: its plan instead of the world. The drifts and chambers seen, a faint ring where a known drift leads on, an outline if it has one, and you on it.</summary>
+    void DrawStructure(StructureChart chart)
+    {
+        var size = Size;
+        var mpp = chart.MetresPerPixel * MetresPerPixel / (Mini ? 3 : 6); // the wheel zooms the plan as it zooms the map
+        var centre = chart.Player + (Mini ? Vector2.Zero : _pan);
+        Vector2 ToScreen(Vector2 p) => (p - centre) / mpp + size / 2;
+        var font = ThemeDB.FallbackFont;
+        var rock = new Color("#2a241c");
+        var floor = new Color("#8a7458");
+        var faint = new Color(0.55f, 0.5f, 0.42f, 0.55f);
+        var at = chart.Rooms.ToDictionary(r => r.Id, r => r.At);
+        if (chart.Outline is { Count: > 2 } hull)
+        {
+            var points = hull.Select(ToScreen).ToArray();
+            DrawColoredPolygon(points, new Color("#6a5236"));
+            DrawPolyline([.. points, points[0]], Ink, 2);
+        }
+        foreach (var (from, to) in chart.Links)
+        {
+            var seen = chart.Rooms.First(r => r.Id == from).Seen && chart.Rooms.First(r => r.Id == to).Seen;
+            DrawLine(ToScreen(at[from]), ToScreen(at[to]), seen ? floor : faint, Mathf.Max(3, 6 / mpp));
+        }
+        foreach (var r in chart.Rooms)
+        {
+            var p = ToScreen(r.At);
+            if (r.Seen) { DrawCircle(p, r.Radius / mpp, floor); DrawArc(p, r.Radius / mpp, 0, Mathf.Tau, 40, rock, 2); }
+            else DrawArc(p, r.Radius / mpp, 0, Mathf.Tau, 40, faint, 2);
+            if (!Mini || (r.At - chart.Player).Length() < r.Radius + 6)
+                DrawString(font, p + new Vector2(-r.Radius / mpp, r.Radius / mpp + 14), r.Seen ? r.Name : $"{r.Name}?", HorizontalAlignment.Left, -1, Mini ? 11 : 14, r.Seen ? Ink : faint);
+        }
+        foreach (var (spot, name) in chart.Marks)
+        {
+            var p = ToScreen(spot);
+            DrawCircle(p, 3, new Color("#ffd27a"));
+            if (!Mini) DrawString(font, p + new Vector2(6, 4), name, HorizontalAlignment.Left, -1, 12, Ink);
+        }
+        var me = ToScreen(chart.Player);
+        var dir = chart.Facing.Normalized();
+        if (dir == Vector2.Zero) dir = Vector2.Up;
+        var side = new Vector2(-dir.Y, dir.X);
+        DrawColoredPolygon([me + dir * 9, me - dir * 6 + side * 6, me - dir * 6 - side * 6], new Color("#ffd27a"));
+        if (!Mini) DrawString(font, new Vector2(12, 24), chart.Title, HorizontalAlignment.Left, -1, 18, Ink);
+    }
+
     public override void _Draw()
     {
         var size = Size;
         DrawRect(new Rect2(Vector2.Zero, size), Fog);
+        if (Structure?.Invoke() is { } chart) { DrawStructure(chart); return; }
         var player = Player();
         var centre = new Vector2(player.X, player.Z) + _pan;
         Vector2 ToScreen(double x, double z) => new Vector2((float)x - centre.X, (float)z - centre.Y) / MetresPerPixel + size / 2;

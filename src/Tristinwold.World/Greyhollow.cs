@@ -177,6 +177,10 @@ public static class Greyhollow
     /// <summary>The name of the chamber a point is in or nearest to.</summary>
     public static string NameAt(double x, double z) =>
         Nearest(x, z).Room?.Name ?? Rooms.MinBy(r => Math.Sqrt(Sq(x - r.X) + Sq(z - r.Z)) - r.Radius)!.Name;
+
+    /// <summary>The chamber a point is in, or just at the mouth of (a drift counts for the chamber it's nearest); null out in a drift's middle.</summary>
+    public static MineRoom? RoomAt(double x, double z) =>
+        Rooms.Select(r => (Room: r, Off: Math.Sqrt(Sq(x - r.X) + Sq(z - r.Z)) - r.Radius)).Where(t => t.Off < 6).OrderBy(t => t.Off).Select(t => t.Room).FirstOrDefault();
 }
 
 /// <summary>
@@ -188,6 +192,8 @@ public static class Greyhollow
 public sealed class MineBook
 {
     public MineStage Stage { get; set; }
+    /// <summary>The chambers the hero has stood in: what the mine's own map shows.</summary>
+    public HashSet<string> Seen { get; set; } = [];
     /// <summary>The veins worked for Dagna since she took the hero on.</summary>
     public int Worked { get; set; }
     /// <summary>How many waves of the dead have been beaten at the breach.</summary>

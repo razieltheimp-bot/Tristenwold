@@ -199,6 +199,35 @@ public partial class Cave(Main main, MineBook book) : Node3D
     /// <summary>A point of the mine (metres from the adit), in the world, on its floor.</summary>
     public static Vector3 At(double x, double z) => new(Stage.X + (float)x, Stage.Y + (float)Greyhollow.Floor(x, z), Stage.Z + (float)z);
 
+    /// <summary>
+    /// The mine's own map: the chambers the hero has stood in and the drifts between them, with a faint ring for each
+    /// chamber a known drift leads to that they haven't reached yet. The deep is on it only once the old face is broken.
+    /// </summary>
+    public StructureChart Chart(Player p)
+    {
+        var deep = book.Stage >= MineStage.Breached;
+        var known = Greyhollow.Rooms.Where(r => !r.Deep || deep).ToList();
+        var seen = known.Where(r => book.Seen.Contains(r.Id)).Select(r => r.Id).ToHashSet();
+        var next = Greyhollow.Tunnels.Where(t => !t.Deep || deep).Where(t => seen.Contains(t.From) != seen.Contains(t.To)).Select(t => seen.Contains(t.From) ? t.To : t.From).ToHashSet();
+        var rooms = known.Where(r => seen.Contains(r.Id) || next.Contains(r.Id))
+            .Select(r => new ChartRoom(r.Id, r.Name, new Vector2((float)r.X, (float)r.Z), (float)r.Radius, seen.Contains(r.Id))).ToList();
+        var ids = rooms.Select(r => r.Id).ToHashSet();
+        var links = Greyhollow.Tunnels.Where(t => ids.Contains(t.From) && ids.Contains(t.To)).Select(t => (t.From, t.To)).ToList();
+        var marks = new List<(Vector2, string)>();
+        if (book.Stage is MineStage.AtTheFace or MineStage.Breached) marks.Add((new Vector2(TamAt.X - Stage.X, TamAt.Z - Stage.Z), "Tam Rusk"));
+        var facing = -p.GlobalTransform.Basis.Z;
+        return new StructureChart("The Greyhollow Mine", rooms, links, null, marks, new Vector2(p.GlobalPosition.X - Stage.X, p.GlobalPosition.Z - Stage.Z), new Vector2(facing.X, facing.Z), 1.3f);
+    }
+
+    public override void _Process(double delta) => NoticeRoom(main.PlayerNode.GlobalPosition);
+
+    /// <summary>The chamber the hero is in goes on the mine's map the first time they stand in it.</summary>
+    void NoticeRoom(Vector3 at)
+    {
+        if (Greyhollow.RoomAt(at.X - Stage.X, at.Z - Stage.Z) is { } room && book.Seen.Add(room.Id))
+            main.HudNode.Log($"The mine: {room.Name}, on your map.");
+    }
+
     public static Vector3 Landing => At(0, 2) + Vector3.Up * 0.5f;
     public static Vector3 WayUp => At(0, 6);
     public static Vector3 FaceAt => At(Greyhollow.Face.X, Greyhollow.Face.Z);

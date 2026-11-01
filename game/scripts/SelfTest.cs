@@ -2363,6 +2363,7 @@ public partial class SelfTest(Main main) : Node
         sea.TakeHelm();
         await Frames(10);
         Check(sea.AtHelm && p.Seat is not null, "you take the wheel");
+        Check(sea.DeckChart(p) is { Outline.Count: > 5 } plan && plan.Player.Length() < 30, "and the ship's own plan is what the map shows while you're aboard");
         Check(sea.Line()?.StartsWith("At the helm") == true, sea.Line() ?? "no line");
         var bearing = Helm.Bearing("port:druitt");
         sea.Heading = bearing;
