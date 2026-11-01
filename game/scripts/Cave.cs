@@ -403,7 +403,8 @@ public partial class Cave(Main main, MineBook book) : Node3D
         tam.GlobalPosition = TamAt;
         tam.Rotation = new Vector3(0, 0.6f, 0);
         tam.AddChild(new Label3D { Text = "Tam Rusk", Position = Vector3.Up * 2.1f, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 40, OutlineSize = 8, PixelSize = 0.011f, Modulate = new Color("#e8dcc4") });
-        Models.Place(this, "dungeon/rubble_large.glb", TamAt + new Vector3(0.9f, 0, -0.5f), 0.9f, 1, solid: false);
+        // The fall that pinned his leg: a heap over his feet and to one side, not a boulder swallowing the man.
+        Models.Place(this, "dungeon/rubble_large.glb", TamAt + new Vector3(1.1f, -0.35f, 0.5f), 0.42f, 1.3f, solid: false);
         _tam = tam;
     }
 
