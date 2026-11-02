@@ -377,6 +377,7 @@ public partial class Main : Node3D
         _terrain.EnsureAround(City.PlayerStart, 2);
 
         _hud = new Hud { PhonePad = _phonePad };
+        PlaceRemoteQr();
         AddChild(_hud);
 
         _player = new Player
@@ -521,7 +522,6 @@ public partial class Main : Node3D
         var side = n * 3;
         var box = new VBoxContainer { Name = "RemoteQr" };
         box.SetAnchorsPreset(Control.LayoutPreset.TopRight);
-        (box.OffsetLeft, box.OffsetTop, box.OffsetRight) = (-232 - side, 24, -232);
         box.AddChild(new TextureRect
         {
             Texture = ImageTexture.CreateFromImage(image), CustomMinimumSize = new Vector2(side, side),
@@ -534,6 +534,18 @@ public partial class Main : Node3D
         });
         layer.AddChild(box);
         box.Visible = RemotePlay.Current is not { Viewers: > 0 };
+        _qrSide = side;
+        PlaceRemoteQr();
+    }
+
+    int _qrSide;
+
+    /// <summary>In the very corner on the title screen, clear of the character list; beside the corner map once the game's under way.</summary>
+    void PlaceRemoteQr()
+    {
+        if (GetNodeOrNull<CanvasLayer>("RemoteLayer")?.GetNodeOrNull<Control>("RemoteQr") is not { } qr) return;
+        var right = _hud is null ? 10 : 232;
+        (qr.OffsetLeft, qr.OffsetTop, qr.OffsetRight) = (-right - _qrSide, _hud is null ? 10 : 24, -right);
     }
 
     /// <summary>The QR code steps aside while a phone is playing, and comes back when none is.</summary>
