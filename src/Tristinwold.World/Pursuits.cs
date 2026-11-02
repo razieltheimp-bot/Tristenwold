@@ -48,6 +48,8 @@ public sealed class PursuitBook
     public double CharmReadyAt { get; set; }
     public HashSet<string> Feats { get; set; } = [];
     public Dictionary<string, int> Counters { get; set; } = [];
+    /// <summary>The carpentry job in hand, as "town|work|stage", or empty.</summary>
+    public string Carpentry { get; set; } = "";
     public int NextSnare { get; set; }
 
     /// <summary>Counts something done, and returns any feats it earned.</summary>

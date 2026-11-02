@@ -2594,6 +2594,38 @@ public partial class SelfTest(Main main) : Node
         Input.ActionRelease("descend");
         main.LeaveSkyboatForTest();
         Check(!main.AboardSkyboat && Mathf.Abs((float)sea.SkyX - boat.GlobalPosition.X) < 0.1f, "brought down, you step off, and she's left where she landed");
+        await CarpentryTest();
+    }
+
+    /// <summary>The carpenters: a job taken from Abel Joist, planks to the site, frame, walls and roof, and the town has its house.</summary>
+    async Task CarpentryTest()
+    {
+        var (p, city, hud) = (main.PlayerNode, main.Economy, main.HudNode);
+        await Teleport(Main.CarpentersYard + new Vector3(4, 0, 6));
+        await Frames(10);
+        var abel = main.Locals.FirstOrDefault(x => x.Npc.Id == "tristinwold/carpenter");
+        Check(abel is not null, "Abel Joist keeps the carpenters' yard");
+        if (abel is null) return;
+        city.FabricOf(ReputationBook.Capital).Burnt = 1;
+        main.Talk(abel);
+        Check(hud.Choose("Raise a burned home in Tristinwold") && main.CarpentryJobForTest is { Work: CarpentryWork.Raise, Stage: 0 }, $"anyone can take a carpenter's job ({string.Join(" | ", hud.Options)})");
+        hud.EndTalk();
+        var site = main.SiteForTest(ReputationBook.Capital)!.Value;
+        await Teleport(site + new Vector3(4, 0, 4));
+        await Frames(10);
+        main.TendSiteForTest();
+        p.Pack.Add("plank", Carpentry.Planks);
+        var (crowns, done) = (p.Crowns, 0);
+        for (var stage = 0; stage < Carpentry.Stages; stage++)
+        {
+            if (main.SiteActionForTest(p.GlobalPosition) is not { } act) break;
+            act.Act();
+            await Frames(10);
+            for (var i = 0; i < 40 && main.FramingForTest; i++) await Frames(10);
+            done++;
+        }
+        Check(done == Carpentry.Stages && main.CarpentryJobForTest is null && city.FabricOf(ReputationBook.Capital).Burnt == 0 && p.Crowns > crowns && p.Pack.Count("plank") == 0,
+            $"frame, walls and roof, and the burned home stands again ({done} stages, {p.Crowns - crowns} crowns)");
     }
 
     async Task TheVillageDeck()

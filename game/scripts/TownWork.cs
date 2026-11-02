@@ -96,6 +96,7 @@ public partial class Main
         City.Zones.Add(new Zone("Hollin's Woodlot", WoodlotAt, 24, 9));
         AddMineMound();
         AddDrownedChapel();
+        AddCarpentersYard();
         AddForest();
         // The quarry's faces: broken rock round the back, cut back where the stone's been taken, and a gravel floor.
         for (var i = 0; i < 9; i++)
