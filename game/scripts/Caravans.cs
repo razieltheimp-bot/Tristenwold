@@ -546,7 +546,7 @@ public partial class Main
     void Hitch()
     {
         _trade.Horses = Math.Min(TradeBook.MaxHorses, _bonds.Count(b => b.Hitched));
-        if (_wagon is { } own && _trade.Run is null) own.Team(_trade.Horses > 0); // the yard's own horse pulls a run
+        if (_wagon is { } own && _trade.Run is null) own.Team(_trade.Steam ? _trade.Fuel > 0 && !_trade.ShopOpen : _trade.Horses > 0); // the yard's own horse pulls a run
     }
 
     /// <summary>A steed put to the wagon: it leaves your heels and goes with the wagon.</summary>
@@ -572,7 +572,7 @@ public partial class Main
         // Any spare grown horse goes in the shafts; one that's with you is yours to hitch or keep, from the party menu.
         foreach (var spare in _bonds.Where(b => b.Steed && b.Rideable && !b.Following && !b.Hitched).Take(TradeBook.MaxHorses - _bonds.Count(b => b.Hitched)).ToList()) HitchToWagon(spare);
         Hitch();
-        if (_trade.Horses == 0)
+        if (_trade.Horses == 0 && !_trade.Steam)
         {
             var with = _bonds.FirstOrDefault(b => b.Steed && b.Rideable && b.Following);
             Say(master, with is null ? "A wagon doesn't pull itself. You need a grown horse: buy one from me, or raise a foal."
@@ -686,13 +686,14 @@ public partial class Main
     void TakeWagon(string? horse)
     {
         StableWagon();
-        _wagon = new Wagon(this, horse);
+        _wagon = new Wagon(this, horse) { Steam = _trade.Steam && _trade.Run is null };
         AddChild(_wagon);
         // At the yard when you take it there; otherwise (a game loaded, a thief's wagon) it's wherever you are: its home is where yours is.
         var hero = _player.GlobalPosition;
         var setOff = hero.DistanceTo(YardAt with { Y = hero.Y }) < 60 ? YardAt + new Vector3(6, 0, 6) : hero + _player.GlobalTransform.Basis.Z * 5;
         _wagon.GlobalPosition = setOff with { Y = City.FloorAt(setOff) };
         Hitch();
+        if (_trade.ShopOpen) PushWagonShop(); // she opens where she stands
     }
 
     void StableWagon()
@@ -706,6 +707,7 @@ public partial class Main
     {
         if ((_caravanTick -= delta) > 0) return;
         _caravanTick = 0.5;
+        TendSteam(0.5);
         if (_wagon is null && (_trade.Run is not null || _trade.WagonOut)) TakeWagon(_trade.WagonOut ? "horse" : null);
         TendRun();
         TendGuarding(0.5);
@@ -848,6 +850,7 @@ public partial class Main
         if (_loading is { Holding: true } && pos.DistanceTo(YardWagon with { Y = pos.Y }) < 4.5f) return ("load the wagon", LoadWagon);
         if (_wagon is { } own && _atSea is null && (_trade.Run is not null || _trade.WagonOut) && _player.Mount is null && pos.DistanceTo(own.GlobalPosition with { Y = pos.Y }) < 6)
         {
+            if (own.Steam) return ("see to the steam wagon", SteamMenu);
             if (own.Teamed) return ("climb up and take the reins", () => ClimbAboard(own));
             return ("look over the wagon", () => _hud.Toast("Nothing in the shafts. Hitch a horse from the party menu (P) to move her.", 5));
         }
@@ -899,6 +902,12 @@ public partial class Wagon(Main main, string? horse) : Node3D
 
     /// <summary>Whether there's a horse in the shafts. With none she stands where she was left, and there's no horse to see.</summary>
     public bool Teamed { get; private set; } = true;
+    /// <summary>A boiler instead of a horse: the house on wheels, not the cart.</summary>
+    public bool Steam { get; init; }
+    public bool Moving => _speed > 0.05f;
+    readonly List<Node3D> _wheels = [];
+    Node3D? _rod;
+    float _turned;
 
     public void Team(bool hitched)
     {
@@ -929,19 +938,53 @@ public partial class Wagon(Main main, string? horse) : Node3D
         }
         foreach (var side in new[] { -1f, 1f })
         {
-            var hand = new Vector3(side * 0.2f, 1.72f, -2.72f);
-            Limb(new Vector3(side * 0.34f, 1.42f, -2.2f), hand, 0.05f, sleeve);
+            var rise = Steam ? new Vector3(0, 1.15f, -1.3f) : Vector3.Zero; // from the steam wagon's bench, higher up and further forward
+            var hand = rise + new Vector3(side * 0.2f, 1.72f, -2.72f);
+            Limb(rise + new Vector3(side * 0.34f, 1.42f, -2.2f), hand, 0.05f, sleeve);
             _reins.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.062f, Height = 0.12f, RadialSegments = 12, Rings = 8 }, MaterialOverride = skin, Position = hand, Scale = new Vector3(1.1f, 0.9f, 1.25f), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
-            Limb(hand, new Vector3(side * 0.14f, 1.62f, -4.5f), 0.009f, strap);
+            if (!Steam) Limb(hand, new Vector3(side * 0.14f, 1.62f, -4.5f), 0.009f, strap);
         }
     }
 
     /// <summary>Where someone rides: the driver's box up front, or on the load behind (the feet: the eyes are above them).</summary>
-    public Vector3 SeatAt(bool driver) => GlobalTransform * (driver ? new Vector3(0, 0.6f, -2.2f) : new Vector3(0, 1.1f, 0.5f));
+    public Vector3 SeatAt(bool driver) => GlobalTransform * (Steam ? new Vector3(0, 1.75f, -3.5f) : driver ? new Vector3(0, 0.6f, -2.2f) : new Vector3(0, 1.1f, 0.5f));
     float _speed;
+
+    /// <summary>The house on wheels: plaster and timber under a plank roof, on four iron-tyred wheels, a brick chimney smoking, and a rod working the back axle.</summary>
+    void BuildSteam()
+    {
+        Buildings.Place(this, "steam_wagon", Vector3.Zero, 0, 1, Surface.Shingle, door: false, solid: false);
+        var iron = new StandardMaterial3D { AlbedoColor = new Color("#2a2622"), Roughness = 0.55f, Metallic = 0.7f };
+        var wood = BuildingMaterials.For(Surface.Timber);
+        var copper = new StandardMaterial3D { AlbedoColor = new Color("#a8602c"), Roughness = 0.35f, Metallic = 0.85f };
+        foreach (var (x, z, radius) in new[] { (-2.05f, -2.5f, 0.95f), (2.05f, -2.5f, 0.95f), (-2.05f, 2.4f, 1.15f), (2.05f, 2.4f, 1.15f) })
+        {
+            var wheel = new Node3D { Position = new Vector3(x, radius, z) };
+            wheel.AddChild(new MeshInstance3D { Mesh = new TorusMesh { InnerRadius = radius - 0.12f, OuterRadius = radius, Rings = 28, RingSegments = 8 }, MaterialOverride = iron, Rotation = new Vector3(0, 0, Mathf.Pi / 2) });
+            for (var i = 0; i < 6; i++)
+                wheel.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.09f, 0.11f, radius * 2 - 0.14f) }, MaterialOverride = wood, Rotation = new Vector3(i * Mathf.Pi / 6, 0, 0) });
+            wheel.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.2f, BottomRadius = 0.2f, Height = 0.3f }, MaterialOverride = iron, Rotation = new Vector3(0, 0, Mathf.Pi / 2) });
+            AddChild(wheel);
+            _wheels.Add(wheel);
+        }
+        AddChild(_rod = new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.12f, 0.12f, 3.4f) }, MaterialOverride = copper, Position = new Vector3(2.25f, 1.15f, 0.7f) });
+        AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.26f, BottomRadius = 0.26f, Height = 1.4f }, MaterialOverride = copper, Position = new Vector3(2.25f, 1.15f, -1.5f), Rotation = new Vector3(Mathf.Pi / 2, 0, 0) });
+        foreach (var (from, to) in new[] { (new Vector3(1.3f, 3.6f, -2.75f), new Vector3(1.3f, 6.2f, -2.75f)), (new Vector3(1.3f, 4.9f, -2.75f), new Vector3(0.1f, 4.2f, -2.75f)) })
+        {
+            var way = to - from;
+            AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.07f, BottomRadius = 0.07f, Height = way.Length() }, MaterialOverride = copper, Position = (from + to) / 2, Basis = new Basis(new Quaternion(Vector3.Up, way.Normalized())) });
+        }
+        AddChild(new CpuParticles3D
+        {
+            Amount = 14, Lifetime = 3, Position = new Vector3(0.9f, 7.1f, -1.6f), Direction = Vector3.Up, Spread = 12, Gravity = new Vector3(0.25f, 0.5f, 0.2f), InitialVelocityMin = 1, InitialVelocityMax = 1.8f,
+            ScaleAmountMin = 0.5f, ScaleAmountMax = 1.3f, Color = new Color(0.72f, 0.72f, 0.72f, 0.45f),
+            Mesh = new SphereMesh { Radius = 0.3f, Height = 0.6f, RadialSegments = 8, Rings = 4, Material = new StandardMaterial3D { VertexColorUseAsAlbedo = true, Transparency = BaseMaterial3D.TransparencyEnum.Alpha, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded } },
+        });
+    }
 
     public override void _Ready()
     {
+        if (Steam) { BuildSteam(); return; }
         // Kenney's covered cart (CC0), at a horse's scale, its shafts forward (-Z), and some goods aboard.
         if (Models.Scene(Main.Cargo + "cart.glb")?.Instantiate() is Node3D cart)
         {
@@ -970,7 +1013,13 @@ public partial class Wagon(Main main, string? horse) : Node3D
 
     public override void _Process(double delta)
     {
-        if (Parked || !Teamed) { _horse?.Move(0, true, false); return; }
+        if (Steam)
+        {
+            _turned += _speed * (float)delta;
+            foreach (var wheel in _wheels) wheel.Rotation = new Vector3(-_turned / wheel.Position.Y, 0, 0);
+            if (_rod is { } rod) rod.Position = rod.Position with { Y = 1.15f + Mathf.Sin(_turned / 1.15f) * 0.32f, Z = 0.7f + Mathf.Cos(_turned / 1.15f) * 0.32f };
+        }
+        if (Parked || !Teamed) { _speed = 0; _horse?.Move(0, true, false); return; }
         if (Reins && Goal is null) { DriveFree(delta); return; }
         if (Goal is { } goal) { Drive(goal, delta); return; }
         var lead = main.PlayerNode.GlobalPosition;

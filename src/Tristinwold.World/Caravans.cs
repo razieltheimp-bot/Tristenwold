@@ -119,7 +119,14 @@ public sealed class TradeBook
     /// <summary>How far out the yard sends its wagons, and its own caravans trade.</summary>
     public const double Reach = 4000;
 
-    public int Capacity => PerHorse * Math.Clamp(Horses, 0, MaxHorses);
+    /// <summary>An artificer's boiler on the wagon: no horse needed, but it burns fuel, by the seconds left in the firebox; what its maker's level was; and the shop it opens up into when parked.</summary>
+    public bool Steam { get; set; }
+    public int SteamLevel { get; set; } = 1;
+    public double Fuel { get; set; }
+    public House? WagonShop { get; set; }
+    public bool ShopOpen { get; set; }
+
+    public int Capacity => Steam ? PerHorse * MaxHorses : PerHorse * Math.Clamp(Horses, 0, MaxHorses);
     public int Loaded => Cargo.Values.Sum();
     public int Room => Math.Max(0, Capacity - Loaded);
 

@@ -58,16 +58,16 @@ public static class RemotePage
           .q i { font-style: normal; font-size: 10px; opacity: .85; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
           .q.empty { opacity: .4; }
           #play { flex: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; min-height: 0; padding-bottom: 22px; }
-          #right { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+          #right { display: flex; flex-direction: column; align-items: center; gap: 20px; }
           .stick { position: relative; aspect-ratio: 1; border-radius: 50%; flex: none;
             background: radial-gradient(circle, rgba(232,220,196,.10), rgba(232,220,196,.04)); border: 2px solid rgba(232,220,196,.25); }
           #stick { width: min(34vw, 136px); }
-          #look { width: min(26vw, 104px); }
+          #look { width: min(19vw, 74px); }
           .knob { position: absolute; left: 50%; top: 50%; width: 38%; height: 38%; margin: -19% 0 0 -19%; border-radius: 50%;
             background: rgba(255, 210, 122, .55); border: 2px solid #ffd27a; pointer-events: none; }
           #look .knob { background: rgba(154, 200, 255, .5); border-color: #9ac8ff; }
-          .stick span { position: absolute; left: 0; right: 0; bottom: -18px; text-align: center; font-size: 12px; opacity: .6; }
-          #moves { display: grid; grid-template-columns: repeat(3, min(15vw, 62px)); grid-auto-rows: min(15vw, 62px); gap: 8px; }
+          .stick span { position: absolute; left: 0; right: 0; bottom: -17px; text-align: center; font-size: 11px; opacity: .6; }
+          #moves { display: grid; grid-template-columns: repeat(3, min(14.5vw, 58px)); grid-auto-rows: min(14.5vw, 58px); gap: 8px; }
           #pad button { background: rgba(58, 50, 38, .85); color: #e8dcc4; border: 1px solid rgba(232, 220, 196, .3);
             font: 600 14px -apple-system, system-ui, sans-serif; padding: 0 2px; touch-action: none; overflow: hidden; }
           #moves button { border-radius: 50%; line-height: 1.1; font-size: 13px; }
@@ -278,6 +278,8 @@ public static class RemotePage
             const a = b.dataset.a;
             if (pad.labels && pad.labels[a]) b.textContent = pad.labels[a];
             b.classList.toggle("lit", !!(pad.lit && pad.lit[a]));
+            // A move that's on a quick key doesn't need a round button as well; the main attack always keeps its own.
+            b.style.display = a !== "attack" && (pad.quick || []).some(q => q.n && q.n === b.textContent) ? "none" : "";
           }
           // The quick keys: what's on each, and which are empty.
           for (const q of pad.quick || []) {

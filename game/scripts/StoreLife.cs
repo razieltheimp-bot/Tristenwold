@@ -59,14 +59,21 @@ public partial class Main
                 _storeFronts[owner].Front.QueueFree();
                 _storeFronts.Remove(owner);
             }
-        foreach (var s in _city.Stores.Values.Where(s => s.Open && s.Owner != _player.Company && !_storeFronts.ContainsKey(s.Owner)))
+        foreach (var s in _city.Stores.Values.Where(s => s.Open && s.Owner != _player.Company && s.Owner != WagonShopKey && !_storeFronts.ContainsKey(s.Owner)))
         {
             var at = new Vector3((float)s.X, 0, (float)s.Z);
             if (new Vector2(at.X - pos.X, at.Z - pos.Z).Length() > StoresDrawnWithin) continue;
             at.Y = City.FloorAt(at);
             var root = new Node3D();
             AddChild(root);
-            Buildings.Place(root, "store", at, 0, s.Owner.Length, Surface.Shingle);
+            if (s.Wagon)
+            {
+                var wagon = new Wagon(this, null) { Parked = true, Steam = true };
+                root.AddChild(wagon);
+                wagon.GlobalPosition = at;
+                wagon.Rotation = new Vector3(0, (float)s.Yaw, 0);
+            }
+            else Buildings.Place(root, "store", at, 0, s.Owner.Length, Surface.Shingle);
             root.AddChild(new Label3D { Text = s.Name, Position = at + new Vector3(0, 6.5f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 56, OutlineSize = 12, PixelSize = 0.012f, Modulate = new Color("#ffd27a") });
             var (x, z) = (at.X + 2.5, at.Z + 5);
             var keeper = new Person

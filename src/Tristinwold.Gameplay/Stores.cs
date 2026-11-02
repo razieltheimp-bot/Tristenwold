@@ -121,13 +121,34 @@ public sealed class PlayerStore
     public double X { get; set; }
     public double Z { get; set; }
     public int Workers { get; set; }
+    /// <summary>A steam wagon opened up as a shop, not a shopfront on the row, and which way it stands.</summary>
+    public bool Wagon { get; set; }
+    public double Yaw { get; set; }
     public House House { get; set; } = new();
+
+    /// <summary>How a company's wagon shop is told from its home, in the book of stores.</summary>
+    public const string WagonMark = "#wagon";
 
     /// <summary>Whether anyone's minding the counter, and there's a counter to mind.</summary>
     [JsonIgnore] public bool Open => Workers > 0 && House.Furniture.Contains("shop_counter") && House.ForSale.Count + House.Buying.Count > 0;
 
     /// <summary>A copy of a house, so the city's and the hero's don't share a chest.</summary>
     public static House Copy(House h) => JsonSerializer.Deserialize<House>(JsonSerializer.Serialize(h))!;
+}
+
+/// <summary>What a steam machine is built from and what it burns. Anything a fire takes will do, and the better the maker, the further it goes.</summary>
+public static class SteamWorks
+{
+    public static readonly IReadOnlyList<(string Id, int N)> Needs = [("iron_ingot", 8), ("iron_nails", 16), ("scrap_iron", 6)];
+    /// <summary>How much steam the firebox holds, in seconds.</summary>
+    public const double MostFuel = 1800;
+
+    /// <summary>How long one of something keeps a boiler hot, or 0 if it won't burn.</summary>
+    public static double Burns(string id, int makerLevel)
+    {
+        var burn = id == "coal" ? 120.0 : Recipes.Fuels.Contains(id) ? 60 : 0;
+        return burn * (1 + 0.1 * Math.Max(0, makerLevel - 1));
+    }
 }
 
 public sealed partial class CityEconomy

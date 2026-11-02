@@ -46,6 +46,22 @@ public class PlayerStoreTests
     }
 
     [Fact]
+    public void A_boiler_burns_anything_a_fire_takes_and_a_better_maker_gets_further_on_it()
+    {
+        Assert.True(SteamWorks.Burns("coal", 1) > 0 && SteamWorks.Burns("pine_log", 1) > 0);
+        Assert.Equal(0, SteamWorks.Burns("bread", 10));
+        Assert.True(SteamWorks.Burns("coal", 20) > SteamWorks.Burns("coal", 1));
+        Assert.All(SteamWorks.Needs, n => Assert.NotNull(Items.Get(n.Id)));
+    }
+
+    [Fact]
+    public void A_steam_wagon_carries_a_full_load_with_no_horse()
+    {
+        var book = new TradeBook { Steam = true };
+        Assert.Equal(TradeBook.PerHorse * TradeBook.MaxHorses, book.Capacity);
+    }
+
+    [Fact]
     public void A_shop_with_nobody_minding_it_is_shut()
     {
         var c = CityEconomy.Start(5);

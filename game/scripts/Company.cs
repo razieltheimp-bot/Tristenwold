@@ -26,6 +26,7 @@ public partial class Main
     {
         if (!_sharedCity) _city.TendStores(seconds); // on a server its own clock runs them, whoever's online
         SyncStore();
+        PullWagonShop();
         TendStoreFronts();
     }
 
@@ -670,6 +671,7 @@ public partial class Main
         foreach (var o in CouncilTalk(person)) yield return o;
         foreach (var o in HireTalk(person)) yield return o;
         foreach (var o in ShaftTalk(person)) yield return o;
+        foreach (var o in SteamTalk(person)) yield return o;
         foreach (var o in StoreTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in ForgeTalk(person)) yield return o;

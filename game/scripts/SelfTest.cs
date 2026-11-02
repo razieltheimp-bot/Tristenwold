@@ -2428,6 +2428,19 @@ public partial class SelfTest(Main main) : Node
         await Frames(30);
         Check(City.OnPier(p.GlobalPosition) && !p.Swimming && Mathf.Abs(p.GlobalPosition.Y) < 1, $"the boardwalk carries you to the far pier (height {p.GlobalPosition.Y:0.0})");
 
+        // The steam wagon: no horse, a fire to feed, and a shop when she's parked.
+        main.SteamForTest(0);
+        await Frames(5);
+        Check(main.WagonNode is { Steam: true, Teamed: false }, "a steam wagon with a cold boiler goes nowhere");
+        main.SteamForTest(120);
+        await Frames(5);
+        Check(main.WagonNode is { Steam: true, Teamed: true }, "with something burning she's ready to go");
+        main.OpenWagonShopForTest();
+        await Frames(5);
+        Check(city.StoreOf(main.WagonShopKeyForTest) is { Wagon: true } && main.WagonNode is { Teamed: false }, "parked, she opens up as a shop, and won't roll while she's open");
+        main.CloseWagonShopForTest();
+        Check(city.StoreOf(main.WagonShopKeyForTest) is null, "and closes up to get back on the road");
+
         // A mine, walked down.
         var mine = world.SettlementsNear(0, 0, 4000).First(s => s.Kind == SettlementKind.Mine && !s.Hostile);
         await Teleport(new Vector3((float)mine.X + 4, 0, (float)mine.Z + 8));

@@ -140,6 +140,7 @@ public static class Buildings
             case "lantern": Lantern(b); break;
             case "pier": Pier(b); break;
             case "boardwalk": Boardwalk(b); break;
+            case "steam_wagon": SteamWagon(b, roof); break;
             default: House(b, rng, roof); break;
         }
         return Cache[key] = b.Finish();
@@ -391,6 +392,37 @@ public static class Buildings
                 b.Beam(new Vector3(x, -4.5f, z), new Vector3(x, x < -3 ? 0 : 0.6f, z), 0.32f, Surface.Timber);
         b.Beam(new Vector3(-3, 0.55f, 2.4f), new Vector3(24, 0.55f, 2.4f), 0.14f, Surface.Timber); // and none where the boardwalk crosses
         b.Solid(new Vector3(0, -0.2f, 0), new Vector3(48, 0.4f, 5));
+    }
+
+    /// <summary>A timber-and-plaster house on a wagon bed, its wide plank roof overhanging, a brick chimney up through it, a driver's bench out front, and a railed porch at the back with a ladder down.</summary>
+    static void SteamWagon(Builder b, Surface roof)
+    {
+        const float wide = 3.3f, floor = 1.45f, eaves = 4.1f;
+        b.Box(Surface.Timber, new Vector3(-1.85f, floor - 0.28f, -3.9f), new Vector3(1.85f, floor, 3.9f)); // the bed
+        b.Box(Surface.Plaster, new Vector3(-wide / 2, floor, -2.6f), new Vector3(wide / 2, eaves, 2.6f));
+        foreach (var x in new[] { -wide / 2 - 0.02f, wide / 2 + 0.02f })
+        {
+            foreach (var z in new[] { -2.6f, -0.9f, 0.9f, 2.6f })
+                b.Beam(new Vector3(x, floor, z), new Vector3(x, eaves, z), 0.16f, Surface.Timber);
+            b.Beam(new Vector3(x, floor + 1.25f, -2.6f), new Vector3(x, floor + 1.25f, 2.6f), 0.14f, Surface.Timber);
+            b.Beam(new Vector3(x, eaves - 0.1f, -2.6f), new Vector3(x, eaves - 0.1f, 2.6f), 0.14f, Surface.Timber);
+        }
+        foreach (var side in new[] { -1f, 1f })
+            b.Box(Surface.Glass, new Vector3(side * wide / 2 - 0.05f, floor + 1.4f, -0.5f), new Vector3(side * wide / 2 + 0.05f, floor + 2.1f, 0.5f));
+        b.Box(Surface.Planks, new Vector3(-0.55f, floor, 2.6f), new Vector3(0.55f, floor + 2.1f, 2.68f)); // the back door
+        b.Gable(wide, 5.2f, eaves, 0.45f, roof == Surface.ClayTile ? Surface.Shingle : Surface.Planks, Surface.Plaster, acrossFront: false, overhang: 0.75f);
+        b.Chimney(new Vector3(0.9f, 0, -1.6f), 7.1f, 0.8f);
+        b.Box(Surface.Timber, new Vector3(-1.1f, floor + 0.35f, -3.8f), new Vector3(1.1f, floor + 0.5f, -3.1f)); // the bench
+        foreach (var x in new[] { -1.8f, 1.8f })
+        {
+            b.Beam(new Vector3(x, floor, 3.85f), new Vector3(x, floor + 1, 3.85f), 0.1f, Surface.Timber);
+            b.Beam(new Vector3(x, floor, 2.7f), new Vector3(x, floor + 1, 2.7f), 0.1f, Surface.Timber);
+            b.Beam(new Vector3(x, floor + 1, 2.7f), new Vector3(x, floor + 1, 3.85f), 0.08f, Surface.Timber);
+        }
+        b.Beam(new Vector3(-1.8f, floor + 1, 3.85f), new Vector3(-0.5f, floor + 1, 3.85f), 0.08f, Surface.Timber);
+        b.Beam(new Vector3(0.5f, floor + 1, 3.85f), new Vector3(1.8f, floor + 1, 3.85f), 0.08f, Surface.Timber);
+        foreach (var x in new[] { -0.4f, 0.4f }) b.Beam(new Vector3(x, 0, 4.6f), new Vector3(x, floor, 3.9f), 0.07f, Surface.Timber); // the ladder
+        for (var y = 0.3f; y < floor; y += 0.35f) b.Beam(new Vector3(-0.4f, y, 4.6f - y * 0.48f), new Vector3(0.4f, y, 4.6f - y * 0.48f), 0.05f, Surface.Timber);
     }
 
     /// <summary>The walk across the landward ends of the piers: as long as the five of them are wide, on piles.</summary>
