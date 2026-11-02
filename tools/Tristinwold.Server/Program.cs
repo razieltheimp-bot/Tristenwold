@@ -116,7 +116,8 @@ listener.Start();
 
 // ---- HTTP (phones and browsers) --------------------------------------------------------------------
 
-using var gateway = new HttpGateway(host, $"http://+:{httpPort}/", Log);
+// The game sits in the folder above the server's: players' copies update themselves from it.
+using var gateway = new HttpGateway(host, $"http://+:{httpPort}/", Log) { Game = new GameFiles(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".."))) };
 try
 {
     gateway.Start();

@@ -19,6 +19,8 @@ public sealed record SyncResponse(string? Session, List<Message> Messages, strin
 ///   POST /v1/join   body: a Hello message     -> SyncResponse (Session set)
 ///   POST /v1/sync   body: SyncRequest         -> SyncResponse (401 when the session expired)
 ///   POST /v1/account body: an AccountRequest  -> an AccountReply (log in, manage characters)
+///   GET  /update/manifest                     -> the game's files, for a copy that wants to update itself
+///   GET  /update/file/{fingerprint}           -> one of them
 ///
 /// It speaks HTTP/1.1 itself on a TCP socket rather than through HttpListener, so on Windows the
 /// server needs no administrator rights or URL reservation to take requests from other machines.
@@ -37,6 +39,9 @@ public sealed class HttpGateway : IDisposable
     readonly ConcurrentDictionary<string, Mailbox> _sessions = new();
     readonly CancellationTokenSource _cts = new();
     readonly Action<string> _log;
+
+    /// <summary>The host's own copy of the game, if there is one to hand out.</summary>
+    public GameFiles? Game { get; init; }
 
     sealed class Mailbox(string player) : IClientSink
     {
@@ -97,8 +102,14 @@ public sealed class HttpGateway : IDisposable
                 idle.CancelAfter(IdleTimeout);
                 var request = await ReadRequest(stream, idle.Token).ConfigureAwait(false);
                 if (request is null) return;
-                var (status, body) = Handle(request.Value.Method, request.Value.Path, request.Value.Body);
                 var keepAlive = !request.Value.Close;
+                if (request.Value.Method == "GET" && request.Value.Path.StartsWith("/update/"))
+                {
+                    await ServeUpdate(stream, request.Value.Path, keepAlive).ConfigureAwait(false);
+                    if (!keepAlive) return;
+                    continue;
+                }
+                var (status, body) = Handle(request.Value.Method, request.Value.Path, request.Value.Body);
                 var head = $"HTTP/1.1 {status} {Reason(status)}\r\nContent-Type: application/json\r\nContent-Length: {body.Length}\r\n" +
                            $"Cache-Control: no-store\r\nConnection: {(keepAlive ? "keep-alive" : "close")}\r\n\r\n";
                 await stream.WriteAsync(Encoding.ASCII.GetBytes(head), _cts.Token).ConfigureAwait(false);
@@ -107,6 +118,29 @@ public sealed class HttpGateway : IDisposable
             }
         }
         catch (Exception ex) when (ex is IOException or SocketException or OperationCanceledException or ObjectDisposedException or InvalidDataException) { }
+    }
+
+    /// <summary>A game updating itself: the list of files, or one of them, streamed (the pack is hundreds of megabytes).</summary>
+    async Task ServeUpdate(NetworkStream stream, string path, bool keepAlive)
+    {
+        string Head(int status, long length, string type) => $"HTTP/1.1 {status} {Reason(status)}\r\nContent-Type: {type}\r\nContent-Length: {length}\r\n" +
+            $"Cache-Control: no-store\r\nConnection: {(keepAlive ? "keep-alive" : "close")}\r\n\r\n";
+        const string Prefix = "/update/file/";
+        if (path == "/update/manifest" && Game?.Files is { Count: > 0 } files)
+        {
+            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(files, Wire.Options));
+            await stream.WriteAsync(Encoding.ASCII.GetBytes(Head(200, body.Length, "application/json")), _cts.Token).ConfigureAwait(false);
+            await stream.WriteAsync(body, _cts.Token).ConfigureAwait(false);
+            return;
+        }
+        if (path.StartsWith(Prefix) && Game?.PathOf(path[Prefix.Length..]) is { } found)
+        {
+            await using var file = File.OpenRead(found);
+            await stream.WriteAsync(Encoding.ASCII.GetBytes(Head(200, file.Length, "application/octet-stream")), _cts.Token).ConfigureAwait(false);
+            await file.CopyToAsync(stream, 1 << 20, _cts.Token).ConfigureAwait(false);
+            return;
+        }
+        await stream.WriteAsync(Encoding.ASCII.GetBytes(Head(404, 0, "application/json")), _cts.Token).ConfigureAwait(false);
     }
 
     readonly record struct Request(string Method, string Path, string Body, bool Close);

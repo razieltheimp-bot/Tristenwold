@@ -675,6 +675,7 @@ public partial class Main : Node3D
             || _roamers.InTown(_player.GlobalPosition) || _hud.Talking) return;
         _hunted = null;
         var hunt = h.Hunt;
+        if (DeviantOut(hunt.DeviantId)) return; // it's here already
         var behind = _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 60;
         var hunter = Enemy.Create(Bestiary.Get(hunt.BaseForm), behind with { Y = City.FloorAt(behind) + 0.5f }, WorldGen.Danger(behind.X, behind.Z));
         AddEnemy(hunter);
@@ -684,6 +685,11 @@ public partial class Main : Node3D
         _tracker.Engaged(hunter.Id, hunter.Kind.Id, hunter.Kind.Name, hunter.Stats.MaxHealth, ToNumerics(hunter.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, hunt.DeviantId);
         _hud.Toast($"{hunter.Stats.Name} has been waiting for you to leave the road.");
     }
+
+    /// <summary>Whether a deviant already has a body in the world: there's only ever one of it.</summary>
+    bool DeviantOut(Guid id) => Enemies().Any(e => e.DeviantId == id && e.State != EnemyState.Dead) || _roamers.Near.Any(n => n.Roamer.DeviantId == id);
+
+    public void HandleForTest(Message m) => Handle(m);
 
     /// <summary>For the self-test: a hunter comes the moment nothing's in its way.</summary>
     public void HurryHunterForTest() { if (_hunted is { } h) _hunted = (h.Hunt, 0); }
@@ -702,6 +708,7 @@ public partial class Main : Node3D
                 {
                     if (_tracker.ActorForSlot(spawn.Slot) is not { } id || FindEnemy(id) is not { } e) continue;
                     if (Raids.All.Any(r => r.BossKind == e.Kind.Id) && !e.Named) continue; // a lair's boss is a nobody until it beats someone
+                    if (e.DeviantId is not null || _feuds.IsSoldier(e) || DeviantOut(spawn.DeviantId)) continue; // the shared world doesn't know who's already here: one body to a deviant
                     e.MakeDeviant(spawn.DeviantId, spawn.Modifiers, spawn.Taunt);
                     _feuds.Soldiers(e, spawn.Modifiers.Rank);
                     _tracker.MarkDeviant(spawn.Slot, spawn.DeviantId);

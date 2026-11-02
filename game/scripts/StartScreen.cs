@@ -389,6 +389,7 @@ public partial class StartScreen : CanvasLayer
         _quality.Selected = (int)(Enum.TryParse<Graphics.Quality>(_settings.GetValueOrDefault("quality", ""), out var q) ? q : Graphics.Default);
         if (Humans.Enabled != Humans.WantedAt((Graphics.Quality)_quality.Selected)) { Humans.Enabled = Humans.WantedAt((Graphics.Quality)_quality.Selected); RebuildAppearance(); }
         _token = _settings.GetValueOrDefault("token");
+        CheckForUpdate();
         if (_token is not null && _server.Text.Length > 0 && _account.Text.Length > 0) _ = LogIn("login", useToken: true);
     }
 
@@ -447,6 +448,50 @@ public partial class StartScreen : CanvasLayer
         _characters.Visible = false;
         _login.Visible = true;
         Say("");
+    }
+
+    /// <summary>
+    /// Keeping up with the server, so nobody has to download anything: a Windows copy of the game compares itself with
+    /// the copy the host's server hands out, fetches what differs, and closes and comes back up as the new version.
+    /// Mac and Android can't replace themselves like this, and a browser is always current.
+    /// </summary>
+    async void CheckForUpdate()
+    {
+        if (OS.GetName() != "Windows" || !OS.HasFeature("template") || OS.GetCmdlineUserArgs().Contains("--selftest")) return;
+        var address = _server.Text.Trim();
+        if (!GameUpdater.CanAsk(address)) return;
+        var exe = OS.GetExecutablePath();
+        var root = System.IO.Path.GetDirectoryName(exe)!;
+        var offered = await GameUpdater.Offered(address);
+        if (offered is not { Count: > 0 }) return;
+        var different = await Task.Run(() => GameUpdater.Different(offered, root));
+        if (different.Count == 0 || !IsInstanceValid(this)) return;
+        var cover = new ColorRect { Color = new Color("#15130f"), AnchorRight = 1, AnchorBottom = 1 };
+        var note = new Label { Text = "A new version is out. Fetching it...", AnchorRight = 1, AnchorBottom = 1, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        note.AddThemeFontSizeOverride("font_size", 28);
+        cover.AddChild(note);
+        AddChild(cover);
+        var (done, total) = (0L, different.Sum(f => f.Size));
+        var fetch = GameUpdater.Fetch(address, different, root, (d, _) => done = d);
+        while (!fetch.IsCompleted)
+        {
+            note.Text = $"A new version is out. Fetching it: {done / 1048576} of {total / 1048576} MB.\nThe game will reopen by itself.";
+            await ToSignal(GetTree().CreateTimer(0.25), SceneTreeTimer.SignalName.Timeout);
+        }
+        var whole = false;
+        try { whole = await fetch; }
+        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or IOException or InvalidDataException or UnauthorizedAccessException or TaskCanceledException) { }
+        if (!whole)
+        {
+            cover.QueueFree();
+            Say("The new version didn't come through. Try closing the game and opening it again.");
+            return;
+        }
+        note.Text = "Got it. Reopening...";
+        var script = System.IO.Path.Combine(root, "apply-update.bat");
+        await File.WriteAllTextAsync(script, GameUpdater.SwapScript(OS.GetProcessId(), System.IO.Path.GetFileName(exe), OS.GetCmdlineUserArgs().Length > 0 ? ["--", .. OS.GetCmdlineUserArgs()] : []));
+        OS.CreateProcess("cmd.exe", ["/c", script]);
+        GetTree().Quit();
     }
 
     Task<AccountReply> Ask(AccountRequest request) => AccountClient.AskAsync(_server.Text.Trim(), request);

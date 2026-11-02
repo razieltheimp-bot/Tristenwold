@@ -133,10 +133,13 @@ public partial class Feuds(Main main) : Node
     /// A deviant's soldiers. They come to it one at a time, and a leader only ever has the one band, however often it's
     /// seen. A dragon has none: nothing follows a dragon. Nor does anything gather inside a town.
     /// </summary>
+    /// <summary>Whether this one marches behind someone: a soldier never becomes the deviant it follows, nor calls soldiers of its own.</summary>
+    public bool IsSoldier(Enemy e) => _bands.Values.Any(b => b.Contains(e));
+
     public void Soldiers(Enemy leader, Rank rank, string? kind = null, double wait = Gathers)
     {
         var count = Bands.Soldiers(rank);
-        if (count == 0 || leader.IsDragon || _bands.ContainsKey(leader) || main.RoamersNode.InTown(leader.GlobalPosition)) return;
+        if (count == 0 || leader.IsDragon || _bands.ContainsKey(leader) || IsSoldier(leader) || main.RoamersNode.InTown(leader.GlobalPosition)) return;
         var band = new List<Enemy>();
         _bands[leader] = band;
         var who = kind ?? Underling(leader.Kind.Id);
@@ -154,7 +157,7 @@ public partial class Feuds(Main main) : Node
                     e.Stats.DamageMult *= 0.6;
                 }
                 e.Roam = 12;
-                if (leader.Named) { e.Stats.Name = Roaming.MinionOf(leader.Stats.Name); e.RefreshPlate(); }
+                if (leader.Named || leader.DeviantId is not null) { e.Stats.Name = Roaming.MinionOf(leader.Stats.Name); e.RefreshPlate(); }
                 main.AddEnemy(e);
                 band.Add(e);
                 if (leader.FightingCompany) e.Provoke(main.PlayerNode);

@@ -2453,6 +2453,30 @@ public partial class SelfTest(Main main) : Node
         main.GoOutsideForTest();
         await Frames(10);
         Check(main.ShaftFoes.Count == 0, "and what's down there stays there when you leave");
+
+        // One deviant, one body: the shared world names it again as each new foe joins the fight, and nothing's copied.
+        await Teleport(new Vector3(-150, 0, -120)); // out in open country: nobody brings a band into a settlement
+        var hordeAt = p.GlobalPosition + new Vector3(6, 0, 6);
+        var chief = Enemy.Create(Bestiary.Get("wolf"), hordeAt with { Y = City.FloorAt(hordeAt) + 0.5f });
+        main.AddEnemy(chief);
+        var chiefId = Guid.NewGuid();
+        var mods = new BattleModifiers("Old Scar", new Dictionary<Stat, double>(), new Dictionary<DamageKind, Affinity>(), [], Rank.Ringleader);
+        chief.MakeDeviant(chiefId, mods, null);
+        main.FeudsNode.Soldiers(chief, Rank.Ringleader, wait: 0.02);
+        await Frames(30);
+        var minions = main.Enemies().Where(e => main.FeudsNode.IsSoldier(e)).ToList();
+        var bystander = Enemy.Create(Bestiary.Get("wolf"), hordeAt + new Vector3(4, 1, 0));
+        main.AddEnemy(bystander);
+        Check(minions.Count == Bands.Soldiers(Rank.Ringleader) && minions.All(m => m.Stats.Name.EndsWith("Minion")), $"a deviant brings its soldiers, its minions by name ({minions.Count})");
+        foreach (var joined in minions.Append(bystander))
+        {
+            main.Tracker.Engaged(joined.Id, joined.Kind.Id, joined.Kind.Name, joined.Stats.MaxHealth, default, "test", default, main.Clock);
+            var slot = Enumerable.Range(0, 64).First(s => main.Tracker.ActorForSlot(s) == joined.Id);
+            main.HandleForTest(new DeviantAppears([new DeviantSpawn(slot, chiefId, mods, null)]));
+        }
+        await Frames(10);
+        Check(main.Enemies().Count(e => e.DeviantId == chiefId) == 1 && minions.All(m => main.FeudsNode.BandOf(m) == 0), $"told again and again, it's still one deviant, and its soldiers raise none of their own ({main.Enemies().Count(e => e.DeviantId == chiefId)})");
+        foreach (var e in minions.Append(bystander).Append(chief)) e.QueueFree();
     }
 
     async Task TheVillageDeck()
