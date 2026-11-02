@@ -44,7 +44,8 @@ public static class City
         new("The Gallows Perch", GallowsPerch, 9, 10),
         new("The Salt Barrel", new(40, 0, 78), 8, 10),
         new("The Lantern Boys' Den", new(-50, 0, 72), 9, 10),
-        new("The Drowned Chapel", new(-80, 0, -40), 11, 10),
+        new("St. Aubrel's Church", new(-80, 0, -40), 11, 10),
+        new("The Drowned Chapel", new(118, 0, -182), 30, 10),
         new("The Watch House", new(70, 0, 55), 8, 10),
         new("The Warrens", new(-20, 0, -82), 15, 9),
         new("The Magi Archive", new(-40, InnerHeight, 0), 8, 10),
@@ -65,8 +66,6 @@ public static class City
         new("giant_rat", 3, new(-20, 0, -82), 6),
         new("dock_thug", 2, new(130, 0, 30), 2), // the far end of the south pier, away from the honest work on the middle one
         new("lantern_boy", 2, new(-50, 0, 72), 4),
-        new("draugr", 1, new(-80, 0, -40), 3),
-        new("sea_wraith", 1, new(-84, 0, -46), 3),
         new("drowned_hand", 2, new(150, 0, -110), 5),
         new("dock_thug", 2, new(-205, 0, 55), 6),
     ];
@@ -216,8 +215,7 @@ public static class City
         Landmark(root, "tavern", "blue", new Vector3(40, 0, 78), 7.5f, 2.6f, "The Salt Barrel");
         Landmark(root, "barracks", "red", new Vector3(-50, 0, 72), 6.5f, 2.2f, "The Lantern Boys' Den");
         Landmark(root, "barracks", "blue", new Vector3(70, 0, 55), 7, 2.4f, "The Watch House");
-        var chapel = Landmark(root, "church", "green", new Vector3(-80, -1.6f, -40), 9, 0.4f, "The Drowned Chapel");
-        chapel.RotationDegrees = new Vector3(5, 20, -4); // half sunk, leaning
+        Landmark(root, "church", "green", new Vector3(-80, 0, -40), 9, Mathf.DegToRad(20), "St. Aubrel's Church"); // the drowned one is out on the north shore
         Landmark(root, "tower_B", "blue", new Vector3(-40, InnerHeight, 0), 7, 1.6f, "The Magi Archive");
         Landmark(root, "market", "red", new Vector3(30, InnerHeight, -30), 9, 2.2f, "The Exchange");
         Landmark(root, "castle", "red", new Vector3(0, CrownHeight, 0), 8, 1.57f, "The Crown");

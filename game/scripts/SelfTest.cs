@@ -48,6 +48,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--lair-only")) { await DeviantLairTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--village-only")) { await TheVillageDeck(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--towns-only")) { await LivingTownsTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--marks-only")) { await ClassMarksTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
@@ -2477,6 +2478,85 @@ public partial class SelfTest(Main main) : Node
         await Frames(10);
         Check(main.Enemies().Count(e => e.DeviantId == chiefId) == 1 && minions.All(m => main.FeudsNode.BandOf(m) == 0), $"told again and again, it's still one deviant, and its soldiers raise none of their own ({main.Enemies().Count(e => e.DeviantId == chiefId)})");
         foreach (var e in minions.Append(bystander).Append(chief)) e.QueueFree();
+    }
+
+    /// <summary>The marks heroes leave: a hall founded and run, another hero's hall to do business at, a druid's tree, and the Drowned Chapel's crypt.</summary>
+    async Task ClassMarksTest()
+    {
+        var (p, city, hud) = (main.PlayerNode, main.Economy, main.HudNode);
+        while (p.Hero.Level < 8) main.GainXp(Hero.XpToNext(p.Hero.Level));
+        p.Crowns = 5000;
+        p.Join("Barbarian");
+        Check(main.NoRoomForHallForTest(Vector3.Zero) is not null, "nobody founds a hall in the middle of Tristinwold");
+        await Teleport(new Vector3(-150, 0, -120));
+        await Frames(10);
+        var plan = Halls.PlanOf(HallKind.FightClub);
+        main.FoundHallForTest();
+        var club = city.HallOf(p.Company, HallKind.FightClub);
+        Check(club is { Members: 1 } && p.Crowns == 5000 - plan.FoundCost, $"a barbarian founds a fight club where they stand ({club?.Name}, {p.Crowns} crowns left)");
+        main.TendHallsForTest();
+        await Frames(5);
+        var steward = main.SharedFolkForTest.FirstOrDefault(x => x.Npc.Id == $"hall:{club?.Key}");
+        Check(steward is not null, "it stands, with its pit boss in the yard");
+        if (steward is null || club is null) return;
+        main.Talk(steward);
+        Check(hud.Choose("Take on another") && city.HallOf(p.Company, HallKind.FightClub)!.Members == 2, $"and takes on another fighter ({hud.TalkText})");
+        hud.EndTalk();
+        city.TendHalls(Halls.JobSeconds * 3);
+        var till = city.HallOf(p.Company, HallKind.FightClub)!.Till;
+        var purse = p.Crowns;
+        main.Talk(steward);
+        Check(till > 0 && hud.Choose("Empty the till") && p.Crowns == purse + till, $"the club earns while you're away, and the till's yours ({till} crowns)");
+        hud.EndTalk();
+        main.Talk(steward);
+        Check(hud.Choose("Step into the pit") && main.Dueling, "you can step into your own pit");
+        var champion = main.Enemies().FirstOrDefault(e => e.Sparring);
+        for (var i = 0; i < 6 && champion is { Yielded: false }; i++) { champion.TakeHit(champion.Stats.MaxHealth * 2, DamageKind.Physical, AttackKind.Weapon, false, p); await Frames(3); }
+        await Frames(10);
+        Check(champion is not null && !main.Dueling && champion.Yielded, $"and the champion yields when beaten ({champion?.Stats.Name}, {champion?.Stats.Health:0} of {champion?.Stats.MaxHealth:0}, duel {main.Dueling})");
+
+        // Someone else's monastery: training, once a day, paid into its till.
+        var at = p.GlobalPosition + new Vector3(90, 0, 0);
+        main.DoCity(CityAction.HallFound(new Hall { Owner = "Mira", Hero = "Mira", Kind = HallKind.Monastery, Name = "Mira's Monastery", X = at.X, Z = at.Z }));
+        await Teleport(at + new Vector3(4, 0, 6));
+        await Frames(10);
+        main.TendHallsForTest();
+        await Frames(5);
+        var monastery = city.HallOf("Mira", HallKind.Monastery)!;
+        var elder = main.SharedFolkForTest.FirstOrDefault(x => x.Npc.Id == $"hall:{monastery.Key}");
+        var (xp, level, crowns) = (p.Hero.Xp, p.Hero.Level, p.Crowns);
+        if (elder is not null) main.Talk(elder);
+        Check(elder is not null && hud.Choose("Train with the disciples") && (p.Hero.Xp > xp || p.Hero.Level > level) && p.Crowns == crowns - 40 && city.HallOf("Mira", HallKind.Monastery)!.Till >= 40,
+            $"another hero's monastery trains you, and Mira's till takes the fee ({hud.TalkText})");
+        hud.EndTalk();
+        if (elder is not null) main.Talk(elder);
+        Check(hud.Choose("Train with the disciples") && hud.TalkText.Contains("Once a day"), "once a day");
+        hud.EndTalk();
+
+        // A druid's tree.
+        p.Join("Spiritcaller");
+        p.Stats.Restore(1e9, 1e9);
+        var trees = city.Grove.Count;
+        main.PlantForTest();
+        Check(city.Grove.Count == trees + 1 && main.ShownGroveForTest > 0, $"a druid plants a tree where they stand, and there it is ({city.Grove.Count})");
+        city.Grove[^1].Day -= Groves.GrownAt;
+        main.TendHallsForTest();
+        Check(Groves.Stage(city.Grove[^1], city.Day) == 2, "and in three days it's grown");
+
+        // The Drowned Chapel, out on the north shore, and the dead in its crypt.
+        await Teleport(Main.CryptStairForTest);
+        await Frames(20);
+        Check(City.AreaAt(p.GlobalPosition) == "The Drowned Chapel" && main.ChapelActionForTest(p.GlobalPosition) is { Verb: "go down into the crypt" }, $"the Drowned Chapel stands in ruins outside the walls, with steps going down ({City.AreaAt(p.GlobalPosition)})");
+        main.EnterCryptForTest();
+        await Frames(20);
+        Check(main.IndoorsNode is not null && main.CryptFoes.Count >= 8 && main.CryptFoes.Any(e => e.Kind.Id == "hollow_soldier") && main.CryptFoes.Any(e => e.Kind.Id == "sea_wraith"),
+            $"down in the crypt, the drowned dead ({string.Join(", ", main.CryptFoes.Select(e => e.Kind.Id))})");
+        crowns = p.Crowns;
+        for (var i = 0; i < 8; i++) { foreach (var e in main.CryptFoes.ToList()) e.Shelled(e.Stats.MaxHealth * 4, true); await Frames(4); }
+        await Frames(30);
+        Check(main.CryptCleared && p.Crowns > crowns, $"clear them, and the Temple pays ({p.Crowns - crowns} crowns; standing: {string.Join(", ", main.CryptFoes.Where(e => GodotObject.IsInstanceValid(e) && e.State != EnemyState.Dead).Select(e => $"{e.Kind.Id} {e.State} {e.Stats.Health:0}"))})");
+        main.GoOutsideForTest();
+        await Frames(10);
     }
 
     async Task TheVillageDeck()

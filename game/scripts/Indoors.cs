@@ -46,6 +46,7 @@ public partial class Main
     void TendIndoors()
     {
         TendShaft();
+        TendCrypt();
         var above = _player.GlobalPosition.Y > Indoors.Threshold;
         if (!above && _indoors is not null)
         {
@@ -90,13 +91,14 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         "tower" => (8, 8, 4),
         "hollow" => (9, 9, 3.2f),
         "mineshaft" => (12, 32, 4.5f),
+        "crypt" => (14, 66, 5),
         _ => (8, 9, 3),
     };
 
     public static string Called(string kind) => kind switch
     {
         "longhall" => "long hall", "smithy" => "smithy", "barn" => "barn", "church" => "church", "keep" => "keep", "tower" => "tower",
-        "tavern" => "tavern", "cottage" => "cottage", "hollow" => "living hollow", "mineshaft" => "mine", _ => "house",
+        "tavern" => "tavern", "cottage" => "cottage", "hollow" => "living hollow", "mineshaft" => "mine", "crypt" => "Drowned Chapel's crypt", _ => "house",
     };
 
     public Vector3 WayIn => Stage + new Vector3(0, 0.6f, Plan(kind).Deep / 2 - 1.6f);
@@ -108,7 +110,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.Below = p => p.Y > Threshold ? Stage.Y : null;
         City.BelowName = p => p.Y > Threshold ? $"Inside the {Called(kind)}" : null;
         City.ShutOutSky(new Color("#b0a090"), 0.3f, 0.002f);
-        var shaft = kind == "mineshaft";
+        var shaft = kind is "mineshaft" or "crypt";
         var stone = kind is "church" or "keep" or "tower" or "smithy";
         Slab(Vector3.Down * 0.1f, new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : stone ? Surface.Stone : Surface.Planks);
         Slab(Vector3.Up * (high + 0.1f), new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : Surface.Timber);
@@ -132,6 +134,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.BelowName = null;
         City.LetInSky();
         if (kind == "mineshaft") main.LeftTheShaft();
+        if (kind == "crypt") main.LeftTheCrypt();
     }
 
     static Material Photo(Surface s)
@@ -192,6 +195,24 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
                 }
                 Sign(new Vector3(0, 3, deep / 2 - 3), "Mind your head");
                 main.PeopleTheShaft(this, seed, Stage + new Vector3(0, 0.4f, -deep / 2 + 5));
+                break;
+            case "crypt":
+                foreach (var z in new[] { deep / 6, -deep / 6 }) // the vaults' walls, each with an arch through the middle
+                    foreach (var side in new[] { -1f, 1f })
+                        Slab(new Vector3(side * (wide / 4 + 0.9f), high / 2, z), new Vector3(wide / 2 - 1.8f, high, 0.6f), Surface.DarkStone);
+                for (var z = -deep / 2 + 4; z < deep / 2 - 3; z += 6)
+                    foreach (var x in new[] { -wide / 2 + 1.6f, wide / 2 - 1.6f })
+                    {
+                        Slab(new Vector3(x, 0.45f, z), new Vector3(1.1f, 0.9f, 2.3f), Surface.Stone); // a tomb, its lid long off
+                        Light(new Vector3(x * 0.6f, 2.6f, z), 0.7f, 8, "#5ac8c0");
+                    }
+                AddChild(new MeshInstance3D // the tide's left a hand of black water over everything
+                {
+                    Mesh = new BoxMesh { Size = new Vector3(wide - 0.4f, 0.04f, deep - 0.4f) }, Position = Stage + new Vector3(0, 0.12f, 0),
+                    MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.3f, 0.32f, 0.55f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.05f, Metallic = 0.3f },
+                });
+                Sign(new Vector3(0, 3, deep / 2 - 3), "Here the drowned keep");
+                main.PeopleTheCrypt(Stage, deep);
                 break;
             case "tavern" or "longhall":
                 Hearth(deep);

@@ -41,8 +41,9 @@ public sealed partial class ServerCore
             if ((_storeSeconds += passed) >= StoreEvery)
             {
                 City.TendStores(_storeSeconds);
+                City.TendHalls(_storeSeconds);
                 _storeSeconds = 0;
-                _cityChanged = City.Stores.Count > 0 || _cityChanged;
+                _cityChanged = City.Stores.Count + City.Halls.Count > 0 || _cityChanged;
             }
         }
         _cityClock = now;

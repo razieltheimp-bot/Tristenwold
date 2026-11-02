@@ -54,7 +54,7 @@ public static class Humans
     }
 
     /// <summary>The looks that aren't people: machines, the undead, spirits and trolls keep their own figures.</summary>
-    static readonly HashSet<string> NotPeople = ["golem", "familiar", "cinder_warden", "cinder_thrall", "forge_golem", "draugr", "draugr_overlord", "sea_wraith", "spriggan", "frost_troll"];
+    static readonly HashSet<string> NotPeople = ["golem", "familiar", "cinder_warden", "cinder_thrall", "forge_golem", "draugr", "draugr_overlord", "sea_wraith", "spriggan", "frost_troll", "hollow_soldier"];
 
     /// <summary>Whether a look is somebody: a person, to be given a real body.</summary>
     public static bool IsPerson(string look) => Figure.Looks.ContainsKey(look) && !NotPeople.Contains(look);
@@ -70,7 +70,7 @@ public static class Humans
             "raider" or "raider_chief" or "warmaster" => ["human", "orc", "half_giant", "human"],
             "bandit" or "bandit_chief" or "dock_thug" or "drowned_hand" => ["human", "human", "dwarf", "orc"],
             "pirate" or "pirate_captain" or "dread_soren" or "sailor" or "monkey_hand" => ["human", "human", "elf", "dwarf"],
-            "guard" or "marine" or "squire" or "hollow_soldier" or "ghost_captain" => ["human", "human", "dwarf"],
+            "guard" or "marine" or "squire" or "ghost_captain" => ["human", "human", "dwarf"],
             "dragon_knight" or "aldric" or "laureate" => ["human"],
             _ => ["human", "human", "human", "elf", "dwarf"],
         };

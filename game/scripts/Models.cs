@@ -372,7 +372,7 @@ public partial class Figure : Body
         ["cinder_thrall"] = new("Skeleton_Minion", [], 0.7f, new Color("#5a4636")),
         // The wild lairs' bosses and their own that are figures (the rest are creatures: see Lairfolk).
         ["ghost_captain"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"], 0.95f),
-        ["hollow_soldier"] = new("Knight", ["1H_Sword", "Round_Shield", "Knight_Helmet"], 0.74f),
+        ["hollow_soldier"] = new("Skeleton_Warrior", [], 0.76f, new Color("#9aa8b0"), 0.12f, RightHand: "Skeleton_Blade", LeftHand: "Skeleton_Shield_Large_A"), // the dead, still in their mail
         ["forge_golem"] = new("Barbarian", ["2H_Axe"], 1.45f),
         // Enemies.
         ["dock_thug"] = new("Barbarian", ["1H_Axe"]),

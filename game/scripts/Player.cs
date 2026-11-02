@@ -1131,6 +1131,9 @@ public partial class Player : Fighter
         Stats.Restore(a.Pays == AttackKind.Spell ? a.Cost : 0, a.Pays == AttackKind.Weapon ? a.Cost : 0);
     }
 
+    /// <summary>A blessing from outside: statuses for a while, then gone.</summary>
+    public void Bless(double seconds, params AutoStatus[] statuses) => For(seconds, statuses);
+
     /// <summary>Statuses for a while (Regen and Haste, Protect and Shell), then gone.</summary>
     void For(double seconds, params AutoStatus[] statuses)
     {

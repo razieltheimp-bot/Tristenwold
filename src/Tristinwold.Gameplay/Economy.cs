@@ -57,7 +57,7 @@ public sealed class Contract
 /// it's sent on and done to the one city everybody shares (see <see cref="CityEconomy.Apply"/>).
 /// </summary>
 public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0, string? Contract = null, IReadOnlyList<string>? Items = null, Good? Good = null, int N = 0,
-    string? Town = null, TownMarket? Market = null, PlayerStore? Store = null)
+    string? Town = null, TownMarket? Market = null, PlayerStore? Store = null, Hall? Hall = null, double X = 0, double Z = 0)
 {
     public static CityAction Sold(string item, int crowns) => new("sold", item, crowns);
     public static CityAction Bought(string item, int crowns) => new("bought", item, crowns);
@@ -101,6 +101,17 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction StoreShut(string owner) => new("store_shut", Contract: owner);
     public static CityAction StoreBuy(string owner, string item, int crowns) => new("store_buy", item, crowns, owner);
     public static CityAction StoreSell(string owner, string item, int crowns) => new("store_sell", item, crowns, owner);
+    // The halls heroes found (see Hall): founded, a recruit taken on, the till emptied or paid into, a thing bought from its stores, lying low, a hero served, shut.
+    public static CityAction HallFound(Hall hall) => new("hall_found", Contract: hall.Key, Hall: hall);
+    public static CityAction HallRecruit(string key, int level) => new("hall_recruit", Contract: key, N: level);
+    public static CityAction HallTill(string key, int crowns) => new("hall_till", Crowns: crowns, Contract: key);
+    public static CityAction HallPay(string key, int crowns) => new("hall_pay", Crowns: crowns, Contract: key);
+    public static CityAction HallTake(string key, string item, int crowns) => new("hall_take", item, crowns, key);
+    public static CityAction HallLow(string key) => new("hall_low", Contract: key);
+    public static CityAction HallServed(string key, string who) => new("hall_served", who, Contract: key);
+    public static CityAction HallClose(string key) => new("hall_close", Contract: key);
+    /// <summary>A druid's tree, set in the ground for everyone.</summary>
+    public static CityAction Plant(string owner, double x, double z) => new("plant", Contract: owner, X: x, Z: z);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -643,6 +654,8 @@ public sealed partial class CityEconomy
             case "mended" when a.Town is not null && FabricOf(a.Town).Derelict > 0: FabricOf(a.Town).Derelict--; return true;
             case "town_name" when a.Town is not null: CouncilOf(a.Town).Standing = Math.Clamp(CouncilOf(a.Town).Standing + a.N / 10.0, -5, 5); return true;
             case "store_set" when a.Store is { Owner.Length: > 0 and <= 60 } shop: Stores[shop.Owner] = shop; return true;
+            case { } hall when hall.StartsWith("hall_", StringComparison.Ordinal): return HallAct(a);
+            case "plant" when a.Contract is not null: return Plant(a.Contract, a.X, a.Z);
             case "store_shut" when a.Contract is not null: return Stores.Remove(a.Contract);
             case "store_buy" when a.Contract is not null && a.Item is not null: return StoreBuy(a.Contract, a.Item, crowns);
             case "store_sell" when a.Contract is not null && a.Item is not null: return StoreSell(a.Contract, a.Item, crowns);
