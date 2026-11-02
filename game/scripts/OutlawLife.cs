@@ -31,7 +31,10 @@ public partial class Main
             $"The Dread Pirate Soren, first and worst of them{(c.SorenDeaths > 0 ? $": killed {c.SorenDeaths} time{(c.SorenDeaths == 1 ? "" : "s")}, and back every time" : "")}.",
             $"Lu Wukong, second only to Soren on the water{(c.WukongDeaths > 0 ? $", and no deader for being killed {c.WukongDeaths} time{(c.WukongDeaths == 1 ? "" : "s")}" : "")}.",
             "Black Ysolde of the Widow's Tooth, who takes the company's ships off the Teeth.",
+            "Irohe, an old man with a kettle and a black dog, who moves his camp every day. The Watch say he burned a city once. Nobody's ever tried to collect, and the ones who've met him say they'd sooner not.",
         };
+        if (c.KorrinFree)
+            lines.Insert(3, $"Korrin, who calls himself the Emperor of Tristinwold now. {(c.KorrinHolds ? "Every stall in the city is shut on his word" : "He's down, for now")}, and the thugs do what he says. If you mean to do something about him, he sits on the dock road.");
         foreach (var (who, bounty) in c.Outlaws.OrderByDescending(o => o.Value).Take(8))
             lines.Add(who == _player.Company ? $"And you, {bounty} crowns on your head. Don't think I don't know your face." : $"{who}: {bounty} crowns on their head, and the Watch would like a word.");
         return "Known outlaws? " + string.Join(" ", lines);

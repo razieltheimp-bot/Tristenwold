@@ -27,7 +27,7 @@ public partial class Main
     /// <summary>Companions at home get on with the work there; the chronicle says what's come of it.</summary>
     void HomeWork(double seconds)
     {
-        if (!_sharedCity) { _city.TendStores(seconds); _city.TendHalls(seconds); } // on a server its own clock runs them, whoever's online
+        if (!_sharedCity) { _city.TendStores(seconds); _city.TendHalls(seconds); _city.TendKorrin(); _city.TendRaid(); } // on a server its own clock runs them, whoever's online
         SyncStore();
         PullWagonShop();
         TendStoreFronts();
@@ -35,6 +35,7 @@ public partial class Main
         TendGrove();
         CollectOrders();
         SyncOutlaw();
+        BeginRaidIfDue();
     }
 
     /// <summary>Mounts past the number of riders go to the Gallows Perch.</summary>
@@ -80,6 +81,13 @@ public partial class Main
         Enemy.Felled += OnFelled;
         Enemy.Turned += OnTurned;
         Enemy.SparEnded += OnSparEnded;
+        Enemy.Slain += OnDrifterSlain;
+        _player.WentDown += OnDrifterWin;
+        Enemy.Slain += OnUndyingSlain;
+        _player.WentDown += OnUndyingWin;
+        Enemy.Slain += OnDeepSlain;
+        Enemy.Slain += OnSyndicateSlain;
+        _player.WentDown += OnDeepWin;
         _player.Summoned += Summon;
         _player.Merged += Merge;
         _player.Overdriven += Overdrive;
@@ -94,6 +102,13 @@ public partial class Main
         Enemy.Felled -= OnFelled;
         Enemy.Turned -= OnTurned;
         Enemy.SparEnded -= OnSparEnded;
+        Enemy.Slain -= OnDrifterSlain;
+        _player.WentDown -= OnDrifterWin;
+        Enemy.Slain -= OnUndyingSlain;
+        _player.WentDown -= OnUndyingWin;
+        Enemy.Slain -= OnDeepSlain;
+        Enemy.Slain -= OnSyndicateSlain;
+        _player.WentDown -= OnDeepWin;
     }
 
     // ---- companions ----------------------------------------------------------------------------
@@ -659,6 +674,26 @@ public partial class Main
     IEnumerable<(string, Action)> MoreTalk(Person person)
     {
         var npc = person.Npc;
+        if (npc.Id.StartsWith("drifter:"))
+        {
+            foreach (var o in DrifterTalk(person)) yield return o;
+            yield break;
+        }
+        if (npc.Id.StartsWith("syndicate:"))
+        {
+            foreach (var o in SyndicateTalk(person)) yield return o;
+            yield break;
+        }
+        if (npc.Id.StartsWith("deep:"))
+        {
+            foreach (var o in DeepTalk(person)) yield return o;
+            yield break;
+        }
+        if (npc.Id.StartsWith("undying:"))
+        {
+            foreach (var o in PrideTalk(person)) yield return o;
+            yield break;
+        }
         foreach (var o in GuildTalk(person)) yield return o;
         if (People.IsYouth(npc))
         {

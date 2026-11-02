@@ -380,6 +380,23 @@ public partial class Figure : Body
         ["elemental_storm"] = new("Barbarian", [], 1.8f, new Color("#8a9aff"), 0.8f, Unarmed: true),
         ["elemental_water"] = new("Barbarian", [], 1.8f, new Color("#3a8ad0"), 0.5f, Unarmed: true),
         ["elemental_frost"] = new("Barbarian", [], 1.8f, new Color("#c8ecff"), 0.6f, Unarmed: true),
+        // The drifters (see Drifters): each built on a real body from their own look, carrying what they carry.
+        ["drifter_broly"] = new("Barbarian", [], 0.74f, Unarmed: true),
+        ["drifter_broly_rage"] = new("Barbarian", [], 0.74f, new Color("#7aff6a"), 0.5f, Unarmed: true),
+        ["drifter_gornok"] = new("Rogue", [], 0.74f, Unarmed: true),
+        ["drifter_ren"] = new("Rogue", ["Knife"], 0.74f, LeftHand: "@lute"),
+        ["drifter_irohe"] = new("Rogue", [], 0.74f, Unarmed: true),
+        ["drifter_faye"] = new("Mage", ["1H_Wand", "Spellbook_open"], 0.74f, new Color("#c8d8ff"), 0.15f),
+        ["drifter_yokin"] = new("Barbarian", ["2H_Sword"], 0.74f),
+        // Korrin and Ronacse (see Undying).
+        ["korrin"] = new("Knight", [], 0.74f, Unarmed: true),
+        ["korrin_final"] = new("Knight", [], 0.74f, Unarmed: true),
+        ["ronacse"] = new("Knight", ["1H_Axe", "Badge_Shield"], 0.74f),
+        ["ronacse_pride"] = new("Barbarian", [], 0.74f, Unarmed: true),
+        // The Dark Depths: the demons' brutes, their lord, and heaven's host (see DeepsLife).
+        ["demon_grunt"] = new("Barbarian", ["2H_Axe"], 0.74f),
+        ["duragon"] = new("Barbarian", [], 0.74f, Unarmed: true),
+        ["angel"] = new("Knight", ["2H_Sword"], 0.74f),
         // Enemies.
         ["dock_thug"] = new("Barbarian", ["1H_Axe"]),
         ["lantern_boy"] = new("Rogue", ["Knife"], 0.66f, new Color("#ffcf9a")),
@@ -433,6 +450,8 @@ public partial class Figure : Body
     /// worn instead of the class's. The class still decides what they carry.</param>
     public static Figure Create(string look, Tristinwold.Gameplay.Avatar? avatar = null)
     {
+        // A drifter is always a real body, built from their own look.
+        if (Main.DrifterAvatar(look) is { } drifter && Human(look, drifter) is { } d) return d;
         // Turlin's always a real body, at any setting: he's built on one.
         if (look == "turlin" && Human(look, Tristinwold.Gameplay.Avatar.For("Barbarian") with { Race = "human", Sex = "Male", Skin = "Deep", Face = "Dark", Headwear = "none", Style = "None", Sleeves = "Long" }) is { } rival) return rival;
         if (look == "giant_ape" && Human(look, "human", Tristinwold.World.Sex.Male, Tristinwold.World.LifeStage.Adult, 7, new Color("#4a2e22")) is { } ape) return ape;

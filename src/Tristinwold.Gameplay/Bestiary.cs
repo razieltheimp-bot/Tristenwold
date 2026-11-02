@@ -107,6 +107,23 @@ public static class Bestiary
         // The Northwood's guardians: older than the city, and they leave you be unless you've given them reason.
         new("turlin", "Turlin", 150, 11, 5.2, 40, 2.0, 1.2, DamageKind.Physical, "#3a3440", 2.0, Wary: true),
         new("giant_ape", "Giant Ape", 3200, 30, 5.6, 110, 3.2, 1.7, DamageKind.Physical, "#35303a", 7.2, Wary: true),
+        // The drifters: incomplete immortals out in the world (see Drifters), and what Irohe calls up out of his fire.
+        new("drifter_broly", "Broly", 640, 26, 5.6, 120, 2.4, 1.1, DamageKind.Physical, "#3a4a2a", 2.3, Wary: true),
+        new("drifter_gornok", "Gornok Thornek", 520, 20, 5.4, 100, 2.2, 0.8, DamageKind.Physical, "#6a4a3a", 2.2, Wary: true),
+        new("drifter_ren", "Ren", 420, 18, 6.2, 60, 2.0, 0.8, DamageKind.Fire, "#3a5ac0", 1.8, Wary: true),
+        new("drifter_irohe", "Irohe", 560, 22, 5.0, 90, 3.0, 1.0, DamageKind.Fire, "#b8382c", 1.9, Wary: true),
+        new("drifter_faye", "Faye", 400, 24, 5.2, 50, 6.0, 1.3, DamageKind.Shock, "#e8e8e4", 1.8, Wary: true),
+        new("drifter_yokin", "Yokin Hearthbeat", 620, 25, 4.8, 130, 2.8, 1.4, DamageKind.Physical, "#8a8a98", 2.3, Wary: true),
+        new("flame_serpent", "Flame Serpent", 260, 16, 6.5, 40, 3.0, 1.0, DamageKind.Fire, "#ff6a20", 1.6),
+        // Korrin, Subject One, in his two forms, and Ronacse, Pride, in his (see Undying).
+        new("korrin", "Korrin", 900, 28, 6.0, 150, 2.4, 0.9, DamageKind.Shock, "#3a2a5a", 2.2),
+        new("korrin_final", "Korrin Unbound", 900, 36, 6.6, 180, 2.8, 0.8, DamageKind.Shock, "#5a3a8a", 2.6),
+        new("ronacse", "Ronacse", 850, 30, 5.2, 220, 2.8, 1.1, DamageKind.Fire, "#d8b040", 2.2),
+        new("ronacse_pride", "Ronacse, Pride Unbound", 950, 40, 5.8, 200, 3.0, 1.0, DamageKind.Fire, "#ffd8a0", 2.6),
+        // The Dark Depths: the demons who raid up out of the Rift, their lord, and heaven's answer to them.
+        new("demon_grunt", "Demon Brute", 420, 26, 4.8, 120, 2.8, 1.4, DamageKind.Fire, "#8a2020", 2.4),
+        new("duragon", "Duragon", 2600, 48, 5.4, 240, 3.2, 1.1, DamageKind.Poison, "#d8d8d0", 2.8),
+        new("angel", "Host of Heaven", 700, 34, 6.8, 160, 6.0, 1.0, DamageKind.Sun, "#ffe8a0", 2.2),
         new("guardian_moss", "Forest Guardian", 5200, 46, 3.6, 120, 4.5, 2.4, DamageKind.Physical, "#5a8a3a", 8, Wary: true),
         new("guardian_bark", "Forest Guardian", 4400, 56, 4.4, 90, 4.5, 2.0, DamageKind.Physical, "#8a6a4a", 7.5, Wary: true),
         new("guardian_elder", "Forest Guardian", 6000, 42, 3.2, 140, 5, 2.6, DamageKind.Frost, "#3a6a5a", 8.5, Wary: true),

@@ -336,6 +336,13 @@ public partial class Main
     {
         if (_duel is not { } duel || duel.Foe != foe) return;
         _duel = null;
+        if (duel.Rival.Npc.Id.StartsWith("drifter:"))
+        {
+            DrifterDuelOver(foe, duel.Rival);
+            duel.Then?.Invoke(won);
+            Save();
+            return;
+        }
         if (duel.Rival.Npc.Id.StartsWith("hall:"))
         {
             HallDuelOver(foe);

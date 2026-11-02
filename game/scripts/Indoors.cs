@@ -73,6 +73,10 @@ public partial class Main
 public partial class Indoors(Main main, string kind, int seed) : Node3D
 {
     public bool IsTavern => kind == "tavern";
+    public string Kind => kind;
+    public int Seed => seed;
+    /// <summary>Where the room is built: its floor's middle.</summary>
+    public static Vector3 StageAt => Stage;
     /// <summary>Where a tavern's business is: the bar, the card table, the dice table and the hearth.</summary>
     public Vector3 Bar { get; private set; }
     public Vector3 CardTable => Stage + new Vector3(2, 0, -2);
@@ -95,13 +99,15 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         "mineshaft" => (12, 32, 4.5f),
         "crypt" => (14, 66, 5),
         "store" => (9, 10, 3.4f),
+        "trench" => (36, 110, 14),
+        "depths" => (64, 150, 26),
         _ => (8, 9, 3),
     };
 
     public static string Called(string kind) => kind switch
     {
         "longhall" => "long hall", "smithy" => "smithy", "barn" => "barn", "church" => "church", "keep" => "keep", "tower" => "tower",
-        "tavern" => "tavern", "cottage" => "cottage", "store" => "shop", "hollow" => "living hollow", "mineshaft" => "mine", "crypt" => "Drowned Chapel's crypt", _ => "house",
+        "tavern" => "tavern", "cottage" => "cottage", "store" => "shop", "hollow" => "living hollow", "mineshaft" => "mine", "crypt" => "Drowned Chapel's crypt", "trench" => "Deep Trenches", "depths" => "Dark Depths", _ => "house",
     };
 
     public Vector3 WayIn => Stage + new Vector3(0, 0.6f, Plan(kind).Deep / 2 - 1.6f);
@@ -113,7 +119,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.Below = p => p.Y > Threshold ? Stage.Y : null;
         City.BelowName = p => p.Y > Threshold ? $"Inside the {Called(kind)}" : null;
         City.ShutOutSky(new Color("#b0a090"), 0.3f, 0.002f);
-        var shaft = kind is "mineshaft" or "crypt";
+        var shaft = kind is "mineshaft" or "crypt" or "trench" or "depths";
         var stone = kind is "church" or "keep" or "tower" or "smithy";
         Slab(Vector3.Down * 0.1f, new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : stone ? Surface.Stone : Surface.Planks);
         Slab(Vector3.Up * (high + 0.1f), new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : Surface.Timber);
@@ -138,6 +144,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.LetInSky();
         if (kind == "mineshaft") main.LeftTheShaft();
         if (kind == "crypt") main.LeftTheCrypt();
+        if (kind is "trench" or "depths") main.LeftTheDeep();
         main.LeftTheShop();
     }
 
@@ -185,6 +192,8 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
 
     void Furnish(float wide, float deep, float high)
     {
+        if (kind == "trench") { main.FurnishTrench(this, seed); return; }
+        if (kind == "depths") { main.FurnishDepths(this); return; }
         var rng = new Rng((ulong)Math.Abs(seed) + 11);
         switch (kind)
         {

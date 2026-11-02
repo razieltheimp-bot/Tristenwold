@@ -50,6 +50,10 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--towns-only")) { await LivingTownsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--marks-only")) { await ClassMarksTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--limits-only")) { await NewLimitsTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--drifters-only")) { await DriftersTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--undying-only")) { await UndyingTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--deeps-only")) { await DeepsTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--syndicate-only")) { await SyndicateTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
@@ -2718,6 +2722,311 @@ public partial class SelfTest(Main main) : Node
             "a hero with a price on their head is on the list of known outlaws, with Soren and Lu Wukong");
         standing.Bounty = 0;
         Check(!main.KnownOutlawsForTest().Contains("on your head") && !main.Economy.Outlaws.ContainsKey(p.Company), "and off it once it's paid");
+        await DriftersTest();
+        await UndyingTest();
+        await DeepsTest();
+        await SyndicateTest();
+    }
+
+    /// <summary>Korrin's empire: the blockade's prices, the fences, the depots and their captains, and the runs that break it.</summary>
+    async Task SyndicateTest()
+    {
+        var p = main.PlayerNode;
+        await Until(() => !p.Downed, 40); // the ring brings them back first, if the last test put them down
+        var hud = main.HudNode;
+        var city = main.Economy;
+        var item = Items.Get("stamina_brew")!;
+        var before = main.ShopPriceFor(item);
+        main.DoCity(CityAction.KorrinFreed(p.Company));
+        Check(city.KorrinInfluence == Syndicate.StartInfluence && Math.Abs(city.KorrinMarkup - 2.6) < 0.01 && main.ShopPriceFor(item) > before * 2.4,
+            $"Korrin out: his influence is {city.KorrinInfluence}%, and a stamina brew goes from {before} to {main.ShopPriceFor(item)} crowns");
+        await Teleport(new Vector3(60, 0, 10));
+        await Frames(10);
+        main.TendSyndicateForTest();
+        await Frames(5);
+        Check(main.FencesForTest.Count == 2, "fences in the city's alleys sell what the stalls can't");
+        main.Talk(main.FencesForTest[0]);
+        Check(hud.Choose("I can't pay") && hud.Choose("Do it") && main.Standing.Bounty >= 25, "or a favour instead: a window broken, and a price on your head");
+        main.Standing.Bounty = 0;
+        hud.EndTalk();
+
+        // A depot: the captain bought, and his ground is safe.
+        var (bid, bname, bat) = Main.DepotsForTest[0];
+        await Teleport(bat + new Vector3(30, 0, 0));
+        await Frames(20);
+        main.TendSyndicateForTest();
+        await Frames(5);
+        Check(main.CaptainForTest is not null && main.DepotGuardForTest.Count == 4, $"{bname}: a captain and four guards in black and violet");
+        p.Crowns += 5000;
+        if (main.CaptainForTest is { } cap) main.Talk(cap);
+        Check(hud.Choose("Make it worth") && city.CaptainsBought.Contains(bid) && main.DepotGuardForTest.Count == 0, "bought: his men stay off you");
+        hud.EndTalk();
+
+        // Another: the captain killed, his men break; the depot burned, and assassins on the way.
+        var (did, dname, dat) = Main.DepotsForTest[1];
+        await Teleport(dat + new Vector3(30, 0, 0));
+        await Frames(20);
+        main.TendSyndicateForTest();
+        await Frames(5);
+        if (main.CaptainForTest is { } captain) main.Talk(captain);
+        Check(hud.Choose("Draw on him") && main.CaptainBodyForTest is not null, $"at {dname} you can draw on the captain (captain {main.CaptainForTest?.Npc.Name ?? "none"}; {string.Join(" | ", hud.Options)})");
+        var guards = main.DepotGuardForTest.ToList();
+        var cb = main.CaptainBodyForTest;
+        for (var i = 0; i < 8 && cb is not null && cb.State != EnemyState.Dead; i++) { cb.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(420);
+        Check(guards.Count == 4 && guards.All(g => !IsInstanceValid(g) || g.State == EnemyState.Dead), "the captain falls and his men break and run");
+        var fire = main.SyndicateActionForTest(dat + new Vector3(1, 0, 1));
+        Check(fire?.Verb == "set the depot alight", "with nobody left, you can burn it");
+        fire?.Act();
+        Check(city.DepotsBurned.Contains(did) && city.KorrinInfluence == Syndicate.StartInfluence - Syndicate.PerDepot && main.AssassinsComingForTest, $"burned: his influence falls to {city.KorrinInfluence}%, and he sends assassins");
+
+        // Food smuggled in past him, and a councillor hanged for it.
+        await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+        await Frames(10);
+        main.Talk(main.Locals.First(x => x.Npc.Id == "tristinwold/caravans"));
+        Check(hud.Choose("Is there any way to get food in") && main.SmuggleRunForTest == 1, "Garrick has a smuggling run");
+        hud.EndTalk();
+        await Teleport(new Vector3(-520, 0, 172));
+        await Frames(20);
+        main.SyndicateActionForTest(new Vector3(-520, 0, 170))?.Act();
+        Check(main.SmuggleRunForTest == 2, "you take the food from the old sheepfold, and the Syndicate jumps you");
+        await Teleport(Main.YardAt + new Vector3(0, 0, 4));
+        await Frames(10);
+        var councillors = city.CouncilOf("city:tristinwold").Living.Count();
+        var influence = city.KorrinInfluence;
+        main.Talk(main.Locals.First(x => x.Npc.Id == "tristinwold/caravans"));
+        Check(hud.Choose("I've brought the food") && city.KorrinInfluence == influence - Syndicate.PerSmuggle && city.FedUntil > city.Day, "the food gets in: his influence falls, and the starving merchants open their good stock");
+        Check(city.CouncilOf("city:tristinwold").Living.Count() < councillors || councillors == 0, "and Korrin hangs a councillor for it");
+        hud.EndTalk();
+        main.DoCity(CityAction.KorrinFell(p.Company, true));
+        Check(city.KorrinInfluence == 0 && city.KorrinMarkup == 1 && city.DepotsBurned.Count == 0, "back in the tank: his influence gone, prices back, the depots forgotten");
+    }
+
+    /// <summary>The Deep Trenches under the mines, the Dark Depths under them, and the demons coming up.</summary>
+    async Task DeepsTest()
+    {
+        var p = main.PlayerNode;
+        await Until(() => !p.Downed, 40); // the ring brings them back first, if the last test put them down
+        var hud = main.HudNode;
+        var city = main.Economy;
+        var home = Deeps.Get(main.World, 0, 0);
+        var near = Deeps.Around(main.World, 0, 0, 1).ToList();
+        Check(home.Home && near.Count(t => t.Mines.Count > 0) >= 2 && near.Sum(t => t.Mines.Count) >= 4,
+            $"under the mines, the Deep Trenches: {string.Join("; ", near.Take(4).Select(t => $"{t.City} under {t.Mines.Count} mines"))}");
+        var trench = near.First(t => t.Mines.Count > 0);
+        await Teleport(new Vector3(-150, 0, -120));
+        await Frames(10);
+        main.GoDeepForTest("trench", trench);
+        await Frames(20);
+        Check(main.IndoorsNode?.Kind == "trench" && main.DeepFolkForTest.Count == 5 && main.DeepFolkForTest.All(f => f.Npc.Race == "dwarf"), $"down in {trench.City}, the dwarves of the deep");
+        main.Talk(main.DeepFolkForTest.First(f => f.Npc.Id.EndsWith(":thane")));
+        Check(hud.Choose("Where do the dwarves come from") && hud.TalkText.Contains("came up out of these roads"), "the thane tells you every dwarf came up from here");
+        hud.EndTalk();
+        var act = main.DeepActionForTest(main.DeepRoadSignForTest);
+        act?.Act();
+        Check(act?.Verb.StartsWith("take the deep road") == true && hud.Options.Count(o => o.StartsWith("Up to")) == trench.Mines.Count + (trench.Home ? 1 : 0), $"the deep road climbs to every mine over it ({string.Join(", ", hud.Options)})");
+        hud.EndTalk();
+        act = main.DeepActionForTest(Indoors.StageAt + new Vector3(0, 0, -110 / 2f + 2.5f));
+        Check(act?.Verb.Contains("Dark Depths") == true, "and one tunnel goes down");
+        act?.Act();
+        await Frames(20);
+        var lord = main.DuragonForTest;
+        Check(main.IndoorsNode?.Kind == "depths" && lord is not null && lord.Stats.Name.Contains("level 25"), $"the Dark Depths: the Rift, and Duragon by it ({lord?.Stats.Name})");
+        act = main.DeepActionForTest(main.DeepRoadSignForTest);
+        act?.Act();
+        Check(hud.Options.Count(o => o.StartsWith("Up to")) >= 3, $"and ways up to trenches all over the world ({hud.Options.Count() - 1})");
+        hud.EndTalk();
+        main.GoOutsideForTest();
+        await Frames(10);
+
+        // A raid: up into a dwarf city first.
+        (city.Demons, city.NextRaid) = (null, city.Day);
+        await Teleport(new Vector3(-150, 0, -120));
+        main.BeginRaidForTest();
+        var r = city.Demons;
+        Check(r is not null && !r.Surfaced && city.News.Last().Contains(r.City), $"demons raid upward: {city.News.Last()}");
+        if (r is null) return;
+        main.GoDeepForTest("trench", Deeps.Parse(main.World, r.Trench));
+        await Frames(20);
+        var demons = main.DeepFoesForTest.Where(e => e.Faction == "hell").ToList();
+        Check(demons.Count == 7 && main.DeepFoesForTest.Count(e => e.Allied) == 3, "the demons are in the streets, and the dwarves are holding");
+        foreach (var e in demons) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Frames(10);
+        main.TendDeepsForTest();
+        Check(city.Demons is null, $"kill them all and the raid is broken ({city.News.Last()})");
+        main.GoOutsideForTest();
+        await Frames(10);
+
+        // Another, left alone: out of a mine a day later, and heaven's answer.
+        city.NextRaid = city.Day;
+        main.BeginRaidForTest();
+        r = city.Demons;
+        if (r is null) { Check(false, "a second raid"); return; }
+        r.Started = city.Day - 1;
+        city.TendRaid();
+        Check(r.Surfaced, $"left alone, they burst out of {r.MineName} the next day");
+        await Teleport(new Vector3((float)r.X + 30, 0, (float)r.Z));
+        await Frames(30);
+        main.TendDeepsForTest();
+        await Frames(10);
+        Check(main.RaidBandForTest.Count(e => e.Faction == "hell") == 8, $"on the surface by {r.MineName}, a band of demons");
+        main.HeavenNowForTest();
+        await Frames(10);
+        Check(main.RaidBandForTest.Count(e => e.Faction == "heaven" && e.Foe == "hell") == 5, "the gates of heaven open, and the host comes down on them");
+        foreach (var e in main.RaidBandForTest.Where(e => e.Faction == "hell").ToList()) e.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Frames(10);
+        main.TendDeepsForTest();
+        Check(city.Demons is null, "and when the demons are dead, it's over");
+        Check(DemonRaids.HeavenPercent == 30 && Enumerable.Range(0, 400).Count(i => DemonRaids.HeavenAnswers($"raid-{i}")) is > 80 and < 160, "heaven answers about three raids in ten");
+        p.Stats.Heal(1e9);
+    }
+
+    /// <summary>Korrin let out of his tank, the city shut, his two forms, and back in the tank; Ronacse at the breach, his meteors, and his true face.</summary>
+    async Task UndyingTest()
+    {
+        var p = main.PlayerNode;
+        await Until(() => !p.Downed, 40); // the ring brings them back first, if the last test put them down
+        var hud = main.HudNode;
+        var city = main.Economy;
+        await Teleport(Main.KorrinTankForTest + new Vector3(0, 0, 2.6f));
+        await Frames(20);
+        main.TendUndyingForTest();
+        await Frames(5);
+        var act = main.TankActionForTest(p.GlobalPosition);
+        Check(act?.Verb == "look at the tank" && !city.KorrinFree, $"in the warehouse by the east gate, a tank with someone asleep in it ({act?.Verb})");
+        act?.Act();
+        Check(hud.TalkText.Contains("SUBJECT ONE") && !hud.TalkText.Contains("evil"), "the plate says only SUBJECT ONE: nothing says what he is");
+        Check(hud.Choose("Pull the lever") && hud.Choose("Pull it") && city.KorrinFree && city.KorrinHolds && city.TradeShut("city:tristinwold"), "pull the lever, and he's out, and Tristinwold is his");
+        main.Talk(main.Locals.First(x => x.Npc.Id == Shops.Fishmonger.Id));
+        Check(hud.Choose("Are you open") && !hud.Options.Any(o => o.StartsWith("Let me see")), $"every stall is shut ({hud.TalkText})");
+        hud.EndTalk();
+
+        await Teleport(Main.KorrinSeatForTest + new Vector3(0, 0, 30));
+        await Frames(20);
+        main.TendUndyingForTest();
+        await Frames(10);
+        var k = main.KorrinForTest;
+        Check(k is not null && main.KorrinCourtForTest == 6 && k.Stats.Name.Contains("(level 10)"), $"he holds court on the dock road at level ten, with six thugs round him ({k?.Stats.Name})");
+        if (k is null) return;
+        foreach (var e in main.Enemies().Where(e => e.Stats.Name.StartsWith("Korrin's")).ToList()) e.QueueFree();
+        for (var i = 0; i < 8 && k.State != EnemyState.Dead; i++) { k.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(10);
+        var k2 = main.KorrinForTest;
+        Check(k2 is not null && k2 != k && main.KorrinFinalForTest && k2.Stats.Health >= k2.Stats.MaxHealth * 0.99, "put down, he gets up again in his second form, whole");
+        if (k2 is null) return;
+        for (var i = 0; i < 8 && k2.State != EnemyState.Dead; i++) { k2.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(10);
+        Check(hud.Choose("Drag him back") && !city.KorrinFree && !city.TradeShut("city:tristinwold") && city.KorrinDeaths == 1, "beaten twice, he can be dragged back into the tank, and the stalls open");
+
+        // Ronacse: a paladin in gold by the breach, until he isn't.
+        var vigil = main.PrideVigilForTest;
+        await Teleport(vigil + new Vector3(6, 0, 6));
+        await Frames(20);
+        main.TendUndyingForTest();
+        await Frames(10);
+        var pride = main.PrideForTest;
+        Check(pride is not null && pride.Npc.Name == "Ronacse" && pride.Npc.Occupation.Contains("paladin"), "by the breach, a paladin in gold keeps his vigil");
+        if (pride is null) return;
+        var wasLevel = p.Hero.Level;
+        p.Hero.Level = Math.Max(wasLevel, 30); // seasoned enough to stand a meteor and see his second face
+        p.Fit();
+        p.Stats.Heal(1e9);
+        main.Talk(pride);
+        Check(hud.Choose("I challenge you"), "you can challenge him");
+        await Frames(10);
+        var r = main.PrideBodyForTest;
+        Check(r is not null && r.Stats.Name.Contains("Pride") && r.Stats.Name.Contains("(level 10)"), $"he fights you: {r?.Stats.Name}");
+        if (r is null) return;
+        p.Stats.Heal(1e9);
+        var before = p.Stats.Health;
+        for (var i = 0; i < 40 && main.MeteorsForTest == 0; i++) await Frames(10);
+        Check(main.MeteorsForTest > 0, "he calls a meteor down on you");
+        for (var i = 0; i < 40 && main.MeteorsForTest > 0; i++) await Frames(5);
+        Check(p.Stats.Health < before, $"and it lands ({before - p.Stats.Health:0} harm)");
+        p.Stats.Heal(1e9);
+        for (var i = 0; i < 8 && r.State != EnemyState.Dead; i++) { r.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(10);
+        var r2 = main.PrideBodyForTest;
+        Check(r2 is not null && r2 != r && main.PrideUnboundForTest && r2.Stats.Health >= r2.Stats.MaxHealth * 0.99, "the gold falls away: Pride Unbound, whole again, with the sun at his back");
+        if (r2 is null) return;
+        for (var i = 0; i < 8 && r2.State != EnemyState.Dead; i++) { r2.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(10);
+        Check(city.PrideDeaths == 1 && city.PrideDown && city.PrideLevel == Drifters.LeastLevel + 1, "brought down, he's gone till tomorrow, and a level the stronger for it");
+        (city.PrideDeaths, city.PrideBack, city.KorrinDeaths) = (0, 0, 0);
+        p.Hero.Level = wasLevel;
+        p.Fit();
+    }
+
+    /// <summary>The drifters: at their camps, talking, training, hired to guard and sent against a town, fought to the death and back.</summary>
+    async Task DriftersTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        var city = main.Economy;
+        city.Hires.Clear();
+        var spot = main.DrifterSpotForTest("gornok");
+        await Teleport(spot + new Vector3(8, 0, 6));
+        await Frames(20);
+        main.PlaceDriftersForTest();
+        await Frames(10);
+        var gornok = main.DrifterForTest("gornok");
+        Check(gornok is not null && gornok.Npc.Name == "Gornok Thornek", $"Gornok Thornek keeps the ruined shrine on the south road ({spot.X:0}, {spot.Z:0})");
+        if (gornok is null) return;
+        var said = main.DrifterTalkForTest(gornok).Select(o => o.Item1).ToList();
+        Check(said.Any(t => t.StartsWith("Will you train")) && said.Any(t => t.StartsWith("I have work")) && said.Any(t => t.StartsWith("Spar")) && said.Any(t => t.StartsWith("Fight me")) && said.Any(t => t.StartsWith("Is there anything") || t.StartsWith("Give Gornok")),
+            $"he'll talk, train you, take work, want something, spar or fight ({said.Count} things to say)");
+        var g = Drifters.Get("gornok")!;
+        Check(Drifters.Refuses(g, HireKind.Town, ReputationBook.Capital, p.Company, city.Outlaws) is not null && Drifters.Refuses(g, HireKind.Hero, "Somebody Honest", p.Company, city.Outlaws) is not null
+              && Drifters.Refuses(g, HireKind.GuardCaravan, p.Company, p.Company, city.Outlaws) is null && Drifters.Refuses(Drifters.Get("broly")!, HireKind.Town, ReputationBook.Capital, p.Company, city.Outlaws) is null,
+            "a good one guards your wagon but won't fall on a town or hunt an honest hero; Broly will do anything");
+
+        // Hired to guard the wagon: when the bandits come, he's there, on your side.
+        main.DoCity(CityAction.Hired(new Hire { Id = "test-guard", Drifter = "gornok", Kind = HireKind.GuardCaravan, Target = p.Company, TargetName = p.Company, By = p.Company }));
+        Check(city.HireOf("gornok")?.Id == "test-guard" && city.HireOf("gornok")!.Ends == city.Day + 2, "hired to guard your wagon, for two days");
+        Check(main.DrifterGuards(HireKind.GuardCaravan, p.GlobalPosition + new Vector3(3, 0, 3)) && main.DrifterFoeForTest is { Friendly: true }, "when bandits come for the wagon he's there, on your side, not in your party");
+        main.DrifterFoeForTest?.QueueFree();
+        await Frames(5);
+        main.TendDriftersForTest();
+        city.Hires.Clear();
+
+        // Fought to the death: level ten at the least, and back tomorrow, a level up.
+        main.Talk(gornok);
+        Check(hud.Choose("Fight me") && hud.Choose("Draw"), "you can call him out, to the death");
+        await Frames(10);
+        var foe = main.DrifterFoeForTest;
+        Check(foe is not null && foe.Stats.Name.Contains("(level 10)") && city.DrifterLevel("gornok") == Drifters.LeastLevel, $"he fights at level ten from the first ({foe?.Stats.Name})");
+        if (foe is null) return;
+        for (var i = 0; i < 8 && foe.State != EnemyState.Dead; i++) { foe.TakeHit(foe.Stats.MaxHealth * 2, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(10);
+        Check(city.DrifterDown("gornok") && city.DrifterDeaths.GetValueOrDefault("gornok") == 1 && city.DrifterLevel("gornok") == Drifters.LeastLevel + 1, "killed, he's gone until tomorrow, and comes back a level stronger");
+        main.PlaceDriftersForTest();
+        await Frames(5);
+        Check(main.DrifterForTest("gornok") is null, "and his shrine stands empty meanwhile");
+        city.DrifterBack.Clear();
+
+        // Irohe, paid to fall on Tristinwold: met in its streets, and at the end of his strength, fire.
+        main.DoCity(CityAction.Hired(new Hire { Id = "test-town", Drifter = "irohe", Kind = HireKind.Town, Target = ReputationBook.Capital, TargetName = "Tristinwold", By = "Someone Else" }));
+        Check(city.HireOf("irohe") is not null && city.News.Last().Contains("Irohe"), $"Irohe hired to fall on Tristinwold, and the roads hear of it ({city.News.Last()})");
+        await Teleport(new Vector3(-30, 0, 20));
+        await Frames(20);
+        for (var i = 0; i < 5 && main.DrifterFoeForTest is null; i++) { main.TendDriftersForTest(); await Frames(5); }
+        var irohe = main.DrifterFoeForTest;
+        Check(irohe is not null && irohe.Stats.Name.StartsWith("Irohe"), "in the city's streets, he comes for you");
+        if (irohe is not null)
+        {
+            irohe.TakeHit(irohe.Stats.MaxHealth * 0.5, DamageKind.Sun, AttackKind.Spell, false, p);
+            await Frames(3);
+            main.TendDriftersForTest();
+            await Frames(10);
+            var serpents = main.Enemies().Count(e => e.Kind.Id == "flame_serpent");
+            Check(serpents == 2 && irohe.Scale.X > 1.2f, $"hurt, he becomes a giant of fire and calls up {serpents} burning serpents");
+            for (var i = 0; i < 8 && !p.Downed; i++) { p.TakeHit(p.Stats.MaxHealth * 3, DamageKind.Fire, AttackKind.Spell, false, irohe); await Frames(3); }
+            await Frames(20);
+            Check(city.HireOf("irohe") is null && city.DrifterWins.GetValueOrDefault("irohe") == 1 && city.DrifterLevel("irohe") == Drifters.LeastLevel + 2, "he beats you: the job's done, and he's two levels the stronger for it");
+            await Frames(120);
+        }
+        city.Hires.Clear();
+        (city.DrifterDeaths, city.DrifterWins, city.DrifterBack) = ([], [], []);
     }
 
     /// <summary>The hero's own ship taken out from the berth and steered like a wagon; and a colony on an island nobody lives on.</summary>

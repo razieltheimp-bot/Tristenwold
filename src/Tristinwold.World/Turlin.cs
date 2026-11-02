@@ -112,7 +112,7 @@ public sealed class TurlinBook
         Self.Memory |= Memory.KilledPlayer;
         Self.Wins++;
         Self.Encounters++;
-        Self.Level = Math.Min(20, Self.Level + 1);
+        Self.Level++; // an incomplete immortal has no ceiling
         Self.Power += 40;
         Self.History.Add(new(day, $"Beat {hero}, and took something from it."));
         NextAt = now + Between;

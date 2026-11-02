@@ -80,6 +80,12 @@ public partial class Main
     IEnumerable<(string, Action)> CaravanTalk(Person person)
     {
         var npc = person.Npc;
+        if (_city.TradeShut(npc.HomeId))
+        {
+            yield return ("Can we trade?", () => Say(person, ShutLine));
+            if (npc.Id == Master) foreach (var o in BlockadeTalk(person)) yield return o;
+            yield break;
+        }
         if (npc.Id == Master)
         {
             foreach (var o in YardTalk(person)) yield return o;
@@ -814,6 +820,7 @@ public partial class Main
             e.Provoke(_player);
         }
         _hud.Toast("Bandits on the road! They want the wagon.", 6);
+        DrifterGuards(HireKind.GuardCaravan, at + new Vector3(3, 0, 3));
     }
 
     IEnumerable<string> CaravanLines(Vector3 pos)

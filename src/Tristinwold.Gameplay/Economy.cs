@@ -57,7 +57,7 @@ public sealed class Contract
 /// it's sent on and done to the one city everybody shares (see <see cref="CityEconomy.Apply"/>).
 /// </summary>
 public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0, string? Contract = null, IReadOnlyList<string>? Items = null, Good? Good = null, int N = 0,
-    string? Town = null, TownMarket? Market = null, PlayerStore? Store = null, Hall? Hall = null, double X = 0, double Z = 0)
+    string? Town = null, TownMarket? Market = null, PlayerStore? Store = null, Hall? Hall = null, double X = 0, double Z = 0, Hire? Hire = null, DemonRaid? Raid = null)
 {
     public static CityAction Sold(string item, int crowns) => new("sold", item, crowns);
     public static CityAction Bought(string item, int crowns) => new("bought", item, crowns);
@@ -120,6 +120,28 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction Carpentered(string town, CarpentryWork work, string by) => new("carpentry", by, N: (int)work, Town: town);
     /// <summary>A hero's bounty as it stands: on the list of known outlaws, or (at 0) off it.</summary>
     public static CityAction Outlaw(string who, int bounty) => new("outlaw", who, N: bounty);
+    // The drifters (see Drifters): one taken on for a job, a job done, and one killed.
+    public static CityAction Hired(Hire hire) => new("hire", Hire: hire);
+    public static CityAction HireDone(string id) => new("hire_done", Contract: id);
+    /// <summary>A drifter beat a hero, and the job they were paid for, if any, is done.</summary>
+    public static CityAction DrifterWon(string id, string? job) => new("drifter_won", id, Contract: job);
+    // Korrin and Ronacse (see Undying): let out of the tank, beaten (and maybe put back), and Pride winning or falling.
+    public static CityAction KorrinFreed(string by) => new("korrin_free", by);
+    public static CityAction KorrinFell(string by, bool sealedAway) => new("korrin_fell", by, N: sealedAway ? 1 : 0);
+    public static CityAction KorrinWon() => new("korrin_won");
+    public static CityAction PrideWon(string who) => new("pride_won", who);
+    public static CityAction PrideFell(string by) => new("pride_fell", by);
+    // The demons of the Dark Depths (see DemonRaids): a raid begun, ended (cleared, or not), and their lord struck down or winning.
+    public static CityAction RaidBegan(DemonRaid raid) => new("raid_begin", Raid: raid);
+    public static CityAction RaidEnded(string id, string by, bool cleared) => new("raid_end", by, Contract: id, N: cleared ? 1 : 0);
+    public static CityAction DuragonFell(string by) => new("duragon_fell", by);
+    public static CityAction DuragonWon() => new("duragon_won");
+    // The Iron Syndicate (see Syndicate): a depot burned, a captain bought, food run in, a caravan rescued.
+    public static CityAction DepotBurned(string depot, string by) => new("korrin_depot", by, Contract: depot);
+    public static CityAction CaptainBought(string captain) => new("korrin_bought", Contract: captain);
+    public static CityAction Smuggled(string by) => new("korrin_smuggled", by);
+    public static CityAction Rescued(string by) => new("korrin_rescued", by);
+    public static CityAction DrifterFell(string id, string by) => new("drifter_fell", id, Contract: by);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -666,6 +688,23 @@ public sealed partial class CityEconomy
             case "plant" when a.Contract is not null: return Plant(a.Contract, a.X, a.Z);
             case { } order when order.StartsWith("order_", StringComparison.Ordinal): return OrderAct(a);
             case "outlaw" when a.Item is { } outlaw: return Outlawed(outlaw, a.N);
+            case "hire": return Hired(a.Hire);
+            case "hire_done" when a.Contract is not null: return Hires.RemoveAll(h => h.Id == a.Contract) > 0;
+            case "drifter_fell" when a.Item is not null: return DrifterFell(a.Item, a.Contract);
+            case "drifter_won" when a.Item is not null: return DrifterWon(a.Item, a.Contract);
+            case "korrin_free": return KorrinFreed(a.Item);
+            case "korrin_fell": return KorrinFell(a.Item, a.N == 1);
+            case "korrin_won" when KorrinHolds: KorrinWins++; return true;
+            case "pride_won": return PrideWon(a.Item);
+            case "pride_fell": return PrideFell(a.Item);
+            case "raid_begin": return RaidBegan(a.Raid);
+            case "raid_end": return RaidEnded(a.Contract, a.Item, a.N == 1);
+            case "duragon_fell": return DuragonFell(a.Item);
+            case "duragon_won": DuragonWins++; return true;
+            case "korrin_depot": return DepotBurned(a.Contract, a.Item);
+            case "korrin_bought": return CaptainBought(a.Contract);
+            case "korrin_smuggled": return Smuggled(a.Item);
+            case "korrin_rescued": return Rescued(a.Item);
             case "carpentry" when a.Town is { Length: > 0 and <= 80 } built && Enum.IsDefined((CarpentryWork)a.N): return Carpentered(built, (CarpentryWork)a.N, a.Item);
             case "store_shut" when a.Contract is not null: return Stores.Remove(a.Contract);
             case "store_buy" when a.Contract is not null && a.Item is not null: return StoreBuy(a.Contract, a.Item, crowns);

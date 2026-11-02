@@ -1109,6 +1109,9 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
             e.Provoke(main.PlayerNode);
             _boarders.Add(e);
         }
+        // Whoever's paid a drifter to guard this ship, or to board it.
+        var deck = new Vector3(Stage.X - side * 2f, DeckY + 0.8f, Stage.Z);
+        if (!main.DrifterGuards(HireKind.GuardShip, deck, exact: true)) main.DrifterBoards(new Vector3(Stage.X + side * 2.6f, DeckY + 0.8f, Stage.Z));
     }
 
     void SailAway(Node3D ship)

@@ -18,7 +18,7 @@ public partial class Main
     /// <summary>What someone asks and pays the hero, as a share of the usual, and the same for a town's market.</summary>
     public double RepBuy(Person person) => ReputationBook.BuyFactor(RegardOf(person));
     public double RepSell(Person person) => ReputationBook.SellFactor(RegardOf(person));
-    double RepBuyAt(string place) => ReputationBook.BuyFactor(Repute.Town(place));
+    double RepBuyAt(string place) => ReputationBook.BuyFactor(Repute.Town(place)) * _city.KorrinMarkup;
     double RepSellAt(string place) => ReputationBook.SellFactor(Repute.Town(place));
 
     /// <summary>Whether someone will still serve the hero. If not, they say so, and it stops there.</summary>

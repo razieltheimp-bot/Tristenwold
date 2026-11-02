@@ -42,6 +42,8 @@ public sealed partial class ServerCore
             {
                 City.TendStores(_storeSeconds);
                 City.TendHalls(_storeSeconds);
+                City.TendKorrin();
+                City.TendRaid();
                 _storeSeconds = 0;
                 _cityChanged = City.Stores.Count + City.Halls.Count > 0 || _cityChanged;
             }

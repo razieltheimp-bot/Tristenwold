@@ -192,6 +192,11 @@ public partial class Main
     IEnumerable<(string, Action)> ShopTalk(Person person)
     {
         if (Shops.Of(person.Npc.Id) is not { } shop) yield break;
+        if (_city.TradeShut(person.Npc.HomeId))
+        {
+            yield return ("Are you open?", () => Say(person, ShutLine));
+            yield break;
+        }
         if (shop.Beasts)
         {
             yield return ("Show me your animals.", () => ShowMenagerie(person));

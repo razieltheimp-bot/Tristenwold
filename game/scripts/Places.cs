@@ -40,7 +40,8 @@ public partial class Person : StaticBody3D
     public override void _Ready()
     {
         var look = Look ?? LookFor(Npc, Captive);
-        Figure = (Humans.Enabled ? Tristinwold.Game.Figure.Human(look, Npc.Race, Npc.Sex, Ageing.Stage(Npc.Race, Math.Max(1, Npc.Age)), (ulong)WorldGen.StableHash(Npc.Id)) : null)
+        Figure = (Main.DrifterAvatar(look) is { } drifter ? Tristinwold.Game.Figure.Human(look, drifter) : null)
+            ?? (Humans.Enabled ? Tristinwold.Game.Figure.Human(look, Npc.Race, Npc.Sex, Ageing.Stage(Npc.Race, Math.Max(1, Npc.Age)), (ulong)WorldGen.StableHash(Npc.Id)) : null)
             ?? Tristinwold.Game.Body.For(look);
         AddChild(Figure);
         AddChild(new CollisionShape3D { Shape = new CapsuleShape3D { Radius = 0.38f, Height = 1.75f }, Position = new Vector3(0, 0.88f, 0) });

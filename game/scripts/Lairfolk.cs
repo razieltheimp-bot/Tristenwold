@@ -89,6 +89,7 @@ public static class Lairfolk
         "briar_mother" => BriarMother(),
         "ghost_captain" or "hollow_soldier" => Ghost(look),
         "crystal_basilisk" => Basilisk(),
+        "flame_serpent" => Serpent(),
         "crystal_rat" => CrystalRat(),
         "forge_golem" => ForgeGolem(),
         "duskprowler" => Shadow("ice_wolf", 2.0f, boss: true),
@@ -359,6 +360,17 @@ public static class Lairfolk
         c.Crystallise();
         c.AddChild(Placed(Light("#a060ff", 2.2f, 8, flicker: 0.15f), new Vector3(0, 1.6f, 0)));
         c.AddChild(Placed(Motes(new Color(0.75f, 0.5f, 1f, 0.8f), 0.08f, 24, new Vector3(0.8f, 0.6f, 1.6f), 0.3f), new Vector3(0, 1.2f, 0)));
+        return c;
+    }
+
+    /// <summary>What Irohe calls up out of his fire: a long, lean serpent-dragon of flame, all glow and embers, that flies low.</summary>
+    static Body? Serpent()
+    {
+        if (Creature.Create("dragon.glb", 1.4f, coat: "dragons/red.png", glow: "dragons/red_corrupt_glow.png") is not { } c) return null;
+        foreach (var m in c.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>()) m.Scale = new Vector3(0.6f, 0.6f, 1.9f) * m.Scale; // drawn out long: a serpent, not a dragon
+        Recoat(c, m => { m.EmissionEnabled = true; m.Emission = new Color("#ff6a1a"); m.EmissionEnergyMultiplier = 1.4f; });
+        c.AddChild(Placed(Light("#ff7a2a", 2.4f, 9, flicker: 0.3f), new Vector3(0, 1.2f, 0)));
+        c.AddChild(Placed(Motes(new Color(1f, 0.55f, 0.15f, 0.9f), 0.12f, 40, new Vector3(0.5f, 0.4f, 2f), 1.2f), new Vector3(0, 1f, 0)));
         return c;
     }
 
