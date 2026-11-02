@@ -118,6 +118,8 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction OrderDone(string key) => new("order_done", Contract: key);
     /// <summary>A hero's carpentry finished in a town (see Carpentry).</summary>
     public static CityAction Carpentered(string town, CarpentryWork work, string by) => new("carpentry", by, N: (int)work, Town: town);
+    /// <summary>A hero's bounty as it stands: on the list of known outlaws, or (at 0) off it.</summary>
+    public static CityAction Outlaw(string who, int bounty) => new("outlaw", who, N: bounty);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -663,6 +665,7 @@ public sealed partial class CityEconomy
             case { } hall when hall.StartsWith("hall_", StringComparison.Ordinal): return HallAct(a);
             case "plant" when a.Contract is not null: return Plant(a.Contract, a.X, a.Z);
             case { } order when order.StartsWith("order_", StringComparison.Ordinal): return OrderAct(a);
+            case "outlaw" when a.Item is { } outlaw: return Outlawed(outlaw, a.N);
             case "carpentry" when a.Town is { Length: > 0 and <= 80 } built && Enum.IsDefined((CarpentryWork)a.N): return Carpentered(built, (CarpentryWork)a.N, a.Item);
             case "store_shut" when a.Contract is not null: return Stores.Remove(a.Contract);
             case "store_buy" when a.Contract is not null && a.Item is not null: return StoreBuy(a.Contract, a.Item, crowns);

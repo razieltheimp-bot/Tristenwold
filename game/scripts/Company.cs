@@ -31,6 +31,7 @@ public partial class Main
         TendHallFronts();
         TendGrove();
         CollectOrders();
+        SyncOutlaw();
     }
 
     /// <summary>Mounts past the number of riders go to the Gallows Perch.</summary>
@@ -680,6 +681,7 @@ public partial class Main
         foreach (var o in EngineTalk(person)) yield return o;
         foreach (var o in CarpentryTalk(person)) yield return o;
         foreach (var o in SailTalk(person)) yield return o;
+        foreach (var o in OutlawTalk(person)) yield return o;
         foreach (var o in IsleEngineTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in ForgeTalk(person)) yield return o;

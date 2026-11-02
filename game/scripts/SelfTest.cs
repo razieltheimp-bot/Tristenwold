@@ -2712,6 +2712,12 @@ public partial class SelfTest(Main main) : Node
         await Frames(10);
         Check(main.KeeperInsideForTest is null && main.IndoorsNode is null, "and stays at the counter when you leave");
         await OpenSeaTest();
+        var standing = main.Standing;
+        standing.Wanted(60);
+        Check(main.KnownOutlawsForTest() is var said && said.Contains("Soren") && said.Contains("Wukong") && said.Contains("60 crowns on your head") && main.Economy.Outlaws.GetValueOrDefault(p.Company) == 60,
+            "a hero with a price on their head is on the list of known outlaws, with Soren and Lu Wukong");
+        standing.Bounty = 0;
+        Check(!main.KnownOutlawsForTest().Contains("on your head") && !main.Economy.Outlaws.ContainsKey(p.Company), "and off it once it's paid");
     }
 
     /// <summary>The hero's own ship taken out from the berth and steered like a wagon; and a colony on an island nobody lives on.</summary>
