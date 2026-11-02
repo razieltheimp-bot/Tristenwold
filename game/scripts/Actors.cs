@@ -432,6 +432,7 @@ public partial class Enemy : Fighter
     public void MakeDeviant(Guid id, BattleModifiers mods, string? taunt)
     {
         DeviantId = id;
+        _rank = mods.Rank;
         Taunt = taunt;
         Stats.Apply(mods);
         if (IsDragon) Grow((DragonSize)Math.Min(3, Math.Max((int)mods.Rank, mods.Victories)));
@@ -619,6 +620,12 @@ public partial class Enemy : Fighter
         if (Expires < double.MaxValue && (Expires -= delta) <= 0)
         {
             Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Shock);
+            QueueFree();
+            return;
+        }
+        if (_runningOff > 0 && (_runningOff -= delta) <= 0)
+        {
+            RanOff?.Invoke(this, true);
             QueueFree();
             return;
         }
@@ -945,8 +952,35 @@ public partial class Enemy : Fighter
         return result;
     }
 
+    Tristinwold.Deviant.Rank _rank = Tristinwold.Deviant.Rank.Ringleader;
+    double _runningOff;
+
+    /// <summary>Told when a deviant cut down gets up and runs for it (false), and when it's got clear (true).</summary>
+    public static event Action<Enemy, bool>? RanOff;
+    /// <summary>The self-test fixes the odds of a deviant beating death.</summary>
+    public static double? DeathOdds { get; set; }
+
+    /// <summary>How long a deviant running from death takes to get clear. Catch it first, and it falls for good.</summary>
+    const double RunOffSeconds = 8;
+
+    /// <summary>A deviant's one chance: instead of falling it gets up, badly hurt, and runs. Named bosses get it; the incomplete immortals have their own ways of coming back.</summary>
+    bool BeatsDeath()
+    {
+        if (_runningOff > 0 || State == EnemyState.Dead || Bond is not null || Sparring || HeroesRival || Friendly || (DeviantId is null && !Named)) return false;
+        if (GD.Randf() >= (DeathOdds ?? Tristinwold.Deviant.BeatingDeath.Chance(_rank))) return false;
+        _runningOff = RunOffSeconds;
+        Stats.Heal(Stats.MaxHealth * 0.1);
+        Carrying?.Dismount();
+        (Rooted, Hobbled, Stunned, Think) = (0, 0, 0, null);
+        (_target, _rival, State) = (Player.Local, null, EnemyState.Fleeing);
+        RefreshPlate();
+        RanOff?.Invoke(this, false);
+        return true;
+    }
+
     void Die(Enemy? killer = null, bool byCompany = false)
     {
+        if (BeatsDeath()) return;
         if (State != EnemyState.Dead) Cry(dying: true);
         State = EnemyState.Dead;
         _altitude = 0;

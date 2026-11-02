@@ -79,7 +79,8 @@ public partial class Main
         {
             foreach (var m in g.Everyone) Townsfolk(m.Npc, m.Look);
             var centre = new Vector3((float)g.X, 0, (float)g.Z);
-            City.Zones.Add(new Zone(Cap(g.Hall), centre, 18, 10));
+            City.Zones.Add(new Zone(Cap(g.Hall), centre, CompoundFence, 10));
+            if (g.Calling != Calling.Druid) Compound(g, centre); // the Root Circle's house is the Heartwood itself
             var props = g.Calling switch
             {
                 Calling.Warrior => new[] { ("medieval/props/weaponrack.gltf", -8, 4), ("medieval/props/target.gltf", 6, 9), ("medieval/props/target.gltf", 9, 5), ("medieval/props/flag_red.gltf", 0, -9), ("medieval/props/weaponrack.gltf", -4, -8) },
@@ -335,7 +336,13 @@ public partial class Main
     {
         if (_duel is not { } duel || duel.Foe != foe) return;
         _duel = null;
-        var g = Guilds.OfMember(duel.Rival.Npc.Id)!;
+        if (Guilds.OfMember(duel.Rival.Npc.Id) is not { } g)
+        {
+            CouncilDuelOver(foe, duel.Rival, won);
+            duel.Then?.Invoke(won);
+            Save();
+            return;
+        }
         var record = _guilds.For(g.Calling);
         if (won) { record.DuelsWon++; Raise(g.Calling, 5); }
         else { record.DuelsLost++; _player.Stats.Heal(_player.Stats.MaxHealth * 0.3); }
@@ -348,6 +355,24 @@ public partial class Main
         };
         duel.Then?.Invoke(won);
         Save();
+    }
+
+    /// <summary>Someone other than a guild's rival steps up to a hero, for blood: same footing as a guild duel, and whoever goes down stays down.</summary>
+    void StartBloodDuel(Person rival, Action<bool>? then)
+    {
+        if (_duel is not null) return;
+        _hud.EndTalk();
+        var level = Math.Max(1, _player.Hero.Level);
+        var at = rival.GlobalPosition;
+        var foe = Enemy.Create(Bestiary.Get("bandit_chief"), at with { Y = City.FloorAt(at) + 0.3f });
+        foe.Spar(rival.Npc.Name, 150 + 24 * level, 9 + 1.7 * level);
+        AddEnemy(foe);
+        rival.Visible = false;
+        rival.CollisionLayer = 0;
+        foe.Provoke(_player);
+        _duel = (foe, rival, then);
+        _player.Face(at);
+        _hud.Toast($"{rival.Npc.First} draws. This one's to the death.", 6);
     }
 
     public bool Dueling => _duel is not null;

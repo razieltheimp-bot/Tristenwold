@@ -116,33 +116,39 @@ public class DeviantWorldTests
     }
 
     [Fact]
-    public void Killing_a_deviant_either_ends_it_or_leaves_a_scar_that_teaches_resistance()
+    public void A_deviant_that_is_beaten_is_dead_and_stays_dead()
     {
-        var sawDeath = false;
-        var sawScar = false;
-        for (ulong seed = 0; seed < 100 && !(sawDeath && sawScar); seed++)
+        for (ulong seed = 0; seed < 100; seed++)
         {
             var world = new DeviantWorld(seed);
             var n = BirthRingleader(world);
-            n.Traits.RemoveAll(t => t.Affinities?.ContainsKey(DamageKind.Fire) == true);
             var events = world.RecordBattle(Report(BattleResult.Victory,
                 Enemy(0, killed: true, deviant: n.Id, blow: DamageKind.Fire)));
-
-            if (!n.Alive)
-            {
-                sawDeath = true;
-                Assert.Contains(events, e => e.Kind == WorldEventKind.Slain);
-                Assert.Empty(world.PlanEncounter("The Warrens", [new FormationSlot(0, "Wolf", "Wolf")], Players));
-            }
-            else
-            {
-                sawScar = true;
-                Assert.Single(n.Scars, s => s.Cause == DamageKind.Fire);
-                Assert.Equal(Affinity.Resist, world.ModifiersFor(n).Affinities[DamageKind.Fire]);
-                Assert.True(n.Memory.HasFlag(Memory.Returned));
-            }
+            Assert.False(n.Alive);
+            Assert.Contains(events, e => e.Kind == WorldEventKind.Slain);
+            Assert.DoesNotContain(events, e => e.Kind == WorldEventKind.Returned);
+            Assert.Empty(world.PlanEncounter("The Warrens", [new FormationSlot(0, "Wolf", "Wolf")], Players));
         }
-        Assert.True(sawDeath && sawScar);
+    }
+
+    [Fact]
+    public void One_cut_down_that_gets_up_and_runs_comes_back_scarred_and_resistant()
+    {
+        var world = new DeviantWorld(5);
+        var n = BirthRingleader(world);
+        n.Traits.RemoveAll(t => t.Affinities?.ContainsKey(DamageKind.Fire) == true);
+        var events = world.RecordBattle(Report(BattleResult.EnemiesEscaped, Enemy(0, killed: false, deviant: n.Id, blow: DamageKind.Fire) with { Escaped = true }));
+        Assert.True(n.Alive);
+        Assert.Contains(events, e => e.Kind == WorldEventKind.Returned);
+        Assert.Single(n.Scars, s => s.Cause == DamageKind.Fire);
+        Assert.Equal(Affinity.Resist, world.ModifiersFor(n).Affinities[DamageKind.Fire]);
+    }
+
+    [Fact]
+    public void Its_chance_of_beating_death_runs_from_three_in_ten_to_six_in_ten()
+    {
+        Assert.Equal(0.3, BeatingDeath.Chance(Rank.Stray), 3);
+        Assert.Equal(0.6, BeatingDeath.Chance(Rank.Tyrant), 3);
     }
 
     [Fact]

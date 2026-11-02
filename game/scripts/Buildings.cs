@@ -63,6 +63,28 @@ public static class Buildings
         return best;
     }
 
+    /// <summary>Boards a building's door up: nobody goes in now.</summary>
+    public static void Shut(Node3D building) => Doors.RemoveAll(d => d.Body == building);
+
+    static StandardMaterial3D? _mould;
+
+    /// <summary>Black-green mould creeping over everything, in blotches, as it does on a place nobody airs.</summary>
+    static StandardMaterial3D MouldCoat => _mould ??= new StandardMaterial3D
+    {
+        Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 1, Uv1Triplanar = true, Uv1WorldTriplanar = true, Uv1Scale = Vector3.One * 0.12f,
+        AlbedoTexture = new NoiseTexture2D
+        {
+            Width = 256, Height = 256, Seamless = true, Noise = new FastNoiseLite { Frequency = 0.03f, FractalOctaves = 4 },
+            ColorRamp = new Gradient { Offsets = [0.42f, 0.6f], Colors = [new Color(0.16f, 0.2f, 0.12f, 0), new Color(0.11f, 0.15f, 0.09f, 0.92f)] },
+        },
+    };
+
+    /// <summary>Lets the mould into a building.</summary>
+    public static void Mould(Node3D building)
+    {
+        foreach (var mesh in building.GetChildren().OfType<MeshInstance3D>()) mesh.MaterialOverlay = MouldCoat;
+    }
+
     public static float HeightOf(Node3D building) => building.HasMeta("height") ? (float)building.GetMeta("height") : 8;
 
     /// <summary>Which kind of building suits what a game asked for (the old KayKit names still work).</summary>
@@ -117,6 +139,7 @@ public static class Buildings
             case "store": Store(b, roof); break;
             case "lantern": Lantern(b); break;
             case "pier": Pier(b); break;
+            case "boardwalk": Boardwalk(b); break;
             default: House(b, rng, roof); break;
         }
         return Cache[key] = b.Finish();
@@ -365,9 +388,19 @@ public static class Buildings
         b.Box(Surface.Planks, new Vector3(-24, -0.35f, -2.5f), new Vector3(24, 0, 2.5f));
         for (var x = -23f; x <= 23; x += 4.75f)
             foreach (var z in new[] { -2.3f, 2.3f })
-                b.Beam(new Vector3(x, -4.5f, z), new Vector3(x, x < -16 ? 0 : 0.6f, z), 0.32f, Surface.Timber);
-        b.Beam(new Vector3(-16, 0.55f, 2.4f), new Vector3(24, 0.55f, 2.4f), 0.14f, Surface.Timber);
+                b.Beam(new Vector3(x, -4.5f, z), new Vector3(x, x < -3 ? 0 : 0.6f, z), 0.32f, Surface.Timber);
+        b.Beam(new Vector3(-3, 0.55f, 2.4f), new Vector3(24, 0.55f, 2.4f), 0.14f, Surface.Timber); // and none where the boardwalk crosses
         b.Solid(new Vector3(0, -0.2f, 0), new Vector3(48, 0.4f, 5));
+    }
+
+    /// <summary>The walk across the landward ends of the piers: as long as the five of them are wide, on piles.</summary>
+    static void Boardwalk(Builder b)
+    {
+        b.Box(Surface.Planks, new Vector3(-2.6f, -0.35f, -33), new Vector3(2.6f, 0, 33));
+        for (var z = -32f; z <= 32; z += 6.4f)
+            foreach (var x in new[] { -2.4f, 2.4f })
+                b.Beam(new Vector3(x, -4.5f, z), new Vector3(x, 0, z), 0.32f, Surface.Timber);
+        b.Solid(new Vector3(0, -0.2f, 0), new Vector3(5.2f, 0.4f, 66));
     }
 
     static void MineEntrance(Builder b)

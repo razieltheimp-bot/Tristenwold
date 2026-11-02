@@ -711,7 +711,6 @@ public partial class Main : Node3D
                 {
                     _hud.Log(ev.Text);
                     if (ev.Kind == WorldEventKind.Born && _deviantJson is { } json && DeviantWorld.FromJson(json).Find(ev.DeviantId) is { } born) _roamers.Named(born);
-                    if (ev.Kind == WorldEventKind.Returned) _roamers.Returned(ev.DeviantId);
                 }
                 break;
             case Drops d: foreach (var note in d.Notes) _hud.Toast($"A hidden note from {note.From}: \"{note.Text}\""); break;
@@ -735,7 +734,7 @@ public partial class Main : Node3D
         if (_player.InFight || boss) _fightMusicUntil = _clock + (boss ? 8 : 5); // let the fight music ring on a moment after
         var college = Guilds.Of(Calling.Bard);
         var atCollege = new Vector2((float)college.X - pos.X, (float)college.Z - pos.Z).Length() < 26;
-        var tavern = _area is "The Gallows Perch" or "The Salt Barrel";
+        var tavern = _area is "The Gallows Perch" or "The Salt Barrel" or "The Gilded Flagon" or "The Scholar's Rest";
         var town = new Vector2(pos.X, pos.Z).Length() < City.OuterRadius + 15 || _area is "The Docks";
         sound.SetMood(boss ? "boss" : _clock < _fightMusicUntil ? "battle" : tavern ? "tavern" : atCollege ? "bard" : town ? "town" : "explore");
         var high = _player.Mount is { Airborne: true } || _world.BiomeAt(pos.X, pos.Z) is Biome.Snowfield or Biome.Tundra or Biome.Crags || pos.Y > 45;

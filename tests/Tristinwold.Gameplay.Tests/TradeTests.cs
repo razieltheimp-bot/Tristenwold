@@ -158,7 +158,7 @@ public class TradeTests
             Assert.NotNull(Items.Get(r.Makes));
             Assert.All(r.Needs, n => Assert.NotNull(Items.Get(n.Id)));
         }
-        foreach (var s in Shops.All) Assert.All(s.Sells, id => Assert.True(id == "meat" || Items.Get(id) is not null, $"{s.Name} sells {id}"));
+        foreach (var s in Shops.All.Concat(Shops.Samples)) Assert.All(s.Sells, id => Assert.True(id == "meat" || Items.Get(id) is not null, $"{s.Name} sells {id}"));
         foreach (var kind in Bestiary.All.Select(k => k.Id))
             Assert.All(Loot.Roll(kind, new Rng(3)).Items, i => Assert.NotNull(Items.Get(i.Id)));
         Assert.Equal(Items.All.Count, Items.All.Select(i => i.Id).Distinct().Count());

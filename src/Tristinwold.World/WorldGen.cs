@@ -158,6 +158,7 @@ public sealed class WorldGen
             var band = s.IsCity ? 110 : 45;
             var w = 1 - Noise.SmoothStep(s.Radius, s.Radius + band, s.DistanceTo(x, z));
             if (w > 0) h = Noise.Lerp(h, s.Floor, w);
+            if (s.Kind == SettlementKind.Mine) h += Greyhollow.SmallHill(s, x, z);
         }
         return h;
     }

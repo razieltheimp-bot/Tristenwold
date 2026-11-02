@@ -176,6 +176,7 @@ public static class Models
         if (p.Contains("watch") || p.Contains("barracks") || p.Contains("fort")) return "barracks";
         if (p.Contains("mine") || p.Contains("pit") || p.Contains("undervault")) return "mine";
         if (p.Contains("mill")) return "windmill";
+        if (p.Contains("quarter")) return "home_B";
         if (p.StartsWith("the ") && p.Split(' ').Length == 3) return "tavern"; // "The Hanged Lark", "The Last Toast"
         return "home_B";
     }

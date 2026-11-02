@@ -543,7 +543,7 @@ public partial class Main
                 yield return ("An ale, please. (4 crowns)", () => BuyOne(person, "ale", 4));
                 break;
         }
-        if (Shops.All.FirstOrDefault(s => s.Id == npc.Id) is { Trade: { } trade } && trade != Job.Cooking)
+        if (Shops.Of(npc.Id) is { Trade: { } trade } && trade != Job.Cooking)
             yield return ($"Teach me about {trade.ToString().ToLowerInvariant()}.", () => Say(person, Advice(trade)));
     }
 

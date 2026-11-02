@@ -381,6 +381,9 @@ public sealed record Shop(string Id, string Name, string Keeper, string Greeting
     public static int Offer(Item item) => Math.Max(1, item.Value / 2);
 }
 
+/// <summary>The two trades every town keeps a shop for, besides its tavern; and what a mine, a ranger's shack and a farm sell at the door.</summary>
+public enum TownTrade { Smith, General, Mine, Ranger, Farm }
+
 public static class Shops
 {
     public static readonly Shop Provisions = new("shop:provisions", "Hollis's Provisions", "Hollis Brandt",
@@ -440,7 +443,44 @@ public static class Shops
         "Log, net, rope, stones, wall, slide. In that order, and don't stop. Every lap makes you quicker.",
         ["stamina_brew", "travel_rations", "bread", "healing_draught", "traveller_cloak"], Trade: Job.Agility);
 
-    public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie, Fishmonger, Quarry, Woodlot, SaltBarrel, Allotments, Jeweller, Course];
+    /// <summary>The capital's second smith and general store on the outer ring, by the west gate and the south wall.</summary>
+    public static readonly Shop WestForge = new("shop:west_forge", "The West Gate Forge", "Brannoc Vale",
+        "Hulda has the east gate, I've the west. Same iron, shorter queue.", Smithy.Sells, Forge: true);
+
+    public static readonly Shop Sundries = new("shop:sundries", "Pell's Sundries", "Odette Pell",
+        "Hollis has the road trade. I have the neighbours, and they're fussier.", Provisions.Sells);
+
+    /// <summary>The inner ring's own smith and general store, for people who don't care to go down the ramp.</summary>
+    public static readonly Shop GiltAnvil = new("shop:gilt_anvil", "The Gilt Anvil", "Sera Quillon",
+        "Up here they want their steel to look as good as it cuts. It does both.", Smithy.Sells, Forge: true);
+
+    public static readonly Shop HarrowGoods = new("shop:harrow_goods", "Harrow & Daughters", "Tamsin Harrow",
+        "Four generations on the same corner. Anything you'd want, wrapped if you like.", Provisions.Sells);
+
+    public static IReadOnlyList<Shop> All { get; } = [Provisions, Smithy, Apothecary, Menagerie, Fishmonger, Quarry, Woodlot, SaltBarrel, Allotments, Jeweller, Course, WestForge, Sundries, GiltAnvil, HarrowGoods];
+
+    static readonly Dictionary<string, Shop> Local = [];
+
+    /// <summary>The smith or the general store a town keeps: same goods as the capital's, under its own sign. The same place and trade always gives the same shop.</summary>
+    public static Shop ForTown(string town, TownTrade trade, string name, string keeper)
+    {
+        var id = $"shop:{town}/{trade.ToString().ToLowerInvariant()}";
+        if (Local.TryGetValue(id, out var shop)) return shop;
+        return Local[id] = trade switch
+        {
+            TownTrade.Smith => new Shop(id, name, keeper, "Hot iron and fair prices. What do you need?", Smithy.Sells, Forge: true),
+            TownTrade.General => new Shop(id, name, keeper, "If it keeps you alive on the road, it's on a shelf here somewhere.", Provisions.Sells),
+            TownTrade.Mine => new Shop(id, name, keeper, "Ore's what we've got, and I'll buy what you've dug. Mind the cart.", ["pickaxe", "stone_block", "iron_ore", "coal", "tinderbox", "bread", "healing_draught"], Trade: Job.Mining),
+            TownTrade.Ranger => new Shop(id, name, keeper, "Pelts on the line, meat on the hook, and a few young ones out the back that lost their mothers.", ["meat", "wolf_pelt", "fox_pelt", "rabbit_pelt", "deer_hide", "leather", "snare", "travel_rations", "traveller_cloak", "hunting_crossbow"], Beasts: true),
+            _ => new Shop(id, name, keeper, "All of it grown here, and you can taste it.", ["bread", "potato", "onion", "cabbage", "meat", "ale", "potato_seed", "onion_seed"], Trade: Job.Farming),
+        };
+    }
+
+    /// <summary>What every kind of place out in the country sells, for checking: a shop no one has come to yet is still a shop.</summary>
+    public static IEnumerable<Shop> Samples => Enum.GetValues<TownTrade>().Select(t => ForTown("sample", t, "Sample", "Sample"));
+
+    /// <summary>Any shop by its id, the capital's or a town's.</summary>
+    public static Shop? Of(string id) => All.FirstOrDefault(s => s.Id == id) ?? Local.GetValueOrDefault(id);
 
     /// <summary>A price with a buyer's markup (never less than 1 crown).</summary>
     public static int Charge(int price, double markup) => price < 0 ? price : Math.Max(1, (int)Math.Round(price * markup));

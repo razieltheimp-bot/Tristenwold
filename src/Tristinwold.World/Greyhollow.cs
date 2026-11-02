@@ -51,6 +51,22 @@ public static class Greyhollow
         return rise * (1 - across * along);
     }
 
+    /// <summary>Where a little mine's door stands, north of the middle of the place.</summary>
+    public static double SmallDoorZ(Settlement s) => s.Z - s.Radius * 0.1;
+
+    /// <summary>The same thing in small for a mine out in the country: a heap of rock behind the workings, with a level cutting in to its door.</summary>
+    public static double SmallHill(Settlement s, double x, double z)
+    {
+        var door = SmallDoorZ(s);
+        var round = Math.Sqrt(Sq((x - s.X) / (s.Radius * 1.3)) + Sq((z - (door - 12)) / (s.Radius * 1.1)));
+        if (round >= 1) return 0;
+        var heap = 1 - round;
+        var rise = 10 * Ease(heap) + 0.8 * Math.Sin(x * 0.31) * Math.Sin(z * 0.27) * Ease(heap * 2.5);
+        var across = 1 - Ease((Math.Abs(x - s.X) - 2.4) / 3);
+        var along = 1 - Ease((door - 5.6 - z) / 1.6);
+        return rise * (1 - across * along);
+    }
+
     public static readonly IReadOnlyList<MineRoom> Rooms =
     [
         new("adit", "The Adit", 0, 0, 9, 0),

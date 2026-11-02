@@ -248,6 +248,13 @@ public sealed class Roads
         return Math.Min(2.5, 1 + 0.4 * Math.Min(3, LostLately(r, day)) + 0.25 * Open(town) + (Raiders(r, day) ? 0.3 : 0));
     }
 
+    /// <summary>How much what's on a town's road is hurting its trade: wagons lost lately, camps uncleared, a clan about.</summary>
+    public double Hazard(string town, int day)
+    {
+        var r = Road(town);
+        return Math.Min(0.6, 0.1 * LostLately(r, day) + 0.2 * Open(town) + (Raiders(r, day) ? 0.2 : 0));
+    }
+
     /// <summary>More bandits at each ambush on a road with camps on it.</summary>
     public int ExtraBandits(string town) => Math.Min(3, Open(town));
 

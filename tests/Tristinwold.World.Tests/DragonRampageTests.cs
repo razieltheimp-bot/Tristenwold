@@ -82,7 +82,7 @@ public class DragonRampageTests
         var c = CityEconomy.Start(5);
         c.Roads.Towns["city:greywater"] = new TownMarket { Id = "city:greywater", Name = "Greywater" };
         var rng = new Tristinwold.Deviant.Rng(1);
-        for (var i = 0; i < 60; i++)
+        for (var i = 0; i < 200; i++)
         {
             (c.Treasury, c.Stock[Good.Timber]) = (2000, 100);
             c.Carpenters(rng);

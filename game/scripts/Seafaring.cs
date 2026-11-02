@@ -25,6 +25,8 @@ public partial class Main
 
     /// <summary>The shipyard, on the shore south of the piers: the slipway, its hull, the timber, and the master.</summary>
     public static readonly Vector3 ShipyardAt = new(84, 0, 84);
+    /// <summary>Where Osric stands to be found: where the boardwalk meets the east gate's pier, first thing anyone comes to on the docks.</summary>
+    public static readonly Vector3 ShipwrightPost = new(City.BoardwalkX - 1, 0, 4);
     static readonly Vector3 SlipHull = new(100, 0, 84), TimberStack = new(80, 0, 78);
     static readonly Vector3[] PlankSpots = [new(92, 0, 80.6f), new(96, 0, 80.6f), new(100, 0, 80.6f), new(104, 0, 80.6f)];
     /// <summary>The harbour master's post at the root of the north pier, and the smugglers' corner by the south pier.</summary>
@@ -38,7 +40,7 @@ public partial class Main
             ["the sea", "money"], "brisk", "Signing on, or shipping out?", HarbourPost.X, HarbourPost.Z), "guard");
         Townsfolk(new Npc(Shipwright, "Osric Tarr", Sex.Male, 63, "master shipwright of the Tristinwold yard", "city:tristinwold", "Tristinwold",
             "Osric has built ships on this slipway since he could lift an adze. Everything the pirates hole, he mends; everything the company sails, he built or rebuilt.",
-            ["the sea", "craft"], "gruff", "Mind the adze. What do you want?", ShipyardAt.X, ShipyardAt.Z - 4), "worker");
+            ["the sea", "craft"], "gruff", "Mind the adze. What do you want?", ShipwrightPost.X, ShipwrightPost.Z), "worker");
         Townsfolk(new Npc(Smuggler, "Nell Corran", Sex.Female, 34, "boatwoman of the Drowned Hand", "city:tristinwold", "Tristinwold",
             "Nell rows things out to ships at night and rows other things back. Everyone on the docks knows what she does; nobody says it to the Watch.",
             ["money", "the sea"], "sly", "Nice night for a row. Or isn't it.", Smugglers.X, Smugglers.Z), "traveller");
@@ -66,6 +68,7 @@ public partial class Main
         Models.Place(this, Cargo + "barrel_apples.glb", ShipyardAt + new Vector3(-3, 0, 3), 1.1f, 0.3f, solid: false);
         Sign(ShipyardAt + new Vector3(0, 3.4f, -6), "The Shipyard");
         Sign(HarbourPost + new Vector3(0, 3.2f, -1), "Harbour Master");
+        Sign(ShipwrightPost + new Vector3(0, 3.2f, 0), "Osric Tarr, Shipwright");
         City.Zones.Add(new Zone("The Shipyard", ShipyardAt + new Vector3(6, 0, 0), 18, 9));
     }
 

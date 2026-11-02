@@ -205,7 +205,7 @@ public sealed class DeviantWorld
             else if (report.Result == BattleResult.PartyEscaped)
                 PlayerFled(n, report, events);
             else if (enemy.Escaped)
-                Escaped(n, report, events);
+                Escaped(n, enemy, report, events);
             else if (enemy.Killed)
                 Defeated(n, enemy, report, events);
         }
@@ -261,9 +261,18 @@ public sealed class DeviantWorld
         events.Add(new(WorldEventKind.Triumph, n.Id, $"{n.FullName} laughs as {Party(report)} flee."));
     }
 
-    void Escaped(Deviant n, BattleReport report, List<WorldEvent> events)
+    void Escaped(Deviant n, EnemyReport enemy, BattleReport report, List<WorldEvent> events)
     {
         n.Memory |= Memory.FledFromPlayer;
+        if (enemy.KillingBlow is { } cause) // cut down, and it got up and ran: it comes back scarred, and has learned from it
+        {
+            AddScar(n, cause);
+            n.Memory |= Memory.Returned;
+            GainPower(n, 10, levels: 1);
+            Log(n, $"Was cut down by {Party(report)} but got up and ran, scarred by {cause}.");
+            events.Add(new(WorldEventKind.Returned, n.Id, $"{n.FullName} was cut down, and got up and ran. It will be back, scarred and angrier."));
+            return;
+        }
         GainPower(n, 10, levels: 0);
         Log(n, $"Escaped from {Party(report)} in {report.AreaId}.");
         events.Add(new(WorldEventKind.Escaped, n.Id, $"{n.FullName} escaped. It will be back."));
@@ -275,19 +284,7 @@ public sealed class DeviantWorld
         var killer = enemy.KilledBy ?? report.Players.FirstOrDefault();
         foreach (var p in report.Players) n.Player(p).TimesTheyBeatMe++;
 
-        var cheatChance = n.Rank switch { Rank.Stray => 0.35, Rank.Ringleader => 0.55, Rank.Scourge => 0.65, _ => 0.75 }
-            - 0.2 * n.Scars.Count;
-        if (_rng.Chance(Math.Max(0.05, cheatChance)))
-        {
-            var cause = enemy.KillingBlow ?? DamageKind.Physical;
-            AddScar(n, cause);
-            n.Memory |= Memory.Returned;
-            GainPower(n, 10, levels: 1);
-            Log(n, $"Was cut down by {killer ?? "the party"} but survived, scarred by {cause}.");
-            events.Add(new(WorldEventKind.Returned, n.Id, $"{n.FullName} was not as dead as it looked."));
-            return;
-        }
-
+        // Down and stayed down: it had its chance to run for it in the fight (see BeatingDeath), and it's dead.
         n.Alive = false;
         Log(n, $"Slain by {killer ?? "the party"} in {report.AreaId}.");
         events.Add(new(WorldEventKind.Slain, n.Id, $"{n.FullName} has been slain by {killer ?? "the party"}!"));

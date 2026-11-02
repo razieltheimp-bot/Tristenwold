@@ -60,9 +60,16 @@ public partial class Main
     /// <summary>Where the ring brings the hero back: the quay for a sailor, home for anyone with one, and the Perch for the rest.</summary>
     Vector3 WakeSpot()
     {
-        var at = _sea.OnACrew ? WakeDock.At : _pursuits.House.IsHome ? HousePlotAt + new Vector3(0, 0, 8) : _story.Home is { } home ? new Vector3((float)home.X + 3, 0, (float)home.Z + 3) : City.PlayerStart;
+        var at = _sea.OnACrew ? WakeDock.At : _pursuits.House.IsHome ? HousePlotAt + new Vector3(0, 0, 8) : _story.Home is { } home ? InTown(home) : City.PlayerStart;
         _terrain.EnsureAround(at, 1);
         return _sea.OnACrew ? at : at with { Y = City.FloorAt(at) + 1 };
+    }
+
+    /// <summary>Somewhere clear in a hometown: in a walled place its keep stands in the very middle, so out along the east gate road, which is kept open; in a village by the well.</summary>
+    Vector3 InTown(Hometown home)
+    {
+        var east = _world.Find(home.Id) is { Kind: SettlementKind.City or SettlementKind.Town } s ? s.Radius * 0.82 : -7;
+        return new Vector3((float)(home.X + east), 0, (float)home.Z);
     }
 
     /// <summary>

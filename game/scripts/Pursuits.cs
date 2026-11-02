@@ -637,13 +637,13 @@ public partial class Main
     {
         var h = _pursuits.House;
         var options = new List<(string, Action)>();
-        if (h.Till > 0) options.Add(($"Empty the till ({h.Till} crowns)", () => { _player.Crowns += h.Till; h.Till = 0; Sound.Ui("coin"); Save(); ShopCounter(); }));
+        if (h.Till > 0) options.Add(($"Empty the till ({h.Till} crowns)", () => { _player.Crowns += h.Till; h.Till = 0; Sound.Ui("coin"); SyncStore(); Save(); ShopCounter(); }));
         foreach (var id in h.Chest.Keys.Concat(h.ForSale).Distinct().Order())
-            options.Add(($"{(h.ForSale.Contains(id) ? "Stop selling" : "Sell")} {Items.Get(id)?.Name ?? id} ({Homestead.SellsFor(id)} crowns each, {h.Chest.GetValueOrDefault(id)} in the chest)", () => { if (!h.ForSale.Remove(id)) h.ForSale.Add(id); Save(); ShopCounter(); }));
+            options.Add(($"{(h.ForSale.Contains(id) ? "Stop selling" : "Sell")} {Items.Get(id)?.Name ?? id} ({(Items.Get(id) is { } sold ? _city.StorePrice(sold) : Homestead.SellsFor(id))} crowns each today, a crown under the shops, {h.Chest.GetValueOrDefault(id)} in the chest)", () => { if (!h.ForSale.Remove(id)) h.ForSale.Add(id); Save(); ShopCounter(); }));
         foreach (var id in _player.Pack.Contents.Where(c => c.Item.Kind is not ItemKind.Tool).Select(c => c.Item.Id).Concat(h.Buying).Distinct().Order())
-            options.Add(($"{(h.Buying.Contains(id) ? "Stop buying" : "Buy in")} {Items.Get(id)?.Name ?? id} (pays {Homestead.BuysFor(id)} crowns)", () => { if (!h.Buying.Remove(id)) h.Buying.Add(id); Save(); ShopCounter(); }));
+            options.Add(($"{(h.Buying.Contains(id) ? "Stop buying" : "Buy in")} {Items.Get(id)?.Name ?? id} (pays {(Items.Get(id) is { } bought ? _city.StoreOffer(bought) : Homestead.BuysFor(id))} crowns today, a crown over the shops)", () => { if (!h.Buying.Remove(id)) h.Buying.Add(id); Save(); ShopCounter(); }));
         options.Add(("Back", HouseMenu));
-        var open = h.ForSale.Count + h.Buying.Count == 0 ? "Nothing's on sale and nobody's buying: it's just a counter." : _bonds.Any(Homestead.Free) ? "Your company at home serves whoever comes." : "Nobody's home to serve: leave a companion here.";
+        var open = h.ForSale.Count + h.Buying.Count == 0 ? "Nothing's on sale and nobody's buying: it's just a counter." : _bonds.Any(Homestead.Free) ? "Your company at home serves whoever comes, other heroes too, whether you're here or not." : "Nobody's home to serve: leave a companion here.";
         _hud.Talk("The shop counter", $"{open} {h.Till} crowns in the till.", [.. options]);
     }
 
@@ -695,9 +695,9 @@ public partial class Main
         var h = _pursuits.House;
         var options = new List<(string, Action)>();
         foreach (var (id, n) in h.Chest.OrderBy(kv => kv.Key).ToList())
-            options.Add(($"Take out {Items.Count(id, n)}", () => { _player.Pack.Add(id, n); h.Chest.Remove(id); Save(); Chest(); }));
+            options.Add(($"Take out {Items.Count(id, n)}", () => { _player.Pack.Add(id, n); h.Chest.Remove(id); SyncStore(); Save(); Chest(); }));
         foreach (var (item, n) in _player.Pack.Contents.Where(c => c.Item.Kind is not ItemKind.Tool).ToList())
-            options.Add(($"Put in {Items.Count(item.Id, n)}", () => { _player.Pack.Take(item.Id, n); h.Chest[item.Id] = h.Chest.GetValueOrDefault(item.Id) + n; Save(); Chest(); }));
+            options.Add(($"Put in {Items.Count(item.Id, n)}", () => { _player.Pack.Take(item.Id, n); h.Chest[item.Id] = h.Chest.GetValueOrDefault(item.Id) + n; SyncStore(); Save(); Chest(); }));
         options.Add(("Close the chest", HouseMenu));
         _hud.Talk("Your chest", h.Chest.Count == 0 ? "Empty." : string.Join(", ", h.Chest.Select(kv => Items.Count(kv.Key, kv.Value))), [.. options]);
     }

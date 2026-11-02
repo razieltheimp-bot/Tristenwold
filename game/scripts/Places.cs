@@ -307,13 +307,13 @@ public partial class Places(Main main, WorldGen world) : Node3D
             var colour = Models.Colours[Math.Abs(WorldGen.StableHash(s.Id) % Models.Colours.Length)];
             switch (s.Kind)
             {
-                case SettlementKind.City or SettlementKind.Town: Town(root, s, rng, colour); break;
-                case SettlementKind.Hamlet: Hamlet(root, s, rng, colour); break;
-                case SettlementKind.Farmstead: Farm(root, s, rng, colour); break;
-                case SettlementKind.HuntingCamp: Camp(root, s, rng, 2, null); Building(root, s, "longhall", colour, -s.Radius * 0.5, s.Radius * 0.35, 0.8f, 6); /* the hunters' hall, where they drink and skin */ Prop(root, s, "medieval/props/weaponrack.gltf", 4, -3, 5); Prop(root, s, "medieval/props/target.gltf", -5, 4, 5); break;
+                case SettlementKind.City or SettlementKind.Town: Town(root, s, rng, colour, b); break;
+                case SettlementKind.Hamlet: Hamlet(root, s, rng, colour, b); break;
+                case SettlementKind.Farmstead: Farm(root, s, rng, colour); TownShop(b, root, s, TownTrade.Farm, colour, 0, 0, root.GetChildren().OfType<Node3D>().FirstOrDefault()); break;
+                case SettlementKind.HuntingCamp: Camp(root, s, rng, 2, null); Cottages(root, s, colour, (1.25, 0.3), (1, -1.2)); TownShop(b, root, s, TownTrade.Ranger, colour, 2.5, s.Radius * 0.6, Building(root, s, "longhall", colour, -s.Radius * 0.5, s.Radius * 0.35, 0.8f, 6)); /* the ranger's hall, where they drink and skin, and sell what they've brought in */ Prop(root, s, "medieval/props/weaponrack.gltf", 4, -3, 5); Prop(root, s, "medieval/props/target.gltf", -5, 4, 5); break;
                 case SettlementKind.Inn: Inn(root, s, rng, colour); break;
                 case SettlementKind.Shrine: Shrine(root, s, rng); break;
-                case SettlementKind.Mine: Mine(root, s, rng, colour); break;
+                case SettlementKind.Mine: Mine(root, s, rng, colour, b); break;
                 case SettlementKind.AshbornCamp: Camp(root, s, rng, 4, new Color("#b05040")); break;
                 case SettlementKind.BanditCamp: Camp(root, s, rng, 3, new Color("#a08060")); Palisade(root, s); Prop(root, s, "medieval/props/flag_red.gltf", 0, -6, 6); break;
                 case SettlementKind.Barrow: Barrow(root, s, rng); break;
@@ -322,6 +322,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
             Label(root, Ground(s.X, s.Z) + new Vector3(0, s.IsCity ? 40 : 12, 0), s.Name, s.IsCity ? 0.08f : 0.04f);
         }
         if (s.Id != "city:hollowheart") Fabric(root, s, rng, b);
+        if (TownCouncils.Keeps(s)) Council(root, s, b);
 
         // Its people as they are this year: aged, the old gone, the children born since (see Ageing). Anyone who has
         // left home to follow the company isn't here.
@@ -427,13 +428,9 @@ public partial class Places(Main main, WorldGen world) : Node3D
     void Fabric(Node3D parent, Settlement s, Rng rng, Built b)
     {
         var fabric = main.Economy.FabricOf(s.Id);
+        var colour = Models.Colours[Math.Abs(WorldGen.StableHash(s.Id) % Models.Colours.Length)];
         for (var i = 0; i < fabric.Grown; i++)
-        {
-            var a = i * 2.399 + 0.6;
-            var r = s.Radius * (s.IsCity ? 1.2 : 1.1) + i % 3 * 7;
-            if (world.Height(s.X + Math.Cos(a) * r, s.Z + Math.Sin(a) * r) > WorldGen.WaterLevel + 1)
-                Building(parent, s, i % 4 == 3 ? "barn" : "house", Models.Colours[Math.Abs(WorldGen.StableHash(s.Id) % Models.Colours.Length)], Math.Cos(a) * r, Math.Sin(a) * r, -(float)a + Mathf.Pi / 2);
-        }
+            if (OutPast(s, i) is { } lot) Building(parent, s, i % 4 == 3 ? "barn" : "house", colour, lot.X, lot.Y, -lot.Angle() + Mathf.Pi / 2);
         var homes = _raised.Where(n => IsInstanceValid(n) && Buildings.HeightOf(n) < 14).ToList();
         for (var i = 0; i < Math.Min(fabric.Burnt, homes.Count); i++)
         {
@@ -443,6 +440,17 @@ public partial class Places(Main main, WorldGen world) : Node3D
             home.QueueFree();
             Ruin(parent, at, rng);
         }
+        var abandoned = Math.Min(fabric.Derelict, homes.Count);
+        for (var i = 0; i < abandoned; i++)
+        {
+            var home = homes[i * 5 % homes.Count];
+            homes.Remove(home);
+            Forsake(parent, home, rng, fallen: i % 3 == 2);
+        }
+        if (s.Id == "city:tristinwold") // no plain homes in its own builder to lose: its hard times show as shanties falling in past the wall
+            for (var i = abandoned; i < fabric.Derelict; i++)
+                if (OutPast(s, fabric.Grown + i) is { } lot && Building(parent, s, "ruin", colour, lot.X, lot.Y, 0) is { } shack)
+                    Buildings.Mould(shack);
         if (!s.IsCity && s.Kind != SettlementKind.Hamlet || s.Id == "city:tristinwold" || s.Hostile) return;
         // There's always something going up, or being put right.
         var (ca, cr) = (rng.NextDouble() * Math.Tau, s.Radius * 0.72);
@@ -455,12 +463,65 @@ public partial class Places(Main main, WorldGen world) : Node3D
         Prop(parent, s, "medieval/props/resource_lumber.gltf", Math.Cos(ca) * cr + 4, Math.Sin(ca) * cr + 2, 4, 0.5f);
         string[] names = ["Bram", "Ansel", "Corra", "Tobin", "Mabry", "Hale"];
         var first = names[Math.Abs(WorldGen.StableHash(s.Id) % names.Length)];
-        var talk = fabric.Burnt > 0 ? "Nails are nothing. It's the timber we can't get. Everyone's scared to cut it now." : "Slow work, but it stands longer than you or I will.";
+        var talk = fabric.Burnt > 0 ? "Nails are nothing. It's the timber we can't get. Everyone's scared to cut it now."
+            : fabric.Derelict > 0 ? "Half the street's gone to mould, and nobody's paying to put it right. I'm patching what I can."
+            : fabric.Grown > 0 ? "Plenty of work, with trade like this. They'll be building past the next hill at this rate."
+            : "Slow work, but it stands longer than you or I will.";
         b.People.Add(Add(parent, new Person
         {
             Npc = new Npc($"{s.Id}/carpenter", $"{first} the Carpenter", Tristinwold.World.Sex.Other, 44, "carpenter", s.Id, s.Name, $"{first} has sawdust in everything and a pencil behind each ear, and is usually on the far side of a half-built wall.", ["trade"], "gruff", talk, cx + 3.4, cz),
             Look = "worker", Position = Ground(cx + 3.4, cz),
         }));
+    }
+
+    /// <summary>A couple of small houses where the people of a mine or a camp live, at spots given as shares of its radius.</summary>
+    void Cottages(Node3D parent, Settlement s, string colour, params (double X, double Z)[] spots)
+    {
+        foreach (var (x, z) in spots) Building(parent, s, "cottage", colour, s.Radius * x, s.Radius * z, 0, 6.5f);
+    }
+
+    /// <summary>The i-th lot out past a town's wall, clear of the water, the gate roads and the highway: offset from its centre, or null if there's no such lot.</summary>
+    Vector2? OutPast(Settlement s, int i)
+    {
+        for (var turn = 0; turn < 5; turn++)
+        {
+            var a = i * 2.399 + 0.6 + turn * 0.31;
+            if (Enumerable.Range(0, 4).Any(g => Math.Abs(Mathf.Wrap((float)a - g * Mathf.Pi / 2, -Mathf.Pi, Mathf.Pi)) < 0.2f)) continue;
+            var r = s.Radius * (s.IsCity ? 1.2 : 1.1) + i % 4 * 12;
+            var (x, z) = (Math.Cos(a) * r, Math.Sin(a) * r);
+            if (world.Height(s.X + x, s.Z + z) > WorldGen.WaterLevel + 1 && !world.Highways.OnRoad(s.X + x, s.Z + z)) return new Vector2((float)x, (float)z);
+        }
+        return null;
+    }
+
+    /// <summary>A home people have walked away from: mouldering, boarded up and leaning, its boards coming off; or fallen in altogether.</summary>
+    void Forsake(Node3D parent, Node3D home, Rng rng, bool fallen)
+    {
+        var (at, yaw) = (home.Position, home.Rotation.Y);
+        if (fallen)
+        {
+            home.QueueFree();
+            Buildings.Mould(Buildings.Place(parent, "ruin", at, yaw, (int)(at.X * 11 + at.Z), door: false));
+            return;
+        }
+        Buildings.Shut(home);
+        Buildings.Mould(home);
+        home.Rotation += new Vector3(((float)rng.NextDouble() - 0.5f) * 0.09f, 0, ((float)rng.NextDouble() - 0.5f) * 0.09f);
+        var planks = BuildingMaterials.For(Surface.Planks);
+        var front = Vector3.Back.Rotated(Vector3.Up, yaw);
+        foreach (var slant in new[] { 0.5f, -0.45f }) // boards nailed across the door
+            parent.AddChild(new MeshInstance3D
+            {
+                Mesh = new BoxMesh { Size = new Vector3(2.2f, 0.16f, 0.05f) }, MaterialOverride = planks,
+                Position = at + front * 3.3f + Vector3.Up * 1.6f, Rotation = new Vector3(0, yaw, slant),
+            });
+        for (var i = 0; i < 5; i++) // and the rest of it, coming down
+            parent.AddChild(new MeshInstance3D
+            {
+                Mesh = new BoxMesh { Size = new Vector3(0.22f, 0.06f, 1.6f + (float)rng.NextDouble() * 1.4f) }, MaterialOverride = planks,
+                Position = at + new Vector3((float)rng.NextDouble() * 9 - 4.5f, 0.1f, (float)rng.NextDouble() * 9 - 4.5f),
+                Rotation = new Vector3(((float)rng.NextDouble() - 0.5f) * 0.3f, (float)rng.NextDouble() * Mathf.Tau, 0),
+            });
     }
 
     /// <summary>What's left of a home the dragon's been through.</summary>
@@ -510,7 +571,63 @@ public partial class Places(Main main, WorldGen world) : Node3D
         }
     }
 
-    void Town(Node3D parent, Settlement s, Rng rng, string colour)
+    /// <summary>A place's council, those still living, and its clerk, who sees to the business whoever's left. A member's years can run out like anyone's.</summary>
+    void Council(Node3D parent, Settlement s, Built b)
+    {
+        var members = TownCouncils.Members(s);
+        var economy = main.Economy;
+        if (economy.CouncilOf(s.Id).Members.Count == 0)
+            main.DoCity(CityAction.CouncilMet(s.Id, s.Name, members.Select(m => $"{m.Id}|{m.Name}").ToList()));
+        var years = Calendar.Years(economy.Day);
+        foreach (var m in members)
+        {
+            if (economy.CouncilOf(s.Id).Fallen.Contains(m.Id)) continue;
+            if (m.Age + years >= Ageing.Of(m.Race).Dies) { main.DoCity(CityAction.CouncilFall(s.Id, m.Id)); continue; }
+            b.People.Add(Add(parent, new Person { Npc = m with { Age = (int)(m.Age + years) }, Look = "priest", Position = Ground(m.X, m.Z) }));
+        }
+        var clerk = TownCouncils.Clerk(s);
+        b.People.Add(Add(parent, new Person { Npc = clerk, Look = "townsfolk", Position = Ground(clerk.X, clerk.Z) }));
+    }
+
+    /// <summary>The smith or general store a town keeps: the building (or the one a place of its own already made), its sign, and someone minding it.</summary>
+    void TownShop(Built b, Node3D parent, Settlement s, TownTrade trade, string colour, double angle, double reach, Node3D? already = null)
+    {
+        var rng = new Rng((ulong)WorldGen.StableHash(s.Id) ^ (trade == TownTrade.Smith ? 0x5317UL : 0x6E11UL));
+        var sex = rng.Chance(0.5) ? Sex.Male : Sex.Female;
+        var keeper = Names.Person(rng, sex);
+        var family = keeper.Split(' ')[^1];
+        var shop = Shops.ForTown(s.Id, trade, trade switch
+        {
+            TownTrade.Smith => $"{family}'s Smithy", TownTrade.General => $"{family}'s General Goods", TownTrade.Mine => $"The {s.Name} Stores",
+            TownTrade.Ranger => $"{family}'s Shack", _ => $"{family}'s Produce",
+        }, keeper);
+        var building = already;
+        for (var turn = 0; building is null && turn < 12; turn++) // a free lot, working round the town
+        {
+            var a = angle + turn * Mathf.Tau / 12;
+            if (Enumerable.Range(0, 4).Any(g => Math.Abs(Mathf.Wrap((float)a - g * Mathf.Pi / 2, -Mathf.Pi, Mathf.Pi)) < 0.22f)) continue; // the gate roads stay clear
+            building = Building(parent, s, trade == TownTrade.Smith ? "smithy" : "store", colour, Math.Cos(a) * reach, Math.Sin(a) * reach, -(float)a + Mathf.Pi / 2, 6.5f, shop.Name);
+        }
+        if (building is null) return;
+        var inward = new Vector2((float)s.X - building.GlobalPosition.X, (float)s.Z - building.GlobalPosition.Z);
+        inward = inward.Length() > 1 ? inward.Normalized() : Vector2.Right; // one in the very middle of the place
+        var (x, z) = (building.GlobalPosition.X + inward.X * 7 - inward.Y * 3.5, building.GlobalPosition.Z + inward.Y * 7 + inward.X * 3.5);
+        var (who, story) = trade switch
+        {
+            TownTrade.Smith => ($"smith of {s.Name}", $"{keeper} keeps the forge in {s.Name}, and has mended most of what's broken here at least twice."),
+            TownTrade.General => ($"shopkeeper of {s.Name}", $"{keeper} keeps the general store in {s.Name}, and hears everything first."),
+            TownTrade.Mine => ($"foreman of {s.Name}", $"{keeper} runs {s.Name} and everyone in it, and counts the lamps back up at the end of every shift."),
+            TownTrade.Ranger => ($"ranger of {s.Name}", $"{keeper} knows every trail for a day's walk, and sells what comes off them."),
+            _ => ($"farmer of {s.Name}", $"{keeper} has worked this ground all their life, and sells what's over at the door."),
+        };
+        b.People.Add(Add(parent, new Person
+        {
+            Npc = new Npc(shop.Id, keeper, sex, 34 + rng.Next(30), who, s.Id, s.Name, story, ["trade", "the road"], "warm", shop.Greeting, x, z),
+            Look = trade switch { TownTrade.Smith => "warmaster", TownTrade.Ranger => "hunter", _ => "worker" }, Position = Ground(x, z),
+        }));
+    }
+
+    void Town(Node3D parent, Settlement s, Rng rng, string colour, Built b)
     {
         // A ring of stone wall with a gatehouse on each side.
         var r = (float)s.Radius;
@@ -531,20 +648,27 @@ public partial class Places(Main main, WorldGen world) : Node3D
         }
         // The seat of power in the middle, the named places around the square, and streets of houses.
         if (s.Places.Count > 0) Building(parent, s, "castle", colour, 0, 0, (float)rng.NextDouble() * Mathf.Tau, s.Kind == SettlementKind.City ? 6.5f : 5f, s.Places[0]);
+        var tavern = false;
+        Node3D? forge = null;
         for (var i = 1; i < s.Places.Count; i++)
         {
             var a = i * Mathf.Tau / s.Places.Count + 0.4;
             var kind = Models.BuildingFor(s.Places[i]);
-            Building(parent, s, kind == "castle" ? "tower_B" : kind, colour, Math.Cos(a) * r * 0.34, Math.Sin(a) * r * 0.34, -(float)a + Mathf.Pi / 2, Models.BuildingScale(kind) * 0.9f, s.Places[i]);
+            if (kind == "tavern" && tavern) kind = "home_B"; // one tavern to a town
+            var place = Building(parent, s, kind == "castle" ? "tower_B" : kind, colour, Math.Cos(a) * r * 0.34, Math.Sin(a) * r * 0.34, -(float)a + Mathf.Pi / 2, Models.BuildingScale(kind) * 0.9f, s.Places[i]);
+            tavern |= kind == "tavern" && place is not null;
+            if (kind == "blacksmith") forge ??= place;
         }
-        Building(parent, s, "tavern", colour, Math.Cos(0.8) * r * 0.62, Math.Sin(0.8) * r * 0.62, -0.8f + Mathf.Pi / 2, 6.5f); // every town has somewhere to drink
+        if (!tavern) Building(parent, s, "tavern", colour, Math.Cos(0.8) * r * 0.62, Math.Sin(0.8) * r * 0.62, -0.8f + Mathf.Pi / 2, 6.5f); // every town has somewhere to drink
+        TownShop(b, parent, s, TownTrade.Smith, colour, 2.4, r * 0.62, forge);
+        TownShop(b, parent, s, TownTrade.General, colour, 4, r * 0.62);
         var houses = (int)(r * 0.32f);
         for (var placed = 0; placed < houses;)
         {
             var a = rng.NextDouble() * Mathf.Tau;
             if (Enumerable.Range(0, 4).Any(g => Math.Abs(Mathf.Wrap((float)a - g * Mathf.Pi / 2, -Mathf.Pi, Mathf.Pi)) < 0.22f)) continue; // keep the gate roads clear
             var d = r * (0.56 + rng.NextDouble() * 0.3);
-            Building(parent, s, rng.Pick(["house", "house", "house", "cottage", "smithy", "barn", "tavern"]), colour, Math.Cos(a) * d, Math.Sin(a) * d, -(float)a + Mathf.Pi / 2, 6.5f);
+            Building(parent, s, rng.Pick(["house", "house", "house", "cottage", "barn"]), colour, Math.Cos(a) * d, Math.Sin(a) * d, -(float)a + Mathf.Pi / 2, 6.5f);
             placed++;
         }
         for (var g = 0; g < 4; g++)
@@ -553,11 +677,14 @@ public partial class Places(Main main, WorldGen world) : Node3D
         Lanterns(parent, s, rng, 6);
     }
 
-    void Hamlet(Node3D parent, Settlement s, Rng rng, string colour)
+    void Hamlet(Node3D parent, Settlement s, Rng rng, string colour, Built b)
     {
-        Ring(parent, s, rng, colour, 4 + rng.Next(4), 0.6, 0.9, ["cottage", "cottage", "house", "barn"]);
         Building(parent, s, "well", colour, 0, 0, 0, 5);
-        Building(parent, s, "tavern", colour, Math.Cos(0.5) * s.Radius * 0.42, Math.Sin(0.5) * s.Radius * 0.42, -0.5f + Mathf.Pi / 2, 6); // every hamlet has its alehouse
+        var reach = Math.Max(s.Radius * 0.5, 15);
+        Building(parent, s, "tavern", colour, Math.Cos(0.5) * reach, Math.Sin(0.5) * reach, -0.5f + Mathf.Pi / 2, 6); // every hamlet has its alehouse
+        TownShop(b, parent, s, TownTrade.Smith, colour, 2.4, reach);
+        TownShop(b, parent, s, TownTrade.General, colour, 4, reach);
+        Ring(parent, s, rng, colour, 4 + rng.Next(4), 0.8, 1.1, ["cottage", "cottage", "house", "barn"]);
         Clutter(parent, s, rng, 5, 0.3);
         Lanterns(parent, s, rng, 3);
     }
@@ -595,10 +722,21 @@ public partial class Places(Main main, WorldGen world) : Node3D
         Prop(parent, s, "halloween/lantern_standing.gltf", -2, -1.5, 1.8f, solid: false);
     }
 
-    void Mine(Node3D parent, Settlement s, Rng rng, string colour)
+    void Mine(Node3D parent, Settlement s, Rng rng, string colour, Built b)
     {
-        Building(parent, s, "mine", colour, 0, -s.Radius * 0.1, 0, 9);
-        Building(parent, s, "cottage", colour, s.Radius * 0.6, s.Radius * 0.4, -0.6f, 6.5f);
+        if (Building(parent, s, "mine_portal", colour, 0, -s.Radius * 0.1, 0, 9) is { } mouth) // a way down, for anyone who'll take it
+        {
+            var seed = (int)Math.Abs(WorldGen.StableHash(s.Id) % 1_000_000);
+            main.Shafts[seed] = s;
+            Buildings.Door(mouth, "mineshaft", seed);
+            parent.AddChild(new MeshInstance3D // the dark at the end of the timber sets
+            {
+                Mesh = new QuadMesh { Size = new Vector2(3.4f, 3.4f) }, Position = mouth.Position + new Vector3(0, 1.6f, -5.3f),
+                MaterialOverride = new StandardMaterial3D { AlbedoColor = Colors.Black, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded },
+            });
+        }
+        Cottages(parent, s, colour, (1.1, 0.9), (-1.1, 0.9));
+        TownShop(b, parent, s, TownTrade.Mine, colour, 0.6, s.Radius * 0.7, Building(parent, s, "cottage", colour, s.Radius * 0.6, s.Radius * 0.4, -0.6f, 6.5f));
         Building(parent, s, "tavern", colour, -s.Radius * 0.58, s.Radius * 0.28, 0.9f, 6); // the miners' tap
         Prop(parent, s, "medieval/props/resource_stone.gltf", 4, -6, 6);
         Prop(parent, s, "medieval/props/wheelbarrow.gltf", 2, 5, 5, 0.8f);

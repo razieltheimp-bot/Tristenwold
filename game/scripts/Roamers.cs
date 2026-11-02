@@ -58,12 +58,14 @@ public partial class Roamers(Main main) : Node
     public override void _Ready()
     {
         Enemy.Slain += OnSlain;
+        Enemy.RanOff += OnRanOff;
         main.PlayerNode.WentDown += OnHeroDown;
     }
 
     public override void _ExitTree()
     {
         Enemy.Slain -= OnSlain;
+        Enemy.RanOff -= OnRanOff;
         main.PlayerNode.WentDown -= OnHeroDown;
     }
 
@@ -372,6 +374,20 @@ public partial class Roamers(Main main) : Node
         main.HudNode.Log($"Deviant: {r.Title} beat you, took a name and went roaming.");
     }
 
+    /// <summary>One of ours got clear of the hero: it goes to ground far away, licks its wounds, and starts over, angrier.</summary>
+    void OnRanOff(Enemy body, bool clear)
+    {
+        if (!clear || _out.FirstOrDefault(o => o.Body == body) is not { } o) return;
+        _out.Remove(o);
+        foreach (var add in o.Adds.Where(a => IsInstanceValid(a) && a.State != EnemyState.Dead)) add.Collapse();
+        var r = o.Roamer;
+        var away = (body.GlobalPosition - main.PlayerNode.GlobalPosition) with { Y = 0 };
+        var to = body.GlobalPosition + (away.LengthSquared() > 1 ? away.Normalized() : Vector3.Forward) * 500;
+        (r.StartX, r.StartZ, r.Seed, r.Wins, r.Hunting) = (to.X, to.Z, r.Seed + 1, r.Wins + 1, false);
+        r.Since = main.GuildBook.PlaySeconds;
+        r.PlansUntil = Tactics.Plan(r.Since, _rng);
+    }
+
     void OnSlain(Enemy victim, Enemy? killer, bool byCompany)
     {
         var o = _out.FirstOrDefault(o => o.Body == victim);
@@ -415,21 +431,6 @@ public partial class Roamers(Main main) : Node
         (r.DeviantId, r.Name) = (n.Id, n.FullName);
         if (_out.FirstOrDefault(o => o.Roamer == r) is { } o) Strengthen(o);
         main.HudNode.Log($"{was} is known across the shared world as {r.Title}.");
-    }
-
-    /// <summary>The shared world says one we killed wasn't as dead as it looked: it's out there again, and it remembers.</summary>
-    public void Returned(Guid deviantId)
-    {
-        if (_fallen.FirstOrDefault(r => r.DeviantId == deviantId) is not { } r) return;
-        _fallen.Remove(r);
-        // Back from the dead where it started, and off again on a new path.
-        r = new Roamer
-        {
-            Id = r.Id, RaidId = r.RaidId, Kind = r.Kind, StartX = r.StartX, StartZ = r.StartZ, Name = r.Name, Wins = r.Wins + 1, Seed = r.Seed + 1,
-            Since = main.GuildBook.PlaySeconds, DeviantId = r.DeviantId, Lessons = r.Lessons,
-        };
-        main.RaidLog.Roamers.Add(r);
-        main.HudNode.Toast($"{r.Title} wasn't as dead as it looked. It's out there again, scarred and angrier.", 10);
     }
 
     /// <summary>A line for the quest tracker: whatever is hunting the hero, or else the nearest deviant they might meet.</summary>

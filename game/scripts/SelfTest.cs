@@ -26,6 +26,7 @@ public partial class SelfTest(Main main) : Node
         main.Received += m => { if (m is DeviantAppears a) _appearances.Add(a); };
         main.RoamersNode.Patient = false; // the scripted fights get on with it
         main.RoamersNode.WildDeviants = false; // the scripted fights below lose on purpose: only the hunt's own test makes deviants
+        Enemy.DeathOdds = 0; // and what's cut down in them stays down, bar the one test of running off
         main.TownLifeNode.Stirring = false; // no young thief lifts the scripted hero's purse mid-test: the town's own test turns it on
         try
         {
@@ -46,6 +47,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--growth-only")) { await TheGrowth(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--lair-only")) { await DeviantLairTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--village-only")) { await TheVillageDeck(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--towns-only")) { await LivingTownsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
@@ -2365,6 +2367,81 @@ public partial class SelfTest(Main main) : Node
     }
 
     /// <summary>Hollowheart's heart-trees: walk up each ramp and you come out on the deck, which is wide and solid all the way round.</summary>
+    /// <summary>A town of the world as a hero finds it: its smith and store and council, a home that keeps trading with its owner away, waking in the town, a mine, and a deviant running from death.</summary>
+    async Task LivingTownsTest()
+    {
+        var (p, world, city, hud) = (main.PlayerNode, main.World, main.Economy, main.HudNode);
+        var druitt = world.Find("city:druitt")!;
+        await Teleport(new Vector3((float)(druitt.X + druitt.Radius * 0.82), 0, (float)druitt.Z));
+        await Until(() => main.PlacesNode.IsBuilt(druitt.Id), 8);
+        var people = main.PlacesNode.People.Where(x => x.Npc.HomeId == druitt.Id).ToList();
+        var smith = people.FirstOrDefault(x => x.Npc.Id.EndsWith("/smith"));
+        var store = people.FirstOrDefault(x => x.Npc.Id.EndsWith("/general"));
+        Check(smith is not null && store is not null, $"{druitt.Name} has its smith and its general store ({smith?.Npc.Name}, {store?.Npc.Name})");
+        Check(city.CouncilOf(druitt.Id).Members.Count >= 3 && people.Any(x => x.Npc.Id.EndsWith(TownCouncils.ClerkId)), $"and its council of {city.CouncilOf(druitt.Id).Members.Count}, with a clerk");
+        main.Talk(smith!);
+        Check(hud.Choose("Let me see") && hud.TalkText.Length > 0, "the smith sells you what the Anvil Gate does");
+        hud.EndTalk();
+
+        // Waking there: on the open road, and on your feet, not in the keep.
+        main.Story.Home = new Hometown(druitt.Id, druitt.Name, druitt.X, druitt.Z);
+        await Teleport(main.WakeSpotForTest() with { Y = 0 });
+        p.GlobalPosition = main.WakeSpotForTest();
+        await Frames(60);
+        var ground = City.FloorAt(p.GlobalPosition);
+        Check(Mathf.Abs(p.GlobalPosition.Y - ground) < 2 && p.GlobalPosition.DistanceTo(new Vector3((float)druitt.X, ground, (float)druitt.Z)) > druitt.Radius * 0.5f, $"the ring wakes you on your feet in {druitt.Name} ({p.GlobalPosition.Y - ground:0.0} m off the ground)");
+        main.Story.Home = null;
+
+        // A seat, and the table to yourself.
+        main.ReputeForTest.Towns[druitt.Id] = 4;
+        var clerk = main.PlacesNode.People.First(x => x.Npc.Id.EndsWith(TownCouncils.ClerkId) && x.Npc.HomeId == druitt.Id);
+        main.Talk(clerk);
+        Check(hud.Choose("I'd like to speak") && city.CouncilOf(druitt.Id).Heroes.Contains(p.Company), $"well thought of, you're given a seat ({hud.TalkText}; heroes: {string.Join(",", city.CouncilOf(druitt.Id).Heroes)}; you {p.Company}; options {string.Join(" | ", hud.Options)})");
+        hud.EndTalk();
+        foreach (var id in city.CouncilOf(druitt.Id).Members.Keys.ToList()) main.DoCity(CityAction.CouncilFall(druitt.Id, id));
+        Check(city.CouncilOf(druitt.Id).Ruler == p.Company, "the last at the table, you rule");
+        main.Talk(clerk);
+        Check(hud.Choose("Send out raiders") && hud.Options.Any(o => o.StartsWith("Raid ")), $"and the raiders are yours to send ({hud.Options.Count()} options)");
+        hud.EndTalk();
+
+        // A deviant cut down that wins its roll runs instead of falling, and when it's caught it falls for good.
+        Enemy.DeathOdds = 1;
+        var ran = false;
+        Action<Enemy, bool> saw = (_, clear) => ran |= !clear;
+        Enemy.RanOff += saw;
+        var at = p.GlobalPosition + new Vector3(4, 0, 0);
+        var deviant = Enemy.Create(Bestiary.Get("wolf"), at with { Y = City.FloorAt(at) + 0.5f });
+        main.AddEnemy(deviant);
+        deviant.MakeDeviant(Guid.NewGuid(), new BattleModifiers("Grey Gnash", new Dictionary<Stat, double>(), new Dictionary<DamageKind, Affinity>(), []), null);
+        await Frames(5);
+        deviant.Shelled(deviant.Stats.Health + 1, true);
+        await Frames(10);
+        Check(ran && deviant.State == EnemyState.Fleeing, $"a deviant that beats death gets up and runs ({deviant.State})");
+        deviant.Shelled(deviant.Stats.Health + 1, true);
+        await Frames(10);
+        Enemy.RanOff -= saw;
+        Enemy.DeathOdds = 0;
+        Check(deviant.State == EnemyState.Dead, "catch it, and it falls for good");
+
+        // The boardwalk: from the gate's pier along to the last of them, and dry the whole way.
+        await Teleport(new Vector3(City.BoardwalkX, 0, -28));
+        await Frames(30);
+        Check(City.OnPier(p.GlobalPosition) && !p.Swimming && Mathf.Abs(p.GlobalPosition.Y) < 1, $"the boardwalk carries you to the far pier (height {p.GlobalPosition.Y:0.0})");
+
+        // A mine, walked down.
+        var mine = world.SettlementsNear(0, 0, 4000).First(s => s.Kind == SettlementKind.Mine && !s.Hostile);
+        await Teleport(new Vector3((float)mine.X + 4, 0, (float)mine.Z + 8));
+        await Until(() => main.PlacesNode.IsBuilt(mine.Id), 8);
+        Check(main.PlacesNode.People.Any(x => x.Npc.Id.EndsWith("/mine")), $"{mine.Name}'s foreman keeps trading");
+        var seed = main.Shafts.First(s => s.Value.Id == mine.Id).Key;
+        main.GoInsideForTest("mineshaft", seed, p.GlobalPosition);
+        await Frames(20);
+        Check(main.IndoorsNode is not null && Mathf.Abs(p.GlobalPosition.Y - Indoors.Threshold) < 500, $"you can walk down it ({main.TroubleAt(mine)})");
+        main.GoOutsideForTest();
+        await Frames(10);
+        Check(main.ShaftFoes.Count == 0, "and what's down there stays there when you leave");
+    }
+
     async Task TheVillageDeck()
     {
         var p = main.PlayerNode;
@@ -3431,7 +3508,7 @@ public partial class SelfTest(Main main) : Node
         if (at is null || v is null) { Check(false, "a voyage under way"); return; }
         (v.Out, v.Home) = ([0.05], []);
         await Until(() => p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, 8);
-        Check(p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, $"aboard the Gull, standing on her deck out at sea ({v.LegSeconds / 60:0} minutes to Druitt)");
+        Check(p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, $"aboard the Gull, standing on her deck out at sea ({v.LegSeconds / 60:0} minutes to Druitt; hero at {p.GlobalPosition}, deck {AtSea.DeckY}, floor {p.IsOnFloor()}, swimming {p.Swimming}, downed {p.Downed}, seat {p.Seat is not null}, indoors {main.IndoorsNode is not null})");
         await Until(() => at.Pending > 0, 10);
         Check(at.Pending > 0 && hud.Tracked.Any(t => t.Contains("On deck:")), "there's work on deck, and the tracker says what");
         at.WorkForTest();
@@ -3566,9 +3643,12 @@ public partial class SelfTest(Main main) : Node
         Check(hud.Choose("Sell me a draught horse") && main.Bonds.Any(b => b.Steed && b.Rideable), $"and a draught horse: {main.Bonds.FirstOrDefault(b => b.Steed)?.Name}");
         hud.EndTalk();
         await Frames(30);
+        Check(main.Bonds.Any(b => b.Hitched) && !main.Bonds.Any(b => b.Steed && b.Following), "a horse you buy for the wagon goes in its shafts");
+        main.UnhitchForTest();
+        await Frames(30);
         main.RideNow();
         await Frames(20);
-        Check(p.Mount is { } mount && mount.Bond?.Steed == true, $"you can ride your horse ({p.Mount?.Stats.Name})");
+        Check(p.Mount is { } mount && mount.Bond?.Steed == true, $"unhitched, you can ride your horse ({p.Mount?.Stats.Name})");
         var from = p.GlobalPosition;
         if (p.Mount is { } m)
         {
@@ -3583,7 +3663,12 @@ public partial class SelfTest(Main main) : Node
         await Frames(10);
         await Teleport(Main.YardAt + new Vector3(0, 0, 4));
         main.Talk(Who("tristinwold/caravans"));
-        Check(hud.Choose("Hitch up my wagon") && trade.WagonOut && trade.Capacity == TradeBook.PerHorse, $"hitched: room for {trade.Capacity} loads");
+        Check(hud.Choose("Hitch up my wagon") && !trade.WagonOut && trade.Capacity == 0 && hud.TalkText.Contains("can't carry you and pull"), "the horse at your side can't also pull the wagon");
+        hud.EndTalk();
+        main.HitchForTest();
+        await Frames(10);
+        main.Talk(Who("tristinwold/caravans"));
+        Check(hud.Choose("Hitch up my wagon") && trade.WagonOut && trade.Capacity == TradeBook.PerHorse && main.WagonNode is { Teamed: true }, $"hitched: room for {trade.Capacity} loads");
         hud.EndTalk();
         main.Talk(Who("tristinwold/caravans"));
         hud.Choose("Load goods");

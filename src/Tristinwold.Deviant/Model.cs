@@ -5,6 +5,12 @@ namespace Tristinwold.Deviant;
 /// <summary>Place in the hierarchy. Higher ranks hit harder and are harder to kill for good.</summary>
 public enum Rank { Stray = 0, Ringleader = 1, Scourge = 2, Tyrant = 3 }
 
+/// <summary>The chance a deviant cut down gets up and runs for it instead of falling: from three in ten for a stray to six in ten for a tyrant.</summary>
+public static class BeatingDeath
+{
+    public static double Chance(Rank rank) => 0.3 + 0.1 * (int)rank;
+}
+
 /// <summary>The soldiers of its own kind each rank has at its back.</summary>
 public static class Bands
 {

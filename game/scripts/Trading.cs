@@ -191,10 +191,11 @@ public partial class Main
     /// <summary>What a shopkeeper offers besides talk: buying, selling, and their forge or bench.</summary>
     IEnumerable<(string, Action)> ShopTalk(Person person)
     {
-        if (Shops.All.FirstOrDefault(s => s.Id == person.Npc.Id) is not { } shop) yield break;
+        if (Shops.Of(person.Npc.Id) is not { } shop) yield break;
         if (shop.Beasts)
         {
             yield return ("Show me your animals.", () => ShowMenagerie(person));
+            if (shop != Shops.Menagerie) goto wares; // a ranger's shack keeps a few, and sells everything else too
             yield return ("I need meat for my beasts.", () => Buy(person, shop));
             yield return ("How do I tame one in the wild?", () => Say(person,
                 "Find a young one with none of its grown kin close by: they won't let you near it, and they'll come for you. " +
@@ -204,6 +205,7 @@ public partial class Main
                 "The only thing you can't tame is a grown beast. Or a dragon, unless you find the egg yourself."));
             yield break;
         }
+    wares:
         yield return ("Let me see what you have.", () => Buy(person, shop));
         yield return ("I've things to sell.", () => Sell(person, shop));
         if (shop.Forge) yield return ("Can I use your forge?", () => ShowCraft(Job.Smithing, () => Say(person, "Mind the anvil.")));
@@ -258,7 +260,7 @@ public partial class Main
         var options = Menagerie.Stock.Select(o => ($"{o.Name}, {Menagerie.Price(o, level, _player.Markup)} crowns. Danger {Menagerie.Stars(o.Danger)}, training {Menagerie.Stars(o.Training)}. {o.Text}",
             (Action)(() => { if (BuyPet(o) is not null) Say(person, "Feed it, and don't let it chew the rope."); }))).ToList();
         options.Add(("Not today.", () => Say(person, "They'll be here. Most of them.")));
-        _hud.Talk($"Wren's Menagerie ({_player.Crowns} crowns)",
+        _hud.Talk($"{Shops.Of(person.Npc.Id)?.Name ?? "The menagerie"} ({_player.Crowns} crowns)",
             $"Danger is what it grows into; training is how much patience it takes. Your beast taming: {level}" +
             $"{(level > 1 ? $", so {3 * (level - 1)}% off" : "")}. They follow you ({(FreePets ? "as many as you like, for one of your calling" : $"up to {PartyRules.MaxPets} at a time")}; the rest wait at the Gallows Perch) " +
             "and grow up at your side. Dragons aren't for sale: no one sells a dragon.", [.. options]);
@@ -320,6 +322,18 @@ public partial class Main
         {
             Townsfolk(new Npc(shop.Id, shop.Keeper, sex, age, who, "city:tristinwold", "Tristinwold", story, ["trade", "the road"], temper, shop.Greeting, at.X, at.Z), look);
             Market.Stall(this, at, shop);
+        }
+        var fronts = new (Shop Shop, Vector3 At, string Look, Sex Sex, int Age, string Who, string Story, string Temper)[]
+        {
+            (Shops.WestForge, City.WestForge, "warmaster", Sex.Male, 49, "smith of the West Gate", "Brannoc Vale came to the city to shoe the Watch's horses and stayed for the arguments with Hulda Ironhand over whose steel is better.", "dry"),
+            (Shops.Sundries, City.Sundries, "worker", Sex.Female, 58, "shopkeeper", "Odette Pell keeps the south wall's corner shop, and with it a fair record of who owes what to whom.", "warm"),
+            (Shops.GiltAnvil, City.GiltAnvil, "warmaster", Sex.Female, 41, "smith of the inner ring", "Sera Quillon makes blades for people who'd rather be seen with one than use it, and is too proud to make them badly.", "blunt"),
+            (Shops.HarrowGoods, City.HarrowGoods, "worker", Sex.Female, 63, "shopkeeper", "Tamsin Harrow and her daughters supply half the inner ring's households, and know what the other half are eating.", "kindly"),
+        };
+        foreach (var (shop, at, look, sex, age, who, story, temper) in fronts)
+        {
+            var by = City.Frontage(at);
+            Townsfolk(new Npc(shop.Id, shop.Keeper, sex, age, who, "city:tristinwold", "Tristinwold", story, ["trade", "the road"], temper, shop.Greeting, by.X, by.Z), look);
         }
     }
 }

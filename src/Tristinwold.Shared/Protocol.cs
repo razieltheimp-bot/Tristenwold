@@ -132,7 +132,7 @@ public sealed record GroupView(string Player, string Area, IReadOnlyList<string>
 
 public static class Wire
 {
-    public const int ProtocolVersion = 9; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place
+    public const int ProtocolVersion = 10; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council
     public const int DefaultPort = 7777;
     public const int MaxLineBytes = 4 * 1024 * 1024; // a big deviant world is still well under this
 

@@ -24,8 +24,9 @@ public partial class Main
     /// <summary>Companions at home get on with the work there; the chronicle says what's come of it.</summary>
     void HomeWork(double seconds)
     {
-        foreach (var (id, n) in Homestead.Tick(_pursuits.House, _bonds.Count(Homestead.Free), seconds))
-            _hud.Log($"At home: {Items.Count(id, n).ToLowerInvariant()} in the chest.");
+        if (!_sharedCity) _city.TendStores(seconds); // on a server its own clock runs them, whoever's online
+        SyncStore();
+        TendStoreFronts();
     }
 
     /// <summary>Mounts past the number of riders go to the Gallows Perch.</summary>
@@ -67,6 +68,7 @@ public partial class Main
     void SetUpCompany()
     {
         Enemy.Slain += OnSlain;
+        Enemy.RanOff += OnRanOff;
         Enemy.Felled += OnFelled;
         Enemy.Turned += OnTurned;
         Enemy.SparEnded += OnSparEnded;
@@ -80,6 +82,7 @@ public partial class Main
     void TearDownCompany()
     {
         Enemy.Slain -= OnSlain;
+        Enemy.RanOff -= OnRanOff;
         Enemy.Felled -= OnFelled;
         Enemy.Turned -= OnTurned;
         Enemy.SparEnded -= OnSparEnded;
@@ -431,8 +434,23 @@ public partial class Main
     }
 
 
+    /// <summary>A deviant cut down gets up and runs: the hero hears it, and if it gets clear the shared world knows it ran.</summary>
+    void OnRanOff(Enemy runner, bool clear)
+    {
+        if (!clear) { _hud.Toast($"{runner.Stats.Name} isn't finished. It staggers up and runs! Catch it before it gets clear.", 6); return; }
+        _tracker.RanOff(runner.Id, runner.LastBlow);
+        _hud.Toast($"{runner.Stats.Name} got away. It'll be back.", 6);
+        _hud.Log($"Deviant: {runner.Stats.Name} was cut down, and got up and ran.");
+    }
+
     void OnSlain(Enemy victim, Enemy? killer, bool byCompany)
     {
+        if (victim.DeviantId is { } deviant) // whoever struck the blow, a pet, a golem, a spell: the shared world hears it's dead, not that it got away
+        {
+            _tracker.Engaged(victim.Id, victim.Kind.Id, victim.Kind.Name, victim.Stats.MaxHealth, ToNumerics(victim.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, deviant);
+            _tracker.Died(victim.Id, byCompany ? _player.Company : null, _clock);
+            Callable.From(Save).CallDeferred();
+        }
         if (victim.Bond is not null || !byCompany) return;
         if (victim.SiteId is { } site)
         {
@@ -649,6 +667,10 @@ public partial class Main
         foreach (var o in ShadowTalk(person)) yield return o;
         foreach (var o in MineTalk(person)) yield return o;
         foreach (var o in ForestTalk(person)) yield return o;
+        foreach (var o in CouncilTalk(person)) yield return o;
+        foreach (var o in HireTalk(person)) yield return o;
+        foreach (var o in ShaftTalk(person)) yield return o;
+        foreach (var o in StoreTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in ForgeTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;
@@ -848,9 +870,9 @@ public partial class Main
             // A grown horse with a wagon of yours is hitched to it or unhitched to ride, rather than sent home and called.
             if (bond.Steed && bond.Rideable && _trade.OwnWagon)
             {
-                if (bond.Hitched) { if (MayFollow(bond)) options.Add(($"Unhitch {bond.Name} to ride", () => { Unhitch(bond); Save(); ShowParty(); })); }
-                else if (bond.Following) options.Add(($"Hitch {bond.Name} to the wagon", () => { HitchToWagon(bond); Save(); ShowParty(); }));
-                else if (MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
+                if (bond.Hitched) { if (MayFollow(bond)) options.Add(($"Unhitch {bond.Name} to ride", () => { Unhitch(bond); Save(); ShowParty(); })); continue; }
+                if (_player.Mount?.Bond != bond && _bonds.Count(b => b.Hitched) < TradeBook.MaxHorses) options.Add(($"Hitch {bond.Name} to the wagon", () => { HitchToWagon(bond); Save(); ShowParty(); })); // what you're riding can't pull as well
+                if (!bond.Following && MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
                 continue;
             }
             if (bond.Following) options.Add(($"Send {bond.Name} home", () => { bond.Following = false; var body = BodyOf(bond); if (body is not null) { _companions.Remove(body); body.QueueFree(); } StableSpareMounts(); Save(); ShowParty(); }));

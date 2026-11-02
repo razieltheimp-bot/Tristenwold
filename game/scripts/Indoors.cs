@@ -45,6 +45,7 @@ public partial class Main
     /// <summary>A room doesn't outlast the hero leaving it some other way (the ring), nor a game that was closed in it.</summary>
     void TendIndoors()
     {
+        TendShaft();
         var above = _player.GlobalPosition.Y > Indoors.Threshold;
         if (!above && _indoors is not null)
         {
@@ -88,13 +89,14 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         "keep" => (18, 18, 6),
         "tower" => (8, 8, 4),
         "hollow" => (9, 9, 3.2f),
+        "mineshaft" => (12, 32, 4.5f),
         _ => (8, 9, 3),
     };
 
     public static string Called(string kind) => kind switch
     {
         "longhall" => "long hall", "smithy" => "smithy", "barn" => "barn", "church" => "church", "keep" => "keep", "tower" => "tower",
-        "tavern" => "tavern", "cottage" => "cottage", "hollow" => "living hollow", _ => "house",
+        "tavern" => "tavern", "cottage" => "cottage", "hollow" => "living hollow", "mineshaft" => "mine", _ => "house",
     };
 
     public Vector3 WayIn => Stage + new Vector3(0, 0.6f, Plan(kind).Deep / 2 - 1.6f);
@@ -106,10 +108,11 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.Below = p => p.Y > Threshold ? Stage.Y : null;
         City.BelowName = p => p.Y > Threshold ? $"Inside the {Called(kind)}" : null;
         City.ShutOutSky(new Color("#b0a090"), 0.3f, 0.002f);
+        var shaft = kind == "mineshaft";
         var stone = kind is "church" or "keep" or "tower" or "smithy";
-        Slab(Vector3.Down * 0.1f, new Vector3(wide, 0.2f, deep), stone ? Surface.Stone : Surface.Planks);
-        Slab(Vector3.Up * (high + 0.1f), new Vector3(wide, 0.2f, deep), Surface.Timber);
-        var walls = stone ? Surface.Stone : kind == "hollow" ? Surface.Timber : Surface.Plaster;
+        Slab(Vector3.Down * 0.1f, new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : stone ? Surface.Stone : Surface.Planks);
+        Slab(Vector3.Up * (high + 0.1f), new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : Surface.Timber);
+        var walls = shaft ? Surface.DarkStone : stone ? Surface.Stone : kind == "hollow" ? Surface.Timber : Surface.Plaster;
         foreach (var side in new[] { -1, 1 })
         {
             Slab(new Vector3(side * (wide / 2 + 0.1f), high / 2, 0), new Vector3(0.2f, high, deep), walls);
@@ -128,6 +131,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.Below = null;
         City.BelowName = null;
         City.LetInSky();
+        if (kind == "mineshaft") main.LeftTheShaft();
     }
 
     static Material Photo(Surface s)
@@ -177,6 +181,18 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         var rng = new Rng((ulong)Math.Abs(seed) + 11);
         switch (kind)
         {
+            case "mineshaft":
+                for (var z = -deep / 2 + 4; z < deep / 2 - 3; z += 7) // props, a lamp to each pair, and the odd cart and heap
+                {
+                    foreach (var side in new[] { -1f, 1f })
+                        Slab(new Vector3(side * (wide / 2 - 0.3f), high / 2, z), new Vector3(0.4f, high, 0.4f), Surface.Timber);
+                    Part(new Vector3(0, high - 0.2f, z), new Vector3(wide, 0.35f, 0.4f), Surface.Timber);
+                    Light(new Vector3(wide / 2 - 0.8f, 2.4f, z), 0.9f, 9);
+                    Put("ph:crate.glb", -wide / 2 + 1.2f, z + 2, 1, (float)rng.NextDouble() * Mathf.Tau);
+                }
+                Sign(new Vector3(0, 3, deep / 2 - 3), "Mind your head");
+                main.PeopleTheShaft(this, seed, Stage + new Vector3(0, 0.4f, -deep / 2 + 5));
+                break;
             case "tavern" or "longhall":
                 Hearth(deep);
                 Slab(new Vector3(-wide / 2 + 1, 0.55f, -1), new Vector3(1, 1.1f, 7), Surface.Timber); // the bar

@@ -16,6 +16,7 @@ public sealed class EncounterTracker(
 {
     sealed class Tracked
     {
+        public bool RanOff;
         public required int Slot;
         public required long Id;
         public required string Kind;
@@ -90,6 +91,14 @@ public sealed class EncounterTracker(
         t.LastFight = now;
     }
 
+    /// <summary>Cut down, and it got up and ran off, and got clear.</summary>
+    public void RanOff(long id, DamageKind blow)
+    {
+        if (!_byId.TryGetValue(id, out var t) || t.Killed) return;
+        t.RanOff = true;
+        t.Blow = blow;
+    }
+
     public void Downed()
     {
         if (_active) _downed = true;
@@ -108,7 +117,7 @@ public sealed class EncounterTracker(
         }
 
         var anyFighting = false;
-        foreach (var t in _byId.Values.Where(t => !t.Killed))
+        foreach (var t in _byId.Values.Where(t => !t.Killed && !t.RanOff))
         {
             if (posOf(t.Id) is { } p) t.Last = p;
             if (stillFighting(t.Id)) { t.LastFight = now; anyFighting = true; }
@@ -120,7 +129,7 @@ public sealed class EncounterTracker(
     void Finish()
     {
         var all = _byId.Values.OrderBy(t => t.Slot).ToList();
-        var alive = all.Where(t => !t.Killed).ToList();
+        var alive = all.Where(t => !t.Killed && !t.RanOff).ToList();
         BattleResult result;
         if (_downed) result = BattleResult.Defeat;
         else if (alive.Count == 0) result = BattleResult.Victory;
@@ -135,9 +144,9 @@ public sealed class EncounterTracker(
         onEnd(new BattleReport(_area, result, all.Select(t => new EnemyReport(
             t.Slot, t.Kind, t.Species, (int)Math.Round(t.MaxHealth),
             Killed: t.Killed,
-            Escaped: !t.Killed && result == BattleResult.EnemiesEscaped,
+            Escaped: t.RanOff || !t.Killed && result == BattleResult.EnemiesEscaped,
             DeviantId: t.DeviantId,
-            KillingBlow: t.Killed ? t.Blow ?? DamageKind.Physical : null,
+            KillingBlow: t.Killed || t.RanOff ? t.Blow ?? DamageKind.Physical : null,
             KilledBy: t.Killed ? t.KilledBy : null,
             BaseForm: t.Kind)).ToList(), [company], PartyLevel: 5));
 

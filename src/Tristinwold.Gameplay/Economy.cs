@@ -12,6 +12,8 @@ public sealed class TownFabric
     public int Burnt { get; set; }
     /// <summary>New buildings its carpenters have raised over the years.</summary>
     public int Grown { get; set; }
+    /// <summary>Homes left empty when times turned hard: mouldering, boarded up, falling apart, until the good years mend them.</summary>
+    public int Derelict { get; set; }
 }
 
 /// <summary>The Dread Pirate Soren at a town's gates: which, the day he'll have finished with it if nobody stops him, and whether Lu Wukong has come to stand against him.</summary>
@@ -55,7 +57,7 @@ public sealed class Contract
 /// it's sent on and done to the one city everybody shares (see <see cref="CityEconomy.Apply"/>).
 /// </summary>
 public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0, string? Contract = null, IReadOnlyList<string>? Items = null, Good? Good = null, int N = 0,
-    string? Town = null, TownMarket? Market = null)
+    string? Town = null, TownMarket? Market = null, PlayerStore? Store = null)
 {
     public static CityAction Sold(string item, int crowns) => new("sold", item, crowns);
     public static CityAction Bought(string item, int crowns) => new("bought", item, crowns);
@@ -85,6 +87,20 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction WebLost(string holder) => new("web_lost", Item: holder);
     /// <summary>Lu Wukong killed (he'll be back, and less), and who did it.</summary>
     public static CityAction WukongKilled(string by) => new("wukong_killed", Item: by);
+    // The towns' councils (see TownCouncil): a place's council met, a hero seated, a member dead, a raid sent, a purse emptied by whoever rules there.
+    public static CityAction CouncilMet(string town, string name, IReadOnlyList<string> members) => new("council_met", Contract: name, Items: members, Town: town);
+    public static CityAction CouncilSeat(string town, string hero) => new("council_seat", Item: hero, Town: town);
+    public static CityAction CouncilFall(string town, string member) => new("council_fall", Item: member, Town: town);
+    public static CityAction TownRaid(string from, string on, RaidAim aim, string? by) => new("town_raid", Item: from, Contract: by, N: (int)aim, Town: on);
+    public static CityAction CouncilPurse(string town, string ruler) => new("council_purse", Item: ruler, Town: town);
+    // Heroes' homes and shops (see PlayerStore): one set up or changed by its owner, shut, and a visitor trading at the counter.
+    public static CityAction StoreSet(PlayerStore store) => new("store_set", Store: store);
+    // What a guild can be hired to do to a town: mend an empty home, or a verse against its name.
+    public static CityAction Mended(string town) => new("mended", Town: town);
+    public static CityAction TownName(string town, double by) => new("town_name", N: (int)Math.Round(by * 10), Town: town);
+    public static CityAction StoreShut(string owner) => new("store_shut", Contract: owner);
+    public static CityAction StoreBuy(string owner, string item, int crowns) => new("store_buy", item, crowns, owner);
+    public static CityAction StoreSell(string owner, string item, int crowns) => new("store_sell", item, crowns, owner);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -104,7 +120,7 @@ public sealed class RunningEvent
 /// works that make a trade better for good. A hero who helps is known for it, and shopkeepers treat them better.
 /// A day is ten minutes of play.
 /// </summary>
-public sealed class CityEconomy
+public sealed partial class CityEconomy
 {
     public const double DaySeconds = 10 * 60;
 
@@ -226,7 +242,9 @@ public sealed class CityEconomy
         return $"Soren has sacked {PlaceName(siege.Town)} and sailed. The carpenters have their work cut out.";
     }
 
-    public const int RampageEvery = 3, CarpentersEvery = 5, BurnedAtOnce = 3, GrowthCap = 12, RebuildTimber = 12;
+    public const int RampageEvery = 3, CarpentersEvery = 5, BurnedAtOnce = 3, GrowthCap = 24, DerelictCap = 10, RebuildTimber = 12;
+    /// <summary>How well a town has to be doing for carpenters to come, and how badly for people to start leaving.</summary>
+    public const double Thrives = 0.3, Fails = -0.3;
     public const double SlumpBlow = 0.3, MostSlump = 0.6;
     /// <summary>How much each town lives by wood, which is what the dragon hunts. Hollowheart isn't here: it's never cut a tree.</summary>
     public static readonly IReadOnlyDictionary<string, int> WoodHunger = new Dictionary<string, int> { ["city:druitt"] = 12, ["city:tristinwold"] = 7, ["city:greywater"] = 5 };
@@ -250,7 +268,25 @@ public sealed class CityEconomy
 
     static string PlaceName(string town) => town.Replace("city:", "") is var n && n.Length > 0 ? char.ToUpperInvariant(n[0]) + n[1..] : town;
 
-    /// <summary>The carpenters' week: the burned go back up first, if there's timber; and a town that's doing well grows.</summary>
+    /// <summary>
+    /// How a place's trade stands, from -1 (dying) to 1 (booming). The capital goes by its stores, its treasury and the
+    /// market's nerve; anywhere else by its stores, whether wagons still come, and what's on its road. Burned homes and
+    /// a siege count against anywhere.
+    /// </summary>
+    public double Prosperity(string town)
+    {
+        var fabric = Fabric.GetValueOrDefault(town);
+        var harm = (fabric?.Burnt ?? 0) * 0.06 + Slump / 2 + (Siege?.Town == town ? 0.4 : 0);
+        if (town == Capital)
+            return Math.Clamp(Goods.Average(g => Math.Clamp(Stock.GetValueOrDefault(g.Good) / g.Target, 0, 2) - 1) * 0.6 + Math.Clamp((Treasury - 400) / 1000.0, -0.4, 0.4) - harm, -1, 1);
+        if (!Roads.Towns.TryGetValue(town, out var m)) return Math.Clamp(-harm, -1, 1);
+        var stores = m.Stock.Count == 0 ? 0 : m.Stock.Average(s => Math.Clamp(s.Value / Math.Max(0.5, m.Usual(s.Key)), 0, 2) - 1);
+        var since = Day - Math.Max(m.LastTrade, Roads.Road(town).LastTrade);
+        var wagons = since <= 10 ? 0.4 : since <= 30 ? 0.4 * (30 - since) / 20 : 0;
+        return Math.Clamp(stores * 0.8 + wagons - Roads.Hazard(town, Day) - harm, -1, 1);
+    }
+
+    /// <summary>The carpenters' week: the burned go back up first, if there's timber; then a town that's doing well mends what's been left to rot, and grows out past its walls.</summary>
     public string? Carpenters(Rng rng)
     {
         var burned = Fabric.Where(f => f.Value.Burnt > 0).Select(f => f.Key).OrderBy(k => k, StringComparer.Ordinal).ToList();
@@ -262,13 +298,19 @@ public sealed class CityEconomy
             Stock[Good.Timber] -= RebuildTimber;
             return $"Carpenters have raised a home again in {PlaceName(town)}, on the ash of the last one.";
         }
-        if (DragonFree || Treasury < 500 || Stock.GetValueOrDefault(Good.Timber) < 3 * RebuildTimber) return null;
-        var towns = Roads.Towns.Keys.Where(k => FabricOf(k).Grown < GrowthCap).OrderBy(k => k, StringComparer.Ordinal).ToList();
+        if (DragonFree || Stock.GetValueOrDefault(Good.Timber) < 3 * RebuildTimber) return null;
+        var towns = Roads.Towns.Keys.Append(Capital).Where(k => Prosperity(k) >= Thrives && (FabricOf(k).Derelict > 0 || FabricOf(k).Grown < GrowthCap)).OrderBy(k => k, StringComparer.Ordinal).ToList();
         if (towns.Count == 0) return null;
         var grown = rng.Pick(towns);
+        if (FabricOf(grown).Derelict > 0)
+        {
+            FabricOf(grown).Derelict--;
+            Stock[Good.Timber] -= RebuildTimber;
+            return $"Trade's back in {TownName(grown)}: carpenters have put an empty home right, and someone's moved in.";
+        }
         FabricOf(grown).Grown++;
         Stock[Good.Timber] -= 2 * RebuildTimber;
-        return $"{Roads.Towns[grown].Name} is growing: its carpenters have put up a new building.";
+        return $"{TownName(grown)} is growing: carpenters have come, and there's a new house out past the wall.";
     }
 
     void Slain(string guardian, bool corrupted)
@@ -479,7 +521,13 @@ public sealed class CityEconomy
         if (DragonFree && !DragonSlain && Day % RampageEvery == 0) told.Add(Rampage());
         if (TendSiege(rng) is { } siege) told.Add(siege);
         else if (Siege is null && Day % SiegeEvery == 0) told.Add(BeginSiege(rng));
-        if (Day % CarpentersEvery == 0 && Carpenters(rng) is { } built) told.Add(built);
+        if (Day % CarpentersEvery == 0)
+        {
+            if (Carpenters(rng) is { } built) told.Add(built);
+            var week = TownsTurn(new Rng(Seed ^ (ulong)Day * 7919)).ToList();
+            News.AddRange(week);
+            told.AddRange(week);
+        }
         return told;
     }
 
@@ -592,6 +640,20 @@ public sealed class CityEconomy
             case "know" when a.Market is { } m && m.Id.Length is > 0 and <= 80: return Roads.Know(m);
             case "town_stock" when a.Town is not null && a.Good is { } tg && Enum.IsDefined(tg): Roads.Adjust(a.Town, tg, Math.Clamp(a.N, -60, 60)); return true;
             case "city_stock" when a.Good is { } cg && Enum.IsDefined(cg): Stock[cg] = Math.Max(0, Stock.GetValueOrDefault(cg) + Math.Clamp(a.N, -60, 60)); return true;
+            case "mended" when a.Town is not null && FabricOf(a.Town).Derelict > 0: FabricOf(a.Town).Derelict--; return true;
+            case "town_name" when a.Town is not null: CouncilOf(a.Town).Standing = Math.Clamp(CouncilOf(a.Town).Standing + a.N / 10.0, -5, 5); return true;
+            case "store_set" when a.Store is { Owner.Length: > 0 and <= 60 } shop: Stores[shop.Owner] = shop; return true;
+            case "store_shut" when a.Contract is not null: return Stores.Remove(a.Contract);
+            case "store_buy" when a.Contract is not null && a.Item is not null: return StoreBuy(a.Contract, a.Item, crowns);
+            case "store_sell" when a.Contract is not null && a.Item is not null: return StoreSell(a.Contract, a.Item, crowns);
+            case "council_met" when a.Town is not null: return Meet(a.Town, a.Contract, items);
+            case "council_seat" when a.Town is not null && a.Item is { Length: > 0 and <= 60 } seated: return SeatHero(a.Town, seated);
+            case "council_fall" when a.Town is not null && a.Item is { Length: > 0 } member: return MemberFalls(a.Town, member);
+            case "council_purse" when a.Town is not null && CouncilOf(a.Town).Ruler == a.Item: CouncilOf(a.Town).Purse = 0; return true;
+            case "town_raid" when a.Town is not null && a.Item is { Length: > 0 } raiders && Enum.IsDefined((RaidAim)a.N):
+                if (Raid(raiders, a.Town, (RaidAim)a.N, new Rng(Seed ^ (ulong)Day ^ (ulong)Roads.Wagons * 7919), a.Contract is { Length: <= 60 } ? a.Contract : null) is not { } raided) return false;
+                News.Add(raided);
+                return true;
             case "plundered" when a.Town is not null: return Roads.Plundered(a.Town, Day) > 0;
             case "steady" when a.Town is not null: return Roads.Steady(a.Town, Day);
             case "escorted" when a.Town is not null:

@@ -142,7 +142,7 @@ public partial class Main
                 : $"{r.Load} loads of {CityEconomy.Info(r.Out).Name} for {r.ToName}, {Direction(person.GlobalPosition, (r.X, r.Z))} of here. Mind the road."));
         if (t.MayOwn && !t.OwnWagon)
             yield return ($"Sell me a wagon of my own. ({TradeBook.WagonPrice} crowns)", () => BuyWagon(person));
-        if (t.OwnWagon && _bonds.Count(b => b.Steed && b.Rideable) < TradeBook.MaxHorses)
+        if (t.OwnWagon && _bonds.Count(b => b.Hitched) < TradeBook.MaxHorses)
             yield return ($"Sell me a draught horse. ({TradeBook.HorsePrice} crowns)", () => BuyHorse(person));
         if (t.OwnWagon)
         {
@@ -455,6 +455,8 @@ public partial class Main
     public void ClimbForTest() { if ((_guarded ?? _wagon) is { } w) ClimbAboard(w); }
     public void ClimbDownForTest() => ClimbDown();
     public void StealForTest() => StealWagon();
+    public void UnhitchForTest() { if (_bonds.FirstOrDefault(b => b.Hitched) is { } horse) Unhitch(horse); }
+    public void HitchForTest() { if (_bonds.FirstOrDefault(b => b.Steed && b.Following) is { } horse) HitchToWagon(horse); }
     public bool MayStealForTest => MayStealWagon;
 
     /// <summary>The guarded wagon on the road: ambushes as it gets far enough along, the bandits at the wagon, and the end of the road.</summary>
@@ -535,13 +537,17 @@ public partial class Main
         if (_player.Crowns < TradeBook.HorsePrice) { Say(master, $"{TradeBook.HorsePrice} crowns for a good draught horse. Come back when you have them."); return; }
         _player.Crowns -= TradeBook.HorsePrice;
         var horse = Adopt("horse", dragon: false, YardAt + new Vector3(2, 0, 3), level: 6);
-        Hitch();
-        Say(master, $"{horse.Name}'s yours: steady, strong, and doesn't kick much. Pulls your wagon, and you can ride {horse.Name} too (V).");
+        HitchToWagon(horse);
+        Say(master, $"{horse.Name}'s yours: steady, strong, and doesn't kick much. {horse.Name}'s in the shafts of your wagon now. A horse can pull or carry you, not both: unhitch {horse.Name} from the party menu (P) to ride.");
         Save();
     }
 
-    /// <summary>The horses that pull your wagon: your own grown ones, two at most, hitched or at your heels.</summary>
-    void Hitch() => _trade.Horses = Math.Min(TradeBook.MaxHorses, _bonds.Count(b => b.Steed && b.Rideable));
+    /// <summary>The horses pulling your wagon: only those in its shafts, two at most. One you're riding, or that's at your heels, isn't pulling anything.</summary>
+    void Hitch()
+    {
+        _trade.Horses = Math.Min(TradeBook.MaxHorses, _bonds.Count(b => b.Hitched));
+        if (_wagon is { } own && _trade.Run is null) own.Team(_trade.Horses > 0); // the yard's own horse pulls a run
+    }
 
     /// <summary>A steed put to the wagon: it leaves your heels and goes with the wagon.</summary>
     void HitchToWagon(Bond horse)
@@ -549,22 +555,32 @@ public partial class Main
         horse.Hitched = true;
         horse.Following = false;
         if (BodyOf(horse) is { } body) { _companions.Remove(body); body.QueueFree(); }
+        Hitch();
     }
 
-    /// <summary>A steed taken off the wagon to ride: at your heels again, and the wagon still yours.</summary>
+    /// <summary>A steed taken off the wagon to ride: at your heels again, and the wagon still yours, standing wherever it was if that was the last horse in the shafts.</summary>
     void Unhitch(Bond horse)
     {
         horse.Hitched = false;
         horse.Following = true;
         BringCompanion(horse);
+        Hitch();
     }
 
     void HitchUp(Person master)
     {
+        // Any spare grown horse goes in the shafts; one that's with you is yours to hitch or keep, from the party menu.
+        foreach (var spare in _bonds.Where(b => b.Steed && b.Rideable && !b.Following && !b.Hitched).Take(TradeBook.MaxHorses - _bonds.Count(b => b.Hitched)).ToList()) HitchToWagon(spare);
         Hitch();
-        if (_trade.Horses == 0) { Say(master, "A wagon doesn't pull itself. You need a grown horse: buy one from me, or raise a foal."); return; }
+        if (_trade.Horses == 0)
+        {
+            var with = _bonds.FirstOrDefault(b => b.Steed && b.Rideable && b.Following);
+            Say(master, with is null ? "A wagon doesn't pull itself. You need a grown horse: buy one from me, or raise a foal."
+                : $"A wagon doesn't pull itself, and {with.Name} can't carry you and pull her too. Put {with.Name} in the shafts from your party menu (P), or buy another horse from me.");
+            return;
+        }
         _trade.WagonOut = true;
-        TakeWagon(_bonds.Where(b => b.Steed && b.Rideable).Select(b => b.KindId).FirstOrDefault());
+        TakeWagon(_bonds.Where(b => b.Hitched).Select(b => b.KindId).FirstOrDefault());
         Say(master, $"Hitched: {_trade.Horses} horse{(_trade.Horses == 1 ? "" : "s")}, room for {_trade.Capacity} loads. Buy cheap where they make it, sell dear where they want it.");
         Save();
     }
@@ -676,6 +692,7 @@ public partial class Main
         var hero = _player.GlobalPosition;
         var setOff = hero.DistanceTo(YardAt with { Y = hero.Y }) < 60 ? YardAt + new Vector3(6, 0, 6) : hero + _player.GlobalTransform.Basis.Z * 5;
         _wagon.GlobalPosition = setOff with { Y = City.FloorAt(setOff) };
+        Hitch();
     }
 
     void StableWagon()
@@ -829,7 +846,11 @@ public partial class Main
         if (_guarded is { } wagon && _trade.Guarding is { } job && _player.Mount is null && pos.DistanceTo(wagon.GlobalPosition with { Y = pos.Y }) < 6) return (job.Driver ? "climb up and take the reins" : "climb up on the wagon", () => ClimbAboard(wagon));
         if (_loading is { Holding: false } && pos.DistanceTo(YardStack with { Y = pos.Y }) < 3.5f) return ("lift a load", LiftSack);
         if (_loading is { Holding: true } && pos.DistanceTo(YardWagon with { Y = pos.Y }) < 4.5f) return ("load the wagon", LoadWagon);
-        if (_wagon is { } own && (_trade.Run is not null || _trade.WagonOut) && _player.Mount is null && pos.DistanceTo(own.GlobalPosition with { Y = pos.Y }) < 6) return ("climb up and take the reins", () => ClimbAboard(own));
+        if (_wagon is { } own && (_trade.Run is not null || _trade.WagonOut) && _player.Mount is null && pos.DistanceTo(own.GlobalPosition with { Y = pos.Y }) < 6)
+        {
+            if (own.Teamed) return ("climb up and take the reins", () => ClimbAboard(own));
+            return ("look over the wagon", () => _hud.Toast("Nothing in the shafts. Hitch a horse from the party menu (P) to move her.", 5));
+        }
         return null;
     }
 
@@ -875,6 +896,15 @@ public partial class Wagon(Main main, string? horse) : Node3D
     const double HoldsLine = 4;
     double _freeFor = HoldsLine;
     Body? _horse;
+
+    /// <summary>Whether there's a horse in the shafts. With none she stands where she was left, and there's no horse to see.</summary>
+    public bool Teamed { get; private set; } = true;
+
+    public void Team(bool hitched)
+    {
+        Teamed = hitched;
+        if (_horse is not null) _horse.Visible = hitched;
+    }
 
     Node3D? _reins;
 
@@ -931,6 +961,7 @@ public partial class Wagon(Main main, string? horse) : Node3D
             _horse = h;
             AddChild(h);
             h.Position = new Vector3(0, 0, -3.2f);
+            h.Visible = Teamed;
         }
     }
 
@@ -939,7 +970,7 @@ public partial class Wagon(Main main, string? horse) : Node3D
 
     public override void _Process(double delta)
     {
-        if (Parked) { _horse?.Move(0, true, false); return; }
+        if (Parked || !Teamed) { _horse?.Move(0, true, false); return; }
         if (Reins && Goal is null) { DriveFree(delta); return; }
         if (Goal is { } goal) { Drive(goal, delta); return; }
         var lead = main.PlayerNode.GlobalPosition;

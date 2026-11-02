@@ -24,6 +24,18 @@ public static class City
     public static readonly Vector3 PlayerStart = new(78, 0, -6);
     public static readonly Vector3 Needle = new(210, 0, 70);
 
+    // The outer ring's second smith and general store, and the inner ring's own, with its two taverns.
+    public static readonly Vector3 WestForge = new(-82, 0, 30), Sundries = new(-20, 0, 84);
+    public static readonly Vector3 GiltAnvil = new(-8, InnerHeight, -46), HarrowGoods = new(-36, InnerHeight, 28);
+    public static readonly Vector3 GildedFlagon = new(38, InnerHeight, 26), ScholarsRest = new(-14, InnerHeight, 44);
+
+    /// <summary>Where a shopkeeper stands: out front towards the city's centre, and to one side of the door.</summary>
+    public static Vector3 Frontage(Vector3 at)
+    {
+        var inward = new Vector3(-at.X, 0, -at.Z).Normalized();
+        return at + inward * 7 + new Vector3(-inward.Z, 0, inward.X) * 3.5f;
+    }
+
     public static List<Zone> Zones { get; } =
     [
         new("The Crown", Vector3.Zero, CrownRadius, 3),
@@ -36,6 +48,12 @@ public static class City
         new("The Watch House", new(70, 0, 55), 8, 10),
         new("The Warrens", new(-20, 0, -82), 15, 9),
         new("The Magi Archive", new(-40, InnerHeight, 0), 8, 10),
+        new("The West Gate Forge", WestForge, 8, 10),
+        new("Pell's Sundries", Sundries, 7, 10),
+        new("The Gilt Anvil", GiltAnvil, 8, 10),
+        new("Harrow & Daughters", HarrowGoods, 7, 10),
+        new("The Gilded Flagon", GildedFlagon, 8, 10),
+        new("The Scholar's Rest", ScholarsRest, 8, 10),
         new("The Docks", new(120, 0, 0), 22, 5),
         new("The Harbor", new(200, 0, 0), 120, 4),
         new("The Needle", Needle, 16, 10),
@@ -71,7 +89,11 @@ public static class City
     /// <summary>They start well up the shore, where the land's level with their boards, so there's no step on or off them.</summary>
     public const float PierFrom = 94, PierTo = 142;
 
-    public static bool OnPier(Vector3 p) => p.X is > PierFrom and < PierTo && Piers.Any(z => Math.Abs(p.Z - z) < 2.5f);
+    /// <summary>The boardwalk across the piers' landward ends, so you can walk from the east gate's pier to every other.</summary>
+    public const float BoardwalkX = 110, BoardwalkReach = 33;
+
+    public static bool OnPier(Vector3 p) => p.X is > PierFrom and < PierTo && Piers.Any(z => Math.Abs(p.Z - z) < 2.5f)
+        || Math.Abs(p.X - BoardwalkX) < 2.6f && Math.Abs(p.Z) < BoardwalkReach;
 
     /// <summary>Out at sea (see <see cref="AtSea"/>): the deck's height, where there's a ship under the hero instead of land.</summary>
     public static Func<Vector3, float?>? Afloat { get; set; }
@@ -199,9 +221,15 @@ public static class City
         Landmark(root, "tower_B", "blue", new Vector3(-40, InnerHeight, 0), 7, 1.6f, "The Magi Archive");
         Landmark(root, "market", "red", new Vector3(30, InnerHeight, -30), 9, 2.2f, "The Exchange");
         Landmark(root, "castle", "red", new Vector3(0, CrownHeight, 0), 8, 1.57f, "The Crown");
+        Landmark(root, "smithy", "red", WestForge, 8, Facing(WestForge), "The West Gate Forge");
+        Landmark(root, "store", "green", Sundries, 8, Facing(Sundries), "Pell's Sundries");
+        Landmark(root, "smithy", "blue", GiltAnvil, 8, Facing(GiltAnvil), "The Gilt Anvil");
+        Landmark(root, "store", "blue", HarrowGoods, 8, Facing(HarrowGoods), "Harrow & Daughters");
+        Landmark(root, "tavern", "red", GildedFlagon, 8, Facing(GildedFlagon), "The Gilded Flagon");
+        Landmark(root, "tavern", "blue", ScholarsRest, 8, Facing(ScholarsRest), "The Scholar's Rest");
         // Streets (after the landmarks, so they keep clear of them) of houses in each ring, crowded at the bottom, grander at the top.
-        Houses(root, rng, 68, 93, 0, 52, ["house", "house", "house", "cottage", "smithy", "tavern"]);
-        Houses(root, rng, 38, 54, InnerHeight, 18, ["house", "house", "market", "tower"]);
+        Houses(root, rng, 68, 93, 0, 52, ["house", "house", "house", "cottage"]);
+        Houses(root, rng, 38, 54, InnerHeight, 18, ["house", "house", "tower"]);
 
         for (var i = 0; i < 6; i++) // the Warrens: a crush of ruins and hovels
             Buildings.Place(root, i % 2 == 0 ? "ruin" : "cottage", new Vector3(-34 + i * 6.5f, 0, -84 - (i % 3) * 5), (float)rng.NextDouble() * Mathf.Tau, i, Surface.Thatch, 0.85f);
@@ -213,8 +241,9 @@ public static class City
             Buildings.Place(root, "pier", new Vector3((PierFrom + PierTo) / 2, 0, z), 0, 0);
             for (var k = 0; k < 3; k++)
                 Models.Place(root, rng.Chance(0.5) ? "ph:barrel.glb" : "ph:crate.glb",
-                    new Vector3(108 + rng.Next(28), 0, z + (float)rng.NextDouble() * 3 - 1.5f), 1, (float)rng.NextDouble() * Mathf.Tau);
+                    new Vector3(116 + rng.Next(22), 0, z + (float)rng.NextDouble() * 3 - 1.5f), 1, (float)rng.NextDouble() * Mathf.Tau);
         }
+        Buildings.Place(root, "boardwalk", new Vector3(BoardwalkX, 0, 0), 0, 0);
         Label(root, new Vector3(120, 5, 0), "The Docks");
 
         // The Needle: a lighthouse on a rocky island.
@@ -304,6 +333,9 @@ public static class City
     }
 
     static readonly List<Vector3> Placed = [];
+
+    /// <summary>The turn that puts a building's front door towards the city's centre.</summary>
+    static float Facing(Vector3 at) => Mathf.Atan2(-at.X, -at.Z);
 
     static Node3D Landmark(Node3D parent, string kind, string colour, Vector3 at, float scale, float yaw, string name, float labelHeight = 0)
     {
