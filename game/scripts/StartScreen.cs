@@ -21,7 +21,7 @@ public partial class StartScreen : CanvasLayer
     public string? DefaultServer { get; init; }
 
     /// <summary>The shared world's outside link, filled in for everyone. If the link's address changes, change it here and rebuild.</summary>
-    const string SharedWorld = "https://dem-caused-rarely-sewing.trycloudflare.com";
+    const string SharedWorld = "https://desirable-sunday-jewel-textbook.trycloudflare.com";
 
     const string SettingsPath = "user://settings.json";
     const string LocalCharactersPath = "user://characters.json";
