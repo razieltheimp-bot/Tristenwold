@@ -3508,7 +3508,7 @@ public partial class SelfTest(Main main) : Node
         if (at is null || v is null) { Check(false, "a voyage under way"); return; }
         (v.Out, v.Home) = ([0.05], []);
         await Until(() => p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, 8);
-        Check(p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, $"aboard the Gull, standing on her deck out at sea ({v.LegSeconds / 60:0} minutes to Druitt; hero at {p.GlobalPosition}, deck {AtSea.DeckY}, floor {p.IsOnFloor()}, swimming {p.Swimming}, downed {p.Downed}, seat {p.Seat is not null}, indoors {main.IndoorsNode is not null})");
+        Check(p.IsOnFloor() && Math.Abs(p.GlobalPosition.Y - AtSea.DeckY) < 2.5f, $"aboard the Gull, standing on her deck out at sea ({v.LegSeconds / 60:0} minutes to Druitt; hero at {p.GlobalPosition.Y:0.0}, deck {AtSea.DeckY:0.0})");
         await Until(() => at.Pending > 0, 10);
         Check(at.Pending > 0 && hud.Tracked.Any(t => t.Contains("On deck:")), "there's work on deck, and the tracker says what");
         at.WorkForTest();

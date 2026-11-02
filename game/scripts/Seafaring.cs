@@ -625,7 +625,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
     public static readonly Vector3 Stage = new(260, 1200, -40);
     /// <summary>The main deck's height, and where the hero comes aboard.</summary>
     public static float DeckY => Stage.Y + 3.85f; // the pinnace's waist deck, with her hull set 1.6 m into the water
-    public static Vector3 Aboard => new(Stage.X, DeckY + 0.8f, Stage.Z + 2);
+    public static Vector3 Aboard => new(Stage.X, DeckY + 0.8f, Stage.Z - 3); // on the planks, aft of the hatch down to her hold
     const float Beam = 3.6f, Length = 15;
 
     readonly List<Enemy> _boarders = [];

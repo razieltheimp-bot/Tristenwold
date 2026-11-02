@@ -846,7 +846,7 @@ public partial class Main
         if (_guarded is { } wagon && _trade.Guarding is { } job && _player.Mount is null && pos.DistanceTo(wagon.GlobalPosition with { Y = pos.Y }) < 6) return (job.Driver ? "climb up and take the reins" : "climb up on the wagon", () => ClimbAboard(wagon));
         if (_loading is { Holding: false } && pos.DistanceTo(YardStack with { Y = pos.Y }) < 3.5f) return ("lift a load", LiftSack);
         if (_loading is { Holding: true } && pos.DistanceTo(YardWagon with { Y = pos.Y }) < 4.5f) return ("load the wagon", LoadWagon);
-        if (_wagon is { } own && (_trade.Run is not null || _trade.WagonOut) && _player.Mount is null && pos.DistanceTo(own.GlobalPosition with { Y = pos.Y }) < 6)
+        if (_wagon is { } own && _atSea is null && (_trade.Run is not null || _trade.WagonOut) && _player.Mount is null && pos.DistanceTo(own.GlobalPosition with { Y = pos.Y }) < 6)
         {
             if (own.Teamed) return ("climb up and take the reins", () => ClimbAboard(own));
             return ("look over the wagon", () => _hud.Toast("Nothing in the shafts. Hitch a horse from the party menu (P) to move her.", 5));
@@ -974,6 +974,7 @@ public partial class Wagon(Main main, string? horse) : Node3D
         if (Reins && Goal is null) { DriveFree(delta); return; }
         if (Goal is { } goal) { Drive(goal, delta); return; }
         var lead = main.PlayerNode.GlobalPosition;
+        if (main.AtSeaNode is not null || main.InMine || main.IndoorsNode is not null) { _speed = 0; _horse?.Move(0, true, false); return; } // she waits on the road: a wagon can't follow you aboard, or down a mine, or indoors
         // The horse walks a few metres behind the hero; the wagon trails it.
         var hitch = GlobalPosition + GlobalTransform.Basis.Z * -3.4f;
         var to = new Vector3(lead.X - hitch.X, 0, lead.Z - hitch.Z);
