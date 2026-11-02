@@ -953,7 +953,8 @@ Everything is saved with your company. `--selftest --pursuits-only` walks throug
   Wren, feeding your beasts and their levelling up all teach it. Each level past the first makes a wild
   youngling 3% likelier to take to you, your beasts learn 5% faster, and Wren charges 3% less. It shows in
   your pack (I).
-- Who travels with you is counted kind by kind. Up to three apprentices or squires. Four pets at your heels (a Ranger
+- Who travels with you is counted kind by kind. Up to three apprentices or squires (a Paladin and a Wizard take on as
+  many apprentices as they like). Four pets at your heels (a Ranger
   and a Shapeshifter have no such limit: every beast they own follows), and the rest wait at the Gallows Perch. As many
   mounts as you like, kept and fed at the Perch, but only as many with you as there are riders: you, and each apprentice
   with you. A golem is a machine and doesn't count, and a foal or a dragon too small to ride counts as a pet until it's grown.

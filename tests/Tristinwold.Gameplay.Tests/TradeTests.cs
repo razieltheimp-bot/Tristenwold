@@ -36,6 +36,8 @@ public class TradeTests
         Assert.True(PartyRules.MayFollow(party, Horse(), freePets: false)); // an apprentice brings a place for a mount
         party.AddRange([Youth(), Youth()]);
         Assert.False(PartyRules.MayFollow(party, Youth(), freePets: false)); // three apprentices at most
+        Assert.True(PartyRules.MayFollow(party, Youth(), freePets: false, freeApprentices: true)); // but a Paladin or a Wizard takes on all who come
+        Assert.True(PartyRules.FreeApprentices("Paladin") && PartyRules.FreeApprentices("Wizard") && !PartyRules.FreeApprentices("Ranger"));
     }
 
     [Fact]

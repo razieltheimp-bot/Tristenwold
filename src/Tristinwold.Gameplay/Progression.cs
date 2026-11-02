@@ -364,7 +364,8 @@ public static class Taming
 }
 
 /// <summary>
-/// Who may travel with a hero, counted kind by kind. Up to three apprentices or squires. Pets by the class's limit (four,
+/// Who may travel with a hero, counted kind by kind. Up to three apprentices or squires (as many as they like for a
+/// Paladin or a Wizard: every youth who joins them is an apprentice). Pets by the class's limit (four,
 /// or as many as they like for a Ranger or a Shapeshifter). As many mounts as they own, kept and fed at the Gallows Perch,
 /// but only as many with them as there are riders: the hero and each apprentice at their side. A golem is a machine and
 /// doesn't count, and a foal or a dragon too small to ride is a pet until it's grown.
@@ -387,6 +388,9 @@ public static class PartyRules
     public static string MiteName(int made) => made < MiteNames.Length ? MiteNames[made] : $"{MiteNames[made % MiteNames.Length]} the {made / MiteNames.Length + 1}{(made / MiteNames.Length + 1) switch { 2 => "nd", 3 => "rd", _ => "th" }}";
 
     public static bool IsApprentice(Bond b) => b.Role is BondRole.Squire or BondRole.Apprentice;
+
+    /// <summary>A Paladin and a Wizard take on as many apprentices as they like, the way a Ranger keeps as many beasts.</summary>
+    public static bool FreeApprentices(string classId) => classId is "Paladin" or "Wizard";
     public static bool IsMount(Bond b) => b.Role == BondRole.Dragon ? b.Rideable : b.Steed && b.Rideable;
     public static bool IsPet(Bond b) => !IsApprentice(b) && !IsMount(b) && !b.Machine;
 
@@ -394,11 +398,11 @@ public static class PartyRules
     public static int Riders(IEnumerable<Bond> bonds) => 1 + bonds.Count(b => b.Following && IsApprentice(b));
 
     /// <summary>Whether this one can join those following, as things stand (it isn't counted itself).</summary>
-    public static bool MayFollow(IReadOnlyCollection<Bond> bonds, Bond who, bool freePets)
+    public static bool MayFollow(IReadOnlyCollection<Bond> bonds, Bond who, bool freePets, bool freeApprentices = false)
     {
         if (who.Machine) return true;
         var others = bonds.Where(b => b != who && b.Following).ToList();
-        if (IsApprentice(who)) return others.Count(IsApprentice) < MaxApprentices;
+        if (IsApprentice(who)) return freeApprentices || others.Count(IsApprentice) < MaxApprentices;
         if (IsMount(who)) return others.Count(IsMount) < Riders(others);
         return freePets || others.Count(IsPet) < MaxPets;
     }

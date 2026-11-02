@@ -16,7 +16,10 @@ public partial class Main
     bool FreePets => _player.Class.Id is "Ranger" or "Shapeshifter";
 
     /// <summary>Whether there's room for this one with the hero (see <see cref="PartyRules"/>).</summary>
-    bool MayFollow(Bond bond) => PartyRules.MayFollow(_bonds, bond, FreePets);
+    bool MayFollow(Bond bond) => PartyRules.MayFollow(_bonds, bond, FreePets, FreeApprentices);
+
+    /// <summary>A Paladin and a Wizard can take on as many apprentices as they like.</summary>
+    bool FreeApprentices => PartyRules.FreeApprentices(_player.Class.Id);
 
     /// <summary>Where a companion not with the hero stays: their house, once they've listed it as home, or the Perch.</summary>
     string WaitsAt => _pursuits.House.IsHome ? "your house" : "the Gallows Perch";
@@ -628,7 +631,7 @@ public partial class Main
         var npc = person.Npc;
         var (role, kind, word) = Follower;
         if (_player.Hero.Level < RecruitLevel) { Say(person, $"You? You're nobody yet. Come back when you've made a name (level {RecruitLevel})."); return false; }
-        if (_bonds.Count(PartyRules.IsApprentice) >= PartyRules.MaxApprentices) { Say(person, $"You've {PartyRules.MaxApprentices} already. Who'd teach me?"); return false; }
+        if (!FreeApprentices && _bonds.Count(PartyRules.IsApprentice) >= PartyRules.MaxApprentices) { Say(person, $"You've {PartyRules.MaxApprentices} already. Who'd teach me?"); return false; }
         if (_player.Crowns < RecruitFee) { Say(person, $"My family can't spare me for nothing. {RecruitFee} crowns, for their trouble."); return false; }
         _player.Crowns -= RecruitFee;
         var bond = new Bond { Id = npc.Id, KindId = kind, Role = role, Name = npc.First, Race = npc.Race, JoinAge = npc.Age, JoinDay = _city.Day };
