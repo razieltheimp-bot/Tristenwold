@@ -1,4 +1,4 @@
-﻿using Godot;
+using Godot;
 using Tristinwold.Gameplay;
 using Tristinwold.World;
 
@@ -26,12 +26,38 @@ public partial class Main
     {
         if (MyHallPlan is { } plan && _city.HallOf(_player.Company, plan.Kind) is null)
             yield return ($"Found your own {plan.Word} here ({plan.FoundCost} crowns, from level 5)", () => FoundHall(plan));
+        if (_city.HallOf(_player.Company, HallKind.Colony) is null)
+            yield return ($"Found a colony here ({Halls.PlanOf(HallKind.Colony).FoundCost} crowns, from level 5; it wants open land, as far from any town as Tristinwold is from its neighbours)", () => FoundHall(Halls.PlanOf(HallKind.Colony)));
         if (Groves.MayPlant(_player.Class.Id)) yield return ($"Plant a tree here ({Groves.Mana:0} mana)", () => { _hud.EndTalk(); PlantTree(); });
     }
 
     /// <summary>Why a hall can't stand here, if it can't: it wants open land of its own, out of the towns.</summary>
-    string? NoRoomForHall(Vector3 at)
+    /// <summary>Whether this is an island out in the ocean that nobody lives on.</summary>
+    bool UninhabitedIsland(Vector3 at) => Northwood.Island(at.X, at.Z) > 0.5 && _world.Height(at.X, at.Z) > WorldGen.WaterLevel + 0.3 && !_world.SettlementsNear(at.X, at.Z, 500).Any();
+
+    /// <summary>How much room a colony wants: as far from any town as Tristinwold is from the nearer of its two neighbours.</summary>
+    double ColonySpacing => new[] { "city:druitt", "city:greywater" }.Select(_world.Find).OfType<Settlement>().Select(s => Math.Sqrt(s.X * s.X + s.Z * s.Z)).DefaultIfEmpty(1200).Min();
+
+    /// <summary>Why a colony can't be founded here, if it can't: too near a town, a city or another colony, or no dry land round it.</summary>
+    string? NoRoomForColony(Vector3 at)
     {
+        if (_indoors is not null || _cave is not null || _atSea is not null || _isle is not null || City.Afloat is not null) return "Not here. A colony wants open land under it.";
+        for (var a = 0; a < 8; a++)
+        {
+            var probe = at + new Vector3(Mathf.Cos(a * Mathf.Tau / 8), 0, Mathf.Sin(a * Mathf.Tau / 8)) * HallYard;
+            if (_world.Height(probe.X, probe.Z) <= WorldGen.WaterLevel + 0.3) return "Too near the water. A colony wants dry land all round it.";
+        }
+        var room = ColonySpacing;
+        if (Math.Sqrt(at.X * at.X + at.Z * at.Z) < room || _world.SettlementsNear(at.X, at.Z, room).Any(s => s.Kind is SettlementKind.City or SettlementKind.Town))
+            return $"Too near a town. A colony wants {room:0} m of open country between it and any town or city.";
+        if (_city.Halls.Values.Any(h => h.Kind == HallKind.Colony && Math.Sqrt((h.X - at.X) * (h.X - at.X) + (h.Z - at.Z) * (h.Z - at.Z)) < room))
+            return $"Too near someone else's colony. Give it {room:0} m.";
+        return _city.HallRoom(at.X, at.Z) ? null : "Someone's settled here already.";
+    }
+
+    string? NoRoomForHall(Vector3 at, bool colony = false)
+    {
+        if (colony) return NoRoomForColony(at);
         if (_indoors is not null || _cave is not null || _atSea is not null || _isle is not null || City.Afloat is not null) return "Not here. A hall wants open land under it.";
         if (new Vector2(at.X, at.Z).Length() < City.OuterRadius + 60 || TownHere(at) is not null || _world.SettlementAt(at.X, at.Z) is not null) return "Not in a town. Find open land of your own, out past the walls.";
         for (var a = 0; a < 8; a++)
@@ -48,13 +74,13 @@ public partial class Main
         var at = _player.GlobalPosition;
         if (_player.Hero.Level < 5) { Sound.Ui("error"); _hud.Toast($"Nobody follows a beginner. Make a name first (level 5), then found your {plan.Word}.", 6); return; }
         if (_player.Crowns < plan.FoundCost) { Sound.Ui("error"); _hud.Toast($"A {plan.Word} costs {plan.FoundCost} crowns to set up: timber, a roof, and a first {plan.Member}'s wages.", 6); return; }
-        if (NoRoomForHall(at) is { } why) { Sound.Ui("error"); _hud.Toast(why, 6); return; }
+        if (NoRoomForHall(at, plan.Kind == HallKind.Colony) is { } why) { Sound.Ui("error"); _hud.Toast(why, 6); return; }
         _player.Crowns -= plan.FoundCost;
         var hall = new Hall { Owner = _player.Company, Hero = _player.Company, Kind = plan.Kind, Name = $"{_player.Company}'s {plan.Word}", X = at.X, Z = at.Z };
         DoCity(CityAction.HallFound(hall));
         Sound.Ui("quest");
         WellDone(2);
-        _hud.Toast($"You've founded {hall.Name}. Your first {plan.Member} is already sweeping the yard. Talk to your {plan.Steward} there to take on more.", 10);
+        _hud.Toast(plan.Kind == HallKind.Colony ? $"You've founded {hall.Name}, and you sit on its council. Your first settler's already cutting timber. Talk to your reeve to bring more out." : $"You've founded {hall.Name}. Your first {plan.Member} is already sweeping the yard. Talk to your {plan.Steward} there to take on more.", 10);
         Save();
         TendHallFronts();
     }
@@ -155,7 +181,7 @@ public partial class Main
                 Save();
                 Say(person, $"{take} crowns. Don't spend it all at once.");
             });
-            if (h.Chest.Count > 0 && h.Kind is HallKind.HuntingLodge or HallKind.Spire) yield return ("Take what's in the stores", () =>
+            if (h.Chest.Count > 0 && h.Kind is HallKind.HuntingLodge or HallKind.Spire or HallKind.Colony) yield return ("Take what's in the stores", () =>
             {
                 foreach (var (id, n) in h.Chest.ToList())
                     for (var i = 0; i < n; i++) { DoCity(CityAction.HallTake(h.Key, id, 0)); _player.Pack.Add(id); }
@@ -210,7 +236,7 @@ public partial class Main
             case HallKind.ThievesGuild:
                 if (mine) return null; // its own founder sends them out by running it
                 return ($"{plan.Service}{cost}", () => ThievesJob(person, h));
-            case HallKind.HuntingLodge or HallKind.Spire:
+            case HallKind.HuntingLodge or HallKind.Spire or HallKind.Colony:
                 return mine ? null : ($"{plan.Service}", () => HallShelves(person, h));
             case HallKind.FightClub:
                 return ($"{plan.Service}{cost}", () =>

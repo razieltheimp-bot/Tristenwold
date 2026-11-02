@@ -192,6 +192,7 @@ public partial class Main
         if ((_skyTick -= delta) > 0) return;
         _skyTick = 1;
         TendSite();
+        TendVessel();
         if (!_sea.Skyboat) { _skyboat?.QueueFree(); _skyboat = null; return; }
         if (_skyboat is { Aboard: true }) return;
         var at = new Vector3((float)_sea.SkyX, 0, (float)_sea.SkyZ);

@@ -4,7 +4,7 @@ using Tristinwold.Deviant;
 namespace Tristinwold.Gameplay;
 
 /// <summary>What a hero can found in the world, by their class: their own little guild, and the people under them.</summary>
-public enum HallKind { ThievesGuild, HuntingLodge, FightClub, Monastery, Chapel, Spire, Playhouse }
+public enum HallKind { ThievesGuild, HuntingLodge, FightClub, Monastery, Chapel, Spire, Playhouse, Colony }
 
 /// <summary>
 /// One kind of hall: who may found one, what it costs, what it's built of, what its people are called, and what it
@@ -61,6 +61,9 @@ public static class Halls
             "Buy from the spire's shelves", 0, "scholar", "magister"),
         new(HallKind.Playhouse, "Playhouse", "player", "players", ["Poet", "Scribe", "Musician"], 300, 35, ["tavern", "longhall", "house"],
             "See tonight's show", 15, "drinker", "stage-manager"),
+        // Any hero, of any class, may settle an island nobody lives on.
+        new(HallKind.Colony, "Colony", "settler", "settlers", [], 800, 50, ["cottage", "house", "barn", "cottage", "house"],
+            "Trade with the colony", 0, "worker", "reeve"),
     ];
 
     public static HallPlan PlanOf(HallKind kind) => Plans.First(p => p.Kind == kind);
@@ -69,6 +72,9 @@ public static class Halls
     public static HallPlan? For(string classId) => Plans.FirstOrDefault(p => p.Classes.Contains(classId));
 
     public static string KeyOf(string owner, HallKind kind) => $"{owner}#{kind}";
+
+    /// <summary>A colony as a place with a council: the town it's kept under.</summary>
+    public static string ColonyTown(string owner) => $"colony:{owner}";
 
     /// <summary>How many people a founder of this level can keep under them.</summary>
     public static int MostMembers(int level) => Math.Clamp(2 + level / 3, 2, 12);
@@ -81,6 +87,7 @@ public static class Halls
 
     static readonly string[] Game = ["venison", "venison", "wolf_pelt", "deer_hide", "rabbit_pelt", "game_bird"];
     static readonly string[] Shelves = ["mana_tonic", "healing_draught", "stamina_brew"];
+    static readonly string[] Settled = ["herring", "mackerel", "pine_log", "stone_block", "venison"];
 
     /// <summary>What a fight club's champion has in them: how much they can take, and how hard they hit, against a hero of this level.</summary>
     public static (double Health, double Damage) Champion(Hall h, int heroLevel)
@@ -135,6 +142,10 @@ public static class Halls
                 case HallKind.Chapel:
                     h.Till += 3 * n; // the tithes
                     break;
+                case HallKind.Colony:
+                    for (var i = 0; i < n; i++) Put(h, Settled[rng.Next(Settled.Length)]);
+                    h.Till += 3 * n;
+                    break;
                 case HallKind.Spire:
                     for (var i = 0; i < (n + 1) / 2; i++) Put(h, Shelves[rng.Next(Shelves.Length)]);
                     h.Till += 2 * n;
@@ -180,6 +191,12 @@ public sealed partial class CityEconomy
         {
             case "hall_found" when a.Hall is { Owner.Length: > 0 and <= 60, Name.Length: > 0 and <= 80 } h && h.Key == key && !Halls.ContainsKey(key) && HallRoom(h.X, h.Z):
                 Halls[key] = new Hall { Owner = h.Owner, Hero = h.Hero.Length <= 60 ? h.Hero : "", Kind = h.Kind, Name = h.Name, X = h.X, Z = h.Z, Members = 1, Founded = Day };
+                if (h.Kind == HallKind.Colony) // its founder sits on its council from the first day
+                {
+                    var council = CouncilOf(Gameplay.Halls.ColonyTown(h.Owner));
+                    council.Name = h.Name;
+                    if (!council.Heroes.Contains(h.Owner)) council.Heroes.Add(h.Owner);
+                }
                 News.Add($"{h.Hero} has founded {h.Name}.");
                 return true;
             case "hall_recruit" when Halls[key] is var r && r.Members < Gameplay.Halls.MostMembers(Math.Clamp(a.N, 1, 60)): r.Members++; return true;
@@ -191,7 +208,9 @@ public sealed partial class CityEconomy
                 return true;
             case "hall_low": Halls[key].LowUntil = Day + 1; return true;
             case "hall_served" when a.Item is { Length: > 0 and <= 60 } who: Halls[key].Served[who] = Day; return true;
-            case "hall_close": return Halls.Remove(key);
+            case "hall_close":
+                if (Halls[key].Kind == HallKind.Colony) Councils.Remove(Gameplay.Halls.ColonyTown(Halls[key].Owner));
+                return Halls.Remove(key);
         }
         return false;
     }

@@ -2711,6 +2711,67 @@ public partial class SelfTest(Main main) : Node
         main.GoOutsideForTest();
         await Frames(10);
         Check(main.KeeperInsideForTest is null && main.IndoorsNode is null, "and stays at the counter when you leave");
+        await OpenSeaTest();
+    }
+
+    /// <summary>The hero's own ship taken out from the berth and steered like a wagon; and a colony on an island nobody lives on.</summary>
+    async Task OpenSeaTest()
+    {
+        var (p, sea, city) = (main.PlayerNode, main.Sea, main.Economy);
+        (sea.OwnShip, sea.ShipName, sea.Hull, sea.Voyage) = (true, "Wren", 100, null);
+        (sea.ShipX, sea.ShipZ) = (Main.ShipBerth.X, Main.ShipBerth.Z);
+        await Teleport(new Vector3(138, 0, 0));
+        await Frames(10);
+        main.BoardVesselForTest();
+        var ship = main.VesselNode;
+        Check(ship is not null && main.AboardShip, "you take your own ship out from her berth");
+        if (ship is null) return;
+        main.LeaveVesselForTest();
+        Check(!main.AboardShip && City.OnPier(p.GlobalPosition), "and can step off onto the pier");
+        main.BoardVesselForTest();
+        var from = ship.GlobalPosition;
+        ship.Rotation = new Vector3(0, -Mathf.Pi / 2, 0); // her bow out to sea
+        Input.ActionPress("move_forward");
+        await Frames(240);
+        Input.ActionRelease("move_forward");
+        Check(ship.GlobalPosition.DistanceTo(from) > 20, $"W drives her across the water ({ship.GlobalPosition.DistanceTo(from):0} m)");
+        var heading = ship.Rotation.Y;
+        Input.ActionPress("move_left");
+        await Frames(60);
+        Input.ActionRelease("move_left");
+        Check(Mathf.Abs(ship.Rotation.Y - heading) > 0.3f, "and A and D bring her round, wherever you want her");
+        main.LeaveVesselForTest();
+        Check(main.AboardShip, "out on open water there's nowhere to step off");
+        (sea.Steam, sea.Flies, sea.Fuel) = (true, true, 600);
+        var sea0 = ship.GlobalPosition.Y;
+        Input.ActionPress("jump");
+        await Frames(120);
+        Input.ActionRelease("jump");
+        Check(ship.GlobalPosition.Y > sea0 + 5 && sea.Fuel < 600, $"a ship with a lift goes up off the water ({ship.GlobalPosition.Y - sea0:0} m) and burns her fuel");
+        Input.ActionPress("descend");
+        for (var i = 0; i < 30 && ship.GlobalPosition.Y > OwnVessel.Floor(ship.GlobalPosition) + 0.3f; i++) await Frames(10);
+        Input.ActionRelease("descend");
+        Check(ship.GlobalPosition.Y < sea0 + 1, "and comes back down onto the sea");
+        (sea.Steam, sea.Flies) = (false, false);
+
+        // Open country, as far from any town as Tristinwold is from its neighbours.
+        Check(main.NoRoomForColonyForTest(new Vector3(300, 0, -300)) is not null, $"no colony next door to Tristinwold: it wants {main.ColonySpacingForTest:0} m of room");
+        Vector3? isle = null;
+        for (var x = -5400; x <= 5400 && isle is null; x += 600)
+            for (var z = -5400; z <= 5400 && isle is null; z += 600)
+                if (main.NoRoomForColonyForTest(new Vector3(x, 0, z)) is null) isle = new Vector3(x, 0, z);
+        Check(isle is not null, $"there's open country out there with room for a colony ({isle})");
+        if (isle is null) return;
+        p.StandUp(isle.Value);
+        await Teleport(isle.Value);
+        await Frames(20);
+        while (p.Hero.Level < 5) main.GainXp(Hero.XpToNext(p.Hero.Level));
+        p.Crowns += 1000;
+        main.FoundColonyForTest();
+        var colony = city.HallOf(p.Company, HallKind.Colony);
+        Check(colony is { Members: 1 } && city.CouncilOf(Halls.ColonyTown(p.Company)).Heroes.Contains(p.Company), $"a hero can found a colony there, and sits on its council ({colony?.Name})");
+        city.TendHalls(Halls.JobSeconds * 4);
+        Check(colony is { Till: > 0 } && colony.Chest.Values.Sum() > 0, $"and its settlers fish, cut and quarry while you're away ({string.Join(", ", colony?.Chest.Select(kv => $"{kv.Value} {kv.Key}") ?? [])})");
     }
 
     async Task TheVillageDeck()

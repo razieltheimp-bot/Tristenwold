@@ -182,6 +182,9 @@ public sealed class SeaBook
     public int SteamLevel { get; set; } = 1;
     /// <summary>A lifeboat made over into a skyboat, where it was left, what's in its firebox, and its maker's level.</summary>
     public bool Skyboat { get; set; }
+    /// <summary>Where the hero's own ship was left on the open water (at her berth off the middle pier, unless they've sailed her somewhere).</summary>
+    public double ShipX { get; set; } = 148;
+    public double ShipZ { get; set; } = 5;
     public double SkyX { get; set; } = 128;
     public double SkyZ { get; set; } = -24;
     public double SkyFuel { get; set; }
