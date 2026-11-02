@@ -907,7 +907,7 @@ public partial class Main : Node3D
     (string Verb, Action Act)? Nearest()
     {
         var pos = _player.GlobalPosition;
-        if (_player.Seat is not null) return _ridden is not null ? ("jump down", LeaveWagon) : _isle?.SeatAction() ?? _atSea?.HelmAction();
+        if (_player.Seat is not null) return AboardSkyboat ? ("step off the skyboat", LeaveSkyboat) : _ridden is not null ? ("jump down", LeaveWagon) : _isle?.SeatAction() ?? _atSea?.HelmAction();
         if (FishingAction() is { } fishing) return fishing;
         var person = _places.People.Concat(_townsfolk).Concat(SharedFolk).Where(p => p.GlobalPosition.DistanceTo(pos) < 3.5f).MinBy(p => p.GlobalPosition.DistanceTo(pos));
         if (person is not null) return ($"talk to {person.Npc.Name}", () => Talk(person));
@@ -915,7 +915,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return TavernAction(pos) ?? IndoorAction(pos) ?? ChapelAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? IsleAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
+        return TavernAction(pos) ?? IndoorAction(pos) ?? ChapelAction(pos) ?? SkyAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? IsleAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>

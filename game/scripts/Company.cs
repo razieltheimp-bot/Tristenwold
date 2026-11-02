@@ -30,6 +30,7 @@ public partial class Main
         TendStoreFronts();
         TendHallFronts();
         TendGrove();
+        CollectOrders();
     }
 
     /// <summary>Mounts past the number of riders go to the Gallows Perch.</summary>
@@ -676,6 +677,8 @@ public partial class Main
         foreach (var o in SteamTalk(person)) yield return o;
         foreach (var o in StoreTalk(person)) yield return o;
         foreach (var o in HallTalk(person)) yield return o;
+        foreach (var o in EngineTalk(person)) yield return o;
+        foreach (var o in IsleEngineTalk(person)) yield return o;
         foreach (var o in ShopTalk(person)) yield return o;
         foreach (var o in ForgeTalk(person)) yield return o;
         foreach (var o in TownTalk(person)) yield return o;

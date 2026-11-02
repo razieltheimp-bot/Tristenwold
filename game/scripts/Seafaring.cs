@@ -113,7 +113,7 @@ public partial class Main
             yield return ($"I want the company's pardon. ({SeaBook.PardonPrice} crowns)", () => BuyPardon(person));
             yield break;
         }
-        if (s.Rank == SeaRank.Landsman)
+        if (s.Rank == SeaRank.Landsman && !s.OwnShip)
         {
             yield return ("Sign me on.", () =>
             {
@@ -1010,7 +1010,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
                 Complete(watch);
         // Work left undone slows her: slack lines, a foul bottom, water in the well.
         var behind = _jobs.Count(j => _clock - j.Posted > 45);
-        var pace = (_helm ? Steer(delta) : behind >= 3 ? 0.4 : behind >= 2 ? 0.7 : 1) * ((_surge -= delta) > 0 ? 4 : 1);
+        var pace = (_helm ? Steer(delta) : behind >= 3 ? 0.4 : behind >= 2 ? 0.7 : 1) * ((_surge -= delta) > 0 ? 4 : 1) * main.EnginePace(delta);
         if (!_helm && behind >= 2 && (_nag -= delta) <= 0)
         {
             _nag = 40;

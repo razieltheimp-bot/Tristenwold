@@ -112,6 +112,10 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction HallClose(string key) => new("hall_close", Contract: key);
     /// <summary>A druid's tree, set in the ground for everyone.</summary>
     public static CityAction Plant(string owner, double x, double z) => new("plant", Contract: owner, X: x, Z: z);
+    // Orders for an artificer (see WorkOrder): left with the makings, fitted by a friend, and collected.
+    public static CityAction OrderPost(string owner, string work, int pay) => new("order_post", work, pay, owner);
+    public static CityAction OrderFit(string key, string by, int level) => new("order_fit", by, Contract: key, N: level);
+    public static CityAction OrderDone(string key) => new("order_done", Contract: key);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -656,6 +660,7 @@ public sealed partial class CityEconomy
             case "store_set" when a.Store is { Owner.Length: > 0 and <= 60 } shop: Stores[shop.Owner] = shop; return true;
             case { } hall when hall.StartsWith("hall_", StringComparison.Ordinal): return HallAct(a);
             case "plant" when a.Contract is not null: return Plant(a.Contract, a.X, a.Z);
+            case { } order when order.StartsWith("order_", StringComparison.Ordinal): return OrderAct(a);
             case "store_shut" when a.Contract is not null: return Stores.Remove(a.Contract);
             case "store_buy" when a.Contract is not null && a.Item is not null: return StoreBuy(a.Contract, a.Item, crowns);
             case "store_sell" when a.Contract is not null && a.Item is not null: return StoreSell(a.Contract, a.Item, crowns);

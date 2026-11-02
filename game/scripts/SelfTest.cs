@@ -2557,6 +2557,43 @@ public partial class SelfTest(Main main) : Node
         Check(main.CryptCleared && p.Crowns > crowns, $"clear them, and the Temple pays ({p.Crowns - crowns} crowns; standing: {string.Join(", ", main.CryptFoes.Where(e => GodotObject.IsInstanceValid(e) && e.State != EnemyState.Dead).Select(e => $"{e.Kind.Id} {e.State} {e.Stats.Health:0}"))})");
         main.GoOutsideForTest();
         await Frames(10);
+        await EnginesTest();
+    }
+
+    /// <summary>An order left for an artificer friend and fitted, and a skyboat taken up and brought down again.</summary>
+    async Task EnginesTest()
+    {
+        var (p, city, sea) = (main.PlayerNode, main.Economy, main.Sea);
+        (sea.OwnShip, sea.ShipName, sea.Steam) = (true, "Wren", false);
+        main.DoCity(CityAction.OrderPost(p.Company, Engines.ShipSteam, 50));
+        main.DoCity(CityAction.OrderFit($"{p.Company}#{Engines.ShipSteam}", "Mira", 12));
+        main.CollectOrdersForTest();
+        Check(sea.Steam && sea.SteamLevel == 12 && city.Orders.Count == 0, "an artificer friend does your order, and your ship has her boiler, as good as they are");
+
+        main.FittedForTest(Engines.Skyboat, 10);
+        sea.SkyFuel = 300;
+        await Teleport(new Vector3((float)sea.SkyX + 3, 0, (float)sea.SkyZ));
+        await Frames(10);
+        main.TendSkyboatForTest();
+        await Frames(5);
+        var boat = main.SkyboatNode;
+        Check(boat is not null, $"the skyboat waits at the end of the pier ({sea.SkyX:0},{sea.SkyZ:0})");
+        if (boat is null) return;
+        main.BoardSkyboatForTest();
+        var y = boat.GlobalPosition.Y;
+        Input.ActionPress("jump");
+        Input.ActionPress("move_forward");
+        await Frames(120);
+        Input.ActionRelease("jump");
+        Input.ActionRelease("move_forward");
+        Check(main.AboardSkyboat && boat.GlobalPosition.Y > y + 3 && sea.SkyFuel < 300, $"at the helm she climbs ({boat.GlobalPosition.Y - y:0.0} m) and burns her fuel ({sea.SkyFuel:0} left)");
+        main.LeaveSkyboatForTest();
+        Check(main.AboardSkyboat, "nobody steps off in the air");
+        Input.ActionPress("descend");
+        for (var i = 0; i < 40 && !boat.Landed; i++) await Frames(10);
+        Input.ActionRelease("descend");
+        main.LeaveSkyboatForTest();
+        Check(!main.AboardSkyboat && Mathf.Abs((float)sea.SkyX - boat.GlobalPosition.X) < 0.1f, "brought down, you step off, and she's left where she landed");
     }
 
     async Task TheVillageDeck()

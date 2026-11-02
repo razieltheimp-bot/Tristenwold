@@ -45,6 +45,7 @@ public partial class Main
     /// <summary>A room doesn't outlast the hero leaving it some other way (the ring), nor a game that was closed in it.</summary>
     void TendIndoors()
     {
+        TendSkyboat(GetProcessDeltaTime());
         TendShaft();
         TendCrypt();
         var above = _player.GlobalPosition.Y > Indoors.Threshold;

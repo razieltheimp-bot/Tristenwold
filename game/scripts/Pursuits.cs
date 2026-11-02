@@ -183,6 +183,7 @@ public partial class Main
         if (_pursuits.Hunt is not null && pack.Count("spade") > 0) yield return ("Dig here (spade)", () => { _hud.EndTalk(); Dig(); });
         if (pack.Count("home_charm") > 0) yield return ("Use the home charm", () => { _hud.EndTalk(); GoHome(); });
         foreach (var o in HallPack()) yield return o;
+        foreach (var o in EnginePack()) yield return o;
     }
 
     // ---- feats ---------------------------------------------------------------------------------------------

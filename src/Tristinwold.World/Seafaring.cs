@@ -175,6 +175,17 @@ public sealed class SeaBook
 
     public bool OwnShip { get; set; }
     public string ShipName { get; set; } = "";
+    /// <summary>An artificer's work on the hero's own ship: a boiler, and a lift on top of it to take her into the air; what's in the firebox, and how good a maker fitted it.</summary>
+    public bool Steam { get; set; }
+    public bool Flies { get; set; }
+    public double Fuel { get; set; }
+    public int SteamLevel { get; set; } = 1;
+    /// <summary>A lifeboat made over into a skyboat, where it was left, what's in its firebox, and its maker's level.</summary>
+    public bool Skyboat { get; set; }
+    public double SkyX { get; set; } = 128;
+    public double SkyZ { get; set; } = -24;
+    public double SkyFuel { get; set; }
+    public int SkyLevel { get; set; } = 1;
     /// <summary>The state of the hull the hero sails in, out of 100: pirates hole it, the shipyard mends it (the company keeps its own ships mended).</summary>
     public double Hull { get; set; } = 100;
     /// <summary>What an ether-aeronaut has fitted at the shipyard (see <see cref="Modules"/>): it sails with them on every ship they're aboard.</summary>
@@ -195,6 +206,9 @@ public sealed class SeaBook
     };
 
     public bool HasModule(string id) => Modules.Contains(id);
+
+    /// <summary>Whether she'll go up when she sails: a lift, and something in the firebox to fill it.</summary>
+    public bool Flying => OwnShip && Flies && Fuel > 0;
 
     /// <summary>The hulls Osric sells at the yard, to anyone with the crowns: how much hold, how fast, and how much of a blow she feels.</summary>
     public static readonly IReadOnlyDictionary<ShipSize, (string Name, int Price, int Hold, double Pace, double Takes)> Hulls = new Dictionary<ShipSize, (string, int, int, double, double)>
@@ -334,7 +348,7 @@ public sealed class SeaBook
     public Voyage? Sail(SeaPort port, Rng rng, bool explore = false, PirateCrew? crew = null)
     {
         var allowed = explore ? NextChart == port : Ports.Contains(port);
-        if (Rank == SeaRank.Landsman || Outlaw || Voyage is not null || !allowed || OwnShip && Hull < Seaworthy) return null;
+        if (Rank == SeaRank.Landsman && !OwnShip || Outlaw || Voyage is not null || !allowed || OwnShip && Hull < Seaworthy) return null;
         if (!OwnShip) Hull = 100; // the company sends a sound ship
         List<double> Leg()
         {
@@ -346,7 +360,7 @@ public sealed class SeaBook
         return Voyage = new Voyage
         {
             Pace = Pace,
-            Port = port.Id, PortName = port.Name, Leagues = port.Leagues, Out = Leg(), Home = Leg(),
+            Port = port.Id, PortName = port.Name, Leagues = port.Leagues, Out = Flying ? [] : Leg(), Home = Flying ? [] : Leg(), // nobody boards a ship in the air
             Pirates = (crew?.Hands ?? 2 + port.Leagues + rng.Next(2)) + (Rank >= SeaRank.FirstMate ? 1 : 0),
             Pay = (int)Math.Round(PayFor(port) * (explore ? ExplorePay : 1)), Command = Rank == SeaRank.Captain, Explore = explore,
             Flag = Seas.Flies(port.Leagues, rng)?.Id, Crew = crew?.Id,
