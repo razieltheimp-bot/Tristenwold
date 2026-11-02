@@ -43,6 +43,8 @@ public partial class Main : Node3D
     readonly List<Person> _townsfolk = [];
     Skies? _skies;
     public Skies? SkiesNode => _skies;
+    public float WeatherSight => _skies?.Sight ?? 1;
+    public double WeatherBite => _skies?.Bite ?? 1;
 
     public override void _Ready()
     {

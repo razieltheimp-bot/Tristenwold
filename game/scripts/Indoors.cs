@@ -45,6 +45,7 @@ public partial class Main
     /// <summary>A room doesn't outlast the hero leaving it some other way (the ring), nor a game that was closed in it.</summary>
     void TendIndoors()
     {
+        _player.ElementalPick ??= () => _pursuits.Counters.GetValueOrDefault("elemental_form") is > 0 and var f && f <= Player.Elementals.Count ? Player.Elementals[f - 1].Id : null;
         TendSkyboat(GetProcessDeltaTime());
         TendShaft();
         TendCrypt();

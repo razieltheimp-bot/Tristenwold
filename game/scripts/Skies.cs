@@ -22,6 +22,12 @@ public partial class Skies(Main main) : Node3D
     /// <summary>Spring, summer, fall or winter, and what's overhead, to go under the name of the place.</summary>
     public string Line => City.Shut ? "" : $"{Season}, {(Sky switch { Weather.Clear => "clear skies", Weather.Cloudy => "overcast", Weather.Rain => "rain", Weather.Storm => "a storm", Weather.Snow => "snow", _ => "fog" })}";
 
+    /// <summary>How far off a hunting deviant can make the hero out: fog and snow hide them, rain a little.</summary>
+    public float Sight => City.Shut ? 1 : Sky switch { Weather.Fog => 0.5f, Weather.Snow => 0.7f, Weather.Rain or Weather.Storm => 0.85f, _ => 1 };
+
+    /// <summary>How long the fish take to bite: they come up for the rain and under cloud.</summary>
+    public double Bite => Sky is Weather.Rain or Weather.Storm or Weather.Cloudy ? 0.7 : Sky == Weather.Clear && Season == Season.Summer ? 1.2 : 1;
+
     /// <summary>The land's season in the shaders: set before anything that reads them is drawn.</summary>
     public static void Prepare()
     {

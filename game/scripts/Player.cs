@@ -180,6 +180,8 @@ public partial class Player : Fighter
         // What a body lends lasts through anything that works the numbers out again (a level, a potion, new gear).
         if (_form is not null) { Stats.DamageMult *= _formMight; Stats.Armor += 20; }
         if (_hybrid is not null) { Stats.DamageMult *= _hybridMight; Stats.Armor += 30; }
+        if (_elemental is not null) { Stats.DamageMult *= _elementalMight; Stats.Armor += _elemental == "earth" ? 60 : 30; }
+        if (_berserk > 0) Stats.DamageMult *= _berserkMight;
     }
 
     /// <summary>What the hero carries and wears (the game hands it over on loading).</summary>
@@ -326,6 +328,7 @@ public partial class Player : Fighter
         TickSuit(delta);
         TrackFall(delta);
         _rage -= delta;
+        TickBerserk(delta);
         if (_mightLeft > 0 && (_mightLeft -= delta) <= 0) Fit();
         if (_wardLeft > 0 && (_wardLeft -= delta) <= 0) Fit();
         _poison -= delta;
@@ -491,7 +494,7 @@ public partial class Player : Fighter
         if (Downed) return false;
         var limit = a == Class.Limit;
         if (limit ? !Stats.LimitReady : Cooldown(a.Id) > 0) return false;
-        if (a.Id == "half_form" && _possessing) return false; // the gauge isn't spent on a body they're already in
+        if (a.Id is "half_form" or "heart_of_the_storm" && _possessing) return false; // the gauge isn't spent on a body they're already in
         var cost = a.Cost * (Class.Id == "Sorcerer" && a.Pays == AttackKind.Spell ? 0.85 : 1);
         if (!limit && !Stats.Spend(a.Pays, cost)) return false;
         if (limit) { Stats.UseLimit(); LimitMoment(a); }
@@ -505,6 +508,7 @@ public partial class Player : Fighter
             Sound.At(Class.Id == "MartialArtist" ? "melee/punch" : "melee/swing", GlobalPosition + Vector3.Up, -6);
         if (Class.Calling == Calling.Bard) Play(a);
         if (a.Id == "half_form") return HalfForm(a.Seconds * Hero.MovePower(a.Id), dmg);
+        if (a.Id == "heart_of_the_storm") return ElementalForm(a.Seconds * Hero.MovePower(a.Id) * Hero.LevelPower(true), dmg);
         if (Advances.For(a.Id) is { } advance) return Advanced(advance, a, dmg, power, near);
         switch (a.Id)
         {
@@ -623,17 +627,7 @@ public partial class Player : Fighter
                 break;
             case "hundred_fists":
                 if (near is null) break;
-                for (var i = 0; i < 8; i++)
-                {
-                    var blow = i;
-                    GetTree().CreateTimer(blow * 0.09).Timeout += () =>
-                    {
-                        if (!IsInstanceValid(near) || near.State == EnemyState.Dead) return;
-                        Figure.Perform(blow % 2 == 0 ? "Unarmed_Melee_Attack_Punch_A" : "Unarmed_Melee_Attack_Punch_B", 0.1, 3);
-                        Strike(near, dmg, a.Kind, AttackKind.Weapon);
-                    };
-                }
-                Said?.Invoke("Hundred Fists!");
+                GuardianSpirit(near, dmg, a.Kind);
                 break;
 
             // ---- the barbarian ----
@@ -658,9 +652,7 @@ public partial class Player : Fighter
                 Said?.Invoke("RAGE!");
                 break;
             case "whirlwind":
-                Figure.Perform("2H_Melee_Attack_Spin", 1.1, 1);
-                Said?.Invoke("LIMIT BREAK: Whirlwind!");
-                foreach (var e in Around(a.Range).ToList()) Strike(e, dmg, a.Kind, AttackKind.Weapon);
+                Berserk(a.Seconds * Hero.MovePower(a.Id) * Hero.LevelPower(true), dmg);
                 break;
 
             // ---- the paladin ----
@@ -1265,6 +1257,7 @@ public partial class Player : Fighter
             Figure.Perform("Dodge_Left", 0.4, 1.6f);
             return;
         }
+        if (Impervious && attack == AttackKind.Weapon) { Effects.Burst(GetParent(), GlobalPosition + Vector3.Up, DamageKind.Fire, 0.5f); return; } // it glances off a berserker
         if (_rage > 0) damage *= 1.2;
         if (Class.Id == "Paladin") damage *= 1 - Class.Passive.Power * Hero.Power("devotion");
         damage *= 1 - Math.Min(Forging.MostBlock, Pack.Ability("block"));

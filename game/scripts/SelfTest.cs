@@ -49,6 +49,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--village-only")) { await TheVillageDeck(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--towns-only")) { await LivingTownsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--marks-only")) { await ClassMarksTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--limits-only")) { await NewLimitsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
@@ -2310,6 +2311,67 @@ public partial class SelfTest(Main main) : Node
     }
 
     /// <summary>A shapeshifter's limit break merges them with the beast they wear, or the one they've worn most; timed, stronger, and each beast lends its own body.</summary>
+    /// <summary>The elemental druid's form of their choosing, the barbarian's berserker rage, and the martial artist's guardian spirit.</summary>
+    async Task NewLimitsTest()
+    {
+        var p = main.PlayerNode;
+        await Teleport(new Vector3(-150, 0, -120));
+        await Frames(10);
+        p.Join("Stormdruid");
+        p.Fit();
+        p.Element = DamageKind.Fire;
+        main.Pursuits.Counters["elemental_form"] = Player.Elementals.ToList().FindIndex(e => e.Id == "earth") + 1;
+        await Frames(2);
+        var (might, armor) = (p.Stats.DamageMult, p.Stats.Armor);
+        p.Stats.GainLimit(100);
+        Check(p.ElementalKind == "earth" && p.LimitBreak() && p.Possessing, $"a fire-casting druid set on stone becomes {p.ElementalKind}, for {p.SuitLeft:0} s");
+        await Frames(10);
+        Check(p.Stats.DamageMult > might && p.Stats.Armor >= armor + 60, $"the rock golem hits harder and takes more: x{p.Stats.DamageMult / might:0.00}, armour +{p.Stats.Armor - armor:0}");
+        var lasts = p.SuitLeft;
+        p.Unpossess();
+        await Frames(10);
+        Check(!p.Possessing && Math.Abs(p.Stats.DamageMult - might) < 0.001 && p.Element == DamageKind.Fire, "and it passes, and they're themselves again");
+        main.Pursuits.Counters["elemental_form"] = 0;
+        p.Stats.GainLimit(100);
+        Check(p.ElementalKind == "fire" && p.LimitBreak(), "left unset, the form follows their attunement");
+        p.Unpossess();
+        await Frames(10);
+
+        p.Join("Barbarian");
+        p.Fit();
+        p.Stats.Heal(1e9);
+        var foe = Enemy.Create(Bestiary.Get("bandit"), p.GlobalPosition + new Vector3(3, 0.3f, 0));
+        main.AddEnemy(foe);
+        await Frames(5);
+        might = p.Stats.DamageMult;
+        var height = p.Figure.Scale.Y;
+        p.Stats.GainLimit(100);
+        Check(p.LimitBreak() && p.Impervious && p.Figure.Scale.Y > height * 1.4f && p.Stats.DamageMult > might, $"the berserker swells (x{p.Figure.Scale.Y / height:0.0}) and grows stronger (x{p.Stats.DamageMult / might:0.00})");
+        var health = p.Stats.Health;
+        p.TakeHit(80, DamageKind.Physical, AttackKind.Weapon, false, foe);
+        Check(p.Stats.Health == health, "no blade can hurt him");
+        p.TakeHit(20, DamageKind.Fire, AttackKind.Spell, false, foe);
+        Check(p.Stats.Health < health, $"but magic still can ({health - p.Stats.Health:0} from a spell)");
+        for (var i = 0; i < 60 && p.Impervious; i++) await Frames(30);
+        Check(!p.Impervious && Mathf.Abs(p.Figure.Scale.Y - height) < 0.01f && Math.Abs(p.Stats.DamageMult - might) < 0.001, "and the rage burns out, back to his own size");
+
+        p.Join("MartialArtist");
+        p.Fit();
+        foe.QueueFree();
+        var target = Enemy.Create(Bestiary.Get("bandit_chief"), p.GlobalPosition - p.GlobalTransform.Basis.Z * 2.5f + Vector3.Up * 0.3f);
+        main.AddEnemy(target);
+        await Frames(5);
+        var hp = target.Stats.Health;
+        p.Stats.GainLimit(100);
+        var spirits = 0;
+        Check(p.LimitBreak(), "the martial artist calls the guardian spirit");
+        await Frames(20);
+        spirits = p.GetParent().GetChildren().OfType<Guardian>().Count();
+        await Frames(120);
+        Check(spirits == 1 && target.Stats.Health < hp, $"a great golden spirit rises behind them and strikes ({hp - target.Stats.Health:0} harm)");
+        target.QueueFree();
+    }
+
     async Task TheHalfForm()
     {
         var p = main.PlayerNode;

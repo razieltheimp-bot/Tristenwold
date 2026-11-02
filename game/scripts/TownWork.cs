@@ -280,7 +280,7 @@ public partial class Main
         Hands()?.Perform("Throw", 0.6, 1.2f);
         _rod = Hands()?.Carry("rod");
         (_line, _water, _bobberAt, _castFrom) = (Line.Waiting, kind, at, _player.GlobalPosition);
-        _lineTimer = Fishing.BiteDelay(_player.Pack.Level(Job.Fishing), _lootRng);
+        _lineTimer = Fishing.BiteDelay(_player.Pack.Level(Job.Fishing), _lootRng) * WeatherBite;
         _bobber = new Node3D { Position = at };
         var red = new StandardMaterial3D { AlbedoColor = new Color("#d83a2a"), Roughness = 0.5f };
         var white = new StandardMaterial3D { AlbedoColor = new Color("#f2ece0"), Roughness = 0.5f };

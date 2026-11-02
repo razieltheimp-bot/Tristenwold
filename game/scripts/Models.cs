@@ -374,6 +374,12 @@ public partial class Figure : Body
         ["ghost_captain"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"], 0.95f),
         ["hollow_soldier"] = new("Skeleton_Warrior", [], 0.76f, new Color("#9aa8b0"), 0.12f, RightHand: "Skeleton_Blade", LeftHand: "Skeleton_Shield_Large_A"), // the dead, still in their mail
         ["forge_golem"] = new("Barbarian", ["2H_Axe"], 1.45f),
+        // An elemental druid's limit break: a golem of their element, built big and bare-handed (see Player.ElementalForm).
+        ["elemental_earth"] = new("Barbarian", [], 1.9f, new Color("#7a7266"), 0, Unarmed: true),
+        ["elemental_fire"] = new("Barbarian", [], 1.8f, new Color("#ff7a2a"), 0.9f, Unarmed: true),
+        ["elemental_storm"] = new("Barbarian", [], 1.8f, new Color("#8a9aff"), 0.8f, Unarmed: true),
+        ["elemental_water"] = new("Barbarian", [], 1.8f, new Color("#3a8ad0"), 0.5f, Unarmed: true),
+        ["elemental_frost"] = new("Barbarian", [], 1.8f, new Color("#c8ecff"), 0.6f, Unarmed: true),
         // Enemies.
         ["dock_thug"] = new("Barbarian", ["1H_Axe"]),
         ["lantern_boy"] = new("Rogue", ["Knife"], 0.66f, new Color("#ffcf9a")),

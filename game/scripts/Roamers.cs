@@ -116,7 +116,7 @@ public partial class Roamers(Main main) : Node
                     Pursue(o, d);
                 }
             }
-            else if (!p.Downed && !heroInTown && d < Tactics.NoticeRange) Stalk(o);
+            else if (!p.Downed && !heroInTown && d < Tactics.NoticeRange * main.WeatherSight) Stalk(o); // fog and snow hide you
             if (!r.Hunting)
             {
                 if (d > DespawnRange || p.Downed && d > 60)

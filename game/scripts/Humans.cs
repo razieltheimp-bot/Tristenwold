@@ -54,7 +54,7 @@ public static class Humans
     }
 
     /// <summary>The looks that aren't people: machines, the undead, spirits and trolls keep their own figures.</summary>
-    static readonly HashSet<string> NotPeople = ["golem", "familiar", "cinder_warden", "cinder_thrall", "forge_golem", "draugr", "draugr_overlord", "sea_wraith", "spriggan", "frost_troll", "hollow_soldier"];
+    static readonly HashSet<string> NotPeople = ["golem", "familiar", "cinder_warden", "cinder_thrall", "forge_golem", "draugr", "draugr_overlord", "sea_wraith", "spriggan", "frost_troll", "hollow_soldier", "elemental_earth", "elemental_fire", "elemental_storm", "elemental_water", "elemental_frost"];
 
     /// <summary>Whether a look is somebody: a person, to be given a real body.</summary>
     public static bool IsPerson(string look) => Figure.Looks.ContainsKey(look) && !NotPeople.Contains(look);

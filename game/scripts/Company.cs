@@ -929,6 +929,16 @@ public partial class Main
         options.Add(("My trades and standing", () => _hud.Talk("Trades and standing", more, ("Back", ShowSkills))));
         foreach (var id in hero.Learned.Keys.Where(k => k != c.Id).ToList())
             options.Add(($"Take up the way of the {Classes.Get(id).Name} again", () => { _player.Join(id); _hud.Toast($"You are a {Classes.Get(id).Name} again, with every rank you had in it.", 8); Save(); ShowSkills(); }));
+        if (c.Id == "Stormdruid")
+        {
+            var form = _pursuits.Counters.GetValueOrDefault("elemental_form");
+            options.Add(($"Elemental Form: {(form == 0 ? $"your attuned element ({_player.ElementalKind})" : Player.Elementals[form - 1].Name)} (change)", () =>
+            {
+                _pursuits.Counters["elemental_form"] = (form + 1) % (Player.Elementals.Count + 1);
+                Save();
+                ShowSkills();
+            }));
+        }
         options.Add(("Feats", ShowFeats));
         options.Add(("Quick keys", () => ShowQuickBar(ShowSkills)));
         options.Add(("Close", _hud.EndTalk));
