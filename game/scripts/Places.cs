@@ -620,11 +620,10 @@ public partial class Places(Main main, WorldGen world) : Node3D
             TownTrade.Ranger => ($"ranger of {s.Name}", $"{keeper} knows every trail for a day's walk, and sells what comes off them."),
             _ => ($"farmer of {s.Name}", $"{keeper} has worked this ground all their life, and sells what's over at the door."),
         };
-        b.People.Add(Add(parent, new Person
-        {
-            Npc = new Npc(shop.Id, keeper, sex, 34 + rng.Next(30), who, s.Id, s.Name, story, ["trade", "the road"], "warm", shop.Greeting, x, z),
-            Look = trade switch { TownTrade.Smith => "warmaster", TownTrade.Ranger => "hunter", _ => "worker" }, Position = Ground(x, z),
-        }));
+        var npc = new Npc(shop.Id, keeper, sex, 34 + rng.Next(30), who, s.Id, s.Name, story, ["trade", "the road"], "warm", shop.Greeting, x, z);
+        var look = trade switch { TownTrade.Smith => "warmaster", TownTrade.Ranger => "hunter", _ => "worker" };
+        b.People.Add(Add(parent, new Person { Npc = npc, Look = look, Position = Ground(x, z) }));
+        if (building.HasMeta("seed")) main.ShopDoors[(int)building.GetMeta("seed")] = (npc, look); // and behind the counter, inside
     }
 
     void Town(Node3D parent, Settlement s, Rng rng, string colour, Built b)

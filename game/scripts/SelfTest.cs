@@ -2688,6 +2688,29 @@ public partial class SelfTest(Main main) : Node
         }
         Check(done == Carpentry.Stages && main.CarpentryJobForTest is null && city.FabricOf(ReputationBook.Capital).Burnt == 0 && p.Crowns > crowns && p.Pack.Count("plank") == 0,
             $"frame, walls and roof, and the burned home stands again ({done} stages, {p.Crowns - crowns} crowns)");
+        await ShopsInsideTest();
+    }
+
+    /// <summary>A town's general store walked into, and its keeper behind the counter, trading the same as out front.</summary>
+    async Task ShopsInsideTest()
+    {
+        var (p, world, hud) = (main.PlayerNode, main.World, main.HudNode);
+        var druitt = world.Find("city:druitt")!;
+        await Teleport(new Vector3((float)(druitt.X + druitt.Radius * 0.82), 0, (float)druitt.Z));
+        await Until(() => main.PlacesNode.IsBuilt(druitt.Id), 8);
+        var door = main.ShopDoors.FirstOrDefault(d => d.Value.Npc.HomeId == druitt.Id && d.Value.Npc.Id.EndsWith("/general"));
+        Check(door.Value.Npc is not null, $"{druitt.Name}'s general store has a door");
+        if (door.Value.Npc is null) return;
+        main.GoInsideForTest("store", door.Key, p.GlobalPosition);
+        await Frames(20);
+        var keeper = main.KeeperInsideForTest;
+        Check(main.IndoorsNode is not null && keeper?.Npc.Id == door.Value.Npc.Id, $"inside, {door.Value.Npc.Name} is behind the counter");
+        if (keeper is not null) main.Talk(keeper);
+        Check(hud.Choose("Let me see"), $"and sells to you the same as out front ({hud.TalkText})");
+        hud.EndTalk();
+        main.GoOutsideForTest();
+        await Frames(10);
+        Check(main.KeeperInsideForTest is null && main.IndoorsNode is null, "and stays at the counter when you leave");
     }
 
     async Task TheVillageDeck()

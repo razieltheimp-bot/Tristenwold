@@ -321,6 +321,7 @@ public partial class Main
         foreach (var (shop, at, look, sex, age, who, story, temper) in stalls)
         {
             Townsfolk(new Npc(shop.Id, shop.Keeper, sex, age, who, "city:tristinwold", "Tristinwold", story, ["trade", "the road"], temper, shop.Greeting, at.X, at.Z), look);
+            ShopDoors[Math.Abs(shop.Id.GetHashCode())] = (_townsfolk[^1].Npc, look);
             Market.Stall(this, at, shop);
         }
         var fronts = new (Shop Shop, Vector3 At, string Look, Sex Sex, int Age, string Who, string Story, string Temper)[]
@@ -334,6 +335,7 @@ public partial class Main
         {
             var by = City.Frontage(at);
             Townsfolk(new Npc(shop.Id, shop.Keeper, sex, age, who, "city:tristinwold", "Tristinwold", story, ["trade", "the road"], temper, shop.Greeting, by.X, by.Z), look);
+            ShopDoors[(int)(at.X * 13 + at.Z)] = (_townsfolk[^1].Npc, look); // the seed its landmark was built with
         }
     }
 }

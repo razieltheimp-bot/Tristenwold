@@ -94,13 +94,14 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         "hollow" => (9, 9, 3.2f),
         "mineshaft" => (12, 32, 4.5f),
         "crypt" => (14, 66, 5),
+        "store" => (9, 10, 3.4f),
         _ => (8, 9, 3),
     };
 
     public static string Called(string kind) => kind switch
     {
         "longhall" => "long hall", "smithy" => "smithy", "barn" => "barn", "church" => "church", "keep" => "keep", "tower" => "tower",
-        "tavern" => "tavern", "cottage" => "cottage", "hollow" => "living hollow", "mineshaft" => "mine", "crypt" => "Drowned Chapel's crypt", _ => "house",
+        "tavern" => "tavern", "cottage" => "cottage", "store" => "shop", "hollow" => "living hollow", "mineshaft" => "mine", "crypt" => "Drowned Chapel's crypt", _ => "house",
     };
 
     public Vector3 WayIn => Stage + new Vector3(0, 0.6f, Plan(kind).Deep / 2 - 1.6f);
@@ -137,6 +138,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.LetInSky();
         if (kind == "mineshaft") main.LeftTheShaft();
         if (kind == "crypt") main.LeftTheCrypt();
+        main.LeftTheShop();
     }
 
     static Material Photo(Surface s)
@@ -238,7 +240,17 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
                 Guest("drinker", new Vector3(-wide / 2 + 2.2f, 0, -1), 1.6f);
                 Guest("townsfolk", new Vector3(3.2f, 0, 3.8f), -2.4f);
                 break;
+            case "store":
+                Slab(new Vector3(0, 0.5f, -1.2f), new Vector3(wide - 3, 1, 0.8f), Surface.Timber); // the counter
+                foreach (var side in new[] { -1f, 1f })
+                    for (var z = -deep / 2 + 1; z < deep / 2 - 2; z += 2.2f)
+                        Put(rng.Chance(0.5) ? "dungeon/shelf_small.glb" : "dungeon/crates_stacked.glb", side * (wide / 2 - 0.6f), z, 0.7f, side * 1.57f);
+                Put("dungeon/barrel_large.glb", -wide / 2 + 1.2f, deep / 2 - 2, 0.6f);
+                Light(new Vector3(0, high - 0.5f, -1), 1.2f, 9);
+                main.KeeperInside(seed, Stage + new Vector3(0, 0, -2.6f));
+                break;
             case "smithy":
+                main.KeeperInside(seed, Stage + new Vector3(1, 0, -2.4f));
                 Hearth(deep);
                 Put("dungeon/box_stacked.glb", wide / 2 - 1.2f, -2, 0.7f);
                 Put("medieval/props/weaponrack.gltf", -wide / 2 + 0.9f, 0, 1.6f, 1.57f);

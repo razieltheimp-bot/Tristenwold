@@ -31,6 +31,7 @@ public static class Buildings
         foreach (var (centre, size) in design.Solids.Where(_ => solid))
             body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size }, Position = centre });
         body.SetMeta("height", design.Height * scale);
+        body.SetMeta("seed", seed);
         parent.AddChild(body);
         if (door && HasInside(KindFor(kind)))
             Doors.Add((body, KindFor(kind), seed, design.Solids.Max(s => s.Centre.Z + s.Size.Z / 2) * scale));
@@ -40,7 +41,7 @@ public static class Buildings
     /// <summary>The buildings you can walk into, and where each one's door is (on the front, +Z, in the middle).</summary>
     static readonly List<(Node3D Body, string Kind, int Seed, float Front)> Doors = [];
 
-    static bool HasInside(string kind) => kind is "house" or "cottage" or "tavern" or "longhall" or "smithy" or "barn" or "church" or "keep" or "tower";
+    static bool HasInside(string kind) => kind is "house" or "cottage" or "tavern" or "longhall" or "smithy" or "barn" or "church" or "keep" or "tower" or "store";
 
     /// <summary>A door that isn't on a building made here: its node's +Z points out of it.</summary>
     public static void Door(Node3D at, string kind, int seed) => Doors.Add((at, kind, seed, 0));
