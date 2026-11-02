@@ -123,7 +123,7 @@ public partial class Player
 
     void TickBerserk(double delta)
     {
-        if (_berserk <= 0 || (_berserk -= delta) > 0) return;
+        if (_berserk <= 0 || (_berserk -= delta) > 0 && Class.Id == "Barbarian") return; // it's a barbarian's rage: take up another way and it's gone
         _berserk = 0;
         Figure.Scale = _berserkScale;
         var own = Appearance?.Size ?? 1;
