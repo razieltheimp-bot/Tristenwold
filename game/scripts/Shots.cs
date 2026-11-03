@@ -519,6 +519,39 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.MakeCurrent();
             await Shot(name);
         }
+        if (OS.GetCmdlineUserArgs().Contains("--warehouses"))
+        {
+            // The dock warehouse from where the hero comes up the road, and from above; the old storehouse from the street, from behind, and inside.
+            await From("warehouse-street", new Vector3(88, 2.4f, 6), new Vector3(90, 1.8f, -13));
+            await From("warehouse-above", new Vector3(104, 22, 6), City.DockWarehouse);
+            var hidden = City.OldStorehouse;
+            await From("storehouse-street", hidden * 0.8f + new Vector3(0, 2.2f, 0), hidden + Vector3.Up * 1.5f);
+            await From("storehouse-behind", hidden * 1.09f + new Vector3(4, 2.6f, 0), hidden + Vector3.Up * 1.5f);
+            await From("storehouse-above", hidden * 0.85f + new Vector3(0, 26, 0), hidden);
+            if (Buildings.DoorNear(hidden * 1.07f) is { } door)
+            {
+                main.GoInsideForTest("storehouse", door.Seed, door.Step);
+                await Frames(40);
+                main.TendUndyingForTest();
+                await Frames(10);
+                cam.GlobalPosition = Main.KorrinTankForTest + new Vector3(2.5f, 2, 6);
+                cam.LookAt(Main.KorrinTankForTest + Vector3.Up * 1.8f, Vector3.Up);
+                cam.MakeCurrent();
+                await Shot("storehouse-inside");
+                main.GoOutsideForTest();
+            }
+            if (Buildings.DoorNear(City.DockWarehouse + new Vector3(0, 0, 4.5f)) is { } dock)
+            {
+                main.GoInsideForTest(dock.Kind, dock.Seed, dock.Step);
+                await Frames(40);
+                cam.GlobalPosition = Indoors.StageAt + new Vector3(0, 2.4f, 5);
+                cam.LookAt(Indoors.StageAt + new Vector3(0, 1, -4), Vector3.Up);
+                cam.MakeCurrent();
+                await Shot("warehouse-inside");
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--minigames"))
         {
             // Through the hero's own eyes: the tavern's tables, the wagon's box, and the ship's wheel.

@@ -238,7 +238,7 @@ public partial class Main
     {
         Townsfolk(new Npc(BrassFactor, "Wren Tollard", Sex.Other, 46, "Brass Factor of the Brasswake trade", "city:tristinwold", "Tristinwold",
             "Keeps the board on the harbour road that says how far out the island is today. Wears a very good watch, and won't tell you how it works.",
-            ["the sea", "craft"], "brisk", "Three days out this morning. Or was. Ask me again.", 92, -8), "scholar");
+            ["the sea", "craft"], "brisk", "Three days out this morning. Or was. Ask me again.", 87.5, -3.5), "scholar"); // out in front of the warehouse, by the clock
         var (iron, brass) = (Armoury.Metal(new Color("#3a3a40"), 0.5f), Armoury.Brass);
         var globe = new StandardMaterial3D { AlbedoColor = new Color("#ffd9a0"), EmissionEnabled = true, Emission = new Color("#ffc070"), EmissionEnergyMultiplier = 2.5f };
         for (var z = -48f; z <= 48; z += 16)
@@ -260,8 +260,8 @@ public partial class Main
         var swing = jib.CreateTween().SetLoops();
         swing.TweenProperty(jib, "rotation:y", 1.1f, 14).SetTrans(Tween.TransitionType.Sine);
         swing.TweenProperty(jib, "rotation:y", -0.7f, 14).SetTrans(Tween.TransitionType.Sine);
-        // The great clock by the harbour master's: brass wheels going round in the open, and the Factor's board beneath.
-        var clock = new Vector3(92, 0, -14);
+        // The great clock in front of the warehouse: brass wheels going round in the open, and the Factor's board beneath.
+        var clock = new Vector3(84.5f, 0, -6.5f);
         clock.Y = City.FloorAt(clock);
         AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(2.4f, 8, 2.4f) }, MaterialOverride = BuildingMaterials.For(Surface.DarkStone), Position = clock + Vector3.Up * 4 });
         foreach (var (y, r, speed) in new[] { (6.4f, 1.1f, 12f), (4.6f, 0.7f, -7f) })
@@ -283,7 +283,7 @@ public partial class Main
     /// <summary>For the self-test and the pictures: straight aboard, and off again.</summary>
     public void BoardForTest() => GoToIsle();
     public void LeaveIsleForTest() => LeaveIsle();
-    public static Vector3 BrassFactorAt => new(92, 0, -8);
+    public static Vector3 BrassFactorAt => new(87.5f, 0, -3.5f);
     public void RaidForTest(string id) => _isle?.Raid(Brasswake.Raids.First(r => r.Id == id));
 }
 

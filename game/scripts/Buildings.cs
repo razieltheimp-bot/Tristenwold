@@ -41,7 +41,7 @@ public static class Buildings
     /// <summary>The buildings you can walk into, and where each one's door is (on the front, +Z, in the middle).</summary>
     static readonly List<(Node3D Body, string Kind, int Seed, float Front)> Doors = [];
 
-    static bool HasInside(string kind) => kind is "house" or "cottage" or "tavern" or "longhall" or "smithy" or "barn" or "church" or "keep" or "tower" or "store";
+    static bool HasInside(string kind) => kind is "house" or "cottage" or "tavern" or "longhall" or "smithy" or "barn" or "church" or "keep" or "tower" or "store" or "warehouse" or "storehouse";
 
     /// <summary>A door that isn't on a building made here: its node's +Z points out of it.</summary>
     public static void Door(Node3D at, string kind, int seed) => Doors.Add((at, kind, seed, 0));
@@ -123,6 +123,8 @@ public static class Buildings
             case "tavern": Tavern(b, rng, roof); break;
             case "longhall": Longhall(b, rng, roof); break;
             case "barn": Barn(b, rng); break;
+            case "warehouse": Warehouse(b, rng, roof); break;
+            case "storehouse": Storehouse(b, rng); break;
             case "smithy": Smithy(b, rng, roof); break;
             case "market": Market(b, rng, roof); break;
             case "tower": Tower(b, rng, roof); break;
@@ -212,6 +214,31 @@ public static class Buildings
         b.Floor(w, d, 0.25f, 4.2f, Surface.Planks, timbered: true, door: true, rng, doorWidth: 3f, windows: false);
         b.Gable(w, d, 4.45f, 0.78f, Surface.Thatch, Surface.Planks, acrossFront: false, overhang: 0.6f);
         b.Solid(new Vector3(0, 2.2f, 0), new Vector3(w, 4.4f, d));
+    }
+
+    /// <summary>A small stone warehouse on the docks: wide doors for the cargo, no windows to speak of, and a hoist beam over the doors.</summary>
+    static void Warehouse(Builder b, Rng rng, Surface roof)
+    {
+        const float w = 7.5f, d = 6;
+        b.Plinth(w, d, 0.25f);
+        b.Floor(w, d, 0.25f, 3.6f, Surface.Stone, timbered: false, door: true, rng, doorWidth: 2.2f, windows: false);
+        b.Gable(w, d, 3.85f, 0.5f, roof, Surface.Stone, acrossFront: true, overhang: 0.5f);
+        b.Beam(new Vector3(0, 3.4f, d / 2), new Vector3(0, 3.4f, d / 2 + 1.3f), 0.2f, Surface.Timber);
+        b.Box(Surface.Timber, new Vector3(-0.05f, 2.7f, d / 2 + 1.1f), new Vector3(0.05f, 3.3f, d / 2 + 1.2f)); // the hoist's rope
+        b.Solid(new Vector3(0, 1.95f, 0), new Vector3(w, 3.9f, d));
+    }
+
+    /// <summary>An old storehouse nobody's used in years: stone, a narrow door, its windows boarded over, the thatch gone grey.</summary>
+    static void Storehouse(Builder b, Rng rng)
+    {
+        const float w = 7, d = 8;
+        b.Plinth(w, d, 0.2f);
+        b.Floor(w, d, 0.2f, 3.4f, Surface.Stone, timbered: false, door: true, rng, doorWidth: 1.3f, windows: false);
+        b.Gable(w, d, 3.6f, 0.62f, Surface.Thatch, Surface.Planks, acrossFront: false, overhang: 0.4f);
+        foreach (var side in new[] { -1f, 1f })
+            foreach (var (z, y) in new[] { (-1.6f, 1.5f), (-1.6f, 1.9f), (1.4f, 1.6f), (1.4f, 2.0f) }) // boards nailed across where the windows were
+                b.Box(Surface.Planks, new Vector3(side * w / 2 - (side > 0 ? 0 : 0.08f), y, z - 0.6f), new Vector3(side * w / 2 + (side > 0 ? 0.08f : 0), y + 0.22f, z + 0.6f));
+        b.Solid(new Vector3(0, 1.8f, 0), new Vector3(w, 3.6f, d));
     }
 
     static void Smithy(Builder b, Rng rng, Surface roof)

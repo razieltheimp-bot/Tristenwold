@@ -99,6 +99,8 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         "mineshaft" => (12, 32, 4.5f),
         "crypt" => (14, 66, 5),
         "store" => (9, 10, 3.4f),
+        "warehouse" => (10, 12, 4.4f),
+        "storehouse" => (9, 11, 4),
         "trench" => (36, 110, 14),
         "depths" => (64, 150, 26),
         _ => (8, 9, 3),
@@ -106,7 +108,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
 
     public static string Called(string kind) => kind switch
     {
-        "longhall" => "long hall", "smithy" => "smithy", "barn" => "barn", "church" => "church", "keep" => "keep", "tower" => "tower",
+        "longhall" => "long hall", "smithy" => "smithy", "barn" => "barn", "warehouse" => "warehouse", "storehouse" => "old storehouse", "church" => "church", "keep" => "keep", "tower" => "tower",
         "tavern" => "tavern", "cottage" => "cottage", "store" => "shop", "hollow" => "living hollow", "mineshaft" => "mine", "crypt" => "Drowned Chapel's crypt", "trench" => "Deep Trenches", "depths" => "Dark Depths", _ => "house",
     };
 
@@ -120,7 +122,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.BelowName = p => p.Y > Threshold ? $"Inside the {Called(kind)}" : null;
         City.ShutOutSky(new Color("#b0a090"), 0.3f, 0.002f);
         var shaft = kind is "mineshaft" or "crypt" or "trench" or "depths";
-        var stone = kind is "church" or "keep" or "tower" or "smithy";
+        var stone = kind is "church" or "keep" or "tower" or "smithy" or "warehouse" or "storehouse";
         Slab(Vector3.Down * 0.1f, new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : stone ? Surface.Stone : Surface.Planks);
         Slab(Vector3.Up * (high + 0.1f), new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : Surface.Timber);
         var walls = shaft ? Surface.DarkStone : stone ? Surface.Stone : kind == "hollow" ? Surface.Timber : Surface.Plaster;
@@ -264,6 +266,22 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
                 Put("dungeon/box_stacked.glb", wide / 2 - 1.2f, -2, 0.7f);
                 Put("medieval/props/weaponrack.gltf", -wide / 2 + 0.9f, 0, 1.6f, 1.57f);
                 Slab(new Vector3(2, 0.4f, -1), new Vector3(0.4f, 0.8f, 0.9f), Surface.DarkStone); // the anvil
+                break;
+            case "warehouse":
+                foreach (var side in new[] { -1f, 1f }) // the cargo in rows down both walls, and an aisle up the middle
+                    for (var z = -deep / 2 + 1.4f; z < deep / 2 - 3; z += 2.2f)
+                        Put(rng.Chance(0.5) ? "dungeon/crates_stacked.glb" : rng.Chance(0.5) ? "dungeon/barrel_large.glb" : "medieval/props/crate_long_A.gltf",
+                            side * (wide / 2 - 1.1f), z, rng.Chance(0.5) ? 0.8f : 1.4f, (float)rng.NextDouble() * 0.4f);
+                Put("medieval/props/sack.gltf", 1.2f, -deep / 2 + 1.2f, 1.6f, solid: false);
+                Put("medieval/props/sack.gltf", -0.6f, -deep / 2 + 1, 1.6f, 0.8f, solid: false);
+                Sign(new Vector3(0, 3, -deep / 2 + 0.6f), "Bonded goods. Hands off.");
+                break;
+            case "storehouse":
+                Put("dungeon/crates_stacked.glb", -wide / 2 + 1, deep / 2 - 2.6f, 0.7f, 0.3f);
+                Put("medieval/props/sack.gltf", wide / 2 - 1.2f, deep / 2 - 2.2f, 1.5f, solid: false);
+                Put("dungeon/barrel_large.glb", wide / 2 - 1, -deep / 2 + 1.2f, 0.6f);
+                Put("medieval/props/crate_long_A.gltf", -wide / 2 + 1.2f, -deep / 2 + 1.6f, 1.4f, 1.2f);
+                main.FurnishStorehouse(this);
                 break;
             case "barn":
                 Put("medieval/props/crate_long_A.gltf", -wide / 2 + 1.4f, -3, 1.6f);

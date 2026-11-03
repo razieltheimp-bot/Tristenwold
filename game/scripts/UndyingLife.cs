@@ -6,8 +6,8 @@ using Tristinwold.World;
 namespace Tristinwold.Game;
 
 /// <summary>
-/// Korrin and Ronacse (see <see cref="Undying"/>) in the world. Korrin floats in his tank in the warehouse by the east
-/// gate until somebody pulls the lever; then he holds court on the dock road with his thugs round him, the stalls and
+/// Korrin and Ronacse (see <see cref="Undying"/>) in the world. Korrin floats in his tank in an old storehouse at the
+/// back of the Warrens, its door to the wall, until somebody finds him and pulls the lever; then he holds court on the dock road with his thugs round him, the stalls and
 /// the caravan yard are shut, and his men take a town every other day. He fights twice: put him down and he gets up
 /// as something worse, whole again. Ronacse keeps his vigil by the Host's breach in the wilds, a paladin in gold to
 /// look at, and goes looking for heroes worth humbling; he calls meteors down on whoever he's fighting, and when he
@@ -15,8 +15,8 @@ namespace Tristinwold.Game;
 /// </summary>
 public partial class Main
 {
-    /// <summary>The tank, in the warehouse by the east gate; and where he sits when the city is his, on the dock road.</summary>
-    static Vector3 KorrinTank => Warehouse + new Vector3(-5.5f, 0, 2.5f);
+    /// <summary>The tank, at the back of the old storehouse's room (see <see cref="City.OldStorehouse"/>); and where he sits when the city is his, on the dock road.</summary>
+    static Vector3 KorrinTank => Indoors.StageAt + new Vector3(0, 0, -2.6f);
     static readonly Vector3 KorrinSeat = new(108, 0, -4);
 
     Node3D? _tank;
@@ -75,11 +75,18 @@ public partial class Main
 
     // ---- the tank -----------------------------------------------------------------------------------------------
 
-    /// <summary>A brass-bound tank of green light as tall as two men, with a figure floating in it, a plate, and a lever.</summary>
-    void BuildTank()
+    /// <summary>The old storehouse's room is built: the tank's in it.</summary>
+    public void FurnishStorehouse(Node3D room)
     {
-        _tank = new Node3D { Position = KorrinTank with { Y = City.FloorAt(KorrinTank) } };
-        AddChild(_tank);
+        BuildTank(room);
+        TendTank();
+    }
+
+    /// <summary>A brass-bound tank of green light as tall as two men, with a figure floating in it, a plate, and a lever.</summary>
+    void BuildTank(Node3D room)
+    {
+        _tank = new Node3D { Position = KorrinTank };
+        room.AddChild(_tank);
         var brass = new StandardMaterial3D { AlbedoColor = new Color("#8a6a30"), Metallic = 0.8f, Roughness = 0.35f };
         var glass = new StandardMaterial3D
         {
@@ -110,15 +117,15 @@ public partial class Main
     /// <summary>The tank as things are: him asleep in it, or the glass in shards and nobody home.</summary>
     void TendTank()
     {
-        if (_tank is null) BuildTank();
+        if (_tank is null || !IsInstanceValid(_tank)) return;
         var awake = _city.KorrinFree;
         if (_tankSleeper is not null && IsInstanceValid(_tankSleeper)) _tankSleeper.Visible = !awake;
-        if (_tank!.GetNodeOrNull<MeshInstance3D>("Glass") is { } g) g.Visible = !awake;
+        if (_tank.GetNodeOrNull<MeshInstance3D>("Glass") is { } g) g.Visible = !awake;
     }
 
     (string Verb, Action Act)? TankAction(Vector3 pos)
     {
-        if (_indoors is not null || _player.Mount is not null || pos.DistanceTo(KorrinTank with { Y = pos.Y }) > 3.2f) return null;
+        if (_indoors?.Kind != "storehouse" || pos.DistanceTo(KorrinTank with { Y = pos.Y }) > 3.2f) return null;
         if (_city.KorrinFree) return ("look at the broken tank", () => _hud.Talk("The tank", "The glass is in pieces on the floor and the green has drained away. Whatever was in here isn't any more. The brass plate still says SUBJECT ONE.", ("Leave it.", _hud.EndTalk)));
         return ("look at the tank", LookAtTank);
     }
@@ -373,7 +380,7 @@ public partial class Main
             _player.Crowns += 1000 + 50 * level;
             GainXp(200 + 30 * level);
             Sound.Ui("coin", -2);
-            _hud.Talk("Korrin, beaten", "He's down, and this time he stays down, for now: breathing, smiling at the sky. You could leave him, and he'll be back in three days. Or you could drag him back to the warehouse and put him in the tank.",
+            _hud.Talk("Korrin, beaten", "He's down, and this time he stays down, for now: breathing, smiling at the sky. You could leave him, and he'll be back in three days. Or you could drag him back to the old storehouse in the Warrens and put him in the tank.",
                 ("Drag him back into the tank.", () => { DoCity(CityAction.KorrinFell(_player.Company, true)); _hud.EndTalk(); _hud.Toast("It takes all night. He doesn't fight it: he just watches you, smiling, until the green closes over his face. The stalls open in the morning.", 10); Save(); }),
                 ("Leave him.", () => { DoCity(CityAction.KorrinFell(_player.Company, false)); _hud.EndTalk(); _hud.Toast("By morning he's gone, and his thugs with him. Tristinwold trades again. He'll be back.", 9); Save(); }));
             return;
@@ -424,6 +431,7 @@ public partial class Main
     // ---- for the self-test -------------------------------------------------------------------------------------------
 
     public static Vector3 KorrinTankForTest => KorrinTank;
+    public static Vector3 OldStorehouseForTest => City.OldStorehouse;
     public static Vector3 KorrinSeatForTest => KorrinSeat;
     public (string Verb, Action Act)? TankActionForTest(Vector3 at) => TankAction(at);
     public Enemy? KorrinForTest => _korrin;

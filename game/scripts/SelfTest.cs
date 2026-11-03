@@ -2953,15 +2953,23 @@ public partial class SelfTest(Main main) : Node
         await Until(() => !p.Downed, 40); // the ring brings them back first, if the last test put them down
         var hud = main.HudNode;
         var city = main.Economy;
-        await Teleport(Main.KorrinTankForTest + new Vector3(0, 0, 2.6f));
+        Check(main.TankActionForTest(Main.KorrinTankForTest + new Vector3(0, 0, 2.6f)) is null, "nothing on any street gives the tank away");
+        await Teleport(Main.OldStorehouseForTest * 1.07f); // round the back, between the old storehouse and the wall
         await Frames(20);
-        main.TendUndyingForTest();
+        var door = Buildings.DoorNear(p.GlobalPosition);
+        Check(door?.Kind == "storehouse", $"at the back of the Warrens, an old storehouse with its door to the wall ({door?.Kind ?? "no door"})");
+        main.GoInsideForTest("storehouse", door?.Seed ?? 31, door?.Step ?? p.GlobalPosition);
+        await Frames(10);
+        p.GlobalPosition = Main.KorrinTankForTest + new Vector3(0, 0.4f, 2.6f);
         await Frames(5);
+        main.TendUndyingForTest();
         var act = main.TankActionForTest(p.GlobalPosition);
-        Check(act?.Verb == "look at the tank" && !city.KorrinFree, $"in the warehouse by the east gate, a tank with someone asleep in it ({act?.Verb})");
+        Check(act?.Verb == "look at the tank" && !city.KorrinFree, $"inside, a tank with someone asleep in it ({act?.Verb})");
         act?.Act();
         Check(hud.TalkText.Contains("SUBJECT ONE") && !hud.TalkText.Contains("evil"), "the plate says only SUBJECT ONE: nothing says what he is");
         Check(hud.Choose("Pull the lever") && hud.Choose("Pull it") && city.KorrinFree && city.KorrinHolds && city.TradeShut("city:tristinwold"), "pull the lever, and he's out, and Tristinwold is his");
+        main.GoOutsideForTest();
+        await Frames(5);
         main.Talk(main.Locals.First(x => x.Npc.Id == Shops.Fishmonger.Id));
         Check(hud.Choose("Are you open") && !hud.Options.Any(o => o.StartsWith("Let me see")), $"every stall is shut ({hud.TalkText})");
         hud.EndTalk();

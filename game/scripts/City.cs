@@ -21,6 +21,9 @@ public static class City
     public const float InnerHeight = 1.5f, CrownHeight = 3f;
 
     public static readonly Vector3 GallowsPerch = new(82, 0, -23);
+    /// <summary>The warehouse the dock work carries crates to, by the east gate; and an old storehouse at the back of the Warrens, its door to the wall, that nobody goes into.</summary>
+    public static readonly Vector3 DockWarehouse = new(90, 0, -15.5f), OldStorehouse = new(-42, 0, -77);
+    static readonly Vector3[] Reserved = [DockWarehouse, OldStorehouse];
     public static readonly Vector3 PlayerStart = new(78, 0, -6);
     public static readonly Vector3 Needle = new(210, 0, 70);
 
@@ -232,6 +235,8 @@ public static class City
         for (var i = 0; i < 6; i++) // the Warrens: a crush of ruins and hovels
             Buildings.Place(root, i % 2 == 0 ? "ruin" : "cottage", new Vector3(-34 + i * 6.5f, 0, -84 - (i % 3) * 5), (float)rng.NextDouble() * Mathf.Tau, i, Surface.Thatch, 0.85f);
         Label(root, new Vector3(-20, 8, -82), "The Warrens");
+        Buildings.Place(root, "storehouse", OldStorehouse, Facing(OldStorehouse) + Mathf.Pi, 31, Surface.Thatch);
+        Placed.Add(OldStorehouse);
 
         // The Docks: piers out into the harbor, stacked with cargo.
         foreach (var z in Piers)
@@ -242,6 +247,8 @@ public static class City
                     new Vector3(116 + rng.Next(22), 0, z + (float)rng.NextDouble() * 3 - 1.5f), 1, (float)rng.NextDouble() * Mathf.Tau);
         }
         Buildings.Place(root, "boardwalk", new Vector3(BoardwalkX, 0, 0), 0, 0);
+        Buildings.Place(root, "warehouse", DockWarehouse, 0, 17, Surface.Slate); // its doors to where the crates are set down
+        Placed.Add(DockWarehouse);
         Label(root, new Vector3(120, 5, 0), "The Docks");
 
         // The Needle: a lighthouse on a rocky island.
@@ -324,7 +331,10 @@ public static class City
             if (Zones.Any(z => z.Priority >= 9 && new Vector2(pos.X - z.Center.X, pos.Z - z.Center.Z).Length() < z.Radius + 5)) continue;
             if (Placed.Any(p => new Vector2(p.X - pos.X, p.Z - pos.Z).Length() < 10.5f)) continue; // no two houses in the same spot
             var roof = rng.Chance(0.6) ? Surface.ClayTile : rng.Chance(0.5) ? Surface.Slate : Surface.Shingle;
-            Buildings.Place(parent, rng.Pick(kinds), pos, Mathf.Atan2(-pos.X, -pos.Z), placed + (int)(r * 7), roof); // front door to the centre
+            var kind = rng.Pick(kinds);
+            // A house on one of the spots kept for something else just isn't built, and the rest of the street stays where it was.
+            if (y == 0 && Reserved.Any(k => new Vector2(k.X - pos.X, k.Z - pos.Z).Length() < 10)) { Placed.Add(pos); placed++; continue; }
+            Buildings.Place(parent, kind, pos, Mathf.Atan2(-pos.X, -pos.Z), placed + (int)(r * 7), roof); // front door to the centre
             Placed.Add(pos);
             placed++;
         }

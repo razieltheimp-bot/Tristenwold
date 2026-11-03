@@ -4,7 +4,7 @@ namespace Tristinwold.Gameplay;
 /// Two more of the incomplete immortals, and the worst of them, both on the server for everyone.
 /// <para>
 /// Korrin: the first thing the Magi made, before the Ringing worked. A half-dragon elf, kept asleep in a stasis tank in
-/// the warehouse by Tristinwold's east gate, with a brass plate that says only SUBJECT ONE. Anyone can pull the lever.
+/// an old storehouse at the back of Tristinwold's Warrens, with a brass plate that says only SUBJECT ONE. Anyone can pull the lever.
 /// Awake he's pure malice and quite mad: he takes Tristinwold for the seat of an empire, shuts every stall and the
 /// caravan yard, and every other day his thugs take another town and shut that too. Thugs and grunts obey him from
 /// the first; the deviants don't. He fights in two forms, the second as strong again as the first. Killed, he's back
@@ -72,7 +72,7 @@ public sealed partial class CityEconomy
     {
         if (KorrinFree || by is not { Length: > 0 and <= 60 }) return false;
         (KorrinFree, KorrinFreedBy, KorrinBack, KorrinNext, KorrinInfluence) = (true, by, Day, Day + Undying.ConquerEvery, Syndicate.StartInfluence);
-        News.Add($"{by} has opened the tank in the warehouse by the east gate. Whatever was in it is awake, and Tristinwold is his now: every stall is shut.");
+        News.Add($"{by} has opened the tank in the old storehouse at the back of the Warrens. Whatever was in it is awake, and Tristinwold is his now: every stall is shut.");
         return true;
     }
 
