@@ -105,6 +105,9 @@ public partial class Player : Fighter
     public override void _Ready()
     {
         Local = this;
+        StepsUp = true;
+        FloorMaxAngle = Mathf.DegToRad(52); // a steep bit of hillside is still walkable
+        FloorSnapLength = 0.35f; // and walking down a step keeps your feet on it
         if (Hero.Discipline is null or "") Hero.Discipline = Classes.For(Outfit).Id;
         Stats = new Combatant(Company, 1);
         var size = Appearance?.Size ?? 1;

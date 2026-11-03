@@ -244,6 +244,7 @@ public partial class StartScreen : CanvasLayer
         }
         else
         {
+            Row(rows, "Sex", () => _avatar.Sex, d => _avatar = _avatar with { Sex = Step(Avatar.Sexes, _avatar.Sex, d) });
             Row(rows, "Head", () => Avatar.Called(_avatar.Head), d => _avatar = _avatar with { Head = Step(figures, _avatar.Head, d) });
             Row(rows, "Body", () => Avatar.Called(_avatar.Body), d => _avatar = _avatar with { Body = Step(figures, _avatar.Body, d) });
             Row(rows, "Arms", () => Avatar.Called(_avatar.Arms), d => _avatar = _avatar with { Arms = Step(figures, _avatar.Arms, d) });
@@ -254,7 +255,7 @@ public partial class StartScreen : CanvasLayer
         Row(rows, "Skin", () => _avatar.Skin, d => _avatar = _avatar with { Skin = Step(Avatar.Skins.Select(o => o.Name).ToArray(), _avatar.Skin, d) });
         Row(rows, "Height", () => _avatar.Height, d => _avatar = _avatar with { Height = Step(Avatar.Heights.Select(o => o.Name).ToArray(), _avatar.Height, d) });
         Row(rows, "Build", () => _avatar.Build, d => _avatar = _avatar with { Build = Step(Avatar.Builds.Select(o => o.Name).ToArray(), _avatar.Build, d) });
-        if (!real) Row(rows, "Beard", () => _avatar.Beard == "none" ? "None" : _avatar.Beard, d => _avatar = _avatar with { Beard = Step(Avatar.Beards, _avatar.Beard, d) });
+        Row(rows, "Beard", () => _avatar.Beard == "none" ? "None" : _avatar.Beard, d => _avatar = _avatar with { Beard = Step(Avatar.Beards, _avatar.Beard, d) });
         Row(rows, real ? "Hair colour" : "Hair (beard)", () => _avatar.Hair, d => _avatar = _avatar with { Hair = Step(Avatar.Hairs.Select(o => o.Name).ToArray(), _avatar.Hair, d) });
         Row(rows, "Horns", () => _avatar.Horns == "none" ? (_avatar.IsDragonkind ? "Swept (dragonkind)" : "None") : _avatar.Horns,
             d => _avatar = _avatar with { Horns = Step(Avatar.HornStyles, _avatar.Horns, d) });

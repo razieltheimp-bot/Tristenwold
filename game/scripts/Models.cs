@@ -625,7 +625,7 @@ public partial class Figure : Body
                         sz.Y * 0.16f, sz.X * 0.035f, Matte(new Color("#f2ead2"), 0.4f)));
             }
             // A beard, from the chin down.
-            var hair = Matte(new Color(a.HairHex), 0.95f);
+            var hair = Garments.Strands(new Color(a.HairHex));
             var chin = new Vector3(c.X, c.Y - sz.Y * 0.28f, front - sz.Z * 0.1f);
             switch (a.Beard)
             {
@@ -648,6 +648,13 @@ public partial class Figure : Body
                     for (var i = 0; i < 4; i++)
                         h.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = sz.X * (0.1f - i * 0.012f), Height = sz.X * (0.2f - i * 0.024f) }, MaterialOverride = hair, Position = chin - new Vector3(0, sz.Y * (0.24f + i * 0.13f), -sz.Z * 0.02f) });
                     break;
+            }
+            // A woman's hair, long down her back, where her people grow hair at all and nothing's on her head.
+            if (a.Female && a.Race is not ("plant" or "shroomie" or "lizard") && a.Hat == "none")
+            {
+                h.AddChild(new MeshInstance3D { Mesh = new CapsuleMesh { Radius = sz.X * 0.36f, Height = sz.Y * 1.15f }, MaterialOverride = hair, Position = c + new Vector3(0, -sz.Y * 0.18f, -sz.Z * 0.4f), Scale = new Vector3(1.05f, 1, 0.45f) });
+                foreach (var side in new[] { -1f, 1f })
+                    h.AddChild(new MeshInstance3D { Mesh = new CapsuleMesh { Radius = sz.X * 0.12f, Height = sz.Y * 0.75f }, MaterialOverride = hair, Position = c + new Vector3(side * sz.X * 0.44f, -sz.Y * 0.08f, -sz.Z * 0.05f), Scale = new Vector3(0.7f, 1, 0.9f) });
             }
             // Horns, from the top of the head: always on dragonkind (swept, if none were picked).
             var horns = a.Horns == "none" && blood is not null ? "Swept" : a.Horns;
@@ -686,6 +693,12 @@ public partial class Figure : Body
             var (c, sz) = (brow.GetCenter(), brow.Size);
             void Round(Vector3 at, float r, Color colour, Vector3 scale) =>
                 crown.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = r, Height = r * 2, RadialSegments = 14, Rings = 8 }, MaterialOverride = Matte(colour), Position = at, Scale = scale });
+            // A hat sits up on a shroomie's cap, or among a Photosynthen's leaves, rather than through them.
+            if (a.Race is "shroomie" or "plant" && skeleton.GetChildren().OfType<BoneAttachment3D>().FirstOrDefault(b => b.BoneName == "head")?.GetNodeOrNull<Node3D>("Avatar_Hat") is { } worn)
+            {
+                worn.Position += Vector3.Up * sz.Y * (a.Race == "shroomie" ? 0.45f : 0.16f);
+                worn.Scale *= a.Race == "shroomie" ? new Vector3(1.9f, 1, 1.9f) : new Vector3(1.15f, 1, 1.15f);
+            }
             switch (a.Race)
             {
                 case "ape":

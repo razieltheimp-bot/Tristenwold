@@ -352,6 +352,7 @@ public partial class Figure
     string _wear = "Class";
     (string Style, Color Colour)? _cut;
     (string Race, string Form)? _kin;
+    (string Style, Color Colour)? _beard;
     float _top = 1.7f;
 
     /// <summary>A real body (see <see cref="Humans"/>), rather than a KayKit figure.</summary>
@@ -439,6 +440,7 @@ public partial class Figure
             f._wear = a.Wear;
             f._cut = Tristinwold.Gameplay.Avatar.IsCut(a.Style) && a.Race is not ("plant" or "shroomie" or "lizard") ? (a.Style, new Color(a.HairHex)) : null; // leaves, a cap or a crest: never hair
             f._kin = a.Race is "ape" or "plant" or "shroomie" or "lizard" ? (a.Race, a.Form) : null;
+            f._beard = a.Beard != "none" ? (a.Beard, new Color(a.HairHex)) : null;
         }
         if (f._source is { } src && src.GetSurfaceCount() > 0) { var vs = src.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array(); if (vs.Length > 0) f._top = vs.Max(v => v.Y); }
         // A cap or a hood in the kit covers the hair: it's put away, and the scalp painted its colour, so nothing pokes through the steel.
@@ -526,7 +528,7 @@ public partial class Figure
     void Regarment((Color Tint, bool Metal)? armour, Color? helm)
     {
         foreach (var n in _garments) if (IsInstanceValid(n)) { n.GetParent()?.RemoveChild(n); n.QueueFree(); }
-        _garments = _skeleton is not null && _garb is not null ? Garments.Dress(_skeleton, _garmentLook, _garb.Outfit, _top, armour, helm, _wear, _cut, _kin) : [];
+        _garments = _skeleton is not null && _garb is not null ? Garments.Dress(_skeleton, _garmentLook, _garb.Outfit, _top, armour, helm, _wear, _cut, _kin, _beard) : [];
     }
 
     /// <summary>How many kit pieces hang on this body (the self-test counts).</summary>

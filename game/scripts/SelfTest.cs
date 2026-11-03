@@ -54,6 +54,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--undying-only")) { await UndyingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--deeps-only")) { await DeepsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--syndicate-only")) { await SyndicateTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--steps-only")) { await StepsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
@@ -2726,6 +2727,39 @@ public partial class SelfTest(Main main) : Node
         await UndyingTest();
         await DeepsTest();
         await SyndicateTest();
+        await StepsTest();
+    }
+
+    /// <summary>A kerb is walked up; a wall isn't.</summary>
+    async Task StepsTest()
+    {
+        var p = main.PlayerNode;
+        await Until(() => !p.Downed, 40);
+        async Task<(float Rise, float Went)> Walk(float high)
+        {
+            var at = new Vector3(-150, 0, -120);
+            await Teleport(at);
+            await Frames(20);
+            var floor = p.GlobalPosition.Y;
+            var block = new StaticBody3D { Position = p.GlobalPosition + new Vector3(0, high / 2 - 0.3f, -20.7f) }; // its near face 0.7 m ahead, and long enough to still be on at the end
+            block.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(4, high + 0.6f, 40) } });
+            main.AddChild(block);
+            await Frames(3);
+            var start = p.GlobalPosition;
+            p.Rotation = Vector3.Zero; // facing the block: forward is -Z
+            main.HudNode.EndTalk();
+            Input.ActionPress("move_forward");
+            for (var i = 0; i < 90; i++) await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+            Input.ActionRelease("move_forward");
+            var (rise, went) = (p.GlobalPosition.Y - floor, start.Z - p.GlobalPosition.Z);
+            block.QueueFree();
+            p.Velocity = Vector3.Zero;
+            return (rise, went);
+        }
+        var (kerbRise, kerbWent) = await Walk(0.3f);
+        Check(kerbRise > 0.2f && kerbWent > 2.5f, $"a knee-high step is walked up, not jumped (up {kerbRise:0.00} m, on {kerbWent:0.0} m)");
+        var (wallRise, wallWent) = await Walk(1.0f);
+        Check(wallRise < 0.3f && wallWent < 2.2f, $"a wall chest-high stops you (up {wallRise:0.00} m, on {wallWent:0.0} m)");
     }
 
     /// <summary>Korrin's empire: the blockade's prices, the fences, the depots and their captains, and the runs that break it.</summary>

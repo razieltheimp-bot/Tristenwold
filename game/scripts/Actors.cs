@@ -73,6 +73,28 @@ public abstract partial class Fighter : CharacterBody3D
 
     public bool Swimming => Depth > SwimDepth;
 
+    /// <summary>Walks up a kerb, a step or a lip in the ground rather than stopping dead at it (the hero does).</summary>
+    protected bool StepsUp { get; set; }
+
+    /// <summary>The highest thing that's stepped onto rather than jumped: a doorstep, a kerb, a root, a seam in the land.</summary>
+    public const float StepHeight = 0.45f;
+
+    /// <summary>
+    /// Blocked at the feet but clear a step up: lifts onto it. Tries the move from a step higher, and if that's clear,
+    /// comes down onto whatever's there, so long as it's ground to stand on and not a wall's face.
+    /// </summary>
+    void StepUp(Vector3 ahead)
+    {
+        var here = GlobalTransform;
+        if (!TestMove(here, ahead) || TestMove(here, Vector3.Up * StepHeight)) return;
+        var up = here.Translated(Vector3.Up * StepHeight);
+        if (TestMove(up, ahead)) return;
+        var over = up.Translated(ahead);
+        var landing = new KinematicCollision3D();
+        if (!TestMove(over, Vector3.Down * (StepHeight + 0.05f), landing) || landing.GetNormal().Y < 0.7f) return;
+        GlobalPosition = over.Origin + landing.GetTravel();
+    }
+
     /// <summary>How quickly a body gets up to speed, and how quickly it stops (metres a second, each second):
     /// quick enough to feel sharp, slow enough that it has weight. Less in the air, and in water.</summary>
     const float Speeding = 28, Stopping = 40, AirControl = 0.3f;
@@ -103,6 +125,8 @@ public abstract partial class Fighter : CharacterBody3D
         }
         else v.Y = IsOnFloor() ? Math.Max(v.Y, -0.1f) : v.Y - Gravity * (float)delta;
         Velocity = v;
+        if (StepsUp && IsOnFloor() && !swimming && want.LengthSquared() > 0.25f) // where they're pushing, not how fast: a kerb has already stopped them
+            StepUp(new Vector3(want.X, 0, want.Y).Normalized() * Math.Max(0.12f, want.Length() * (float)delta));
         MoveAndSlide();
         // Fell through land that wasn't built yet (after a long flight or a jump across the map), or was flung into
         // the sky by the physics for standing inside something: back on top of the land.

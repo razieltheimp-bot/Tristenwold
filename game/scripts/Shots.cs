@@ -865,6 +865,20 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                 foreach (var f in row) f.QueueFree();
             }
             Tristinwold.Gameplay.Avatar Base(string look, string sex) => Tristinwold.Gameplay.Avatar.For(look) with { Sex = sex, Headwear = "none" };
+            (lens, lensAt) = (new Vector3(0, 1.62f, -1.7f), new Vector3(0, 1.52f, 0)); // close on the faces
+            await Row("looks-beards", [
+                ("Barbarian", Base("Barbarian", "Male") with { Beard = "Long", Hair = "Grey", Age = "Seasoned" }),
+                ("Paladin", Base("Paladin", "Male") with { Beard = "Forked", Hair = "Copper" }),
+                ("Thief", Base("Thief", "Male") with { Beard = "Short", Hair = "Black" }),
+            ]);
+            (lens, lensAt) = (new Vector3(0, 1.75f, -3.1f), new Vector3(0, 1.5f, 0)); // close on the heads
+            await Row("looks-crowned", [
+                ("Wizard", Base("Wizard", "Male") with { Race = "shroomie" }),
+                ("Wizard", Base("Wizard", "Female") with { Race = "plant" }),
+                ("Assassin", Base("Assassin", "Male") with { Race = "shroomie" }),
+                ("Assassin", Base("Assassin", "Female") with { Race = "plant", Form = "Fall" }),
+            ]);
+            (lens, lensAt) = (new Vector3(0, 1.3f, -5.6f), new Vector3(0, 1, 0));
             await Row("looks-hair", [
                 ("Thief", Base("Thief", "Male") with { Style = "Topknot", Hair = "Black", Top = "Forest", Bottom = "Sand", Wear = "Wrapped robe" }),
                 ("Thief", Base("Thief", "Female") with { Style = "Bun", Hair = "Chestnut", Top = "Teal", Bottom = "Slate", Wear = "Vest" }),

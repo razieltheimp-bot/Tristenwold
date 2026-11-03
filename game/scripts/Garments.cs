@@ -101,7 +101,7 @@ public static class Garments
     /// Dresses a body in its kit. Armour worn from the pack (a tint and whether it's metal) puts a cuirass on in that
     /// metal; a helm worn puts a cap on in its tint. Returns the nodes made, so they can be taken off again.
     /// </summary>
-    public static List<Node> Dress(Skeleton3D sk, string look, Humans.Outfit outfit, float top, (Color Tint, bool Metal)? armour = null, Color? helm = null, string wear = "Class", (string Style, Color Colour)? cut = null, (string Race, string Form)? kin = null)
+    public static List<Node> Dress(Skeleton3D sk, string look, Humans.Outfit outfit, float top, (Color Tint, bool Metal)? armour = null, Color? helm = null, string wear = "Class", (string Style, Color Colour)? cut = null, (string Race, string Form)? kin = null, (string Style, Color Colour)? beard = null)
     {
         var made = new List<Node>();
         if (Measured(sk, top) is not { } m) return made;
@@ -234,11 +234,23 @@ public static class Garments
             chest.AddChild(Part(Drape(m.ShoulderHalf * 2.2f, length, m.ShoulderHalf * 0.9f, 0.3f, 12, 18, lean: 0.08f), cape, new Vector3(0, m.Neck.Y - 0.02f, -(m.ShoulderHalf * 0.85f + 0.02f)), new Vector3(0, 180, 0)));
         }
 
+        // Whatever's worn on the head sits on top of what their people grow there: over a shroomie's cap, among a Photosynthen's leaves.
+        var (lift, wide, tall) = kin?.Race switch { "shroomie" => (0.13f, 2.15f, 0.75f), "plant" => (0.05f, 1.25f, 1f), _ => (0f, 1f, 1f) };
+        Node3D Crown()
+        {
+            var space = Hang(sk, "Head", made);
+            if (lift == 0) return space;
+            var pivot = new Vector3(0, m.Top - 0.08f, -0.016f);
+            var grow = Basis.FromScale(new Vector3(wide, tall, wide));
+            var gear = new Node3D { Transform = new Transform3D(grow, pivot + Vector3.Up * lift - grow * pivot) };
+            space.AddChild(gear);
+            return gear;
+        }
         switch (kit.Head)
         {
             case "hood":
             {
-                var head = Hang(sk, "Head", made);
+                var head = Crown();
                 var hood = Cloth(outfit.Cap ?? outfit.Tunic.Darkened(0.25f), span: 0);
                 var size = m.Top - m.Head.Y;
                 // The hood sits back on the head so the face comes out of its opening: its front edge at the cheeks, the crown over the top.
@@ -252,7 +264,7 @@ public static class Garments
             case "bandana":
             {
                 // A kerchief tied over the crown, its ends hanging at the nape.
-                var head = Hang(sk, "Head", made);
+                var head = Crown();
                 var kerchief = Cloth(outfit.Cap ?? outfit.Tunic, span: 0);
                 head.AddChild(Part(new SphereMesh { Radius = 0.128f, Height = 0.256f, RadialSegments = 32, Rings = 16 }, kerchief, new Vector3(0, m.Top - 0.045f, -0.012f), scale: new Vector3(1.0f, 0.62f, 1.04f)));
                 head.AddChild(Part(new TorusMesh { InnerRadius = 0.114f, OuterRadius = 0.128f, Rings = 32, RingSegments = 8 }, kerchief, new Vector3(0, m.Top - 0.085f, -0.012f), new Vector3(8, 0, 0), new Vector3(1, 1.1f, 1.04f))); // the rolled edge over the brow
@@ -263,7 +275,7 @@ public static class Garments
             }
             case "cap":
             {
-                var head = Hang(sk, "Head", made);
+                var head = Crown();
                 var mat = helm is { } h ? Armoury.Metal(h, 0.42f) : steel;
                 // Sits on the crown like a skullcap: its rim just above the brows and ears, the dome over the top of the head.
                 head.AddChild(Part(new SphereMesh { Radius = 0.122f, Height = 0.244f, RadialSegments = 24, Rings = 12 }, mat, new Vector3(0, m.Top - 0.075f, -0.012f), scale: new Vector3(1, 0.85f, 1.05f)));
@@ -273,7 +285,7 @@ public static class Garments
             }
             case "hat":
             {
-                var head = Hang(sk, "Head", made);
+                var head = Crown();
                 var felt = Armoury.Cloth("#" + outfit.Trousers.Darkened(0.1f).ToHtml(false));
                 head.AddChild(Part(new CylinderMesh { TopRadius = 0.2f, BottomRadius = 0.2f, Height = 0.012f, RadialSegments = 32 }, felt, new Vector3(0, m.Top - 0.035f, -0.01f))); // the brim
                 head.AddChild(Part(new CylinderMesh { TopRadius = 0.01f, BottomRadius = 0.12f, Height = 0.36f, RadialSegments = 24 }, felt, new Vector3(0, m.Top + 0.15f, -0.02f), new Vector3(8, 0, 0))); // the point, leaning a little
@@ -288,7 +300,8 @@ public static class Garments
         if (look.StartsWith("soren_")) Soren(sk, m, int.Parse(look[6..]), made);
         if (look.StartsWith("lu_")) Wukong(sk, m, int.Parse(look[3..]), made);
         if (cut is { } style && kit.Head is null && outfit.Cap is null) Hair(sk, m, style.Style, style.Colour, made);
-        if (kin is { } people) Kin(sk, m, people.Race, people.Form, kit.Head is not null, made);
+        if (kin is { } people) Kin(sk, m, people.Race, people.Form, false, made); // the cap and the leaves stay: headgear sits over them
+        if (beard is { } whiskers && kin is not { Race: "plant" or "shroomie" or "lizard" }) Beard(sk, m, whiskers.Style, whiskers.Colour, made);
         return made;
     }
 
@@ -956,6 +969,68 @@ public static class Garments
             hips.AddChild(Limb(tailAt, way, 0.14f, thick - i * thick * 0.08f, thick - (i + 1) * thick * 0.08f, i == segments - 1 && kind == "fox" ? pale : coat));
             tailAt += way * 0.13f;
             way = (way + new Vector3(0, kind == "giant_rat" ? 0.05f : 0.25f, 0)).Normalized();
+        }
+    }
+
+    static NoiseTexture2D? _strandTexture, _strandNormal;
+
+    /// <summary>
+    /// Hair with some life in it: fine noise drawn out long, as strands, shading the colour and roughing up the light
+    /// across it, so a beard or a lock reads as hair and not as a smooth lump.
+    /// </summary>
+    public static StandardMaterial3D Strands(Color colour)
+    {
+        var noise = new FastNoiseLite { NoiseType = FastNoiseLite.NoiseTypeEnum.Perlin, Frequency = 0.09f, FractalOctaves = 3 };
+        _strandTexture ??= new NoiseTexture2D { Width = 256, Height = 256, Seamless = true, Noise = noise, ColorRamp = new Gradient { Offsets = [0, 1], Colors = [new Color(0.5f, 0.5f, 0.5f), Colors.White] } };
+        _strandNormal ??= new NoiseTexture2D { Width = 256, Height = 256, Seamless = true, Noise = noise, AsNormalMap = true, BumpStrength = 6 };
+        return new StandardMaterial3D
+        {
+            AlbedoColor = colour, AlbedoTexture = _strandTexture, NormalEnabled = true, NormalTexture = _strandNormal, NormalScale = 0.8f,
+            Uv1Scale = new Vector3(14, 1.6f, 1), Roughness = 0.78f, RimEnabled = true, Rim = 0.25f, RimTint = 0.6f,
+        };
+    }
+
+    /// <summary>A beard on a real body, from the jaw down, with a moustache over it; strands, not a lump.</summary>
+    static void Beard(Skeleton3D sk, Measure m, string style, Color colour, List<Node> made)
+    {
+        var head = Hang(sk, "Head", made);
+        var hair = Strands(colour);
+        var chin = new Vector3(0, m.Top - 0.178f, 0.092f); // out on the jaw, in front of the face rather than inside it
+        void Lump(Vector3 at, float r, float h, Vector3 scale) => head.AddChild(Part(new CapsuleMesh { Radius = r, Height = h, RadialSegments = 16, Rings = 8 }, hair, at, scale: scale));
+        void Moustache()
+        {
+            head.AddChild(Part(new CapsuleMesh { Radius = 0.011f, Height = 0.075f, RadialSegments = 10, Rings = 4 }, hair, new Vector3(0, m.Top - 0.138f, 0.118f), new Vector3(0, 0, 90)));
+            foreach (var side in new[] { -1f, 1f })
+                head.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.002f, BottomRadius = 0.01f, Height = 0.04f, RadialSegments = 8 }, hair, new Vector3(side * 0.04f, m.Top - 0.152f, 0.114f)), new Vector3(side * 0.3f, -1, 0.1f).Normalized()));
+        }
+        switch (style)
+        {
+            case "Stubble":
+                var shadow = Strands(colour with { A = 0.55f });
+                shadow.Transparency = BaseMaterial3D.TransparencyEnum.Alpha;
+                head.AddChild(Part(new SphereMesh { Radius = 0.08f, Height = 0.12f, RadialSegments = 18, Rings = 8 }, shadow, chin + new Vector3(0, 0.035f, -0.03f), scale: new Vector3(1.15f, 0.82f, 0.85f)));
+                break;
+            case "Short":
+                Lump(chin, 0.048f, 0.11f, new Vector3(1.4f, 1, 0.8f));
+                Moustache();
+                break;
+            case "Long":
+                Lump(chin - new Vector3(0, 0.06f, 0.004f), 0.05f, 0.24f, new Vector3(1.35f, 1, 0.75f));
+                Moustache();
+                break;
+            case "Forked":
+                Lump(chin, 0.047f, 0.11f, new Vector3(1.35f, 1, 0.78f));
+                foreach (var side in new[] { -1f, 1f })
+                    head.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.004f, BottomRadius = 0.024f, Height = 0.12f, RadialSegments = 10 }, hair, chin + new Vector3(side * 0.022f, -0.09f, 0.004f)), new Vector3(side * 0.25f, -1, 0.08f).Normalized()));
+                Moustache();
+                break;
+            case "Braided":
+                Lump(chin, 0.047f, 0.11f, new Vector3(1.35f, 1, 0.78f));
+                for (var i = 0; i < 4; i++)
+                    head.AddChild(Part(new SphereMesh { Radius = 0.024f - i * 0.003f, Height = 0.05f - i * 0.006f, RadialSegments = 12, Rings = 6 }, hair, chin - new Vector3(0, 0.07f + i * 0.036f, -0.005f)));
+                head.AddChild(Part(new TorusMesh { InnerRadius = 0.012f, OuterRadius = 0.02f, Rings = 12, RingSegments = 6 }, Armoury.Brass, chin - new Vector3(0, 0.2f, -0.005f)));
+                Moustache();
+                break;
         }
     }
 
