@@ -44,8 +44,10 @@ public sealed partial class ServerCore
                 City.TendHalls(_storeSeconds);
                 City.TendKorrin();
                 City.TendRaid();
+                // The named deviants on the roster can sit at a council's table, and come for the heroes who rule one.
+                var schemed = City.TendWarlords(World.Living.Select(Warlords.From).ToList());
                 _storeSeconds = 0;
-                _cityChanged = City.Stores.Count + City.Halls.Count > 0 || _cityChanged;
+                _cityChanged = City.Stores.Count + City.Halls.Count > 0 || schemed || _cityChanged;
             }
         }
         _cityClock = now;

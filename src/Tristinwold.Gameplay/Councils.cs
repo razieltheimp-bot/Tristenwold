@@ -27,11 +27,15 @@ public sealed class TownCouncil
     public Dictionary<string, int> Tribute { get; set; } = [];
     public int LastRaid { get; set; } = -99;
     public int LastBanded { get; set; } = -99;
+    /// <summary>A deviant at the table (see <see cref="Gameplay.Warlord"/>): scheming, or ruling.</summary>
+    public Warlord? Warlord { get; set; }
+    /// <summary>A deviant killed the whole council before anyone from outside had met it: whoever's named to it later is dead already.</summary>
+    public bool Emptied { get; set; }
 
     [JsonIgnore] public IEnumerable<string> Living => Members.Where(m => !Fallen.Contains(m.Key)).Select(m => m.Value);
 
-    /// <summary>The hero who rules here: the only one left at the table.</summary>
-    [JsonIgnore] public string? Ruler => Heroes.Count == 1 && Members.Count > 0 && Members.Keys.All(Fallen.Contains) ? Heroes[0] : null;
+    /// <summary>The hero who rules here: the only one left at the table, with no deviant at it.</summary>
+    [JsonIgnore] public string? Ruler => Warlord is null && Heroes.Count == 1 && (Members.Count > 0 || Emptied) && Members.Keys.All(Fallen.Contains) ? Heroes[0] : null;
 }
 
 public sealed partial class CityEconomy
@@ -59,6 +63,8 @@ public sealed partial class CityEconomy
         if (c.Members.Count > 0) return false;
         if (name is { Length: > 0 and <= 60 }) c.Name = name;
         foreach (var m in members.Select(m => m.Split('|', 2)).Where(m => m.Length == 2)) c.Members[m[0]] = m[1];
+        // A deviant got to the head of the table before anyone from outside came: the rest of it is dead already.
+        if (c.Warlord is { Rules: true } || c.Emptied) c.Fallen.UnionWith(c.Members.Keys);
         return c.Members.Count > 0;
     }
 
@@ -66,7 +72,7 @@ public sealed partial class CityEconomy
     public bool SeatHero(string town, string hero)
     {
         var c = CouncilOf(town);
-        if (c.Heroes.Contains(hero)) return false;
+        if (c.Heroes.Contains(hero) || c.Warlord is not null) return false;
         c.Heroes.Add(hero);
         News.Add($"{hero} has taken a seat on the council of {TownName(town)}.");
         return true;
@@ -91,8 +97,9 @@ public sealed partial class CityEconomy
 
     double TownSize(string town) => town == Capital ? 1 : Roads.Towns.TryGetValue(town, out var m) ? m.Size : 0.15;
 
-    /// <summary>How much a town can put in the field: its size, and how well it's doing.</summary>
-    double Strength(string town) => TownSize(town) * (1.5 + Prosperity(town));
+    /// <summary>How much a town can put in the field: its size, and how well it's doing; and a deviant's band, when one rules it.</summary>
+    double Strength(string town) => TownSize(town) * (1.5 + Prosperity(town))
+        + (Councils.GetValueOrDefault(town)?.Warlord is { Rules: true } lord ? 0.25 + 0.03 * Math.Min(lord.Level, 30) : 0);
 
     /// <summary>Its stores carried off. What's taken goes to the raiders' stores, as much as they can carry.</summary>
     void Sack(string from, string on)

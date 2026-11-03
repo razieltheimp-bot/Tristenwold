@@ -55,6 +55,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--deeps-only")) { await DeepsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--syndicate-only")) { await SyndicateTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--steps-only")) { await StepsTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--warlords-only")) { await WarlordsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
@@ -2728,6 +2729,36 @@ public partial class SelfTest(Main main) : Node
         await DeepsTest();
         await SyndicateTest();
         await StepsTest();
+        await WarlordsTest();
+    }
+
+    /// <summary>A deviant at the head of a town's table: in the street with its band when you come, and the table yours when it falls.</summary>
+    async Task WarlordsTest()
+    {
+        var p = main.PlayerNode;
+        await Until(() => !p.Downed, 40);
+        var city = main.Economy;
+        var place = main.World.SettlementsNear(0, 0, 3000).Where(TownCouncils.Keeps).Where(s => s.Id != CityEconomy.Capital)
+            .OrderBy(s => s.DistanceTo(0, 0)).First();
+        var table = city.CouncilOf(place.Id);
+        table.Fallen.UnionWith(table.Members.Keys); // it killed its way to the head of the table
+        table.Heroes.Remove(p.Company);
+        table.Warlord = new Warlord { Id = "roamer:selftest", Name = "Grask the Grinning", Kind = "bandit_chief", Level = 3, Against = p.Company, Rules = true };
+        city.WarlordDay = city.Day; // nobody prunes it from the roster today
+        await Teleport(new Vector3((float)place.X + 6, 0, (float)place.Z + 6));
+        await Frames(20);
+        main.TendWarlordSeatForTest();
+        await Frames(5);
+        var lord = main.WarlordForTest;
+        Check(lord is not null && main.WarlordBandForTest == 4 && lord.Stats.Name.Contains("Lord of " + place.Name), $"in {place.Name}, Grask holds the street with its band ({lord?.Stats.Name ?? "nobody"}, {main.WarlordBandForTest} with it)");
+        Check(main.WarlordLinesForTest(p.GlobalPosition).Any(l => l.Contains("YOUR RIVAL Grask")), "and it's on your tracker as your rival");
+        for (var i = 0; i < 8 && lord is not null && lord.State != EnemyState.Dead; i++) { lord.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(10);
+        var council = city.CouncilOf(place.Id);
+        Check(council.Warlord is null && council.Ruler == p.Company && city.Unseated.Contains("roamer:selftest"),
+            $"struck down: {place.Name} is free, and the head of its table is yours (ruler: {council.Ruler ?? "nobody"})");
+        main.TendWarlordSeatForTest();
+        Check(main.WarlordForTest is null && main.WarlordBandForTest == 0, "and its band is gone from the street");
     }
 
     /// <summary>A kerb is walked up; a wall isn't.</summary>

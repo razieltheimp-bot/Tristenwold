@@ -142,6 +142,8 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction Smuggled(string by) => new("korrin_smuggled", by);
     public static CityAction Rescued(string by) => new("korrin_rescued", by);
     public static CityAction DrifterFell(string id, string by) => new("drifter_fell", id, Contract: by);
+    /// <summary>A deviant at the head of a town's table struck down (see Warlord).</summary>
+    public static CityAction WarlordFell(string town, string by) => new("warlord_fell", by, Town: town);
 }
 
 /// <summary>An event running now, and the days it has left.</summary>
@@ -712,6 +714,7 @@ public sealed partial class CityEconomy
             case "council_met" when a.Town is not null: return Meet(a.Town, a.Contract, items);
             case "council_seat" when a.Town is not null && a.Item is { Length: > 0 and <= 60 } seated: return SeatHero(a.Town, seated);
             case "council_fall" when a.Town is not null && a.Item is { Length: > 0 } member: return MemberFalls(a.Town, member);
+            case "warlord_fell" when a.Town is not null: return WarlordFell(a.Town, a.Item);
             case "council_purse" when a.Town is not null && CouncilOf(a.Town).Ruler == a.Item: CouncilOf(a.Town).Purse = 0; return true;
             case "town_raid" when a.Town is not null && a.Item is { Length: > 0 } raiders && Enum.IsDefined((RaidAim)a.N):
                 if (Raid(raiders, a.Town, (RaidAim)a.N, new Rng(Seed ^ (ulong)Day ^ (ulong)Roads.Wagons * 7919), a.Contract is { Length: <= 60 } ? a.Contract : null) is not { } raided) return false;

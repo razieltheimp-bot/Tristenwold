@@ -70,6 +70,7 @@ public partial class Main
         TendKorrinTowns();
         TendSyndicate();
         TendPride();
+        TendWarlordSeat();
     }
 
     // ---- the tank -----------------------------------------------------------------------------------------------

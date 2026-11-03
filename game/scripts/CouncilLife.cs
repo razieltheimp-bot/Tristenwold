@@ -37,10 +37,11 @@ public partial class Main
 
     string CouncilSays(string town, string name, TownCouncil council)
     {
-        var seats = council.Living.Concat(council.Heroes).ToList();
+        var seats = council.Living.Concat(council.Heroes).Concat(council.Warlord is { } w ? [w.Name] : []).ToList();
         var who = council.Ruler is { } ruler ? $"{ruler} rules {name} now: the only one of the council left."
+            : council.Warlord is { Rules: true } master ? $"{master.Name} rules {name} now. The rest of the council are dead, one after another, and nobody says how.{(master.Against is { } hero ? $" It says it came for {hero}." : "")}"
             : seats.Count == 0 ? $"The council of {name} is an empty table."
-            : $"The council of {name}: {string.Join(", ", seats)}.";
+            : $"The council of {name}: {string.Join(", ", seats)}.{(council.Warlord is { } schemer ? $" {schemer.Name} is new to the table, and councillors keep dying since it came." : "")}";
         var holds = council.Holds.Count > 0 ? $" It holds {string.Join(", ", council.Holds.Select(h => _city.CouncilOf(h).Name is { Length: > 0 } n ? n : h))}." : "";
         var over = _city.Councils.FirstOrDefault(c => c.Value.Holds.Contains(town)) is { Value: not null } lord ? $" It answers to {lord.Value.Name}." : "";
         var name_ = council.Standing <= CityEconomy.BadName ? " Its neighbours are talking of what to do about it." : council.Standing < 0 ? " Its name is none too good with its neighbours." : "";
@@ -50,6 +51,7 @@ public partial class Main
     /// <summary>A hero asks for a seat: they have to be well thought of to be heard, and to have done enough good here to be given one.</summary>
     void AskForSeat(Person person, string town, string name)
     {
+        if (_city.CouncilOf(town).Warlord is { } lord) { Say(person, $"Not while {lord.Name} sits at the table. It doesn't share. Ask again when it's gone, if you're brave enough to make it go."); return; }
         var heard = Repute.Town(town);
         if (heard < CityEconomy.SpeakAt) { Say(person, $"With respect, nobody in {name} knows enough about you to hear you out."); return; }
         if (Repute.Own(town) < CityEconomy.SeatAt) { Say(person, $"They've heard good of you. But the council wants to see it done here, in {name}, not told about from the road. Do more good here, and ask again."); return; }
