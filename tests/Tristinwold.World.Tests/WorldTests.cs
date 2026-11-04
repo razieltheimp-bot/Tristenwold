@@ -112,9 +112,23 @@ public class WorldTests(ITestOutputHelper output)
                 case QuestKind.Slay: Assert.True(target.Hostile); Assert.Equal(target.Lair!.Total, q.Count); break;
                 case QuestKind.Fetch: Assert.True(target.Hostile); Assert.NotNull(q.Item); break;
                 case QuestKind.Rescue: Assert.True(target.Hostile); Assert.NotNull(q.PersonName); break;
+                case QuestKind.Deliver when QuestLog.ForCouncil(q): Assert.True(TownCouncils.Keeps(target)); Assert.Equal($"{target.Id}/council", q.PersonId); break;
                 case QuestKind.Deliver: Assert.Contains(World.PeopleOf(target), p => p.Id == q.PersonId); break;
             }
         }
+    }
+
+    [Fact]
+    public void Debts_for_a_town_go_to_its_council_and_anyone_on_it_takes_them()
+    {
+        var log = new QuestLog();
+        var debts = log.Accept(new Quest("q-debts", QuestKind.Deliver, "A purse of debts for Hollowheart", "p", "giver", "Asta", "home", "Rimeford", 0, 0,
+            "city:hollowheart", "Hollowheart", 10, 10, 40, Item: "purse of debts", PersonId: "city:hollowheart/council", PersonName: "the council of Hollowheart"));
+        Assert.Contains("any councillor", debts.Objective);
+        Assert.Empty(log.TalkedTo("city:druitt/council0")); // not another town's
+        Assert.Empty(log.TalkedTo("city:hollowheart/smith"));
+        Assert.Equal(40, log.TalkedTo("city:hollowheart/council_clerk").Single().Reward);
+        Assert.Equal(QuestStage.Done, debts.Stage);
     }
 
     [Fact]

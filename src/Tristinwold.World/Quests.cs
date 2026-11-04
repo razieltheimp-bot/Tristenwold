@@ -44,6 +44,7 @@ public sealed class QuestEntry
         (_, QuestStage.Done) => "Done.",
         (QuestKind.Slay, QuestStage.Active) => $"Clear {Quest.TargetName}: {Progress}/{Quest.Count}",
         (QuestKind.Fetch, QuestStage.Active) => $"Find {Quest.Item} at {Quest.TargetName}",
+        (QuestKind.Deliver, _) when QuestLog.ForCouncil(Quest) => $"Take the {Quest.Item} to the council of {Quest.TargetName} (any councillor, or the clerk)",
         (QuestKind.Deliver, _) => $"Take the {Quest.Item} to {Quest.PersonName} at {Quest.TargetName}",
         (QuestKind.Rescue, QuestStage.Active) => $"Find {Quest.PersonName} at {Quest.TargetName}",
         (QuestKind.Duel, QuestStage.Active) => $"Beat {Quest.PersonName} in a duel at {Quest.TargetName}",
@@ -105,16 +106,21 @@ public sealed class QuestLog
         }
     }
 
+    /// <summary>A delivery to a town's council, not to one person in it.</summary>
+    public static bool ForCouncil(Quest q) => q.PersonId is { } p && p.EndsWith("/council");
+
     /// <summary>The company spoke to someone: a recipient, a captive, or a giver waiting on news.</summary>
     public IEnumerable<QuestUpdate> TalkedTo(string npcId)
     {
         foreach (var e in Open.ToList())
         {
             var q = e.Quest;
-            if (q.Kind == QuestKind.Deliver && q.PersonId == npcId)
+            if (q.Kind == QuestKind.Deliver && (q.PersonId == npcId || ForCouncil(q) && npcId.StartsWith(q.PersonId!)))
             {
                 e.Stage = QuestStage.Done;
-                yield return new QuestUpdate(q, e.Stage, $"{q.PersonName} takes the {q.Item} and pays you {q.Reward} crowns.", q.Reward);
+                yield return new QuestUpdate(q, e.Stage, ForCouncil(q)
+                    ? $"The council of {q.TargetName} takes the {q.Item} and pays you {q.Reward} crowns."
+                    : $"{q.PersonName} takes the {q.Item} and pays you {q.Reward} crowns.", q.Reward);
             }
             else if (q.Kind == QuestKind.Rescue && q.PersonId == npcId && e.Stage == QuestStage.Active)
             {
@@ -163,6 +169,16 @@ public static class Quests
             var target = rng.Pick(places);
             var recipient = rng.Pick(world.PeopleOf(target));
             var item = rng.Pick(["letter", "sealed parcel", "bundle of herbs", "jar of honey", "carved box", "purse of debts"]);
+            // Debts and letters for a town are the council's business: any councillor, or the clerk, takes them.
+            if (item is "purse of debts" or "letter" && TownCouncils.Keeps(target))
+            {
+                var clerk = TownCouncils.Clerk(target);
+                var owed = 20 + (int)(target.DistanceTo(home.X, home.Z) / 25);
+                return new Quest(id, kind, $"A {item} for {target.Name}",
+                    $"Take this {item} to the council of {target.Name}. Any councillor will take it, or the clerk. It's town business, and they'll pay you {owed} crowns for it.",
+                    npc.Id, npc.Name, home.Id, home.Name, npc.X, npc.Z, target.Id, target.Name, clerk.X, clerk.Z, owed,
+                    Item: item, PersonId: $"{target.Id}/council", PersonName: $"the council of {target.Name}");
+            }
             var reward = 20 + (int)(target.DistanceTo(home.X, home.Z) / 25);
             var why = rng.Pick([
                 "My knees won't take the road any more.", $"{recipient.First} and I haven't spoken in years. This should mend it.",
