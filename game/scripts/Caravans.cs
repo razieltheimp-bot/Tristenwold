@@ -696,7 +696,10 @@ public partial class Main
         AddChild(_wagon);
         // At the yard when you take it there; otherwise (a game loaded, a thief's wagon) it's wherever you are: its home is where yours is.
         var hero = _player.GlobalPosition;
-        var setOff = hero.DistanceTo(YardAt with { Y = hero.Y }) < 60 ? YardAt + new Vector3(6, 0, 6) : hero + _player.GlobalTransform.Basis.Z * 5;
+        // At the yard when you take it there; otherwise where it was left (it stays put, and doesn't follow you home); a thief's or a run's wagon starts by you.
+        var setOff = hero.DistanceTo(YardAt with { Y = hero.Y }) < 60 ? YardAt + new Vector3(6, 0, 6)
+            : _trade is { WagonOut: true, WagonX: { } wx, WagonZ: { } wz } && _trade.Run is null ? new Vector3((float)wx, 0, (float)wz)
+            : hero + _player.GlobalTransform.Basis.Z * 5;
         _wagon.GlobalPosition = setOff with { Y = City.FloorAt(setOff) };
         Hitch();
         if (_trade.ShopOpen) PushWagonShop(); // she opens where she stands
@@ -713,6 +716,7 @@ public partial class Main
     {
         if ((_caravanTick -= delta) > 0) return;
         _caravanTick = 0.5;
+        if (_wagon is { } parked && _trade.OwnWagon && _trade.Run is null) (_trade.WagonX, _trade.WagonZ) = (parked.GlobalPosition.X, parked.GlobalPosition.Z); // where it's left, it stays
         TendSteam(0.5);
         if (_wagon is null && (_trade.Run is not null || _trade.WagonOut)) TakeWagon(_trade.WagonOut ? "horse" : null);
         TendRun();

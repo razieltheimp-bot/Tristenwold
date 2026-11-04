@@ -2810,6 +2810,16 @@ public partial class SelfTest(Main main) : Node
         Kit.TakeBack(lad, p.Pack, Slot.Weapon);
         Kit.TakeBack(lad, p.Pack, Slot.Body);
         Check(p.Pack.Count("steel_sword") == 1 && p.Pack.Count("steel_plate") == 1 && lad.Gear.Count == 0, "taken back, both are in your pack again");
+        // A pet eats fish as gladly as meat.
+        var pup = main.AdoptForTest("wolf");
+        pup.Fed = 30;
+        p.Meat = 0;
+        p.Pack.Add("herring", 2);
+        main.Feed(pup);
+        Check(pup.Fed > 30 && p.Pack.Count("herring") == 1, $"with no meat, a pet eats a herring ({pup.Fed:0}% fed)");
+        // Your own things on the map, wherever you left them.
+        main.Sea.OwnShip = true;
+        Check(main.BelongingsForTest.Any(b => b.Kind == "ship"), $"your ship is on the map ({string.Join(", ", main.BelongingsForTest.Select(b => b.Name))})");
         foreach (var c in p.Companions().ToList()) c.QueueFree();
     }
 

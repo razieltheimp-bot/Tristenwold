@@ -564,10 +564,15 @@ public partial class Main
         }
     }
 
+    /// <summary>A fish from the pack a pet would eat, the cheapest first (a pearl's not food, and you'd not waste a golden carp).</summary>
+    string? FishToFeed() => _player.Pack.Contents.Where(c => CityEconomy.GoodOf(c.Item.Id) == Good.Fish && c.Item.Id != "golden_carp").OrderBy(c => c.Item.Value).Select(c => c.Item.Id).FirstOrDefault();
+    int FishInPack => _player.Pack.Contents.Where(c => CityEconomy.GoodOf(c.Item.Id) == Good.Fish && c.Item.Id != "golden_carp").Sum(c => c.N);
+
     public void Feed(Bond bond)
     {
-        if (_player.Meat <= 0) { _hud.Toast("You have no meat. Hunt something: deer, boar, anything wild."); return; }
-        _player.Meat--;
+        if (_player.Meat > 0) _player.Meat--;
+        else if (FishToFeed() is { } fish) _player.Pack.Take(fish); // fish does as well as meat
+        else { _hud.Toast("You have no meat or fish. Hunt something, or catch something."); return; }
         bond.Feed();
         if (_player.Pack.Practise(Job.Taming, 3) is { } level) _hud.Toast($"Beast taming rises to {level}!", 4);
         _hungerSaid.Remove(bond.Id);
@@ -1046,7 +1051,7 @@ public partial class Main
             return $"{b.Name}: {b.Stage} {(b.Role is BondRole.Pet or BondRole.Dragon ? kind : "")}, level {b.Level} ({b.Xp}/{Bond.XpToNext(b.Level)} xp), {state}{(b.Eats ? $", {b.Fed:0}% fed" : "")}. Knows: {(b.Skills.Any() ? string.Join(", ", b.Skills.Select(s => s.Name)) : "nothing yet")}.";
         });
         var options = new List<(string, Action)>();
-        foreach (var b in _bonds.Where(b => b.Following && b.Eats)) options.Add(($"Feed {b.Name} (meat: {_player.Meat})", () => { Feed(b); ShowParty(); }));
+        foreach (var b in _bonds.Where(b => b.Following && b.Eats)) options.Add(($"Feed {b.Name} (meat: {_player.Meat}, fish: {FishInPack})", () => { Feed(b); ShowParty(); }));
         foreach (var b in _bonds)
         {
             var bond = b;

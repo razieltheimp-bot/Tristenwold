@@ -32,6 +32,24 @@ public partial class Main
             yield return ($"Have the crew bring {_sea.ShipName} home.", () => { (_sea.ShipX, _sea.ShipZ) = (ShipBerth.X, ShipBerth.Z); _vessel?.QueueFree(); _vessel = null; Save(); Say(person, "She'll be alongside the middle pier by morning."); });
     }
 
+    /// <summary>The hero's own things left about the world, for the map: the colony, the ship, the wagon and the skyboat, wherever they are now.</summary>
+    IEnumerable<(double X, double Z, string Name, string Kind)> Belongings()
+    {
+        if (_city.HallOf(_player.Company, HallKind.Colony) is { } colony) yield return (colony.X, colony.Z, colony.Name, "colony");
+        if (_sea.OwnShip && !AboardShip && _sea.Voyage is null)
+            yield return _vessel is { } v ? (v.GlobalPosition.X, v.GlobalPosition.Z, _sea.ShipName, "ship") : (_sea.ShipX, _sea.ShipZ, _sea.ShipName, "ship");
+        if (_trade.OwnWagon && _ridden is null)
+        {
+            if (_wagon is { } w) yield return (w.GlobalPosition.X, w.GlobalPosition.Z, "Your wagon", "wagon");
+            else if (_trade is { WagonOut: true, WagonX: { } x, WagonZ: { } z }) yield return (x, z, "Your wagon", "wagon");
+            else yield return (YardAt.X, YardAt.Z, "Your wagon (at the yard)", "wagon");
+        }
+        if (_sea.Skyboat && !AboardSkyboat) yield return (_sea.SkyX, _sea.SkyZ, "Your skyboat", "skyboat");
+    }
+
+    /// <summary>For the self-test.</summary>
+    public IReadOnlyList<(double X, double Z, string Name, string Kind)> BelongingsForTest => [.. Belongings()];
+
     /// <summary>The hero's ship drawn where they left her, when they're near.</summary>
     void TendVessel()
     {

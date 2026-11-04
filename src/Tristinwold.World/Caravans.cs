@@ -108,6 +108,9 @@ public sealed class TradeBook
     public int Loads { get; set; }
     public int Runs { get; set; }
     public bool OwnWagon { get; set; }
+    /// <summary>Where the hero's wagon was left, if it's been out: it stays there, and is found there again after a game's loaded.</summary>
+    public double? WagonX { get; set; }
+    public double? WagonZ { get; set; }
     public int Horses { get; set; }
     public bool WagonOut { get; set; }
     public CaravanRun? Run { get; set; }

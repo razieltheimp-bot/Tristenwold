@@ -17,6 +17,8 @@ public partial class MapView : Control
     public Func<IEnumerable<(double X, double Z)>> Goals { get; init; } = () => [];
     /// <summary>The lairs found, near home and out in the far country.</summary>
     public Func<IEnumerable<(double X, double Z, string Name)>> Lairs { get; init; } = () => [];
+    /// <summary>The hero's own things left about the world (a colony, a ship, a wagon, a skyboat), so they're never lost: kind is "colony", "ship", "wagon" or "skyboat".</summary>
+    public Func<IEnumerable<(double X, double Z, string Name, string Kind)>> Belongings { get; init; } = () => [];
     public bool Mini { get; init; }
     /// <summary>The plan of whatever the hero is inside (the mine, a ship), drawn in place of the world while they are; null out of doors.</summary>
     public Func<StructureChart?>? Structure { get; init; }
@@ -181,6 +183,38 @@ public partial class MapView : Control
             var lair = new Color("#b070e0");
             DrawColoredPolygon([p + new Vector2(0, -6), p + new Vector2(5, 4), p + new Vector2(-5, 4)], lair);
             if (!Mini) DrawString(font, p + new Vector2(7, 4), name, HorizontalAlignment.Left, -1, 11, lair);
+        }
+
+        // Your own things, wherever you left them: pinned to the edge, pointing the way, when they're off the map.
+        foreach (var (x, z, name, kind) in Belongings())
+        {
+            var at = ToScreen(x, z);
+            var off = at.X < 8 || at.Y < 8 || at.X > size.X - 8 || at.Y > size.Y - 8;
+            var p = new Vector2(Mathf.Clamp(at.X, 9, size.X - 9), Mathf.Clamp(at.Y, 9, size.Y - 9));
+            var colour = kind switch { "colony" => new Color("#7ad87a"), "ship" => new Color("#7ab8f0"), "skyboat" => new Color("#b8a0f0"), _ => new Color("#e0b070") };
+            DrawCircle(p, 8, new Color(0, 0, 0, 0.55f));
+            switch (kind)
+            {
+                case "colony": // a house
+                    DrawRect(new Rect2(p + new Vector2(-4, -1), new Vector2(8, 5)), colour);
+                    DrawColoredPolygon([p + new Vector2(-5.5f, -1), p + new Vector2(0, -6), p + new Vector2(5.5f, -1)], colour);
+                    break;
+                case "ship": // a hull and a sail
+                    DrawColoredPolygon([p + new Vector2(-6, 2), p + new Vector2(6, 2), p + new Vector2(3.5f, 5.5f), p + new Vector2(-3.5f, 5.5f)], colour);
+                    DrawColoredPolygon([p + new Vector2(0, -6), p + new Vector2(4.5f, 1), p + new Vector2(0, 1)], colour);
+                    DrawLine(p + new Vector2(0, -6), p + new Vector2(0, 2), colour, 1);
+                    break;
+                case "skyboat": // a gas-bag over a little hull
+                    DrawCircle(p + new Vector2(0, -2.5f), 4.5f, colour);
+                    DrawRect(new Rect2(p + new Vector2(-3, 3), new Vector2(6, 2.5f)), colour);
+                    break;
+                default: // a wagon: its bed and two wheels
+                    DrawRect(new Rect2(p + new Vector2(-5.5f, -3.5f), new Vector2(11, 5)), colour);
+                    DrawCircle(p + new Vector2(-3, 3), 2, colour);
+                    DrawCircle(p + new Vector2(3, 3), 2, colour);
+                    break;
+            }
+            if (!Mini) DrawString(font, p + new Vector2(10, 4), off ? $"{name} ({(new Vector2((float)x, (float)z) - new Vector2(player.X, player.Z)).Length():0} m)" : name, HorizontalAlignment.Left, -1, 12, colour);
         }
 
         foreach (var (x, z) in Goals())
