@@ -90,7 +90,8 @@ public class HighwaysTests
         Assert.Null(W.Highways.WayTo("nowhere"));
         // The village up the wood's own road, and Druitt at the end of the west road, have ways too.
         var village = W.Highways.WayTo("city:hollowheart")!;
-        Assert.Equal((Northwood.VillageX, Northwood.VillageZ), village.Line[^1]);
+        Assert.Equal(Northwood.VillageGate, village.Line[^1]);
+        Assert.All(Northwood.Hearts, t => Assert.All(village.Line, p => Assert.True(Math.Sqrt(Math.Pow(p.X - t.X, 2) + Math.Pow(p.Z - t.Z, 2)) > t.Radius * Northwood.RootSpread, "the way to the village runs into a great tree")));
         Assert.All(village.Line.Skip(1), p => Assert.True(Northwood.OnRoad(p.X, p.Z)));
         var druitt = W.Find("city:druitt")!;
         var toDruitt = W.Highways.WayTo(druitt.Id, druitt.X, druitt.Z)!;

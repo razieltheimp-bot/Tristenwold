@@ -16,9 +16,17 @@ public static class Northwood
     /// <summary>A maze cell's size, how far a path reaches from its line, and how far apart the trunks of a wall stand.</summary>
     public const double Cell = 44, PathHalf = 2.8, RoadHalf = 4.5, Trunks = 4.6;
 
-    /// <summary>The road from the west gate to the village and on out of the north.</summary>
+    /// <summary>
+    /// The road from the west gate past the village and on out of the north. It goes round Hollowheart to the west, in
+    /// the open ground about it, not through it: the great trees' roots spread wide, and the middle one stands where
+    /// the road would have run.
+    /// </summary>
     public static readonly (double X, double Z)[] NorthRoad =
-        [(-108, -4), (-180, -130), (-160, -300), (VillageX, VillageZ), (-170, -800), (-120, -1000), (-130, -1150), (ExitX, ExitZ)];
+        [(-108, -4), (-180, -130), (-160, -300), (VillageX - 75, VillageZ + 40), (VillageX - 80, VillageZ - 40), (-170, -800), (-120, -1000), (-130, -1150), (ExitX, ExitZ)];
+    /// <summary>Where the way to Hollowheart ends, at the foot of the village and clear of the roots: where its wagons pull up.</summary>
+    public static readonly (double X, double Z) VillageGate = (VillageX - 2, VillageZ + 30);
+    /// <summary>The way to the village itself: up the north road, and in to the gate.</summary>
+    public static readonly (double X, double Z)[] VillageRoad = [(-108, -4), (-180, -130), (-160, -300), VillageGate];
     /// <summary>The road from the west gate to the Strand, past the wood's western edge.</summary>
     public static readonly (double X, double Z)[] WestRoad = [(-108, -4), (-400, -120), (-690, -260), (-960, -260)];
 
@@ -152,7 +160,28 @@ public static class Northwood
     public static int MazePaths => Open.Count;
 
     /// <summary>On a road, safe from the guardians if not from everything else.</summary>
-    public static bool OnRoad(double x, double z) => ToLine(NorthRoad, x, z) < RoadHalf || ToLine(WestRoad, x, z) < RoadHalf;
+    public static bool OnRoad(double x, double z) => ToLine(NorthRoad, x, z) < RoadHalf || ToLine(WestRoad, x, z) < RoadHalf || ToLine(VillageRoad, x, z) < RoadHalf;
+
+    /// <summary>
+    /// A spot pushed out past the roots of whichever of Hollowheart's great trees it would be inside, and a step more,
+    /// so nobody stands in a trunk. The roots spread to about two and a half times a tree's girth at the ground.
+    /// </summary>
+    public static (double X, double Z) OutOfTrunks(double x, double z)
+    {
+        foreach (var t in Hearts)
+        {
+            var (dx, dz) = (x - t.X, z - t.Z);
+            var d = Math.Sqrt(dx * dx + dz * dz);
+            var clear = t.Radius * RootSpread + 2;
+            if (d >= clear) continue;
+            var (ux, uz) = d < 0.01 ? (0.0, 1.0) : (dx / d, dz / d);
+            (x, z) = (t.X + ux * clear, t.Z + uz * clear);
+        }
+        return (x, z);
+    }
+
+    /// <summary>How far a great tree's roots spread at the ground, for its girth (its trunk swells to this at its foot).</summary>
+    public const double RootSpread = 2.45;
 
     /// <summary>On a road or a path of the maze: kept clear of trees, and trodden to dirt.</summary>
     public static bool OnPath(double x, double z)

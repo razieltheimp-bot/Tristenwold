@@ -41,7 +41,11 @@ public static class Wildfolk
     {
         if (Creature.Create("troll.glb", height, tint) is not { } c || Graft.On(c) is not { } g) return null;
         var feet = new[] { "foot_tip.L", "foot_tip.R", "foot.L", "foot.R" }.Where(g.Has).Select(b => g.Bone(b).Y).DefaultIfEmpty(0).Min();
-        if (feet < -0.05f && c.GetChildren().OfType<Node3D>().FirstOrDefault() is { } model) model.Position += Vector3.Up * -feet;
+        if (feet < -0.05f && c.GetChildren().OfType<Node3D>().FirstOrDefault() is { } model)
+        {
+            model.Position += Vector3.Up * -feet;
+            c.Footing?.Rebase(); // the footing stands it from here, not from where it was
+        }
         return c;
     }
 
@@ -258,7 +262,7 @@ public partial class FlapWings : Node3D
                 var root = new Vector3(0.04f + f * 0.56f, 0.15f * f + (scale < 1 ? 0.01f : 0), 0) * s;
                 var length = s * (0.3f + f * 0.5f) * reach;
                 var dir = new Vector3(f * 0.75f, -0.3f + f * 0.15f, 1 - f * 0.5f).Normalized();
-                var basis = Basis.LookingAt(dir, Vector3.Up).Scaled(new Vector3(s * 0.085f * scale, s * 0.012f, length));
+                var basis = Basis.LookingAt(dir, Vector3.Up) * Basis.FromScale(new Vector3(s * 0.085f * scale, s * 0.012f, length)); // broad across, thin through, long back: each its own way
                 wing.AddChild(new MeshInstance3D { Mesh = quill, MaterialOverride = feather, Transform = new Transform3D(basis, root + dir * length * 0.45f) });
             }
     }
@@ -274,10 +278,10 @@ public partial class FlapWings : Node3D
         var rate = Flying ? _rate * 2.6f : _rate;
         _beat = Mathf.MoveToward(_beat, rate, (float)delta * 3);
         _phase += (float)delta * _beat * Mathf.Tau;
-        // Folded back along the body at rest, stirring now and then; flung wide and beating hard in the air.
+        // Half open and drooping at rest, stirring now and then; flung wide and beating hard in the air.
         _open = Mathf.MoveToward(_open, Flying ? 1 : 0, (float)delta * 2.5f);
         var flap = Mathf.Sin(_phase) * Mathf.Lerp(0.08f, 0.75f, _open);
         foreach (var (pivot, side) in _wings)
-            pivot.Rotation = new Vector3(0, -side * (1 - _open) * 1.35f, side * (flap + Mathf.Lerp(0.45f, 0.15f, _open))); // the arm swung back along the body
+            pivot.Rotation = new Vector3(0, -side * (1 - _open) * 0.45f, side * (flap + Mathf.Lerp(-0.5f, 0.15f, _open))); // at rest half open and drooping by its sides, the tips crossing over the tail: the wing's all one piece, so swung right back the feathers swing across too and the two lie one on the other
     }
 }

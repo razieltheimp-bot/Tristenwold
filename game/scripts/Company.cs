@@ -38,6 +38,28 @@ public partial class Main
         BeginRaidIfDue();
     }
 
+    /// <summary>
+    /// Companions standing together have their plates stacked, nearest the camera lowest, so one's name is never
+    /// printed over another's.
+    /// </summary>
+    void StackPlates()
+    {
+        var camera = GetViewport().GetCamera3D();
+        if (camera is null || _companions.Count < 2) return;
+        var placed = new List<(Vector3 At, float Lift)>();
+        foreach (var c in _companions.Where(c => IsInstanceValid(c) && c.Visible).OrderBy(c => c.GlobalPosition.DistanceSquaredTo(camera.GlobalPosition)))
+        {
+            c.LiftPlate(0);
+            var at = c.PlateAt;
+            var lift = 0f;
+            // Another plate already drawn about here: go over it, and over whatever went over it.
+            while (placed.Any(p => new Vector2(p.At.X - at.X, p.At.Z - at.Z).Length() < 2.4f && Mathf.Abs(p.At.Y + p.Lift - (at.Y + lift)) < 0.75f))
+                lift += 0.8f;
+            if (lift > 0) c.LiftPlate(lift);
+            placed.Add((at, lift));
+        }
+    }
+
     /// <summary>Mounts past the number of riders go to the Gallows Perch.</summary>
     void StableSpareMounts()
     {

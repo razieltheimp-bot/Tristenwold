@@ -384,7 +384,11 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     // ---- building ----------------------------------------------------------------------------
 
-    Vector3 Ground(double x, double z) => new((float)x, (float)world.Height(x, z), (float)z);
+    Vector3 Ground(double x, double z)
+    {
+        (x, z) = Northwood.OutOfTrunks(x, z); // never in one of Hollowheart's great trees
+        return new((float)x, (float)world.Height(x, z), (float)z);
+    }
 
     static T Add<T>(Node3D parent, T node) where T : Node3D
     {

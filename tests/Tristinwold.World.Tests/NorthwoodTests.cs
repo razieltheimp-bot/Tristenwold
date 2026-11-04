@@ -13,9 +13,27 @@ public class NorthwoodTests
     }
 
     [Fact]
+    public void Nothing_stands_in_a_great_tree_and_no_road_runs_through_one()
+    {
+        foreach (var t in Northwood.Hearts)
+        {
+            var (x, z) = Northwood.OutOfTrunks(t.X + 1, t.Z + 1);
+            Assert.True(Math.Sqrt(Math.Pow(x - t.X, 2) + Math.Pow(z - t.Z, 2)) > t.Radius * Northwood.RootSpread, "pushed out past the roots");
+            foreach (var line in new[] { Northwood.NorthRoad, Northwood.VillageRoad })
+                for (var i = 1; i < line.Length; i++)
+                    for (var f = 0.0; f <= 1; f += 0.01)
+                    {
+                        var (px, pz) = (line[i - 1].X + (line[i].X - line[i - 1].X) * f, line[i - 1].Z + (line[i].Z - line[i - 1].Z) * f);
+                        Assert.True(Math.Sqrt(Math.Pow(px - t.X, 2) + Math.Pow(pz - t.Z, 2)) > t.Radius * Northwood.RootSpread, $"a road runs into the tree at {t.X:0},{t.Z:0}");
+                    }
+        }
+        Assert.Equal((5.0, 2.0), Northwood.OutOfTrunks(5, 2)); // nowhere near a tree, nothing moves
+    }
+
+    [Fact]
     public void The_roads_run_clear_from_the_gate_to_the_village_and_out_of_the_north()
     {
-        foreach (var line in new[] { Northwood.NorthRoad, Northwood.WestRoad })
+        foreach (var line in new[] { Northwood.NorthRoad, Northwood.WestRoad, Northwood.VillageRoad })
             for (var i = 1; i < line.Length; i++)
                 for (var t = 0.0; t <= 1; t += 0.02)
                 {

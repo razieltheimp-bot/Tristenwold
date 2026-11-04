@@ -410,6 +410,18 @@ public partial class Enemy : Fighter
         var top = FigureTop();
         if (top > 0) Plate.Position = Plate.Position with { Y = Math.Max(Plate.Position.Y, top + 0.4f) };
         if (Bond is not null) { Plate.NoDepthTest = true; Plate.RenderPriority = 10; Plate.FontSize = 34; Plate.OutlineSize = 10; }
+        _plateY = Plate.Position.Y;
+    }
+
+    float _plateY = -1;
+
+    /// <summary>Where its plate floats, over its head: lifted when another's would be drawn over it (see Main.StackPlates).</summary>
+    public Vector3 PlateAt => Plate.GlobalPosition;
+
+    public void LiftPlate(float by)
+    {
+        if (_plateY < 0) _plateY = Plate.Position.Y;
+        Plate.Position = Plate.Position with { Y = _plateY + by };
     }
 
     /// <summary>How high the figure's meshes reach, in this body's own space (their rest shapes, through every transform down to them).</summary>
@@ -504,7 +516,7 @@ public partial class Enemy : Fighter
     {
         var bar = new string('|', (int)Math.Ceiling(Stats.Health / Stats.MaxHealth * 20));
         Plate.Text = State == EnemyState.Dead ? (Bond is not null ? $"{Stats.Name} (down)" : "")
-            : Bond is not null ? $"{Stats.Name}\nlevel {Bond.Level} {Bond.Stage}{(Bond.Hungry ? ", hungry" : "")}\n{bar}"
+            : Bond is not null ? $"{Stats.Name}, level {Bond.Level} {Bond.Stage}{(Bond.Hungry ? ", hungry" : "")}\n{bar}"
             : Rider ? $"Dragon Knight {Stats.Name}\n{bar}"
             : $"{Stats.Name}\n{bar}";
         if (State != EnemyState.Dead && Frenzy > 0) Plate.Text = $"FRENZIED\n{Plate.Text}";

@@ -111,7 +111,7 @@ public sealed class Highways
             legs.Insert(0, Approach(r.Line[0]));
         }
         else if (id == "city:hollowheart")
-            legs.Add([Yard, .. Northwood.NorthRoad.TakeWhile(p => !(p.X == Northwood.VillageX && p.Z == Northwood.VillageZ)), (Northwood.VillageX, Northwood.VillageZ)]); // up the wood's own road to the village
+            legs.Add([Yard, .. Northwood.VillageRoad]); // up the wood's own road to the foot of the village
         else if (!double.IsNaN(x) && Starts.Select((p, i) => (p, i)).Where(s => Math.Sqrt(Sq(s.p.X - x) + Sq(s.p.Z - z)) < 140).Select(s => (int?)s.i).FirstOrDefault() is { } near)
             legs.Add(Approach(Starts[near])); // a place at a road's very start (Druitt, at the end of the west road)
         else return null;

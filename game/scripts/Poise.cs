@@ -84,6 +84,9 @@ public static class Poise
 public partial class Footing(Body body, Node3D model, Skeleton3D skeleton, Poise.Rig rig) : Node
 {
     float _baseY = model.Position.Y, _drop;
+
+    /// <summary>The model's been stood somewhere new (a body lifted onto its feet): stand it from there.</summary>
+    public void Rebase() => _baseY = model.Position.Y;
     /// <summary>How far the body has settled below its stance to let a downhill leg reach the ground.</summary>
     public float Drop => _drop;
     readonly List<(int Root, int Mid, int End, float Past, Node3D Target)> _legs = [];

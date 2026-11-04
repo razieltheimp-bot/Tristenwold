@@ -1149,7 +1149,8 @@ public partial class Main : Node3D
 
     void Townsfolk(Npc npc, string? look = null, float? floor = null)
     {
-        var at = new Vector3((float)npc.X, 0, (float)npc.Z);
+        var (x, z) = floor is null ? Northwood.OutOfTrunks(npc.X, npc.Z) : (npc.X, npc.Z); // on the ground, never in one of Hollowheart's great trees
+        var at = new Vector3((float)x, 0, (float)z);
         var person = new Person { Npc = npc, Look = look, Position = at with { Y = floor ?? City.FloorAt(at) } };
         AddChild(person);
         _townsfolk.Add(person);
