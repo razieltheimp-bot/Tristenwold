@@ -28,6 +28,17 @@ public sealed class TurlinBook
     public bool Met { get; set; }
     /// <summary>How many times the hero has killed him. He came back from every one.</summary>
     public int Deaths { get; set; }
+    /// <summary>
+    /// How far gone he is: how many of those deaths took something of him. Only one death in four does (see
+    /// <see cref="ChangeChance"/>). -1 in a save from before that, where every death did, so it follows the deaths.
+    /// </summary>
+    public int Fall { get; set; } = -1;
+    /// <summary>How many steps he's taken from the man he was.</summary>
+    [System.Text.Json.Serialization.JsonIgnore] public int Changes => Fall < 0 ? Deaths : Fall;
+    /// <summary>The chance a death costs him something of himself; the rest he comes back from as he was, only stronger.</summary>
+    public const double ChangeChance = 0.25;
+    /// <summary>For the self-test: the chance to use instead, so a test can be sure of the change.</summary>
+    [System.Text.Json.Serialization.JsonIgnore] public double? ChangeChanceForTest { get; set; }
     /// <summary>What beating him has taught the hero, for good.</summary>
     public int Edge { get; set; }
     /// <summary>The deviant in him has shown itself: he's eaten the fruit in front of the hero, and from then on he burns with it.</summary>
@@ -71,7 +82,7 @@ public sealed class TurlinBook
             "It falls, and its last look is a surprised one, as it always is. It has no idea. You know better than to think that's the end of it."),
     ];
 
-    public TurlinForm Form => Forms[Math.Min(Deaths, Forms.Count - 1)];
+    public TurlinForm Form => Forms[Math.Min(Changes, Forms.Count - 1)];
 
     public static readonly IReadOnlyList<TurlinCase> Cases =
     [
@@ -132,9 +143,15 @@ public sealed class TurlinBook
         Waiting = false;
     }
 
-    /// <summary>The hero caught him and killed him. He'll be back, and less; they're stronger for it, and that part they keep.</summary>
-    public void HeLost(string hero, DamageKind blow, int day, double now)
+    /// <summary>
+    /// The hero caught him and killed him. He'll be back, and one time in four less himself (<paramref name="changes"/>
+    /// says, or the dice do); they're stronger for it, and that part they keep.
+    /// </summary>
+    public void HeLost(string hero, DamageKind blow, int day, double now, bool? changes = null)
     {
+        if (Fall < 0) Fall = Deaths;
+        var changed = changes ?? Random.Shared.NextDouble() < (ChangeChanceForTest ?? ChangeChance);
+        if (changed) Fall++;
         var rec = Self.Player(hero);
         rec.TimesTheyBeatMe++;
         Self.Losses++;
@@ -148,7 +165,7 @@ public sealed class TurlinBook
         if (blow != DamageKind.Unknown && Self.Traits.All(t => t.Id != id))
             Self.Traits.Add(new(id, TraitKind.Strength, $"has learned to stand {blow.ToString().ToLowerInvariant()}", Affinities: new() { [blow] = Affinity.Resist }));
         Self.Rank = Form.Rank;
-        Self.History.Add(new(day, $"Killed by {hero}. Came back, and doesn't know he died: {Form.Is}."));
+        Self.History.Add(new(day, changed ? $"Killed by {hero}. Came back, and doesn't know he died: {Form.Is}." : $"Killed by {hero}. Came back as he was, and stronger for it."));
         NextAt = now + Between;
         Waiting = false;
     }
@@ -244,7 +261,7 @@ public sealed class TurlinBook
         return string.Join("\n", new[]
         {
             "YOUR RIVAL  Turlin",
-            $"   {char.ToUpperInvariant(Form.Is[0])}{Form.Is[1..]}. He has beaten you {hero?.TimesKilledThem ?? 0} time{(hero?.TimesKilledThem == 1 ? "" : "s")}; you have killed him {Deaths} time{(Deaths == 1 ? "" : "s")}, and he came back from every one, less himself.",
+            $"   {char.ToUpperInvariant(Form.Is[0])}{Form.Is[1..]}. He has beaten you {hero?.TimesKilledThem ?? 0} time{(hero?.TimesKilledThem == 1 ? "" : "s")}; you have killed him {Deaths} time{(Deaths == 1 ? "" : "s")}, and he came back from every one{(Changes == 0 ? "" : Changes == Deaths ? ", less" : $", {Changes} of them less")} himself.",
             Edge > 0 ? $"   What he's taught you: {EdgeGain * Math.Min(Edge, MostEdge):P0} more health and damage." : "",
             Self.Traits.Count > 0 ? "   " + string.Join("; ", Self.Traits.Select(t => t.Label)) : "",
         }.Where(l => l != "").Concat(last));

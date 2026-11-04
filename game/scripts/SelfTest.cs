@@ -3485,7 +3485,7 @@ public partial class SelfTest(Main main) : Node
         city.Siege = new PirateSiege { Town = "city:druitt", Ends = city.Day + 3 };
         await Until(() => main.LegendsNode?.Soren is not null, 8);
         soren = main.LegendsNode?.Soren;
-        Check(soren is not null && Mathf.IsEqualApprox(soren.Scale.X, Legend.FormOf(1).Size), $"he comes back bigger, with the sea on him: {soren?.Scale.X:0.00} times the size");
+        Check(soren is not null && Mathf.IsEqualApprox(soren.Scale.X, Legend.FormOf(city.SorenChanges).Size), $"he comes back, and wears the form the sea's left him ({city.SorenChanges} of {city.SorenDeaths} deaths took something): {soren?.Scale.X:0.00} times the size");
         if (soren is null) return;
         soren.Foresees = 0;
         soren.Provoke(p);
@@ -4146,10 +4146,12 @@ public partial class SelfTest(Main main) : Node
         await Frames(10);
         e = f.RivalBody!;
         var before = t.Form.Demon;
+        t.ChangeChanceForTest = 1; // this death, be sure it takes something
         e.TakeHit(1e7, DamageKind.Fire, AttackKind.Spell, false, p);
         await Until(() => f.RivalBody is null, 4);
         Check(t.Deaths == 1 && t.Self.Name == "Turlin" && t.Form.Demon > before && t.Self.Scars.Count == 1, $"catch him and he dies, and comes back less himself: {t.Form.Is}");
-        for (var i = 0; i < 6; i++) t.HeLost("test", DamageKind.Fire, 1, 0);
+        for (var i = 0; i < 6; i++) t.HeLost("test", DamageKind.Fire, 1, 0, changes: true);
+        t.ChangeChanceForTest = null;
         t.NextAt = 0;
         await Teleport(edge);
         main.MeetTurlinForTest();

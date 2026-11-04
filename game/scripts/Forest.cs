@@ -969,11 +969,12 @@ public partial class Forest(Main main) : Node3D
     public Enemy PoseRival(int deaths, Vector3 at)
     {
         var t = main.ForestLog.Turlin;
-        (t.Deaths, _ape) = (deaths, null);
+        var fall = t.Fall;
+        (t.Deaths, t.Fall, _ape) = (deaths, deaths, null);
         Rise(at, t);
         var e = _ape!;
         _ape = null;
-        t.Deaths = 0;
+        (t.Deaths, t.Fall) = (0, fall);
         e.Carried = true;
         e.GlobalPosition = at with { Y = City.FloorAt(at) };
         e.HidePlate();

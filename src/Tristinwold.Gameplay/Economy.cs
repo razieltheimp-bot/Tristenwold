@@ -248,6 +248,23 @@ public sealed partial class CityEconomy
     public string? WebHolder { get; set; }
     /// <summary>How many times Soren's been killed, by anyone. He came back from every one.</summary>
     public int SorenDeaths { get; set; }
+    /// <summary>
+    /// How far the sea has him: how many of those deaths took something of him. Only one death in four does, the same on
+    /// every game and the server (the dice are the city's own). -1 in a save from before that, where it follows the deaths.
+    /// </summary>
+    public int SorenFall { get; set; } = -1;
+    /// <summary>How many steps he's taken from the man he was: which of his forms he wears.</summary>
+    [System.Text.Json.Serialization.JsonIgnore] public int SorenChanges => SorenFall < 0 ? SorenDeaths : SorenFall;
+    /// <summary>The chance a death costs Soren something of himself.</summary>
+    public const double SorenChangeChance = 0.25;
+
+    /// <summary>Soren killed: back again, and one time in four the sea keeps a little more of him.</summary>
+    void SorenDied()
+    {
+        if (SorenFall < 0) SorenFall = SorenDeaths;
+        SorenDeaths++;
+        if (new Rng(Seed ^ (ulong)SorenDeaths * 0x9E3779B97F4A7C15UL).Chance(SorenChangeChance)) SorenFall++;
+    }
     /// <summary>How many times Lu Wukong's been killed, by anyone. He came back from every one.</summary>
     public int WukongDeaths { get; set; }
     public const int SiegeEvery = 24, SiegeDays = 3, SiegeBurns = 1, SackBurns = 2, SackTreasury = 200;
@@ -662,7 +679,7 @@ public sealed partial class CityEconomy
             case "blade" when a.Item == Legend.Rubilacxe && BladeHolder is null && a.Contract is { Length: > 0 and <= 60 } holder: BladeHolder = holder; News.Add($"{holder} has drawn the sword from the stone."); return true;
             case "blade" when a.Item == Legend.Arachnicalibur && WebHolder is null && a.Contract is { Length: > 0 and <= 60 } taker: WebHolder = taker; News.Add($"{taker} has taken Arachnicalibur from the Dread Pirate Soren."); return true;
             case "soren_killed" when a.Item is { Length: > 0 and <= 60 } slayer:
-                SorenDeaths++;
+                SorenDied();
                 News.Add($"{slayer} has killed the Dread Pirate Soren. Nobody who knows the sea believes that's the end of it.");
                 return true;
             case "wukong_killed" when a.Item is { Length: > 0 and <= 60 } killer:
@@ -676,7 +693,7 @@ public sealed partial class CityEconomy
                 return true;
             case "siege_broken" when Siege is { } broken:
                 News.Add($"{(a.Item is { Length: > 0 and <= 60 } who2 ? who2 : "Someone")} has broken Soren's siege of {PlaceName(broken.Town)}{(a.N == 1 ? ", and killed him. Nobody who knows the sea believes that's the end of it" : "")}.");
-                if (a.N == 1) SorenDeaths++;
+                if (a.N == 1) SorenDied();
                 Siege = null;
                 return true;
             // The roads.

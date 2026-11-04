@@ -799,7 +799,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             var ground = City.FloorAt(stand);
             for (var i = 0; i < 6; i++)
             {
-                main.Economy.SorenDeaths = i;
+                main.Economy.SorenDeaths = main.Economy.SorenFall = i;
                 var at = stand with { Y = ground } + new Vector3((2.5f - i) * 2.1f, 0, 0);
                 var e = Enemy.Create(Bestiary.Get("dread_soren"), at, look: Legends.Look(main.Economy));
                 e.Carried = true;

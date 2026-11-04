@@ -322,6 +322,24 @@ public class ForgingTests
     }
 
     [Fact]
+    public void Only_one_of_Sorens_deaths_in_four_takes_something_of_him_the_same_on_every_game()
+    {
+        CityEconomy Killed(int times)
+        {
+            var c = CityEconomy.Start(11);
+            for (var i = 0; i < times; i++) c.Apply(CityAction.SorenKilled("Ana"));
+            return c;
+        }
+        var (a, b) = (Killed(400), Killed(400));
+        Assert.Equal(400, a.SorenDeaths);
+        Assert.InRange(a.SorenChanges, 60, 140);
+        Assert.Equal(a.SorenChanges, b.SorenChanges); // the city's own dice: the server and every game agree
+        // A world saved before: four deaths, every one of them took something, and he's still that far gone.
+        var old = System.Text.Json.JsonSerializer.Deserialize<CityEconomy>("{\"SorenDeaths\":4}")!;
+        Assert.Equal(4, old.SorenChanges);
+    }
+
+    [Fact]
     public void Killing_Soren_counts_for_the_whole_server_and_he_comes_back_less_each_time()
     {
         var city = CityEconomy.Start(7);
@@ -333,6 +351,7 @@ public class ForgingTests
         }
         var seas = Legend.SorenForms.Select(f => f.Sea).ToList();
         Assert.Equal(seas.OrderBy(s => s), seas);
+        Assert.InRange(city.SorenChanges, 0, city.SorenDeaths);
         Assert.Equal(Legend.SorenForms[^1], Legend.FormOf(99));
         Assert.Equal(Legend.SorenMost, Legend.SorenStrength(99));
         Assert.True(Legend.SorenStrength(1) > Legend.SorenStrength(0));

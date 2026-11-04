@@ -59,7 +59,7 @@ public class TurlinTests
         {
             Assert.True(t.Form.Demon >= last);
             last = t.Form.Demon;
-            t.HeLost("Ana", DamageKind.Fire, i, 0);
+            t.HeLost("Ana", DamageKind.Fire, i, 0, changes: true);
             Assert.Equal("Turlin", t.Self.Name);
             Assert.True(t.Self.Alive);
         }
@@ -67,6 +67,27 @@ public class TurlinTests
         Assert.Equal(9, t.Deaths);
         Assert.Single(t.Self.Traits); // he learns to stand fire once
         Assert.Equal(9, t.Self.Scars.Count);
+    }
+
+    [Fact]
+    public void Only_one_death_in_four_takes_something_of_him_and_an_old_save_keeps_its_form()
+    {
+        var t = new TurlinBook();
+        t.HeLost("Ana", DamageKind.Fire, 1, 0, changes: false);
+        Assert.Equal((1, 0), (t.Deaths, t.Changes));
+        Assert.Equal(TurlinBook.Forms[0], t.Form); // back as he was, only stronger
+        Assert.Contains("as he was", t.Self.History[^1].Text);
+        t.HeLost("Ana", DamageKind.Fire, 2, 0, changes: true);
+        Assert.Equal((2, 1), (t.Deaths, t.Changes));
+        Assert.Equal(TurlinBook.Forms[1], t.Form);
+        // Left to the dice, about one in four.
+        var many = new TurlinBook();
+        for (var i = 0; i < 400; i++) many.HeLost("Ana", DamageKind.Fire, i, 0);
+        Assert.InRange(many.Changes, 60, 140);
+        // A hero's save from before: three deaths, every one of them took something, and it's still that far gone.
+        var old = System.Text.Json.JsonSerializer.Deserialize<TurlinBook>("{\"Deaths\":3}")!;
+        Assert.Equal(3, old.Changes);
+        Assert.Equal(TurlinBook.Forms[3], old.Form);
     }
 
     [Fact]

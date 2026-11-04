@@ -197,12 +197,12 @@ public partial class Legends(Main main) : Node
         e.Carried = true;
         var away = e.GlobalPosition - main.PlayerNode.GlobalPosition;
         _away = new Vector3(away.X, 0, away.Z).Normalized();
-        main.HudNode.Toast($"{Legend.FormOf(main.Economy.SorenDeaths).Retreat} Bring him down now, or he's away!", 7);
+        main.HudNode.Toast($"{Legend.FormOf(main.Economy.SorenChanges).Retreat} Bring him down now, or he's away!", 7);
     }
 
     void Muster(Vector3 at)
     {
-        var form = Legend.FormOf(main.Economy.SorenDeaths);
+        var form = Legend.FormOf(main.Economy.SorenChanges);
         var danger = WorldGen.Danger(at.X, at.Z) * (1 + 0.08 * main.PlayerNode.Hero.Level);
         _soren = Enemy.Create(Bestiary.Get("dread_soren"), at with { Y = City.FloorAt(at) + 0.5f }, danger * 1.4 * Legend.SorenStrength(main.Economy.SorenDeaths), look: Look(main.Economy));
         Dress(_soren, main.Economy);
@@ -306,7 +306,7 @@ public partial class Legends(Main main) : Node
     public void HuntForTest() => Hunt();
 
     /// <summary>The look of him as he is now: the sea's work is built into his body (see Garments.Soren).</summary>
-    public static string Look(CityEconomy city) => $"soren_{Math.Min(city.SorenDeaths, Legend.SorenForms.Count - 1)}";
+    public static string Look(CityEconomy city) => $"soren_{Math.Min(city.SorenChanges, Legend.SorenForms.Count - 1)}";
 
     /// <summary>He sees blows coming, while the blade and its scabbard are still his.</summary>
     public static void Dress(Enemy soren, CityEconomy city) => soren.Foresees = city.WebHolder is null ? Legend.SorenForesees : 0;
@@ -344,7 +344,7 @@ public partial class Legends(Main main) : Node
     {
         if (victim.Kind.Id == "lu_wukong") { LuFell(victim, killer, byCompany); return; }
         if (victim != _soren) return;
-        var form = Legend.FormOf(main.Economy.SorenDeaths);
+        var form = Legend.FormOf(main.Economy.SorenChanges);
         var earned = byCompany || _struck || _hunting;
         main.DoCity(_hunting ? CityAction.SorenKilled(main.PlayerNode.Company) : CityAction.SiegeBroken(earned ? main.PlayerNode.Company : Legend.WukongName, true));
         (_soren, _leaving, _hunting) = (null, 0, false);
