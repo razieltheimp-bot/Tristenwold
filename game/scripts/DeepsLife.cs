@@ -105,18 +105,50 @@ public partial class Main
         var stage = Indoors.StageAt;
         var rng = new Rng((ulong)seed ^ 0xD3E9);
         var rock = new StandardMaterial3D { AlbedoColor = new Color("#4a4440"), Roughness = 1 };
-        for (var z = -48f; z < 50; z += 12)
+        // The city's hall, in the middle of the tunnels: pillars of living rock down both sides, the houses between.
+        for (var z = -14f; z < 24; z += 12)
             foreach (var side in new[] { -1f, 1f })
-                room.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 1.6f, BottomRadius = 2.2f, Height = 14 }, MaterialOverride = rock, Position = stage + new Vector3(side * 14, 7, z) });
+                room.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 1.4f, BottomRadius = 1.9f, Height = 14 }, MaterialOverride = rock, Position = stage + new Vector3(side * 15.5f, 7, z) });
         for (var i = 0; i < 6; i++)
         {
-            var at = stage + new Vector3(i % 2 == 0 ? -8 : 8, 0, -18 + i / 2 * 12);
+            var at = stage + new Vector3(i % 2 == 0 ? -9 : 9, 0, -11 + i / 2 * 11);
             Buildings.Place(room, i == 2 ? "smithy" : "house", at, i % 2 == 0 ? Mathf.Pi / 2 : -Mathf.Pi / 2, seed + i);
         }
-        foreach (var z in new[] { -30f, -10f, 10f, 30f, 46f })
+        foreach (var z in new[] { -12f, 6f, 20f })
         {
             room.AddChild(Placed(Lairfolk.Light("#ffb060", 1.8f, 18, flicker: 0.1f), stage + new Vector3(0, 9, z)));
             room.AddChild(Placed(Lairfolk.Motes(new Color(0.6f, 0.8f, 1f, 0.5f), 0.05f, 20, new Vector3(10, 4, 4), 0.1f), stage + new Vector3(0, 6, z)));
+        }
+        room.AddChild(Placed(Lairfolk.Light("#ffb060", 1.4f, 14, flicker: 0.1f), stage + new Vector3(0, 4, 49))); // the way in
+        // The side rooms off the old roads: a storeroom, a shrine to the ancestors, a grotto of glowing caps.
+        foreach (var (m, i) in room.SideRooms.Select((m, i) => (m, i)))
+        {
+            var (at, size) = room.RoomSpan(m);
+            switch (i % 3)
+            {
+                case 0:
+                    Models.Place(room, "dungeon/keg.glb", at + new Vector3(-size.X / 2 + 1.4f, 0, -1), 0.8f);
+                    Models.Place(room, "dungeon/keg.glb", at + new Vector3(-size.X / 2 + 1.4f, 0, 0.4f), 0.8f);
+                    Models.Place(room, "ph:crate.glb", at + new Vector3(size.X / 2 - 1.6f, 0, 0), 1.1f, 0.5f);
+                    room.Glow(at + Vector3.Up * 3, "#ffb060", 1.2f, 12);
+                    break;
+                case 1:
+                    room.Block(at + new Vector3(0, 0.6f, -size.Y / 2 + 1.2f), new Vector3(2.4f, 1.2f, 1), Surface.Stone);
+                    room.Block(at + new Vector3(0, 2.4f, -size.Y / 2 + 0.8f), new Vector3(1.4f, 2.4f, 0.4f), Surface.Stone, solid: false);
+                    room.Glow(at + new Vector3(0, 2, -size.Y / 2 + 2), "#a0c8ff", 1.4f, 12);
+                    break;
+                default:
+                    var cap = new StandardMaterial3D { AlbedoColor = new Color("#60e0c8"), EmissionEnabled = true, Emission = new Color("#30c0a0"), EmissionEnergyMultiplier = 1.6f };
+                    for (var k = 0; k < 7; k++)
+                    {
+                        var p = at + new Vector3(((float)rng.NextDouble() - 0.5f) * (size.X - 2), 0, ((float)rng.NextDouble() - 0.5f) * (size.Y - 2));
+                        var h = 0.4f + (float)rng.NextDouble() * 1.2f;
+                        room.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.06f, BottomRadius = 0.09f, Height = h }, MaterialOverride = rock, Position = p + Vector3.Up * h / 2 });
+                        room.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.35f + h * 0.2f, Height = 0.3f + h * 0.15f }, MaterialOverride = cap, Position = p + Vector3.Up * h });
+                    }
+                    room.Glow(at + Vector3.Up * 2, "#40e0c0", 1.2f, 12);
+                    break;
+            }
         }
         room.AddChild(new Label3D { Text = t.City, Position = stage + new Vector3(0, 8, -6), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 96, OutlineSize = 16, PixelSize = 0.02f, Modulate = new Color("#ffd27a") });
         room.AddChild(new Label3D { Text = "The Deep Road\n(to the mines above)", Position = DeepRoadSign + new Vector3(0, 2.4f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 40, OutlineSize = 8, PixelSize = 0.008f, Modulate = new Color("#e8d8b0") });
@@ -152,16 +184,16 @@ public partial class Main
         var level = Math.Max(8, _player.Hero.Level);
         for (var i = 0; i < 7; i++)
         {
-            var at = stage + new Vector3(-6 + i % 4 * 4, 0.4f, -30 + i / 4 * 5);
+            var at = stage + new Vector3(-4.5f + i % 4 * 3, 0.4f, -17 + i / 4 * 3); // in at the far end of the city's hall
             var e = Enemy.Create(Bestiary.Get(i < 3 ? "demon_grunt" : "imp"), at, Northwood.DangerFor(level), look: i < 3 ? "demon_grunt" : null);
-            (e.Faction, e.Foe, e.Roam) = (Hell, Deep, 14);
+            (e.Faction, e.Foe, e.Roam) = (Hell, Deep, 10);
             AddEnemy(e);
             e.Provoke(_player);
             _deepFoes.Add(e);
         }
         for (var i = 0; i < 3; i++)
         {
-            var at = stage + new Vector3(-3 + i * 3, 0.4f, -14);
+            var at = stage + new Vector3(-3 + i * 3, 0.4f, -6);
             var e = Enemy.Create(Bestiary.Get("bandit_chief"), at, Northwood.DangerFor(level - 2), look: "warmaster");
             e.Stats.Name = $"Dwarf of {_deepTrench!.City}";
             (e.Allied, e.Faction, e.Foe, e.Roam) = (true, Deep, Hell, 12);
@@ -178,11 +210,44 @@ public partial class Main
         var stage = Indoors.StageAt;
         var rock = new StandardMaterial3D { AlbedoColor = new Color("#2a2020"), Roughness = 1 };
         var rng = new Rng(0xDEE9);
-        for (var i = 0; i < 26; i++)
+        // Fangs of rock about the Rift's cavern (the burrows up from it are the warren, see Indoors.CutWarren).
+        for (var i = 0; i < 12; i++)
         {
-            var at = stage + new Vector3(rng.Next(56) - 28, 0, rng.Next(130) - 65);
+            var at = stage + new Vector3(rng.Next(56) - 28, 0, -72 + rng.Next(42));
+            if (Mathf.Abs(at.X - stage.X) < 22 && at.Z < stage.Z - 46) continue; // not in the Rift, nor on the throne
             if (Mathf.Abs(at.X - stage.X) < 6) continue;
             room.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0, BottomRadius = 1.4f + rng.Next(3), Height = 4 + rng.Next(12) }, MaterialOverride = rock, Position = at + Vector3.Up * 2 });
+        }
+        room.AddChild(Placed(Lairfolk.Light("#ff6030", 1.4f, 16, flicker: 0.2f), stage + new Vector3(0, 4, 66))); // the way in
+        // The burrows' side rooms: a pit of bones, a pool of fire, a nest with something in it.
+        foreach (var (m, i) in room.SideRooms.Select((m, i) => (m, i)))
+        {
+            var (at, size) = room.RoomSpan(m);
+            switch (i % 3)
+            {
+                case 0:
+                    var bones = new StandardMaterial3D { AlbedoColor = new Color("#d8d0c0"), Roughness = 0.8f };
+                    for (var k = 0; k < 14; k++)
+                        room.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.06f, BottomRadius = 0.08f, Height = 0.6f + (float)rng.NextDouble() }, MaterialOverride = bones,
+                            Position = at + new Vector3(((float)rng.NextDouble() - 0.5f) * (size.X - 3), 0.1f, ((float)rng.NextDouble() - 0.5f) * (size.Y - 3)), Rotation = new Vector3(Mathf.Pi / 2, (float)rng.NextDouble() * 3, 0) });
+                    room.Glow(at + Vector3.Up * 3, "#ff8050", 1, 12);
+                    break;
+                case 1:
+                    var fire = new StandardMaterial3D { AlbedoColor = new Color("#ff5010"), EmissionEnabled = true, Emission = new Color("#ff3000"), EmissionEnergyMultiplier = 2.5f, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded };
+                    room.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(size.X * 0.5f, 0.06f, size.Y * 0.5f) }, MaterialOverride = fire, Position = at + new Vector3(0, 0.05f, 0) });
+                    room.Glow(at + Vector3.Up * 2, "#ff4010", 2, 14);
+                    break;
+                default:
+                    for (var k = 0; k < 2; k++)
+                    {
+                        var e = Enemy.Create(Bestiary.Get(k == 0 ? "imp" : "dire_imp"), at + new Vector3(k * 2 - 1, 0.4f, 0), Northwood.DangerFor(Math.Max(10, _player.Hero.Level)));
+                        (e.Faction, e.Roam) = (Hell, 4);
+                        AddEnemy(e);
+                        _deepFoes.Add(e);
+                    }
+                    room.Glow(at + Vector3.Up * 3, "#ff6030", 1, 12);
+                    break;
+            }
         }
         // The Rift: a wound in the floor that goes down forever, burning.
         var rift = stage + new Vector3(0, 0.05f, -58);
@@ -197,7 +262,7 @@ public partial class Main
         // The Host on this side of it: brutes and imps, and their lord.
         for (var i = 0; i < 8; i++)
         {
-            var at = stage + new Vector3(-16 + i % 4 * 10, 0.4f, -20 - i / 4 * 14);
+            var at = stage + new Vector3(-16 + i % 4 * 10, 0.4f, -32 - i / 4 * 7); // in the Rift's cavern, between it and the burrows
             var e = Enemy.Create(Bestiary.Get(i % 3 == 0 ? "demon_grunt" : i % 3 == 1 ? "imp" : "dire_imp"), at, Northwood.DangerFor(Math.Max(12, _player.Hero.Level + 2)), look: i % 3 == 0 ? "demon_grunt" : null);
             (e.Faction, e.Roam) = (Hell, 10);
             AddEnemy(e);

@@ -813,7 +813,26 @@ public partial class Enemy : Fighter
             return Vector3.Zero;
         }
         if (d < 3.5f + Bulk) return Vector3.Zero;
+        // Underground the tunnels wind, and walking straight at the hero means walking into rock: keep up by the way they went.
+        if (d > 14 && GlobalPosition.Y > Indoors.Threshold) { CatchUp(leader); return Vector3.Zero; }
         return to.Normalized() * Math.Max(speed, d > 12 ? 9 : 5);
+    }
+
+    /// <summary>Close behind the hero, wherever there's room: behind them if that's clear of rock, else at their side.</summary>
+    void CatchUp(Player leader)
+    {
+        var from = leader.GlobalPosition + Vector3.Up * 0.8f;
+        var space = GetWorld3D().DirectSpaceState;
+        foreach (var dir in new[] { leader.GlobalTransform.Basis.Z, leader.GlobalTransform.Basis.X, -leader.GlobalTransform.Basis.X, -leader.GlobalTransform.Basis.Z })
+        {
+            var to = from + (dir with { Y = 0 }).Normalized() * (2.2f + Bulk);
+            var ray = PhysicsRayQueryParameters3D.Create(from, to);
+            ray.Exclude = [leader.GetRid(), GetRid()];
+            if (space.IntersectRay(ray).Count > 0) continue;
+            GlobalPosition = to with { Y = leader.GlobalPosition.Y + 0.3f };
+            ResetPhysicsInterpolation();
+            return;
+        }
     }
 
     bool Ready(BondSkill skill)

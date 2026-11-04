@@ -98,7 +98,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         "keep" => (18, 18, 6),
         "tower" => (8, 8, 4),
         "hollow" => (9, 9, 3.2f),
-        "mineshaft" => (12, 32, 4.5f),
+        "mineshaft" => (24, 36, 4.5f),
         "crypt" => (14, 66, 5),
         "store" => (9, 10, 3.4f),
         "warehouse" => (10, 12, 4.4f),
@@ -134,10 +134,12 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
             Slab(new Vector3(0, high / 2, side * (deep / 2 + 0.1f)), new Vector3(wide + 0.4f, high, 0.2f), walls);
         }
         Part(new Vector3(0, 1.25f, deep / 2 - 0.02f), new Vector3(1.5f, 2.5f, 0.08f), Surface.Planks); // the door, shut behind you
-        foreach (var x in new[] { -wide / 4, wide / 4 })
-            for (var z = -deep / 2 + 3; z < deep / 2; z += 5)
-                Part(new Vector3(x, high - 0.1f, z), new Vector3(0.28f, 0.28f, 0.28f), Surface.Timber);
-        Light(new Vector3(0, high - 0.6f, 0), 1.6f, Math.Max(wide, deep) * 1.1f);
+        if (WarrenPlan(kind) is null)
+            foreach (var x in new[] { -wide / 4, wide / 4 })
+                for (var z = -deep / 2 + 3; z < deep / 2; z += 5)
+                    Part(new Vector3(x, high - 0.1f, z), new Vector3(0.28f, 0.28f, 0.28f), Surface.Timber);
+        Light(new Vector3(0, high - 0.6f, 0), WarrenPlan(kind) is null ? 1.6f : 0.7f, Math.Max(wide, deep) * 1.1f);
+        CutWarren(wide, deep, high);
         Furnish(wide, deep, high);
     }
 
@@ -152,9 +154,13 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         main.LeftTheShop();
     }
 
+    static readonly Dictionary<Surface, Material> Photos = [];
+
     static Material Photo(Surface s)
     {
+        if (Photos.TryGetValue(s, out var made)) return made; // one per surface, however many walls a warren has
         if (BuildingMaterials.For(s).Duplicate() is not StandardMaterial3D m) return BuildingMaterials.For(s);
+        Photos[s] = m;
         m.Uv1Triplanar = true; // boxes here have no measured UVs: lay the photograph on by the world's metres
         m.Uv1WorldTriplanar = true;
         m.Uv1Scale = Vector3.One * 0.45f;
@@ -203,16 +209,48 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         switch (kind)
         {
             case "mineshaft":
-                for (var z = -deep / 2 + 4; z < deep / 2 - 3; z += 7) // props, a lamp to each pair, and the odd cart and heap
+                // The way in, with the lift's frame and a cart; the drifts beyond (see CutWarren); the face at the far end, where the trouble is; and a side room or two.
+                Put("ph:crate.glb", -2.2f, deep / 2 - 3, 1, 0.4f);
+                Light(new Vector3(0, 3, deep / 2 - 3), 1.2f, 10);
+                Sign(new Vector3(0, 3, deep / 2 - 3.5f), "Mind your head");
+                if (Maze?.Rooms.FirstOrDefault(m => m.Id == "face") is { } face)
                 {
-                    foreach (var side in new[] { -1f, 1f })
-                        Slab(new Vector3(side * (wide / 2 - 0.3f), high / 2, z), new Vector3(0.4f, high, 0.4f), Surface.Timber);
-                    Part(new Vector3(0, high - 0.2f, z), new Vector3(wide, 0.35f, 0.4f), Surface.Timber);
-                    Light(new Vector3(wide / 2 - 0.8f, 2.4f, z), 0.9f, 9);
-                    Put("ph:crate.glb", -wide / 2 + 1.2f, z + 2, 1, (float)rng.NextDouble() * Mathf.Tau);
+                    var (at, size) = RoomSpan(face);
+                    var ore = new StandardMaterial3D { AlbedoColor = new Color("#c8a040"), EmissionEnabled = true, Emission = new Color("#a07010"), EmissionEnergyMultiplier = 0.8f, Metallic = 0.6f };
+                    for (var i = 0; i < 6; i++) // seams in the face, glinting
+                        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(1.2f + (float)rng.NextDouble(), 0.25f, 0.15f) }, MaterialOverride = ore, Position = at + new Vector3(-size.X / 2 + 2 + i * (size.X - 4) / 5, 1 + (float)rng.NextDouble() * 2, -size.Y / 2 + 0.15f) });
+                    Put("ph:crate.glb", at.X - Stage.X + size.X / 2 - 1.5f, at.Z - Stage.Z, 1, 1.2f);
+                    Light(at - Stage + new Vector3(0, 3, 0), 1.1f, 12);
+                    main.PeopleTheShaft(this, seed, at + new Vector3(0, 0.4f, 1));
                 }
-                Sign(new Vector3(0, 3, deep / 2 - 3), "Mind your head");
-                main.PeopleTheShaft(this, seed, Stage + new Vector3(0, 0.4f, -deep / 2 + 5));
+                foreach (var (m, i) in SideRooms.Select((m, i) => (m, i)))
+                {
+                    var (at, size) = RoomSpan(m);
+                    switch ((Math.Abs(seed) + i) % 4)
+                    {
+                        case 0: // a sump, flooded
+                            Block(at + new Vector3(0, 0.08f, 0), new Vector3(size.X - 1, 0.05f, size.Y - 1), Surface.DarkStone, solid: false);
+                            AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(size.X - 1.2f, 0.04f, size.Y - 1.2f) }, Position = at + new Vector3(0, 0.15f, 0),
+                                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.1f, 0.22f, 0.26f, 0.7f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.05f, Metallic = 0.4f } });
+                            Glow(at + Vector3.Up * 2.5f, "#8ac0d0", 0.8f, 10);
+                            break;
+                        case 1: // a drift that came down
+                            for (var k = 0; k < 5; k++) Block(at + new Vector3(((float)rng.NextDouble() - 0.5f) * size.X * 0.6f, 0.4f, ((float)rng.NextDouble() - 0.5f) * size.Y * 0.6f), new Vector3(1 + (float)rng.NextDouble(), 0.8f + (float)rng.NextDouble(), 1 + (float)rng.NextDouble()), Surface.Stone);
+                            Glow(at + Vector3.Up * 2.5f, "#ffb070", 0.7f, 9);
+                            break;
+                        case 2: // the tool store
+                            Put("ph:crate.glb", at.X - Stage.X - 1.5f, at.Z - Stage.Z - 1.5f, 1, 0.2f);
+                            Put("ph:crate.glb", at.X - Stage.X + 1.2f, at.Z - Stage.Z - 1.8f, 1, 1.1f);
+                            Put("dungeon/keg.glb", at.X - Stage.X - 1.8f, at.Z - Stage.Z + 1.4f, 0.7f);
+                            Glow(at + Vector3.Up * 2.8f, "#ffc890", 1, 10);
+                            break;
+                        default: // a rich seam, half worked
+                            var gold = new StandardMaterial3D { AlbedoColor = new Color("#d8b050"), EmissionEnabled = true, Emission = new Color("#b08020"), EmissionEnergyMultiplier = 1.2f, Metallic = 0.7f };
+                            for (var k = 0; k < 4; k++) AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.6f, 0.6f, 0.6f) }, MaterialOverride = gold, Position = at + new Vector3(-1.5f + k, 0.3f, size.Y / 2 - 0.8f), Rotation = new Vector3(0, k, 0.3f) });
+                            Glow(at + Vector3.Up * 2.5f, "#ffd27a", 1, 10);
+                            break;
+                    }
+                }
                 break;
             case "crypt":
                 foreach (var z in new[] { deep / 6, -deep / 6 }) // the vaults' walls, each with an arch through the middle

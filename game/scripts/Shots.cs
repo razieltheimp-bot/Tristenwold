@@ -641,6 +641,48 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.MakeCurrent();
             await Shot(name);
         }
+        if (OS.GetCmdlineUserArgs().Contains("--warrens"))
+        {
+            // A country mine, a trench and the Depths, from just inside the way in and from down the tunnels.
+            async Task Look(string name, Vector3 eye, Vector3 at)
+            {
+                main.PlayerNode.GlobalPosition = eye with { Y = Indoors.StageAt.Y + 0.6f };
+                await Frames(20);
+                cam.GlobalPosition = eye;
+                cam.LookAt(at, Vector3.Up);
+                cam.MakeCurrent();
+                await Shot(name);
+            }
+            foreach (var kind in new[] { "mineshaft", "trench", "depths" })
+            {
+                if (kind == "mineshaft") main.GoInsideForTest("mineshaft", 4242, new Vector3(0, 0, 40));
+                else main.GoDeepForTest(kind, kind == "trench" ? Tristinwold.World.Deeps.Around(main.World, 0, 0, 1).First(t => t.Mines.Count > 0) : null);
+                await Frames(60);
+                if (main.IndoorsNode is not { Maze: { } maze } room) { GD.Print($"no warren in {kind}"); continue; }
+                var s = Indoors.StageAt;
+                var door = room.WayIn;
+                await Look($"{kind}-way-in", door + new Vector3(0, 1.7f, 0), door + new Vector3(0, 1.2f, -12));
+                // Down a tunnel: the first cell outside any chamber with an opening to look along.
+                for (var r = maze.Rows - 1; r >= 0; r--)
+                    for (var c = 0; c < maze.Cols; c++)
+                    {
+                        if (maze.RoomAt(c, r) is not null || !maze.Open(c, r, 0, -1)) continue;
+                        var mid = room.CellMiddle(c, r);
+                        await Look($"{kind}-tunnel", mid + new Vector3(0, 1.7f, 0), room.CellMiddle(c, r - 1) + Vector3.Up * 1.4f);
+                        r = -1;
+                        break;
+                    }
+                foreach (var m in maze.Rooms.Where(m => m.Id != "door").Take(3))
+                {
+                    var (at, size) = room.RoomSpan(m);
+                    await Look($"{kind}-{m.Id}", at + new Vector3(size.X * 0.35f, 2.2f, size.Y * 0.4f), at + Vector3.Up);
+                }
+                main.GoOutsideForTest();
+                await Frames(30);
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--ownship"))
         {
             // The hero's own ship at her berth: from the pier, from off her bow, from above, from her wheel and along her deck.
