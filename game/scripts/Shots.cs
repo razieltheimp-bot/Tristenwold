@@ -28,6 +28,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         if (market) { await Market(); return; }
         if (town) { await Town(); return; }
         if (audit) { await Audit(); return; }
+        if (OS.GetCmdlineUserArgs().Contains("--overlaps")) { await Overlaps(); return; }
         if (spells) { await Spells(); return; }
         if (quick) { await Quick(); return; }
 
@@ -441,6 +442,127 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         }
         GD.Print($"AUDIT done: {problems} props wrong");
         GetTree().Quit();
+    }
+
+    /// <summary>
+    /// Every building, hull and great structure that runs into another (--overlaps): Tristinwold in a ring of stops, the
+    /// docks and the shipyard, every guild's yard, the places near the city and every lair. Wall pieces meeting round a
+    /// curve, and piers meeting the boardwalk, are meant to.
+    /// </summary>
+    async Task Overlaps()
+    {
+        var stops = new List<(string Name, Vector3 At)> { ("Tristinwold's crown", Vector3.Zero), ("the docks", new Vector3(122, 0, 0)), ("the shipyard", Main.ShipyardAt + new Vector3(8, 0, 0)), ("the Warrens", new Vector3(-20, 0, -86)) };
+        for (var i = 0; i < 12; i++)
+        {
+            var a = i * Mathf.Tau / 12;
+            stops.Add(($"Tristinwold's outer ring ({i * 30} degrees)", new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 80));
+            stops.Add(($"Tristinwold's middle ring ({i * 30} degrees)", new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 46));
+        }
+        foreach (var g in Guilds.All) stops.Add((g.Hall, new Vector3((float)g.X, 0, (float)g.Z)));
+        foreach (var s in main.World.SitesNear(0, 0, 1800).Where(s => s.Kind is not SettlementKind.City || s.DistanceTo(0, 0) > 200).OrderBy(s => s.DistanceTo(0, 0)))
+            stops.Add(($"{s.Name} ({s.Kind})", new Vector3((float)s.X, 0, (float)s.Z)));
+        foreach (var r in Raids.All) stops.Add((r.Name, new Vector3((float)r.X, 0, (float)r.Z)));
+        var told = new HashSet<(ulong, ulong)>();
+        var count = 0;
+        foreach (var (name, at) in stops)
+        {
+            await Go(at + new Vector3(0, 0, 3), 40);
+            var near = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>()
+                .Where(n => IsInstanceValid(n) && n.IsInsideTree() && !What(n).StartsWith("disc:") && n.GlobalPosition.DistanceTo(at) < 110).ToList();
+            foreach (var s in near.Where(s => s.HasMeta("kind") && !Meant(What(s), What(s)) && What(s) is not ("pier" or "boardwalk" or "steam_wagon" or "mine_portal"))) // a mine's mouth is set into its hill
+            {
+                if (!told.Add((s.GetInstanceId(), 0)) || Slope(s) is not { } drop || drop < 1.4f) continue;
+                count++;
+                GD.Print($"OVERLAP {name}: {What(s)} at ({s.GlobalPosition.X:0.0}, {s.GlobalPosition.Z:0.0}) stands on ground {drop:0.0} m higher at one corner than another");
+            }
+            foreach (var s in near)
+                foreach (var other in RunsInto(s))
+                {
+                    var (a, b) = (s.GetInstanceId(), other.GetInstanceId());
+                    if (!told.Add(a < b ? (a, b) : (b, a)) || Meant(What(s), What(other))) continue;
+                    count++;
+                    GD.Print($"OVERLAP {name}: {What(s)} at ({s.GlobalPosition.X:0.0}, {s.GlobalPosition.Z:0.0}) runs into {What(other)} at ({other.GlobalPosition.X:0.0}, {other.GlobalPosition.Z:0.0})");
+                }
+        }
+        GD.Print($"OVERLAP done: {count} found at {stops.Count} stops");
+        GetTree().Quit();
+    }
+
+    /// <summary>How far the ground under a building rises from its lowest corner to its highest (rays down past the building itself, so a mound counts as well as the land).</summary>
+    float? Slope(Node3D n)
+    {
+        var box = Solids(n).FirstOrDefault();
+        if (box.Size == Vector3.Zero) return null;
+        var space = n.GetWorld3D().DirectSpaceState;
+        var mine = n is CollisionObject3D body ? new Godot.Collections.Array<Rid> { body.GetRid() } : [];
+        var heights = new List<float>();
+        foreach (var (x, z) in new[] { (-0.5f, -0.5f), (0.5f, -0.5f), (-0.5f, 0.5f), (0.5f, 0.5f), (0f, 0f) })
+        {
+            var at = box.At * new Vector3(box.Size.X * x, 0, box.Size.Z * z);
+            var from = at with { Y = n.GlobalPosition.Y + 30 };
+            var skip = new Godot.Collections.Array<Rid>(mine);
+            float? ground = null;
+            for (var tries = 0; tries < 6 && ground is null; tries++) // past other buildings' roofs, props and people, down to the land or a mound
+            {
+                var hit = space.IntersectRay(new PhysicsRayQueryParameters3D { From = from, To = from + Vector3.Down * 60, Exclude = skip });
+                if (hit.Count == 0) break;
+                var thing = hit["collider"].AsGodotObject() as Node;
+                var owner = thing;
+                while (owner is not null && !(owner is Node3D o && (o.HasMeta("kind") || o.HasMeta("prop")))) owner = owner.GetParent();
+                if (owner is null && thing is not CharacterBody3D) ground = ((Vector3)hit["position"]).Y;
+                else skip.Add((Rid)hit["rid"]);
+            }
+            heights.Add(ground ?? (float)main.World.Height(at.X, at.Z));
+        }
+        return heights.Max() - heights.Min();
+    }
+
+    static string What(Node3D n) => n.HasMeta("structure") ? (string)n.GetMeta("structure") : (string)n.GetMeta("kind");
+
+    static bool Meant(string a, string b)
+    {
+        static bool Wall(string k) => k is "wall" or "wall_low" or "gate";
+        static bool Boards(string k) => k is "pier" or "boardwalk";
+        return Wall(a) && Wall(b) || Boards(a) && Boards(b) || Wall(a) && Boards(b) || Boards(a) && Wall(b) || a == "lantern" || b == "lantern" || a.StartsWith("disc:") || b.StartsWith("disc:");
+    }
+
+    /// <summary>The other buildings and structures this one's solid boxes run into.</summary>
+    IEnumerable<Node3D> RunsInto(Node3D n)
+    {
+        var space = n.GetWorld3D().DirectSpaceState;
+        var mine = n is CollisionObject3D body ? new Godot.Collections.Array<Rid> { body.GetRid() } : [];
+        var found = new HashSet<Node3D>();
+        foreach (var (at, size) in Solids(n))
+        {
+            var probe = new PhysicsShapeQueryParameters3D { Shape = new BoxShape3D { Size = size }, Transform = at, Exclude = mine, CollisionMask = uint.MaxValue };
+            foreach (var hit in space.IntersectShape(probe, 16))
+            {
+                var owner = hit["collider"].AsGodotObject() as Node;
+                while (owner is not null && !(owner is Node3D o3 && (o3.HasMeta("kind") || o3.HasMeta("structure")))) owner = owner.GetParent();
+                if (owner is Node3D other && other != n && !n.IsAncestorOf(other) && !other.IsAncestorOf(n) && other.IsInGroup(Buildings.Group)) found.Add(other);
+            }
+        }
+        return found;
+    }
+
+    /// <summary>Its solid boxes, turned as it's turned: a building's collision boxes, or, for a thing with none, its meshes' box in its own frame, a little in from the edges.</summary>
+    static IEnumerable<(Transform3D At, Vector3 Size)> Solids(Node3D n)
+    {
+        static (Transform3D, Vector3) Plain(Transform3D t, Vector3 size) => (new Transform3D(t.Basis.Orthonormalized(), t.Origin), size * t.Basis.Scale);
+        var shapes = n.GetChildren().OfType<CollisionShape3D>().Where(c => c.Shape is BoxShape3D).ToList();
+        if (shapes.Count > 0)
+        {
+            foreach (var c in shapes) yield return Plain(c.GlobalTransform, ((BoxShape3D)c.Shape).Size * 0.9f);
+            yield break;
+        }
+        var inverse = n.GlobalTransform.AffineInverse();
+        Aabb? box = null;
+        foreach (var m in n.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().Append(n as MeshInstance3D).OfType<MeshInstance3D>().Where(m => m.IsVisibleInTree()))
+        {
+            var b = inverse * m.GlobalTransform * m.GetAabb();
+            box = box is { } x ? x.Merge(b) : b;
+        }
+        if (box is { } a) yield return Plain(n.GlobalTransform * new Transform3D(Basis.Identity, a.GetCenter()), a.Size * 0.85f);
     }
 
     /// <summary>What's wrong with a prop, if anything: floating, sunk, or inside a wall.</summary>

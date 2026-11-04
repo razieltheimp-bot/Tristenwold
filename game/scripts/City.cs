@@ -22,7 +22,7 @@ public static class City
 
     public static readonly Vector3 GallowsPerch = new(82, 0, -23);
     /// <summary>The warehouse the dock work carries crates to, by the east gate; and an old storehouse at the back of the Warrens, its door to the wall, that nobody goes into.</summary>
-    public static readonly Vector3 DockWarehouse = new(90, 0, -15.5f), OldStorehouse = new(-42, 0, -77);
+    public static readonly Vector3 DockWarehouse = new(92.5f, 0, -14), OldStorehouse = new(-42, 0, -77);
     static readonly Vector3[] Reserved = [DockWarehouse, OldStorehouse];
     public static readonly Vector3 PlayerStart = new(78, 0, -6);
     public static readonly Vector3 Needle = new(210, 0, 70);
@@ -218,7 +218,7 @@ public static class City
         Landmark(root, "tavern", "blue", new Vector3(40, 0, 78), 7.5f, 2.6f, "The Salt Barrel");
         Landmark(root, "barracks", "red", new Vector3(-50, 0, 72), 6.5f, 2.2f, "The Lantern Boys' Den");
         Landmark(root, "barracks", "blue", new Vector3(70, 0, 55), 7, 2.4f, "The Watch House");
-        Landmark(root, "church", "green", new Vector3(-80, 0, -40), 9, Mathf.DegToRad(20), "St. Aubrel's Church"); // the drowned one is out on the north shore
+        Landmark(root, "church", "green", new Vector3(-74, 0, -37), 9, Mathf.DegToRad(20), "St. Aubrel's Church", keepClear: new Vector3(-80, 0, -40)); // in off the wall; the drowned one is out on the north shore
         Landmark(root, "tower_B", "blue", new Vector3(-40, InnerHeight, 0), 7, 1.6f, "The Magi Archive");
         Landmark(root, "market", "red", new Vector3(30, InnerHeight, -30), 9, 2.2f, "The Exchange");
         Landmark(root, "castle", "red", new Vector3(0, CrownHeight, 0), 8, 1.57f, "The Crown");
@@ -334,7 +334,7 @@ public static class City
             var kind = rng.Pick(kinds);
             // A house on one of the spots kept for something else just isn't built, and the rest of the street stays where it was.
             if (y == 0 && Reserved.Any(k => new Vector2(k.X - pos.X, k.Z - pos.Z).Length() < 10)) { Placed.Add(pos); placed++; continue; }
-            Buildings.Place(parent, kind, pos, Mathf.Atan2(-pos.X, -pos.Z), placed + (int)(r * 7), roof); // front door to the centre
+            Buildings.Place(parent, kind, pos, Mathf.Atan2(-pos.X, -pos.Z), placed + (int)(r * 7), roof).SetMeta("filler", true); // front door to the centre
             Placed.Add(pos);
             placed++;
         }
@@ -342,13 +342,31 @@ public static class City
 
     static readonly List<Vector3> Placed = [];
 
+    /// <summary>
+    /// Takes down any house on the streets that runs into something put up besides them (a landmark, a shop, a guild's
+    /// yard, the warehouse, the Warrens): the streets are only filling, and give way. Run once the city's built.
+    /// </summary>
+    public static void Declutter(SceneTree tree)
+    {
+        var all = tree.GetNodesInGroup(Buildings.Group).OfType<Node3D>().Where(n => GodotObject.IsInstanceValid(n) && n.IsInsideTree() && !Buildings.KindOf(n).StartsWith("disc:")).ToList();
+        var standing = all.Where(n => !n.HasMeta("filler")).Select(n => (Node: n, Feet: Buildings.Footprint(n, 1))).ToList(); // the house a little in from its edges against the others whole, so even touching counts
+        foreach (var house in all.Where(n => n.HasMeta("filler")))
+        {
+            var feet = Buildings.Footprint(house, 1.05f); // a step out from its walls: a house that only touches another goes too
+            if (!standing.Any(s => s.Node.GlobalPosition.DistanceTo(house.GlobalPosition) < 40 && Buildings.Overlap(feet, s.Feet))) continue;
+            house.GetParent().RemoveChild(house);
+            house.QueueFree();
+        }
+    }
+
     /// <summary>The turn that puts a building's front door towards the city's centre.</summary>
     static float Facing(Vector3 at) => Mathf.Atan2(-at.X, -at.Z);
 
-    static Node3D Landmark(Node3D parent, string kind, string colour, Vector3 at, float scale, float yaw, string name, float labelHeight = 0)
+    /// <param name="keepClear">Where the streets keep clear of it, if not where it stands: the church moved in off the wall, and the streets were laid out round where it was.</param>
+    static Node3D Landmark(Node3D parent, string kind, string colour, Vector3 at, float scale, float yaw, string name, float labelHeight = 0, Vector3? keepClear = null)
     {
         var b = Buildings.Place(parent, kind, at, yaw, (int)(at.X * 13 + at.Z), Buildings.RoofFor(colour), Mathf.Clamp(scale / 8, 0.95f, 1.2f));
-        Placed.Add(at);
+        Placed.Add(keepClear ?? at);
         var height = labelHeight > 0 ? labelHeight : Buildings.HeightOf(b) + 3;
         Label(parent, at + new Vector3(0, height, 0), name);
         return b;

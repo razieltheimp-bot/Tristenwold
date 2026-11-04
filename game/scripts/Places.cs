@@ -478,7 +478,24 @@ public partial class Places(Main main, WorldGen world) : Node3D
     /// <summary>A couple of small houses where the people of a mine or a camp live, at spots given as shares of its radius.</summary>
     void Cottages(Node3D parent, Settlement s, string colour, params (double X, double Z)[] spots)
     {
-        foreach (var (x, z) in spots) Building(parent, s, "cottage", colour, s.Radius * x, s.Radius * z, 0, 6.5f);
+        foreach (var (x, z) in spots)
+        {
+            // The flattest ground near the spot: a mine's mound or a camp's hillside isn't somewhere to build.
+            var (fx, fz) = new[] { 0.0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05, 1.4, -1.4 }.SelectMany(turn => new[] { 1.0, 1.25, 0.85, 1.5 }.Select(reach =>
+                {
+                    var (sin, cos) = Math.SinCos(turn);
+                    return ((x * cos - z * sin) * reach * s.Radius, (x * sin + z * cos) * reach * s.Radius);
+                }))
+                .MinBy(p => Steep(s.X + p.Item1, s.Z + p.Item2, 4) + (world.Height(s.X + p.Item1, s.Z + p.Item2) < WorldGen.WaterLevel + 1 || world.Highways.OnRoad(s.X + p.Item1, s.Z + p.Item2) ? 100 : 0)); // and not in the water or on the road
+            Building(parent, s, "cottage", colour, fx, fz, 0, 6.5f);
+        }
+    }
+
+    /// <summary>How far the land rises across a square this far either side of a point: low is flat enough to build on.</summary>
+    double Steep(double x, double z, double half)
+    {
+        var heights = new[] { (-1, -1), (1, -1), (-1, 1), (1, 1), (0, 0) }.Select(c => world.Height(x + c.Item1 * half, z + c.Item2 * half)).ToList();
+        return heights.Max() - heights.Min();
     }
 
     /// <summary>The i-th lot out past a town's wall, clear of the water, the gate roads and the highway: offset from its centre, or null if there's no such lot.</summary>

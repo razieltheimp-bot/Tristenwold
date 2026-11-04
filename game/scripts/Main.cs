@@ -430,6 +430,7 @@ public partial class Main : Node3D
         AddWatchHouse();
         AddShadows();
         AddPursuits();
+        City.Declutter(GetTree());
         _herbPatch = new HerbPatch(this);
         AddChild(_herbPatch);
         foreach (var raid in Raids.All)
@@ -703,7 +704,7 @@ public partial class Main : Node3D
         switch (m)
         {
             case Welcome w: _hud.Toast($"{_player.Company}'s company joins {w.Campaign}."); break;
-            case Rejected r: _hud.Toast($"The server turned us away: {r.Reason}"); break;
+            case Rejected r: _hud.Toast($"The server turned us away: {Wire.Explain(r.Reason)}", 12); break;
             case Notice n: _hud.Toast(n.From is null ? n.Text : n.Kind == NoticeKind.Vann ? $"{n.From}: \"{n.Text}\"" : $"{n.From}: {n.Text}"); break;
             case DeviantAppears a:
                 foreach (var spawn in a.Spawns)

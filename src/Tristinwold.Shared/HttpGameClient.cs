@@ -99,7 +99,7 @@ public sealed class HttpGameClient : IGameLink
     {
         foreach (var m in response.Messages)
         {
-            if (m is Rejected r) { Status = ClientStatus.Rejected; LastError = r.Reason; }
+            if (m is Rejected r) { Status = ClientStatus.Rejected; LastError = Wire.Explain(r.Reason); }
             if (m is Welcome) Status = ClientStatus.Connected;
             _inbox.Enqueue(m);
         }

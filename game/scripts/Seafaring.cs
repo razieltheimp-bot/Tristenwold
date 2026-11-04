@@ -49,6 +49,7 @@ public partial class Main
         if (Models.Scene("ph:ship.glb")?.Instantiate() is Node3D hull)
         {
             var slip = new Node3D { Position = SlipHull with { Y = -0.4f }, Rotation = new Vector3(0, 0, -0.05f) };
+            Buildings.Structure(slip, "the hull on the slipway");
             AddChild(slip);
             slip.AddChild(hull);
         }

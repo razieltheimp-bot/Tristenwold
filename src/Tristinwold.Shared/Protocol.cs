@@ -134,6 +134,21 @@ public static class Wire
 {
     public const int ProtocolVersion = 10; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council
     public const int DefaultPort = 7777;
+
+    /// <summary>
+    /// A server's refusal in plain words. A server too old to say which side is behind ("Version mismatch: server speaks
+    /// 7, you sent 10. Update the mod.", from when this was a Skyrim mod) is read here and told the right way round.
+    /// </summary>
+    public static string Explain(string reason)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(reason, @"server speaks (\d+), you sent (\d+)");
+        return m.Success ? Mismatch(int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value)) : reason;
+    }
+
+    /// <summary>What to tell a game whose version isn't the server's: which of the two is behind, and what to do about it.</summary>
+    public static string Mismatch(int server, int game) => game > server
+        ? $"This server is running an older version of Tristinwold than your game (the server is on {server}, your game on {game}). Whoever runs the server needs to update it, or join a server that's up to date."
+        : $"Your game is older than this server (your game is on {game}, the server on {server}). Update the game: on Windows, start it again and let it update itself; on a phone or a Mac, download the new version.";
     public const int MaxLineBytes = 4 * 1024 * 1024; // a big deviant world is still well under this
 
     public static JsonSerializerOptions Options { get; } = new(DeviantJson.Options) { WriteIndented = false };

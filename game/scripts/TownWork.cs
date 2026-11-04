@@ -128,9 +128,9 @@ public partial class Main
         for (var i = 0; i < 5; i++)
             Models.Place(this, "ph:crate.glb", CrateStack + new Vector3(i % 2 * 0.9f, 0, i / 2 * 0.8f - 0.8f), 1.3f, i * 0.3f, solid: false);
         for (var i = 0; i < 4; i++)
-            Models.Place(this, i % 2 == 0 ? "ph:crate.glb" : "ph:barrel.glb", Warehouse + new Vector3(-1.5f + i, 0, -2.2f), 1.2f, i, solid: false);
+            Models.Place(this, i % 2 == 0 ? "ph:crate.glb" : "ph:barrel.glb", Warehouse + new Vector3(-1.5f + i, 0, -1.2f), 1.2f, i, solid: false);
         Sign(CrateStack + new Vector3(0, 3, 0), "Cargo");
-        Sign(Warehouse + new Vector3(0, 4.6f, -3.3f), "Warehouse"); // over the warehouse's doors (see City.DockWarehouse)
+        Sign(City.DockWarehouse + new Vector3(0, 4.8f, 2.9f), "Warehouse"); // over its doors
 
         Board(FactorAt + new Vector3(-1.6f, 0, -1.6f));
         Ships();

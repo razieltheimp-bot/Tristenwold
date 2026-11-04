@@ -120,7 +120,7 @@ public sealed class GameClient : IGameLink
                     if (message is Rejected r)
                     {
                         Status = ClientStatus.Rejected;
-                        LastError = r.Reason;
+                        LastError = Wire.Explain(r.Reason);
                         _inbox.Enqueue(message);
                         return; // a rejection won't fix itself by retrying
                     }

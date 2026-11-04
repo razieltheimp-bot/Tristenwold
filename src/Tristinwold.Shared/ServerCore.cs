@@ -75,7 +75,7 @@ public sealed partial class ServerCore
     {
         var name = hello.Player.Trim();
         if (hello.ProtocolVersion != Wire.ProtocolVersion)
-            return [new(name, new Rejected($"Version mismatch: server speaks {Wire.ProtocolVersion}, you sent {hello.ProtocolVersion}. Update the mod."))];
+            return [new(name, new Rejected(Wire.Mismatch(Wire.ProtocolVersion, hello.ProtocolVersion)))];
         if (_options.Password.Length > 0 && hello.Password != _options.Password)
             return [new(name, new Rejected("Wrong password."))];
         if (name.Length is 0 or > 24)

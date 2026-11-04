@@ -263,7 +263,9 @@ public partial class Main
         // The great clock in front of the warehouse: brass wheels going round in the open, and the Factor's board beneath.
         var clock = new Vector3(84.5f, 0, -6.5f);
         clock.Y = City.FloorAt(clock);
-        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(2.4f, 8, 2.4f) }, MaterialOverride = BuildingMaterials.For(Surface.DarkStone), Position = clock + Vector3.Up * 4 });
+        var tower = new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(2.4f, 8, 2.4f) }, MaterialOverride = BuildingMaterials.For(Surface.DarkStone), Position = clock + Vector3.Up * 4 };
+        Buildings.Structure(tower, "the Brass Factor's clock");
+        AddChild(tower);
         foreach (var (y, r, speed) in new[] { (6.4f, 1.1f, 12f), (4.6f, 0.7f, -7f) })
         {
             var wheel = new Node3D { Position = clock + new Vector3(1.3f, y, 0), Rotation = new Vector3(0, 0, Mathf.Pi / 2) };

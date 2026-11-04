@@ -32,6 +32,8 @@ public static class Buildings
             body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size }, Position = centre });
         body.SetMeta("height", design.Height * scale);
         body.SetMeta("seed", seed);
+        body.SetMeta("kind", kind);
+        body.AddToGroup(Group);
         parent.AddChild(body);
         if (door && HasInside(KindFor(kind)))
             Doors.Add((body, KindFor(kind), seed, design.Solids.Max(s => s.Centre.Z + s.Size.Z / 2) * scale));
@@ -84,6 +86,63 @@ public static class Buildings
     public static void Mould(Node3D building)
     {
         foreach (var mesh in building.GetChildren().OfType<MeshInstance3D>()) mesh.MaterialOverlay = MouldCoat;
+    }
+
+    /// <summary>Every building, and every great structure that isn't one (a hull, a clock tower): what has to keep out of each other's way.</summary>
+    public const string Group = "structure";
+
+    public static string KindOf(Node3D n) => n.HasMeta("structure") ? (string)n.GetMeta("structure") : n.HasMeta("kind") ? (string)n.GetMeta("kind") : "";
+
+    /// <summary>A great structure that isn't a building, so it's kept out of their way too.</summary>
+    public static void Structure(Node3D n, string name)
+    {
+        n.SetMeta("structure", name);
+        n.AddToGroup(Group);
+    }
+
+    /// <summary>One solid box of a building, flat on the ground: its middle, its two axes and half its size along each, and how high it goes.</summary>
+    public readonly record struct Foot(Vector2 Centre, Vector2 U, Vector2 V, float HalfU, float HalfV, float Bottom, float Top);
+
+    /// <summary>
+    /// What a building stands on and fills: its collision boxes as they're turned, a little in from their edges; or, for
+    /// a thing with none, its meshes' box in its own frame.
+    /// </summary>
+    public static List<Foot> Footprint(Node3D n, float shrink = 0.9f)
+    {
+        var feet = new List<Foot>();
+        Foot From(Transform3D t, Vector3 size)
+        {
+            var (u, v) = (new Vector2(t.Basis.X.X, t.Basis.X.Z), new Vector2(t.Basis.Z.X, t.Basis.Z.Z));
+            var half = size / 2 * shrink;
+            var up = Mathf.Abs(t.Basis.Y.Y) * half.Y;
+            return new Foot(new Vector2(t.Origin.X, t.Origin.Z), u.Normalized(), v.Normalized(), half.X * u.Length(), half.Z * v.Length(), t.Origin.Y - up, t.Origin.Y + up);
+        }
+        foreach (var c in n.GetChildren().OfType<CollisionShape3D>().Where(c => c.Shape is BoxShape3D))
+            feet.Add(From(c.GlobalTransform, ((BoxShape3D)c.Shape).Size));
+        if (feet.Count > 0) return feet;
+        var inverse = n.GlobalTransform.AffineInverse();
+        Aabb? box = null;
+        foreach (var m in n.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().Append(n as MeshInstance3D).OfType<MeshInstance3D>())
+        {
+            var b = inverse * m.GlobalTransform * m.GetAabb();
+            box = box is { } x ? x.Merge(b) : b;
+        }
+        if (box is { } a) feet.Add(From(n.GlobalTransform * new Transform3D(Basis.Identity, a.GetCenter()), a.Size * 0.95f));
+        return feet;
+    }
+
+    /// <summary>Whether any box of one runs into any box of the other: side by side on the ground (no gap along any of their four axes), and at the same heights.</summary>
+    public static bool Overlap(List<Foot> a, List<Foot> b) => a.Any(x => b.Any(y => Overlap(x, y)));
+
+    static bool Overlap(Foot a, Foot b)
+    {
+        if (a.Top < b.Bottom || b.Top < a.Bottom) return false;
+        foreach (var axis in new[] { a.U, a.V, b.U, b.V })
+        {
+            float Reach(Foot f) => f.HalfU * Mathf.Abs(f.U.Dot(axis)) + f.HalfV * Mathf.Abs(f.V.Dot(axis));
+            if (Mathf.Abs((a.Centre - b.Centre).Dot(axis)) > Reach(a) + Reach(b)) return false;
+        }
+        return true;
     }
 
     public static float HeightOf(Node3D building) => building.HasMeta("height") ? (float)building.GetMeta("height") : 8;
@@ -219,7 +278,7 @@ public static class Buildings
     /// <summary>A small stone warehouse on the docks: wide doors for the cargo, no windows to speak of, and a hoist beam over the doors.</summary>
     static void Warehouse(Builder b, Rng rng, Surface roof)
     {
-        const float w = 7.5f, d = 6;
+        const float w = 6.5f, d = 5.5f;
         b.Plinth(w, d, 0.25f);
         b.Floor(w, d, 0.25f, 3.6f, Surface.Stone, timbered: false, door: true, rng, doorWidth: 2.2f, windows: false);
         b.Gable(w, d, 3.85f, 0.5f, roof, Surface.Stone, acrossFront: true, overhang: 0.5f);
