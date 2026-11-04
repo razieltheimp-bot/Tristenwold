@@ -2065,7 +2065,9 @@ public partial class SelfTest(Main main) : Node
         await Teleport(Main.Smugglers + new Vector3(1, 0, 1));
         var purse = p.Crowns;
         main.Talk(Who("tristinwold/smuggler"));
+        var (scrapHad, nailsHad) = (p.Pack.Count("scrap_iron"), p.Pack.Count("iron_nails"));
         Check(hud.Choose("Break my spare gear") && p.Crowns > purse && !p.Pack.Contents.Any(x => x.Item.Id == "iron_sword"), $"Nell Corran buys two swords as parts: +{p.Crowns - purse} crowns");
+        Check(p.Pack.Count("scrap_iron") > scrapHad && p.Pack.Count("iron_nails") > nailsHad, $"and the iron's yours to keep: {p.Pack.Count("scrap_iron") - scrapHad} scrap iron, {p.Pack.Count("iron_nails") - nailsHad} nails");
         hud.EndTalk();
         await Teleport(Main.ParkedWagonAt + new Vector3(2, 0, 2));
         var act = main.ArtificerActionForTest(p.GlobalPosition);
@@ -2098,8 +2100,8 @@ public partial class SelfTest(Main main) : Node
         // Every class has its trade, on the sheet; and a golem follows only an artificer.
         Check(Classes.All.All(d => Perks.Of(d.Id).Name != "None"), $"every one of the {Classes.All.Count} classes has a trade perk");
         p.Join("Paladin");
-        await Until(() => Golem() is null, 6);
-        Check(Golem() is null && hud.Heard("winds down"), "leave the calling, and the golem winds down in the Foundry yard");
+        await Frames(240);
+        Check(Golem() is not null, "take up another calling, and the golem still walks with you: once an artificer, always its maker");
     }
 
     /// <summary>

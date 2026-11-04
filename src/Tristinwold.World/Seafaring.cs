@@ -294,6 +294,12 @@ public sealed class SeaBook
     static readonly string[] Prey = ["a Saltmere herring boat", "a Brinehollow tanner", "a Vosk ore-carrier", "a Corrow pearl-trader", "an Ambermouth spice ship"];
 
     /// <summary>How many loads the hold takes: a captain's private venture on the company's ship, or a whole hold of their own.</summary>
+    /// <summary>How much more a bigger hull takes to lift: a sloop's the least, a galleon's nearly three times it.</summary>
+    public static double LiftScale(ShipSize size) => size switch { ShipSize.Small => 1, ShipSize.Medium => 1.6, _ => 2.8 };
+    /// <summary>The yard's crowns for her gas and rigging, when an artificer fits her lift; and what Brasswake's engineers ask to do the lot.</summary>
+    [System.Text.Json.Serialization.JsonIgnore] public int LiftYardPrice => (int)Math.Round(Engines.GasBagPrice * LiftScale(Size));
+    [System.Text.Json.Serialization.JsonIgnore] public int LiftIslePrice => (int)Math.Round(Engines.Works[Engines.ShipFlight].Crowns * LiftScale(Size));
+
     public int Capacity => OwnShip ? Hulls[Size].Hold + (HasUpgrade("deep_hold") ? 20 : 0) : Rank == SeaRank.Captain ? 20 : 0;
     public int Loaded => Hold.Values.Sum();
     public int Room => Math.Max(0, Capacity - Loaded);

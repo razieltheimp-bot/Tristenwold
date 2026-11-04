@@ -50,6 +50,17 @@ public class EngineTests
     }
 
     [Fact]
+    public void A_ships_lift_costs_far_more_than_a_skyboat_and_more_the_bigger_she_is()
+    {
+        var lift = Engines.Works[Engines.ShipFlight].Needs.ToDictionary(n => n.Id, n => n.N);
+        var sky = Engines.Works[Engines.Skyboat].Needs.ToDictionary(n => n.Id, n => n.N);
+        Assert.All(sky, n => Assert.True(lift[n.Key] >= n.Value * 4, n.Key));
+        var (sloop, galleon) = (new SeaBook { OwnShip = true, Size = ShipSize.Small }, new SeaBook { OwnShip = true, Size = ShipSize.Large });
+        Assert.True(sloop.LiftYardPrice >= Engines.LifeboatPrice * 5);
+        Assert.True(galleon.LiftYardPrice > sloop.LiftYardPrice * 2 && galleon.LiftIslePrice > sloop.LiftIslePrice * 2);
+    }
+
+    [Fact]
     public void Every_work_has_makings_and_only_ships_cost_crowns_at_brasswake()
     {
         foreach (var (id, w) in Engines.Works)

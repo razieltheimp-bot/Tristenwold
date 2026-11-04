@@ -14,13 +14,15 @@ public static class Engines
     public static readonly IReadOnlyDictionary<string, (string Name, IReadOnlyList<(string Id, int N)> Needs, int Crowns)> Works = new Dictionary<string, (string, IReadOnlyList<(string, int)>, int)>
     {
         [ShipSteam] = ("a boiler and paddle-wheels for her", [("iron_ingot", 12), ("iron_nails", 24), ("scrap_iron", 10)], 300),
-        [ShipFlight] = ("a lift and gas-bag, to take her up into the air", [("steel_ingot", 6), ("leather", 8), ("iron_nails", 20)], 750),
+        [ShipFlight] = ("a lift and gas-bag, to take her up into the air", [("steel_ingot", 16), ("leather", 20), ("iron_nails", 60), ("linen", 24)], 4000),
         [WagonSteam] = ("a boiler for a wagon", [.. SteamWorks.Needs], 0),
         [Skyboat] = ("a lifeboat made over into a skyboat", [("steel_ingot", 3), ("leather", 4), ("iron_nails", 10)], 0),
     };
 
     /// <summary>What Osric asks for the lifeboat itself.</summary>
     public const int LifeboatPrice = 250;
+    /// <summary>What the yard asks for a ship's gas and rigging when an artificer fits her lift themselves, for a sloop: a bigger ship takes more (see SeaBook.LiftScale). Far dearer than a skyboat.</summary>
+    public const int GasBagPrice = 1500;
     /// <summary>The level of a Brasswake engineer, as a maker.</summary>
     public const int IsleMaker = 15;
     /// <summary>How much faster a ship goes under steam, and in the air.</summary>

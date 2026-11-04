@@ -30,7 +30,7 @@ public partial class Main
         foreach (var (work, wanted) in works.Where(w => w.Item2))
         {
             var (name, _, _) = Engines.Works[work];
-            var extra = work == Engines.Skyboat ? $" and {Engines.LifeboatPrice} crowns for the lifeboat" : "";
+            var extra = work == Engines.Skyboat ? $" and {Engines.LifeboatPrice} crowns for the lifeboat" : work == Engines.ShipFlight ? $" and {_sea.LiftYardPrice} crowns for the gas and rigging, for a {SeaBook.Hulls[_sea.Size].Name}" : "";
             if (Artificer) yield return ($"Fit {name} myself. ({Engines.Makings(work)}{extra})", () => FitMyself(person, work));
             else if (_city.Orders.ContainsKey($"{_player.Company}#{work}"))
                 yield return ($"Take back my order for {name}.", () => TakeBackOrder(person, work));
@@ -42,10 +42,13 @@ public partial class Main
         if (id == Shipwright && _sea.Steam) yield return ($"Stoke {_sea.ShipName}'s boiler ({_sea.Fuel:0} seconds of steam)", () => Firebox(_sea.ShipName, () => _sea.Fuel, f => _sea.Fuel = f, _sea.SteamLevel, () => Say(person, "She'll go.")));
     }
 
+    /// <summary>What the yard asks on top of the makings: the lifeboat for a skyboat; the gas and rigging for a ship's lift, by her size.</summary>
+    int YardPrice(string work) => work == Engines.Skyboat ? Engines.LifeboatPrice : work == Engines.ShipFlight ? _sea.LiftYardPrice : 0;
+
     void FitMyself(Person person, string work)
     {
-        var price = work == Engines.Skyboat ? Engines.LifeboatPrice : 0;
-        if (!Engines.HasMakings(_player.Pack, work) || _player.Crowns < price) { Say(person, $"You'll want {Engines.Makings(work)}{(price > 0 ? $", and {price} crowns for the boat" : "")}. Bring them and the yard's yours."); return; }
+        var price = YardPrice(work);
+        if (!Engines.HasMakings(_player.Pack, work) || _player.Crowns < price) { Say(person, $"You'll want {Engines.Makings(work)}{(price > 0 ? $", and {price} crowns {(work == Engines.Skyboat ? "for the boat" : "for the gas and rigging")}" : "")}. Bring them and the yard's yours."); return; }
         Engines.TakeMakings(_player.Pack, work);
         _player.Crowns -= price;
         Fitted(work, _player.Hero.Level, null);
@@ -54,7 +57,7 @@ public partial class Main
 
     void PostOrder(Person person, string work)
     {
-        var price = work == Engines.Skyboat ? Engines.LifeboatPrice : 0;
+        var price = YardPrice(work);
         if (!Engines.HasMakings(_player.Pack, work)) { Say(person, $"No artificer works without the makings: {Engines.Makings(work)}. Leave them with me and I'll pass the word."); return; }
         var options = new[] { 0, 50, 150, 400 }.Where(pay => _player.Crowns >= pay + price).Select(pay => ($"Offer {(pay == 0 ? "nothing but thanks" : $"{pay} crowns")}", (Action)(() =>
         {
@@ -65,7 +68,7 @@ public partial class Main
             Say(person, "It's on the board. Any artificer who comes by can take it on, and you'll find it done when you're back.");
         }))).ToList();
         options.Add(("Not yet.", () => Say(person, "Whenever you're ready.")));
-        _hud.Talk("An order for an artificer", $"The makings stay here till it's done. What will you pay whoever does it?{(price > 0 ? $" (and {price} crowns for the lifeboat)" : "")}", [.. options]);
+        _hud.Talk("An order for an artificer", $"The makings stay here till it's done. What will you pay whoever does it?{(price > 0 ? $" (and {price} crowns to the yard)" : "")}", [.. options]);
     }
 
     void TakeBackOrder(Person person, string work)
@@ -73,7 +76,7 @@ public partial class Main
         if (_city.Orders.GetValueOrDefault($"{_player.Company}#{work}") is not { FittedBy: null } o) { CollectOrders(); return; }
         DoCity(CityAction.OrderDone(o.Key));
         foreach (var (item, n) in Engines.Works[work].Needs) _player.Pack.Add(item, n);
-        _player.Crowns += o.Pay + (work == Engines.Skyboat ? Engines.LifeboatPrice : 0);
+        _player.Crowns += o.Pay + YardPrice(work);
         Save();
         Say(person, "Your makings and your crowns. Nobody's touched them.");
     }
@@ -105,7 +108,8 @@ public partial class Main
         if (person.Npc.Id != Engineer || !_sea.OwnShip || !Isle.Berthed) yield break;
         foreach (var work in new[] { Engines.ShipSteam, Engines.ShipFlight }.Where(w => w == Engines.ShipSteam ? !_sea.Steam : _sea.Steam && !_sea.Flies))
         {
-            var (name, _, price) = Engines.Works[work];
+            var (name, _, listed) = Engines.Works[work];
+            var price = work == Engines.ShipFlight ? _sea.LiftIslePrice : listed; // a bigger hull takes more lifting
             yield return ($"Have your engineers fit {_sea.ShipName} with {name}. ({price} crowns; you have {_player.Crowns})", () =>
             {
                 if (_player.Crowns < price) { Say(person, $"{price} crowns. There's work at the valves, at the stern, if you're short."); return; }

@@ -102,13 +102,22 @@ public partial class Main
 
     void Scrap(Person nell, List<(Item Item, int N)> spare)
     {
-        var crowns = 0;
+        var (crowns, scrap, nails) = (0, 0, 0);
         foreach (var (item, n) in spare.Where(x => !x.Item.Bound))
-            for (var i = 0; i < n && _player.Pack.Take(item.Id); i++) crowns += (int)Math.Round(_city.Offer(item) * PerkSell * 1.2);
+            for (var i = 0; i < n && _player.Pack.Take(item.Id); i++)
+            {
+                crowns += (int)Math.Round(_city.Offer(item) * PerkSell * 1.2);
+                // What's worth keeping out of it: the iron (more from steel and plate than from a leather jerkin) and its rivets and nails.
+                var iron = item.Metal || item.Slot is Slot.Weapon or Slot.Offhand;
+                scrap += iron ? Math.Clamp(item.Value / 40, 1, 5) : item.Value >= 60 ? 1 : 0;
+                nails += iron ? Math.Clamp(item.Value / 60, 1, 4) : 1;
+            }
         _player.Crowns += crowns;
+        if (scrap > 0) _player.Pack.Add("scrap_iron", scrap);
+        if (nails > 0) _player.Pack.Add("iron_nails", nails);
         Sound.Ui("coin", -2);
-        Say(nell, $"Springs, plates, good steel and a buckle or two. {crowns} crowns, and nobody asks where the parts go.");
-        _hud.Toast($"Scrapped for the black market: +{crowns} crowns.", 6);
+        Say(nell, $"Springs, plates, good steel and a buckle or two. {crowns} crowns, and the iron's yours to keep: {scrap} scrap and {nails} nails. Nobody asks where the rest goes.");
+        _hud.Toast($"Broken down for the black market: +{crowns} crowns, {scrap} scrap iron, {nails} iron nails.", 7);
         Save();
     }
 

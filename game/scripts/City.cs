@@ -68,6 +68,9 @@ public static class City
     [
         new("giant_rat", 3, new(-20, 0, -82), 6),
         new("dock_thug", 2, new(130, 0, 30), 2), // the far end of the south pier, away from the honest work on the middle one
+        new("dock_thug", 1, new(133, 0, 15), 2), // and one on each of the other piers but the middle one, loafing at the far end
+        new("dock_thug", 1, new(128, 0, -15), 2),
+        new("dock_thug", 1, new(134, 0, -30), 2),
         new("lantern_boy", 2, new(-50, 0, 72), 4),
         new("drowned_hand", 2, new(150, 0, -110), 5),
         new("dock_thug", 2, new(-205, 0, 55), 6),
