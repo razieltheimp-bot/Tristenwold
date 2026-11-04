@@ -5,6 +5,28 @@ namespace Tristinwold.Gameplay.Tests;
 public class SettlingTests
 {
     [Fact]
+    public void The_company_wears_what_the_hero_gives_them_and_its_stronger_for_it()
+    {
+        var pack = new Pack();
+        foreach (var id in new[] { "steel_sword", "steel_plate", "iron_mail", "heavy_crossbow" }) pack.Add(id);
+        var squire = new Bond { Role = BondRole.Squire, KindId = "squire" };
+        var wolf = new Bond { Role = BondRole.Pet, KindId = "wolf" };
+        Assert.True(Kit.Give(squire, pack, "steel_sword"));
+        Assert.True(Kit.Give(squire, pack, "steel_plate"));
+        Assert.Equal(0, pack.Count("steel_sword"));
+        var (damage, armor, _) = Kit.Adds(squire);
+        Assert.True(damage > 0.15 && armor >= 40, $"{damage} {armor}");
+        Assert.False(Kit.Give(wolf, pack, "heavy_crossbow")); // a beast carries no weapon
+        Assert.True(Kit.Give(wolf, pack, "iron_mail")); // but wears armour
+        Assert.True(Kit.Give(squire, pack, "heavy_crossbow")); // a crossbow for the sword: the sword comes back
+        Assert.Equal(1, pack.Count("steel_sword"));
+        Kit.TakeBack(squire, pack, Slot.Body);
+        Assert.Equal(1, pack.Count("steel_plate"));
+        var kept = System.Text.Json.JsonSerializer.Deserialize<Bond>(System.Text.Json.JsonSerializer.Serialize(squire))!;
+        Assert.Equal("heavy_crossbow", kept.Gear[Slot.Weapon]);
+    }
+
+    [Fact]
     public void A_refuge_grows_a_step_at_a_time_and_a_colony_starts_with_its_tavern()
     {
         var city = CityEconomy.Start(5);

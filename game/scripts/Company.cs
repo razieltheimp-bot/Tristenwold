@@ -149,8 +149,50 @@ public partial class Main
         e.Leader = _player;
         AddEnemy(e);
         _companions.Add(e);
+        Outfit(e, bond);
         if (bond.KindId == "tinker") BuildLittleRobot(bond, spot);
         return e;
+    }
+
+    /// <summary>What the hero's given them, on them: their numbers stronger for it, and an apprentice wearing it to see.</summary>
+    void Outfit(Enemy e, Bond bond)
+    {
+        if (bond.Gear.Count == 0) return;
+        var (damage, armor, health) = Kit.Adds(bond);
+        var share = e.Stats.MaxHealth > 0 ? e.Stats.Health / e.Stats.MaxHealth : 1;
+        e.Tune(e.Stats.MaxHealth * (1 + health), e.Kind.Damage * e.Stats.DamageMult * (1 + damage));
+        e.Stats.Lose(e.Stats.MaxHealth * (1 - share)); // as hurt as they were: new armour doesn't heal
+        e.Stats.Armor += armor;
+        if (e.Figure is Figure f) Wardrobe.Wear(f, new Pack { Worn = new(bond.Gear) });
+    }
+
+    /// <summary>The company's gear, one of them at a time: what they have on, and what from the pack would fit them.</summary>
+    void GearMenu(Bond bond)
+    {
+        var options = new List<(string, Action)>();
+        foreach (var (slot, id) in bond.Gear.OrderBy(kv => kv.Key).ToList())
+            options.Add(($"Take back the {Items.Get(id)?.Name ?? id} ({slot})", () => { Kit.TakeBack(bond, _player.Pack, slot); Regear(bond); GearMenu(bond); }));
+        foreach (var (item, _) in _player.Pack.Contents.Where(c => Kit.Fits(bond, c.Item)).Take(12).ToList())
+            options.Add(($"Give {bond.Name} the {item.Name} ({item.Slot}{(item.Damage > 0 ? $", +{item.Damage:P0} damage" : "")}{(item.Armor > 0 ? $", {item.Armor:0} armour" : "")})", () => { Kit.Give(bond, _player.Pack, item.Id); Regear(bond); GearMenu(bond); }));
+        options.Add(("Back", ShowParty));
+        var (damage, armor, _) = Kit.Adds(bond);
+        var worn = bond.Gear.Count == 0 ? "nothing of yours" : string.Join(", ", bond.Gear.Values.Select(id => Items.Get(id)?.Name ?? id));
+        _hud.Talk($"{bond.Name}'s gear", $"{bond.Name} has {worn}{(bond.Gear.Count > 0 ? $": +{damage:P0} damage, {armor:0} armour" : "")}. {(PartyRules.IsApprentice(bond) ? "A weapon, an off-hand, a helm and armour, like you." : "Armour for the head and body.")}", [.. options]);
+    }
+
+    /// <summary>Their body brought again, wearing what they have now.</summary>
+    void Regear(Bond bond)
+    {
+        if (BodyOf(bond) is { } body)
+        {
+            var at = body.GlobalPosition;
+            bond.Health = body.State == EnemyState.Dead ? 0.4 : body.Stats.Health / body.Stats.MaxHealth;
+            _companions.Remove(body);
+            body.QueueFree();
+            BringCompanion(bond, at);
+        }
+        Sound.Ui("equip", -4);
+        Save();
     }
 
     /// <summary>The little robots an artificer's apprentices have built, each at its maker's heels.</summary>
@@ -196,6 +238,7 @@ public partial class Main
     }
 
     public void RetrainForTest(Bond bond, string classId) => Retrain(bond, classId);
+    public void RegearForTest(Bond bond) => Regear(bond);
     public Enemy BringForTest(Bond bond) => BringCompanion(bond);
     public int LittleRobotsForTest => _littleRobots.Values.Count(IsInstanceValid);
 
@@ -265,6 +308,11 @@ public partial class Main
         {
             _hud.Toast($"{bond.Name} is down! {bond.Name} will get up when the fighting is over.");
             return;
+        }
+        if (bond.Gear.Count > 0) // what you gave them, back to you
+        {
+            foreach (var slot in bond.Gear.Keys.ToList()) Kit.TakeBack(bond, _player.Pack, slot);
+            _hud.Log($"You take back what {bond.Name} carried.");
         }
         _bonds.Remove(bond);
         _companions.Remove(e);
@@ -1002,6 +1050,7 @@ public partial class Main
         foreach (var b in _bonds)
         {
             var bond = b;
+            options.Add(($"{bond.Name}'s gear{(bond.Gear.Count > 0 ? $" ({bond.Gear.Count} worn)" : "")}", () => GearMenu(bond))); // weapons and armour from your pack
             if (!PartyRules.IsApprentice(bond)) options.Add(($"Rename {bond.Name}", () => AskName(bond))); // a person comes with a name of their own
             else options.Add(($"Train {bond.Name} another way", () => RetrainMenu(bond))); // but a different calling, if the hero likes
             // A grown horse with a wagon of yours is hitched to it or unhitched to ride, rather than sent home and called.

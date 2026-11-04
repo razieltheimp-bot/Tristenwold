@@ -75,6 +75,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--pupils-only")) { await PupilTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--refuge-only")) { await GrowthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--spread-only")) { await SpreadTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--kit-only")) { await KitTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--shadows-only")) { await ShadowsTest(); Finish(0); return; }
@@ -2787,6 +2788,29 @@ public partial class SelfTest(Main main) : Node
         await HandiworkTest();
         await PanicTest();
         await KeeperTest();
+    }
+
+    /// <summary>A squire given a sword and plate wears them and is the stronger for it; taken back, they're in the pack again.</summary>
+    async Task KitTest()
+    {
+        var p = main.PlayerNode;
+        p.Join("Paladin");
+        var (role, kind, _) = PartyRules.Follower(p.Class.Id);
+        var lad = new Bond { Id = "test/kit", KindId = kind, Role = role, Trains = p.Class.Id, Name = "Osk", Level = 5, Race = "human", JoinAge = 15 };
+        main.AddBondForTest(lad);
+        var body = main.BringForTest(lad);
+        await Frames(30);
+        var (health, armour, might) = (body.Stats.MaxHealth, body.Stats.Armor, body.Stats.DamageMult);
+        foreach (var id in new[] { "steel_sword", "steel_plate" }) { p.Pack.Add(id); Kit.Give(lad, p.Pack, id); }
+        main.RegearForTest(lad);
+        await Frames(30);
+        var now = main.CompanionBodies.First(e => e.Bond == lad);
+        Check(now.Stats.Armor >= armour + 40 && now.Stats.DamageMult > might * 1.15, $"given a steel sword and plate, {lad.Name} hits harder and is harder to hurt (armour {armour:0} to {now.Stats.Armor:0}, damage x{now.Stats.DamageMult / might:0.00})");
+        Check(now.Figure is not Figure { IsHuman: true } fig || fig.HeldIn("RightHand") is not null, "and carries the sword where you can see it");
+        Kit.TakeBack(lad, p.Pack, Slot.Weapon);
+        Kit.TakeBack(lad, p.Pack, Slot.Body);
+        Check(p.Pack.Count("steel_sword") == 1 && p.Pack.Count("steel_plate") == 1 && lad.Gear.Count == 0, "taken back, both are in your pack again");
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
     }
 
     /// <summary>The company spread out behind the hero, each where you can see them, not stood on one another.</summary>

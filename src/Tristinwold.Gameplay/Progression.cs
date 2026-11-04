@@ -148,6 +148,8 @@ public sealed class Bond
     public string? Keeps { get; set; }
     /// <summary>The class an apprentice or squire is learning: their hero's, unless the hero has had them trained another way. Null in an older save.</summary>
     public string? Trains { get; set; }
+    /// <summary>What the hero has given them to wear and carry (see <see cref="Kit"/>), by slot.</summary>
+    public Dictionary<Slot, string> Gear { get; set; } = [];
 
     /// <summary>A dragon too young to fly is lost for good if it falls; anything else is only knocked out.</summary>
     [JsonIgnore]

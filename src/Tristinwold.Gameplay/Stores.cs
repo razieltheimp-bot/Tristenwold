@@ -111,6 +111,39 @@ public static class Homestead
 }
 
 /// <summary>
+/// Gear the hero gives their company. An apprentice or squire carries a weapon and an off-hand and wears a helm and
+/// armour, like the hero; a beast, a mount or a machine wears armour, head and body. What it's given adds to theirs:
+/// a share more damage, armour, and (forged) a share more health. Given from the hero's pack, and back into it.
+/// </summary>
+public static class Kit
+{
+    public static IReadOnlyList<Slot> Slots(Bond b) => PartyRules.IsApprentice(b) ? [Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body] : [Slot.Head, Slot.Body];
+
+    /// <summary>Whether a piece can be put on this one: something worn, in a slot they have.</summary>
+    public static bool Fits(Bond b, Item item) => item.Wearable && Slots(b).Contains(item.Slot) && !item.Bound;
+
+    /// <summary>Puts a piece on them out of the hero's pack; what was in that slot goes back to the pack. A two-handed weapon takes the off-hand's place too.</summary>
+    public static bool Give(Bond b, Pack from, string id)
+    {
+        if (Items.Get(id) is not { } item || !Fits(b, item) || !from.Take(id)) return false;
+        TakeBack(b, from, item.Slot);
+        if (item.Slot == Slot.Weapon && item.Grip is Grip.TwoHand or Grip.Ranged) TakeBack(b, from, Slot.Offhand);
+        if (item.Slot == Slot.Offhand && b.Gear.TryGetValue(Slot.Weapon, out var held) && Items.Get(held) is { Grip: Grip.TwoHand or Grip.Ranged }) TakeBack(b, from, Slot.Weapon);
+        b.Gear[item.Slot] = id;
+        return true;
+    }
+
+    public static void TakeBack(Bond b, Pack to, Slot slot)
+    {
+        if (b.Gear.Remove(slot, out var id)) to.Add(id);
+    }
+
+    /// <summary>What they're wearing adds up to: a share more damage, armour, and a share more health.</summary>
+    public static (double Damage, double Armor, double Health) Adds(Bond b) =>
+        (b.Gear.Values.Sum(id => Items.Get(id)?.Damage ?? 0), b.Gear.Values.Sum(id => Items.Get(id)?.Armor ?? 0), b.Gear.Values.Sum(id => Items.Get(id)?.Health ?? 0));
+}
+
+/// <summary>
 /// One of the company keeping shop for the hero: an apprentice or squire sent to mind the counter at home, at the
 /// wagon, or aboard the ship. They serve one customer at a time, as a home's company does (<see cref="Homestead"/>).
 /// </summary>
