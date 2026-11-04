@@ -392,7 +392,7 @@ public static class PartyRules
     public static bool IsApprentice(Bond b) => b.Role is BondRole.Squire or BondRole.Apprentice;
 
     /// <summary>A Paladin and a Wizard take on as many apprentices as they like, the way a Ranger keeps as many beasts.</summary>
-    public static bool FreeApprentices(string classId) => classId is "Paladin" or "Wizard";
+    public static bool FreeApprentices(string classId) => classId is "Paladin" or "Wizard" or "MartialArtist";
     public static bool IsMount(Bond b) => b.Role == BondRole.Dragon ? b.Rideable : b.Steed && b.Rideable;
     public static bool IsPet(Bond b) => !IsApprentice(b) && !IsMount(b) && !b.Machine;
 
@@ -402,12 +402,16 @@ public static class PartyRules
     /// <summary>Whether this one can join those following, as things stand (it isn't counted itself).</summary>
     public static bool MayFollow(IReadOnlyCollection<Bond> bonds, Bond who, bool freePets, bool freeApprentices = false)
     {
-        if (who.Machine) return true;
+        if (who.Machine) return true; // a golem comes with the calling, and a saboteur makes as many mites as they like
         var others = bonds.Where(b => b != who && b.Following).ToList();
         if (IsApprentice(who)) return freeApprentices || others.Count(IsApprentice) < MaxApprentices;
         if (IsMount(who)) return others.Count(IsMount) < Riders(others);
         return freePets || others.Count(IsPet) < MaxPets;
     }
+
+    /// <summary>Pets at the hero's heels over the four (an older save), the newest first: they go and wait at home.</summary>
+    public static IEnumerable<Bond> SparePets(IReadOnlyList<Bond> bonds, bool freePets) =>
+        freePets ? [] : bonds.Where(b => b.Following && IsPet(b)).Skip(MaxPets);
 
     /// <summary>The mounts following over and above the riders, last first: an apprentice sent home leaves their mount at the Perch too.</summary>
     public static IEnumerable<Bond> SpareMounts(IReadOnlyCollection<Bond> bonds, Bond? ridden = null)

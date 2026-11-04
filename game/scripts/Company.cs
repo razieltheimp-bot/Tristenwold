@@ -118,6 +118,7 @@ public partial class Main
         _player.Merged += Merge;
         _player.Overdriven += Overdrive;
         foreach (var spare in PartyRules.SpareMounts(_bonds)) spare.Following = false;
+        foreach (var spare in PartyRules.SparePets(_bonds, FreePets).ToList()) spare.Following = false; // four at your heels; the rest wait at home
         foreach (var bond in _bonds.Where(b => b.Following)) BringCompanion(bond);
     }
 

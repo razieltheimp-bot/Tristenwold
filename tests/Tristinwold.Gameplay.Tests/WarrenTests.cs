@@ -7,6 +7,23 @@ public class WarrenTests
     static readonly WarrenRoom[] Kept = [new("door", 2, 17, 2, 1), new("city", 0, 6, 6, 6), new("mouth", 2, 0, 2, 1)];
 
     [Fact]
+    public void Four_pets_at_your_heels_for_anyone_but_a_ranger_or_shapeshifter_and_machines_dont_count()
+    {
+        var bonds = new List<Bond>();
+        for (var i = 0; i < 4; i++) bonds.Add(new Bond { Role = BondRole.Pet, Following = true });
+        for (var i = 0; i < 6; i++) bonds.Add(new Bond { Role = BondRole.Mite, KindId = "clockwork_mite", Following = true }); // a saboteur's, as many as they like
+        bonds.Add(new Bond { Role = BondRole.Golem, KindId = "golem", Following = true });
+        Assert.True(PartyRules.MayFollow(bonds, new Bond { Role = BondRole.Mite, KindId = "clockwork_mite" }, freePets: false));
+        var fifth = new Bond { Role = BondRole.Pet };
+        Assert.False(PartyRules.MayFollow(bonds, fifth, freePets: false));
+        Assert.True(PartyRules.MayFollow(bonds, fifth, freePets: true));
+        fifth.Following = true;
+        bonds.Add(fifth);
+        Assert.Equal([fifth], PartyRules.SparePets(bonds, false));
+        Assert.Empty(PartyRules.SparePets(bonds, true));
+    }
+
+    [Fact]
     public void Every_tunnel_and_chamber_can_be_reached_from_the_way_in()
     {
         var w = Warren.Carve(6, 18, Kept, 7);

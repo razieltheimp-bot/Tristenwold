@@ -176,8 +176,9 @@ public partial class Player : Fighter
         foreach (var slot in Enum.GetValues<Slot>())
             if (slot != Slot.Weapon && Pack.WornIn(slot)?.Fire is { } fire) Stats.Resist[fire] = Stats.Resist.GetValueOrDefault(fire) + Forging.FireResist; // armour forged in a fire stands it
         // What they wear, and what they've drunk.
-        Stats.Armor += Pack.Armor + (_wardLeft > 0 ? _ward : 0);
-        var might = (1 + Pack.Damage) * (_mightLeft > 0 ? 1 + _might : 1) * Trophies * RivalEdge;
+        var gear = GearCounts; // a half-form wears its armour and swings its weapon three times over
+        Stats.Armor += Pack.Armor * gear + (_wardLeft > 0 ? _ward : 0);
+        var might = (1 + Pack.Damage * gear) * (_mightLeft > 0 ? 1 + _might : 1) * Trophies * RivalEdge;
         Stats.DamageMult *= might;
         Stats.SpellPower *= might;
         // What a body lends lasts through anything that works the numbers out again (a level, a potion, new gear).
@@ -195,8 +196,13 @@ public partial class Player : Fighter
     /// <summary>Puts on what's worn: the class's own look, then the gear over it, and the numbers to match.</summary>
     public void Dress()
     {
+        if (_possessing) { Fit(); return; } // inside a golem or a half-form: the gear goes on the hero's own body when they step out
+        // In a beast's shape the hero's own body is put away under it: dress that one, and stay the beast.
+        var beast = _form is not null && _beast is not null && _own is not null ? _beast : null;
+        if (beast is not null) Wear(_own!);
         Restyle(Class.Look, Avatar is null && !Humans.Enabled ? null : MakeFigure);
         if (Figure is Figure f) Wardrobe.Wear(f, Pack);
+        if (beast is not null) { _own = Figure; Wear(beast); }
         Fit();
     }
 
@@ -541,15 +547,17 @@ public partial class Player : Fighter
             // ---- the ether-aeronaut ----
             case "harpoon":
                 if (near is null) { Refund(a); return false; }
-                Figure.Perform("2H_Ranged_Shoot", 0.6, 1.4f);
-                Effects.Bolt(GetParent(), Hand, near.GlobalPosition + Vector3.Up, DamageKind.Shock, 0.1f);
+                Figure.Perform("Throw", 0.5, 1.5f); // the launcher on the wrist, whatever's in hand
+                Harpoon(near.GlobalPosition + Vector3.Up, 0.35f);
+                Effects.Bolt(GetParent(), Wrist, near.GlobalPosition + Vector3.Up, DamageKind.Shock, 0.1f);
                 Strike(near, dmg, a.Kind, AttackKind.Weapon);
                 near.Pull(GlobalPosition - GlobalTransform.Basis.Z * (1.2f + near.Figure.Scale.X)); // dragged to you
                 break;
             case "anchor":
                 if (near is null) { Refund(a); return false; }
-                Figure.Perform("2H_Ranged_Shoot", 0.7, 1.2f);
-                Effects.Bolt(GetParent(), Hand, near.GlobalPosition + Vector3.Up, DamageKind.Shock, 0.16f);
+                Figure.Perform("Spellcast_Shoot", 0.6, 1.3f); // a charged shot from the wrist launcher
+                Harpoon(near.GlobalPosition + Vector3.Up * 0.6f, 1.2f);
+                Effects.Bolt(GetParent(), Wrist, near.GlobalPosition + Vector3.Up, DamageKind.Shock, 0.16f);
                 Strike(near, dmg, a.Kind, AttackKind.Weapon);
                 near.Rooted = a.Seconds * power;
                 Said?.Invoke("Pinned!");
@@ -1144,6 +1152,30 @@ public partial class Player : Fighter
     }
 
     Vector3 Hand => GlobalPosition + Vector3.Up * 1.3f - GlobalTransform.Basis.Z * 0.6f;
+    /// <summary>The aeronaut's left wrist, where the harpoon launcher's strapped: free of whatever's in their hands.</summary>
+    Vector3 Wrist => GlobalPosition + Vector3.Up * 1.2f - GlobalTransform.Basis.Z * 0.45f - GlobalTransform.Basis.X * 0.4f;
+
+    /// <summary>How many times over the hero's gear counts: three in a half-form, once otherwise.</summary>
+    double GearCounts => _hybrid is not null ? 3 : 1;
+
+    /// <summary>A harpoon on its line, from the wrist to what it hit: a brass barb on a taut cable, there a moment.</summary>
+    void Harpoon(Vector3 to, float life)
+    {
+        var from = Wrist;
+        var line = new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.02f, BottomRadius = 0.02f, Height = from.DistanceTo(to), RadialSegments = 6 },
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#3a3a40"), Metallic = 0.6f, Roughness = 0.4f } };
+        var barb = new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0, BottomRadius = 0.12f, Height = 0.4f, RadialSegments = 8 },
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#c49a3a"), Metallic = 0.8f, Roughness = 0.3f } };
+        var world = GetParent();
+        world.AddChild(line);
+        world.AddChild(barb);
+        var dir = (to - from).Normalized();
+        var turn = Mathf.Abs(dir.Dot(Vector3.Up)) < 0.999f ? new Basis(new Quaternion(Vector3.Up, dir)) : Basis.Identity;
+        line.GlobalTransform = new Transform3D(turn, (from + to) / 2);
+        barb.GlobalTransform = new Transform3D(turn, to - dir * 0.1f);
+        var t = world.GetTree().CreateTimer(life);
+        t.Timeout += () => { if (IsInstanceValid(line)) line.QueueFree(); if (IsInstanceValid(barb)) barb.QueueFree(); };
+    }
 
     void Shot(Enemy e, DamageKind kind) => Effects.Bolt(GetParent(), Hand, e.GlobalPosition + Vector3.Up, kind, 0.07f);
 
@@ -1194,7 +1226,7 @@ public partial class Player : Fighter
     double Strike(Enemy target, double baseDamage, DamageKind kind, AttackKind attack, bool sureCrit = false)
     {
         if (target.State == EnemyState.Dead) return 0;
-        if (attack == AttackKind.Weapon) baseDamage += Pack.Power; // a forged weapon's own bite
+        if (attack == AttackKind.Weapon) baseDamage += Pack.Power * GearCounts; // a forged weapon's own bite (three times over in a half-form)
         var damage = Stats.Outgoing(attack, baseDamage, _rng, out var crit);
         if (attack == AttackKind.Weapon && !crit && !sureCrit && _rng.Chance(Forging.Glances(Pack.ToHit))) damage *= Forging.GlanceDamage; // it only glances
         if ((sureCrit || _smoke) && !crit) { damage *= 2; crit = true; }

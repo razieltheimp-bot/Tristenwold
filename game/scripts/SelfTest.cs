@@ -61,6 +61,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--handiwork-only")) { await HandiworkTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--panic-only")) { await PanicTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--armoured-shift-only")) { await ArmouredShift(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-living")) { await HuntTest(); await LivingWorldTest(); Finish(0); return; } // the one after the other, as the full run has them
@@ -2382,6 +2383,48 @@ public partial class SelfTest(Main main) : Node
         await Frames(120);
         Check(spirits == 1 && target.Stats.Health < hp, $"a great golden spirit rises behind them and strikes ({hp - target.Stats.Health:0} harm)");
         target.QueueFree();
+    }
+
+    /// <summary>A shapeshifter in armour, a sword in hand, takes a beast's shape all the same, and keeps what the gear gives.</summary>
+    async Task ArmouredShift()
+    {
+        var p = main.PlayerNode;
+        p.Join("Shapeshifter");
+        main.ForestLog.Shapes = ["wolf", "bear"];
+        foreach (var id in new[] { "steel_plate", "steel_sword" }) { p.Pack.Add(id); p.Pack.Equip(id); }
+        p.Dress();
+        await Frames(10);
+        var (own, might, armor) = (p.Figure, p.Stats.DamageMult, p.Stats.Armor);
+        await Until(() => p.Cooldown("shift") <= 0, 4);
+        var used = p.UseMove(p.Class.Utility);
+        await Frames(10);
+        Check(used && p.Form == "wolf" && p.Figure != own && p.Figure.Visible && !own.Visible, $"in steel plate with a sword, they still take the wolf's shape (used {used}, form {p.Form}, own body hidden {!own.Visible})");
+        Check(p.Stats.Armor >= armor && p.Stats.DamageMult > might, $"and the plate and the sword count in the wolf's body (armour {armor:0} to {p.Stats.Armor:0})");
+        // Changing gear in a beast's shape dresses the hero's own body under it, and leaves them the beast.
+        p.Pack.Unequip(Slot.Weapon);
+        p.Dress();
+        await Frames(5);
+        Check(p.Form == "wolf" && p.Figure is not Figure { IsHuman: true } && p.Figure.Visible, "taking the sword off in wolf shape, they're still a wolf");
+        p.Pack.Equip("steel_sword");
+        p.Dress();
+        var beast = (p.Stats.Armor, p.Stats.DamageMult);
+        await Until(() => p.Cooldown("shift") <= 0, 4);
+        p.UseMove(p.Class.Utility); // to the bear
+        p.UseMove(p.Class.Utility);
+        await Until(() => p.Cooldown("shift") <= 0, 4);
+        p.UseMove(p.Class.Utility); // and back to themselves
+        await Frames(5);
+        if (p.Form is not null) { await Until(() => p.Cooldown("shift") <= 0, 4); p.UseMove(p.Class.Utility); await Frames(5); }
+        var (plain, plainMight) = (p.Stats.Armor, p.Stats.DamageMult);
+        p.Stats.GainLimit(100);
+        p.LimitBreak();
+        await Frames(10);
+        var gearArmour = p.Pack.Armor;
+        Check(p.Possessing && p.Stats.Armor >= plain + 30 + gearArmour * 2 - 0.5, $"in the half-form the plate counts three times over (armour {plain:0} to {p.Stats.Armor:0}, the plate's {gearArmour:0})");
+        p.Unpossess();
+        await Frames(5);
+        foreach (var id in new[] { "steel_plate", "steel_sword" }) { p.Pack.Unequip(id == "steel_plate" ? Slot.Body : Slot.Weapon); p.Pack.Take(id); }
+        p.Dress();
     }
 
     async Task TheHalfForm()
