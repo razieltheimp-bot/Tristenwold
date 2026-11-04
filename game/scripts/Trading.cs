@@ -213,7 +213,7 @@ public partial class Main
     wares:
         yield return ("Let me see what you have.", () => Buy(person, shop));
         yield return ("I've things to sell.", () => Sell(person, shop));
-        if (shop.Forge) yield return ("Can I use your forge?", () => ShowCraft(Job.Smithing, () => Say(person, "Mind the anvil.")));
+        if (shop.Forge) yield return ("Can I use your forge?", () => OfferForge(person, "Mind the anvil."));
         if (shop.Bench) yield return ("Can I use your bench?", () => ShowCraft(Job.Herbalism, () => Say(person, "Wash the mortar after.")));
         if (shop.Kitchen) yield return ("Can I use your kitchen?", () => ShowCraft(Job.Cooking, () => Say(person, "Leave the pans how you found them.")));
         if (shop.Workshop) yield return ("Can I use your bench and loom?", () => ShowCraft(Job.Crafting, () => Say(person, "Sweep up the filings.")));

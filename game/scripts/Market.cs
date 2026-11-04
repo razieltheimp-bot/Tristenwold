@@ -20,7 +20,8 @@ public static class Market
         var root = new Node3D { Position = at with { Y = floor }, Rotation = new Vector3(0, at.Z < 0 ? Mathf.Pi : 0, 0), Name = shop.Id.Replace(':', '_') };
         world.AddChild(root);
         var back = new Vector3(0, 0, 1.6f);
-        Buildings.Place(root, "store", new Vector3(0, 0, -2), Mathf.Pi, Math.Abs(shop.Id.GetHashCode()), Buildings.RoofFor(shop.Forge ? "blue" : shop.Bench ? "gold" : "red"));
+        Buildings.Place(root, "store", new Vector3(0, 0, -2), Mathf.Pi, Math.Abs(shop.Id.GetHashCode()), Buildings.RoofFor(shop.Forge ? "blue" : shop.Bench ? "gold" : "red"),
+            inside: shop.Forge ? "smithy" : null); // Hulda's fire is through the back
         Solid(root, new Vector3(0, 0.5f, -1.5f), new Vector3(3.6f, 1, 0.8f), Wood);
         root.AddChild(new Label3D
         {

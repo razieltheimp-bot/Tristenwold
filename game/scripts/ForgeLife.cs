@@ -28,6 +28,6 @@ public partial class Main
     IEnumerable<(string, Action)> ForgeTalk(Person person)
     {
         if (Shops.All.Any(s => s.Id == person.Npc.Id) || !person.Npc.Occupation.Contains("smith", StringComparison.OrdinalIgnoreCase)) yield break;
-        yield return ("Can I use your forge?", () => { if (Serves(person)) ShowCraft(Job.Smithing, () => Say(person, "Mind the tongs.")); });
+        yield return ("Can I use your forge?", () => { if (Serves(person)) OfferForge(person, "Mind the tongs."); });
     }
 }

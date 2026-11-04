@@ -16,7 +16,7 @@ namespace Tristinwold.Game;
 public partial class Main
 {
     /// <summary>The tank, at the back of the old storehouse's room (see <see cref="City.OldStorehouse"/>); and where he sits when the city is his, on the dock road.</summary>
-    static Vector3 KorrinTank => Indoors.StageAt + new Vector3(0, 0, -2.6f);
+    static Vector3 KorrinTank => Indoors.StageAt + new Vector3(0, 0, -3.4f); // in the strongroom, behind its iron door
     static readonly Vector3 KorrinSeat = new(108, 0, -4);
 
     Node3D? _tank;
@@ -77,9 +77,10 @@ public partial class Main
     // ---- the tank -----------------------------------------------------------------------------------------------
 
     /// <summary>The old storehouse's room is built: the tank's in it.</summary>
-    public void FurnishStorehouse(Node3D room)
+    public void FurnishStorehouse(Indoors room)
     {
         BuildTank(room);
+        FurnishVault(room);
         TendTank();
     }
 
@@ -126,7 +127,7 @@ public partial class Main
 
     (string Verb, Action Act)? TankAction(Vector3 pos)
     {
-        if (_indoors?.Kind != "storehouse" || pos.DistanceTo(KorrinTank with { Y = pos.Y }) > 3.2f) return null;
+        if (_indoors?.Kind != "storehouse" || !VaultOpen || pos.DistanceTo(KorrinTank with { Y = pos.Y }) > 3.2f) return null;
         if (_city.KorrinFree) return ("look at the broken tank", () => _hud.Talk("The tank", "The glass is in pieces on the floor and the green has drained away. Whatever was in here isn't any more. The brass plate still says SUBJECT ONE.", ("Leave it.", _hud.EndTalk)));
         return ("look at the tank", LookAtTank);
     }
@@ -327,19 +328,33 @@ public partial class Main
         if (_prideBody is not { } e || !IsInstanceValid(e) || e.State == EnemyState.Dead || !e.FightingCompany) return;
         if ((_meteorIn -= delta) > 0) return;
         _meteorIn = _prideUnbound ? 4 : 7;
-        var at = _player.GlobalPosition with { Y = City.FloorAt(_player.GlobalPosition) + 0.05f };
+        var at = _player.GlobalPosition with { Y = City.FloorAt(_player.GlobalPosition) };
+        CallMeteor(at, new Color("#ff6a20"), new Color("#3a2010"), 1, DamageKind.Fire, () =>
+        {
+            if (IsInstanceValid(e) && _player.GlobalPosition.DistanceTo(at) < 4.5f && !_player.Downed)
+                _player.TakeHit(30 + 4 * _city.PrideLevel, DamageKind.Fire, AttackKind.Spell, false, e);
+        });
+    }
+
+    /// <summary>
+    /// A stone called down out of the sky: a ring of warning on the ground where it'll land, the stone falling in its own
+    /// fire, the burst where it hits, and whatever that does. Pride's are orange; the Starfall Diamond's silver and violet.
+    /// </summary>
+    void CallMeteor(Vector3 ground, Color fire, Color stoneColour, float size, DamageKind kind, Action landed)
+    {
+        var at = ground + Vector3.Up * 0.05f;
         var mark = new MeshInstance3D
         {
-            Mesh = new TorusMesh { InnerRadius = 3.6f, OuterRadius = 4.2f }, Position = at,
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(1, 0.4f, 0.1f, 0.7f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, EmissionEnabled = true, Emission = new Color("#ff6a20") },
+            Mesh = new TorusMesh { InnerRadius = 3.6f * size, OuterRadius = 4.2f * size }, Position = at,
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = fire with { A = 0.7f }, Transparency = BaseMaterial3D.TransparencyEnum.Alpha, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, EmissionEnabled = true, Emission = fire },
         };
         AddChild(mark);
         var stone = new MeshInstance3D
         {
-            Mesh = new SphereMesh { Radius = 1.1f, Height = 2.2f }, Position = at + new Vector3(8, 45, -6),
-            MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#3a2010"), EmissionEnabled = true, Emission = new Color("#ff7a20"), EmissionEnergyMultiplier = 2.5f },
+            Mesh = new SphereMesh { Radius = 1.1f * size, Height = 2.2f * size }, Position = at + new Vector3(8, 45, -6),
+            MaterialOverride = new StandardMaterial3D { AlbedoColor = stoneColour, EmissionEnabled = true, Emission = fire, EmissionEnergyMultiplier = 2.5f },
         };
-        stone.AddChild(Lairfolk.Motes(new Color(1f, 0.6f, 0.2f, 0.9f), 0.25f, 40, new Vector3(0.6f, 0.6f, 0.6f), 2f));
+        stone.AddChild(Lairfolk.Motes(fire.Lightened(0.3f) with { A = 0.9f }, 0.25f, 40, new Vector3(0.6f, 0.6f, 0.6f) * size, 2f));
         AddChild(stone);
         _meteors.Add(mark);
         _meteors.Add(stone);
@@ -347,10 +362,9 @@ public partial class Main
         fall.TweenProperty(stone, "position", at, 1.4).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
         fall.TweenCallback(Callable.From(() =>
         {
-            Effects.Burst(this, at + Vector3.Up, DamageKind.Fire, 5);
+            Effects.Burst(this, at + Vector3.Up, kind, 5 * size);
             Sound.At("move/land", at, 6, 0.5f);
-            if (IsInstanceValid(e) && _player.GlobalPosition.DistanceTo(at) < 4.5f && !_player.Downed)
-                _player.TakeHit(30 + 4 * _city.PrideLevel, DamageKind.Fire, AttackKind.Spell, false, e);
+            landed();
             _meteors.Remove(mark);
             _meteors.Remove(stone);
             if (IsInstanceValid(mark)) mark.QueueFree();
@@ -433,6 +447,7 @@ public partial class Main
 
     public static Vector3 KorrinTankForTest => KorrinTank;
     public static Vector3 OldStorehouseForTest => City.OldStorehouse;
+    public int MeteorsInFlightForTest => _meteors.Count;
     public static Vector3 KorrinSeatForTest => KorrinSeat;
     public (string Verb, Action Act)? TankActionForTest(Vector3 at) => TankAction(at);
     public Enemy? KorrinForTest => _korrin;

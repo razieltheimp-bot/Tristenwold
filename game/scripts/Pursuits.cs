@@ -182,6 +182,7 @@ public partial class Main
         if (pack.Count("torn_map") > 0 && _pursuits.Hunt is null) yield return ("Read the torn map", ReadMap);
         if (_pursuits.Hunt is not null && pack.Count("spade") > 0) yield return ("Dig here (spade)", () => { _hud.EndTalk(); Dig(); });
         if (pack.Count("home_charm") > 0) yield return ("Use the home charm", () => { _hud.EndTalk(); GoHome(); });
+        foreach (var o in DiamondPack()) yield return o;
         foreach (var o in HallPack()) yield return o;
         foreach (var o in EnginePack()) yield return o;
     }

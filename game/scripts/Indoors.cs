@@ -82,6 +82,8 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
     public Vector3 CardTable => Stage + new Vector3(2, 0, -2);
     public Vector3 DiceTable => Stage + new Vector3(4.2f, 0, 3);
     public Vector3 Fireside { get; private set; }
+    /// <summary>Where something worth taking is kept in here (see Main.Burgle), if anything is: not down a mine or a crypt.</summary>
+    public Vector3? Stash { get; private set; }
 
     public const float Threshold = 3000;
     static readonly Vector3 Stage = new(0, 3400, 0);
@@ -197,6 +199,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         if (kind == "trench") { main.FurnishTrench(this, seed); return; }
         if (kind == "depths") { main.FurnishDepths(this); return; }
         var rng = new Rng((ulong)Math.Abs(seed) + 11);
+        StashIn(wide, deep);
         switch (kind)
         {
             case "mineshaft":
@@ -264,8 +267,13 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
                 main.KeeperInside(seed, Stage + new Vector3(1, 0, -2.4f));
                 Hearth(deep);
                 Put("dungeon/box_stacked.glb", wide / 2 - 1.2f, -2, 0.7f);
-                Put("medieval/props/weaponrack.gltf", -wide / 2 + 0.9f, 0, 1.6f, 1.57f);
-                Slab(new Vector3(2, 0.4f, -1), new Vector3(0.4f, 0.8f, 0.9f), Surface.DarkStone); // the anvil
+                Put("medieval/props/weaponrack.gltf", -wide / 2 + 0.9f, -1.5f, 1.6f, 1.57f);
+                // The anvil, across from the counter so the smith's never in the way of it (see Main.Anvil), and the quench by it.
+                var anvil = Main.Anvil - Stage;
+                Slab(anvil + new Vector3(0, 0.4f, 0), new Vector3(0.45f, 0.8f, 0.95f), Surface.DarkStone);
+                Part(anvil + new Vector3(0, 0.85f, 0), new Vector3(0.55f, 0.12f, 1.2f), Surface.DarkStone);
+                Slab(anvil + new Vector3(1.3f, 0.35f, 0), new Vector3(0.7f, 0.7f, 1.3f), Surface.Planks); // the quench trough
+                Sign(anvil + new Vector3(0, 1.9f, 0), "The anvil");
                 break;
             case "warehouse":
                 foreach (var side in new[] { -1f, 1f }) // the cargo in rows down both walls, and an aisle up the middle
@@ -278,9 +286,20 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
                 break;
             case "storehouse":
                 Put("dungeon/crates_stacked.glb", -wide / 2 + 1, deep / 2 - 2.6f, 0.7f, 0.3f);
-                Put("medieval/props/sack.gltf", wide / 2 - 1.2f, deep / 2 - 2.2f, 1.5f, solid: false);
+                Put("medieval/props/sack.gltf", -wide / 2 + 1.3f, 0.6f, 1.5f, solid: false);
                 Put("dungeon/barrel_large.glb", wide / 2 - 1, -deep / 2 + 1.2f, 0.6f);
-                Put("medieval/props/crate_long_A.gltf", -wide / 2 + 1.2f, -deep / 2 + 1.6f, 1.4f, 1.2f);
+                // The Magi's strongroom: a wall of dark stone across the back of the room, an iron door in it, and the
+                // tank and the diamond's pedestal behind (see Main.FurnishVault).
+                foreach (var side in new[] { -1f, 1f })
+                    Slab(new Vector3(side * (0.9f + (wide / 2 - 0.9f) / 2), high / 2, VaultWall), new Vector3(wide / 2 - 0.9f, high, 0.3f), Surface.DarkStone);
+                Slab(new Vector3(0, (high + 2.5f) / 2, VaultWall), new Vector3(1.8f, high - 2.5f, 0.3f), Surface.DarkStone);
+                _vaultDoor = new StaticBody3D { Position = Stage + new Vector3(0, 1.25f, VaultWall) };
+                var iron = new StandardMaterial3D { AlbedoColor = new Color("#3a3a42"), Metallic = 0.85f, Roughness = 0.4f };
+                _vaultDoor.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(1.8f, 2.5f, 0.2f) }, MaterialOverride = iron });
+                _vaultDoor.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.22f, BottomRadius = 0.22f, Height = 0.08f }, MaterialOverride = Lairfolk.Plain("#a88a3a", 0.3f, 0.9f), Position = new Vector3(0.35f, 0.1f, 0.13f), RotationDegrees = new Vector3(90, 0, 0) }); // the dial
+                _vaultDoor.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(1.8f, 2.5f, 0.2f) } });
+                AddChild(_vaultDoor);
+                Slab(new Vector3(-2.6f, 0.5f, -3.6f), new Vector3(0.7f, 1, 0.7f), Surface.Stone); // the diamond's pedestal (Main.Pedestal)
                 main.FurnishStorehouse(this);
                 break;
             case "barn":
@@ -313,6 +332,39 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
                 Put("dungeon/shelf_small.glb", -wide / 2 + 0.5f, -deep / 2 + 1.6f, 0.7f, 1.57f);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Where this room keeps its valuables, and the chest or box to show it: a house's chest and a keep's are already in
+    /// their corner; everywhere else gets one, kept clear of whoever stands behind the counter (they'd answer E first).
+    /// </summary>
+    void StashIn(float wide, float deep)
+    {
+        if (kind is "mineshaft" or "crypt") return;
+        var (x, z, box) = kind switch
+        {
+            "keep" or "tower" => (wide / 2 - 1.3f, -deep / 2 + 1.4f, (string?)null),
+            "smithy" => (wide / 2 - 1, deep / 2 - 2.5f, "dungeon/chest.glb"),
+            "store" => (wide / 2 - 1, -deep / 2 + 1.2f, "dungeon/chest.glb"),
+            "storehouse" => (wide / 2 - 1.2f, deep / 2 - 2.6f, "dungeon/crates_stacked.glb"), // out in front of the strongroom
+            "warehouse" or "barn" => (wide / 2 - 1.2f, -deep / 2 + 1.4f, "dungeon/crates_stacked.glb"),
+            "tavern" or "longhall" or "church" => (wide / 2 - 1, -deep / 2 + 1.3f, "dungeon/chest.glb"),
+            _ => (wide / 2 - 1, -deep / 2 + 1.4f, null), // the house's own chest or trunk
+        };
+        if (box is not null) Put(box, x, z, 0.75f, 3.14f);
+        Stash = Stage + new Vector3(x, 0, z + 0.9f); // stood in front of it
+    }
+
+    /// <summary>Where the old storehouse's strongroom wall stands across its room.</summary>
+    public const float VaultWall = -1.2f;
+    StaticBody3D? _vaultDoor;
+
+    /// <summary>The strongroom's iron door shut, or open (gone, so the way's clear).</summary>
+    public void OpenVault(bool open)
+    {
+        if (_vaultDoor is null || !IsInstanceValid(_vaultDoor)) return;
+        _vaultDoor.Visible = !open;
+        foreach (var s in _vaultDoor.GetChildren().OfType<CollisionShape3D>()) s.Disabled = open;
     }
 
     void Guest(string look, Vector3 at, float yaw)

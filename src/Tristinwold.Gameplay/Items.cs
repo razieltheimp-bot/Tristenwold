@@ -293,6 +293,7 @@ public static class Items
         new("ale", "Ale", ItemKind.Food, 4, "A tankard of brown ale. Restores some stamina.") { Use = new Effect(Stamina: 0.3) },
         new("travellers_tea", "Traveller's Tea", ItemKind.Food, 6, "Irohe's own blend, in a twist of paper. Brewed on any fire, it warms you through. Heals a fair bit and restores stamina.") { Use = new Effect(Health: 0.2, Stamina: 0.6) },
         new("travel_rations", "Travel Rations", ItemKind.Food, 8, "Dried meat, hard cheese, an apple. Heals a fair bit.") { Use = new Effect(Health: 0.25, Stamina: 0.5) },
+        new("starfall_diamond", "Starfall Diamond", ItemKind.Tool, 5000, "A diamond the size of a hen's egg, silver-violet, warm in the hand, with something turning slowly inside it like weather. The Magi kept it by Subject One's tank. Worth five thousand crowns to the right buyer; or break it, once, and the sky comes down where you point."),
         new("alchemist_kit", "Alchemist's Kit", ItemKind.Tool, 40, "Mortar, pestle, little bottles. Lets you brew potions anywhere (from your pack, I)."),
         // ---- tools of the town's trades ----------------------------------------------------------------
         new("fishing_rod", "Fishing Rod", ItemKind.Tool, 12, "Ash rod, horsehair line, a bone hook. Face open water and press E to cast."),

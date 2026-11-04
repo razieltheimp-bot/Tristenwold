@@ -56,6 +56,8 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--syndicate-only")) { await SyndicateTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--steps-only")) { await StepsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--warlords-only")) { await WarlordsTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--stash-only")) { await StashTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--heist-only")) { await HeistTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
@@ -2730,6 +2732,99 @@ public partial class SelfTest(Main main) : Node
         await SyndicateTest();
         await StepsTest();
         await WarlordsTest();
+        await StashTest();
+        await HeistTest();
+    }
+
+    /// <summary>The Velvet Knives' job: Vesper's offer, the strongroom's door, the diamond, the pay; and a diamond broken on a foe.</summary>
+    async Task HeistTest()
+    {
+        var p = main.PlayerNode;
+        var hud = main.HudNode;
+        await Until(() => !p.Downed, 40);
+        var vesper = main.Locals.First(x => x.Npc.Id == "guild/vesper");
+        await Teleport(vesper.GlobalPosition + new Vector3(1.5f, 0, 1.5f));
+        await Frames(10);
+        if (main.HeistForTest == 0)
+        {
+            main.Talk(vesper);
+            Check(hud.Choose("Any work for a light pair of hands?") && hud.TalkText.Contains("Warrens") && hud.Choose("Take the job.") && main.HeistForTest == 1, "Vesper has a job: the diamond in the Warrens' storehouse");
+            hud.EndTalk();
+        }
+        Check(main.HeistLinesForTest(p.GlobalPosition).Any(l => l.Contains("Warrens")), "and it's on your tracker");
+        await Teleport(Main.OldStorehouseForTest * 1.07f);
+        await Frames(20);
+        var door = Buildings.DoorNear(p.GlobalPosition);
+        main.GoInsideForTest("storehouse", door?.Seed ?? 31, door?.Step ?? p.GlobalPosition);
+        await Frames(10);
+        p.GlobalPosition = Indoors.StageAt + new Vector3(0, 0.4f, Indoors.VaultWall + 0.9f);
+        await Frames(5);
+        if (!main.VaultOpenForTest)
+        {
+            var open = main.VaultActionForTest(p.GlobalPosition);
+            Check(open?.Verb.StartsWith("open the vault") == true, $"at the strongroom's door, the Knives' combination opens it ({open?.Verb ?? "nothing"})");
+            open?.Act();
+        }
+        Check(main.VaultOpenForTest, "the iron door swings open");
+        p.GlobalPosition = Main.Pedestal + new Vector3(0.9f, 0.4f, 0.9f);
+        await Frames(5);
+        var take = main.VaultActionForTest(p.GlobalPosition);
+        if (take?.Verb == "take the Starfall Diamond") take.Value.Act();
+        Check(p.Pack.Count(Main.Diamond) == 1, "the Starfall Diamond, off its pedestal and in your pack");
+        main.GoOutsideForTest();
+        await Frames(5);
+        await Teleport(vesper.GlobalPosition + new Vector3(1.5f, 0, 1.5f));
+        await Frames(10);
+        var purse = p.Crowns;
+        main.Talk(vesper);
+        Check(hud.Choose("I have your diamond.") && p.Crowns == purse + 500 && p.Pack.Count(Main.Diamond) == 0 && main.HeistForTest == 2, "handed to Vesper: 500 crowns, and the job's done");
+        hud.EndTalk();
+        // Another diamond, kept and broken on a foe: the sky comes down on it, once.
+        p.Pack.Add(Main.Diamond);
+        var foe = Enemy.Create(Bestiary.Get("bandit"), p.GlobalPosition + new Vector3(0, 0.5f, -12));
+        main.AddEnemy(foe);
+        await Frames(5);
+        var health = foe.Stats.Health;
+        main.BreakDiamondForTest(foe.GlobalPosition);
+        Check(p.Pack.Count(Main.Diamond) == 0 && main.MeteorsInFlightForTest > 0, "broken, the diamond's gone, and a stone falls out of the sky");
+        await Frames(140);
+        Check(!IsInstanceValid(foe) || foe.State == EnemyState.Dead || foe.Stats.Health < health, $"and it lands on the bandit ({(IsInstanceValid(foe) ? foe.Stats.Health : 0):0} of {health:0} left)");
+        if (IsInstanceValid(foe)) foe.QueueFree();
+    }
+
+    /// <summary>A house's chest, unseen and seen: the haul and the practice, then the fine, the name and the price on your head.</summary>
+    async Task StashTest()
+    {
+        var p = main.PlayerNode;
+        await Until(() => !p.Downed, 40);
+        await Teleport(City.PlayerStart);
+        await Frames(10);
+        main.GoInsideForTest("house", 4242, City.PlayerStart);
+        await Frames(10);
+        var room = main.IndoorsNode!;
+        Check(room.Stash is not null, "a house has a chest worth going through");
+        p.GlobalPosition = room.Stash!.Value + Vector3.Up * 0.4f;
+        await Frames(5);
+        var act = main.StashActionForTest(p.GlobalPosition);
+        Check(act?.Verb == "search the chest (it isn't yours)", $"and E goes through it ({act?.Verb ?? "nothing"})");
+        var (crowns, xp, infamy, bounty) = (p.Crowns, p.Pack.JobXp.GetValueOrDefault(Job.Thieving), main.Standing.Infamy, main.Standing.Bounty);
+        main.StashCaughtForTest = false;
+        act?.Act();
+        Check(p.Pack.JobXp.GetValueOrDefault(Job.Thieving) > xp && main.Standing.Infamy == infamy && main.Standing.Bounty == bounty, $"unseen: the haul ({p.Crowns - crowns} crowns) and the practice, and nobody the wiser");
+        Check(main.StashActionForTest(p.GlobalPosition)?.Verb.StartsWith("look in") == true, "and it's empty till it fills again");
+        main.GoOutsideForTest();
+        await Frames(5);
+        main.GoInsideForTest("tavern", 4343, City.PlayerStart);
+        await Frames(10);
+        p.GlobalPosition = main.IndoorsNode!.Stash!.Value + Vector3.Up * 0.4f;
+        await Frames(5);
+        main.StashCaughtForTest = true;
+        main.StashActionForTest(p.GlobalPosition)?.Act();
+        Check(main.Standing.Infamy > infamy && main.Standing.Bounty >= bounty + 20, $"seen at the tavern's takings: a worse name (infamy {infamy} to {main.Standing.Infamy}) and a price on your head ({main.Standing.Bounty} crowns)");
+        main.StashCaughtForTest = null;
+        main.Standing.Bounty = bounty;
+        main.GoOutsideForTest();
+        await Frames(5);
     }
 
     /// <summary>A deviant at the head of a town's table: in the street with its band when you come, and the table yours when it falls.</summary>
@@ -2960,7 +3055,9 @@ public partial class SelfTest(Main main) : Node
         Check(door?.Kind == "storehouse", $"at the back of the Warrens, an old storehouse with its door to the wall ({door?.Kind ?? "no door"})");
         main.GoInsideForTest("storehouse", door?.Seed ?? 31, door?.Step ?? p.GlobalPosition);
         await Frames(10);
-        p.GlobalPosition = Main.KorrinTankForTest + new Vector3(0, 0.4f, 2.6f);
+        Check(main.TankActionForTest(Main.KorrinTankForTest + new Vector3(0, 0, 2.6f)) is null || main.VaultOpenForTest, "the tank's behind the strongroom's iron door");
+        if (!main.VaultOpenForTest) main.OpenVaultForTest();
+        p.GlobalPosition = Main.KorrinTankForTest + new Vector3(0, 0.4f, 1.6f);
         await Frames(5);
         main.TendUndyingForTest();
         var act = main.TankActionForTest(p.GlobalPosition);
@@ -3982,13 +4079,33 @@ public partial class SelfTest(Main main) : Node
         foreach (var (id, n) in new[] { ("steel_ingot", 8), ("leather", 6), ("pine_log", 6) }) pack.Add(id, n);
         pack.Practise(Job.Smithing, Pack.XpFor(6));
         main.Talk(hulda);
-        Check(hud.Choose("Can I use your forge?"), "Hulda lets you at the fire");
+        Check(hud.Choose("Can I use your forge?") && hud.TalkText.Contains("inside"), $"Hulda lets you at the fire, inside ({hud.TalkText})");
+        hud.EndTalk();
+        main.GoInsideForTest("smithy", Math.Abs(Shops.Smithy.Id.GetHashCode()), hulda.GlobalPosition);
+        await Frames(10);
+        Check(main.KeeperInsideForTest?.Npc.Id == Shops.Smithy.Id, "and she's in there behind the counter");
+        p.GlobalPosition = Main.Anvil + new Vector3(0.8f, 0.4f, 0.8f);
+        await Frames(5);
+        var forge = main.SmithyActionForTest(p.GlobalPosition);
+        Check(forge?.Verb == "work at the forge", $"at the anvil, the forge is yours ({forge?.Verb ?? "nothing"})");
+        forge?.Act();
         Check(hud.Choose("Make Steel Sword"), "and you make a sword");
         Check(hud.Choose("Make Steel Sword"), "and another");
         var made = pack.Contents.Where(x => x.Item.Forged).Select(x => x.Item).ToList();
         Check(made.Count == 2 && made[0].Id != made[1].Id && made[0].Text != made[1].Text, $"two swords, not the same sword: {made[0].Name}, {made[1].Name}");
         Check(made.All(x => x.Name.Contains("+2") && x.Text.Contains("The Anvil Gate") && x.Text.Contains(p.Company)), $"each carries its forge and its maker: {made[0].Text}");
         hud.EndTalk();
+        // Hulda's own work, by the piece, at the same anvil.
+        if (main.KeeperInsideForTest is { } smith) main.Talk(smith);
+        Check(hud.Choose("Any work at the forge?") && main.AnvilShiftForTest == 5, "she has work: five pieces off the anvil");
+        hud.EndTalk();
+        var (purse, xp) = (p.Crowns, pack.JobXp.GetValueOrDefault(Job.Smithing));
+        Check(main.SmithyActionForTest(p.GlobalPosition)?.Verb.StartsWith("hammer out") == true, "and the anvil's for hammering now");
+        for (var i = 0; i < 5; i++) main.HammerNowForTest();
+        Check(main.AnvilShiftForTest is null && p.Crowns > purse + 10 && pack.JobXp.GetValueOrDefault(Job.Smithing) > xp,
+            $"five pieces hammered out: +{p.Crowns - purse} crowns, and smithing practised (+{pack.JobXp.GetValueOrDefault(Job.Smithing) - xp} xp)");
+        main.GoOutsideForTest();
+        await Frames(5);
         var fists = p.Stats.DamageMult;
         Check(pack.Equip(made[0].Id), "a forged sword goes in the hand");
         p.Fit();

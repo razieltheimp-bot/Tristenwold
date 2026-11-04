@@ -23,7 +23,8 @@ public static class Buildings
     /// <summary>Places a building. <paramref name="seed"/> picks the variant; the same seed gives the same building.</summary>
     /// <param name="door">Whether it can be walked into.</param>
     /// <param name="solid">Whether anything can bump into it (not one hung up out of reach).</param>
-    public static Node3D Place(Node3D parent, string kind, Vector3 at, float yaw, int seed, Surface roof = Surface.Slate, float scale = 1, bool door = true, bool solid = true)
+    /// <param name="inside">What its door opens onto, if not its own kind (a shop front with a smithy behind it).</param>
+    public static Node3D Place(Node3D parent, string kind, Vector3 at, float yaw, int seed, Surface roof = Surface.Slate, float scale = 1, bool door = true, bool solid = true, string? inside = null)
     {
         var design = Get(kind, Math.Abs(seed) % Variants, roof);
         var body = new StaticBody3D { Position = at, Rotation = new Vector3(0, yaw, 0), Scale = Vector3.One * scale };
@@ -36,7 +37,7 @@ public static class Buildings
         body.AddToGroup(Group);
         parent.AddChild(body);
         if (door && HasInside(KindFor(kind)))
-            Doors.Add((body, KindFor(kind), seed, design.Solids.Max(s => s.Centre.Z + s.Size.Z / 2) * scale));
+            Doors.Add((body, inside ?? KindFor(kind), seed, design.Solids.Max(s => s.Centre.Z + s.Size.Z / 2) * scale));
         return body;
     }
 

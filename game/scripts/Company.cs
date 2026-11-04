@@ -719,6 +719,8 @@ public partial class Main
             yield break;
         }
         foreach (var o in GuildTalk(person)) yield return o;
+        foreach (var o in SmithyTalk(person)) yield return o;
+        foreach (var o in HeistTalk(person)) yield return o;
         if (People.IsYouth(npc))
         {
             var word = Follower.Word;
