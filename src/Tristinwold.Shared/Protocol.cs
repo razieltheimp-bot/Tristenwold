@@ -132,7 +132,7 @@ public sealed record GroupView(string Player, string Area, IReadOnlyList<string>
 
 public static class Wire
 {
-    public const int ProtocolVersion = 11; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council; 11: buildings moved apart, Korrin's storehouse, the dock warehouse
+    public const int ProtocolVersion = 12; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council; 11: buildings moved apart, Korrin's storehouse, the dock warehouse; 12: council chambers in every town, refuges that grow, more dock thugs
     public const int DefaultPort = 7777;
 
     /// <summary>
