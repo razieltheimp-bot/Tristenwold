@@ -69,6 +69,8 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--caravan-only")) { await CaravanTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--opensea-only")) { await OpenSeaTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--shadows-only")) { await ShadowsTest(); Finish(0); return; }
@@ -2738,6 +2740,47 @@ public partial class SelfTest(Main main) : Node
         await HeistTest();
         await HandiworkTest();
         await PanicTest();
+        await KeeperTest();
+    }
+
+    /// <summary>An apprentice set to keep shop aboard the hero's ship: goods put out sell a little at a time, the till's the hero's, the shop shuts while she sails and opens where she ties up.</summary>
+    async Task KeeperTest()
+    {
+        var (p, sea, city) = (main.PlayerNode, main.Sea, main.Economy);
+        (sea.OwnShip, sea.ShipName, sea.Hull, sea.Voyage) = (true, "Wren", 100, null);
+        (sea.ShipX, sea.ShipZ) = (Main.ShipBerth.X, Main.ShipBerth.Z);
+        await Teleport(new Vector3(138, 0, 0));
+        await Frames(10);
+        main.BoardVesselForTest();
+        main.LeaveVesselForTest(); // she's drawn at her berth, and you're on the pier
+        await Frames(10);
+        var lad = new Bond { Id = "test/tobin", KindId = "apprentice", Role = BondRole.Apprentice, Name = "Tobin", Race = "human", JoinAge = 15, Following = false };
+        main.AddBondForTest(lad);
+        Check(main.KeepingOptionsForTest(lad).Any(o => o.Contains("aboard Wren")), "an apprentice can be set to keep shop aboard your ship");
+        main.StartKeepingForTest(lad, Keeping.Ship);
+        Check(lad.Keeps == Keeping.Ship && city.StoreOf(main.ShipShopKeyForTest) is { Ship: true }, "Tobin goes aboard and opens a shop on her deck");
+        var keeper = main.KeeperForTest(lad);
+        Check(keeper is not null && main.VesselNode is { } ship && ship.OnDeck(keeper.GlobalPosition), "and stands on her deck to mind it");
+        p.Pack.Add("iron_ingot", 6);
+        main.PutOutForTest(Keeping.Ship, "iron_ingot", 6);
+        city.TendStores(Homestead.JobSeconds * 4 + 1);
+        var store = city.StoreOf(main.ShipShopKeyForTest);
+        Check(store is { House: var h } && h.Chest.GetValueOrDefault("iron_ingot") == 2 && h.Till == 4 * Homestead.SellsFor("iron_ingot"),
+            $"the ingots sell one customer at a time ({store?.House.Chest.GetValueOrDefault("iron_ingot")} left, {store?.House.Till} crowns in the till)");
+        if (keeper is not null)
+        {
+            var purse = p.Crowns;
+            main.Talk(keeper);
+            Check(main.HudNode.Choose("I'll take the takings") && p.Crowns == purse + 4 * Homestead.SellsFor("iron_ingot"), "and the takings are yours");
+            main.HudNode.EndTalk();
+        }
+        main.BoardVesselForTest();
+        Check(city.StoreOf(main.ShipShopKeyForTest) is null && main.KeeperForTest(lad) is null, "taking her out shuts the shop, and Tobin goes below");
+        main.LeaveVesselForTest();
+        Check(city.StoreOf(main.ShipShopKeyForTest) is { House.Chest: var c } && c.GetValueOrDefault("iron_ingot") == 2, "tied up again, the shop opens where she lies, the shelves as they were");
+        main.StopKeepingForTest(lad);
+        Check(lad.Keeps is null && city.StoreOf(main.ShipShopKeyForTest) is null, "and brought back, Tobin shuts up shop");
+        foreach (var c2 in p.Companions().ToList()) c2.QueueFree();
     }
 
     /// <summary>Raiders in the street: the townsfolk run for a door or a guard and hide till it's over, and the guard comes to the hero's help.</summary>
@@ -3293,6 +3336,26 @@ public partial class SelfTest(Main main) : Node
         var ship = main.VesselNode;
         Check(ship is not null && main.AboardShip, "you take your own ship out from her berth");
         if (ship is null) return;
+        // Let go of the wheel and walk about her deck.
+        main.LeaveWheelForTest();
+        await Frames(40);
+        Check(!main.AboardShip && p.Seat is null && ship.OnDeck(p.GlobalPosition) && p.GlobalPosition.Y > ship.GlobalPosition.Y + OwnVessel.QuarterTop - 0.3f,
+            $"let go of the wheel and you're standing on her quarterdeck ({p.GlobalPosition.Y - ship.GlobalPosition.Y:0.0} m above her waterline)");
+        main.GoAboardForTest();
+        p.Rotation = new Vector3(0, ship.Rotation.Y, 0);
+        await Frames(20);
+        var midships = p.GlobalPosition;
+        Input.ActionPress("move_forward");
+        await Frames(50);
+        Input.ActionRelease("move_forward");
+        await Frames(20);
+        Check(ship.OnDeck(p.GlobalPosition) && p.GlobalPosition.DistanceTo(midships) > 1.0f && Mathf.Abs(p.GlobalPosition.Y - midships.Y) < 0.6f,
+            $"walk about her deck, the planks underfoot ({p.GlobalPosition.DistanceTo(midships):0.0} m, still aboard: {ship.OnDeck(p.GlobalPosition)})");
+        p.GlobalPosition = ship.BesideWheel;
+        await Frames(10);
+        Check(main.VesselVerbForTest == "take the wheel", $"up at the wheel, E takes it ({main.VesselVerbForTest})");
+        main.BoardVesselForTest();
+        Check(main.AboardShip && p.Seat is not null, "and you're at the helm again");
         main.LeaveVesselForTest();
         Check(!main.AboardShip && City.OnPier(p.GlobalPosition), "and can step off onto the pier");
         main.BoardVesselForTest();

@@ -144,6 +144,8 @@ public sealed class Bond
     public bool Renamed { get; set; }
     /// <summary>A steed hitched to your wagon: it goes where the wagon goes, not at your heels, until you unhitch it to ride.</summary>
     public bool Hitched { get; set; }
+    /// <summary>Keeping shop for the hero (see <see cref="Keeping"/>): at home, at the wagon or aboard the ship; null when not.</summary>
+    public string? Keeps { get; set; }
 
     /// <summary>A dragon too young to fly is lost for good if it falls; anything else is only knocked out.</summary>
     [JsonIgnore]

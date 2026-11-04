@@ -132,12 +132,12 @@ public sealed record GroupView(string Player, string Area, IReadOnlyList<string>
 
 public static class Wire
 {
-    public const int ProtocolVersion = 10; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council
+    public const int ProtocolVersion = 11; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council; 11: buildings moved apart, Korrin's storehouse, the dock warehouse
     public const int DefaultPort = 7777;
 
     /// <summary>
     /// A server's refusal in plain words. A server too old to say which side is behind ("Version mismatch: server speaks
-    /// 7, you sent 10. Update the mod.", from when this was a Skyrim mod) is read here and told the right way round.
+    /// 7, you sent 10. Update the mod.", worded from long ago) is read here and told the right way round.
     /// </summary>
     public static string Explain(string reason)
     {

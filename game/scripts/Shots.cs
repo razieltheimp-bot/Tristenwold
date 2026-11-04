@@ -641,6 +641,31 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.MakeCurrent();
             await Shot(name);
         }
+        if (OS.GetCmdlineUserArgs().Contains("--ownship"))
+        {
+            // The hero's own ship at her berth: from the pier, from off her bow, from above, from her wheel and along her deck.
+            (main.Sea.OwnShip, main.Sea.ShipName, main.Sea.Hull, main.Sea.Voyage) = (true, "Wren", 100, null);
+            (main.Sea.ShipX, main.Sea.ShipZ) = (Main.ShipBerth.X, Main.ShipBerth.Z);
+            main.PlayerNode.GlobalPosition = new Vector3(138, 2, 0);
+            await Frames(10);
+            main.BoardVesselForTest();
+            main.LeaveWheelForTest();
+            main.PlayerNode.GlobalPosition = new Vector3(120, 2, 0);
+            await Frames(30);
+            if (main.VesselNode is { } ship)
+            {
+                var b = ship.GlobalTransform.Basis;
+                var o = ship.GlobalPosition;
+                await From("ownship-side", o + b * new Vector3(14, 4, 2), o + b * new Vector3(0, 3, 0));
+                await From("ownship-bow", o + b * new Vector3(6, 5, -16), o + b * new Vector3(0, 3, 0));
+                await From("ownship-stern", o + b * new Vector3(-7, 5, 15), o + b * new Vector3(0, 2.5f, 3));
+                await From("ownship-above", o + b * new Vector3(9, 16, 8), o + b * new Vector3(0, 2, -1));
+                await From("ownship-wheel", o + b * new Vector3(0, 4.6f, 4.6f), o + b * new Vector3(0, 2.6f, -4));
+                await From("ownship-deck", o + b * new Vector3(1.2f, 3.4f, -6.5f), o + b * new Vector3(0, 3.2f, 4.5f));
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--warehouses"))
         {
             // The dock warehouse from where the hero comes up the road, and from above; the old storehouse from the street, from behind, and inside.

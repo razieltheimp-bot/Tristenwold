@@ -87,6 +87,7 @@ public partial class Main
 
     void CloseWagonShop()
     {
+        if (KeeperAt(Keeping.Wagon) is { } keeper) keeper.Keeps = null; // and whoever was minding it goes home
         PullWagonShop();
         DoCity(CityAction.StoreShut(WagonShopKey));
         _trade.ShopOpen = false;
@@ -99,7 +100,7 @@ public partial class Main
     {
         if (_wagon is not { } own) return;
         var at = own.GlobalPosition;
-        DoCity(CityAction.StoreSet(new PlayerStore { Owner = WagonShopKey, Name = $"{_player.Company}'s Steam Wagon", X = at.X, Z = at.Z, Workers = 1, Wagon = true, Yaw = own.Rotation.Y, House = PlayerStore.Copy(WagonHouse) }));
+        DoCity(CityAction.StoreSet(new PlayerStore { Owner = WagonShopKey, Name = $"{_player.Company}'s {(_trade.Steam ? "Steam Wagon" : "Wagon")}", X = at.X, Z = at.Z, Workers = 1, Wagon = true, Yaw = own.Rotation.Y, House = PlayerStore.Copy(WagonHouse) }));
     }
 
     void PullWagonShop()

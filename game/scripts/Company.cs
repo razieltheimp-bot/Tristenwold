@@ -31,6 +31,8 @@ public partial class Main
         SyncStore();
         TendBay();
         PullWagonShop();
+        PullShipShop();
+        TendKeepers();
         TendStoreFronts();
         TendHallFronts();
         TendGrove();
@@ -704,6 +706,11 @@ public partial class Main
             foreach (var o in DrifterTalk(person)) yield return o;
             yield break;
         }
+        if (npc.Id.StartsWith(Keeping.NpcMark))
+        {
+            foreach (var o in KeeperTalk(person)) yield return o;
+            yield break;
+        }
         if (npc.Id.StartsWith("syndicate:"))
         {
             foreach (var o in SyndicateTalk(person)) yield return o;
@@ -935,7 +942,7 @@ public partial class Main
         {
             var body = BodyOf(b);
             var kind = Bestiary.Get(b.KindId).Name.ToLowerInvariant();
-            var state = !b.Following ? (b.Hitched ? "hitched to your wagon" : _pursuits.House.IsHome ? "at home" : "waiting at the Gallows Perch") : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
+            var state = !b.Following ? (b.Keeps is { } keeps ? $"keeping shop {ShopCalled(keeps)}" : b.Hitched ? "hitched to your wagon" : _pursuits.House.IsHome ? "at home" : "waiting at the Gallows Perch") : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
             return $"{b.Name}: {b.Stage} {(b.Role is BondRole.Pet or BondRole.Dragon ? kind : "")}, level {b.Level} ({b.Xp}/{Bond.XpToNext(b.Level)} xp), {state}{(b.Eats ? $", {b.Fed:0}% fed" : "")}. Knows: {(b.Skills.Any() ? string.Join(", ", b.Skills.Select(s => s.Name)) : "nothing yet")}.";
         });
         var options = new List<(string, Action)>();
@@ -952,6 +959,8 @@ public partial class Main
                 if (!bond.Following && MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
                 continue;
             }
+            options.AddRange(KeepingOptions(bond)); // an apprentice or squire can be set to keep shop
+            if (bond.Keeps is not null) continue;
             if (bond.Following) options.Add(($"Send {bond.Name} home", () => { bond.Following = false; var body = BodyOf(bond); if (body is not null) { _companions.Remove(body); body.QueueFree(); } StableSpareMounts(); Save(); ShowParty(); }));
             else if (MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
         }

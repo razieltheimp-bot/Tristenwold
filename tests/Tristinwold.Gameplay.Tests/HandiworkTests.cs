@@ -19,6 +19,35 @@ public class HandiworkTests
     }
 
     [Fact]
+    public void Only_the_people_of_the_company_keep_shop_and_one_away_at_the_wagon_or_ship_isnt_working_at_home()
+    {
+        Assert.True(Keeping.CanKeep(new Bond { Role = BondRole.Apprentice }));
+        Assert.True(Keeping.CanKeep(new Bond { Role = BondRole.Squire }));
+        Assert.False(Keeping.CanKeep(new Bond { Role = BondRole.Pet }));
+        Assert.True(Homestead.Free(new Bond { Following = false, Keeps = Keeping.Home }));
+        Assert.False(Homestead.Free(new Bond { Following = false, Keeps = Keeping.Ship }));
+        Assert.False(Homestead.Free(new Bond { Following = false, Keeps = Keeping.Wagon }));
+        Assert.True(Homestead.Free(new Bond { Following = false }));
+        var kept = System.Text.Json.JsonSerializer.Deserialize<Bond>(System.Text.Json.JsonSerializer.Serialize(new Bond { Keeps = Keeping.Ship }))!;
+        Assert.Equal(Keeping.Ship, kept.Keeps);
+    }
+
+    [Fact]
+    public void A_shop_kept_aboard_trades_slowly_selling_what_is_put_out_and_buying_in_out_of_the_till()
+    {
+        var shop = new House { Owned = true, Built = Housing.Stages.Count, IsHome = true, Furniture = ["shop_counter"] };
+        shop.Chest["iron_ingot"] = 3;
+        shop.ForSale.Add("iron_ingot");
+        shop.Buying.Add("leather");
+        Homestead.Tick(shop, 1, Homestead.JobSeconds - 1);
+        Assert.Equal(0, shop.Till); // not a customer yet
+        Homestead.Tick(shop, 1, Homestead.JobSeconds * 3);
+        Assert.Equal(0, shop.Chest.GetValueOrDefault("iron_ingot"));
+        Assert.True(shop.Chest.GetValueOrDefault("leather") > 0, "the till buys leather in");
+        Assert.Equal(3 * Homestead.SellsFor("iron_ingot") - shop.Chest["leather"] * Homestead.BuysFor("leather"), shop.Till);
+    }
+
+    [Fact]
     public void A_towns_forges_arm_its_guards_and_its_harvests_raise_its_children()
     {
         var city = CityEconomy.Start(3);

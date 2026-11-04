@@ -59,14 +59,22 @@ public partial class Main
                 _storeFronts[owner].Front.QueueFree();
                 _storeFronts.Remove(owner);
             }
-        foreach (var s in _city.Stores.Values.Where(s => s.Open && s.Owner != _player.Company && s.Owner != WagonShopKey && !_storeFronts.ContainsKey(s.Owner)))
+        foreach (var s in _city.Stores.Values.Where(s => s.Open && s.Owner != _player.Company && s.Owner != WagonShopKey && s.Owner != ShipShopKey && !_storeFronts.ContainsKey(s.Owner)))
         {
             var at = new Vector3((float)s.X, 0, (float)s.Z);
             if (new Vector2(at.X - pos.X, at.Z - pos.Z).Length() > StoresDrawnWithin) continue;
             at.Y = City.FloorAt(at);
             var root = new Node3D();
             AddChild(root);
-            if (s.Wagon)
+            OwnVessel? moored = null;
+            if (s.Ship)
+            {
+                moored = new OwnVessel(this) { Called = s.Name, Moored = true };
+                root.AddChild(moored);
+                moored.GlobalPosition = at with { Y = (float)WorldGen.WaterLevel };
+                moored.Rotation = new Vector3(0, (float)s.Yaw, 0);
+            }
+            else if (s.Wagon)
             {
                 var wagon = new Wagon(this, null) { Parked = true, Steam = true };
                 root.AddChild(wagon);
@@ -74,7 +82,7 @@ public partial class Main
                 wagon.Rotation = new Vector3(0, (float)s.Yaw, 0);
             }
             else Buildings.Place(root, "store", at, 0, s.Owner.Length, Surface.Shingle);
-            root.AddChild(new Label3D { Text = s.Name, Position = at + new Vector3(0, 6.5f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 56, OutlineSize = 12, PixelSize = 0.012f, Modulate = new Color("#ffd27a") });
+            if (moored is null) root.AddChild(new Label3D { Text = s.Name, Position = at + new Vector3(0, 6.5f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 56, OutlineSize = 12, PixelSize = 0.012f, Modulate = new Color("#ffd27a") });
             var (x, z) = (at.X + 2.5, at.Z + 5);
             var keeper = new Person
             {
@@ -83,6 +91,7 @@ public partial class Main
                 Look = "worker", Position = new Vector3((float)x, City.FloorAt(new Vector3((float)x, 0, (float)z)), (float)z),
             };
             root.AddChild(keeper);
+            if (moored is not null) keeper.GlobalPosition = moored.DeckSpot; // aboard her, at the rail
             _storeFronts[s.Owner] = (root, keeper);
         }
     }

@@ -70,8 +70,8 @@ public static class Homestead
         return did;
     }
 
-    /// <summary>Whether a companion's free to work at home: not at the hero's heels, and not in a wagon's shafts.</summary>
-    public static bool Free(Bond b) => !b.Following && !b.Hitched;
+    /// <summary>Whether a companion's free to work at home: not at the hero's heels, not in a wagon's shafts, and not keeping shop somewhere else.</summary>
+    public static bool Free(Bond b) => !b.Following && !b.Hitched && b.Keeps is null or Keeping.Home;
 
     /// <summary>What each worked station does in this much time: what came of it, in the chest now.</summary>
     public static List<(string Id, int N)> Tick(House h, int workers, double seconds)
@@ -111,6 +111,20 @@ public static class Homestead
 }
 
 /// <summary>
+/// One of the company keeping shop for the hero: an apprentice or squire sent to mind the counter at home, at the
+/// wagon, or aboard the ship. They serve one customer at a time, as a home's company does (<see cref="Homestead"/>).
+/// </summary>
+public static class Keeping
+{
+    public const string Home = "home", Wagon = "wagon", Ship = "ship";
+    /// <summary>How a keeper is told from other folk to talk to.</summary>
+    public const string NpcMark = "keeper:";
+
+    /// <summary>Who can keep shop: the hero's people, not their beasts or machines.</summary>
+    public static bool CanKeep(Bond b) => b.Role is BondRole.Squire or BondRole.Apprentice;
+}
+
+/// <summary>
 /// A hero's home as the shared world keeps it, so it goes on working whether they're there or not: the house, how many
 /// of their people are there, and where other players find its shop.
 /// </summary>
@@ -128,6 +142,10 @@ public sealed class PlayerStore
 
     /// <summary>How a company's wagon shop is told from its home, in the book of stores.</summary>
     public const string WagonMark = "#wagon";
+    /// <summary>And its ship's: a shop aboard, wherever she's tied up.</summary>
+    public const string ShipMark = "#ship";
+    /// <summary>A shop aboard a ship, not a shopfront on the row.</summary>
+    public bool Ship { get; set; }
 
     /// <summary>Whether anyone's minding the counter, and there's a counter to mind.</summary>
     [JsonIgnore] public bool Open => Workers > 0 && House.Furniture.Contains("shop_counter") && House.ForSale.Count + House.Buying.Count > 0;

@@ -169,6 +169,9 @@ public sealed class SeaBook
 
     public WrightRank Wright { get; set; }
     public int Repairs { get; set; }
+    /// <summary>The shop aboard the hero's own ship, kept by one of their company, and whether it's open.</summary>
+    public House? ShipShop { get; set; }
+    public bool ShipShopOpen { get; set; }
     /// <summary>How far the hero's own ship has come on the slipway (out of <see cref="KeelJobs"/>).</summary>
     public int Keel { get; set; }
     public bool KeelLaid { get; set; }

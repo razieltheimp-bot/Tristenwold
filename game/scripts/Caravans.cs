@@ -552,7 +552,7 @@ public partial class Main
     void Hitch()
     {
         _trade.Horses = Math.Min(TradeBook.MaxHorses, _bonds.Count(b => b.Hitched));
-        if (_wagon is { } own && _trade.Run is null) own.Team(_trade.Steam ? _trade.Fuel > 0 && !_trade.ShopOpen : _trade.Horses > 0); // the yard's own horse pulls a run
+        if (_wagon is { } own && _trade.Run is null) own.Team(!_trade.ShopOpen && (_trade.Steam ? _trade.Fuel > 0 : _trade.Horses > 0)); // the yard's own horse pulls a run; an open shop stays put
     }
 
     /// <summary>A steed put to the wagon: it leaves your heels and goes with the wagon.</summary>
