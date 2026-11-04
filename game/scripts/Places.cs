@@ -416,6 +416,12 @@ public partial class Places(Main main, WorldGen world) : Node3D
         if (_built.TryGetValue(siteId, out var b) && b.Enemies.All(e => !IsInstanceValid(e) || e.State == EnemyState.Dead)) _cleared.Add(siteId);
     }
 
+    /// <summary>Takes a place down, to be built again as it is now when it's next in view (a refuge that's grown).</summary>
+    public void Rebuild(string id)
+    {
+        if (_built.TryGetValue(id, out var b)) Drop(b);
+    }
+
     void Drop(Built b)
     {
         foreach (var e in b.Enemies.Concat(b.Animals).Concat(b.Guards).Where(IsInstanceValid)) e.QueueFree();
@@ -473,7 +479,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
                 case SettlementKind.Inn: Inn(root, s, rng, colour); break;
                 case SettlementKind.Shrine: Shrine(root, s, rng); break;
                 case SettlementKind.Mine: Mine(root, s, rng, colour, b); break;
-                case SettlementKind.AshbornCamp: Camp(root, s, rng, 4, new Color("#b05040")); break;
+                case SettlementKind.AshbornCamp: Camp(root, s, rng, 4, new Color("#b05040")); Refuge(root, s, colour, b); break;
                 case SettlementKind.BanditCamp: Camp(root, s, rng, 3, new Color("#a08060")); Palisade(root, s); Prop(root, s, "medieval/props/flag_red.gltf", 0, -6, 6); break;
                 case SettlementKind.Barrow: Barrow(root, s, rng); break;
                 case SettlementKind.Den: Den(root, s, rng); break;
@@ -574,7 +580,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
     /// A generated building at an offset from the settlement's centre, front door towards the centre.
     /// Returns null (and builds nothing) if another building already stands there.
     /// </summary>
-    Node3D? Building(Node3D parent, Settlement s, string kind, string colour, double dx, double dz, float yaw, float scale = 7.5f, string? name = null)
+    Node3D? Building(Node3D parent, Settlement s, string kind, string colour, double dx, double dz, float yaw, float scale = 7.5f, string? name = null, string? inside = null)
     {
         kind = Buildings.KindFor(kind);
         var at = new Vector2((float)(s.X + dx), (float)(s.Z + dz));
@@ -583,7 +589,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
         _lots.Add((at, room));
         var facing = dx * dx + dz * dz > 1 ? Mathf.Atan2(-(float)dx, -(float)dz) : yaw;
         var size = kind == "keep" ? (s.Kind == SettlementKind.City ? 1f : 0.82f) : 1f;
-        var b = Buildings.Place(parent, kind, Ground(s.X + dx, s.Z + dz), facing, (int)(WorldGen.StableHash(s.Id) % 1000) + _lots.Count, Buildings.RoofFor(colour), size);
+        var b = Buildings.Place(parent, kind, Ground(s.X + dx, s.Z + dz), facing, (int)(WorldGen.StableHash(s.Id) % 1000) + _lots.Count, Buildings.RoofFor(colour), size, inside: inside);
         if (name is not null) Label(parent, b.Position + new Vector3(0, Buildings.HeightOf(b) + 2.5f, 0), name, 0.02f);
         if (name is null && kind is "house" or "cottage" or "barn") _raised.Add(b);
         return b;
@@ -770,7 +776,10 @@ public partial class Places(Main main, WorldGen world) : Node3D
         }
     }
 
-    /// <summary>A place's council, those still living, and its clerk, who sees to the business whoever's left. A member's years can run out like anyone's.</summary>
+    /// <summary>
+    /// A place's council: its chamber, those still living at the table inside it (see Main.PeopleTheCouncil), and its
+    /// clerk at the door, who sees to the business whoever's left. A member's years can run out like anyone's.
+    /// </summary>
     void Council(Node3D parent, Settlement s, Built b)
     {
         var members = TownCouncils.Members(s);
@@ -779,13 +788,60 @@ public partial class Places(Main main, WorldGen world) : Node3D
             main.DoCity(CityAction.CouncilMet(s.Id, s.Name, members.Select(m => $"{m.Id}|{m.Name}").ToList()));
         var years = Calendar.Years(economy.Day);
         foreach (var m in members)
-        {
-            if (economy.CouncilOf(s.Id).Fallen.Contains(m.Id)) continue;
-            if (m.Age + years >= Ageing.Of(m.Race).Dies) { main.DoCity(CityAction.CouncilFall(s.Id, m.Id)); continue; }
-            b.People.Add(Add(parent, new Person { Npc = m with { Age = (int)(m.Age + years) }, Look = "priest", Position = Ground(m.X, m.Z) }));
-        }
+            if (!economy.CouncilOf(s.Id).Fallen.Contains(m.Id) && m.Age + years >= Ageing.Of(m.Race).Dies) main.DoCity(CityAction.CouncilFall(s.Id, m.Id));
         var clerk = TownCouncils.Clerk(s);
-        b.People.Add(Add(parent, new Person { Npc = clerk, Look = "townsfolk", Position = Ground(clerk.X, clerk.Z) }));
+        var chamber = CouncilChamber(parent, s, clerk);
+        var (cx, cz) = chamber is { } door ? (door.X, door.Z) : (clerk.X, clerk.Z);
+        b.People.Add(Add(parent, new Person { Npc = clerk with { X = cx, Z = cz }, Look = "townsfolk", Position = Ground(cx, cz) }));
+        // With nowhere to meet (no room for a chamber), they stand about as they always have.
+        if (chamber is null)
+            foreach (var m in members.Where(m => !economy.CouncilOf(s.Id).Fallen.Contains(m.Id)))
+                b.People.Add(Add(parent, new Person { Npc = m with { Age = (int)(m.Age + years) }, Look = "priest", Position = Ground(m.X, m.Z) }));
+    }
+
+    /// <summary>The council chamber: a long hall out past where the clerk stands, its door to the town, its table inside. Where its door is, or null if there's no room for it.</summary>
+    (double X, double Z)? CouncilChamber(Node3D parent, Settlement s, Npc clerk)
+    {
+        var colour = Models.Colours[Math.Abs(WorldGen.StableHash(s.Id) % Models.Colours.Length)];
+        var (ox, oz) = (clerk.X - s.X, clerk.Z - s.Z);
+        var away = Math.Sqrt(ox * ox + oz * oz);
+        var (ux, uz) = away > 1 ? (ox / away, oz / away) : (1.0, 0.0);
+        Node3D? hall = null;
+        if (s.Id == "city:tristinwold")
+        {
+            // On the Crown, by the castle, its door out to the ring.
+            var at = new Vector3((float)(s.X + ux * 17), 0, (float)(s.Z + uz * 17));
+            hall = Buildings.Place(parent, "longhall", at with { Y = City.FloorAt(at) }, Mathf.Atan2((float)ux, (float)uz), 7100, Surface.Slate, 0.9f, inside: "council");
+            (ux, uz) = (-ux, -uz);
+        }
+        else
+            foreach (var (turn, reach) in new[] { (0.0, 8.0), (0.5, 9.0), (-0.5, 9.0), (1.0, 11.0), (-1.0, 11.0), (Math.PI, 8.0) })
+            {
+                var (dx, dz) = (ux * Math.Cos(turn) - uz * Math.Sin(turn), ux * Math.Sin(turn) + uz * Math.Cos(turn));
+                hall = Building(parent, s, "longhall", colour, ox + dx * reach, oz + dz * reach, 0, inside: "council");
+                if (hall is not null) { (ux, uz) = (dx, dz); break; }
+            }
+        if (hall is null) return null;
+        var seed = (int)hall.GetMeta("seed");
+        main.CouncilChambers[seed] = s.Id;
+        Label(parent, hall.Position + new Vector3(0, Buildings.HeightOf(hall) + 2, 0), $"The Council of {s.Name}", 0.02f);
+        // The clerk at its door.
+        var doorAt = hall.Position + hall.Basis.Z * 6.5f;
+        return (doorAt.X, doorAt.Z);
+    }
+
+    /// <summary>A refuge as far as it's grown (see Settling): a tavern, a market, a council chamber, a palisade and more homes.</summary>
+    void Refuge(Node3D parent, Settlement s, string colour, Built b)
+    {
+        var stage = main.Economy.GrownOf(s.Id);
+        if (stage >= Settling.Tavern) Building(parent, s, "tavern", colour, s.Radius * 0.85, -s.Radius * 0.2, 0, name: $"The {s.Name.Replace(" Refuge", "")} Rest");
+        if (stage >= Settling.Market) TownShop(b, parent, s, TownTrade.General, colour, -0.6, s.Radius * 0.9);
+        if (stage >= Settling.Walls)
+        {
+            Palisade(parent, s);
+            Building(parent, s, "cottage", colour, -s.Radius * 0.8, s.Radius * 0.6, 0);
+            Building(parent, s, "house", colour, s.Radius * 0.3, s.Radius * 0.95, 0);
+        }
     }
 
     /// <summary>The smith or general store a town keeps: the building (or the one a place of its own already made), its sign, and someone minding it.</summary>

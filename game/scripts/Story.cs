@@ -78,6 +78,11 @@ public partial class Main
     /// </summary>
     (string, Action)? TavernHome()
     {
+        // A colony's tavern: the colony as home.
+        var here = _indoors is not null ? _outside : _player.GlobalPosition;
+        if (_city.Halls.Values.FirstOrDefault(h => h.Kind == HallKind.Colony && new Vector2((float)h.X - here.X, (float)h.Z - here.Z).Length() < 45) is { } colony)
+            return _story.Home?.Id == Halls.ColonyTown(colony.Owner) ? null
+                : ($"Make {colony.Name} my hometown", () => { _story.Home = new Hometown(Halls.ColonyTown(colony.Owner), colony.Name, colony.X, colony.Z); Settled(colony.Name); });
         if (TownHere(_player.GlobalPosition) is not { } id) return null;
         if (id == ReputationBook.Capital)
             return _story.Home is null ? null : ("Make Tristinwold my hometown", () => { _story.Home = null; Settled("Tristinwold"); });

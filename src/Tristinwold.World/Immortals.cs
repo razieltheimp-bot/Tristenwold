@@ -51,7 +51,8 @@ public sealed class ImmortalSaga
     public Hometown? Home { get; set; }
 
     /// <summary>Somewhere a hero can make a home: a place with people in it, and not one that would rather they were dead.</summary>
-    public static bool Homely(Settlement s) => !s.Hostile && s.Kind is SettlementKind.City or SettlementKind.Town or SettlementKind.Hamlet or SettlementKind.Inn;
+    public static bool Homely(Settlement s) => !s.Hostile && (s.Kind is SettlementKind.City or SettlementKind.Town or SettlementKind.Hamlet or SettlementKind.Inn
+        || s.Kind == SettlementKind.AshbornCamp && TownCouncils.Grown?.Invoke(s.Id) >= TownCouncils.GrownTavern); // a refuge, once it has its tavern
 
     /// <summary>The ring is tied to a new home, if it's somewhere that can be one. True if that changed anything.</summary>
     public bool Settle(Settlement s)

@@ -103,6 +103,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         "store" => (9, 10, 3.4f),
         "warehouse" => (10, 12, 4.4f),
         "storehouse" => (9, 11, 4),
+        "council" => (12, 15, 5),
         "trench" => (36, 110, 14),
         "depths" => (64, 150, 26),
         _ => (8, 9, 3),
@@ -111,7 +112,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
     public static string Called(string kind) => kind switch
     {
         "longhall" => "long hall", "smithy" => "smithy", "barn" => "barn", "warehouse" => "warehouse", "storehouse" => "old storehouse", "church" => "church", "keep" => "keep", "tower" => "tower",
-        "tavern" => "tavern", "cottage" => "cottage", "store" => "shop", "hollow" => "living hollow", "mineshaft" => "mine", "crypt" => "Drowned Chapel's crypt", "trench" => "Deep Trenches", "depths" => "Dark Depths", _ => "house",
+        "tavern" => "tavern", "cottage" => "cottage", "store" => "shop", "hollow" => "living hollow", "mineshaft" => "mine", "crypt" => "Drowned Chapel's crypt", "trench" => "Deep Trenches", "depths" => "Dark Depths", "council" => "council chamber", _ => "house",
     };
 
     public Vector3 WayIn => Stage + new Vector3(0, 0.6f, Plan(kind).Deep / 2 - 1.6f);
@@ -124,7 +125,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.BelowName = p => p.Y > Threshold ? $"Inside the {Called(kind)}" : null;
         City.ShutOutSky(new Color("#b0a090"), 0.3f, 0.002f);
         var shaft = kind is "mineshaft" or "crypt" or "trench" or "depths";
-        var stone = kind is "church" or "keep" or "tower" or "smithy" or "warehouse" or "storehouse";
+        var stone = kind is "church" or "keep" or "tower" or "smithy" or "warehouse" or "storehouse" or "council";
         Slab(Vector3.Down * 0.1f, new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : stone ? Surface.Stone : Surface.Planks);
         Slab(Vector3.Up * (high + 0.1f), new Vector3(wide, 0.2f, deep), shaft ? Surface.DarkStone : Surface.Timber);
         var walls = shaft ? Surface.DarkStone : stone ? Surface.Stone : kind == "hollow" ? Surface.Timber : Surface.Plaster;
@@ -151,6 +152,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         if (kind == "mineshaft") main.LeftTheShaft();
         if (kind == "crypt") main.LeftTheCrypt();
         if (kind is "trench" or "depths") main.LeftTheDeep();
+        if (kind == "council") main.LeftTheCouncil();
         main.LeftTheShop();
     }
 
@@ -208,6 +210,20 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         StashIn(wide, deep);
         switch (kind)
         {
+            case "council":
+                // The long table, its benches, the town's banner behind the head of it, and the council at it.
+                Slab(new Vector3(0, 0.45f, -0.6f), new Vector3(1.6f, 0.9f, 8.2f), Surface.Timber);
+                foreach (var side in new[] { -1f, 1f }) Part(new Vector3(side * 1.35f, 0.25f, -0.6f), new Vector3(0.4f, 0.5f, 8), Surface.Timber);
+                Slab(new Vector3(0, 0.55f, -5.6f), new Vector3(1.4f, 1.1f, 0.6f), Surface.Stone); // the chair at the head of it
+                AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(2.6f, 3.2f, 0.05f) }, Position = Stage + new Vector3(0, 2.6f, -deep / 2 + 0.15f),
+                    MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#8a2a2a"), Roughness = 0.9f } });
+                Hearth(deep);
+                Sign(new Vector3(0, 3.6f, -deep / 2 + 0.4f), "The Council");
+                Put("dungeon/shelf_small.glb", wide / 2 - 0.5f, 2, 0.8f, -1.57f);
+                Put("dungeon/chest.glb", -wide / 2 + 0.8f, 3, 0.7f, 1.57f);
+                Light(new Vector3(0, high - 0.8f, -1), 1.4f, 14);
+                main.PeopleTheCouncil(this, seed);
+                break;
             case "mineshaft":
                 // The way in, with the lift's frame and a cart; the drifts beyond (see CutWarren); the face at the far end, where the trouble is; and a side room or two.
                 Put("ph:crate.glb", -2.2f, deep / 2 - 3, 1, 0.4f);

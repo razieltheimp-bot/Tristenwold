@@ -762,6 +762,7 @@ public partial class Main
             foreach (var o in KeeperTalk(person)) yield return o;
             yield break;
         }
+        foreach (var o in GrowthTalk(person)) yield return o; // a refuge's people, about building it up
         if (npc.Id.StartsWith("syndicate:"))
         {
             foreach (var o in SyndicateTalk(person)) yield return o;

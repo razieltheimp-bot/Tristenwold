@@ -8,7 +8,11 @@ public static class TownCouncils
     public const string ClerkId = "/council_clerk";
 
     /// <summary>Whether a place is big enough to have one: a village, a town or a city.</summary>
-    public static bool Keeps(Settlement s) => s.Kind is SettlementKind.City or SettlementKind.Town or SettlementKind.Hamlet && !s.Hostile;
+    public static bool Keeps(Settlement s) => !s.Hostile && (s.Kind is SettlementKind.City or SettlementKind.Town or SettlementKind.Hamlet || s.Kind == SettlementKind.AshbornCamp && Grown?.Invoke(s.Id) >= GrownChamber);
+
+    /// <summary>How far a refuge has grown (the game's city book fills this in), and the step at which it has a council chamber and a council.</summary>
+    public static Func<string, int>? Grown { get; set; }
+    public const int GrownChamber = 3, GrownTavern = 1;
 
     public static bool IsMember(string id) => id.Contains("/council");
 

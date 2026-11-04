@@ -73,6 +73,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--opensea-only")) { await OpenSeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pupils-only")) { await PupilTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--refuge-only")) { await GrowthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--shadows-only")) { await ShadowsTest(); Finish(0); return; }
@@ -2787,6 +2788,49 @@ public partial class SelfTest(Main main) : Node
         await KeeperTest();
     }
 
+    /// <summary>A refuge built up a step at a time: a tavern to make it home, a market, a council chamber with its council inside, walls; and every town's council in its chamber.</summary>
+    async Task GrowthTest()
+    {
+        var (p, hud, city) = (main.PlayerNode, main.HudNode, main.Economy);
+        var refuge = main.World.SettlementsNear(0, 0, 6000).Where(s => s.Kind == SettlementKind.AshbornCamp && !s.Hostile).MinBy(s => s.X * s.X + s.Z * s.Z);
+        if (refuge is null) { Check(false, "a refuge to build up"); return; }
+        await Teleport(new Vector3((float)refuge.X + 6, 0, (float)refuge.Z + 6));
+        await Frames(60);
+        Person Someone() => main.PlacesNode.People.First(x => x.Npc.HomeId == refuge.Id && !TownCouncils.IsMember(x.Npc.Id));
+        Node3D? Built(string kind) => GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>()
+            .FirstOrDefault(n => IsInstanceValid(n) && n.HasMeta("kind") && (string)n.GetMeta("kind") == kind && refuge.DistanceTo(n.GlobalPosition.X, n.GlobalPosition.Z) < refuge.Radius + 25);
+        main.Talk(Someone());
+        Check(hud.Choose("What does") && hud.TalkText.Contains("a tavern"), $"{refuge.Name} has tents and a fire, and wants a tavern first");
+        hud.EndTalk();
+        for (var stage = 1; stage <= Settling.Walls; stage++)
+        {
+            var step = Settling.Next(city.GrownOf(refuge.Id))!;
+            foreach (var (id, n) in step.Needs) p.Pack.Add(id, n);
+            p.Crowns += step.Crowns;
+            main.Talk(Someone());
+            Check(hud.Choose("I've brought what") && city.GrownOf(refuge.Id) == stage, $"bring what {step.Name} takes, and {refuge.Name} raises it");
+            await Frames(90);
+            if (stage == Settling.Tavern)
+                Check(Built("tavern") is not null && ImmortalSaga.Homely(refuge), "a tavern stands, and the refuge can be made a home at its bar");
+            if (stage == Settling.Chamber)
+            {
+                Check(TownCouncils.Keeps(refuge) && main.CouncilChambers.ContainsValue(refuge.Id), "with its chamber it has a council");
+                var seed = main.CouncilChambers.First(kv => kv.Value == refuge.Id).Key;
+                main.GoInsideForTest("council", seed, p.GlobalPosition);
+                await Frames(30);
+                Check(main.CouncilFolkForTest.Count >= 3, $"and its councillors sit at the table inside ({main.CouncilFolkForTest.Count})");
+                main.GoOutsideForTest();
+                await Frames(30);
+            }
+        }
+        Check(Settling.Next(city.GrownOf(refuge.Id)) is null, "walls and more homes, and it's a town");
+        // Every town's council has its chamber.
+        var town = main.World.SettlementsNear(0, 0, 3000).Where(s => s.Kind is SettlementKind.Town or SettlementKind.City && s.Id is not ("city:tristinwold" or "city:hollowheart")).MinBy(s => s.X * s.X + s.Z * s.Z)!;
+        await Teleport(new Vector3((float)town.X + 30, 0, (float)town.Z + 30));
+        await Frames(60);
+        Check(main.CouncilChambers.ContainsValue(town.Id), $"{town.Name}'s council meets in its own chamber");
+    }
+
     /// <summary>An apprentice learns their hero's class: an aeronaut's is a tinker with a little robot of their own, until they're trained another way.</summary>
     async Task PupilTest()
     {
@@ -4240,7 +4284,7 @@ public partial class SelfTest(Main main) : Node
         hud.EndTalk();
         main.LeaveTavernForTest();
         await Frames(10);
-        Check(new Vector2(main.WakeSpotForTest().X - (float)greywater.X, main.WakeSpotForTest().Z - (float)greywater.Z).Length() < 10, "and that's where the ring brings you now");
+        Check(new Vector2(main.WakeSpotForTest().X - (float)greywater.X, main.WakeSpotForTest().Z - (float)greywater.Z).Length() < greywater.Radius, $"and that's where the ring brings you now, on the open road inside its walls (wakes {main.WakeSpotForTest()}, Greywater at {greywater.X:0},{greywater.Z:0}, a {greywater.Kind} of {greywater.Radius:0} m)");
         Check(hero.Discipline == "EtherAeronaut", "still an aeronaut");
         var sea = main.Sea;
         sea.Rank = SeaRank.Deckhand;

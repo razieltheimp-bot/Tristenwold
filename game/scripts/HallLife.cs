@@ -123,12 +123,23 @@ public partial class Main
         var rng = new Tristinwold.Deviant.Rng((ulong)WorldGen.StableHash(h.Key) ^ 0x4A11);
         var gate = Mathf.Atan2(-centre.Z, -centre.X); // facing home
         var roof = rng.Chance(0.5) ? Surface.Slate : Surface.Shingle;
-        var count = plan.Buildings.Count;
+        // A colony has its tavern from the start, and what it's grown into since (see Settling).
+        var kinds = plan.Buildings.ToList();
+        if (h.Kind == HallKind.Colony)
+        {
+            var grown = _city.GrownOf(Halls.ColonyTown(h.Owner));
+            kinds.Insert(0, "tavern");
+            if (grown >= Settling.Market) kinds.Add("store");
+            if (grown >= Settling.Chamber) kinds.Add("longhall");
+            if (grown >= Settling.Walls) kinds.AddRange(["house", "house"]);
+        }
+        var count = kinds.Count;
+        var ring = HallRing * (count > 6 ? 1 + (count - 6) * 0.12f : 1);
         for (var i = 0; i < count; i++)
         {
             var a = gate + (i + 1f) / (count + 1) * Mathf.Tau;
-            var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * HallRing;
-            Buildings.Place(root, plan.Buildings[i], at with { Y = City.FloorAt(at) }, Mathf.Atan2(centre.X - at.X, centre.Z - at.Z), i + 7, roof);
+            var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * ring;
+            Buildings.Place(root, kinds[i], at with { Y = City.FloorAt(at) }, Mathf.Atan2(centre.X - at.X, centre.Z - at.Z), i + 7, roof, inside: kinds[i] == "longhall" && h.Kind == HallKind.Colony ? "council" : null);
         }
         var panels = (int)(Mathf.Tau * HallYard / FencePanel);
         for (var i = 0; i < panels; i++)
@@ -170,6 +181,12 @@ public partial class Main
         if (mine)
         {
             yield return ("How do we stand?", () => Say(person, HallReport(h)));
+            if (h.Kind == HallKind.Colony)
+            {
+                foreach (var o in GrowthOptions(person, Halls.ColonyTown(h.Owner), h.Name)) yield return o; // building the colony up
+                if (_story.Home?.Id != Halls.ColonyTown(h.Owner))
+                    yield return ($"Make {h.Name} my hometown.", () => { _story.Home = new Hometown(Halls.ColonyTown(h.Owner), h.Name, h.X, h.Z); Settled(h.Name, bar: false); });
+            }
             if (h.Members < Halls.MostMembers(_player.Hero.Level))
                 yield return ($"Take on another {plan.Member} ({plan.RecruitCost} crowns)", () => Recruit(person, h));
             if (h.Till > 0) yield return ($"Empty the till ({h.Till} crowns)", () =>

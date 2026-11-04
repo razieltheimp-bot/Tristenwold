@@ -1063,6 +1063,7 @@ public partial class Main : Node3D
         if (scripted && Godot.FileAccess.FileExists(_savePath)) DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(_savePath));
         if (Choice.Account is not null) _savePath = $"user://saves/{string.Concat(Choice.Account.Where(char.IsLetterOrDigit))}-{company}.json";
         _city = CityEconomy.Start(_world.Seed);
+        TownCouncils.Grown = id => _city.GrownOf(id); // a refuge that's built its chamber has a council (and a tavern makes it a home)
         _trade.Roads = _city.Roads;
         _pursuits = new PursuitBook();
         var stored = Choice.Save ?? (Choice.Account is null && Godot.FileAccess.FileExists(_savePath) ? Godot.FileAccess.GetFileAsString(_savePath) : null);

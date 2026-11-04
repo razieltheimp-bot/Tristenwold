@@ -144,6 +144,8 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction DrifterFell(string id, string by) => new("drifter_fell", id, Contract: by);
     /// <summary>A piece of a hero's work done in a place, that the place shows for (see Handiwork).</summary>
     public static CityAction Worked(string town, HandiKind kind, int n = 1) => new("worked", kind.ToString(), N: n, Town: town);
+    /// <summary>A refuge or colony builds its next step (see Settling).</summary>
+    public static CityAction Grew(string town, int stage) => new("grew", null, N: stage, Town: town);
     /// <summary>A deviant at the head of a town's table struck down (see Warlord).</summary>
     public static CityAction WarlordFell(string town, string by) => new("warlord_fell", by, Town: town);
 }
@@ -748,6 +750,7 @@ public sealed partial class CityEconomy
             case "council_fall" when a.Town is not null && a.Item is { Length: > 0 } member: return MemberFalls(a.Town, member);
             case "warlord_fell" when a.Town is not null: return WarlordFell(a.Town, a.Item);
             case "worked" when a.Town is not null && Enum.TryParse<HandiKind>(a.Item, out var work): return Worked(a.Town, work, a.N);
+            case "grew" when a.Town is not null: return Grow(a.Town, a.N);
             case "council_purse" when a.Town is not null && CouncilOf(a.Town).Ruler == a.Item: CouncilOf(a.Town).Purse = 0; return true;
             case "town_raid" when a.Town is not null && a.Item is { Length: > 0 } raiders && Enum.IsDefined((RaidAim)a.N):
                 if (Raid(raiders, a.Town, (RaidAim)a.N, new Rng(Seed ^ (ulong)Day ^ (ulong)Roads.Wagons * 7919), a.Contract is { Length: <= 60 } ? a.Contract : null) is not { } raided) return false;
