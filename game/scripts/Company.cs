@@ -145,7 +145,7 @@ public partial class Main
     Enemy BringCompanion(Bond bond, Vector3? at = null)
     {
         var spot = at ?? _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 3 + new Vector3((float)GD.RandRange(-2, 2), 0, 0);
-        var e = Enemy.Create(Bestiary.Get(bond.KindId), spot with { Y = City.FloorAt(spot) + 0.5f }, bond: bond, look: bond.Machine ? $"golem:{GolemName(_player.Class.Id)}" : null);
+        var e = Enemy.Create(Bestiary.Get(bond.KindId), spot with { Y = City.FloorAt(spot) + 0.5f }, bond: bond, look: bond.Machine ? $"golem:{GolemName(_player.Hero.Artificer ?? _player.Class.Id)}" : null);
         e.Leader = _player;
         AddEnemy(e);
         _companions.Add(e);
@@ -460,7 +460,7 @@ public partial class Main
             body.Stats.TakeHit(damage, kind, attack, crit, from.Stats);
             if (body.Stats.Dead) _player.Unpossess();
         };
-        _player.Possess(() => { var shell = Clockwork.For(golem.Name); shell.Scale = Vector3.One * (float)golem.Size; return shell; }, size, seconds, () =>
+        _player.Possess(() => { var shell = Clockwork.For(GolemName(_player.Hero.Artificer ?? _player.Class.Id)); shell.Scale = Vector3.One * (float)golem.Size; return shell; }, size, seconds, () => // its maker's design, whatever it's been named
         {
             _player.Hull = null;
             _worn = null;
@@ -1043,18 +1043,21 @@ public partial class Main
     public void ShowParty()
     {
         if (_bonds.Count == 0) { _hud.Talk("Your company", "No one follows you yet. Find a youngling alone in the wilds, or a youth in a town who dreams of adventure.", ("Close", _hud.EndTalk)); return; }
-        var lines = _bonds.Select(b =>
+        string Line(Bond b)
         {
             var body = BodyOf(b);
             var kind = Bestiary.Get(b.KindId).Name.ToLowerInvariant();
             var state = !b.Following ? (b.Keeps is { } keeps ? $"keeping shop {ShopCalled(keeps)}" : b.Hitched ? "hitched to your wagon" : _pursuits.House.IsHome ? "at home" : "waiting at the Gallows Perch") : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
             return $"{b.Name}: {b.Stage} {(b.Role is BondRole.Pet or BondRole.Dragon ? kind : "")}, level {b.Level} ({b.Xp}/{Bond.XpToNext(b.Level)} xp), {state}{(b.Eats ? $", {b.Fed:0}% fed" : "")}. Knows: {(b.Skills.Any() ? string.Join(", ", b.Skills.Select(s => s.Name)) : "nothing yet")}.";
-        });
-        var options = new List<(string, Action)>();
-        foreach (var b in _bonds.Where(b => b.Following && b.Eats)) options.Add(($"Feed {b.Name} (meat: {_player.Meat}, fish: {FishInPack})", () => { Feed(b); ShowParty(); }));
+        }
+        // Each of the company, and right under them what can be done for them.
+        var groups = new List<(string Line, List<(string Label, Action Then)> Options)>();
         foreach (var b in _bonds)
         {
             var bond = b;
+            var options = new List<(string Label, Action Then)>();
+            groups.Add((Line(bond), options));
+            if (bond.Following && bond.Eats) options.Add(($"Feed {bond.Name} (meat: {_player.Meat}, fish: {FishInPack})", () => { Feed(bond); ShowParty(); }));
             options.Add(($"{bond.Name}'s gear{(bond.Gear.Count > 0 ? $" ({bond.Gear.Count} worn)" : "")}", () => GearMenu(bond))); // weapons and armour from your pack
             if (!PartyRules.IsApprentice(bond)) options.Add(($"Rename {bond.Name}", () => AskName(bond))); // a person comes with a name of their own
             else options.Add(($"Train {bond.Name} another way", () => RetrainMenu(bond))); // but a different calling, if the hero likes
@@ -1071,8 +1074,7 @@ public partial class Main
             if (bond.Following) options.Add(($"Send {bond.Name} home", () => { bond.Following = false; var body = BodyOf(bond); if (body is not null) { _companions.Remove(body); body.QueueFree(); } StableSpareMounts(); Save(); ShowParty(); }));
             else if (MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
         }
-        options.Add(("Close", _hud.EndTalk));
-        _hud.Talk("Your company", string.Join("\n", lines), [.. options]);
+        _hud.TalkGroups("Your company", $"{_bonds.Count(b => b.Following)} with you, {_bonds.Count(b => !b.Following)} elsewhere. Meat {_player.Meat}, fish {FishInPack}.", groups, ("Close", _hud.EndTalk));
     }
 
     /// <summary>A name for a pet, a mount or a machine, typed in by the hero.</summary>

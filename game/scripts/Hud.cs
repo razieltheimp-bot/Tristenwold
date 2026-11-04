@@ -183,6 +183,36 @@ public partial class Hud : CanvasLayer
         UpdateMouse();
     }
 
+    /// <summary>
+    /// A conversation about several at once (the company): each one's line, and right under it a row of what can be
+    /// done for that one, wrapping as it needs to; then the closing replies. The window takes the screen's height and
+    /// the whole list scrolls.
+    /// </summary>
+    public void TalkGroups(string who, string text, IEnumerable<(string Line, List<(string Label, Action Then)> Options)> groups, params (string Label, Action Then)[] after)
+    {
+        Talk(who, text, after);
+        TallTalk();
+        var at = 0;
+        var place = 0;
+        foreach (var (line, options) in groups)
+        {
+            var block = new VBoxContainer();
+            block.AddChild(new Label { Text = line, AutowrapMode = TextServer.AutowrapMode.Word, Modulate = new Color("#e8dcc4") });
+            var row = new HFlowContainer();
+            foreach (var (label, then) in options)
+            {
+                var b = new Button { Text = label };
+                b.Pressed += then;
+                row.AddChild(b);
+                _options.Insert(at++, (label, then));
+            }
+            block.AddChild(row);
+            block.AddChild(new HSeparator());
+            _talkOptions.AddChild(block);
+            _talkOptions.MoveChild(block, place++); // in order, above the closing replies
+        }
+    }
+
     /// <summary>Puts a control (the volume sliders) among the replies, above them.</summary>
     public void AddToTalk(Control c)
     {

@@ -2802,8 +2802,18 @@ public partial class SelfTest(Main main) : Node
         main.ForestLog.Shapes = ["wolf", "bear"];
         await Frames(240);
         Check(main.Bonds.Any(b => b.Role == BondRole.Golem), "a shapeshifter now, the aeronaut's golem still walks with them");
+        Check(main.CompanionBodies.FirstOrDefault(e => e.Bond?.Role == BondRole.Golem)?.Figure is Clockwork { Design: "Ballast" }, "and it's still Ballast, the aeronaut's hull, not a saboteur's scrap");
         Check(QuickBar.Moves(p.Hero).Any(a => a.Id == "harpoon") && p.Limit.Id == "half_form", $"the harpoon still to hand, and the half-form their limit break ({p.Limit.Name})");
         p.Join("EtherAeronaut");
+        // Renamed, it's still the aeronaut's hull you climb into.
+        var golem = main.Bonds.First(b => b.Role == BondRole.Golem);
+        main.Rename(golem, "Old Faithful");
+        await Until(() => p.Cooldown("merge") <= 0, 4);
+        p.UseMove(Classes.Move("merge")!);
+        await Frames(10);
+        Check(p.Possessing && p.Figure is Clockwork { Design: "Ballast" }, $"renamed {golem.Name}, merging still makes you the aeronaut's hull ({(p.Figure as Clockwork)?.Design})");
+        p.Unpossess();
+        await Frames(10);
         p.Hero.Ultimate = "Shapeshifter";
         p.Stats.GainLimit(100);
         Check(p.Limit.Id == "half_form" && p.LimitBreak() && p.Possessing, "an aeronaut again, they can call the half-form as their one limit break");
@@ -2854,6 +2864,10 @@ public partial class SelfTest(Main main) : Node
         foreach (var c in p.Companions().ToList()) c.QueueFree();
         await Teleport(new Vector3(-150, 0, 40));
         foreach (var kind in new[] { "wolf", "bear", "fox", "boar" }) main.AdoptForTest(kind);
+        // The party: each one's line, and right under it what can be done for them.
+        main.ShowParty();
+        Check(main.HudNode.Options.Count(o => o.StartsWith("Feed ")) == 4 && main.HudNode.Options.Count(o => o.StartsWith("Send ")) == 4, $"the party lists each of them with their own buttons ({main.HudNode.Options.Count()} buttons)");
+        main.HudNode.EndTalk();
         await Frames(30);
         Input.ActionPress("move_forward");
         await Frames(150);

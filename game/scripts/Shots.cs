@@ -641,6 +641,19 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.MakeCurrent();
             await Shot(name);
         }
+        if (OS.GetCmdlineUserArgs().Contains("--party"))
+        {
+            foreach (var kind in new[] { "wolf", "fox", "bear", "kipine", "boar" }) main.AdoptForTest(kind);
+            var lad = new Tristinwold.Gameplay.Bond { Id = "shot/liv", KindId = "tinker", Role = Tristinwold.Gameplay.BondRole.Apprentice, Trains = "EtherAeronaut", Name = "Liv", Level = 6, Race = "human", JoinAge = 14 };
+            main.AddBondForTest(lad);
+            main.BringForTest(lad);
+            await Frames(60);
+            main.ShowParty();
+            await Frames(20);
+            await Shot("party");
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--warrens"))
         {
             // A country mine, a trench and the Depths, from just inside the way in and from down the tunnels.
