@@ -3556,6 +3556,21 @@ public partial class SelfTest(Main main) : Node
         Input.ActionRelease("move_forward");
         Check(ship.GlobalPosition.DistanceTo(from) > 20, $"W drives her across the water ({ship.GlobalPosition.DistanceTo(from):0} m)");
         Check(main.CrewForTest.All(c => ship.OnDeck(c.GlobalPosition)), "and her crew are still on her deck, not swimming after her");
+        // Left out at sea, then traded in for another hull: the new one's at the berth, and on the map.
+        main.LeaveWheelForTest();
+        var traded = Enum.GetValues<ShipSize>().First(s => s != sea.Size);
+        main.BuyHullForTest(traded);
+        await Frames(10);
+        Check(sea.Size == traded && new Vector2((float)sea.ShipX - Main.ShipBerth.X, (float)sea.ShipZ - Main.ShipBerth.Z).Length() < 1 && main.BelongingsForTest.Any(b => b.Kind == "ship" && Math.Abs(b.X - Main.ShipBerth.X) < 1),
+            $"traded in for a {traded}, she's waiting at the berth by the middle pier, and on the map");
+        await Teleport(new Vector3(138, 0, 0));
+        await Frames(10);
+        main.BoardVesselForTest();
+        ship = main.VesselNode!;
+        ship.Rotation = new Vector3(0, -Mathf.Pi / 2, 0);
+        Input.ActionPress("move_forward");
+        await Frames(240);
+        Input.ActionRelease("move_forward");
         var heading = ship.Rotation.Y;
         Input.ActionPress("move_left");
         await Frames(60);

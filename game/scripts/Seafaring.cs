@@ -438,9 +438,27 @@ public partial class Main
         var (crowns, had) = (_player.Crowns, _sea.OwnShip);
         if (_sea.BuyHull(size, SeaBook.NameShip(_lootRng), ref crowns) is not { } paid) { Say(master, $"{_sea.HullCost(size)} crowns for a {hull.Name}. I don't build on credit."); return; }
         _player.Crowns = crowns;
+        DeliverHull();
         Sound.Ui("coin", -2);
-        Say(master, had ? $"Done. {_sea.ShipName} goes out as a {hull.Name} now, {paid} crowns on top of the old hull, with a hold for {_sea.Capacity} loads." : $"She's yours: {_sea.ShipName}, a {hull.Name} with a hold for {_sea.Capacity} loads. {paid} crowns, and every one of them worth it.");
+        Say(master, (had ? $"Done. {_sea.ShipName} goes out as a {hull.Name} now, {paid} crowns on top of the old hull, with a hold for {_sea.Capacity} loads." : $"She's yours: {_sea.ShipName}, a {hull.Name} with a hold for {_sea.Capacity} loads. {paid} crowns, and every one of them worth it.")
+            + " She's tied up at the berth by the middle pier, and she's on your map.");
         Save();
+    }
+
+    /// <summary>The yard delivers a new hull to the berth by the middle pier, wherever the old one was left.</summary>
+    void DeliverHull()
+    {
+        (_sea.ShipX, _sea.ShipZ) = (ShipBerth.X, ShipBerth.Z);
+        _vessel?.QueueFree();
+        _vessel = null;
+        TendVessel();
+        ShipShopUnderWay(false);
+    }
+
+    public void BuyHullForTest(ShipSize size)
+    {
+        var crowns = _player.Crowns + 99999;
+        if (_sea.BuyHull(size, "Test", ref crowns) is not null) DeliverHull();
     }
 
     void FitUpgrade(Person master, string id)
