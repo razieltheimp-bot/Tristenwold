@@ -812,10 +812,39 @@ public partial class Enemy : Fighter
             ResetPhysicsInterpolation();
             return Vector3.Zero;
         }
-        if (d < 3.5f + Bulk) return Vector3.Zero;
         // Underground the tunnels wind, and walking straight at the hero means walking into rock: keep up by the way they went.
         if (d > 14 && GlobalPosition.Y > Indoors.Threshold) { CatchUp(leader); return Vector3.Zero; }
-        return to.Normalized() * Math.Max(speed, d > 12 ? 9 : 5);
+        // Each to their own place behind the hero, so the company's spread out enough to see every one of them.
+        var toSlot = FollowSlot(leader) - GlobalPosition;
+        toSlot.Y = 0;
+        var gap = toSlot.Length();
+        if (gap < 0.9f || d < 2.2f + Bulk && gap < 3) return Vector3.Zero;
+        return toSlot.Normalized() * (gap > 12 ? Math.Max(speed, 9) : gap > 4 ? Math.Max(speed, 5) : Math.Max(1.5f, speed * gap / 4));
+    }
+
+    double _slotAge = 9;
+    int _slot;
+    float _rowGap = 3;
+
+    /// <summary>
+    /// Where in the company it walks: rows of three behind the hero (the middle, then left, then right), each row further
+    /// back, spaced by the biggest of them, so a golem or a dragon doesn't stand on anyone. Worked out now and then, not
+    /// every step.
+    /// </summary>
+    Vector3 FollowSlot(Player leader)
+    {
+        if ((_slotAge += GetPhysicsProcessDeltaTime()) > 0.6)
+        {
+            _slotAge = 0;
+            var mates = leader.Companions().Where(c => !c.Carried && c != leader.Mount).OrderBy(c => c.GetInstanceId()).ToList();
+            _slot = Math.Max(0, mates.IndexOf(this));
+            _rowGap = 2.4f + mates.Select(c => c.Bulk).DefaultIfEmpty(1).Max() * 1.5f;
+        }
+        var row = _slot / 3;
+        var side = (_slot % 3) switch { 0 => 0, 1 => -1, _ => 1 };
+        var behind = (leader.GlobalTransform.Basis.Z with { Y = 0 }).Normalized();
+        var across = (leader.GlobalTransform.Basis.X with { Y = 0 }).Normalized();
+        return leader.GlobalPosition + behind * (2.5f + Bulk + row * _rowGap) + across * (side * _rowGap);
     }
 
     /// <summary>Close behind the hero, wherever there's room: behind them if that's clear of rock, else at their side.</summary>

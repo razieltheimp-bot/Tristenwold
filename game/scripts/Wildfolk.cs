@@ -79,38 +79,65 @@ public static class Wildfolk
 
     // ---- the kipine -----------------------------------------------------------------------------
 
+    static readonly StandardMaterial3D Disc = new() { AlbedoColor = new Color("#e6d9c2"), Roughness = 0.85f };
+    static readonly StandardMaterial3D DiscRim = Lairfolk.Plain("#5a4232", 0.9f);
+    static readonly StandardMaterial3D Beak = new() { AlbedoColor = new Color("#c8a85a"), Roughness = 0.35f, MetallicSpecular = 0.6f };
+    static readonly StandardMaterial3D Tawny = Lairfolk.Plain("#8a6a48", 0.9f);
+    static readonly StandardMaterial3D Speckle = Lairfolk.Plain("#c8b08a", 0.9f);
+    static readonly StandardMaterial3D AntlerBase = Lairfolk.Plain("#7a6248", 0.7f);
+    static readonly StandardMaterial3D AntlerTip = Lairfolk.Plain("#e4d8bc", 0.5f);
+
+    /// <summary>
+    /// A bear's body with an owl's head on it, a stag's antlers and an owl's great wings: the facial disc in two pale
+    /// hearts edged dark round huge amber eyes, a hooked beak between them, ear tufts, branching antlers dark at the root
+    /// and pale at the points, a breast of speckled feathers, and tawny barred wings.
+    /// </summary>
     static Body? Kipine()
     {
         if (Creature.Create("bear.glb", 2.4f, coat: "bear_kipine.png") is not { } c || Graft.On(c) is not { } g) return null;
         var t = g.Tall;
         var head = g.Has("Ursidae_Head") ? "Ursidae_Head" : "Ursidae_Neck";
         var h = g.Bone(head);
-        // The owl's mask over the bear's face: a pale flat disc just behind the tip of the snout, two great
-        // moonlike eyes, a hooked beak.
-        var face = new Vector3(0, h.Y + t * 0.02f, g.Box.Position.Z + t * 0.07f);
-        g.Add(head, face, new SphereMesh { Radius = t * 0.12f, Height = t * 0.24f, RadialSegments = 16, Rings = 8 }, Mask, Basis.Identity.Scaled(new Vector3(1, 1.1f, 0.45f)));
+        var face = new Vector3(0, h.Y + t * 0.03f, g.Box.Position.Z + t * 0.075f);
+        // The facial disc: a heart round each eye, pale, edged with a dark rim, meeting over the beak.
         foreach (var side in new[] { -1f, 1f })
         {
-            var eye = face + new Vector3(side * t * 0.05f, t * 0.025f, -t * 0.045f);
-            g.Add(head, eye, new SphereMesh { Radius = t * 0.03f, Height = t * 0.06f }, Eye);
-            g.Add(head, eye + Vector3.Forward * t * 0.02f, new SphereMesh { Radius = t * 0.016f, Height = t * 0.032f }, Pupil);
-            // Antlers: a beam from the crown sweeping up, out and back, tines off its front.
-            var root = new Vector3(side * t * 0.07f, h.Y + t * 0.13f, face.Z + t * 0.12f);
-            var tip = Curve(g, head, root, new Vector3(side * 0.45f, 1, 0.2f), new Vector3(side * 0.7f, -0.3f, 0.8f), t * 0.55f, t * 0.026f, 6, _ => Antler);
+            var cheek = face + new Vector3(side * t * 0.058f, 0, t * 0.01f);
+            g.Add(head, cheek + Vector3.Back * t * 0.006f, new SphereMesh { Radius = t * 0.078f, Height = t * 0.156f, RadialSegments = 18, Rings = 8 }, DiscRim,
+                new Basis(Vector3.Forward, side * 0.25f).Scaled(new Vector3(0.95f, 1.15f, 0.3f)));
+            g.Add(head, cheek, new SphereMesh { Radius = t * 0.07f, Height = t * 0.14f, RadialSegments = 18, Rings = 8 }, Disc,
+                new Basis(Vector3.Forward, side * 0.25f).Scaled(new Vector3(0.9f, 1.1f, 0.32f)));
+            // Great amber eyes, set forward in the disc, black at the middle.
+            var eye = cheek + new Vector3(side * t * 0.004f, t * 0.01f, -t * 0.024f);
+            g.Add(head, eye, new SphereMesh { Radius = t * 0.036f, Height = t * 0.072f, RadialSegments = 16, Rings = 8 }, Eye);
+            g.Add(head, eye + Vector3.Forward * t * 0.022f, new SphereMesh { Radius = t * 0.02f, Height = t * 0.04f }, Pupil);
+            // Ear tufts over the brow.
+            g.Spike(head, face + new Vector3(side * t * 0.085f, t * 0.085f, t * 0.03f), new Vector3(side * 0.35f, 1, 0.25f), t * 0.09f, t * 0.022f, Tawny, 4);
+            // Antlers from behind the tufts: a thick beam sweeping up, out and back, three tines forward off it, darker at the root.
+            var root = new Vector3(side * t * 0.065f, h.Y + t * 0.12f, face.Z + t * 0.13f);
+            var tip = Curve(g, head, root, new Vector3(side * 0.5f, 1, 0.25f), new Vector3(side * 0.6f, -0.35f, 0.75f), t * 0.6f, t * 0.036f, 7, i => i < 3 ? AntlerBase : AntlerTip);
             for (var k = 1; k <= 3; k++)
-                Curve(g, head, root.Lerp(tip, k / 4f), new Vector3(side * 0.15f, 1, -0.4f), new Vector3(0, 0.2f, 0.4f), t * (0.2f - k * 0.03f), t * 0.013f, 3, _ => Antler);
+                Curve(g, head, root.Lerp(tip, k / 4.2f), new Vector3(side * 0.2f, 1, -0.45f), new Vector3(side * 0.1f, 0.25f, 0.35f), t * (0.24f - k * 0.035f), t * 0.017f, 4, _ => AntlerTip);
         }
-        g.Spike(head, face + new Vector3(0, -t * 0.035f, -t * 0.05f), new Vector3(0, -0.7f, -1), t * 0.06f, t * 0.018f, Claw, 5);
-        // A ruff of feathers round the mask.
-        for (var k = 0; k < 10; k++)
+        // The hooked beak, down between the eyes.
+        Curve(g, head, face + new Vector3(0, -t * 0.005f, -t * 0.03f), new Vector3(0, -0.35f, -1), new Vector3(0, -1.6f, 0.6f), t * 0.075f, t * 0.022f, 4, _ => Beak);
+        // A ruff where the owl's head meets the bear: overlapping feathers all round the disc.
+        for (var k = 0; k < 14; k++)
         {
-            var a = k * Mathf.Tau / 10;
-            g.Add(head, face + new Vector3(Mathf.Cos(a) * t * 0.13f, Mathf.Sin(a) * t * 0.14f, t * 0.04f), new SphereMesh { Radius = t * 0.05f, Height = t * 0.05f },
-                Lairfolk.Plain("#4a3c34", 0.9f), new Basis(Vector3.Forward, a).Scaled(new Vector3(1.4f, 0.6f, 0.7f)));
+            var a = k * Mathf.Tau / 14;
+            g.Add(head, face + new Vector3(Mathf.Cos(a) * t * 0.14f, Mathf.Sin(a) * t * 0.13f, t * 0.05f), new SphereMesh { Radius = t * 0.045f, Height = t * 0.045f },
+                k % 2 == 0 ? Tawny : DiscRim, new Basis(Vector3.Forward, a).Scaled(new Vector3(1.5f, 0.55f, 0.6f)));
         }
-        // Great leathery wings, smoke-grey, from its shoulders.
+        // A breast of speckled feathers down its chest, in overlapping rows.
+        var chest = Highest(g, "Ursidae_Spine_3", "Ursidae_Spine_2", "Ursidae_Neck");
+        var breast = g.Bone(chest);
+        for (var row = 0; row < 4; row++)
+            for (var k = -2; k <= 2; k++)
+                g.Add(chest, breast + new Vector3(k * t * 0.06f + (row % 2) * t * 0.03f, -t * (0.02f + row * 0.06f), face.Z - breast.Z > 0 ? t * 0.1f : -t * 0.12f),
+                    new SphereMesh { Radius = t * 0.04f, Height = t * 0.03f }, (row + k) % 2 == 0 ? Speckle : Tawny, Basis.Identity.Scaled(new Vector3(1.3f, 0.7f, 0.5f)));
+        // An owl's great wings from its shoulders, tawny and barred dark.
         var shoulders = Highest(g, "Ursidae_Spine_3", "Ursidae_Spine_2");
-        FlapWings.Grow(g, shoulders, g.Bone(shoulders) + Vector3.Up * t * 0.14f, t * 0.12f, t * 0.85f, feathered: false, new Color("#7a726c"), new Color("#2a2420"));
+        FlapWings.Grow(g, shoulders, g.Bone(shoulders) + Vector3.Up * t * 0.14f, t * 0.12f, t * 0.9f, feathered: true, new Color("#8a6a48"), new Color("#4a3628"), bars: new Color("#4a3426"));
         return c;
     }
 
@@ -205,7 +232,7 @@ public partial class FlapWings : Node3D
     /// <summary>Beating hard to fly (a kipine's dive, a winged ape's leap).</summary>
     public bool Flying { get; set; }
 
-    public static FlapWings Grow(Graft g, string bone, Vector3 between, float apart, float span, bool feathered, Color skin, Color bones, float beat = 1.2f)
+    public static FlapWings Grow(Graft g, string bone, Vector3 between, float apart, float span, bool feathered, Color skin, Color bones, float beat = 1.2f, Color? bars = null)
     {
         var w = new FlapWings { _rate = beat };
         var holder = g.Hold(bone, between);
@@ -222,7 +249,7 @@ public partial class FlapWings : Node3D
             w.AddChild(pivot);
             var wing = new Node3D { Scale = new Vector3(side, 1, 1) }; // the left wing is the right one mirrored
             pivot.AddChild(wing);
-            if (feathered) Feathers(wing, span, membrane, bone3);
+            if (feathered) Feathers(wing, span, membrane, bone3, bars is { } dark ? new StandardMaterial3D { AlbedoColor = dark, Roughness = 0.8f, CullMode = BaseMaterial3D.CullModeEnum.Disabled } : null);
             else Membrane(wing, span, membrane, bone3);
             w._wings.Add((pivot, side));
         }
@@ -250,7 +277,7 @@ public partial class FlapWings : Node3D
     }
 
     /// <summary>A bird's wing: the arm, and long feathers fanned back from it, longest at the tip.</summary>
-    static void Feathers(Node3D wing, float s, Material feather, Material bone)
+    static void Feathers(Node3D wing, float s, Material feather, Material bone, Material? bar = null)
     {
         Rod(wing, Vector3.Zero, new Vector3(0.55f, 0.15f, 0) * s, s * 0.04f, bone);
         // Flight feathers, each a long flat taper, overlapping; then a row of short coverts over their roots.
@@ -263,7 +290,7 @@ public partial class FlapWings : Node3D
                 var length = s * (0.3f + f * 0.5f) * reach;
                 var dir = new Vector3(f * 0.75f, -0.3f + f * 0.15f, 1 - f * 0.5f).Normalized();
                 var basis = Basis.LookingAt(dir, Vector3.Up) * Basis.FromScale(new Vector3(s * 0.085f * scale, s * 0.012f, length)); // broad across, thin through, long back: each its own way
-                wing.AddChild(new MeshInstance3D { Mesh = quill, MaterialOverride = feather, Transform = new Transform3D(basis, root + dir * length * 0.45f) });
+                wing.AddChild(new MeshInstance3D { Mesh = quill, MaterialOverride = bar is not null && i % 3 == 1 ? bar : feather, Transform = new Transform3D(basis, root + dir * length * 0.45f) }); // every third feather dark, for an owl's bars
             }
     }
 

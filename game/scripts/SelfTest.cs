@@ -74,6 +74,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pupils-only")) { await PupilTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--refuge-only")) { await GrowthTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--spread-only")) { await SpreadTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--shadows-only")) { await ShadowsTest(); Finish(0); return; }
@@ -2786,6 +2787,24 @@ public partial class SelfTest(Main main) : Node
         await HandiworkTest();
         await PanicTest();
         await KeeperTest();
+    }
+
+    /// <summary>The company spread out behind the hero, each where you can see them, not stood on one another.</summary>
+    async Task SpreadTest()
+    {
+        var p = main.PlayerNode;
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        await Teleport(new Vector3(-150, 0, 40));
+        foreach (var kind in new[] { "wolf", "bear", "fox", "boar" }) main.AdoptForTest(kind);
+        await Frames(30);
+        Input.ActionPress("move_forward");
+        await Frames(150);
+        Input.ActionRelease("move_forward");
+        await Frames(240);
+        var all = p.Companions().ToList();
+        var closest = all.SelectMany((a, i) => all.Skip(i + 1).Select(b => new Vector2(a.GlobalPosition.X - b.GlobalPosition.X, a.GlobalPosition.Z - b.GlobalPosition.Z).Length())).DefaultIfEmpty(99).Min();
+        Check(all.Count == 4 && closest > 1.8f, $"four companions stand apart behind you, the closest two {closest:0.0} m apart");
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
     }
 
     /// <summary>A refuge built up a step at a time: a tavern to make it home, a market, a council chamber with its council inside, walls; and every town's council in its chamber.</summary>
