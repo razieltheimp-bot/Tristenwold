@@ -146,6 +146,8 @@ public sealed class Bond
     public bool Hitched { get; set; }
     /// <summary>Keeping shop for the hero (see <see cref="Keeping"/>): at home, at the wagon or aboard the ship; null when not.</summary>
     public string? Keeps { get; set; }
+    /// <summary>The class an apprentice or squire is learning: their hero's, unless the hero has had them trained another way. Null in an older save.</summary>
+    public string? Trains { get; set; }
 
     /// <summary>A dragon too young to fly is lost for good if it falls; anything else is only knocked out.</summary>
     [JsonIgnore]
@@ -253,7 +255,43 @@ public sealed class Bond
     public bool Knows(string id) => Skills.Any(s => s.Id == id);
 
     /// <summary>What a companion learns as it grows, by what it is.</summary>
-    public static IEnumerable<BondSkill> SkillsFor(BondRole role, string kindId) => role switch
+    public static IEnumerable<BondSkill> SkillsFor(BondRole role, string kindId) => kindId switch
+    {
+        // The young who learn from a hero, by what they're learning.
+        "pupil" =>
+        [
+            new("strike", "Palm Strike", 3, "An open-handed blow that lands like a hammer.", 5, 2.5),
+            new("rally", "Inner Calm", 5, "A breath, and you heal a little in a fight.", 14, 0.1),
+            new("guard", "Iron Body", 8, "Steps in front of a foe that is hurting you.", 8, 0),
+        ],
+        "tinker" =>
+        [
+            new("strike", "Spark Shot", 3, "A crackling bolt from a brass gun.", 5, 2.5),
+            new("rally", "Patch Up", 5, "A quick fix that heals you a little in a fight.", 14, 0.1),
+            new("guard", "Decoy", 8, "A clattering little decoy that draws a foe off you.", 10, 0),
+        ],
+        "acolyte" =>
+        [
+            new("strike", "Thorn Lash", 3, "A whip of thorns at your foe.", 5, 2.5),
+            new("rally", "Green Mend", 5, "Heals you a little in a fight.", 14, 0.12),
+            new("guard", "Tangle", 8, "Roots that drag a foe off you.", 10, 0),
+        ],
+        "protege" =>
+        [
+            new("strike", "Quick Cut", 3, "A knife where it hurts.", 5, 2.5),
+            new("rally", "Bandage", 5, "Binds your wounds a little in a fight.", 14, 0.1),
+            new("guard", "Feint", 8, "Draws a foe that is hurting you onto itself.", 8, 0),
+        ],
+        "understudy" =>
+        [
+            new("strike", "Cutting Note", 3, "A note sharp enough to cut.", 5, 2.5),
+            new("rally", "Rousing Song", 5, "A song that heals you a little in a fight.", 14, 0.12),
+            new("guard", "Heckle", 8, "Draws a foe that is hurting you onto itself.", 8, 0),
+        ],
+        _ => SkillsByRole(role, kindId),
+    };
+
+    static IEnumerable<BondSkill> SkillsByRole(BondRole role, string kindId) => role switch
     {
         BondRole.Mite => [],
         BondRole.Squire =>
@@ -391,7 +429,34 @@ public static class PartyRules
 
     public static bool IsApprentice(Bond b) => b.Role is BondRole.Squire or BondRole.Apprentice;
 
-    /// <summary>A Paladin and a Wizard take on as many apprentices as they like, the way a Ranger keeps as many beasts.</summary>
+    /// <summary>
+    /// What a youth who follows a hero becomes, by the class they learn: a warrior's squire (a martial artist's pupil), a
+    /// mage's apprentice, a druid's acolyte, a rogue's protege, a bard's understudy, an artificer's tinker with a little
+    /// robot of their own. The hero's own class, unless the hero has them trained another way.
+    /// </summary>
+    public static (BondRole Role, string Kind, string Word) Follower(string classId)
+    {
+        var d = Classes.Get(classId);
+        return d.Calling switch
+        {
+            Calling.Warrior when d.Id == "MartialArtist" => (BondRole.Squire, "pupil", "pupil"),
+            Calling.Warrior => (BondRole.Squire, "squire", "squire"),
+            Calling.Mage => (BondRole.Apprentice, "apprentice", "apprentice"),
+            Calling.Druid => (BondRole.Apprentice, "acolyte", "acolyte"),
+            Calling.Bard => (BondRole.Apprentice, "understudy", "understudy"),
+            Calling.Artificer => (BondRole.Apprentice, "tinker", "apprentice"),
+            _ => (BondRole.Apprentice, "protege", "protege"),
+        };
+    }
+
+    /// <summary>Sets a youth learning a class: what they are, what they look like and what they learn, all at once. Their name and their levels stay.</summary>
+    public static void Train(Bond b, string classId)
+    {
+        var (role, kind, _) = Follower(classId);
+        (b.Trains, b.Role, b.KindId) = (Classes.Get(classId).Id, role, kind);
+    }
+
+    /// <summary>A Paladin, a Wizard and a Martial Artist take on as many apprentices as they like, the way a Ranger keeps as many beasts.</summary>
     public static bool FreeApprentices(string classId) => classId is "Paladin" or "Wizard" or "MartialArtist";
     public static bool IsMount(Bond b) => b.Role == BondRole.Dragon ? b.Rideable : b.Steed && b.Rideable;
     public static bool IsPet(Bond b) => !IsApprentice(b) && !IsMount(b) && !b.Machine;

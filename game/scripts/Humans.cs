@@ -77,7 +77,7 @@ public static class Humans
         var stage = look switch
         {
             "child" => LifeStage.Young,
-            "youth" or "squire" or "apprentice" or "protege" or "understudy" or "lantern_boy" => LifeStage.Adolescent,
+            "youth" or "squire" or "apprentice" or "protege" or "understudy" or "pupil" or "tinker" or "acolyte" or "lantern_boy" => LifeStage.Adolescent,
             "elder" or "laureate" => LifeStage.Elder,
             _ => LifeStage.Adult,
         };
@@ -230,6 +230,9 @@ public static class Humans
         ["apprentice"] = new(new("#4a5a9a"), new("#2a2a4a"), new("#3a2a20")),
         ["protege"] = new(new("#5a4a3a"), new("#2a2a2a"), new("#2a2220")),
         ["understudy"] = new(new("#d0a060"), new("#5a4a3a"), new("#3a2a20")),
+        ["pupil"] = new(new("#c8b090"), new("#5a4a3a"), new("#3a2a20"), Sleeves: false),
+        ["tinker"] = new(new("#7a4f2c"), new("#3a3028"), new("#2a2220"), Cap: new("#b08a4a")),
+        ["acolyte"] = new(new("#4a6a4a"), new("#34402c"), new("#3a2a20")),
         ["laureate"] = new(new("#f0e4c8"), new("#6a5a4a"), new("#3a2a20")),
         ["lantern_boy"] = new(new("#8a5a3a"), new("#4a3a2a"), new("#2a2220")),
         ["drowned_hand"] = new(new("#3a5a6a"), new("#2a2a3a"), new("#2a2220"), Cap: new("#2a4a5a")),

@@ -72,6 +72,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--opensea-only")) { await OpenSeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--pupils-only")) { await PupilTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--shadows-only")) { await ShadowsTest(); Finish(0); return; }
@@ -2784,6 +2785,26 @@ public partial class SelfTest(Main main) : Node
         await HandiworkTest();
         await PanicTest();
         await KeeperTest();
+    }
+
+    /// <summary>An apprentice learns their hero's class: an aeronaut's is a tinker with a little robot of their own, until they're trained another way.</summary>
+    async Task PupilTest()
+    {
+        var p = main.PlayerNode;
+        p.Join("EtherAeronaut");
+        var (role, kind, _) = PartyRules.Follower(p.Class.Id);
+        var lad = new Bond { Id = "test/wren", KindId = kind, Role = role, Trains = p.Class.Id, Name = "Wren", Level = 4, Race = "human", JoinAge = 14 };
+        main.AddBondForTest(lad);
+        var body = main.BringForTest(lad);
+        await Frames(150);
+        Check(body.Kind.Id == "tinker" && main.LittleRobotsForTest == 1, $"an aeronaut's apprentice is a tinker, with a little robot of their own ({body.Kind.Id}, {main.LittleRobotsForTest} robot)");
+        Check(lad.Skills.Any(s => s.Name == "Spark Shot"), "who shoots sparks");
+        main.RetrainForTest(lad, "MartialArtist");
+        await Frames(150);
+        var now = main.CompanionBodies.FirstOrDefault(e => e.Bond == lad);
+        Check(now?.Kind.Id == "pupil" && main.LittleRobotsForTest == 0 && lad.Skills.Any(s => s.Name == "Palm Strike") && lad.Level == 4,
+            $"trained another way, as a martial artist: a pupil now, the robot put away, the levels kept ({now?.Kind.Id})");
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
     }
 
     /// <summary>An apprentice set to keep shop aboard the hero's ship: goods put out sell a little at a time, the till's the hero's, the shop shuts while she sails and opens where she ties up.</summary>

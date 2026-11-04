@@ -278,7 +278,7 @@ public static class Loot
         "stormwing" => [("storm_feather", 0.6, 1, 1)],
         "velvet_assassin" => [("iron_dagger", 0.4, 1, 1), ("healing_draught", 0.3, 1, 1), ("linen", 0.3, 1, 1)],
         "watchman" or "squire" => [("bread", 0.6, 1, 2), ("leather", 0.4, 1, 1), ("iron_dagger", 0.08, 1, 1)],
-        "young_thief" or "initiate" or "protege" or "understudy" => [("bread", 0.6, 1, 1), ("linen", 0.5, 1, 1)],
+        "young_thief" or "initiate" or "protege" or "understudy" or "pupil" or "tinker" or "acolyte" => [("bread", 0.6, 1, 1), ("linen", 0.5, 1, 1)],
         "apprentice" => [("linen", 0.6, 1, 2), ("healing_draught", 0.15, 1, 1)],
         "monkey_hand" => [("ale", 0.6, 1, 2), ("linen", 0.4, 1, 2), ("ancient_coin", 0.4, 1, 2), ("healing_draught", 0.15, 1, 1)],
         "dread_soren" => [("ancient_coin", 1, 3, 6), ("linen", 0.5, 1, 2)],

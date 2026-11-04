@@ -119,6 +119,7 @@ public partial class Main
         _player.Overdriven += Overdrive;
         foreach (var spare in PartyRules.SpareMounts(_bonds)) spare.Following = false;
         foreach (var spare in PartyRules.SparePets(_bonds, FreePets).ToList()) spare.Following = false; // four at your heels; the rest wait at home
+        foreach (var youth in _bonds.Where(b => PartyRules.IsApprentice(b) && b.Trains is null).ToList()) PartyRules.Train(youth, _player.Class.Id); // from an older save: they learn their hero's class
         foreach (var bond in _bonds.Where(b => b.Following)) BringCompanion(bond);
     }
 
@@ -148,7 +149,62 @@ public partial class Main
         e.Leader = _player;
         AddEnemy(e);
         _companions.Add(e);
+        if (bond.KindId == "tinker") BuildLittleRobot(bond, spot);
         return e;
+    }
+
+    /// <summary>The little robots an artificer's apprentices have built, each at its maker's heels.</summary>
+    readonly Dictionary<string, Enemy> _littleRobots = [];
+
+    /// <summary>An apprentice artificer's own machine: a mite of their making, knee-high and weaker than a saboteur's, that fights beside them.</summary>
+    void BuildLittleRobot(Bond maker, Vector3 at)
+    {
+        if (_littleRobots.TryGetValue(maker.Id, out var had) && IsInstanceValid(had)) return;
+        var spot = at + new Vector3(1.2f, 0, 0.8f);
+        var robot = Enemy.Create(Bestiary.Get("clockwork_mite"), spot with { Y = City.FloorAt(spot) + 0.4f }, 0.6);
+        robot.Stats.Name = $"{maker.Name}'s little robot";
+        robot.Leader = _player;
+        robot.Scale = Vector3.One * 0.75f;
+        AddEnemy(robot);
+        robot.RefreshPlate();
+        _companions.Add(robot);
+        _littleRobots[maker.Id] = robot;
+    }
+
+    /// <summary>A little robot goes where its maker goes: home with them, or along with them.</summary>
+    void TendLittleRobots()
+    {
+        foreach (var (id, robot) in _littleRobots.ToList())
+        {
+            var maker = _bonds.FirstOrDefault(b => b.Id == id);
+            var body = maker is null ? null : BodyOf(maker);
+            if (maker is { Following: true, KindId: "tinker" } && body is not null && IsInstanceValid(robot)) continue;
+            if (IsInstanceValid(robot)) { _companions.Remove(robot); robot.QueueFree(); }
+            _littleRobots.Remove(id);
+        }
+        foreach (var b in _bonds.Where(b => b.Following && b.KindId == "tinker" && !_littleRobots.ContainsKey(b.Id)).ToList())
+            if (BodyOf(b) is { } body) BuildLittleRobot(b, body.GlobalPosition);
+    }
+
+    /// <summary>Has one of the company learn another class: they look the part, and learn its moves, from now on.</summary>
+    void Retrain(Bond bond, string classId)
+    {
+        PartyRules.Train(bond, classId);
+        if (BodyOf(bond) is { } body) { var at = body.GlobalPosition; _companions.Remove(body); body.QueueFree(); TendLittleRobots(); BringCompanion(bond, at); }
+        _hud.Toast($"{bond.Name} sets out to learn the ways of the {Classes.Get(classId).Name}.", 6);
+        Save();
+    }
+
+    public void RetrainForTest(Bond bond, string classId) => Retrain(bond, classId);
+    public Enemy BringForTest(Bond bond) => BringCompanion(bond);
+    public int LittleRobotsForTest => _littleRobots.Values.Count(IsInstanceValid);
+
+    void RetrainMenu(Bond bond)
+    {
+        var options = Classes.All.Select(d => ($"{(bond.Trains == d.Id ? "Still " : "")}{d.Name} ({d.Calling})", (Action)(() => { Retrain(bond, d.Id); ShowParty(); }))).ToList();
+        options.Add(("Back", ShowParty));
+        var now = bond.Trains is { } t ? Classes.Get(t).Name : "the old ways";
+        _hud.Talk($"Train {bond.Name} another way", $"{bond.Name} learns {now} now. A youth can learn any calling: choose what {bond.Name} should be.", [.. options]);
     }
 
     Enemy? BodyOf(Bond bond) => CompanionBodies.FirstOrDefault(e => e.Bond == bond);
@@ -442,6 +498,7 @@ public partial class Main
     {
         if ((_regather -= delta) > 0) return;
         _regather = 2;
+        TendLittleRobots();
         foreach (var bond in _bonds.Where(b => b.Following).ToList())
         {
             var body = BodyOf(bond);
@@ -656,15 +713,8 @@ public partial class Main
         return bond;
     }
 
-    /// <summary>What a youth would be to this hero: a warrior's squire, a mage's apprentice, a rogue's protege, a bard's understudy.</summary>
-    (BondRole Role, string Kind, string Word) Follower => _player.Class.Calling switch
-    {
-        Calling.Warrior => (BondRole.Squire, "squire", "squire"),
-        Calling.Mage => (BondRole.Apprentice, "apprentice", "apprentice"),
-        Calling.Bard => (BondRole.Apprentice, "understudy", "understudy"),
-        Calling.Artificer => (BondRole.Apprentice, "apprentice", "apprentice"),
-        _ => (BondRole.Apprentice, "protege", "apprentice"),
-    };
+    /// <summary>What a youth would be to this hero: they learn the hero's own class (see <see cref="PartyRules.Follower"/>).</summary>
+    (BondRole Role, string Kind, string Word) Follower => PartyRules.Follower(_player.Class.Id);
 
     public const int RecruitLevel = 3, RecruitFee = 25;
 
@@ -677,7 +727,7 @@ public partial class Main
         if (!FreeApprentices && _bonds.Count(PartyRules.IsApprentice) >= PartyRules.MaxApprentices) { Say(person, $"You've {PartyRules.MaxApprentices} already. Who'd teach me?"); return false; }
         if (_player.Crowns < RecruitFee) { Say(person, $"My family can't spare me for nothing. {RecruitFee} crowns, for their trouble."); return false; }
         _player.Crowns -= RecruitFee;
-        var bond = new Bond { Id = npc.Id, KindId = kind, Role = role, Name = npc.First, Race = npc.Race, JoinAge = npc.Age, JoinDay = _city.Day };
+        var bond = new Bond { Id = npc.Id, KindId = kind, Role = role, Trains = _player.Class.Id, Name = npc.First, Race = npc.Race, JoinAge = npc.Age, JoinDay = _city.Day };
         _bonds.Add(bond);
         bond.Following = MayFollow(bond);
         var at = person.GlobalPosition;
@@ -952,6 +1002,7 @@ public partial class Main
         {
             var bond = b;
             if (!PartyRules.IsApprentice(bond)) options.Add(($"Rename {bond.Name}", () => AskName(bond))); // a person comes with a name of their own
+            else options.Add(($"Train {bond.Name} another way", () => RetrainMenu(bond))); // but a different calling, if the hero likes
             // A grown horse with a wagon of yours is hitched to it or unhitched to ride, rather than sent home and called.
             if (bond.Steed && bond.Rideable && _trade.OwnWagon)
             {

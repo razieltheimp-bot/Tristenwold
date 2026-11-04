@@ -362,6 +362,9 @@ public partial class Figure : Body
         ["apprentice"] = new("Mage", ["1H_Wand"], 0.6f),
         ["protege"] = new("Rogue", ["Knife"], 0.6f),
         ["understudy"] = new("Rogue", [], 0.6f, new Color("#f0d8a0"), LeftHand: "@lute", Unarmed: true),
+        ["pupil"] = new("Rogue", [], 0.6f, new Color("#f2c27a"), Unarmed: true),
+        ["tinker"] = new("Rogue", [], 0.6f, new Color("#d8b870"), RightHand: "@wrench"),
+        ["acolyte"] = new("Mage", [], 0.6f, new Color("#a8c890"), Unarmed: true),
         ["laureate"] = new("Mage", ["Spellbook_open"], 0.76f, new Color("#ffe4a8"), 0.05f, LeftHand: "@laurel", Unarmed: true),
         ["familiar"] = new("Skeleton_Minion", [], 0.62f, new Color("#b080ff"), 0.7f),
         // The Ashen Crypt.

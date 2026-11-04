@@ -24,6 +24,25 @@ public class WarrenTests
     }
 
     [Fact]
+    public void An_apprentice_learns_their_heros_class_unless_trained_another_way()
+    {
+        Assert.Equal((BondRole.Squire, "pupil"), (PartyRules.Follower("MartialArtist").Role, PartyRules.Follower("MartialArtist").Kind));
+        Assert.Equal("tinker", PartyRules.Follower("EtherAeronaut").Kind);
+        Assert.Equal("tinker", PartyRules.Follower("Saboteur").Kind);
+        Assert.Equal("acolyte", PartyRules.Follower("Shapeshifter").Kind);
+        Assert.Equal("squire", PartyRules.Follower("Paladin").Kind);
+        var b = new Bond { Name = "Tobin", Level = 9 };
+        PartyRules.Train(b, "EtherAeronaut");
+        Assert.Equal(("EtherAeronaut", BondRole.Apprentice, "tinker"), (b.Trains, b.Role, b.KindId));
+        Assert.Contains(b.Skills, s => s.Name == "Spark Shot");
+        PartyRules.Train(b, "MartialArtist");
+        Assert.Equal((BondRole.Squire, "pupil", 9), (b.Role, b.KindId, b.Level)); // the levels stay
+        Assert.Contains(b.Skills, s => s.Name == "Palm Strike");
+        Assert.True(PartyRules.IsApprentice(b));
+        Assert.True(PartyRules.FreeApprentices("MartialArtist"));
+    }
+
+    [Fact]
     public void Every_tunnel_and_chamber_can_be_reached_from_the_way_in()
     {
         var w = Warren.Carve(6, 18, Kept, 7);
