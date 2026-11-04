@@ -7,8 +7,8 @@ namespace Tristinwold.Game;
 
 /// <summary>
 /// Brasswake, the moving island (see <see cref="Brasswake"/>), and the trade route to it. Marit Hale will tell you how far
-/// out it is today, and any ship may tie up at its Strangers' Dock and trade from the hold. Aboard, a hero's crowns are worth
-/// nothing: the work on the valves and in the air crews pays in the island's own marks, marks buy what it makes, and
+/// out it is today, and any ship may tie up at its Strangers' Dock and trade from the hold. Aboard, the work on the
+/// valves and in the air crews pays in crowns like anywhere else, crowns buy what it makes, and
 /// that stays behind when the hero goes. A hero who's earned enough is made a citizen, and a citizen can light the
 /// brass beacon and have a skiff sent for them.
 /// </summary>
@@ -87,7 +87,7 @@ public partial class Main
         _player.ResetPhysicsInterpolation();
         _sea.Market(Brasswake.Market, _city.Day);
         if (first) _isle.Greet(Locals.First(x => x.Npc.Id == IsleWarden));
-        else _hud.Toast($"Brasswake. {IsleBook.Title(Isle.Rank)}, back aboard: {Isle.Marks} marks, and whatever you left at the gangway.", 7);
+        else _hud.Toast($"Brasswake. {IsleBook.Title(Isle.Rank)}, back aboard: {_player.Crowns} crowns in your purse, and whatever you left at the gangway.", 7);
         Save();
     }
 
@@ -165,7 +165,7 @@ public partial class Main
         if (!id.StartsWith("isle/")) yield break;
         if (id == IsleWarden)
         {
-            yield return ("What are the rules?", () => Say(person, "Any ship may tie up. Past this gangway, crowns are no good: you earn marks on the valves or in the air, and marks are no good anywhere else. Whatever we make for you, you may use while you're aboard, and you hand it back here when you go. Bring a dragon within sight of this island, or come on one, and the guns will settle the matter."));
+            yield return ("What are the rules?", () => Say(person, "Any ship may tie up. There's work on the valves and in the air, and it pays in crowns, the same as anywhere. Whatever we make for you, you may use while you're aboard, and you hand it back here when you go. Bring a dragon within sight of this island, or come on one, and the guns will settle the matter."));
             yield return ("Why so hard on dragons?", () => Say(person, "A ship can only come at you one way, and it has to ask. A dragon goes where it likes, and a rider goes where the Order likes, and the Order has wanted a look in our foundries for a hundred years. There's nothing on a dragon we need, and nothing here it should see."));
             yield return ("Can I sell you anything?", () => Say(person, "Talk to the dockmaster, on the Strangers' Dock. Timber, ale and herbs, the few things a rock at sea can't make. The fish come from the pens, the bread and the greens from the glasshouses, and the iron from the rock under your feet."));
             yield return ("Fly me back to the mainland.", () => { _hud.EndTalk(); _isle?.FlyHome(); });
@@ -186,7 +186,7 @@ public partial class Main
         else if (id == Engineer)
         {
             if (_isle?.OnShift == true) yield return ("How's the pressure?", () => Say(person, "Go and see to the one that's lit, and stop talking to me."));
-            else yield return ($"Put me on the valves. ({IsleBook.VentPay} marks a valve, {IsleBook.ShiftPay} for the shift)", () =>
+            else yield return ($"Put me on the valves. ({IsleBook.VentPay} crowns a valve, {IsleBook.ShiftPay} for the shift)", () =>
             {
                 _hud.EndTalk();
                 _isle?.StartShift();
@@ -195,16 +195,17 @@ public partial class Main
         }
         else if (id == Stores)
         {
-            foreach (var (item, marks) in Brasswake.Wares.Where(w => _player.Pack.Count(w.Id) == 0))
-                yield return ($"{Items.Get(item)!.Name} ({marks} marks; you have {Isle.Marks})", () =>
+            foreach (var (item, price) in Brasswake.Wares.Where(w => _player.Pack.Count(w.Id) == 0))
+                yield return ($"{Items.Get(item)!.Name} ({price} crowns; you have {_player.Crowns})", () =>
                 {
-                    if (!Isle.Buy(item)) { Say(person, $"{marks} marks. The valves are at the stern."); return; }
+                    var purse = _player.Crowns;
+                    if (!Isle.Buy(item, ref purse)) { Say(person, $"{price} crowns. There's work at the valves, at the stern, if you're short."); return; }
+                    _player.Crowns = purse;
                     _player.Pack.Add(item);
                     Sound.Ui("coin", -2);
                     Say(person, $"{Items.Get(item)!.Text} Sign here. You give it back at the gangway.");
                     Save();
                 });
-            yield return ("I've got crowns.", () => Say(person, "Have you. They'd make good washers."));
         }
         else if (id == Skymaster)
         {
@@ -221,9 +222,11 @@ public partial class Main
                 yield return ("How do I get on in the crews?", () => Say(person, $"You're {Article(IsleBook.Title(Isle.Air))}, with {Isle.Sorties} patrol{(Isle.Sorties == 1 ? "" : "s")} home and {Isle.AirKills} brought down. {Isle.NextAirStep}"));
             }
             if (Isle.Pilot) yield return ("Give me a skiff.", () => { _hud.EndTalk(); _isle?.TakeSkiff(); });
-            else yield return ($"Teach me to fly. ({IsleBook.Licence} marks)", () =>
+            else yield return ($"Teach me to fly. ({IsleBook.Licence} crowns)", () =>
             {
-                if (!Isle.LearnToFly()) { Say(person, $"{IsleBook.Licence} marks, for the fuel you're about to waste."); return; }
+                var purse = _player.Crowns;
+                if (!Isle.LearnToFly(ref purse)) { Say(person, $"{IsleBook.Licence} crowns, for the fuel you're about to waste."); return; }
+                _player.Crowns = purse;
                 Say(person, "Push her nose up and she climbs, push it down and she dives. Left and right do what you'd hope. She'll fly straight into anything you point her at, so don't. Press E and she'll bring you home to the dock on her own.");
                 Save();
             });
@@ -875,7 +878,7 @@ void fragment() {
         if (RaidOn) return $"The horns are going: {_foes.Count} in the sky over Brasswake. The deck guns want hands";
         if (_flying) return $"Flying a sky-skiff: {_altitude:0} m up. Up and down climb and dive, left and right steer, E brings her home";
         if (OnShift) return $"On the valves: ease the lit valve at the stern ({_shiftLeft} to go, {Math.Max(0, _valveLeft):0}s before it blows)";
-        return $"Brasswake: {IsleBook.Title(isle.Rank)}, {isle.Marks} marks";
+        return $"Brasswake: {IsleBook.Title(isle.Rank)}, {main.PlayerNode.Crowns} crowns";
     }
 
     // ---- the valves -----------------------------------------------------------------------------------------------------
@@ -922,8 +925,9 @@ void fragment() {
     {
         var last = _shiftLeft == 1;
         var (pay, made) = main.Sea.Isle.Vent(last);
+        main.PlayerNode.Crowns += pay;
         NextValve();
-        main.HudNode.Toast($"The gauge drops out of the red. +{pay} marks ({main.Sea.Isle.Marks}).{(last ? " That's the shift." : "")}", 3);
+        main.HudNode.Toast($"The gauge drops out of the red. +{pay} crowns.{(last ? " That's the shift." : "")}", 3);
         if (made is { } r) main.HudNode.Toast(r == IsleRank.Citizen ? "The Archwright sends for you, and there's a small brass beacon on the desk, and a line in a very old book with your name in it. You're a citizen of Brasswake. Light that beacon, anywhere in the world, and they'll send a skiff." : "Dorrin Pike looks at your burnt hands and nods. You're a hand of the engines now.", 12);
         main.Save();
     }
@@ -1107,9 +1111,8 @@ void fragment() {
         {
             var isle = main.Sea.Isle;
             var pay = isle.Downed();
-            isle.Marks += pay;
-            isle.Earned += pay;
-            main.HudNode.Toast($"{victim.Stats.Name} comes down burning. +{pay} marks.", 4);
+            main.PlayerNode.Crowns += pay;
+            main.HudNode.Toast($"{victim.Stats.Name} comes down burning. +{pay} crowns.", 4);
         }
         if (_foes.Count > 0) return;
         Sound.Ui("quest", -6);
@@ -1280,7 +1283,8 @@ void fragment() {
         var raid = _raid ?? Brasswake.Raids[0];
         var isle = main.Sea.Isle;
         var (pay, air, made) = isle.Sortie(raid, won);
-        main.HudNode.Toast(won ? $"{ship.Name} comes in with her paint burnt off and everybody cheering. +{pay} marks." : $"You come down the wire to the Sky Dock with your hands burning. +{pay} marks, for the trouble.", 8);
+        main.PlayerNode.Crowns += pay;
+        main.HudNode.Toast(won ? $"{ship.Name} comes in with her paint burnt off and everybody cheering. +{pay} crowns." : $"You come down the wire to the Sky Dock with your hands burning. +{pay} crowns, for the trouble.", 8);
         if (air is { } r) main.HudNode.Toast($"Aune Rook looks you over, then pins something brass on you. You're a {IsleBook.Title(r)} now.{(r == AirRank.Helmsman ? " Next patrol, you take the wheel." : "")}", 10);
         if (made is { } rank) main.HudNode.Toast($"You're {IsleBook.Title(rank)} now.", 8);
         main.Save();
@@ -1413,7 +1417,7 @@ void fragment() {
         Meet("isle/dockmaster", "Hesk Ardo", Sex.Male, 58, "dockmaster of the Strangers' Dock", "Has tied up every ship that's come alongside for thirty years, and never once let one stay past its welcome.", "Lines ashore, and mind the gap. She doesn't stop for anyone.", "worker", new Vector3(Tiers[0].Wide + 15, Tiers[0].Floor, 19));
         Meet("isle/archwright", "Archwright Sefa Vell", Sex.Female, 71, "Archwright of Brasswake", "The ninth to hold the office, and the first to say out loud that the island's getting smaller. She has oil on her cuffs, and doesn't care.", "You found us. Sit down before you touch anything.", "scholar", new Vector3(4, Tiers[2].Floor, Tiers[2].Aft + Tiers[2].Long - 10));
         Meet("isle/engineer", "Dorrin Pike", Sex.Male, 44, "chief of the Steam Gallery", "Burn-scarred to the elbows and proud of it. He hears the engines change in his sleep.", "Mind the hot bits. They're all hot bits.", "worker", GalleryAt + new Vector3(0, 0, 8));
-        Meet("isle/stores", "Tobble Marsh", Sex.Other, 38, "keeper of the Cog Market", "Keeps the book on every spring and rivet on the island, and can tell you what any of it cost to make in hours.", "Marks only, and it all comes back.", "worker", new Vector3(62, Tiers[0].Floor, 33));
+        Meet("isle/stores", "Tobble Marsh", Sex.Other, 38, "keeper of the Cog Market", "Keeps the book on every spring and rivet on the island, and can tell you what any of it cost to make in hours.", "Crowns, like anywhere, and it all comes back.", "worker", new Vector3(62, Tiers[0].Floor, 33));
         Meet("isle/skymaster", "Aune Rook", Sex.Female, 29, "skymaster of the Sky Dock", "Took a skiff through the Brass Gate at sixteen, for a bet, and they made her skymaster to keep an eye on her.", "Don't look down. It's fine, I'm only saying that.", "hunter", new Vector3(5, Tiers[DockTier].Floor, Tiers[DockTier].Aft + Tiers[DockTier].Long - 8));
         // The automatons who walk the streets, sweeping and carrying.
         var beats = new[] { (0, 0.1f), (0, 2f), (1, 0.4f), (1, 3.4f), (2, 0.4f), (2, 3.4f) };
@@ -1435,7 +1439,7 @@ void fragment() {
         ("I understand.", () =>
         {
             main.HudNode.EndTalk();
-            main.HudNode.Toast("Marks at the valves, at the stern. The dockmaster trades at the Strangers' Dock. The lifts on the east face go up through the tiers, and the Sky Dock's at the very top.", 9);
+            main.HudNode.Toast("Work at the valves, at the stern, for crowns. The dockmaster trades at the Strangers' Dock. The lifts on the east face go up through the tiers, and the Sky Dock's at the very top.", 9);
         }));
 
     public override void _Process(double delta)
@@ -1464,7 +1468,7 @@ void fragment() {
         }
         if (OnShift && (_valveLeft -= delta) <= 0)
         {
-            main.HudNode.Toast("The valve lets go with a bang, and the whole gallery fills with steam. No marks for that one.", 5);
+            main.HudNode.Toast("The valve lets go with a bang, and the whole gallery fills with steam. No pay for that one.", 5);
             NextValve();
         }
         // Over the edge: the deck crew's automatons have a net for that.

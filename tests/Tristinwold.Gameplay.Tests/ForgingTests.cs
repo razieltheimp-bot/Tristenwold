@@ -340,6 +340,22 @@ public class ForgingTests
     }
 
     [Fact]
+    public void Lu_Wukong_too_loses_a_verse_only_one_death_in_four()
+    {
+        CityEconomy Killed(int times)
+        {
+            var c = CityEconomy.Start(13);
+            for (var i = 0; i < times; i++) c.Apply(CityAction.WukongKilled("Ana"));
+            return c;
+        }
+        var (a, b) = (Killed(400), Killed(400));
+        Assert.Equal(400, a.WukongDeaths);
+        Assert.InRange(a.WukongChanges, 60, 140);
+        Assert.Equal(a.WukongChanges, b.WukongChanges);
+        Assert.Equal(2, System.Text.Json.JsonSerializer.Deserialize<CityEconomy>("{\"WukongDeaths\":2}")!.WukongChanges);
+    }
+
+    [Fact]
     public void Killing_Soren_counts_for_the_whole_server_and_he_comes_back_less_each_time()
     {
         var city = CityEconomy.Start(7);

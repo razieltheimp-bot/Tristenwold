@@ -50,13 +50,13 @@ public class EngineTests
     }
 
     [Fact]
-    public void Every_work_has_makings_and_only_ships_cost_marks()
+    public void Every_work_has_makings_and_only_ships_cost_crowns_at_brasswake()
     {
         foreach (var (id, w) in Engines.Works)
         {
             Assert.NotEmpty(w.Needs);
             Assert.All(w.Needs, n => Assert.NotNull(Items.Get(n.Id)));
-            Assert.Equal(id is Engines.ShipSteam or Engines.ShipFlight, w.Marks > 0);
+            Assert.Equal(id is Engines.ShipSteam or Engines.ShipFlight, w.Crowns > 0);
         }
     }
 }

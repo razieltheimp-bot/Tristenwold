@@ -139,18 +139,37 @@ public partial class Main
         AddChild(_workings);
     }
 
+    /// <summary>Where ships lie at anchor in the bay, in the order they come: the first two always, the rest as the yard's kept busy.</summary>
+    static readonly (string File, Vector3 At, float Yaw)[] Anchorage =
+    [
+        ("ph:ship_large.glb", new Vector3(205, 0, -55), 0.4f), ("ph:pinnace.glb", new Vector3(165, 0, 25), 1.6f),
+        ("ph:ship.glb", new Vector3(225, 0, 50), -1.1f), ("ph:ship_large.glb", new Vector3(285, 0, 10), 2.0f),
+        ("ph:ship.glb", new Vector3(250, 0, -25), 0.9f), ("ph:pinnace.glb", new Vector3(190, 0, -82), -0.5f),
+        ("ph:ship_large.glb", new Vector3(320, 0, 70), 2.6f), ("ph:ship.glb", new Vector3(300, 0, -50), -1.8f),
+        ("ph:pinnace.glb", new Vector3(255, 0, 95), 1.2f),
+    ];
+
+    readonly List<Node3D> _bay = [];
+
     /// <summary>
-    /// Ships at anchor in the harbour: two great merchantmen, a smaller trader and a pinnace (Poly Haven's scanned
-    /// Dutch ships), riding the swell. Only where the files are (they're left out of the phone build).
+    /// Ships at anchor in the harbour (Poly Haven's scanned Dutch ships), riding the swell: two at rest, and more as the
+    /// yard's kept busy mending them (see <see cref="CityEconomy.BayShips"/>). Only where the files are (they're left
+    /// out of the phone build).
     /// </summary>
-    void Ships()
+    void Ships() => TendBay();
+
+    /// <summary>The bay as busy as the yard's been: ships put out to anchor, or gone, to match.</summary>
+    void TendBay()
     {
-        foreach (var (file, at, yaw) in new[] { ("ph:ship_large.glb", new Vector3(205, 0, -55), 0.4f), ("ph:ship.glb", new Vector3(225, 0, 50), -1.1f),
-                     ("ph:ship_large.glb", new Vector3(285, 0, 10), 2.0f), ("ph:pinnace.glb", new Vector3(165, 0, 25), 1.6f) })
+        var want = Math.Min(_city.BayShips, Anchorage.Length);
+        while (_bay.Count > want) { var last = _bay[^1]; _bay.RemoveAt(_bay.Count - 1); if (IsInstanceValid(last)) last.QueueFree(); }
+        for (var i = _bay.Count; i < want; i++)
         {
-            if (OS.HasFeature("mobile") || Models.Scene(file)?.Instantiate() is not Node3D ship) continue;
+            var (file, at, yaw) = Anchorage[i];
             var hold = new Node3D { Position = at with { Y = (float)WorldGen.WaterLevel - 1.6f }, Rotation = new Vector3(0, yaw, 0) };
             AddChild(hold);
+            _bay.Add(hold);
+            if (OS.HasFeature("mobile") || Models.Scene(file)?.Instantiate() is not Node3D ship) continue;
             hold.AddChild(ship);
             // Riding the swell: a slow roll and pitch, each ship its own.
             var t = hold.CreateTween().SetLoops();
@@ -159,6 +178,9 @@ public partial class Main
             t.TweenProperty(ship, "rotation", new Vector3(-pitch, 0, -roll), period).SetTrans(Tween.TransitionType.Sine);
         }
     }
+
+    public int BayShipsShownForTest => _bay.Count;
+    public void TendBayForTest() => TendBay();
 
     /// <summary>The Exchange's market board: a notice board on two posts, papered with prices and contracts.</summary>
     void Board(Vector3 at)

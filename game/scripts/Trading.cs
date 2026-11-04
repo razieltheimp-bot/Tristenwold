@@ -170,6 +170,7 @@ public partial class Main
                 }
                 Sound.Ui(job == Job.Smithing ? "anvil" : job == Job.Cooking ? "herb" : "potion");
                 Made(r);
+                if (job == Job.Smithing && TownHere(_player.GlobalPosition) is { } forgedIn) DoCity(CityAction.Worked(forgedIn, HandiKind.Smithing));
                 var unique = Forging.Unique(r) ? ForgeUnique(r, job) : null;
                 _hud.Toast(unique is not null ? $"You make {unique.Name}. {unique.Text}" : $"You make {Items.Count(r.Makes, r.Count).ToLowerInvariant()}.{(pack.Level(job) > before ? $" {job} rises to {pack.Level(job)}!" : "")}", unique is not null ? 9 : 4);
                 if (unique is not null) _hud.Log($"{unique.Name}: {unique.Text}");

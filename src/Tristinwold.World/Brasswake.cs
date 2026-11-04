@@ -54,12 +54,12 @@ public static class Brasswake
     /// <summary>What comes for her: a town that won't be found is still a lot of warm metal, and dragons can smell that.</summary>
     public static readonly IReadOnlyList<SkyRaid> Raids =
     [
-        new("stormwings", "Horns on every tier. There's a squall coming up against the wind, and it has wings in it: stormwings, a whole flock", [("stormwing", 9, DragonSize.Normal)], 8, AirRank.Hand),
-        new("young", "Horns on every tier. Three shapes coming in low out of the sun: young red dragons, after the smell of the furnaces", [("dragon_red", 3, DragonSize.Normal)], 14, AirRank.Hand),
-        new("flight", "Horns on every tier. A flight of blue dragons has found the steam, with a big one at its head", [("dragon_blue", 3, DragonSize.Normal), ("dragon_blue", 1, DragonSize.Large)], 22, AirRank.Gunner),
-        new("riders", "Horns on every tier, and every gun on the island swings round at once. Riders of the Eyrie, on gold and silver, come to see what the artificers won't show them. Nobody who rides a dragon comes aboard Brasswake", [("dragon_gold", 1, DragonSize.Normal), ("dragon_silver", 3, DragonSize.Normal)], 26, AirRank.Gunner, Riders: true),
-        new("giant", "Every horn on the island, and then the big one at the Gearworks, that nobody's heard in years. A black dragon the size of a street is coming over the bank", [("dragon_black", 1, DragonSize.Giant), ("dragon_black", 2, DragonSize.Normal)], 34, AirRank.Helmsman),
-        new("rift", "The horns stop. Something's turned the steam violet. A dragon the Rift has taken is coming straight for the boilers, and its flight with it", [("dragon_white_corrupt", 1, DragonSize.Large), ("dragon_green_corrupt", 2, DragonSize.Normal)], 40, AirRank.Skipper),
+        new("stormwings", "Horns on every tier. There's a squall coming up against the wind, and it has wings in it: stormwings, a whole flock", [("stormwing", 9, DragonSize.Normal)], 40, AirRank.Hand),
+        new("young", "Horns on every tier. Three shapes coming in low out of the sun: young red dragons, after the smell of the furnaces", [("dragon_red", 3, DragonSize.Normal)], 70, AirRank.Hand),
+        new("flight", "Horns on every tier. A flight of blue dragons has found the steam, with a big one at its head", [("dragon_blue", 3, DragonSize.Normal), ("dragon_blue", 1, DragonSize.Large)], 110, AirRank.Gunner),
+        new("riders", "Horns on every tier, and every gun on the island swings round at once. Riders of the Eyrie, on gold and silver, come to see what the artificers won't show them. Nobody who rides a dragon comes aboard Brasswake", [("dragon_gold", 1, DragonSize.Normal), ("dragon_silver", 3, DragonSize.Normal)], 130, AirRank.Gunner, Riders: true),
+        new("giant", "Every horn on the island, and then the big one at the Gearworks, that nobody's heard in years. A black dragon the size of a street is coming over the bank", [("dragon_black", 1, DragonSize.Giant), ("dragon_black", 2, DragonSize.Normal)], 170, AirRank.Helmsman),
+        new("rift", "The horns stop. Something's turned the steam violet. A dragon the Rift has taken is coming straight for the boilers, and its flight with it", [("dragon_white_corrupt", 1, DragonSize.Large), ("dragon_green_corrupt", 2, DragonSize.Normal)], 200, AirRank.Skipper),
     ];
 
     /// <summary>What's coming: nothing worse than the crew's been trusted with, and more often the worst of that.</summary>
@@ -69,13 +69,13 @@ public static class Brasswake
         return rng.Chance(0.5) ? fit[^1] : rng.Pick(fit);
     }
 
-    /// <summary>What they make, and what it costs in their own marks. None of it leaves the island.</summary>
-    public static readonly IReadOnlyList<(string Id, int Marks)> Wares =
+    /// <summary>What they make, and what it costs in crowns. None of it leaves the island.</summary>
+    public static readonly IReadOnlyList<(string Id, int Crowns)> Wares =
     [
-        ("steamweave_coat", 18),
-        ("spring_buckler", 24),
-        ("aether_gauntlet", 40),
-        ("orrery_ring", 60),
+        ("steamweave_coat", 90),
+        ("spring_buckler", 120),
+        ("aether_gauntlet", 200),
+        ("orrery_ring", 300),
     ];
 
     public static bool Made(string id) => Wares.Any(w => w.Id == id);
@@ -84,9 +84,11 @@ public static class Brasswake
 /// <summary>What a hero knows of Brasswake and what they are there, kept with their sea book.</summary>
 public sealed class IsleBook
 {
-    public const int ToHand = 30, ToCitizen = 120, VentPay = 2, ShiftPay = 5, Licence = 5, Valves = 6;
+    public const int ToHand = 150, ToCitizen = 600, VentPay = 10, ShiftPay = 25, Licence = 25, Valves = 6;
     public const int PassagePrice = 60;
-    public const int ToGunner = 2, ToHelmsman = 5, HelmsmanKills = 4, ToSkipper = 10, SkipperKills = 12, KillPay = 3;
+    public const int ToGunner = 2, ToHelmsman = 5, HelmsmanKills = 4, ToSkipper = 10, SkipperKills = 12, KillPay = 15;
+    /// <summary>What one of the island's old marks is worth in crowns, for a save from when it had its own money.</summary>
+    public const int MarkInCrowns = 5;
 
     /// <summary>Their place in the air crews, how often they've gone up and come back, and what they've brought down.</summary>
     public AirRank Air { get; set; }
@@ -101,10 +103,26 @@ public sealed class IsleBook
     public bool Aboard { get; set; }
     /// <summary>The ship the hero came on is tied up at the Strangers' Dock.</summary>
     public bool Berthed { get; set; }
-    /// <summary>The island's own money: crowns are no good here, and marks are no good anywhere else.</summary>
+    /// <summary>Left from an older save, when the island paid in its own marks: changed into crowns once (see <see cref="ChangeMarks"/>).</summary>
     public int Marks { get; set; }
-    /// <summary>All the marks ever earned: it's the work that makes a citizen, not the spending.</summary>
+    /// <summary>The book's in crowns; an older one, in marks, is changed over when it's loaded.</summary>
+    public bool InCrowns { get; set; }
+    /// <summary>All the crowns ever earned aboard: it's the work that makes a citizen, not the spending.</summary>
     public int Earned { get; set; }
+
+    /// <summary>
+    /// A save from when Brasswake paid in its own marks: what's left of them comes to the hero as crowns, and what they
+    /// earned there counts in crowns too. Once; a book that's already in crowns owes nothing.
+    /// </summary>
+    public int ChangeMarks()
+    {
+        if (InCrowns) return 0;
+        InCrowns = true;
+        var owed = Math.Max(0, Marks) * MarkInCrowns;
+        Earned *= MarkInCrowns;
+        Marks = 0;
+        return owed;
+    }
     public int Shifts { get; set; }
     /// <summary>May take a sky-skiff up alone.</summary>
     public bool Pilot { get; set; }
@@ -135,10 +153,11 @@ public sealed class IsleBook
         return true;
     }
 
-    /// <summary>Something brought down by the hero's own gun: a bounty in marks, and it counts for the crew.</summary>
+    /// <summary>Something brought down by the hero's own gun: a bounty in crowns, and it counts for the crew and toward citizenship.</summary>
     public int Downed()
     {
         AirKills++;
+        Earn(KillPay);
         return KillPay;
     }
 
@@ -183,10 +202,10 @@ public sealed class IsleBook
         AirRank.Hand => "hand of the air", AirRank.Gunner => "sky gunner", AirRank.Helmsman => "sky helmsman", AirRank.Skipper => "sky skipper", _ => "",
     };
 
-    /// <summary>Marks earned, by any honest work: the rank it's made them, if any.</summary>
-    IsleRank? Earn(int pay)
+    /// <summary>Crowns earned aboard, by any honest work (the caller pays them): the rank it's made them, if any.</summary>
+    public IsleRank? Earn(int pay)
     {
-        Marks += pay;
+        InCrowns = true;
         Earned += pay;
         IsleRank? next = Rank switch
         {
@@ -201,19 +220,20 @@ public sealed class IsleBook
     /// <summary>A citizen can light the brass beacon and have a skiff sent, wherever the island's got to.</summary>
     public bool MaySummon => Rank == IsleRank.Citizen;
 
-    public bool LearnToFly()
+    /// <summary>A pilot's licence, out of the hero's crowns.</summary>
+    public bool LearnToFly(ref int crowns)
     {
-        if (Pilot || Marks < Licence) return false;
-        Marks -= Licence;
+        if (Pilot || crowns < Licence) return false;
+        crowns -= Licence;
         return Pilot = true;
     }
 
-    /// <summary>Bought with marks: it goes straight into the hero's hands, for as long as they're aboard.</summary>
-    public bool Buy(string id)
+    /// <summary>Bought with crowns: it goes straight into the hero's hands, for as long as they're aboard.</summary>
+    public bool Buy(string id, ref int crowns)
     {
         var (found, price) = Brasswake.Wares.FirstOrDefault(w => w.Id == id);
-        if (found is null || Marks < price) return false;
-        Marks -= price;
+        if (found is null || crowns < price) return false;
+        crowns -= price;
         return true;
     }
 
@@ -224,8 +244,8 @@ public sealed class IsleBook
 
     public string NextStep => Rank switch
     {
-        IsleRank.Guest => $"{ToHand} marks earned at the valves and you're a hand of the engines ({Earned} so far).",
-        IsleRank.Hand => $"{ToCitizen} marks earned and the Archwright will have you as a citizen ({Earned} so far).",
+        IsleRank.Guest => $"{ToHand} crowns earned at the valves and you're a hand of the engines ({Earned} so far).",
+        IsleRank.Hand => $"{ToCitizen} crowns earned aboard and the Archwright will have you as a citizen ({Earned} so far).",
         _ => "There's nothing higher. There's only keeping her moving.",
     };
 }

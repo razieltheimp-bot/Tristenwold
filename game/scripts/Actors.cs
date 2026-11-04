@@ -238,6 +238,10 @@ public partial class Enemy : Fighter
     /// <summary>One of a barbarian clan, raiding: every guard goes for it.</summary>
     public bool Raider { get; set; }
 
+    /// <summary>Empties a street: a raider, or anything that's come into town fighting (the hero, the guard, a rival crew).</summary>
+    public bool Frightens => !Friendly && !Sparring && !Young && State != EnemyState.Dead
+        && (Raider || State == EnemyState.Fighting && (_target is not null || _rival is not null) && SiteId is null && !InLair && Owner is null);
+
     /// <summary>One of the hero's own clan: it won't fight the company, and the company can't strike it (the guards still can).</summary>
     public bool Kin { get; set; }
 
@@ -611,7 +615,8 @@ public partial class Enemy : Fighter
                     && (e.FightingCompany || e == leader.LastStruck || e._rival?.Leader == leader))
                 .MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
         }
-        if (Watch) return all.Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < 70 && Disturbs(e)).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
+        // The guard comes to whoever's in trouble in its streets, from further off when it's the hero being set on.
+        if (Watch) return all.Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < (e.FightingCompany || e.Raider ? 95 : 70) && Disturbs(e)).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
         var sight = IsDragon ? 120 : 60;
         // Mad with the Rift: anything at all, the nearest first.
         if (Frenzy > 0) return all.Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < 90).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));

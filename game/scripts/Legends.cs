@@ -206,7 +206,7 @@ public partial class Legends(Main main) : Node
         var danger = WorldGen.Danger(at.X, at.Z) * (1 + 0.08 * main.PlayerNode.Hero.Level);
         _soren = Enemy.Create(Bestiary.Get("dread_soren"), at with { Y = City.FloorAt(at) + 0.5f }, danger * 1.4 * Legend.SorenStrength(main.Economy.SorenDeaths), look: Look(main.Economy));
         Dress(_soren, main.Economy);
-        _soren.Roam = 16;
+        (_soren.Roam, _soren.Raider) = (16, true);
         _soren.Struck = (_, _, _, _) => _struck = true;
         main.AddEnemy(_soren);
         _soren.Scale = Vector3.One * form.Size;
@@ -214,7 +214,7 @@ public partial class Legends(Main main) : Node
         {
             var spot = at + new Vector3(Mathf.Cos(i * 1.05f) * 7, 0, Mathf.Sin(i * 1.05f) * 7);
             var e = Enemy.Create(Bestiary.Get(i == 0 ? "pirate_captain" : "pirate"), spot with { Y = City.FloorAt(spot) + 0.5f }, danger);
-            e.Roam = 12;
+            (e.Roam, e.Raider) = (12, true);
             main.AddEnemy(e);
             _crew.Add(e);
         }
@@ -229,7 +229,7 @@ public partial class Legends(Main main) : Node
     void MusterLu(Vector3 soren, double danger)
     {
         var deaths = main.Economy.WukongDeaths;
-        var form = Legend.WukongOf(deaths);
+        var form = Legend.WukongOf(main.Economy.WukongChanges);
         foreach (var e in _crew.Append(_soren!)) (e.Faction, e.Foe) = (Reckoning, Monkey);
         var at = soren + new Vector3(0, 0, -16);
         _lu = Enemy.Create(Bestiary.Get("lu_wukong"), at with { Y = City.FloorAt(at) + 0.5f }, danger * 1.2 * Legend.WukongStrength(deaths), look: LuLook(main.Economy));
@@ -279,7 +279,7 @@ public partial class Legends(Main main) : Node
             return;
         }
         var rank = main.Sea.Rank == SeaRank.Landsman ? "" : " (the Brine Company will strike you off its books)";
-        main.HudNode.Talk($"{Legend.WukongName}, of {PirateCrew.DrunkenMonkey.Ship}", Legend.WukongOf(main.Economy.WukongDeaths).Offer,
+        main.HudNode.Talk($"{Legend.WukongName}, of {PirateCrew.DrunkenMonkey.Ship}", Legend.WukongOf(main.Economy.WukongChanges).Offer,
             ($"I'll sail with you.{rank}", () =>
             {
                 main.Sea.JoinCrew(PirateCrew.DrunkenMonkey);
@@ -312,7 +312,7 @@ public partial class Legends(Main main) : Node
     public static void Dress(Enemy soren, CityEconomy city) => soren.Foresees = city.WebHolder is null ? Legend.SorenForesees : 0;
 
     /// <summary>The look of Lu as he is now: how much of him is ape (see Garments.Wukong).</summary>
-    public static string LuLook(CityEconomy city) => $"lu_{Math.Min(city.WukongDeaths, Legend.WukongForms.Count - 1)}";
+    public static string LuLook(CityEconomy city) => $"lu_{Math.Min(city.WukongChanges, Legend.WukongForms.Count - 1)}";
 
     void Clear()
     {
@@ -327,7 +327,7 @@ public partial class Legends(Main main) : Node
     /// <summary>Lu's down, at a siege or on a pirate's deck. It isn't the end of him, and each time it costs him more.</summary>
     void LuFell(Enemy lu, Enemy? killer, bool byCompany)
     {
-        var form = Legend.WukongOf(main.Economy.WukongDeaths);
+        var form = Legend.WukongOf(main.Economy.WukongChanges);
         main.DoCity(CityAction.WukongKilled(byCompany ? main.PlayerNode.Company : killer?.Stats.Name ?? "The Dread Pirate Soren"));
         main.HudNode.Toast(form.Lost, 11);
         main.HudNode.Log($"Lu Wukong: {form.Lost}");

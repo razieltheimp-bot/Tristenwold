@@ -70,7 +70,7 @@ public static class Humans
             "raider" or "raider_chief" or "warmaster" => ["human", "orc", "half_giant", "human"],
             "bandit" or "bandit_chief" or "dock_thug" or "drowned_hand" => ["human", "human", "dwarf", "orc"],
             "pirate" or "pirate_captain" or "dread_soren" or "sailor" or "monkey_hand" => ["human", "human", "elf", "dwarf"],
-            "guard" or "marine" or "squire" or "ghost_captain" => ["human", "human", "dwarf"],
+            "guard" or "guard_steel" or "guard_plate" or "marine" or "squire" or "ghost_captain" => ["human", "human", "dwarf"],
             "dragon_knight" or "aldric" or "laureate" => ["human"],
             _ => ["human", "human", "human", "elf", "dwarf"],
         };
@@ -160,6 +160,8 @@ public static class Humans
         ["ape_elder"] = new(new("#6e6660"), new("#6e6660"), new("#6e6660")), // the Apekin: fur all over, grey on the elder
         ["ape_warrior"] = new(new("#3e2c20"), new("#3e2c20"), new("#3e2c20")),
         ["guard"] = new(new("#6a6e74"), new("#3a3a44"), new("#2a2220"), Cap: new("#7a7e84")),
+        ["guard_steel"] = new(new("#9aa2ac"), new("#3a3a44"), new("#2a2220"), Cap: new("#aab2bc")),
+        ["guard_plate"] = new(new("#c8ced8"), new("#4a4a56"), new("#2a2220"), Cap: new("#c8a04a")),
         ["marine"] = new(new("#8a3a2a"), new("#3a3a44"), new("#2a2220"), Cap: new("#6a6e74")),
         ["scholar"] = new(new("#4a5a8a"), new("#3a3a4a"), new("#3a2a20")),
         ["priest"] = new(new("#e8e0d0"), new("#d8d0c0"), new("#5a4a3a")),

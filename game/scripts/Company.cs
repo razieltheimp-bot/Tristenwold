@@ -29,6 +29,7 @@ public partial class Main
     {
         if (!_sharedCity) { _city.TendStores(seconds); _city.TendHalls(seconds); _city.TendKorrin(); _city.TendRaid(); _city.TendWarlords(LocalContenders()); } // on a server its own clock runs them, whoever's online
         SyncStore();
+        TendBay();
         PullWagonShop();
         TendStoreFronts();
         TendHallFronts();

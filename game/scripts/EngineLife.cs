@@ -7,7 +7,7 @@ namespace Tristinwold.Game;
 /// <summary>
 /// Steam in the hero's ship and wagon, and a skyboat of their own (see <see cref="Engines"/>). Only an artificer fits
 /// them: the hero, if they are one; an artificer friend on the server, from an order left at the yard with the makings;
-/// or, for a ship, Brasswake's engineers, for marks. A boiler drives a ship along faster than the wind, a lift takes
+/// or, for a ship, Brasswake's engineers, for crowns. A boiler drives a ship along faster than the wind, a lift takes
 /// her up where no pirate can board her, and both burn whatever a fire takes.
 /// </summary>
 public partial class Main
@@ -99,17 +99,17 @@ public partial class Main
         }
     }
 
-    /// <summary>Brasswake's engineers will fit a ship that's tied up at the Strangers' Dock, for marks.</summary>
+    /// <summary>Brasswake's engineers will fit a ship that's tied up at the Strangers' Dock, for crowns.</summary>
     IEnumerable<(string, Action)> IsleEngineTalk(Person person)
     {
         if (person.Npc.Id != Engineer || !_sea.OwnShip || !Isle.Berthed) yield break;
         foreach (var work in new[] { Engines.ShipSteam, Engines.ShipFlight }.Where(w => w == Engines.ShipSteam ? !_sea.Steam : _sea.Steam && !_sea.Flies))
         {
-            var (name, _, marks) = Engines.Works[work];
-            yield return ($"Have your engineers fit {_sea.ShipName} with {name}. ({marks} marks; you have {Isle.Marks})", () =>
+            var (name, _, price) = Engines.Works[work];
+            yield return ($"Have your engineers fit {_sea.ShipName} with {name}. ({price} crowns; you have {_player.Crowns})", () =>
             {
-                if (Isle.Marks < marks) { Say(person, $"{marks} marks. The valves are at the stern."); return; }
-                Isle.Marks -= marks;
+                if (_player.Crowns < price) { Say(person, $"{price} crowns. There's work at the valves, at the stern, if you're short."); return; }
+                _player.Crowns -= price;
                 Fitted(work, Engines.IsleMaker, "Brasswake's engineers");
                 Say(person, "Done before your crew had finished their tea. Don't let the Foundry take her apart to see how.");
             });

@@ -72,7 +72,7 @@ public class BrasswakeTests
     }
 
     [Fact]
-    public void Aboard_the_work_pays_in_marks_and_makes_a_citizen_of_you()
+    public void Aboard_the_work_pays_in_crowns_and_makes_a_citizen_of_you()
     {
         var isle = new IsleBook();
         isle.Board();
@@ -86,26 +86,40 @@ public class BrasswakeTests
     }
 
     [Fact]
-    public void Marks_buy_their_wares_and_a_pilots_licence_and_crowns_dont_come_into_it()
+    public void Crowns_buy_their_wares_and_a_pilots_licence()
     {
-        var isle = new IsleBook { Marks = 20 };
-        Assert.False(isle.Buy("iron_ore"));
-        Assert.False(isle.Buy("aether_gauntlet"));
-        Assert.True(isle.Buy("steamweave_coat"));
-        Assert.Equal(2, isle.Marks);
-        Assert.False(isle.LearnToFly());
-        isle.Marks = 5;
-        Assert.True(isle.LearnToFly());
-        Assert.False(isle.LearnToFly());
-        Assert.Equal(0, isle.Marks);
+        var isle = new IsleBook();
+        var purse = 100;
+        Assert.False(isle.Buy("iron_ore", ref purse));
+        Assert.False(isle.Buy("aether_gauntlet", ref purse));
+        Assert.True(isle.Buy("steamweave_coat", ref purse));
+        Assert.Equal(10, purse);
+        Assert.False(isle.LearnToFly(ref purse));
+        purse = IsleBook.Licence;
+        Assert.True(isle.LearnToFly(ref purse));
+        Assert.False(isle.LearnToFly(ref purse));
+        Assert.Equal(0, purse);
+    }
+
+    [Fact]
+    public void An_old_save_in_marks_is_changed_into_crowns_once()
+    {
+        var old = System.Text.Json.JsonSerializer.Deserialize<IsleBook>("{\"Marks\":12,\"Earned\":40,\"Rank\":2}")!;
+        Assert.Equal(12 * IsleBook.MarkInCrowns, old.ChangeMarks());
+        Assert.Equal((0, 40 * IsleBook.MarkInCrowns), (old.Marks, old.Earned));
+        Assert.Equal(0, old.ChangeMarks()); // once
+        var fresh = new IsleBook();
+        fresh.Vent(false);
+        Assert.Equal(0, fresh.ChangeMarks());
+        Assert.Equal(IsleBook.VentPay, fresh.Earned);
     }
 
     [Fact]
     public void Everything_they_make_exists_is_bound_and_is_known_for_theirs()
     {
-        foreach (var (id, marks) in Brasswake.Wares)
+        foreach (var (id, price) in Brasswake.Wares)
         {
-            Assert.True(marks > 0);
+            Assert.True(price > 0);
             Assert.True(Items.Get(id) is { Bound: true }, id);
             Assert.True(Brasswake.Made(id));
         }

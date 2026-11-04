@@ -142,6 +142,8 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction Smuggled(string by) => new("korrin_smuggled", by);
     public static CityAction Rescued(string by) => new("korrin_rescued", by);
     public static CityAction DrifterFell(string id, string by) => new("drifter_fell", id, Contract: by);
+    /// <summary>A piece of a hero's work done in a place, that the place shows for (see Handiwork).</summary>
+    public static CityAction Worked(string town, HandiKind kind, int n = 1) => new("worked", kind.ToString(), N: n, Town: town);
     /// <summary>A deviant at the head of a town's table struck down (see Warlord).</summary>
     public static CityAction WarlordFell(string town, string by) => new("warlord_fell", by, Town: town);
 }
@@ -255,7 +257,7 @@ public sealed partial class CityEconomy
     public int SorenFall { get; set; } = -1;
     /// <summary>How many steps he's taken from the man he was: which of his forms he wears.</summary>
     [System.Text.Json.Serialization.JsonIgnore] public int SorenChanges => SorenFall < 0 ? SorenDeaths : SorenFall;
-    /// <summary>The chance a death costs Soren something of himself.</summary>
+    /// <summary>The chance a death costs Soren (or Lu Wukong) something of himself.</summary>
     public const double SorenChangeChance = 0.25;
 
     /// <summary>Soren killed: back again, and one time in four the sea keeps a little more of him.</summary>
@@ -267,6 +269,18 @@ public sealed partial class CityEconomy
     }
     /// <summary>How many times Lu Wukong's been killed, by anyone. He came back from every one.</summary>
     public int WukongDeaths { get; set; }
+    /// <summary>How much of himself Lu Wukong has lost: how many of those deaths took a verse. One in four does, on the city's dice; -1 in an older save, where it follows the deaths.</summary>
+    public int WukongFall { get; set; } = -1;
+    /// <summary>Which of his forms he wears.</summary>
+    [System.Text.Json.Serialization.JsonIgnore] public int WukongChanges => WukongFall < 0 ? WukongDeaths : WukongFall;
+
+    /// <summary>Lu killed: back again, and one time in four the gourd takes another verse of him.</summary>
+    void WukongDied()
+    {
+        if (WukongFall < 0) WukongFall = WukongDeaths;
+        WukongDeaths++;
+        if (new Rng(Seed ^ (ulong)WukongDeaths * 0xC2B2AE3D27D4EB4FUL).Chance(SorenChangeChance)) WukongFall++;
+    }
     public const int SiegeEvery = 24, SiegeDays = 3, SiegeBurns = 1, SackBurns = 2, SackTreasury = 200;
     /// <summary>The towns his ships can reach.</summary>
     public static readonly IReadOnlyList<string> SiegeTowns = ["city:druitt", "city:greywater", "city:tristinwold"];
@@ -290,7 +304,7 @@ public sealed partial class CityEconomy
             if (Day < siege.Ends) return $"Lu Wukong's crew are holding the streets of {PlaceName(siege.Town)} against Soren.";
             Siege = null;
             if (!rng.Chance(Legend.LuFalls)) return $"Lu Wukong held {PlaceName(siege.Town)} to the end, and Soren has sailed with nothing.";
-            WukongDeaths++;
+            WukongDied();
             return $"Soren has sailed from {PlaceName(siege.Town)} with nothing, but Lu Wukong fell holding it. Nobody who knows the sea believes that's the end of him.";
         }
         FabricOf(siege.Town).Burnt += SiegeBurns;
@@ -578,6 +592,7 @@ public sealed partial class CityEconomy
         News.AddRange(told);
         if (News.Count > 12) News.RemoveRange(0, News.Count - 12);
         Slump = Math.Max(0, Slump - 0.02);
+        FadeWork();
         if (DragonFree && !DragonSlain && Day % RampageEvery == 0) told.Add(Rampage());
         if (TendSiege(rng) is { } siege) told.Add(siege);
         else if (Siege is null && Day % SiegeEvery == 0) told.Add(BeginSiege(rng));
@@ -683,7 +698,7 @@ public sealed partial class CityEconomy
                 News.Add($"{slayer} has killed the Dread Pirate Soren. Nobody who knows the sea believes that's the end of it.");
                 return true;
             case "wukong_killed" when a.Item is { Length: > 0 and <= 60 } killer:
-                WukongDeaths++;
+                WukongDied();
                 if (Siege is { Lu: true } held) held.Lu = false; // there's nobody holding the town now
                 News.Add($"{killer} has killed Lu Wukong. Nobody who knows the sea believes that's the end of him.");
                 return true;
@@ -732,6 +747,7 @@ public sealed partial class CityEconomy
             case "council_seat" when a.Town is not null && a.Item is { Length: > 0 and <= 60 } seated: return SeatHero(a.Town, seated);
             case "council_fall" when a.Town is not null && a.Item is { Length: > 0 } member: return MemberFalls(a.Town, member);
             case "warlord_fell" when a.Town is not null: return WarlordFell(a.Town, a.Item);
+            case "worked" when a.Town is not null && Enum.TryParse<HandiKind>(a.Item, out var work): return Worked(a.Town, work, a.N);
             case "council_purse" when a.Town is not null && CouncilOf(a.Town).Ruler == a.Item: CouncilOf(a.Town).Purse = 0; return true;
             case "town_raid" when a.Town is not null && a.Item is { Length: > 0 } raiders && Enum.IsDefined((RaidAim)a.N):
                 if (Raid(raiders, a.Town, (RaidAim)a.N, new Rng(Seed ^ (ulong)Day ^ (ulong)Roads.Wagons * 7919), a.Contract is { Length: <= 60 } ? a.Contract : null) is not { } raided) return false;

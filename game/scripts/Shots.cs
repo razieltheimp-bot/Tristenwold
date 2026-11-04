@@ -832,7 +832,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             var ground = City.FloorAt(stand);
             for (var i = 0; i < 6; i++)
             {
-                main.Economy.WukongDeaths = i;
+                main.Economy.WukongDeaths = main.Economy.WukongFall = i;
                 var at = stand with { Y = ground } + new Vector3((2.5f - i) * 2.3f, 0, 0);
                 var e = Enemy.Create(Bestiary.Get("lu_wukong"), at, look: Legends.LuLook(main.Economy));
                 e.Carried = true;

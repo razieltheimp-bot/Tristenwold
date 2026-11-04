@@ -450,6 +450,7 @@ public partial class Main
         if (_sea.Upgrade(id, ref crowns) is null) { Say(master, $"{kind.Price} crowns for {kind.Name}. Come back when you have them."); return; }
         _player.Crowns = crowns;
         Sound.Ui("anvil");
+        DoCity(CityAction.Worked(CityEconomy.Capital, HandiKind.Ships, 2));
         Say(master, $"{kind.Name} on {_sea.ShipName}: {kind.Text}.");
         Save();
     }
@@ -564,6 +565,7 @@ public partial class Main
         _plank?.QueueFree();
         _plank = null;
         _sea.FitPlank(ownShip: p.Building);
+        DoCity(CityAction.Worked(CityEconomy.Capital, HandiKind.Ships)); // the yard kept busy: more ships ride in the bay
         if (!p.Building)
         {
             _player.Crowns += _sea.PlankPay;
@@ -1059,7 +1061,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
         if (_vaulting || _raider is null || _boarders.FirstOrDefault(e => e.Kind.Id == "lu_wukong") is not { } lu || lu.Stats.Health > lu.Stats.MaxHealth * Legend.WukongFleeAt) return;
         _vaulting = true;
         lu.Carried = true;
-        main.HudNode.Toast($"{Legend.WukongOf(main.Economy.WukongDeaths).Retreat} Bring him down now, or he's away!", 7);
+        main.HudNode.Toast($"{Legend.WukongOf(main.Economy.WukongChanges).Retreat} Bring him down now, or he's away!", 7);
         var away = lu.CreateTween();
         away.TweenProperty(lu, "global_position", _raider.GlobalPosition + Vector3.Up * 6, Legend.WukongFlightSeconds);
         away.TweenCallback(Callable.From(() =>
@@ -1104,7 +1106,7 @@ public partial class AtSea(Main main, Voyage voyage) : Node3D
             var e = Enemy.Create(Bestiary.Get(named?.Kind ?? (leader ? "pirate_captain" : kind)), spot, danger * (lu ? Legend.WukongStrength(main.Economy.WukongDeaths) : 1), look: named?.Id == "soren" ? Legends.Look(main.Economy) : lu ? Legends.LuLook(main.Economy) : null);
             if (leader && named is null) e.Stats.Name = crew?.Captain ?? "Black Ysolde's bosun";
             if (named?.Id == "soren") Legends.Dress(e, main.Economy);
-            if (lu) e.Scale = Vector3.One * Legend.WukongOf(main.Economy.WukongDeaths).Size;
+            if (lu) e.Scale = Vector3.One * Legend.WukongOf(main.Economy.WukongChanges).Size;
             e.Roam = 6;
             main.AddEnemy(e);
             e.Provoke(main.PlayerNode);

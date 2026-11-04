@@ -67,6 +67,18 @@ public static class Buildings
         return best;
     }
 
+    /// <summary>The spots outside every door within a distance (where townsfolk run to, to get in out of a raid).</summary>
+    public static IEnumerable<Vector3> DoorsWithin(Vector3 pos, float within)
+    {
+        Doors.RemoveAll(d => !GodotObject.IsInstanceValid(d.Body));
+        foreach (var (body, _, _, front) in Doors)
+        {
+            if (!body.IsInsideTree()) continue;
+            var step = body.ToGlobal(new Vector3(0, 0, front + 0.6f));
+            if (new Vector2(step.X - pos.X, step.Z - pos.Z).Length() < within && Mathf.Abs(step.Y - pos.Y) < 4) yield return step;
+        }
+    }
+
     /// <summary>Boards a building's door up: nobody goes in now.</summary>
     public static void Shut(Node3D building) => Doors.RemoveAll(d => d.Body == building);
 

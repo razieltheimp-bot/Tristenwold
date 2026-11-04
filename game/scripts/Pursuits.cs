@@ -257,6 +257,7 @@ public partial class Main
         var n = Farming.Yield(crop, level, _lootRng);
         _player.Pack.Add(crop.Gives, n);
         var up = _player.Pack.Practise(Job.Farming, Farming.HarvestXp(crop));
+        DoCity(CityAction.Worked(TownHere(_player.GlobalPosition) ?? CityEconomy.Capital, HandiKind.Farming)); // a town well fed: more of its children grow up
         Hands()?.Perform("Use_Item", 0.6, 1.2f);
         Sound.Ui("herb");
         _hud.Toast($"You harvest {Items.Count(crop.Gives, n).ToLowerInvariant()}.{(up is { } l ? $" Farming rises to {l}!" : "")}", 4);

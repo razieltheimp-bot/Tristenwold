@@ -11,10 +11,10 @@ public static class Engines
 {
     public const string ShipSteam = "ship_steam", ShipFlight = "ship_flight", WagonSteam = "wagon_steam", Skyboat = "skyboat";
 
-    public static readonly IReadOnlyDictionary<string, (string Name, IReadOnlyList<(string Id, int N)> Needs, int Marks)> Works = new Dictionary<string, (string, IReadOnlyList<(string, int)>, int)>
+    public static readonly IReadOnlyDictionary<string, (string Name, IReadOnlyList<(string Id, int N)> Needs, int Crowns)> Works = new Dictionary<string, (string, IReadOnlyList<(string, int)>, int)>
     {
-        [ShipSteam] = ("a boiler and paddle-wheels for her", [("iron_ingot", 12), ("iron_nails", 24), ("scrap_iron", 10)], 60),
-        [ShipFlight] = ("a lift and gas-bag, to take her up into the air", [("steel_ingot", 6), ("leather", 8), ("iron_nails", 20)], 150),
+        [ShipSteam] = ("a boiler and paddle-wheels for her", [("iron_ingot", 12), ("iron_nails", 24), ("scrap_iron", 10)], 300),
+        [ShipFlight] = ("a lift and gas-bag, to take her up into the air", [("steel_ingot", 6), ("leather", 8), ("iron_nails", 20)], 750),
         [WagonSteam] = ("a boiler for a wagon", [.. SteamWorks.Needs], 0),
         [Skyboat] = ("a lifeboat made over into a skyboat", [("steel_ingot", 3), ("leather", 4), ("iron_nails", 10)], 0),
     };

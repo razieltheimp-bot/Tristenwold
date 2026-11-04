@@ -65,6 +65,7 @@ public partial class Main
         var wage = AnvilWage;
         _player.Crowns += wage;
         var rose = _player.Pack.Practise(Job.Smithing, PracticePerPiece);
+        if (TownHere(_player.GlobalPosition) is { } town) DoCity(CityAction.Worked(town, HandiKind.Smithing)); // the town's forges kept hot: its guards are the better armed
         Effects.Burst(this, Anvil + Vector3.Up * 1.0f, Tristinwold.Deviant.DamageKind.Fire, 0.8f);
         Sound.At("melee/hit_metal", Anvil, 2);
         Sound.Ui("anvil");
@@ -82,6 +83,17 @@ public partial class Main
             _hud.Toast($"You hammer out {piece}, and that's the lot. +{wage} crowns, and {ShiftBonus} more for a full shift.{(rose is { } l ? $" Smithing rises to {l}." : "")}", 5);
         }
         Save();
+    }
+
+    /// <summary>How a town's guards are turned out, for the work at its forges: as ever, in good steel, or in plate.</summary>
+    public string GuardLook(string town) => _city.GuardTier(town) switch { 2 => "guard_plate", 1 => "guard_steel", _ => "guard" };
+
+    /// <summary>A guard armed as the town's forges allow: harder to bring down and harder-hitting the better its kit.</summary>
+    public void ArmGuard(Enemy g, string town)
+    {
+        var tier = _city.GuardTier(town);
+        if (tier == 0) return;
+        g.Tune(g.Stats.MaxHealth * (1 + 0.3 * tier), g.Kind.Damage * g.Stats.DamageMult * (1 + 0.25 * tier));
     }
 
     // ---- for the self-test -------------------------------------------------------------------------------------------

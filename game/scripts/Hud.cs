@@ -438,7 +438,7 @@ public partial class Hud : CanvasLayer
         foreach (var c in contracts)
         {
             var row = new HBoxContainer();
-            row.AddChild(new Label { Text = $"{c.Title}\n   {c.PostedBy} | {c.Where} | {c.Pay} gp", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, AutowrapMode = TextServer.AutowrapMode.Word, Modulate = c.Status == ContractStatus.Done ? new Color(1, 1, 1, 0.4f) : Colors.White });
+            row.AddChild(new Label { Text = $"{c.Title}\n   {c.PostedBy} | {c.Where} | {c.Pay} crowns", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, AutowrapMode = TextServer.AutowrapMode.Word, Modulate = c.Status == ContractStatus.Done ? new Color(1, 1, 1, 0.4f) : Colors.White });
             if (c.Status == ContractStatus.Open) AddButton(row, "Take it", new ClaimContract(c.Id));
             else if (c.Status == ContractStatus.Claimed && c.ClaimedBy == Company)
             {

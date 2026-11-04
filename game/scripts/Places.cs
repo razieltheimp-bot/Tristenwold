@@ -67,6 +67,7 @@ public partial class Person : StaticBody3D
     /// </summary>
     public override void _Process(double delta)
     {
+        if (!Captive && Afraid(delta)) return;
         if (_strolling) { Stroll(delta); return; }
         _next -= delta;
         if (_busy > 0) { _busy -= delta; return; }
@@ -142,6 +143,163 @@ public partial class Person : StaticBody3D
         }
         GlobalPosition += to.Normalized() * step;
         Figure.Move(0.9f, true, false);
+    }
+
+    // ---- a raid in the street: run for a door or a guard, and keep out of it till it's over ---------------------
+
+    enum Fear { Calm, Fleeing, Indoors, Cowering, Returning }
+    Fear _fear;
+    Vector3 _refuge, _threat;
+    bool _inside;
+    double _watchFor, _calmFor, _flinch;
+    uint _layer;
+
+    /// <summary>How near raiders have to come before the street empties.</summary>
+    public const float Scare = 26;
+    /// <summary>How fast someone runs for their life (a run, not a walk).</summary>
+    public const float RunSpeed = 6.8f;
+
+    /// <summary>Gone indoors out of a raid: not in the street to talk to.</summary>
+    public bool Hidden => _fear == Fear.Indoors;
+    /// <summary>Running from a raid, hiding from one, or cowering by a guard.</summary>
+    public bool Sheltering => _fear is Fear.Fleeing or Fear.Indoors or Fear.Cowering;
+    /// <summary>Gone in, rather than to a guard (for tests).</summary>
+    public bool ShelteringIndoors => _inside;
+
+    static readonly List<Vector3> Menace = [], Guards = [];
+    static ulong _surveyed;
+
+    /// <summary>Where the raiders and the guards are: looked up a couple of times a second for the whole town, not by everyone.</summary>
+    static void Survey(SceneTree tree)
+    {
+        var now = Time.GetTicksMsec();
+        if (now - _surveyed < 350 && _surveyed != 0) return;
+        _surveyed = now;
+        Menace.Clear();
+        Guards.Clear();
+        foreach (var e in tree.GetNodesInGroup("enemies").OfType<Enemy>())
+        {
+            if (!IsInstanceValid(e) || !e.IsInsideTree() || e.State == EnemyState.Dead) continue;
+            if (e.Watch) Guards.Add(e.GlobalPosition);
+            else if (e.Frightens) Menace.Add(e.GlobalPosition);
+        }
+    }
+
+    /// <summary>Looks again at once, not at the next half-second (for tests).</summary>
+    public static void ResurveyForTest() => _surveyed = 0;
+
+    static Vector3? Closest(List<Vector3> of, Vector3 to, float within)
+    {
+        Vector3? best = null;
+        var near = within;
+        foreach (var p in of)
+            if (p.DistanceTo(to) is var d && d < near) (near, best) = (d, p);
+        return best;
+    }
+
+    /// <summary>
+    /// Raiders in the street (a clan, Soren's crew, a warlord's band, anything fighting the hero or the guard): they
+    /// run, properly, for the nearest door or the nearest guard, whichever's closer and not the raiders' way, and stay
+    /// there, hidden or cowering, until it's been quiet a while; then they come back out and go back to what they were at.
+    /// </summary>
+    bool Afraid(double delta)
+    {
+        if (GlobalPosition.Y > 3000) return false; // indoors already, in one of the rooms
+        if ((_watchFor -= delta) <= 0)
+        {
+            _watchFor = 0.35 + GD.Randf() * 0.3;
+            Survey(GetTree());
+            if (Closest(Menace, GlobalPosition, _fear == Fear.Calm || _fear == Fear.Returning ? Scare : Scare + 14) is { } threat)
+            {
+                _calmFor = 7;
+                _threat = threat;
+                if (_fear is Fear.Calm or Fear.Returning) Panic();
+            }
+        }
+        if (_fear == Fear.Calm) return false;
+        if (_fear != Fear.Returning && (_calmFor -= delta) <= 0) { Settle(); return true; }
+        switch (_fear)
+        {
+            case Fear.Fleeing: Run(delta, RunSpeed); break;
+            case Fear.Returning: Run(delta, 2.6f); break;
+            case Fear.Cowering:
+                if ((_flinch -= delta) <= 0)
+                {
+                    _flinch = 1.4 + GD.Randf();
+                    Face(_threat);
+                    if (Figure is Figure f) f.Perform("Block", 1.2, 0.8f); // arms up, as if that'd help
+                }
+                break;
+        }
+        return true;
+    }
+
+    void Panic()
+    {
+        if (_home == Vector3.Zero) { _home = GlobalPosition; _homeYaw = Rotation.Y; }
+        if (_strolling) _strolling = false;
+        _busy = 0;
+        var here = GlobalPosition;
+        var away = (here - _threat) with { Y = 0 };
+        away = away.LengthSquared() > 0.01f ? away.Normalized() : Vector3.Forward;
+        // A door or a guard, but not one the raiders are standing at, nor one past them.
+        bool Safe(Vector3 p) => p.DistanceTo(_threat) > 9 && (p - here).Dot(_threat - here) < (_threat - here).LengthSquared() * 0.5f;
+        var door = Buildings.DoorsWithin(here, 40).Where(Safe).Where(Clear).OrderBy(d => d.DistanceTo(here)).Cast<Vector3?>().FirstOrDefault();
+        var guard = Guards.Where(g => g.DistanceTo(here) < 50 && Safe(g)).OrderBy(g => g.DistanceTo(here)).Cast<Vector3?>().FirstOrDefault();
+        if (door is { } d && (guard is not { } g0 || d.DistanceTo(here) <= g0.DistanceTo(here))) (_refuge, _inside) = (d, true);
+        else if (guard is { } g) (_refuge, _inside) = (g + ((g - _threat) with { Y = 0 }).Normalized() * 2.5f, false); // behind the guard, from the raiders
+        else (_refuge, _inside) = (here + away * 16, false);
+        _fear = Fear.Fleeing;
+        _flinch = 0;
+    }
+
+    /// <summary>Nothing solid between here and there (a building's wall, a stall).</summary>
+    bool Clear(Vector3 to)
+    {
+        var ray = PhysicsRayQueryParameters3D.Create(GlobalPosition + Vector3.Up * 0.9f, to + Vector3.Up * 0.9f);
+        ray.Exclude = [GetRid()];
+        var hit = GetWorld3D().DirectSpaceState.IntersectRay(ray);
+        return hit.Count == 0 || hit["collider"].AsGodotObject() is not Node n || !(n.IsInGroup(Buildings.Group) || n.GetParent()?.IsInGroup(Buildings.Group) == true);
+    }
+
+    void Run(double delta, float speed)
+    {
+        var to = (_fear == Fear.Returning ? _home : _refuge) - GlobalPosition;
+        to.Y = 0;
+        var step = (float)delta * speed;
+        if (to.Length() <= step + 0.2f)
+        {
+            Figure.Move(0, true, false);
+            if (_fear == Fear.Returning)
+            {
+                GlobalPosition = _home;
+                _fear = Fear.Calm;
+                CreateTween().TweenProperty(this, "rotation:y", _homeYaw, 0.8).SetTrans(Tween.TransitionType.Sine);
+                _busy = 2;
+            }
+            else if (_inside)
+            {
+                _fear = Fear.Indoors; // in, and the door shut
+                (Visible, _layer, CollisionLayer) = (false, CollisionLayer, 0);
+            }
+            else _fear = Fear.Cowering;
+            return;
+        }
+        var next = GlobalPosition + to.Normalized() * step;
+        var floor = City.FloorAt(next);
+        if (Mathf.Abs(floor - next.Y) < 1.5f) next.Y = Mathf.Lerp(next.Y, floor, 0.5f);
+        Face(next + to);
+        GlobalPosition = next;
+        Figure.Move(speed, true, false);
+    }
+
+    /// <summary>It's been quiet a while: out of hiding, and back to where they were.</summary>
+    void Settle()
+    {
+        if (_fear == Fear.Indoors) (Visible, CollisionLayer) = (true, _layer);
+        _fear = _home == Vector3.Zero || GlobalPosition.DistanceTo(_home) < 0.4f ? Fear.Calm : Fear.Returning;
+        _inside = false;
+        _next = 3 + GD.Randf() * 4;
     }
 
     /// <summary>Turns to face something (a deviant in the street, the hero they're patching up).</summary>
@@ -329,6 +487,9 @@ public partial class Places(Main main, WorldGen world) : Node3D
         // left home to follow the company isn't here.
         foreach (var npc in Ageing.Villagers(world, s, Calendar.Years(main.Economy.Day)).Where(n => Gone?.Invoke(n.Id) != true))
             b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z) }));
+        // A town that's been well fed has more of its children growing up (see Handiwork): youngsters about the place.
+        foreach (var youth in Youngsters(s, main.Economy.FedYouths(s.Id)).Where(n => Gone?.Invoke(n.Id) != true))
+            b.People.Add(Add(root, new Person { Npc = youth, Look = "youth", Position = Ground(youth.X, youth.Z) }));
 
         // The animals people keep, near the people who keep them (in the open, where people stand).
         foreach (var (kind, count) in Livestock.Of(s, rng))
@@ -350,13 +511,14 @@ public partial class Places(Main main, WorldGen world) : Node3D
             for (var i = 0; i < Warband.Guards(s); i++)
             {
                 var a = i * Math.Tau / Math.Max(1, Warband.Guards(s)) + rng.NextDouble();
-                var g = Enemy.Create(Bestiary.Get("watchman"), Ground(s.X + Math.Cos(a) * s.Radius * 0.35, s.Z + Math.Sin(a) * s.Radius * 0.35) + new Vector3(0, 0.5f, 0), look: "guard");
+                var g = Enemy.Create(Bestiary.Get("watchman"), Ground(s.X + Math.Cos(a) * s.Radius * 0.35, s.Z + Math.Sin(a) * s.Radius * 0.35) + new Vector3(0, 0.5f, 0), look: main.GuardLook(s.Id));
                 g.Allied = true;
                 g.Watch = true;
                 g.Roam = 8;
                 var keep = s;
                 g.Keeps = p => keep.DistanceTo(p.X, p.Z) < keep.Radius + 40;
                 g.Stats.Name = $"Guard of {s.Name}";
+                main.ArmGuard(g, s.Id);
                 main.AddEnemy(g);
                 g.RefreshPlate();
                 b.Guards.Add(g);
@@ -477,6 +639,21 @@ public partial class Places(Main main, WorldGen world) : Node3D
             Npc = new Npc($"{s.Id}/carpenter", $"{first} the Carpenter", Tristinwold.World.Sex.Other, 44, "carpenter", s.Id, s.Name, $"{first} has sawdust in everything and a pencil behind each ear, and is usually on the far side of a half-built wall.", ["trade"], "gruff", talk, cx + 3.4, cz),
             Look = "worker", Position = Ground(cx + 3.4, cz),
         }));
+    }
+
+    /// <summary>The well-fed youngsters a place has besides its own folk: the same ones each time for the same place, by number.</summary>
+    public static IEnumerable<Npc> Youngsters(Settlement s, int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            var rng = new Rng((ulong)WorldGen.StableHash(s.Id) ^ (ulong)(i + 1) * 0x9E3779B97F4A7C15UL);
+            var sex = rng.Chance(0.5) ? Tristinwold.World.Sex.Female : Tristinwold.World.Sex.Male;
+            var a = rng.NextDouble() * Math.Tau;
+            var r = s.Radius * (0.2 + rng.NextDouble() * 0.4);
+            yield return new Npc($"{s.Id}/youngster{i}", Names.Person(rng, sex), sex, 12 + rng.Next(4), "a well-fed youngster", s.Id, s.Name,
+                "Grew up on full plates, as more and more of the children here have lately, and is looking for something to do with all that.",
+                ["dreams", "gossip"], "cheerful", "Are you a hero? A real one? Do you need anyone?", s.X + Math.Cos(a) * r, s.Z + Math.Sin(a) * r);
+        }
     }
 
     /// <summary>A couple of small houses where the people of a mine or a camp live, at spots given as shares of its radius.</summary>

@@ -33,6 +33,8 @@ public static class Garments
     {
         "Paladin" or "Knight" or "aldric" or "dragon_knight" => new("cuirass", null, Pauldrons: true, Bracers: true, MetalBracers: true, Tabard: true),
         "guard" or "marine" or "squire" or "hollow_soldier" or "ghost_captain" => new("cuirass", "cap", Pauldrons: true, Bracers: true, MetalBracers: true),
+        "guard_steel" => new("cuirass", "cap", Pauldrons: true, Bracers: true, MetalBracers: true, Tabard: true),
+        "guard_plate" => new("cuirass", "cap", Pauldrons: true, Bracers: true, MetalBracers: true, Tabard: true, Cloak: true),
         "EtherAeronaut" => new("jerkin", "cap", Bracers: true, MetalBracers: true),
         "Barbarian" or "raider" or "raider_chief" or "warmaster" => new("fur", null, Pauldrons: true, Bracers: true),
         "dock_thug" or "worker" => new(null, null, Bracers: true),

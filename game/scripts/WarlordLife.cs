@@ -40,7 +40,7 @@ public partial class Main
         var at = p + ahead * 16;
         var e = Enemy.Create(Bestiary.Get(lord.Kind), at with { Y = City.FloorAt(at) + 0.5f }, Northwood.DangerFor(level), look: lord.Kind);
         e.HeroesRival = lord.Id.StartsWith("roamer:");
-        e.Roam = 16;
+        (e.Roam, e.Raider) = (16, true);
         AddEnemy(e);
         e.Crown($"{lord.Name}, Lord of {place.Name} (level {level})", Guid.TryParse(lord.Id, out var id) ? id : null);
         _warlord = e;
@@ -50,7 +50,7 @@ public partial class Main
             var spot = at + new Vector3(Mathf.Cos(i * 1.57f) * 5, 0, Mathf.Sin(i * 1.57f) * 5);
             var b = Enemy.Create(Bestiary.Get(under), spot with { Y = City.FloorAt(spot) + 0.5f }, Northwood.DangerFor(Math.Max(1, level - 3)), look: under);
             b.Stats.Name = Roaming.MinionOf(lord.Name);
-            b.Roam = 12;
+            (b.Roam, b.Raider) = (12, true);
             AddEnemy(b);
             b.RefreshPlate();
             _warlordBand.Add(b);

@@ -58,6 +58,8 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--warlords-only")) { await WarlordsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--stash-only")) { await StashTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--heist-only")) { await HeistTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--handiwork-only")) { await HandiworkTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--panic-only")) { await PanicTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--halfform-only")) { await TheHalfForm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--hunt-only")) { await HuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--living-only")) { await LivingWorldTest(); Finish(0); return; }
@@ -2734,6 +2736,86 @@ public partial class SelfTest(Main main) : Node
         await WarlordsTest();
         await StashTest();
         await HeistTest();
+        await HandiworkTest();
+        await PanicTest();
+    }
+
+    /// <summary>Raiders in the street: the townsfolk run for a door or a guard and hide till it's over, and the guard comes to the hero's help.</summary>
+    async Task PanicTest()
+    {
+        var p = main.PlayerNode;
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        var place = main.World.SettlementsNear(0, 0, 3000).Where(s => s.Id != "city:tristinwold" && Warband.Guards(s) > 0).MinBy(s => s.X * s.X + s.Z * s.Z);
+        if (place is null) { Check(false, "a town with guards of its own"); return; }
+        await Teleport(new Vector3((float)place.X + 30, 0, (float)place.Z + 30));
+        await Frames(60);
+        var folk = main.PlacesNode.People.Where(x => !x.Captive && place.DistanceTo(x.GlobalPosition.X, x.GlobalPosition.Z) < place.Radius).ToList();
+        if (folk.Count == 0) { Check(false, $"folk in {place.Name}"); return; }
+        var who = folk.MinBy(x => x.GlobalPosition.DistanceTo(new Vector3((float)place.X, x.GlobalPosition.Y, (float)place.Z)))!;
+        var stood = who.GlobalPosition;
+        var at = stood + new Vector3(8, 0.5f, 0);
+        var raider = Enemy.Create(Bestiary.Get("raider"), at with { Y = City.FloorAt(at) + 0.5f }, Northwood.DangerFor(8));
+        raider.Raider = true;
+        raider.Roam = 3;
+        main.AddEnemy(raider);
+        Person.ResurveyForTest();
+        await Until(() => who.Sheltering, 2);
+        Check(who.Sheltering, $"{who.Npc.Name} sees a raider in the street and runs for it");
+        var start = stood.DistanceTo(raider.GlobalPosition);
+        await Frames(120);
+        Check(who.GlobalPosition.DistanceTo(raider.GlobalPosition) > start + 3 && (who.Hidden || who.Sheltering),
+            $"away from it, {(who.Hidden ? "and in at a door" : who.ShelteringIndoors ? "for a door" : "to a guard")} ({start:0} m to {who.GlobalPosition.DistanceTo(raider.GlobalPosition):0} m)");
+        var near = folk.Where(x => IsInstanceValid(x) && x != who && x.GlobalPosition.DistanceTo(at) < Person.Scare - 4).ToList();
+        var far = folk.Where(x => IsInstanceValid(x) && x.GlobalPosition.DistanceTo(at) > Person.Scare + 30).ToList();
+        Check(near.All(x => x.Sheltering) && far.All(x => !x.Sheltering),
+            $"and everyone else near it with them ({near.Count(x => x.Sheltering)} of {near.Count}), while folk further off carry on ({far.Count(x => !x.Sheltering)} of {far.Count})");
+        var guards = main.PlacesNode.GuardsOf(place.Id).ToList();
+        Check(guards.Any(g => IsInstanceValid(g) && g.Rival == raider), $"{place.Name}'s guards go for the raider");
+        raider.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Until(() => !who.Sheltering && !who.Hidden && who.GlobalPosition.DistanceTo(stood) < 1, 30);
+        Check(!who.Hidden && who.GlobalPosition.DistanceTo(stood) < 1, $"when it's quiet again {who.Npc.Name} comes back out and goes back to where they stood ({who.GlobalPosition.DistanceTo(stood):0.0} m off)");
+
+        // Set on in the street, and the guard comes to help.
+        var alive = guards.Where(g => IsInstanceValid(g) && g.State != EnemyState.Dead).ToList();
+        if (alive.Count == 0) { Check(false, $"a guard left standing to help ({guards.Count} had been)"); return; }
+        await Until(() => !p.Downed, 10); // if the raider got to you first
+        p.Stats.Heal(1e6);
+        alive = main.PlacesNode.GuardsOf(place.Id).Where(g => IsInstanceValid(g) && g.State != EnemyState.Dead).ToList(); // the town's own, as it stands now
+        var thug = Enemy.Create(Bestiary.Get("bandit"), p.GlobalPosition + new Vector3(3, 0.5f, 0), Northwood.DangerFor(3));
+        thug.Roam = 4;
+        main.AddEnemy(thug);
+        await Frames(3);
+        thug.Provoke(p);
+        var helped = false;
+        await Until(() => { p.Stats.Heal(1e6); return helped = alive.Any(g => IsInstanceValid(g) && IsInstanceValid(thug) && g.Rival == thug); }, 4);
+        Check(helped, $"a bandit sets on you in the street, and the guard comes to help you ({(IsInstanceValid(thug) ? thug.State.ToString() : "gone")})");
+        if (IsInstanceValid(thug)) thug.TakeHit(1e7, DamageKind.Sun, AttackKind.Spell, false, p);
+        await Frames(10);
+    }
+
+    /// <summary>What heroes do shows in the world: a busy yard fills the bay, hot forges arm the guards, full plates raise more children.</summary>
+    async Task HandiworkTest()
+    {
+        var city = main.Economy;
+        main.TendBayForTest();
+        var before = main.BayShipsShownForTest;
+        Check(before == city.BayShips, $"the bay shows as many ships as the yard's kept busy for ({before})");
+        for (var i = 0; i < 12; i++) main.DoCity(CityAction.Worked(CityEconomy.Capital, HandiKind.Ships));
+        main.TendBayForTest();
+        Check(main.BayShipsShownForTest == city.BayShips && city.BayShips > before, $"mend ships at the yard and more come to anchor ({before} to {main.BayShipsShownForTest})");
+        for (var i = 0; i < 45; i++) main.DoCity(CityAction.Worked(CityEconomy.Capital, HandiKind.Smithing));
+        Check(main.GuardLook(CityEconomy.Capital) == "guard_plate", "keep Tristinwold's forges hot and its Watch goes in plate");
+        var g = Enemy.Create(Bestiary.Get("watchman"), main.PlayerNode.GlobalPosition + new Vector3(4, 0.5f, 0), look: main.GuardLook(CityEconomy.Capital));
+        main.AddEnemy(g);
+        var plain = g.Stats.MaxHealth;
+        main.ArmGuard(g, CityEconomy.Capital);
+        Check(g.Stats.MaxHealth > plain * 1.5, $"and harder to bring down for it ({plain:0} to {g.Stats.MaxHealth:0})");
+        g.QueueFree();
+        var town = main.World.SettlementsNear(0, 0, 3000).First(TownCouncils.Keeps);
+        for (var i = 0; i < 24; i++) main.DoCity(CityAction.Worked(town.Id, HandiKind.Farming));
+        var young = Places.Youngsters(town, city.FedYouths(town.Id)).ToList();
+        Check(young.Count == 3 && young.All(People.IsYouth), $"bring in the harvests in {town.Name} and three more of its children grow up ({young.Count}, all youths: {young.All(People.IsYouth)})");
+        Check(young.Select(y => y.Name).SequenceEqual(Places.Youngsters(town, 3).Select(y => y.Name)), "the same youngsters every time");
     }
 
     /// <summary>The Velvet Knives' job: Vesper's offer, the strongroom's door, the diamond, the pay; and a diamond broken on a foe.</summary>
@@ -3756,7 +3838,9 @@ public partial class SelfTest(Main main) : Node
         // The closed market.
         main.Talk(Who("isle/stores"));
         var crowns = p.Crowns;
-        Check(hud.Choose("Steamweave Coat") && p.Pack.Count("steamweave_coat") == 0 && p.Crowns == crowns, "no marks, no coat, and crowns don't come into it");
+        p.Crowns = 0;
+        Check(hud.Choose("Steamweave Coat") && p.Pack.Count("steamweave_coat") == 0 && p.Crowns == 0, "no crowns, no coat");
+        p.Crowns = crowns;
         hud.EndTalk();
 
         // The valves.
@@ -3770,7 +3854,7 @@ public partial class SelfTest(Main main) : Node
             Check(near?.Verb == "ease the valve", $"valve {i + 1} wants easing");
             near?.Act();
         }
-        Check(!node.OnShift && isle.Marks == IsleBook.Valves * IsleBook.VentPay + IsleBook.ShiftPay && isle.Shifts == 1, $"a shift worked: {isle.Marks} marks");
+        Check(!node.OnShift && isle.Earned == IsleBook.Valves * IsleBook.VentPay + IsleBook.ShiftPay && isle.Shifts == 1 && p.Crowns >= crowns + isle.Earned, $"a shift worked: {isle.Earned} crowns ({p.Crowns - crowns} more in your purse)");
 
         // Up the lifts.
         for (var i = 0; i < 3; i++)
@@ -3815,7 +3899,7 @@ public partial class SelfTest(Main main) : Node
         var inTheSky = node.Foes.Count;
         await Until(() => node.Foes.Count < inTheSky, 40);
         Check(node.Foes.Count < inTheSky && isle.AirKills == 0, $"the fleet's guns bring them down without you: {inTheSky - node.Foes.Count} so far, in the time it took");
-        var (kills, marks) = (isle.AirKills, isle.Marks);
+        var (kills, marks) = (isle.AirKills, p.Crowns);
         for (var i = 0; i < 40 && isle.AirKills == kills && node.Foes.Count > 0; i++)
         {
             var f = node.Foes[0];
@@ -3825,7 +3909,7 @@ public partial class SelfTest(Main main) : Node
             node.ShootForTest();
             await Frames(45);
         }
-        Check(isle.AirKills > kills && isle.Marks > marks, $"a shell of yours brings one down: {isle.AirKills} kills, {isle.Marks - marks} marks");
+        Check(isle.AirKills > kills && p.Crowns > marks, $"a shell of yours brings one down: {isle.AirKills} kills, {p.Crowns - marks} crowns");
         p.Camera.Rotation = Vector3.Zero;
         (await Near())?.Act();
         await Frames(5);
@@ -3868,11 +3952,11 @@ public partial class SelfTest(Main main) : Node
         Check(hud.Choose("Take me up on patrol") && node.OnPatrol && p.Seat is not null, "and takes you up on patrol");
         await Until(() => node.RaidOn, 10);
         Check(node.RaidOn, "something's sighted");
-        var homeMarks = isle.Marks;
+        var homeMarks = p.Crowns;
         foreach (var f in node.Foes.ToList()) f.Shelled(1e9, false);
         await Until(() => !node.OnPatrol, 6);
         await Frames(10);
-        Check(!node.OnPatrol && p.Seat is null && isle.Sorties == 1 && isle.Marks > homeMarks, $"sky clear, back on the dock and paid: {isle.Marks - homeMarks} marks");
+        Check(!node.OnPatrol && p.Seat is null && isle.Sorties == 1 && p.Crowns > homeMarks, $"sky clear, back on the dock and paid: {p.Crowns - homeMarks} crowns");
         isle.Sorties = IsleBook.ToHelmsman;
         isle.AirKills = IsleBook.HelmsmanKills;
         isle.Air = AirRank.Helmsman;
@@ -3886,9 +3970,10 @@ public partial class SelfTest(Main main) : Node
         await Until(() => !node.RaidOn, 4);
 
         // What they made stays behind.
-        isle.Marks += 18;
+        p.Crowns += 90;
+        var before = p.Crowns;
         main.Talk(Who("isle/stores"));
-        Check(hud.Choose("Steamweave Coat") && p.Pack.Count("steamweave_coat") == 1, "marks buy the coat");
+        Check(hud.Choose("Steamweave Coat") && p.Pack.Count("steamweave_coat") == 1 && p.Crowns == before - 90, "crowns buy the coat");
         hud.EndTalk();
         main.Talk(Who("isle/warden"));
         Check(hud.Choose("Fly me back to the mainland"), "you ask to go");

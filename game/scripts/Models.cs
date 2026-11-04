@@ -417,6 +417,8 @@ public partial class Figure : Body
         ["frost_troll"] = new("Barbarian", ["2H_Axe"], 1.35f, new Color("#c8d4e4")),
         // People.
         ["guard"] = new("Knight", ["1H_Sword", "Round_Shield", "Knight_Helmet"]),
+        ["guard_steel"] = new("Knight", ["1H_Sword", "Badge_Shield", "Knight_Helmet"]), // a town whose forges are kept hot: good steel and a crested shield
+        ["guard_plate"] = new("Knight", ["2H_Sword", "Knight_Helmet"]),                 // and hotter still: plate and a greatsword
         ["scholar"] = new("Mage", ["Spellbook"], Unarmed: true),
         ["priest"] = new("Mage", ["Spellbook_open", "Mage_Hat"], Unarmed: true),
         ["worker"] = new("Barbarian", [], Unarmed: true),

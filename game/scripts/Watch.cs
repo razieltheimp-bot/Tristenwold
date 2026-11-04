@@ -73,7 +73,8 @@ public partial class TownWatch(Main main) : Node
     void Post(int i)
     {
         var at = Posts[i].At with { Y = City.FloorAt(Posts[i].At) + 0.4f };
-        var g = Enemy.Create(Bestiary.Get("watchman"), at, look: "guard");
+        var g = Enemy.Create(Bestiary.Get("watchman"), at, look: main.GuardLook(CityEconomy.Capital)); // armed as Tristinwold's forges allow
+        main.ArmGuard(g, CityEconomy.Capital);
         g.Allied = !_hostile;
         g.Watch = true;
         g.Roam = 7;
