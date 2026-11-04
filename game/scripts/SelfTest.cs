@@ -3375,6 +3375,8 @@ public partial class SelfTest(Main main) : Node
         (sea.ShipX, sea.ShipZ) = (Main.ShipBerth.X, Main.ShipBerth.Z);
         await Teleport(new Vector3(138, 0, 0));
         await Frames(10);
+        main.AdoptForTest("wolf"); // a companion along for the voyage
+        await Frames(20);
         main.BoardVesselForTest();
         var ship = main.VesselNode;
         Check(ship is not null && main.AboardShip, "you take your own ship out from her berth");
@@ -3399,6 +3401,9 @@ public partial class SelfTest(Main main) : Node
         Check(main.VesselVerbForTest == "take the wheel", $"up at the wheel, E takes it ({main.VesselVerbForTest})");
         main.BoardVesselForTest();
         Check(main.AboardShip && p.Seat is not null, "and you're at the helm again");
+        await Frames(10);
+        var crew = main.CrewForTest.ToList();
+        Check(crew.Count > 0 && crew.All(c => ship.OnDeck(c.GlobalPosition)), $"your company rides on her deck ({crew.Count} aboard)");
         main.LeaveVesselForTest();
         Check(!main.AboardShip && City.OnPier(p.GlobalPosition), "and can step off onto the pier");
         main.BoardVesselForTest();
@@ -3408,6 +3413,7 @@ public partial class SelfTest(Main main) : Node
         await Frames(240);
         Input.ActionRelease("move_forward");
         Check(ship.GlobalPosition.DistanceTo(from) > 20, $"W drives her across the water ({ship.GlobalPosition.DistanceTo(from):0} m)");
+        Check(main.CrewForTest.All(c => ship.OnDeck(c.GlobalPosition)), "and her crew are still on her deck, not swimming after her");
         var heading = ship.Rotation.Y;
         Input.ActionPress("move_left");
         await Frames(60);

@@ -54,6 +54,40 @@ public partial class Main
         return ($"go aboard {_sea.ShipName}", GoAboard);
     }
 
+    /// <summary>Your company aboard while she sails: each at their place on her deck, going where she goes.</summary>
+    public void CrewAboard(OwnVessel ship)
+    {
+        var i = 0;
+        foreach (var c in _companions.Where(c => IsInstanceValid(c) && c.State != EnemyState.Dead && c != _player.Mount))
+        {
+            c.Carried = true;
+            c.GlobalPosition = ship.GlobalTransform * OwnVessel.CrewSpots[i++ % OwnVessel.CrewSpots.Length];
+            c.Rotation = new Vector3(0, ship.Rotation.Y + (i % 2 == 0 ? 0.6f : -0.6f), 0);
+        }
+    }
+
+    /// <summary>The wheel let go: they're free about her deck again, on their own feet.</summary>
+    void CrewAtEase()
+    {
+        foreach (var c in _companions.Where(IsInstanceValid)) c.Carried = false;
+    }
+
+    /// <summary>Your company over the side with you: onto the deck going aboard, or ashore beside you going ashore.</summary>
+    void CrewTo(Vector3 at, OwnVessel? ship)
+    {
+        var i = 0;
+        foreach (var c in _companions.Where(c => IsInstanceValid(c) && c.State != EnemyState.Dead && c != _player.Mount))
+        {
+            c.Carried = false;
+            var spot = ship is not null ? ship.GlobalTransform * OwnVessel.CrewSpots[i % OwnVessel.CrewSpots.Length] + Vector3.Up * 0.3f
+                : at + new Vector3(Mathf.Cos(i * 1.3f) * 2.2f, 0, Mathf.Sin(i * 1.3f) * 2.2f) with { Y = 0 };
+            if (ship is null) spot.Y = City.FloorAt(spot) + 0.4f;
+            c.GlobalPosition = spot;
+            c.ResetPhysicsInterpolation();
+            i++;
+        }
+    }
+
     /// <summary>Up the side and onto her deck, amidships: walk about her, and take the wheel when you want her to go.</summary>
     void GoAboard()
     {
@@ -62,6 +96,7 @@ public partial class Main
         _player.GlobalPosition = ship.DeckSpot;
         _player.Velocity = Vector3.Zero;
         _player.ResetPhysicsInterpolation();
+        CrewTo(ship.DeckSpot, ship); // and your company with you
         _hud.Toast($"Aboard {_sea.ShipName}. Walk about her deck; E at the wheel, up on the quarterdeck, to take her out, or E at the rail to step ashore.", 7);
     }
 
@@ -73,6 +108,7 @@ public partial class Main
         ship.Halt();
         (_sea.ShipX, _sea.ShipZ) = (ship.GlobalPosition.X, ship.GlobalPosition.Z);
         _player.StandUp(ship.BesideWheel);
+        CrewAtEase();
         ShipShopUnderWay(false);
         _hud.Toast($"You let go of the wheel and {_sea.ShipName} drifts to a stop. Walk about her deck; E at the wheel to take her again, or at the rail to step ashore.", 6);
         Save();
@@ -107,6 +143,7 @@ public partial class Main
         var ashore = step with { Y = City.FloorAt(step) + 0.3f };
         if (_player.Seat is not null) _player.StandUp(ashore);
         else { _player.GlobalPosition = ashore; _player.Velocity = Vector3.Zero; _player.ResetPhysicsInterpolation(); }
+        CrewTo(ashore, null); // they come ashore with you
         ShipShopUnderWay(false);
         Save();
     }
@@ -116,6 +153,8 @@ public partial class Main
     public void BoardVesselForTest() { TendVessel(); BoardVessel(); }
     public void LeaveVesselForTest() => LeaveVessel();
     public void LeaveWheelForTest() => LeaveWheel();
+    public IEnumerable<Enemy> CrewForTest => _companions.Where(IsInstanceValid);
+    public Bond AdoptForTest(string kind) => Adopt(kind, dragon: false, _player.GlobalPosition + Vector3.Back * 2, level: 6);
     public void GoAboardForTest() => GoAboard();
     public string? VesselVerbForTest => VesselAction(_player.GlobalPosition)?.Verb;
     public bool UninhabitedIslandForTest(Vector3 at) => UninhabitedIsland(at);
@@ -163,6 +202,13 @@ public partial class OwnVessel(Main main) : Node3D
 
     /// <summary>Way off her: she stops where she is.</summary>
     public void Halt() => (_speed, _climb) = (0, 0);
+
+    /// <summary>Where the hero's company stand on her deck while she sails, clear of the mast, the hatch, the cargo and the wheel.</summary>
+    public static readonly Vector3[] CrewSpots =
+    [
+        new(1.0f, DeckTop + 0.05f, -1.7f), new(-0.6f, DeckTop + 0.05f, -0.2f), new(0.9f, DeckTop + 0.05f, 1.3f), new(-0.8f, DeckTop + 0.05f, -4.6f),
+        new(0.7f, DeckTop + 0.05f, -5.9f), new(-0.3f, DeckTop + 0.05f, -7.0f), new(1.2f, QuarterTop + 0.05f, 5.2f), new(-1.2f, QuarterTop + 0.05f, 5.2f),
+    ];
 
     static StandardMaterial3D Mat(string hex, float rough = 0.8f) => new() { AlbedoColor = new Color(hex), Roughness = rough };
 
@@ -373,6 +419,7 @@ public partial class OwnVessel(Main main) : Node3D
         var y = Mathf.Clamp(GlobalPosition.Y + _climb * d, floor, floor + Skyboat.MostHeight);
         var afloat = y <= floor + 0.05f && main.World.Height(at.X, at.Z) <= WorldGen.WaterLevel;
         GlobalPosition = at with { Y = afloat ? (float)WorldGen.WaterLevel + Mathf.Sin((float)Time.GetTicksMsec() / 900f) * 0.12f : y };
+        main.CrewAboard(this); // the company on her deck, not swimming after her
     }
 
     float _climb;
