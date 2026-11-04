@@ -5,6 +5,29 @@ namespace Tristinwold.Gameplay.Tests;
 public class SettlingTests
 {
     [Fact]
+    public void Two_classes_learned_give_the_moves_of_both_and_one_limit_break_of_either()
+    {
+        var hero = new Hero { Discipline = "EtherAeronaut", Level = 12 };
+        hero.Join("Shapeshifter"); // an artificer cross-classed into a druid
+        var moves = QuickBar.Moves(hero).Select(a => a.Id).ToList();
+        Assert.Contains("shift", moves);
+        Assert.Contains("harpoon", moves); // the old class's moves are still there
+        Assert.Equal("half_form", Classes.Get(hero.UltimateOf).Limit.Id);
+        Assert.Equal("EtherAeronaut", hero.Artificer); // and the golem walks with them still
+        hero.Ultimate = "EtherAeronaut";
+        Assert.Equal("overdrive", Classes.Get(hero.UltimateOf).Limit.Id);
+        Assert.Single(QuickBar.Moves(hero), a => a.Id is "overdrive" or "half_form"); // one limit break at a time
+        hero.Ultimate = "Wizard"; // not one they've learned
+        Assert.Equal("Shapeshifter", hero.UltimateOf);
+        var druid = new Hero { Discipline = "Shapeshifter", Level = 12 };
+        druid.Join("Saboteur"); // a druid who becomes an artificer
+        druid.Ultimate = "Shapeshifter";
+        Assert.Contains(QuickBar.Moves(druid), a => a.Id == "half_form");
+        Assert.Contains(QuickBar.Moves(druid), a => a.Id == "shift");
+        Assert.Equal("Saboteur", druid.Artificer);
+    }
+
+    [Fact]
     public void The_company_wears_what_the_hero_gives_them_and_its_stronger_for_it()
     {
         var pack = new Pack();

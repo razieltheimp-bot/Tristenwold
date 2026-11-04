@@ -51,7 +51,7 @@ public partial class Main
         }
         if (Classes.Move(id) is not { } a) return new(id, "", 0, false, true);
         var stats = _player.Stats;
-        if (a == _player.Class.Limit) return new(a.Name, "", 1 - stats.Limit / 100, stats.LimitReady, !stats.LimitReady);
+        if (a == _player.Limit) return new(a.Name, "", 1 - stats.Limit / 100, stats.LimitReady, !stats.LimitReady);
         var left = _player.Cooldown(a.Id);
         var cantPay = a.Cost > (a.Pays == AttackKind.Spell ? stats.Mana : stats.Stamina);
         return new(a.Name, left >= 1 ? $"{left:0}" : "", a.Cooldown > 0 ? left / a.Cooldown : 0, false, cantPay);

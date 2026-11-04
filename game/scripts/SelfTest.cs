@@ -76,6 +76,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--refuge-only")) { await GrowthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--spread-only")) { await SpreadTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--kit-only")) { await KitTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--multiclass-only")) { await MulticlassTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--shadows-only")) { await ShadowsTest(); Finish(0); return; }
@@ -2788,6 +2789,29 @@ public partial class SelfTest(Main main) : Node
         await HandiworkTest();
         await PanicTest();
         await KeeperTest();
+    }
+
+    /// <summary>An aeronaut who takes up the shapeshifter's way keeps the golem and the harpoon, and can take the half-form as their one limit break.</summary>
+    async Task MulticlassTest()
+    {
+        var p = main.PlayerNode;
+        p.Hero.Level = 12;
+        p.Join("EtherAeronaut");
+        await Until(() => main.Bonds.Any(b => b.Role == BondRole.Golem), 6);
+        p.Join("Shapeshifter");
+        main.ForestLog.Shapes = ["wolf", "bear"];
+        await Frames(240);
+        Check(main.Bonds.Any(b => b.Role == BondRole.Golem), "a shapeshifter now, the aeronaut's golem still walks with them");
+        Check(QuickBar.Moves(p.Hero).Any(a => a.Id == "harpoon") && p.Limit.Id == "half_form", $"the harpoon still to hand, and the half-form their limit break ({p.Limit.Name})");
+        p.Join("EtherAeronaut");
+        p.Hero.Ultimate = "Shapeshifter";
+        p.Stats.GainLimit(100);
+        Check(p.Limit.Id == "half_form" && p.LimitBreak() && p.Possessing, "an aeronaut again, they can call the half-form as their one limit break");
+        p.Unpossess();
+        await Until(() => p.Cooldown("shift") <= 0, 4);
+        Check(p.UseMove(Classes.Move("shift")!) && p.Form is not null, $"and take a beast's shape ({p.Form})");
+        p.Hero.Ultimate = null;
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
     }
 
     /// <summary>A squire given a sword and plate wears them and is the stronger for it; taken back, they're in the pack again.</summary>

@@ -450,13 +450,16 @@ public partial class Player : Fighter
     public bool Cast() => Use(Class.Signature);
 
     /// <summary>The limit break (R), once the gauge is full.</summary>
-    public bool LimitBreak() => Use(Class.Limit);
+    public bool LimitBreak() => Use(Limit);
+
+    /// <summary>The limit break this hero calls on: their class's, or another class's they've learned and chosen (see Hero.Ultimate).</summary>
+    public Ability Limit => Classes.Get(Hero.UltimateOf).Limit;
 
     /// <summary>A limit break went off (the HUD shows its name across the screen).</summary>
     public event Action<Ability, Color>? LimitUsed;
 
     /// <summary>The colour of each class's limit break.</summary>
-    public Color LimitColour => Class.Id switch
+    public Color LimitColour => Hero.UltimateOf switch
     {
         "MartialArtist" => new Color("#ffd27a"),
         "Barbarian" => new Color("#ff4a32"),
@@ -470,7 +473,7 @@ public partial class Player : Fighter
         "Poet" => new Color("#ffd86a"),
         "Scribe" => new Color("#7ad8ff"),
         "Musician" => new Color("#ff9ad0"),
-        _ => Effects.Of(Class.Limit.Kind),
+        _ => Effects.Of(Limit.Kind),
     };
 
     /// <summary>The moment a limit break goes off: light, a shockwave, the world slowing for a heartbeat, the camera shaking.</summary>
@@ -501,7 +504,7 @@ public partial class Player : Fighter
     public bool Use(Ability a)
     {
         if (Downed) return false;
-        var limit = a == Class.Limit;
+        var limit = a == Limit;
         if (limit ? !Stats.LimitReady : Cooldown(a.Id) > 0) return false;
         if (a.Id is "half_form" or "heart_of_the_storm" && _possessing) return false; // the gauge isn't spent on a body they're already in
         var cost = a.Cost * (Class.Id == "Sorcerer" && a.Pays == AttackKind.Spell ? 0.85 : 1);
@@ -1234,7 +1237,7 @@ public partial class Player : Fighter
         if (Class.Id == "Assassin" && !target.FightingCompany) damage *= 1 + Class.Passive.Power * Hero.Power("backstab");
         if (_rage > 0) damage *= 1 + 0.6 * Hero.MovePower("rage");
         if (_merged > Now) damage *= 1 + Classes.Move("merge")!.Power * Hero.MovePower("merge"); // the golem's weight behind every blow
-        if (_overdrive > Now) damage *= 1 + Class.Limit.Power;
+        if (_overdrive > Now) damage *= 1 + Classes.Move("overdrive")!.Power;
         if (Class.Id == "Scribe") // every weakness noted: each blow on the same foe hits harder
         {
             if (_noted != target) (_noted, _notes) = (target, 0);

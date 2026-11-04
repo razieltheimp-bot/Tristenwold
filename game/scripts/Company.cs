@@ -357,14 +357,14 @@ public partial class Main
     void TendGolem()
     {
         var golems = _bonds.Where(b => b.Role == BondRole.Golem).ToList();
-        var id = _player.Class.Id;
+        var id = _player.Hero.Artificer ?? _player.Class.Id; // an artificer's golem walks with them, whatever calling they've taken up since
         foreach (var mite in _bonds.Where(b => b.Role == BondRole.Mite && id != "Saboteur").ToList()) // a saboteur's work, and nobody else can keep it wound
         {
             if (BodyOf(mite) is { } body) { _companions.Remove(body); body.QueueFree(); }
             _bonds.Remove(mite);
             _hud.Toast($"{mite.Name} runs down: a mite needs a saboteur's hand on the key.", 6);
         }
-        var wanted = PartyRules.Constructs(_player.Class.Calling, id, _player.Hero.Level);
+        var wanted = PartyRules.Constructs(Classes.Get(id).Calling, id, _player.Hero.Level);
         foreach (var spare in golems.Skip(wanted).ToList())
         {
             if (BodyOf(spare) is { } body) { _companions.Remove(body); body.QueueFree(); }
@@ -393,7 +393,7 @@ public partial class Main
             if ((_worn is not null && BodyOf(golem) == _worn) || (golem.Level == level && golem.Build == build && !refit)) continue; // refitted once you've stepped out, never round you
             if (refit) // another artificer's way: the Foundry refits the machine to its design
             {
-                _hud.Toast($"The Foundry refits {golem.Name} to a {_player.Class.Name}'s design: it's {name} now.", 8);
+                _hud.Toast($"The Foundry refits {golem.Name} to a {Classes.Get(id).Name}'s design: it's {name} now.", 8);
                 golem.Name = name;
             }
             (golem.Level, golem.Build) = (level, build);
@@ -565,8 +565,8 @@ public partial class Main
     }
 
     /// <summary>A fish from the pack a pet would eat, the cheapest first (a pearl's not food, and you'd not waste a golden carp).</summary>
-    string? FishToFeed() => _player.Pack.Contents.Where(c => CityEconomy.GoodOf(c.Item.Id) == Good.Fish && c.Item.Id != "golden_carp").OrderBy(c => c.Item.Value).Select(c => c.Item.Id).FirstOrDefault();
-    int FishInPack => _player.Pack.Contents.Where(c => CityEconomy.GoodOf(c.Item.Id) == Good.Fish && c.Item.Id != "golden_carp").Sum(c => c.N);
+    string? FishToFeed() => _player.Pack.Contents.Where(c => CityEconomy.GoodOf(c.Item.Id) == Good.Fish).OrderBy(c => c.Item.Value).Select(c => c.Item.Id).FirstOrDefault();
+    int FishInPack => _player.Pack.Contents.Where(c => CityEconomy.GoodOf(c.Item.Id) == Good.Fish).Sum(c => c.N);
 
     public void Feed(Bond bond)
     {
@@ -1113,6 +1113,20 @@ public partial class Main
         options.Add(("My trades and standing", () => _hud.Talk("Trades and standing", more, ("Back", ShowSkills))));
         foreach (var id in hero.Learned.Keys.Where(k => k != c.Id).ToList())
             options.Add(($"Take up the way of the {Classes.Get(id).Name} again", () => { _player.Join(id); _hud.Toast($"You are a {Classes.Get(id).Name} again, with every rank you had in it.", 8); Save(); ShowSkills(); }));
+        // One limit break at a time, from any class learned.
+        if (hero.Learned.Count > 0)
+            foreach (var id in hero.Classes.Where(k => k != hero.UltimateOf).ToList())
+                options.Add(($"Call on {Classes.Get(id).Limit.Name} as your limit break ({Classes.Get(id).Name}; now {_player.Limit.Name})", () =>
+                {
+                    var was = _player.Limit.Id;
+                    hero.Ultimate = id == c.Id ? null : id;
+                    if (Array.IndexOf(hero.Bar.Slots, was) is >= 0 and var key) hero.Bar.Slots[key] = _player.Limit.Id; // on the key the old one had
+                    hero.Bar.Arrange(hero);
+                    _player.Fit();
+                    _hud.Toast($"Your limit break is {_player.Limit.Name} now. Only one at a time.", 6);
+                    Save();
+                    ShowSkills();
+                }));
         if (c.Id == "Stormdruid")
         {
             var form = _pursuits.Counters.GetValueOrDefault("elemental_form");

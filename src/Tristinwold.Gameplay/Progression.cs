@@ -82,6 +82,20 @@ public sealed class Hero
     public bool Knows(string discipline) => discipline == Discipline || Learned.ContainsKey(discipline);
 
     /// <summary>
+    /// The one limit break the hero calls on: their present class's, unless they've chosen another class they've
+    /// learned (a cross-classed artificer taking the shapeshifter's half-form). One at a time.
+    /// </summary>
+    public string? Ultimate { get; set; }
+
+    /// <summary>The class whose limit break is the hero's now.</summary>
+    [JsonIgnore]
+    public string UltimateOf => Ultimate is { } u && Knows(u) ? u : Discipline;
+
+    /// <summary>The artificer's calling learned, if any, the present one first: whose golem walks with the hero, whatever they're doing now.</summary>
+    [JsonIgnore]
+    public string? Artificer => Classes.FirstOrDefault(c => Gameplay.Classes.Get(c).Calling == Calling.Artificer);
+
+    /// <summary>
     /// Takes up a class: a new one, or one learned before. The class left keeps its skill ranks for the day it's taken
     /// up again; a class taken up for the first time gets half the hero's levels in skill points to spend on it, since
     /// an immortal doesn't start from nothing twice.

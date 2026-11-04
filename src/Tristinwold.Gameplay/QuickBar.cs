@@ -26,14 +26,19 @@ public sealed class QuickBar
     static Ability[] Own(Discipline d) => [d.Primary, d.Signature, d.Utility, d.Limit];
 
     /// <summary>
-    /// Every move that can go on the bar: the class's own, then those of the classes learned before. A limit break
-    /// belongs to the class it was learned in: it runs on that class's gauge, so another's can't be carried over.
+    /// Every move that can go on the bar: the class's own, then those of the classes learned before, their advanced
+    /// moves too, all usable side by side. Only one limit break: the class's own, or the one the hero has chosen from
+    /// another class they've learned (see <see cref="Hero.Ultimate"/>).
     /// </summary>
-    public static IReadOnlyList<Ability> Moves(Hero hero) =>
-        Own(Classes.Get(hero.Discipline))
+    public static IReadOnlyList<Ability> Moves(Hero hero)
+    {
+        var d = Classes.Get(hero.Discipline);
+        return new[] { d.Primary, d.Signature, d.Utility, Classes.Get(hero.UltimateOf).Limit }
             .Concat(Advances.Known(hero.Discipline, hero.Level).Where(a => a.Style != MoveStyle.Passive).Select(a => a.Move))
             .Concat(hero.Classes.Skip(1).Select(Classes.Get).SelectMany(c => new[] { c.Primary, c.Signature, c.Utility }))
+            .Concat(hero.Classes.Skip(1).SelectMany(c => Advances.Known(c, hero.Level)).Where(a => a.Style != MoveStyle.Passive).Select(a => a.Move))
             .DistinctBy(a => a.Id).ToList();
+    }
 
     /// <summary>
     /// Keeps the bar true to the hero: lays it out the first time, hands a new class's moves the keys the old class's

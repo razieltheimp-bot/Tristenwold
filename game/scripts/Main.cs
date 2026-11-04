@@ -834,7 +834,7 @@ public partial class Main : Node3D
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
 
         if (_player.Stats.LimitReady && !_limitWasReady)
-            _hud.Toast($"Limit break ready: {_player.Class.Limit.Name}. {(TouchMode ? "Tap Limit" : "Press R")}!", 5);
+            _hud.Toast($"Limit break ready: {_player.Limit.Name}. {(TouchMode ? "Tap Limit" : "Press R")}!", 5);
         _limitWasReady = _player.Stats.LimitReady;
         if (_clock - _lastRespawnCheck > 30) { _lastRespawnCheck = _clock; RespawnEmptyLairs(); }
         if (_clock - _lastSave > 20) { _lastSave = _clock; Save(); }
