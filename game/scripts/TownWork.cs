@@ -23,6 +23,8 @@ public partial class Main
 {
     CityEconomy _city = CityEconomy.Start(0);
     Workings _workings = null!;
+    /// <summary>The ore in the walls of the mine the hero's down, if they're down one (see Indoors.Seams).</summary>
+    public List<WorkSpot> IndoorVeins { get; } = [];
     double _cityTick;
     bool _working;
 
@@ -741,8 +743,9 @@ public partial class Workings(Main main) : Node3D
         var p = main.PlayerNode.GlobalPosition;
         var now = main.GuildBook.PlaySeconds;
         var below = main.InMine; // the mine's veins down the mine, and everything else on the surface
-        var near = Fixed.Where(s => s.At.Y > Cave.Threshold == below && s.At.DistanceTo(p with { Y = s.At.Y }) < 110)
-            .Concat(below ? [] : Outcrops.Near(main.World, p.X, p.Z, 110).Select(o => new WorkSpot(o.Id, o.VeinId, false, new Vector3((float)o.X, 0, (float)o.Z))))
+        var indoors = p.Y > Indoors.Threshold;
+        var near = (indoors ? main.IndoorVeins : Fixed.Where(s => s.At.Y > Cave.Threshold == below && s.At.DistanceTo(p with { Y = s.At.Y }) < 110)
+            .Concat(below ? [] : Outcrops.Near(main.World, p.X, p.Z, 110).Select(o => new WorkSpot(o.Id, o.VeinId, false, new Vector3((float)o.X, 0, (float)o.Z)))))
             .ToDictionary(s => s.Id);
         foreach (var id in _shown.Keys.Where(id => !near.ContainsKey(id) || Ready(near[id], now) != !_shown[id].Body.HasMeta("stump")).ToList())
         {
@@ -751,10 +754,10 @@ public partial class Workings(Main main) : Node3D
         }
         foreach (var (id, spot) in near)
         {
-            if (_shown.ContainsKey(id) || !below && !main.TerrainNode.HasGround(spot.At)) continue;
+            if (_shown.ContainsKey(id) || !below && !indoors && !main.TerrainNode.HasGround(spot.At)) continue;
             var ready = Ready(spot, now);
             if (!ready && !spot.IsTree) continue; // a worked vein is just rock until it comes back
-            var at = below ? spot.At : spot.At with { Y = City.FloorAt(spot.At) };
+            var at = below || indoors ? spot.At : spot.At with { Y = City.FloorAt(spot.At) };
             var body = ready ? (spot.IsTree ? Tree(spot) : Vein(spot)) : Stump(spot);
             body.Position = at;
             _shown[id] = (spot, body);

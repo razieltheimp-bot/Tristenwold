@@ -4,6 +4,37 @@ using Tristinwold.Gameplay;
 namespace Tristinwold.Game;
 
 /// <summary>
+/// The dwarves' door down to the Deep Trenches: a squared arch of dressed stone, a door of dark oak bound in iron
+/// with a great ring, runes cut over it that glow blue, and a word cut under them. It stands at the back of a mine, where
+/// the way down is, so nobody has to stumble on a crack to find it.
+/// </summary>
+public static class DwarfDoor
+{
+    public static Node3D Build(Node3D parent, Vector3 at, float yaw, string words = "The Deep Door\n(down to the Deep Trenches)")
+    {
+        var root = new Node3D { Position = at, Rotation = new Vector3(0, yaw, 0) };
+        parent.AddChild(root);
+        var stone = new StandardMaterial3D { AlbedoColor = new Color("#6a6460"), Roughness = 0.95f };
+        var oak = new StandardMaterial3D { AlbedoColor = new Color("#3a2a1c"), Roughness = 0.85f };
+        var iron = new StandardMaterial3D { AlbedoColor = new Color("#2e2e32"), Roughness = 0.45f, Metallic = 0.8f };
+        var rune = new StandardMaterial3D { AlbedoColor = new Color("#8ac8ff"), EmissionEnabled = true, Emission = new Color("#4aa0ff"), EmissionEnergyMultiplier = 2.4f, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded };
+        void Box(Vector3 p, Vector3 s, Material m) => root.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = s }, MaterialOverride = m, Position = p });
+        // The arch: two posts, a lintel, a step; the door set in it.
+        foreach (var side in new[] { -1f, 1f }) Box(new Vector3(side * 1.45f, 1.7f, 0), new Vector3(0.7f, 3.4f, 0.8f), stone);
+        Box(new Vector3(0, 3.65f, 0), new Vector3(3.8f, 0.6f, 0.9f), stone);
+        Box(new Vector3(0, 0.08f, 0.45f), new Vector3(3.4f, 0.16f, 0.6f), stone);
+        Box(new Vector3(0, 1.7f, -0.1f), new Vector3(2.2f, 3.4f, 0.2f), oak);
+        foreach (var y in new[] { 0.6f, 1.7f, 2.8f }) Box(new Vector3(0, y, 0.02f), new Vector3(2.24f, 0.14f, 0.06f), iron); // its bands
+        root.AddChild(new MeshInstance3D { Mesh = new TorusMesh { InnerRadius = 0.16f, OuterRadius = 0.22f }, MaterialOverride = iron, Position = new Vector3(0.6f, 1.5f, 0.08f), Rotation = new Vector3(Mathf.Pi / 2, 0, 0) });
+        for (var i = 0; i < 7; i++) // runes across the lintel
+            Box(new Vector3(-1.5f + i * 0.5f, 3.65f, 0.46f), new Vector3(0.12f + (i % 3) * 0.05f, 0.32f - (i % 2) * 0.1f, 0.02f), rune);
+        root.AddChild(new OmniLight3D { Position = new Vector3(0, 3, 1.2f), LightColor = new Color("#8ac8ff"), LightEnergy = 1.2f, OmniRange = 7 });
+        root.AddChild(new Label3D { Text = words, Position = new Vector3(0, 4.5f, 0.3f), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 40, OutlineSize = 8, PixelSize = 0.008f, Modulate = new Color("#a8d0ff") });
+        return root;
+    }
+}
+
+/// <summary>
 /// The tunnels under the world laid into a room: a country mine's drifts and side chambers, the Deep Trenches' old dwarf
 /// roads round the city's hall, the Dark Depths' burrows up from the Rift. The room's own floor and walls hold it; the
 /// warren (<see cref="Warren"/>) puts rock between the cells that don't open into each other, a lower roof over the
@@ -98,6 +129,38 @@ public partial class Indoors
                         foreach (var s in new[] { -1f, 1f }) Part(edge + across * (s * half) + Vector3.Up * (high / 2), new Vector3(0.28f, high, 0.28f), Surface.Timber);
                         Part(edge + Vector3.Up * (high - 0.25f), dc == 1 ? new Vector3(0.3f, 0.3f, half * 2 + 0.3f) : new Vector3(half * 2 + 0.3f, 0.3f, 0.3f), Surface.Timber);
                     }
+    }
+
+    /// <summary>A mine's way down: the dwarf door at the back of its face.</summary>
+    public Vector3 DeepDoorAt => Stage + new Vector3(0, 0, -Plan(kind).Deep / 2 + 0.6f);
+
+    /// <summary>Ore in a mine's walls to work with a pick: the mine's own ore (silver for a silver mine, iron for the rest), coal and grey stone, and at the face, now and then, gold.</summary>
+    void Seams(float wide, float deep)
+    {
+        if (Maze is not { } w || kind != "mineshaft") return;
+        var rng = new Tristinwold.Deviant.Rng((ulong)Math.Abs(seed) + 0x0E5);
+        var what = main.Shafts.TryGetValue(seed, out var mine) ? mine.What : "";
+        var own = what.Contains("silver") ? "silver" : "iron";
+        var spots = new List<(Vector3 At, string Kind)>();
+        // At the face, along its back wall either side of the door.
+        foreach (var (x, k) in new[] { (-6.2f, own), (-3.4f, "coal"), (3.4f, own), (6.2f, rng.Chance(0.25) ? "gold" : "stone") })
+            spots.Add((Stage + new Vector3(x, 0, -deep / 2 + 1.3f), k));
+        // In each side room, a seam against its far wall.
+        foreach (var m in SideRooms)
+        {
+            var (at, size) = RoomSpan(m);
+            spots.Add((at + new Vector3(-size.X / 2 + 1.4f, 0, -size.Y / 2 + 1.4f), rng.Chance(0.5) ? own : "coal"));
+        }
+        // And a few along the drifts, against the rock.
+        var cells = Enumerable.Range(0, w.Cols).SelectMany(c => Enumerable.Range(0, w.Rows).Select(r => (c, r))).Where(cr => w.RoomAt(cr.c, cr.r) is null).OrderBy(_ => rng.Next(1000)).Take(4);
+        var (cw, cd) = (wide / w.Cols, deep / w.Rows);
+        foreach (var (c, r) in cells)
+        {
+            var (dx, dz) = !w.Open(c, r, 1, 0) && c < w.Cols - 1 ? (cw / 2 - 1, 0f) : !w.Open(c, r, -1, 0) && c > 0 ? (-cw / 2 + 1, 0f) : !w.Open(c, r, 0, -1) && r > 0 ? (0f, -cd / 2 + 1) : (0f, cd / 2 - 1);
+            spots.Add((CellMiddle(c, r) + new Vector3(dx, 0, dz), rng.Chance(0.6) ? own : rng.Chance(0.5) ? "coal" : "stone"));
+        }
+        main.IndoorVeins.Clear();
+        for (var i = 0; i < spots.Count; i++) main.IndoorVeins.Add(new WorkSpot($"shaft:{seed}:{i}", spots[i].Kind, false, spots[i].At));
     }
 
     /// <summary>The middle of a cell of the tunnels, on the floor.</summary>

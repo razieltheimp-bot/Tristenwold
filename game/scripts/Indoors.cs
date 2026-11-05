@@ -149,7 +149,7 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
         City.Below = null;
         City.BelowName = null;
         City.LetInSky();
-        if (kind == "mineshaft") main.LeftTheShaft();
+        if (kind == "mineshaft") { main.LeftTheShaft(); main.IndoorVeins.Clear(); }
         if (kind == "crypt") main.LeftTheCrypt();
         if (kind is "trench" or "depths") main.LeftTheDeep();
         if (kind == "council") main.LeftTheCouncil();
@@ -232,9 +232,9 @@ public partial class Indoors(Main main, string kind, int seed) : Node3D
                 if (Maze?.Rooms.FirstOrDefault(m => m.Id == "face") is { } face)
                 {
                     var (at, size) = RoomSpan(face);
-                    var ore = new StandardMaterial3D { AlbedoColor = new Color("#c8a040"), EmissionEnabled = true, Emission = new Color("#a07010"), EmissionEnergyMultiplier = 0.8f, Metallic = 0.6f };
-                    for (var i = 0; i < 6; i++) // seams in the face, glinting
-                        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(1.2f + (float)rng.NextDouble(), 0.25f, 0.15f) }, MaterialOverride = ore, Position = at + new Vector3(-size.X / 2 + 2 + i * (size.X - 4) / 5, 1 + (float)rng.NextDouble() * 2, -size.Y / 2 + 0.15f) });
+                    // The way down: the dwarves' door in the middle of the face's back wall.
+                    DwarfDoor.Build(this, DeepDoorAt, 0);
+                    Seams(wide, deep); // ore to work with a pick, at the face, in the side rooms and along the drifts
                     Put("ph:crate.glb", at.X - Stage.X + size.X / 2 - 1.5f, at.Z - Stage.Z, 1, 1.2f);
                     Light(at - Stage + new Vector3(0, 3, 0), 1.1f, 12);
                     main.PeopleTheShaft(this, seed, at + new Vector3(0, 0.4f, 1));

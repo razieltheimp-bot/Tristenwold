@@ -36,15 +36,15 @@ public partial class Main
     {
         // Greyhollow, past the old face: the way down to the trench under Tristinwold.
         if (_cave is not null && _mine.Broken && pos.DistanceTo(Cave.FaceAt) < 5)
-            return ("go down into the Deep Trenches", () => { var out_ = MineDoor + new Vector3(0, 0, 3); _ = LeaveMine(); _outside = out_; GoDeep("trench", Deeps.Get(_world, 0, 0)); });
+            return ("open the dwarf door down to the Deep Trenches", () => { var out_ = MineDoor + new Vector3(0, 0, 3); _ = LeaveMine(); _outside = out_; GoDeep("trench", Deeps.Get(_world, 0, 0)); });
         if (_indoors is null) return null;
         var stage = Indoors.StageAt;
-        var deep = _indoors.Kind switch { "mineshaft" => 32f, "trench" => 110f, "depths" => 150f, _ => 0f };
+        var deep = _indoors.Kind switch { "mineshaft" => 36f, "trench" => 110f, "depths" => 150f, _ => 0f };
         var back = stage + new Vector3(0, 0, -deep / 2 + 2.5f);
         switch (_indoors.Kind)
         {
-            case "mineshaft" when pos.DistanceTo(back with { Y = pos.Y }) < 3 && Shafts.TryGetValue(_indoors.Seed, out var mine):
-                return ("climb down the crack into the Deep Trenches", () => GoDeep("trench", Deeps.Under(_world, mine.X, mine.Z)));
+            case "mineshaft" when pos.DistanceTo(_indoors.DeepDoorAt with { Y = pos.Y }) < 3.2f && Shafts.TryGetValue(_indoors.Seed, out var mine):
+                return ("open the dwarf door down to the Deep Trenches", () => GoDeep("trench", Deeps.Under(_world, mine.X, mine.Z)));
             case "trench" when pos.DistanceTo(back with { Y = pos.Y }) < 4:
                 return ("take the tunnel down to the Dark Depths", () => GoDeep("depths", null));
             case "trench" when pos.DistanceTo(DeepRoadSign with { Y = pos.Y }) < 3:

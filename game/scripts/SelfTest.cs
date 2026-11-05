@@ -78,6 +78,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--kit-only")) { await KitTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--multiclass-only")) { await MulticlassTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--elemental-only")) { await ElementalFormTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--seams-only")) { await SeamsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--shadows-only")) { await ShadowsTest(); Finish(0); return; }
@@ -2792,6 +2793,31 @@ public partial class SelfTest(Main main) : Node
         await HandiworkTest();
         await PanicTest();
         await KeeperTest();
+    }
+
+    /// <summary>A country mine's maze has ore in its walls to work with a pick, and the way down is a dwarf door at the back of the face.</summary>
+    async Task SeamsTest()
+    {
+        var p = main.PlayerNode;
+        var mine = main.World.SettlementsNear(0, 0, 6000).First(s => s.Kind == SettlementKind.Mine);
+        main.Shafts[777001] = mine;
+        main.GoInsideForTest("mineshaft", 777001, p.GlobalPosition);
+        await Frames(40);
+        Check(main.IndoorVeins.Count >= 6, $"{mine.Name} ({mine.What}) has ore in its walls: {string.Join(", ", main.IndoorVeins.Select(v => v.Kind))}");
+        var spot = main.IndoorVeins[0];
+        p.GlobalPosition = spot.At + new Vector3(0, 0.3f, 1.6f);
+        await Until(() => main.WorkingsNode.Shown.Any(s => s.Id == spot.Id), 4);
+        p.Pack.Add("pickaxe");
+        var ore = Gathering.Vein(spot.Kind).Ore;
+        var had = p.Pack.Count(ore);
+        main.WorkForTest(spot);
+        await Until(() => p.Pack.Count(ore) > had, 8);
+        Check(p.Pack.Count(ore) > had, $"work it with a pick and it gives up its {Items.Get(ore)!.Name.ToLowerInvariant()}");
+        p.GlobalPosition = main.IndoorsNode!.DeepDoorAt + new Vector3(0, 0.3f, 1.8f);
+        await Frames(10);
+        Check(main.NearestForTest()?.Verb == "open the dwarf door down to the Deep Trenches", $"at the back of the face, a dwarf door down to the Deep Trenches ({main.NearestForTest()?.Verb})");
+        main.GoOutsideForTest();
+        await Frames(20);
     }
 
     /// <summary>An elemental druid in Elemental Form: a slam of its fists for what's close, and its spells as strong as its blows.</summary>

@@ -263,6 +263,7 @@ public partial class Cave(Main main, MineBook book) : Node3D
         Dress();
         main.PlayerNode.AddChild(_lamp = new OmniLight3D { Position = new Vector3(0, 2, 0), LightColor = new Color("#ffd8a0"), LightEnergy = 1.1f, OmniRange = 11 });
         if (!book.Broken) RaiseWall();
+        DwarfDoor.Build(this, FaceAt + new Vector3(0, 0, -1.3f), 0); // the dwarves' door, behind the old face till it's broken through
         Miner();
         Populate();
     }
