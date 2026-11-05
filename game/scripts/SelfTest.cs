@@ -2842,6 +2842,16 @@ public partial class SelfTest(Main main) : Node
         p.UseMove(Classes.Move("merge")!);
         await Frames(10);
         Check(p.Possessing && p.Figure is Clockwork { Design: "Ballast" }, $"renamed {golem.Name}, merging still makes you the aeronaut's hull ({(p.Figure as Clockwork)?.Design})");
+        // Merged, close up, the basic attack is a slam of the hull's brass fists.
+        var foe = Enemy.Create(Bestiary.Get("bandit"), p.GlobalPosition - p.GlobalTransform.Basis.Z * 3 + Vector3.Up * 0.5f, 3);
+        main.AddEnemy(foe);
+        foe.Carried = true;
+        await Frames(5);
+        var had = foe.Stats.Health;
+        p.Stats.Restore(1e6, 1e6);
+        var (mana, stamina) = (p.Stats.Mana, p.Stats.Stamina);
+        Check(p.Swing() && foe.Stats.Health < had && p.Stats.Mana >= mana - 0.01 && p.Stats.Stamina >= stamina - 0.01, $"merged, close up, the basic attack is a slam of the hull's fists ({had - foe.Stats.Health:0} damage)");
+        foe.QueueFree();
         p.Unpossess();
         await Frames(10);
         p.Hero.Ultimate = "Shapeshifter";

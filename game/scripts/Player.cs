@@ -441,7 +441,7 @@ public partial class Player : Fighter
         return new Moved(Class.Look, Avatar, Stats.Name, p.X, p.Y, p.Z, Figure.GlobalRotation.Y, Frozen ? 0 : GroundSpeed, Figure.Recent, Figure.Beat);
     }
 
-    public bool Swing() => Mount is not null ? DragonStrike() : _elemental is not null && InFront(5.5, 70).Any() ? ElementalSlam() : Use(Class.Primary);
+    public bool Swing() => Mount is not null ? DragonStrike() : (_elemental is not null || _merged > Now && _possessing) && InFront(5.5, 70).Any() ? Slam() : Use(Class.Primary);
 
     /// <summary>A move from the quick keys: the class's basic strike goes by way of <see cref="Swing"/>, so it's the dragon's breath in the saddle.</summary>
     public bool UseMove(Ability a) => a == Class.Primary ? Swing() : Use(a);

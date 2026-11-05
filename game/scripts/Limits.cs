@@ -56,19 +56,21 @@ public partial class Player
     }
 
     /// <summary>
-    /// A blow of the elemental's fists, for whatever's close in front of it: no mana, the element in it, and the form's
-    /// weight behind it. Further off, the basic attack is still the bolt.
+    /// A blow of a giant body's fists, for whatever's close in front of it: an elemental druid's form, in its element, or
+    /// an aeronaut's golem merged with, in brass. No mana, and the body's weight behind it. Further off, the basic attack
+    /// is the class's own (the bolt, the harpoon).
     /// </summary>
-    bool ElementalSlam()
+    bool Slam()
     {
-        if (Cooldown("elemental_slam") > 0) return false;
-        _ready["elemental_slam"] = Now + 0.75;
+        if (Cooldown("slam") > 0) return false;
+        _ready["slam"] = Now + 0.75;
         _actingUntil = Now + 0.5;
         Figure.Attack(true);
         var power = Hero.MovePower(Class.Primary.Id) * Hero.LevelPower(false);
         var hit = InFront(5.5, 70).Take(4).ToList();
-        foreach (var e in hit) Strike(e, Class.Primary.Power * 1.8 * power, Element, AttackKind.Weapon);
-        Effects.Burst(GetParent(), GlobalPosition - GlobalTransform.Basis.Z * 3 + Vector3.Up * 0.5f, Element == DamageKind.Physical ? DamageKind.Poison : Element, 2.2f);
+        var kind = _elemental is not null ? Element : DamageKind.Physical; // a golem's fists are brass
+        foreach (var e in hit) Strike(e, Math.Max(Class.Primary.Power, 15) * 1.8 * power, kind, AttackKind.Weapon);
+        Effects.Burst(GetParent(), GlobalPosition - GlobalTransform.Basis.Z * 3 + Vector3.Up * 0.5f, _elemental is null ? DamageKind.Shock : Element == DamageKind.Physical ? DamageKind.Poison : Element, 2.2f);
         Sound.At("melee/swing", GlobalPosition + Vector3.Up * 2, -2);
         return true;
     }
