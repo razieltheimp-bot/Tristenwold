@@ -184,7 +184,7 @@ public partial class Player : Fighter
         // What a body lends lasts through anything that works the numbers out again (a level, a potion, new gear).
         if (_form is not null) { Stats.DamageMult *= _formMight; Stats.Armor += 20; }
         if (_hybrid is not null) { Stats.DamageMult *= _hybridMight; Stats.Armor += 30; }
-        if (_elemental is not null) { Stats.DamageMult *= _elementalMight; Stats.Armor += _elemental == "earth" ? 60 : 30; }
+        if (_elemental is not null) { Stats.DamageMult *= _elementalMight; Stats.SpellPower *= _elementalMight; Stats.Armor += _elemental == "earth" ? 60 : 30; } // its blows and its spells, both
         if (_berserk > 0) Stats.DamageMult *= _berserkMight;
     }
 
@@ -441,7 +441,7 @@ public partial class Player : Fighter
         return new Moved(Class.Look, Avatar, Stats.Name, p.X, p.Y, p.Z, Figure.GlobalRotation.Y, Frozen ? 0 : GroundSpeed, Figure.Recent, Figure.Beat);
     }
 
-    public bool Swing() => Mount is not null ? DragonStrike() : Use(Class.Primary);
+    public bool Swing() => Mount is not null ? DragonStrike() : _elemental is not null && InFront(5.5, 70).Any() ? ElementalSlam() : Use(Class.Primary);
 
     /// <summary>A move from the quick keys: the class's basic strike goes by way of <see cref="Swing"/>, so it's the dragon's breath in the saddle.</summary>
     public bool UseMove(Ability a) => a == Class.Primary ? Swing() : Use(a);

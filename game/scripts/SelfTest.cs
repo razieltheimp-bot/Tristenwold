@@ -77,6 +77,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--spread-only")) { await SpreadTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--kit-only")) { await KitTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--multiclass-only")) { await MulticlassTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--elemental-only")) { await ElementalFormTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--standing-only")) { await StandingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--artificer-only")) { await ArtificerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--shadows-only")) { await ShadowsTest(); Finish(0); return; }
@@ -2791,6 +2792,33 @@ public partial class SelfTest(Main main) : Node
         await HandiworkTest();
         await PanicTest();
         await KeeperTest();
+    }
+
+    /// <summary>An elemental druid in Elemental Form: a slam of its fists for what's close, and its spells as strong as its blows.</summary>
+    async Task ElementalFormTest()
+    {
+        var p = main.PlayerNode;
+        p.Join("Stormdruid");
+        p.Hero.Level = 10;
+        p.Fit();
+        await Frames(10);
+        var spells = p.Stats.SpellPower;
+        p.Stats.GainLimit(100);
+        Check(p.LimitBreak() && p.Possessing, "an elemental druid calls up Elemental Form");
+        await Frames(10);
+        Check(p.Stats.SpellPower > spells * 1.3, $"and its spells are the stronger for it (x{p.Stats.SpellPower / spells:0.00})");
+        var foe = Enemy.Create(Bestiary.Get("bandit"), p.GlobalPosition - p.GlobalTransform.Basis.Z * 3 + Vector3.Up * 0.5f, 3);
+        main.AddEnemy(foe);
+        foe.Carried = true; // it stands still for the test
+        await Frames(5);
+        var health = foe.Stats.Health;
+        p.Stats.Restore(0, 0);
+        var mana = p.Stats.Mana;
+        Check(p.Swing() && foe.Stats.Health < health && p.Stats.Mana >= mana - 0.01, $"close up, the basic attack is a slam of its fists, no mana ({health - foe.Stats.Health:0} damage)");
+        foe.QueueFree();
+        p.Unpossess();
+        await Frames(10);
+        Check(Math.Abs(p.Stats.SpellPower - spells) < 0.01, "and out of the form, its spells are as they were");
     }
 
     /// <summary>An aeronaut who takes up the shapeshifter's way keeps the golem and the harpoon, and can take the half-form as their one limit break.</summary>
