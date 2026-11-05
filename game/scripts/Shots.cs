@@ -721,6 +721,29 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--skyboat"))
+        {
+            // The hero's skyboat at the end of the pier: from beside her, off her bow, her stern, from above, and up in the air from below.
+            main.FittedForTest(Tristinwold.Gameplay.Engines.Skyboat, 10);
+            main.PlayerNode.GlobalPosition = new Vector3((float)main.Sea.SkyX + 3, 2, (float)main.Sea.SkyZ);
+            await Frames(20);
+            main.TendSkyboatForTest();
+            await Frames(10);
+            if (main.SkyboatNode is { } boat)
+            {
+                var b = boat.GlobalTransform.Basis;
+                var o = boat.GlobalPosition;
+                await From("skyboat-side", o + b * new Vector3(9, 3.5f, 1), o + b * new Vector3(0, 2.4f, 0));
+                await From("skyboat-bow", o + b * new Vector3(5, 3, -10), o + b * new Vector3(0, 2.4f, 0));
+                await From("skyboat-stern", o + b * new Vector3(-5, 3, 9), o + b * new Vector3(0, 2.2f, 0));
+                await From("skyboat-above", o + b * new Vector3(6, 11, 5), o + b * new Vector3(0, 1, 0));
+                await From("skyboat-inside", o + b * new Vector3(0.6f, 2.2f, 2.6f), o + b * new Vector3(0, 0.9f, -1.5f));
+                boat.GlobalPosition = o + Vector3.Up * 14;
+                await From("skyboat-aloft", o + b * new Vector3(10, 4, 6), boat.GlobalPosition + Vector3.Up * 2);
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--warehouses"))
         {
             // The dock warehouse from where the hero comes up the road, and from above; the old storehouse from the street, from behind, and inside.
