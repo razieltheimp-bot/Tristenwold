@@ -6,7 +6,7 @@ namespace Tristinwold.Game;
 
 /// <summary>
 /// One of the company set to keep shop: an apprentice or squire sent to the hero's home (the house's counter), to their
-/// wagon (parked and opened up), or aboard their ship (wherever she's tied up). They stand at it and serve whoever
+/// wagon (parked and opened up), aboard their ship (wherever she's tied up), or to a market stall in their colony's yard. They stand at it and serve whoever
 /// comes, slowly, a customer every minute and a half or so (<see cref="Homestead"/>): selling what the hero put out and
 /// buying in what the hero asked for, out of the till. Other heroes can trade there too. Talk to them to put goods out,
 /// choose what to buy in, take the takings, or bring them back. A ship's shop shuts while she sails, and opens again
@@ -15,6 +15,11 @@ namespace Tristinwold.Game;
 public partial class Main
 {
     string ShipShopKey => $"{_player.Company}{PlayerStore.ShipMark}";
+    string ColonyShopKey(string place) => $"{_player.Company}{PlayerStore.ColonyMark}{place[Keeping.Colony.Length..]}";
+    House ColonyHouse(string place) => _pursuits.ColonyShops.TryGetValue(place, out var h) ? h
+        : _pursuits.ColonyShops[place] = new House { Owned = true, Built = Housing.Stages.Count, IsHome = true, Furniture = ["shop_counter"] };
+    Hall? ColonyAt(string place) => _city.ColoniesOf(_player.Company).FirstOrDefault(h => Keeping.ColonyPlace(h) == place);
+    readonly Dictionary<string, Node3D> _colonyStalls = [];
     House ShipHouse => _sea.ShipShop ??= new House { Owned = true, Built = Housing.Stages.Count, IsHome = true, Furniture = ["shop_counter"] };
     readonly Dictionary<string, Person> _keepers = [];
 
@@ -26,9 +31,10 @@ public partial class Main
         if (_pursuits.House is { IsHome: true, Finished: true }) yield return (Keeping.Home, ShopCalled(Keeping.Home));
         if (_trade.OwnWagon) yield return (Keeping.Wagon, ShopCalled(Keeping.Wagon));
         if (_sea.OwnShip) yield return (Keeping.Ship, ShopCalled(Keeping.Ship));
+        foreach (var colony in _city.ColoniesOf(_player.Company).ToList()) yield return (Keeping.ColonyPlace(colony), ShopCalled(Keeping.ColonyPlace(colony)));
     }
 
-    string ShopCalled(string place) => place switch { Keeping.Home => "at home", Keeping.Wagon => "at your wagon", _ => $"aboard {_sea.ShipName}" };
+    string ShopCalled(string place) => place switch { Keeping.Home => "at home", Keeping.Wagon => "at your wagon", var c when Keeping.IsColony(c) => $"at {ColonyAt(c)?.Name ?? "your colony"}'s market stall", _ => $"aboard {_sea.ShipName}" };
 
     /// <summary>The party's keeping-shop options for one of the company.</summary>
     IEnumerable<(string, Action)> KeepingOptions(Bond bond)
@@ -42,7 +48,7 @@ public partial class Main
         foreach (var (place, called) in ShopPlaces().Where(p => KeeperAt(p.Place) is null).ToList())
             yield return ($"Set {bond.Name} to keep shop {called}", () => { StartKeeping(bond, place); ShowParty(); });
         if (!ShopPlaces().Any())
-            yield return ($"Set {bond.Name} to keep shop (needs a house that's home, a wagon or a ship)", () => _hud.Toast("Nowhere to keep shop yet: finish a house and list it as home, or get a wagon or a ship of your own.", 6));
+            yield return ($"Set {bond.Name} to keep shop (needs a house that's home, a wagon, a ship or a colony)", () => _hud.Toast("Nowhere to keep shop yet: finish a house and list it as home, get a wagon or a ship of your own, or found a colony.", 6));
     }
 
     void StartKeeping(Bond bond, string place)
@@ -65,6 +71,10 @@ public partial class Main
                 _sea.ShipShopOpen = true;
                 PushShipShop();
                 break;
+            case var c when Keeping.IsColony(c):
+                _pursuits.ColonyShopsOpen.Add(c);
+                PushColonyShop(c);
+                break;
         }
         TendKeepers();
         Sound.Ui("quest", -6);
@@ -80,6 +90,7 @@ public partial class Main
         if (_keepers.Remove(bond.Id, out var p) && IsInstanceValid(p)) Dismiss(p);
         bond.Following = MayFollow(bond);
         if (bond.Following) BringCompanion(bond);
+        TendKeepers(); // a colony's stall packed away with them
         Save();
     }
 
@@ -99,6 +110,53 @@ public partial class Main
             DoCity(CityAction.StoreShut(ShipShopKey));
             _sea.ShipShopOpen = false;
         }
+        if (place is { } colony && Keeping.IsColony(colony) && _pursuits.ColonyShopsOpen.Contains(colony))
+        {
+            PullColonyShop(colony);
+            DoCity(CityAction.StoreShut(ColonyShopKey(colony)));
+            _pursuits.ColonyShopsOpen.Remove(colony);
+        }
+    }
+
+    /// <summary>The colony's market stall, in its yard: the world keeps it, and its customers come, whether the hero's there or not.</summary>
+    void PushColonyShop(string place)
+    {
+        if (!_pursuits.ColonyShopsOpen.Contains(place) || ColonyAt(place) is not { } h) return;
+        var (at, yaw, _) = ColonyStall(h);
+        DoCity(CityAction.StoreSet(new PlayerStore { Owner = ColonyShopKey(place), Name = $"{h.Name} Market Stall", X = at.X, Z = at.Z, Yaw = yaw, Workers = 1, Stall = true, House = PlayerStore.Copy(ColonyHouse(place)) }));
+    }
+
+    void PullColonyShop(string place)
+    {
+        if (_pursuits.ColonyShopsOpen.Contains(place) && _city.StoreOf(ColonyShopKey(place)) is { } s) ColonyHouse(place).Mirror(PlayerStore.Copy(s.House));
+    }
+
+    /// <summary>Where a colony's market stall stands in its yard, the far side from where its people work, which way it faces (into the yard), and where its keeper stands.</summary>
+    static (Vector3 At, float Yaw, Vector3 Keeper) ColonyStall(Hall h)
+    {
+        var centre = new Vector3((float)h.X, 0, (float)h.Z);
+        var gate = Mathf.Atan2(-centre.Z, -centre.X); // as the hall's laid out (see HallCompound)
+        var a = gate - 0.75f;
+        var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 7.5f;
+        var yaw = Mathf.Atan2(centre.X - at.X, centre.Z - at.Z);
+        var keeper = at + new Basis(Vector3.Up, yaw) * new Vector3(1.4f, 0, 1.8f);
+        return (at with { Y = City.FloorAt(at) }, yaw, keeper with { Y = City.FloorAt(keeper) });
+    }
+
+    /// <summary>A market stall drawn: the stall, its goods, and its name over it.</summary>
+    Node3D StallNode(Vector3 at, float yaw, string name)
+    {
+        var root = new Node3D();
+        AddChild(root);
+        Models.Place(root, Cargo + "stall_green.glb", at, 2.4f, yaw);
+        var b = new Basis(Vector3.Up, yaw);
+        foreach (var (x, z, kind) in new[] { (-1.6f, 0.9f, "crate"), (-1.9f, -0.2f, "barrel"), (1.7f, -0.6f, "sack") })
+        {
+            var spot = at + b * new Vector3(x, 0, z);
+            Models.Place(root, Cargo + kind switch { "crate" => "crate_apples.glb", "barrel" => "barrel_apples.glb", _ => "bag.glb" }, spot with { Y = City.FloorAt(spot) }, 1.1f, yaw + x, solid: false);
+        }
+        root.AddChild(new Label3D { Text = name, Position = at + Vector3.Up * 3.8f, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 48, OutlineSize = 10, PixelSize = 0.01f, Modulate = new Color("#ffd27a") });
+        return root;
     }
 
     /// <summary>The ship's shop, where she lies now; not while she's under way.</summary>
@@ -130,6 +188,7 @@ public partial class Main
         {
             case Keeping.Home: SyncStore(); return _pursuits.House;
             case Keeping.Wagon: PullWagonShop(); return WagonHouse;
+            case var c when Keeping.IsColony(c): PullColonyShop(c); return ColonyHouse(c);
             default: PullShipShop(); return ShipHouse;
         }
     }
@@ -140,11 +199,12 @@ public partial class Main
         {
             case Keeping.Home: SyncStore(); break;
             case Keeping.Wagon: PushWagonShop(); break;
+            case var c when Keeping.IsColony(c): PushColonyShop(c); break;
             default: PushShipShop(); break;
         }
     }
 
-    /// <summary>Where a keeper stands: by the house's door, beside the wagon, on the ship's deck. Null when there's nowhere to stand (the ship under way).</summary>
+    /// <summary>Where a keeper stands: by the house's door, beside the wagon, on the ship's deck, at the colony's stall. Null when there's nowhere to stand (the ship under way).</summary>
     Vector3? KeeperSpot(string place)
     {
         switch (place)
@@ -156,6 +216,8 @@ public partial class Main
                 if (_wagon is not { } w) return null;
                 var by = w.GlobalPosition + w.GlobalTransform.Basis * new Vector3(2.4f, 0, 0.5f);
                 return by with { Y = City.FloorAt(by) };
+            case var c when Keeping.IsColony(c):
+                return ColonyAt(c) is { } h ? ColonyStall(h).Keeper : null;
             default:
                 return _vessel is { Aboard: false } v ? v.GlobalPosition + v.GlobalTransform.Basis * new Vector3(-1.1f, OwnVessel.DeckTop, -2.3f) : null;
         }
@@ -165,12 +227,13 @@ public partial class Main
     void TendKeepers()
     {
         foreach (var b in _bonds.Where(b => b.Keeps is not null).ToList())
-            if (b.Keeps == Keeping.Wagon && !_trade.OwnWagon || b.Keeps == Keeping.Ship && !_sea.OwnShip || b.Keeps == Keeping.Home && !_pursuits.House.IsHome)
+            if (b.Keeps == Keeping.Wagon && !_trade.OwnWagon || b.Keeps == Keeping.Ship && !_sea.OwnShip || b.Keeps == Keeping.Home && !_pursuits.House.IsHome || Keeping.IsColony(b.Keeps) && ColonyAt(b.Keeps!) is null)
             {
                 CloseShopAt(b.Keeps);
                 b.Keeps = null;
             }
         if (_sea.ShipShopOpen && KeeperAt(Keeping.Ship) is null) CloseShopAt(Keeping.Ship);
+        foreach (var open in _pursuits.ColonyShopsOpen.Where(c => KeeperAt(c) is null).ToList()) CloseShopAt(open);
         var pos = _player.GlobalPosition;
         foreach (var id in _keepers.Keys.ToList())
         {
@@ -191,6 +254,19 @@ public partial class Main
                 "One of your company, minding the counter for you.", ["trade"], "warm", "Trade's slow, but it's trade. What can I do for you?", at.X, at.Z, Race: b.Race ?? "human");
             _keepers[b.Id] = MeetAt(npc, "townsfolk", at.Y);
         }
+        // Each colony's stall, drawn while its keeper is.
+        foreach (var place in _colonyStalls.Keys.ToList())
+            if (KeeperAt(place) is not { } ck || !_keepers.ContainsKey(ck.Id) || ColonyAt(place) is null)
+            {
+                if (IsInstanceValid(_colonyStalls[place])) _colonyStalls[place].QueueFree();
+                _colonyStalls.Remove(place);
+            }
+        foreach (var b in _bonds.Where(b => Keeping.IsColony(b.Keeps) && _keepers.ContainsKey(b.Id) && !_colonyStalls.ContainsKey(b.Keeps!)).ToList())
+            if (ColonyAt(b.Keeps!) is { } col)
+            {
+                var (at, yaw, _) = ColonyStall(col);
+                _colonyStalls[b.Keeps!] = StallNode(at, yaw, $"{col.Name} Market Stall");
+            }
     }
 
     /// <summary>What a keeper can do for the hero.</summary>
@@ -284,5 +360,8 @@ public partial class Main
         PushShop(place);
     }
     public Person? KeeperForTest(Bond bond) { TendKeepers(); return _keepers.GetValueOrDefault(bond.Id); }
+    public string ColonyShopKeyForTest => ColonyShopKey(Keeping.Colony);
+    public Vector3? ColonyStallForTest => ColonyAt(Keeping.Colony) is { } h ? ColonyStall(h).At : null;
+    public bool ColonyStallDrawnForTest => _colonyStalls.TryGetValue(Keeping.Colony, out var s) && IsInstanceValid(s);
     public string ShipShopKeyForTest => ShipShopKey;
 }

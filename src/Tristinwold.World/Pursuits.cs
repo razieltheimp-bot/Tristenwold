@@ -41,6 +41,9 @@ public sealed class PursuitBook
 {
     public Dictionary<string, Planting> Plots { get; set; } = [];
     public House House { get; set; } = new();
+    /// <summary>The market stalls in the yards of the hero's colonies, by place (see Keeping.ColonyPlace): their shelves and tills, kept here while nobody's minding them; and which are open.</summary>
+    public Dictionary<string, House> ColonyShops { get; set; } = [];
+    public HashSet<string> ColonyShopsOpen { get; set; } = [];
     public List<Snare> Snares { get; set; } = [];
     public TreasureHunt? Hunt { get; set; }
     public Dictionary<string, double> WaryUntil { get; set; } = [];

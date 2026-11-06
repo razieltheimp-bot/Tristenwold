@@ -34,6 +34,9 @@ public partial class Main : Node3D
     EncounterTracker _tracker = null!;
     IGameLink? _client;
     string _area = "", _sentArea = "", _savePath = "";
+    bool _sheltered;
+    /// <summary>Inside a tavern, a city's or any town's: the one place nobody may attack the hero.</summary>
+    bool InTavern => _indoors is { IsTavern: true } || _area is "The Gallows Perch" or "The Salt Barrel" or "The Gilded Flagon" or "The Scholar's Rest";
     string? _deviantJson;
     bool _limitWasReady;
     double _clock, _lastScore, _fightMusicUntil, _lastRespawnCheck, _lastReveal, _lastPlaces, _lastSave, _lastMoved, _lastTold;
@@ -399,6 +402,7 @@ public partial class Main : Node3D
         }
         Poise.Hero = _player; // the creatures' eyes follow the hero
         _player.Said += text => _hud.Toast(text);
+        _player.Sheltered = () => InTavern; // nobody lays a hand on anyone in a tavern
         _player.LimitUsed += (a, c) => _hud.LimitBanner(a.Name, a.Text, c);
         _player.WentDown += () => { _tracker.Downed(); _hud.Center("You have fallen."); };
         _player.Struck += (enemy, hit, kind) =>
@@ -757,7 +761,8 @@ public partial class Main : Node3D
         if (_player.InFight || boss) _fightMusicUntil = _clock + (boss ? 8 : 5); // let the fight music ring on a moment after
         var college = Guilds.Of(Calling.Bard);
         var atCollege = new Vector2((float)college.X - pos.X, (float)college.Z - pos.Z).Length() < 26;
-        var tavern = _area is "The Gallows Perch" or "The Salt Barrel" or "The Gilded Flagon" or "The Scholar's Rest";
+        var tavern = InTavern;
+        if (tavern != _sheltered && (_sheltered = tavern)) _hud.Toast("A tavern: nobody raises a hand to anyone in here. You're safe.", 4);
         var town = new Vector2(pos.X, pos.Z).Length() < City.OuterRadius + 15 || _area is "The Docks";
         sound.SetMood(boss ? "boss" : _clock < _fightMusicUntil ? "battle" : tavern ? "tavern" : atCollege ? "bard" : town ? "town" : "explore");
         var high = _player.Mount is { Airborne: true } || _world.BiomeAt(pos.X, pos.Z) is Biome.Snowfield or Biome.Tundra or Biome.Crags || pos.Y > 45;
@@ -922,7 +927,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return TavernAction(pos) ?? DeepAction(pos) ?? SyndicateAction(pos) ?? SmithyAction(pos) ?? VaultAction(pos) ?? StashAction(pos) ?? IndoorAction(pos) ?? TankAction(pos) ?? ChapelAction(pos) ?? SkyAction(pos) ?? VesselAction(pos) ?? SiteAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? IsleAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
+        return TavernAction(pos) ?? DeepAction(pos) ?? SyndicateAction(pos) ?? SmithyAction(pos) ?? VaultAction(pos) ?? StashAction(pos) ?? IndoorAction(pos) ?? TankAction(pos) ?? ChapelAction(pos) ?? SkyAction(pos) ?? VesselAction(pos) ?? FleetAction(pos) ?? SiteAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? IsleAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>

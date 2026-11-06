@@ -59,7 +59,7 @@ public partial class Main
                 _storeFronts[owner].Front.QueueFree();
                 _storeFronts.Remove(owner);
             }
-        foreach (var s in _city.Stores.Values.Where(s => s.Open && s.Owner != _player.Company && s.Owner != WagonShopKey && s.Owner != ShipShopKey && !_storeFronts.ContainsKey(s.Owner)))
+        foreach (var s in _city.Stores.Values.Where(s => s.Open && s.Owner != _player.Company && s.Owner != WagonShopKey && s.Owner != ShipShopKey && !s.Owner.StartsWith(_player.Company + PlayerStore.ColonyMark) && !_storeFronts.ContainsKey(s.Owner)))
         {
             var at = new Vector3((float)s.X, 0, (float)s.Z);
             if (new Vector2(at.X - pos.X, at.Z - pos.Z).Length() > StoresDrawnWithin) continue;
@@ -67,7 +67,12 @@ public partial class Main
             var root = new Node3D();
             AddChild(root);
             OwnVessel? moored = null;
-            if (s.Ship)
+            if (s.Stall) // a colony's market stall, in its yard
+            {
+                root.QueueFree();
+                root = StallNode(at, (float)s.Yaw, s.Name);
+            }
+            else if (s.Ship)
             {
                 moored = new OwnVessel(this) { Called = s.Name, Moored = true };
                 root.AddChild(moored);
@@ -82,8 +87,9 @@ public partial class Main
                 wagon.Rotation = new Vector3(0, (float)s.Yaw, 0);
             }
             else Buildings.Place(root, "store", at, 0, s.Owner.Length, Surface.Shingle);
-            if (moored is null) root.AddChild(new Label3D { Text = s.Name, Position = at + new Vector3(0, 6.5f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 56, OutlineSize = 12, PixelSize = 0.012f, Modulate = new Color("#ffd27a") });
-            var (x, z) = (at.X + 2.5, at.Z + 5);
+            if (moored is null && !s.Stall) root.AddChild(new Label3D { Text = s.Name, Position = at + new Vector3(0, 6.5f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 56, OutlineSize = 12, PixelSize = 0.012f, Modulate = new Color("#ffd27a") });
+            var by = s.Stall ? at + new Basis(Vector3.Up, (float)s.Yaw) * new Vector3(1.4f, 0, 1.8f) : at + new Vector3(2.5f, 0, 5);
+            var (x, z) = ((double)by.X, (double)by.Z);
             var keeper = new Person
             {
                 Npc = new Npc($"store:{s.Owner}", $"{s.Owner}'s shopkeeper", Sex.Other, 30, "shopkeeper", "city:tristinwold", "Tristinwold",

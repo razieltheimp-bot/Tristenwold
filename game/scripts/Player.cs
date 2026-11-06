@@ -1281,9 +1281,13 @@ public partial class Player : Fighter
     }
 
     /// <summary>A blow from a foe: a martial artist may slip it; rage leaves you open; a paladin's devotion turns some.</summary>
+    /// <summary>Whether the hero's somewhere nobody may lay a hand on them: inside a tavern. Set by Main.</summary>
+    public Func<bool>? Sheltered { get; set; }
+    public bool Safe => Sheltered?.Invoke() == true;
+
     public void TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Enemy from)
     {
-        if (Downed) return;
+        if (Downed || Safe) return; // nobody fights in a tavern
         LastHitBy = from;
         if (Class.Id == "MartialArtist" && _rng.Chance(Class.Passive.Power + 0.03 * (Hero.Rank("evasion") - 1)))
         {

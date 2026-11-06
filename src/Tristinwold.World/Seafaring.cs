@@ -158,6 +158,35 @@ public sealed class Voyage
 /// </summary>
 public enum ShipSize { Small, Medium, Large }
 
+/// <summary>
+/// A ship of the hero's fleet besides the one they sail: her name and size, her hull, what's fitted to her, the hands
+/// hired to crew her (ordinary sailors, not the hero's company: they don't count against apprentices or hirelings, and
+/// they're no use in a fight), and, while she's away on a trading run, where to, when she's due home, and how it went.
+/// </summary>
+public sealed class FleetShip
+{
+    public string Name { get; set; } = "";
+    public ShipSize Size { get; set; } = ShipSize.Small;
+    public double Hull { get; set; } = 100;
+    public HashSet<string> Upgrades { get; set; } = [];
+    public int Hands { get; set; }
+    public bool Steam { get; set; }
+    public bool Flies { get; set; }
+    public double Fuel { get; set; }
+    public int SteamLevel { get; set; } = 1;
+    /// <summary>Her berth in Tristinwold harbour, off the end of the piers (see Main.FleetBerth).</summary>
+    public int Berth { get; set; }
+    public string? RunTo { get; set; }
+    public double RunBack { get; set; }
+    public int RunTakings { get; set; }
+    public double RunHarm { get; set; }
+    public bool RunPirates { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore] public bool Away => RunTo is not null;
+    [System.Text.Json.Serialization.JsonIgnore] public int Crew => SeaBook.HandsFor(Size);
+    [System.Text.Json.Serialization.JsonIgnore] public bool Crewed => Hands >= Crew;
+}
+
 public sealed class SeaBook
 {
     public SeaRank Rank { get; set; }
@@ -223,6 +252,80 @@ public sealed class SeaBook
         [ShipSize.Medium] = ("pinnace", 6000, 50, 1, 1),
         [ShipSize.Large] = ("galleon", 15000, 120, 0.85, 0.65),
     };
+
+    // ---- the fleet: more ships than the one the hero sails, each with its own hired hands ----
+
+    /// <summary>The rest of the hero's fleet, tied up in Tristinwold harbour or away on trading runs.</summary>
+    public List<FleetShip> Fleet { get; set; } = [];
+    /// <summary>Hands hired to crew the ship the hero sails. Ordinary sailors: they patch and pump while the hero fights boarders, and nothing more.</summary>
+    public int Hands { get; set; }
+
+    /// <summary>How many ships a fleet can have besides the one the hero sails, and what the harbour master asks to sign a hand on.</summary>
+    public const int MostFleet = 5, HandWage = 60;
+
+    /// <summary>How many hands a hull wants to sail her without the hero aboard: a sloop four, a pinnace eight, a galleon sixteen.</summary>
+    public static int HandsFor(ShipSize size) => size switch { ShipSize.Small => 4, ShipSize.Medium => 8, _ => 16 };
+
+    /// <summary>A full crew aboard the hero's ship takes a third off what boarders do to her hull.</summary>
+    public double CrewSaves => OwnShip ? 0.33 * Math.Min(1, (double)Hands / HandsFor(Size)) : 0;
+
+    /// <summary>A name for a new ship that none of the hero's others has.</summary>
+    public string FreshName(Rng rng)
+    {
+        var taken = Fleet.Select(f => f.Name).Append(ShipName).ToHashSet();
+        for (var i = 0; i < 20; i++) if (NameShip(rng) is var n && !taken.Contains(n)) return n;
+        var b = NameShip(rng);
+        for (var k = 2; ; k++) if (!taken.Contains($"{b} {k}")) return $"{b} {k}";
+    }
+
+    /// <summary>A hull bought for the fleet, tied up at the first free berth: the crowns it took, or null if the fleet's full or they can't pay.</summary>
+    public FleetShip? BuyForFleet(ShipSize size, string name, ref int crowns)
+    {
+        if (!OwnShip || Fleet.Count >= MostFleet || crowns < Hulls[size].Price) return null;
+        crowns -= Hulls[size].Price;
+        var berth = Enumerable.Range(0, MostFleet).First(b => Fleet.All(f => f.Berth != b));
+        var ship = new FleetShip { Name = name, Size = size, Berth = berth };
+        Fleet.Add(ship);
+        return ship;
+    }
+
+    /// <summary>The ship the hero sails and one of their fleet change places: she's theirs to sail now, and the other's tied up at her berth with her own crew.</summary>
+    public void Flagship(FleetShip f)
+    {
+        (ShipName, f.Name) = (f.Name, ShipName);
+        (Size, f.Size) = (f.Size, Size);
+        (Hull, f.Hull) = (f.Hull, Hull);
+        (Upgrades, f.Upgrades) = (f.Upgrades, Upgrades);
+        (Hands, f.Hands) = (f.Hands, Hands);
+        (Steam, f.Steam) = (f.Steam, Steam);
+        (Flies, f.Flies) = (f.Flies, Flies);
+        (Fuel, f.Fuel) = (f.Fuel, Fuel);
+        (SteamLevel, f.SteamLevel) = (f.SteamLevel, SteamLevel);
+    }
+
+    /// <summary>
+    /// A fleet ship sent off with a full crew to trade at a port and back: how long it takes (a day there and a day back
+    /// for every league), what she'll bring home (by the size of her hold and how far she went), and whether pirates
+    /// find her (by the water she crosses): if they do, she comes home holed and with half of it.
+    /// </summary>
+    public static void SendOnRun(FleetShip f, SeaPort port, double now, Rng rng)
+    {
+        var hold = Hulls[f.Size].Hold + (f.Upgrades.Contains("deep_hold") ? 20 : 0);
+        var pace = Hulls[f.Size].Pace * (f.Upgrades.Contains("fine_canvas") ? 1.1 : 1);
+        var takings = hold * (5 + 3 * port.Leagues) * (0.8 + rng.NextDouble() * 0.45);
+        var pirates = rng.NextDouble() < port.Pirates;
+        var harm = (pirates ? 25 + rng.NextDouble() * 25 : rng.NextDouble() * 8) * Hulls[f.Size].Takes * (f.Upgrades.Contains("iron_strakes") ? 0.75 : 1);
+        (f.RunTo, f.RunBack, f.RunTakings, f.RunHarm, f.RunPirates) = (port.Id, now + 2 * port.Leagues * CityEconomy.DaySeconds / pace, (int)(pirates ? takings / 2 : takings), harm, pirates);
+    }
+
+    /// <summary>A ship home from her run: the hull's as the voyage left it, and her takings are counted out. What she made.</summary>
+    public static int HomeFromRun(FleetShip f)
+    {
+        var made = f.RunTakings;
+        f.Hull = Math.Max(Seaworthy, f.Hull - f.RunHarm); // her crew bring her home, however she's holed
+        (f.RunTo, f.RunTakings, f.RunHarm, f.RunPirates) = (null, 0, 0, false);
+        return made;
+    }
 
     /// <summary>What a ship of the hero's own is: every ship launched before there were sizes is a pinnace.</summary>
     public ShipSize Size { get; set; } = ShipSize.Medium;
@@ -481,7 +584,7 @@ public sealed class SeaBook
     }
 
     /// <summary>Pirates aboard hole the ship while they're on her.</summary>
-    public void Damage(double amount) => Hull = Math.Max(0, Hull - amount * (HasModule("bilge_pump") ? 0.5 : 1) * Hulls[Size].Takes * (HasUpgrade("iron_strakes") ? 0.75 : 1));
+    public void Damage(double amount) => Hull = Math.Max(0, Hull - amount * (HasModule("bilge_pump") ? 0.5 : 1) * Hulls[Size].Takes * (HasUpgrade("iron_strakes") ? 0.75 : 1) * (1 - CrewSaves));
 
     /// <summary>
     /// Home again, the voyage done: the wage (less if the deck work wasn't done), the count, and any promotion the

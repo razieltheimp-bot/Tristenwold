@@ -71,7 +71,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--opensea-only")) { await OpenSeaTest(); Finish(0); return; }
-            if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); await FleetTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pupils-only")) { await PupilTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--refuge-only")) { await GrowthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--spread-only")) { await SpreadTest(); Finish(0); return; }
@@ -2263,6 +2263,11 @@ public partial class SelfTest(Main main) : Node
         await Frames(40);
         await Teleport(room.Bar);
         await Frames(10);
+        var brute = Enemy.Create(Bestiary.Get("wolf"), p.GlobalPosition + new Vector3(1, 0, 0));
+        var hp = p.Stats.Health;
+        p.TakeHit(40, Tristinwold.Deviant.DamageKind.Physical, AttackKind.Weapon, true, brute);
+        Check(p.Safe && p.Stats.Health == hp, "in a tavern nobody can hurt you");
+        brute.Free();
         Check(main.ActionForTest()?.Verb == "order at the bar", $"at the bar: E to {main.ActionForTest()?.Verb}");
         main.ActionForTest()?.Act();
         Check(hud.TalkTitle == "The bar" && hud.Choose("Honey Mead") && p.Pack.Contents.Any(c => c.Item.Id == "mead") && p.Crowns < 500, $"a mead, bought: {p.Crowns} crowns left");
@@ -2793,6 +2798,7 @@ public partial class SelfTest(Main main) : Node
         await HandiworkTest();
         await PanicTest();
         await KeeperTest();
+        await FleetTest();
     }
 
     /// <summary>A country mine's maze has ore in its walls to work with a pick, and the way down is a dwarf door at the back of the face.</summary>
@@ -2999,12 +3005,17 @@ public partial class SelfTest(Main main) : Node
         var body = main.BringForTest(lad);
         await Frames(150);
         Check(body.Kind.Id == "tinker" && main.LittleRobotsForTest == 1, $"an aeronaut's apprentice is a tinker, with a little robot of their own ({body.Kind.Id}, {main.LittleRobotsForTest} robot)");
+        Check(main.LittleRobotOfForTest(lad)?.Figure is Clockwork, $"and the little robot is a machine, not a person ({main.LittleRobotOfForTest(lad)?.Figure.GetType().Name})");
         Check(lad.Skills.Any(s => s.Name == "Spark Shot"), "who shoots sparks");
         main.RetrainForTest(lad, "MartialArtist");
         await Frames(150);
         var now = main.CompanionBodies.FirstOrDefault(e => e.Bond == lad);
         Check(now?.Kind.Id == "pupil" && main.LittleRobotsForTest == 0 && lad.Skills.Any(s => s.Name == "Palm Strike") && lad.Level == 4,
             $"trained another way, as a martial artist: a pupil now, the robot put away, the levels kept ({now?.Kind.Id})");
+        main.RetrainForTest(lad, "Shapeshifter");
+        await Frames(150);
+        var beast = main.LittleRobotOfForTest(lad);
+        Check(beast is { Kind.Id: "wolf" } && beast.Figure is not Figure, $"trained as a shapeshifter: an acolyte with a wolf at their heels, a real beast ({beast?.Kind.Id}, {beast?.Figure.GetType().Name})");
         foreach (var c in p.Companions().ToList()) c.QueueFree();
     }
 
@@ -3046,6 +3057,44 @@ public partial class SelfTest(Main main) : Node
         main.StopKeepingForTest(lad);
         Check(lad.Keeps is null && city.StoreOf(main.ShipShopKeyForTest) is null, "and brought back, Tobin shuts up shop");
         foreach (var c2 in p.Companions().ToList()) c2.QueueFree();
+    }
+
+    /// <summary>A fleet: a second ship bought for it, tied up off the piers, crewed with hired hands, sent trading and home with crowns, and made the ship the hero sails.</summary>
+    async Task FleetTest()
+    {
+        var (p, sea) = (main.PlayerNode, main.Sea);
+        (sea.OwnShip, sea.ShipName, sea.Size, sea.Hull, sea.Voyage, sea.Hands) = (true, "Wren", ShipSize.Medium, 100, null, 0);
+        sea.Fleet.Clear();
+        await Teleport(new Vector3(130, 0, 5));
+        await Frames(10);
+        var f = main.BuyForFleetForTest(ShipSize.Small);
+        Check(f is not null && sea.Fleet.Count == 1 && f.Name != sea.ShipName, $"a second ship of your own, for your fleet ({f?.Name})");
+        if (f is null) return;
+        main.TendFleetForTest();
+        var drawn = main.FleetVesselForTest(f);
+        Check(drawn is not null && drawn.GlobalPosition.DistanceTo(Main.FleetBerth(f.Berth) with { Y = drawn.GlobalPosition.Y }) < 0.5f, "she's tied up off the end of the piers");
+        p.Crowns = 10000;
+        var bonds = main.Bonds.Count;
+        main.HireHandsForTest(f);
+        main.TendFleetForTest();
+        Check(f.Crewed && f.Hands == SeaBook.HandsFor(ShipSize.Small) && main.FleetVesselForTest(f) is { HandsAboard: 4 } && main.Bonds.Count == bonds,
+            $"hands signed on for her stand about her deck, and they aren't your company ({f.Hands} hands)");
+        var port = Seas.Ports.First(x => x.Id == "port:saltmere");
+        SeaBook.SendOnRun(f, port, main.PlaySecondsForTest, new Tristinwold.Deviant.Rng(7));
+        main.TendFleetForTest();
+        Check(f.Away && main.FleetVesselForTest(f) is null, "sent trading, she casts off and is gone from her berth");
+        var purse = p.Crowns;
+        f.RunBack = main.PlaySecondsForTest - 1;
+        main.TendFleetForTest();
+        Check(!f.Away && p.Crowns > purse, $"and comes home with crowns ({p.Crowns - purse})");
+        main.HireHandsForTest(null);
+        Check(sea.Hands == SeaBook.HandsFor(ShipSize.Medium) && sea.CrewSaves > 0.3, "hands for the ship you sail patch and pump while you fight: a third off what boarders do to her");
+        main.MakeFlagshipForTest(f);
+        Check(sea.ShipName == f.Name ? false : sea.Size == ShipSize.Small && f.Name == "Wren" && f.Size == ShipSize.Medium && sea.Hands == 4 && f.Hands == 8,
+            $"any of the fleet can be made the ship you sail, and the old one ties up with her crew ({sea.ShipName} now, {f.Name} in the fleet)");
+        sea.Fleet.Clear();
+        main.TendFleetForTest();
+        (sea.OwnShip, sea.Hands) = (false, 0);
     }
 
     /// <summary>Raiders in the street: the townsfolk run for a door or a guard and hide till it's over, and the guard comes to the hero's help.</summary>
@@ -3688,6 +3737,42 @@ public partial class SelfTest(Main main) : Node
         Check(colony is { Members: 1 } && city.CouncilOf(Halls.ColonyTown(p.Company)).Heroes.Contains(p.Company), $"a hero can found a colony there, and sits on its council ({colony?.Name})");
         city.TendHalls(Halls.JobSeconds * 4);
         Check(colony is { Till: > 0 } && colony.Chest.Values.Sum() > 0, $"and its settlers fish, cut and quarry while you're away ({string.Join(", ", colony?.Chest.Select(kv => $"{kv.Value} {kv.Key}") ?? [])})");
+
+        // An apprentice sent to keep a market stall in the colony's yard: customers come to it, as to a shop at home.
+        var lad = new Bond { Id = "test/wyn", KindId = "apprentice", Role = BondRole.Apprentice, Name = "Wyn", Race = "human", JoinAge = 15, Following = false };
+        main.AddBondForTest(lad);
+        Check(main.KeepingOptionsForTest(lad).Any(o => o.Contains("market stall")), "an apprentice can be set to keep a market stall at your colony");
+        main.StartKeepingForTest(lad, Keeping.Colony);
+        var keeper = main.KeeperForTest(lad);
+        Check(city.StoreOf(main.ColonyShopKeyForTest) is { Stall: true } && keeper is not null && main.ColonyStallDrawnForTest
+            && main.ColonyStallForTest is { } stall && keeper.GlobalPosition.DistanceTo(stall) < 4, $"Wyn sets up the stall in the colony's yard and stands at it (store {city.StoreOf(main.ColonyShopKeyForTest) is { Stall: true, Open: true }}, keeper {keeper?.GlobalPosition}, stall drawn {main.ColonyStallDrawnForTest} at {main.ColonyStallForTest})");
+        p.Pack.Add("pine_log", 5);
+        main.PutOutForTest(Keeping.Colony, "pine_log", 5);
+        city.TendStores(Homestead.JobSeconds * 3 + 1);
+        Check(city.StoreOf(main.ColonyShopKeyForTest) is { House: var stallHouse } && stallHouse.Chest.GetValueOrDefault("pine_log") == 2 && stallHouse.Till == 3 * Homestead.SellsFor("pine_log"),
+            "and the colony's customers buy off it, one at a time, while you're away");
+        main.StopKeepingForTest(lad);
+        Check(city.StoreOf(main.ColonyShopKeyForTest) is null && !main.ColonyStallDrawnForTest, "brought back, Wyn packs the stall away");
+
+        // A second colony, out in other open country: a hero may found as many as they can find room for.
+        Vector3? second = null;
+        for (var x = 5400; x >= -5400 && second is null; x -= 600)
+            for (var z = 5400; z >= -5400 && second is null; z -= 600)
+                if (main.NoRoomForColonyForTest(new Vector3(x, 0, z)) is null) second = new Vector3(x, 0, z);
+        if (second is { } far)
+        {
+            p.StandUp(far);
+            await Teleport(far);
+            await Frames(20);
+            p.Crowns += 1000;
+            main.FoundColonyForTest();
+            var both = city.ColoniesOf(p.Company).ToList();
+            Check(both.Count == 2 && both[1].Number == 2 && both[1].Name.Contains("Second") && city.CouncilOf(both[1].Town).Heroes.Contains(p.Company),
+                $"and a second colony elsewhere, with a council of its own ({string.Join(", ", both.Select(h => h.Name))})");
+            Check(main.KeepingOptionsForTest(lad).Count(o => o.Contains("market stall")) == 2, "each colony has a market stall to keep");
+        }
+        else Check(false, "room in the world for a second colony");
+        foreach (var c2 in p.Companions().ToList()) c2.QueueFree();
     }
 
     async Task TheVillageDeck()

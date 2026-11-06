@@ -420,15 +420,15 @@ public static class Taming
 }
 
 /// <summary>
-/// Who may travel with a hero, counted kind by kind. Up to three apprentices or squires (as many as they like for a
-/// Paladin or a Wizard: every youth who joins them is an apprentice). Pets by the class's limit (four,
+/// Who may travel with a hero, counted kind by kind. Up to five apprentices or squires (as many as they like for a
+/// Paladin, a Wizard or a Martial Artist: every youth who joins them is an apprentice). A ship's hired crew are ordinary hands and aren't counted. Pets by the class's limit (four,
 /// or as many as they like for a Ranger or a Shapeshifter). As many mounts as they own, kept and fed at the Gallows Perch,
 /// but only as many with them as there are riders: the hero and each apprentice at their side. A golem is a machine and
 /// doesn't count, and a foal or a dragon too small to ride is a pet until it's grown.
 /// </summary>
 public static class PartyRules
 {
-    public const int MaxApprentices = 3, MaxPets = 4;
+    public const int MaxApprentices = 5, MaxPets = 4;
     /// <summary>The level an artificer who works beside their construct builds a second. The Ether-Aeronaut climbs inside theirs, and has only the one.</summary>
     public const int SecondConstructLevel = 6;
 

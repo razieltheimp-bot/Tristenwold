@@ -529,6 +529,7 @@ public partial class Main
         if (s.OwnShip)
             foreach (var (id, kind) in SeaBook.UpgradeKinds.Where(k => !s.HasUpgrade(k.Key)))
                 yield return ($"Fit {kind.Name} to {s.ShipName}. ({kind.Price} crowns: {kind.Text})", () => FitUpgrade(master, id));
+        foreach (var o in FleetYard(master)) yield return o;
         if (s.MayLayKeel) yield return ($"Lay down a keel for a ship of my own. ({SeaBook.KeelPrice} crowns of timber)", () => LayKeel(master));
         if (s.OwnShip && s.Hull < 100)
         {

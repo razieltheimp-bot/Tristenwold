@@ -150,7 +150,7 @@ public partial class Main
         AddEnemy(e);
         _companions.Add(e);
         Outfit(e, bond);
-        if (bond.KindId == "tinker") BuildLittleRobot(bond, spot);
+        if (Sidekick(bond) is not null) BuildLittleRobot(bond, spot);
         return e;
     }
 
@@ -195,18 +195,37 @@ public partial class Main
         Save();
     }
 
-    /// <summary>The little robots an artificer's apprentices have built, each at its maker's heels.</summary>
+    /// <summary>The little robots an artificer's apprentices have built, and the beasts a druid's acolytes keep, each at its keeper's heels.</summary>
     readonly Dictionary<string, Enemy> _littleRobots = [];
 
-    /// <summary>An apprentice artificer's own machine: a mite of their making, knee-high and weaker than a saboteur's, that fights beside them.</summary>
+    /// <summary>
+    /// What an apprentice keeps at their heels, by the class they learn, if anything: an artificer's apprentice a little
+    /// machine built to their discipline's design (a robot, never a person), a druid's acolyte a beast of their circle's
+    /// (a shapeshifter's wolf, a spiritcaller's spirit wolf, an elemental druid's hawk).
+    /// </summary>
+    static (string Kind, string Look, string Word)? Sidekick(Bond b) => !PartyRules.IsApprentice(b) || b.Trains is not { } t ? null : Classes.Get(t).Calling switch
+    {
+        Calling.Artificer => ("clockwork_mite", $"golem:{GolemName(t)}", "little robot"),
+        Calling.Druid => t switch
+        {
+            "Shapeshifter" => ("wolf", "wolf", "wolf"),
+            "Spiritcaller" => ("wolf", "spirit_beast", "spirit wolf"),
+            "Stormdruid" => ("hawk", "hawk", "hawk"),
+            _ => ("fox", "fox", "fox"),
+        },
+        _ => null,
+    };
+
+    /// <summary>An apprentice's own creature: an artificer's little machine, knee-high and weaker than a saboteur's mite, or a druid's beast, that fights beside them.</summary>
     void BuildLittleRobot(Bond maker, Vector3 at)
     {
         if (_littleRobots.TryGetValue(maker.Id, out var had) && IsInstanceValid(had)) return;
+        if (Sidekick(maker) is not { } side) return;
         var spot = at + new Vector3(1.2f, 0, 0.8f);
-        var robot = Enemy.Create(Bestiary.Get("clockwork_mite"), spot with { Y = City.FloorAt(spot) + 0.4f }, 0.6);
-        robot.Stats.Name = $"{maker.Name}'s little robot";
+        var robot = Enemy.Create(Bestiary.Get(side.Kind), spot with { Y = City.FloorAt(spot) + 0.4f }, 0.6, look: side.Look);
+        robot.Stats.Name = $"{maker.Name}'s {side.Word}";
         robot.Leader = _player;
-        robot.Scale = Vector3.One * 0.75f;
+        if (side.Kind == "clockwork_mite") robot.Scale = Vector3.One * 0.75f;
         AddEnemy(robot);
         robot.RefreshPlate();
         _companions.Add(robot);
@@ -220,11 +239,11 @@ public partial class Main
         {
             var maker = _bonds.FirstOrDefault(b => b.Id == id);
             var body = maker is null ? null : BodyOf(maker);
-            if (maker is { Following: true, KindId: "tinker" } && body is not null && IsInstanceValid(robot)) continue;
+            if (maker is { Following: true } && body is not null && IsInstanceValid(robot) && Sidekick(maker) is { } side && robot.Stats.Name.EndsWith(side.Word)) continue;
             if (IsInstanceValid(robot)) { _companions.Remove(robot); robot.QueueFree(); }
             _littleRobots.Remove(id);
         }
-        foreach (var b in _bonds.Where(b => b.Following && b.KindId == "tinker" && !_littleRobots.ContainsKey(b.Id)).ToList())
+        foreach (var b in _bonds.Where(b => b.Following && Sidekick(b) is not null && !_littleRobots.ContainsKey(b.Id)).ToList())
             if (BodyOf(b) is { } body) BuildLittleRobot(b, body.GlobalPosition);
     }
 
@@ -241,6 +260,7 @@ public partial class Main
     public void RegearForTest(Bond bond) => Regear(bond);
     public Enemy BringForTest(Bond bond) => BringCompanion(bond);
     public int LittleRobotsForTest => _littleRobots.Values.Count(IsInstanceValid);
+    public Enemy? LittleRobotOfForTest(Bond b) => _littleRobots.TryGetValue(b.Id, out var r) && IsInstanceValid(r) ? r : null;
 
     void RetrainMenu(Bond bond)
     {

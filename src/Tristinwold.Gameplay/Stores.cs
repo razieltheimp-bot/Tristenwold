@@ -145,11 +145,14 @@ public static class Kit
 
 /// <summary>
 /// One of the company keeping shop for the hero: an apprentice or squire sent to mind the counter at home, at the
-/// wagon, or aboard the ship. They serve one customer at a time, as a home's company does (<see cref="Homestead"/>).
+/// wagon, aboard the ship, or at a market stall in the yard of the hero's colony. They serve one customer at a time, as a home's company does (<see cref="Homestead"/>).
 /// </summary>
 public static class Keeping
 {
-    public const string Home = "home", Wagon = "wagon", Ship = "ship";
+    public const string Home = "home", Wagon = "wagon", Ship = "ship", Colony = "colony";
+    /// <summary>A colony's market stall, as a place to keep shop: "colony" for the first, "colony2" for the second, and so on.</summary>
+    public static bool IsColony(string? place) => place?.StartsWith(Colony) == true;
+    public static string ColonyPlace(Hall h) => h.Number > 1 ? $"{Colony}{h.Number}" : Colony;
     /// <summary>How a keeper is told from other folk to talk to.</summary>
     public const string NpcMark = "keeper:";
 
@@ -179,6 +182,10 @@ public sealed class PlayerStore
     public const string ShipMark = "#ship";
     /// <summary>A shop aboard a ship, not a shopfront on the row.</summary>
     public bool Ship { get; set; }
+    /// <summary>And a colony's: a market stall in its yard, kept by one of the founder's company.</summary>
+    public const string ColonyMark = "#colony";
+    /// <summary>A market stall in a colony's yard, not a shopfront on the row.</summary>
+    public bool Stall { get; set; }
 
     /// <summary>Whether anyone's minding the counter, and there's a counter to mind.</summary>
     [JsonIgnore] public bool Open => Workers > 0 && House.Furniture.Contains("shop_counter") && House.ForSale.Count + House.Buying.Count > 0;

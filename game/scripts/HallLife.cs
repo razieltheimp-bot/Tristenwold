@@ -26,8 +26,7 @@ public partial class Main
     {
         if (MyHallPlan is { } plan && _city.HallOf(_player.Company, plan.Kind) is null)
             yield return ($"Found your own {plan.Word} here ({plan.FoundCost} crowns, from level 5)", () => FoundHall(plan));
-        if (_city.HallOf(_player.Company, HallKind.Colony) is null)
-            yield return ($"Found a colony here ({Halls.PlanOf(HallKind.Colony).FoundCost} crowns, from level 5; it wants open land, as far from any town as Tristinwold is from its neighbours)", () => FoundHall(Halls.PlanOf(HallKind.Colony)));
+        yield return ($"Found {(_city.ColoniesOf(_player.Company).Any() ? "another" : "a")} colony here ({Halls.PlanOf(HallKind.Colony).FoundCost} crowns, from level 5; it wants open land, as far from any town as Tristinwold is from its neighbours)", () => FoundHall(Halls.PlanOf(HallKind.Colony)));
         if (Groves.MayPlant(_player.Class.Id)) yield return ($"Plant a tree here ({Groves.Mana:0} mana)", () => { _hud.EndTalk(); PlantTree(); });
     }
 
@@ -76,7 +75,8 @@ public partial class Main
         if (_player.Crowns < plan.FoundCost) { Sound.Ui("error"); _hud.Toast($"A {plan.Word} costs {plan.FoundCost} crowns to set up: timber, a roof, and a first {plan.Member}'s wages.", 6); return; }
         if (NoRoomForHall(at, plan.Kind == HallKind.Colony) is { } why) { Sound.Ui("error"); _hud.Toast(why, 6); return; }
         _player.Crowns -= plan.FoundCost;
-        var hall = new Hall { Owner = _player.Company, Hero = _player.Company, Kind = plan.Kind, Name = $"{_player.Company}'s {plan.Word}", X = at.X, Z = at.Z };
+        var number = plan.Kind == HallKind.Colony ? _city.NextColony(_player.Company) : 0; // as many colonies as a hero can find room for
+        var hall = new Hall { Owner = _player.Company, Hero = _player.Company, Kind = plan.Kind, Name = plan.Kind == HallKind.Colony ? Halls.ColonyName(_player.Company, number) : $"{_player.Company}'s {plan.Word}", X = at.X, Z = at.Z, Number = number };
         DoCity(CityAction.HallFound(hall));
         Sound.Ui("quest");
         WellDone(2);
@@ -127,7 +127,7 @@ public partial class Main
         var kinds = plan.Buildings.ToList();
         if (h.Kind == HallKind.Colony)
         {
-            var grown = _city.GrownOf(Halls.ColonyTown(h.Owner));
+            var grown = _city.GrownOf(h.Town);
             kinds.Insert(0, "tavern");
             if (grown >= Settling.Market) kinds.Add("store");
             if (grown >= Settling.Chamber) kinds.Add("longhall");
@@ -183,9 +183,9 @@ public partial class Main
             yield return ("How do we stand?", () => Say(person, HallReport(h)));
             if (h.Kind == HallKind.Colony)
             {
-                foreach (var o in GrowthOptions(person, Halls.ColonyTown(h.Owner), h.Name)) yield return o; // building the colony up
-                if (_story.Home?.Id != Halls.ColonyTown(h.Owner))
-                    yield return ($"Make {h.Name} my hometown.", () => { _story.Home = new Hometown(Halls.ColonyTown(h.Owner), h.Name, h.X, h.Z); Settled(h.Name, bar: false); });
+                foreach (var o in GrowthOptions(person, h.Town, h.Name)) yield return o; // building the colony up
+                if (_story.Home?.Id != h.Town)
+                    yield return ($"Make {h.Name} my hometown.", () => { _story.Home = new Hometown(h.Town, h.Name, h.X, h.Z); Settled(h.Name, bar: false); });
             }
             if (h.Members < Halls.MostMembers(_player.Hero.Level))
                 yield return ($"Take on another {plan.Member} ({plan.RecruitCost} crowns)", () => Recruit(person, h));

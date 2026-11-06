@@ -38,8 +38,12 @@ public sealed class Hall
     /// <summary>The last day each hero was served here, for the services a hero can only have once a day.</summary>
     public Dictionary<string, int> Served { get; set; } = [];
     public int Founded { get; set; }
+    /// <summary>Which of its founder's colonies this is: 0 for the first, 2 for the second, and so on. Other halls are one to a founder.</summary>
+    public int Number { get; set; }
 
-    [JsonIgnore] public string Key => Halls.KeyOf(Owner, Kind);
+    [JsonIgnore] public string Key => Number > 1 ? $"{Halls.KeyOf(Owner, Kind)}{Number}" : Halls.KeyOf(Owner, Kind);
+    /// <summary>A colony as a place with a council: the town it's kept under.</summary>
+    [JsonIgnore] public string Town => Halls.ColonyTown(Owner, Number);
     [JsonIgnore] public HallPlan Plan => Halls.PlanOf(Kind);
 }
 
@@ -74,7 +78,11 @@ public static class Halls
     public static string KeyOf(string owner, HallKind kind) => $"{owner}#{kind}";
 
     /// <summary>A colony as a place with a council: the town it's kept under.</summary>
-    public static string ColonyTown(string owner) => $"colony:{owner}";
+    public static string ColonyTown(string owner, int number = 0) => number > 1 ? $"colony:{owner}#{number}" : $"colony:{owner}";
+
+    /// <summary>What a founder's n-th colony is called: their Colony, then their Second Colony, Third Colony...</summary>
+    public static string ColonyName(string founder, int number) => number <= 1 ? $"{founder}'s Colony"
+        : $"{founder}'s {(number switch { 2 => "Second", 3 => "Third", 4 => "Fourth", 5 => "Fifth", 6 => "Sixth", 7 => "Seventh", 8 => "Eighth", 9 => "Ninth", 10 => "Tenth", _ => $"{number}th" })} Colony";
 
     /// <summary>How many people a founder of this level can keep under them.</summary>
     public static int MostMembers(int level) => Math.Clamp(2 + level / 3, 2, 12);
@@ -173,6 +181,12 @@ public sealed partial class CityEconomy
 
     public Hall? HallOf(string owner, HallKind kind) => Halls.GetValueOrDefault(Gameplay.Halls.KeyOf(owner, kind));
 
+    /// <summary>Every colony a hero has founded, the first first.</summary>
+    public IEnumerable<Hall> ColoniesOf(string owner) => Halls.Values.Where(h => h.Kind == HallKind.Colony && h.Owner == owner).OrderBy(h => Math.Max(1, h.Number));
+
+    /// <summary>The number the hero's next colony takes: 0 for their first, then one past the highest they have.</summary>
+    public int NextColony(string owner) => ColoniesOf(owner).Select(h => Math.Max(1, h.Number)).DefaultIfEmpty(0).Max() is var n && n == 0 ? 0 : n + 1;
+
     /// <summary>Time passes at every hall: its people work, and now and then it's news.</summary>
     public void TendHalls(double seconds)
     {
@@ -190,10 +204,10 @@ public sealed partial class CityEconomy
         switch (a.Kind)
         {
             case "hall_found" when a.Hall is { Owner.Length: > 0 and <= 60, Name.Length: > 0 and <= 80 } h && h.Key == key && !Halls.ContainsKey(key) && HallRoom(h.X, h.Z):
-                Halls[key] = new Hall { Owner = h.Owner, Hero = h.Hero.Length <= 60 ? h.Hero : "", Kind = h.Kind, Name = h.Name, X = h.X, Z = h.Z, Members = 1, Founded = Day };
+                Halls[key] = new Hall { Owner = h.Owner, Hero = h.Hero.Length <= 60 ? h.Hero : "", Kind = h.Kind, Name = h.Name, X = h.X, Z = h.Z, Members = 1, Founded = Day, Number = h.Kind == HallKind.Colony ? Math.Clamp(h.Number, 0, 99) : 0 };
                 if (h.Kind == HallKind.Colony) // its founder sits on its council from the first day
                 {
-                    var council = CouncilOf(Gameplay.Halls.ColonyTown(h.Owner));
+                    var council = CouncilOf(Halls[key].Town);
                     council.Name = h.Name;
                     if (!council.Heroes.Contains(h.Owner)) council.Heroes.Add(h.Owner);
                 }
@@ -209,7 +223,7 @@ public sealed partial class CityEconomy
             case "hall_low": Halls[key].LowUntil = Day + 1; return true;
             case "hall_served" when a.Item is { Length: > 0 and <= 60 } who: Halls[key].Served[who] = Day; return true;
             case "hall_close":
-                if (Halls[key].Kind == HallKind.Colony) Councils.Remove(Gameplay.Halls.ColonyTown(Halls[key].Owner));
+                if (Halls[key].Kind == HallKind.Colony) Councils.Remove(Halls[key].Town);
                 return Halls.Remove(key);
         }
         return false;

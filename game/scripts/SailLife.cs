@@ -28,6 +28,7 @@ public partial class Main
             TendVessel();
             BoardVessel();
         });
+        foreach (var o in FleetTalk(person)) yield return o;
         if (_sea.ShipX != ShipBerth.X || _sea.ShipZ != ShipBerth.Z)
             yield return ($"Have the crew bring {_sea.ShipName} home.", () => { (_sea.ShipX, _sea.ShipZ) = (ShipBerth.X, ShipBerth.Z); _vessel?.QueueFree(); _vessel = null; Save(); Say(person, "She'll be alongside the middle pier by morning."); });
     }
@@ -35,7 +36,7 @@ public partial class Main
     /// <summary>The hero's own things left about the world, for the map: the colony, the ship, the wagon and the skyboat, wherever they are now.</summary>
     IEnumerable<(double X, double Z, string Name, string Kind)> Belongings()
     {
-        if (_city.HallOf(_player.Company, HallKind.Colony) is { } colony) yield return (colony.X, colony.Z, colony.Name, "colony");
+        foreach (var colony in _city.ColoniesOf(_player.Company)) yield return (colony.X, colony.Z, colony.Name, "colony");
         if (_sea.OwnShip && !AboardShip && _sea.Voyage is null)
             yield return _vessel is { } v ? (v.GlobalPosition.X, v.GlobalPosition.Z, _sea.ShipName, "ship") : (_sea.ShipX, _sea.ShipZ, _sea.ShipName, "ship");
         if (_trade.OwnWagon && _ridden is null)
@@ -62,6 +63,7 @@ public partial class Main
         _vessel = new OwnVessel(this);
         AddChild(_vessel);
         _vessel.GlobalPosition = at with { Y = (float)WorldGen.WaterLevel };
+        _vessel.Hands(_sea.Hands); // her hired hands about her deck
     }
 
     (string Verb, Action Act)? VesselAction(Vector3 pos)
@@ -220,6 +222,30 @@ public partial class OwnVessel(Main main) : Node3D
 
     /// <summary>Way off her: she stops where she is.</summary>
     public void Halt() => (_speed, _climb) = (0, 0);
+
+    /// <summary>Where her hired hands stand about her deck: forward, at the rails, by the mast, clear of where the company stand.</summary>
+    public static readonly Vector3[] HandSpots =
+    [
+        new(-1.4f, DeckTop + 0.05f, 2.4f), new(1.4f, DeckTop + 0.05f, -3.3f), new(-1.3f, DeckTop + 0.05f, -2.6f), new(0.2f, DeckTop + 0.05f, -8.0f),
+        new(1.4f, DeckTop + 0.05f, 2.6f), new(-1.5f, DeckTop + 0.05f, -5.6f),
+    ];
+    readonly List<Node3D> _hands = [];
+    public int HandsAboard => _hands.Count;
+
+    /// <summary>Her hired hands drawn about her deck: ordinary sailors, as many as she has (up to six seen).</summary>
+    public void Hands(int n)
+    {
+        foreach (var h in _hands) if (IsInstanceValid(h)) h.QueueFree();
+        _hands.Clear();
+        for (var i = 0; i < Math.Min(n, HandSpots.Length); i++)
+            if (Body.For("sailor") is { } sailor)
+            {
+                AddChild(sailor);
+                sailor.Position = HandSpots[i];
+                sailor.Rotation = new Vector3(0, i * 1.7f, 0);
+                _hands.Add(sailor);
+            }
+    }
 
     /// <summary>Where the hero's company stand on her deck while she sails, clear of the mast, the hatch, the cargo and the wheel.</summary>
     public static readonly Vector3[] CrewSpots =

@@ -721,6 +721,36 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--colonyshop"))
+        {
+            // A colony founded out in open country, and an apprentice keeping its market stall.
+            Vector3? isle = null;
+            for (var x = -5400; x <= 5400 && isle is null; x += 600)
+                for (var z = -5400; z <= 5400 && isle is null; z += 600)
+                    if (main.NoRoomForColonyForTest(new Vector3(x, 0, z)) is null) isle = new Vector3(x, 0, z);
+            if (isle is { } land)
+            {
+                main.TerrainNode.EnsureAround(land, 1);
+                main.PlayerNode.GlobalPosition = land with { Y = (float)main.World.Height(land.X, land.Z) + 1 };
+                await Frames(30);
+                while (main.PlayerNode.Hero.Level < 5) main.GainXp(Hero.XpToNext(main.PlayerNode.Hero.Level));
+                main.PlayerNode.Crowns += 1000;
+                main.FoundColonyForTest();
+                var lad = new Bond { Id = "shot/wyn", KindId = "apprentice", Role = BondRole.Apprentice, Name = "Wyn", Race = "human", JoinAge = 15, Following = false };
+                main.AddBondForTest(lad);
+                main.StartKeepingForTest(lad, Keeping.Colony);
+                await Frames(30);
+                if (main.ColonyStallForTest is { } stall)
+                {
+                    var centre = main.Economy.HallOf(main.PlayerNode.Company, HallKind.Colony) is { } h ? new Vector3((float)h.X, stall.Y, (float)h.Z) : stall;
+                    var inward = (centre - stall).Normalized();
+                    await From("colonyshop-front", stall + inward * 7 + Vector3.Up * 2.5f, stall + Vector3.Up * 1.2f);
+                    await From("colonyshop-yard", centre + (centre - stall).Normalized() * 14 + Vector3.Up * 9, stall);
+                }
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--skyboat"))
         {
             // The hero's skyboat at the end of the pier: from beside her, off her bow, her stern, from above, and up in the air from below.

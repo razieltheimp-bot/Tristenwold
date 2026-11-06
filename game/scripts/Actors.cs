@@ -699,7 +699,7 @@ public partial class Enemy : Fighter
             _lookForRival = 0.5;
             _rival = FindRival();
             // In a frenzy it goes for whatever's nearest, people included.
-            if (Frenzy > 0 && player is { Downed: false } && player.GlobalPosition.DistanceTo(GlobalPosition) is var pd and < 35
+            if (Frenzy > 0 && player is { Downed: false, Safe: false } && player.GlobalPosition.DistanceTo(GlobalPosition) is var pd and < 35
                 && (_rival is null || pd < _rival.GlobalPosition.DistanceTo(GlobalPosition))) { _rival = null; Provoke(player); }
             if (_rival is not null && State != EnemyState.Fighting) { Cry(); State = EnemyState.Fighting; }
             else if (State == EnemyState.Fighting) State = EnemyState.Idle;
@@ -749,7 +749,7 @@ public partial class Enemy : Fighter
                 break;
 
             case EnemyState.Fighting when _target is not null:
-                if (_target.Downed || _target.GlobalPosition.DistanceTo(Home) > Math.Max(IsDragon ? 250 : 60, Roam * 3))
+                if (_target.Downed || _target.Safe || _target.GlobalPosition.DistanceTo(Home) > Math.Max(IsDragon ? 250 : 60, Roam * 3))
                 {
                     _target = null;
                     State = EnemyState.Idle;

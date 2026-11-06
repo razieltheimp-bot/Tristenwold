@@ -48,7 +48,7 @@ public partial class Main
                 _hud.EndTalk();
                 _hud.Toast($"{name} raises {step.Name}. {step.Gives}", 9);
                 if (_world.Find(town) is { } s) _places.Rebuild(s.Id); // up it goes
-                else if (_hallFronts.Remove(Halls.KeyOf(town["colony:".Length..], HallKind.Colony), out var front)) front.Root.QueueFree(); // a colony is drawn again, grown
+                else if (_city.Halls.Values.FirstOrDefault(h => h.Kind == HallKind.Colony && h.Town == town) is { } grown && _hallFronts.Remove(grown.Key, out var front)) front.Root.QueueFree(); // a colony is drawn again, grown
                 Save();
             });
     }
