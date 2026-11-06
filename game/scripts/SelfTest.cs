@@ -37,6 +37,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--repute-only")) { await TheRepute(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--feud-only")) { await TheFeud(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--tavern-only")) { await TheTavern(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--herofight-only")) { await HeroFightTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ride-only")) { await TheRide(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
@@ -2799,6 +2800,75 @@ public partial class SelfTest(Main main) : Node
         await PanicTest();
         await KeeperTest();
         await FleetTest();
+        await HeroFightTest();
+    }
+
+    /// <summary>
+    /// Heroes fighting heroes: another player's unseen stand-in, B to draw on them, a blow sent to their game, theirs
+    /// taken here, and a fall to them that pays them (a copy of the pack, gear as crowns, the purse, the bounty) while
+    /// this hero keeps everything.
+    /// </summary>
+    async Task HeroFightTest()
+    {
+        var (p, visitors) = (main.PlayerNode, main.VisitorsNode);
+        await Teleport(City.PlayerStart + new Vector3(0, 0, 6));
+        await Frames(10);
+        var at = p.GlobalPosition - p.GlobalTransform.Basis.Z * 1.6f;
+        visitors.Seen("Mira", new Moved("Wizard", null, "Mira", at.X, at.Y, at.Z, 0, 0, null, 0));
+        await Frames(20);
+        var mira = visitors.StandIn("Mira");
+        Check(mira is { Hero: "Mira" } && !mira.Figure.Visible && mira.Stats.Name == "Mira" && mira.GlobalPosition.DistanceTo(at) < 0.5f, "another player has an unseen stand-in where her hero is drawn");
+        p.Face(mira!.GlobalPosition);
+        p.CoolForTest();
+        p.Stats.Restore(p.Stats.MaxMana, p.Stats.MaxStamina);
+        p.Swing();
+        await Frames(40);
+        Check(main.LastHeroMessage is null && !main.FightingHeroForTest("Mira"), "not drawn on players, a swing doesn't touch her");
+        main.DrawOnHeroesForTest();
+        Check(main.DrawnForTest && main.FightingHeroForTest("Mira"), "B draws on every player about");
+        for (var i = 0; i < 6 && main.LastHeroMessage is null; i++)
+        {
+            p.Face(mira.GlobalPosition);
+            p.CoolForTest();
+            p.Stats.Restore(p.Stats.MaxMana, p.Stats.MaxStamina);
+            p.Swing();
+            await Frames(40);
+        }
+        Check(main.LastHeroMessage is StrikeHero { Target: "Mira", Damage: > 0 }, $"and a swing lands on Mira: the blow goes to her game ({main.LastHeroMessage})");
+        main.DrawOnHeroesForTest();
+        Check(!main.DrawnForTest && main.FightingHeroForTest("Mira"), "put away, she's still one you're fighting");
+
+        // A blow from her, taken like any other; and from someone nowhere near, nothing.
+        var hp = p.Stats.Health;
+        for (var i = 0; i < 10 && p.Stats.Health >= hp; i++) main.HandleForTest(new HeroStruck("Mira", 20, DamageKind.Physical, AttackKind.Weapon, false));
+        Check(p.Stats.Health < hp, $"Mira's blow lands on you ({hp:0} to {p.Stats.Health:0})");
+        hp = p.Stats.Health;
+        main.HandleForTest(new HeroStruck("Nobody", 20, DamageKind.Physical, AttackKind.Weapon, false));
+        Check(p.Stats.Health == hp, "a player nowhere near can't reach you");
+
+        // She puts you down: she gets her spoils, you keep it all, and your bounty is hers.
+        p.Pack.Add("healing_draught", 2);
+        p.Pack.Add("iron_sword");
+        p.Crowns = 300;
+        main.Standing.Bounty = 40;
+        var (draughts, swords) = (p.Pack.Count("healing_draught"), p.Pack.Count("iron_sword"));
+        for (var i = 0; i < 10 && !p.Downed; i++) main.HandleForTest(new HeroStruck("Mira", 1e6, DamageKind.Physical, AttackKind.Weapon, true));
+        Check(p.Downed, "and Mira can put you down");
+        var fell = main.LastHeroMessage as HeroFell;
+        Check(fell is { Killer: "Mira", Crowns: 300, Bounty: 40 } && fell.GearCrowns >= Items.Get("iron_sword")!.Value
+              && fell.Items.Any(i => i.Id == "healing_draught" && i.N == draughts) && fell.Items.All(i => Items.Get(i.Id)?.Kind != ItemKind.Gear),
+            $"she wins a copy of your pack, your gear as crowns ({fell?.GearCrowns}), a purse like yours and the bounty");
+        Check(p.Crowns == 300 && p.Pack.Count("healing_draught") == draughts && p.Pack.Count("iron_sword") == swords && main.Standing.Bounty == 0,
+            "and you keep everything: only the bounty is gone, collected");
+        await Until(() => !p.Downed, 8);
+
+        // You put her down: yours for it.
+        var crowns = p.Crowns;
+        main.HandleForTest(new HeroSpoils("Mira", [new("mana_tonic", 3)], 100, 50, 25));
+        Check(p.Crowns == crowns + 175 && p.Pack.Count("mana_tonic") >= 3 && !main.FightingHeroForTest("Mira"), $"beat her, and her purse, her gear's worth and her bounty are yours ({crowns} to {p.Crowns})");
+        visitors.Roster([]);
+        await Frames(5);
+        Check(visitors.StandIn("Mira") is null, "and when she's gone, so is her stand-in");
     }
 
     /// <summary>A country mine's maze has ore in its walls to work with a pick, and the way down is a dwarf door at the back of the face.</summary>

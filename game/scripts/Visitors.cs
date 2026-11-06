@@ -6,8 +6,10 @@ namespace Tristinwold.Game;
 /// <summary>
 /// The other players on the shared server, walking about this game's world. Each is drawn as their own hero
 /// (class look and character page choices) from what the server last said of them, eased toward where they
-/// were, playing the moves they made; a name floats over them. Nothing here fights or blocks: they're company,
-/// not obstacles. A player not heard of for a while, or gone from the roster, fades out.
+/// were, playing the moves they made; a name floats over them. Nothing here blocks: they're company, not
+/// obstacles. Each has an unseen stand-in (<see cref="Enemy.ForHero"/>) where they're drawn, for this hero's blows
+/// to land on when the two are fighting; their name goes red then. A player not heard of for a while, or gone from
+/// the roster, fades out.
 /// </summary>
 public partial class Visitors : Node3D
 {
@@ -20,11 +22,26 @@ public partial class Visitors : Node3D
     /// <summary>Where a player was last seen, if they're about.</summary>
     public Vector3? Where(string player) => _here.TryGetValue(player, out var v) ? v.Target : null;
 
+    /// <summary>The stand-in for a player's hero, if they're about.</summary>
+    public Enemy? StandIn(string player) => _here.TryGetValue(player, out var v) && IsInstanceValid(v.Stand) ? v.Stand : null;
+
+    /// <summary>Every player about, as stand-ins.</summary>
+    public IEnumerable<Enemy> StandIns => _here.Values.Select(v => v.Stand).Where(IsInstanceValid);
+
+    /// <summary>What a player's hero is called, if they're about.</summary>
+    public string? NameOf(string player) => StandIn(player)?.Stats.Name;
+
+    /// <summary>Which players this hero is fighting: their names show red.</summary>
+    public Func<string, bool>? Fighting { get; set; }
+
+    /// <summary>A player's hero takes a blow from this one: they flinch (their own game decides the rest).</summary>
+    public void Flinch(string player) { if (_here.TryGetValue(player, out var v)) v.Flinch(); }
+
     public void Seen(string player, Moved where)
     {
         if (!_here.TryGetValue(player, out var v))
         {
-            v = new Visitor { Name = $"Visitor_{player}" };
+            v = new Visitor { Name = $"Visitor_{player}", Player = player };
             _here[player] = v;
             AddChild(v);
             v.Position = new Vector3(where.X, where.Y, where.Z);
@@ -48,6 +65,7 @@ public partial class Visitors : Node3D
         {
             if (_clock - v.Heard > Stale) { _here.Remove(player); v.QueueFree(); continue; }
             v.Ease(delta);
+            v.Mark(Fighting?.Invoke(player) == true);
         }
     }
 
@@ -60,10 +78,15 @@ public partial class Visitors : Node3D
         float _yaw, _speed;
         public Vector3 Target;
         public double Heard;
+        public string Player = "";
+        public Enemy Stand = null!;
+        bool _marked;
 
         public void Take(Moved m, double now)
         {
             Heard = now;
+            if (!IsInstanceValid(Stand)) AddChild(Stand = Enemy.ForHero(Player, m.Name));
+            if (Stand.Stats.Name != m.Name) Stand.Stats.Name = m.Name;
             if (_figure is null || m.Look != _look || (m.Avatar ?? "") != _avatar) Dress(m);
             Target = new Vector3(m.X, m.Y, m.Z);
             _yaw = m.Yaw;
@@ -92,6 +115,7 @@ public partial class Visitors : Node3D
             _figure = Figure.Create(m.Look, Tristinwold.Gameplay.Avatar.Parse(m.Avatar, m.Look));
             AddChild(_figure);
             var top = Models.Bounds(_figure).End.Y;
+            _marked = false;
             _plate = new Label3D
             {
                 Text = m.Name, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 34, OutlineSize = 10, PixelSize = 0.008f,
@@ -99,6 +123,16 @@ public partial class Visitors : Node3D
                 Position = new Vector3(0, Math.Max(1.6f, top) + 0.45f, 0),
             };
             AddChild(_plate);
+        }
+
+        public void Flinch() => _figure?.Hurt();
+
+        /// <summary>Their name red while the two heroes are fighting, pale blue otherwise.</summary>
+        public void Mark(bool fighting)
+        {
+            if (_plate is null || fighting == _marked) return;
+            _marked = fighting;
+            _plate.Modulate = new Color(fighting ? "#ff6a5a" : "#dff4ff");
         }
 
         public void Ease(double delta)

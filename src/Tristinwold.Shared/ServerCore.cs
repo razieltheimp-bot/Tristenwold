@@ -135,6 +135,8 @@ public sealed partial class ServerCore
             EncounterStarted e => OnEncounter(player, e),
             CityTrade t => OnCityTrade(player, t),
             Moved m => OnMoved(player, m),
+            StrikeHero s => OnStrikeHero(player, s),
+            HeroFell f => OnHeroFell(player, f),
             _ => [],
         };
     }
@@ -145,6 +147,33 @@ public sealed partial class ServerCore
         var where = m with { Look = Clip(m.Look, 40), Avatar = m.Avatar is null ? null : Clip(m.Avatar, 400), Name = Clip(m.Name, 40), Clip = m.Clip is null ? null : Clip(m.Clip, 40) };
         _sights[player] = where;
         return [new(null, new Seen(player, where), Except: player)];
+    }
+
+    /// <summary>The most one blow between heroes may do, and the most of anything one fall may hand over.</summary>
+    public const double MostBlow = 1_000_000;
+    public const int MostSpoil = 10_000_000;
+
+    /// <summary>A hero struck another: the blow goes to the one it landed on, whose game decides what it does.</summary>
+    IReadOnlyList<Outgoing> OnStrikeHero(string player, StrikeHero s)
+    {
+        var target = _online.FirstOrDefault(o => o.Equals(s.Target?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (target is null || target.Equals(player, StringComparison.OrdinalIgnoreCase) || !double.IsFinite(s.Damage) || s.Damage <= 0) return [];
+        return [new(target, new HeroStruck(player, Math.Min(s.Damage, MostBlow), s.Kind, s.Attack, s.Crit))];
+    }
+
+    /// <summary>A hero went down to another: the winner is told what's theirs for it.</summary>
+    IReadOnlyList<Outgoing> OnHeroFell(string player, HeroFell f)
+    {
+        var killer = _online.FirstOrDefault(o => o.Equals(f.Killer?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (killer is null || killer.Equals(player, StringComparison.OrdinalIgnoreCase)) return [];
+        static int Fair(int n) => Math.Clamp(n, 0, MostSpoil);
+        var items = (f.Items ?? []).Where(i => !string.IsNullOrWhiteSpace(i.Id) && i.N > 0).Take(500)
+            .Select(i => new SpoilItem(Clip(i.Id, 80), Fair(i.N))).ToList();
+        return
+        [
+            new(killer, new HeroSpoils(player, items, Fair(f.Crowns), Fair(f.GearCrowns), Fair(f.Bounty))),
+            new(null, new Notice(NoticeKind.World, $"{killer} has cut down {player}{(f.Bounty > 0 ? $", and collects the {Fair(f.Bounty)} crowns on {player}'s head" : "")}."), Except: killer),
+        ];
     }
 
     IReadOnlyList<Outgoing> OnPresence(Group group, Presence p)

@@ -407,7 +407,7 @@ public partial class Main : Node3D
         _player.WentDown += () => { _tracker.Downed(); _hud.Center("You have fallen."); };
         _player.Struck += (enemy, hit, kind) =>
         {
-            if (enemy.Sparring || enemy.Yielded || enemy.HeroesRival) return; // a duel in the yard isn't a battle
+            if (enemy.Sparring || enemy.Yielded || enemy.HeroesRival || enemy.Hero is not null) return; // a duel in the yard, or a fight with another player, isn't a battle
             _tracker.Engaged(enemy.Id, enemy.Kind.Id, enemy.Kind.Name, enemy.Stats.MaxHealth, ToNumerics(enemy.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, enemy.DeviantId);
             _tracker.Hit(enemy.Id, kind, _player.Company, _clock);
             if (hit.Killed) _tracker.Died(enemy.Id, _player.Company, _clock);
@@ -457,6 +457,7 @@ public partial class Main : Node3D
         _life = new TownLife(this);
         AddChild(_life);
         SetUpCompany();
+        SetUpHeroFights();
         // On the map you're where you are; at sea, where the ship is on her leg, heading the way she's sailing.
         _hud.AttachMap(_world, _explored, () => _atSea is { } sea ? new Vector3(sea.ChartPosition.X, 0, sea.ChartPosition.Y) : _player.GlobalPosition,
             () => _atSea is { } sea ? new Vector3(sea.ChartHeading.X, 0, sea.ChartHeading.Y) : -_player.GlobalTransform.Basis.Z, QuestGoals,
@@ -732,6 +733,8 @@ public partial class Main : Node3D
             case CitySnapshot c: TakeCity(c); break;
             case Roster r: _hud.ShowCompanies(r.Groups); _visitors.Roster(r.Groups); break;
             case Seen s: _visitors.Seen(s.Player, s.Where); break;
+            case HeroStruck h: StruckByHero(h); break;
+            case HeroSpoils s: TakeSpoils(s); break;
             case DeviantSnapshot s: _hud.ShowDeviants(s.WorldJson); _deviantJson = s.WorldJson; break;
             case DeviantEvents e:
                 foreach (var ev in e.Events)
@@ -860,10 +863,11 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("skills") && !_hud.Talking) ShowSkills();
         if (Input.IsActionJustPressed("pack") && !_hud.Talking) ShowPack();
         if (Input.IsActionJustPressed("drink")) QuickDrink();
+        if (Input.IsActionJustPressed("draw_on") && !_hud.Talking) DrawOnHeroes();
         if (Input.IsActionJustPressed("ride")) ToggleRide();
         if (Input.IsActionJustPressed("rest") && !_tracker.InFight) Rest();
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills\nI: pack   H: heal   1-0: quick keys   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}{(_player.Possessing ? _player.Class.Id == "EtherAeronaut" ? $"   Suit: {_player.SuitLeft:0}s ({_player.FlightSecondsLeft:0}s of flight)" : $"   Half-form: {_player.SuitLeft:0}s" : "")}");
+        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills\nI: pack   H: heal   1-0: quick keys   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_visitors.Count > 0 || _drawn ? $"   B: {(_drawn ? "stop fighting players" : "fight players")}" : "")}{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}{(_player.Possessing ? _player.Class.Id == "EtherAeronaut" ? $"   Suit: {_player.SuitLeft:0}s ({_player.FlightSecondsLeft:0}s of flight)" : $"   Half-form: {_player.SuitLeft:0}s" : "")}");
         var saga = _saga.Objective(Dragon, _player.Hero.Level) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
         if (StoryLine(pos) is { } story) saga = [story, .. saga];
         // The nearest lair that suits the hero, and the nearest deviant out roaming.
@@ -1228,7 +1232,7 @@ public partial class Main : Node3D
         Key("limit", Godot.Key.R); Key("cycle_element", Godot.Key.Q); Key("menu", Godot.Key.F10); Key("rest", Godot.Key.T);
         Key("interact", Godot.Key.E); Key("map", Godot.Key.M); Key("journal", Godot.Key.J);
         Key("party", Godot.Key.P); Key("skills", Godot.Key.K); Key("ride", Godot.Key.V); Key("descend", Godot.Key.C);
-        Key("pack", Godot.Key.I); Key("drink", Godot.Key.H);
+        Key("pack", Godot.Key.I); Key("drink", Godot.Key.H); Key("draw_on", Godot.Key.B);
         Key("save", Godot.Key.F5); Key("game_menu", Godot.Key.Escape);
         foreach (var (name, key) in new[] { ("1", Godot.Key.Key1), ("2", Godot.Key.Key2), ("3", Godot.Key.Key3), ("4", Godot.Key.Key4), ("5", Godot.Key.Key5), ("6", Godot.Key.Key6), ("7", Godot.Key.Key7), ("8", Godot.Key.Key8), ("9", Godot.Key.Key9), ("0", Godot.Key.Key0) })
             Key($"quick_{name}", key);
@@ -1239,6 +1243,7 @@ public partial class Main : Node3D
         if (_player is null) return; // still on the start screen
         Save();
         TearDownCompany();
+        TearDownHeroFights();
         _client?.Dispose();
     }
 }

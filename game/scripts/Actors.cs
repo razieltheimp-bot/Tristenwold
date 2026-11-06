@@ -294,6 +294,28 @@ public partial class Enemy : Fighter
 
     public bool Corrupted => Dragons.IsCorrupted(Kind.Id);
 
+    /// <summary>
+    /// Another player on the server, as this game has them: an unseen stand-in where their hero is drawn (see
+    /// <see cref="Visitors"/>), for this hero's blows to land on. It takes no harm here: every blow goes to the other
+    /// player's own game (<see cref="HeroStruck"/>), which decides what it does to them.
+    /// </summary>
+    public string? Hero { get; private set; }
+
+    /// <summary>A blow landed on another player's stand-in: how much, of what, and whether it was a critical.</summary>
+    public static event Action<Enemy, double, DamageKind, AttackKind, bool>? HeroStruck;
+
+    /// <summary>A stand-in for another player's hero: nothing drawn, nothing solid, no mind of its own.</summary>
+    public static Enemy ForHero(string player, string name)
+    {
+        var e = Create(Bestiary.Get("bandit"), Vector3.Zero);
+        e.Hero = player;
+        e.Stats.Name = name;
+        e.Figure.Visible = false;
+        e.Plate.Visible = false;
+        (e.CollisionLayer, e.CollisionMask) = (0, 0);
+        return e;
+    }
+
     /// <summary>A duel in a guild yard: whoever is beaten to the edge yields, and nobody dies.</summary>
     public bool Sparring { get; private set; }
 
@@ -589,6 +611,7 @@ public partial class Enemy : Fighter
     /// <summary>Another creature attacks it (a dragon of a warring flight, a companion): it fights back.</summary>
     public void TakeHitFrom(Enemy attacker, double damage, bool crit, DamageKind? kind = null)
     {
+        if (Hero is not null) { HeroStruck?.Invoke(this, damage, kind ?? attacker.Kind.DamageKind, AttackKind.Weapon, crit); return; } // a hero's dragon, at another player
         if (State == EnemyState.Dead) return;
         var result = Stats.TakeHit(damage, kind ?? attacker.Kind.DamageKind, AttackKind.Weapon, crit, attacker.Stats);
         if (_target is null && State != EnemyState.Fleeing) { _rival = attacker; State = EnemyState.Fighting; }
@@ -650,6 +673,7 @@ public partial class Enemy : Fighter
 
     public override void _PhysicsProcess(double delta)
     {
+        if (Hero is not null) return; // another player's hero: their own game moves them
         if (Carried && State != EnemyState.Dead) return;
         if (State == EnemyState.Dead)
         {
@@ -1029,6 +1053,7 @@ public partial class Enemy : Fighter
 
     public HitResult TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Player by)
     {
+        if (Hero is not null) { HeroStruck?.Invoke(this, damage, kind, attack, crit); return new HitResult(damage, 0, 0, false, crit, false); }
         if (Foresees > 0 && GD.Randf() < Foresees) { Provoke(by); return new HitResult(0, 0, 0, false, crit, false); }
         LastBlow = kind;
         var result = Stats.TakeHit(damage, kind, attack, crit, by.Stats);

@@ -25,6 +25,8 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(EncounterStarted), "encounter_started")]
 [JsonDerivedType(typeof(CityTrade), "city_trade")]
 [JsonDerivedType(typeof(Moved), "moved")]
+[JsonDerivedType(typeof(StrikeHero), "strike_hero")]
+[JsonDerivedType(typeof(HeroFell), "hero_fell")]
 // server -> client
 [JsonDerivedType(typeof(Welcome), "welcome")]
 [JsonDerivedType(typeof(Rejected), "rejected")]
@@ -40,6 +42,8 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(DeviantHunts), "deviant_hunts")]
 [JsonDerivedType(typeof(CitySnapshot), "city_snapshot")]
 [JsonDerivedType(typeof(Seen), "seen")]
+[JsonDerivedType(typeof(HeroStruck), "hero_struck")]
+[JsonDerivedType(typeof(HeroSpoils), "hero_spoils")]
 public abstract record Message;
 
 // ---- client -> server ----------------------------------------------------------------------
@@ -78,6 +82,21 @@ public sealed record CityTrade(Gameplay.CityAction Action) : Message;
 /// swing, a spell, a jump) and <paramref name="Beat"/> counts them, so each is played once.
 /// </summary>
 public sealed record Moved(string Look, string? Avatar, string Name, float X, float Y, float Z, float Yaw, float Speed, string? Clip, int Beat) : Message;
+
+/// <summary>
+/// This hero's blow landed on another player's hero (any blow, any reason: there's no asking). The harm is worked
+/// out here, before the target's own armour and luck; the target's game takes it as they would any other blow.
+/// </summary>
+public sealed record StrikeHero(string Target, double Damage, DamageKind Kind, Gameplay.AttackKind Attack, bool Crit) : Message;
+
+/// <summary>
+/// This hero was put down by another player: what the winner takes. Nothing leaves the loser: the winner gets a copy
+/// of everything carried but the gear, the gear's worth in crowns instead (<paramref name="GearCrowns"/>), a purse as
+/// full as the loser's (<paramref name="Crowns"/>), and any bounty on the loser's head.
+/// </summary>
+public sealed record HeroFell(string Killer, IReadOnlyList<SpoilItem> Items, int Crowns, int GearCrowns, int Bounty) : Message;
+
+public sealed record SpoilItem(string Id, int N);
 
 // ---- server -> client ----------------------------------------------------------------------
 
@@ -119,6 +138,12 @@ public sealed record CitySnapshot(Gameplay.CityEconomy City, double Seconds) : M
 /// <summary>Another player's hero, where they were last seen. Sent to everyone else whenever a player moves, and to a newcomer for everyone already there.</summary>
 public sealed record Seen(string Player, Moved Where) : Message;
 
+/// <summary>Another player's hero struck this one: the target's game takes the blow, if it can.</summary>
+public sealed record HeroStruck(string From, double Damage, DamageKind Kind, Gameplay.AttackKind Attack, bool Crit) : Message;
+
+/// <summary>This hero put another player's hero down: what's theirs for it (see <see cref="HeroFell"/>).</summary>
+public sealed record HeroSpoils(string From, IReadOnlyList<SpoilItem> Items, int Crowns, int GearCrowns, int Bounty) : Message;
+
 // ---- views (what players may see) ------------------------------------------------------------
 
 public enum ContractStatus { Open, Claimed, Done }
@@ -132,7 +157,7 @@ public sealed record GroupView(string Player, string Area, IReadOnlyList<string>
 
 public static class Wire
 {
-    public const int ProtocolVersion = 12; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council; 11: buildings moved apart, Korrin's storehouse, the dock warehouse; 12: council chambers in every town, refuges that grow, more dock thugs
+    public const int ProtocolVersion = 13; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council; 11: buildings moved apart, Korrin's storehouse, the dock warehouse; 12: council chambers in every town, refuges that grow, more dock thugs; 13: many colonies to a hero, and heroes fighting heroes
     public const int DefaultPort = 7777;
 
     /// <summary>

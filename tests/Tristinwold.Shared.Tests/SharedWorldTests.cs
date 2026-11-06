@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Tristinwold.Deviant;
+using Tristinwold.Gameplay;
 using Tristinwold.Shared;
 
 namespace Tristinwold.Shared.Tests;
@@ -113,6 +114,31 @@ public class SharedWorldTests
         // Gone is gone.
         server.Disconnect("Joe");
         Assert.Empty(To<Seen>(server.Connect(Hi("Pell")), "Pell"));
+    }
+
+    [Fact]
+    public void A_blow_between_heroes_goes_to_the_one_struck_and_a_fall_pays_the_winner()
+    {
+        var server = NewServer();
+        server.Connect(Hi("Joe"));
+        server.Connect(Hi("Mira"));
+
+        var hit = Assert.Single(To<HeroStruck>(server.Handle("Joe", new StrikeHero("mira", 42, DamageKind.Fire, AttackKind.Spell, true)), "Mira"));
+        Assert.Equal(("Joe", 42.0, DamageKind.Fire, true), (hit.From, hit.Damage, hit.Kind, hit.Crit));
+        Assert.Empty(server.Handle("Joe", new StrikeHero("Joe", 42, DamageKind.Fire, AttackKind.Spell, false))); // not yourself
+        Assert.Empty(server.Handle("Joe", new StrikeHero("Nobody", 42, DamageKind.Fire, AttackKind.Spell, false)));
+        Assert.Empty(server.Handle("Joe", new StrikeHero("Mira", double.NaN, DamageKind.Fire, AttackKind.Spell, false)));
+
+        var outs = server.Handle("Mira", new HeroFell("Joe", [new("healing_potion", 3)], 120, 45, 40));
+        var spoils = Assert.Single(To<HeroSpoils>(outs, "Joe"));
+        Assert.Equal(("Mira", 120, 45, 40), (spoils.From, spoils.Crowns, spoils.GearCrowns, spoils.Bounty));
+        Assert.Equal("healing_potion", Assert.Single(spoils.Items).Id);
+        Assert.Contains(outs, o => o.Message is Notice { Kind: NoticeKind.World } n && n.Text.Contains("collects the 40 crowns"));
+
+        // And it all crosses the wire.
+        var back = Assert.IsType<HeroSpoils>(Wire.Decode(Wire.Encode(spoils)));
+        Assert.Equal((120, 3), (back.Crowns, Assert.Single(back.Items).N));
+        Assert.IsType<HeroStruck>(Wire.Decode(Wire.Encode(hit)));
     }
 
     [Fact]

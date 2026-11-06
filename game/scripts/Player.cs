@@ -1215,7 +1215,7 @@ public partial class Player : Fighter
 
     void Steal(Enemy e, double power)
     {
-        if (e.Friendly) return;
+        if (e.Friendly || e.Hero is not null) return; // another player's purse is theirs till they fall
         var take = (int)Math.Round((1 + _rng.Next(5)) * power);
         Crowns += take;
         Said?.Invoke($"You lift {take} crowns from {e.Stats.Name}.");
@@ -1463,9 +1463,13 @@ public partial class Player : Fighter
 
     // ---- who's about -----------------------------------------------------------------------------
 
-    /// <summary>Foes: everything that fights, less the company's own and the alliance.</summary>
+    /// <summary>Foes: everything that fights, less the company's own and the alliance, and any other players this hero is fighting.</summary>
     IEnumerable<Enemy> Foes() =>
-        GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly && !e.Kin);
+        GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly && !e.Kin)
+            .Concat(Rivals?.Invoke().Where(IsInstanceValid) ?? []);
+
+    /// <summary>Other players' heroes this hero's blows reach now (stand-ins, see <see cref="Enemy.Hero"/>): the game says who.</summary>
+    public Func<IEnumerable<Enemy>>? Rivals { get; set; }
 
     /// <summary>The company's companions that are with this hero and on their feet.</summary>
     public IEnumerable<Enemy> Companions() =>
