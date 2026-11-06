@@ -117,9 +117,10 @@ public class SharedWorldTests
     }
 
     [Fact]
-    public void A_blow_between_heroes_goes_to_the_one_struck_and_a_fall_pays_the_winner()
+    public void A_blow_between_heroes_goes_to_the_one_struck_and_a_fall_pays_the_winner_once_an_hour()
     {
-        var server = NewServer();
+        var now = new DateTime(2026, 11, 6, 12, 0, 0, DateTimeKind.Utc);
+        var server = new ServerCore(CampaignState.SavedMan(), Quiet, seed: 1, clock: () => now);
         server.Connect(Hi("Joe"));
         server.Connect(Hi("Mira"));
 
@@ -134,6 +135,14 @@ public class SharedWorldTests
         Assert.Equal(("Mira", 120, 45, 40), (spoils.From, spoils.Crowns, spoils.GearCrowns, spoils.Bounty));
         Assert.Equal("healing_potion", Assert.Single(spoils.Items).Id);
         Assert.Contains(outs, o => o.Message is Notice { Kind: NoticeKind.World } n && n.Text.Contains("collects the 40 crowns"));
+
+        // Beat her again within the hour: nothing more. An hour on, it pays again.
+        var again = server.Handle("Mira", new HeroFell("Joe", [new("healing_potion", 3)], 120, 45, 0));
+        Assert.Empty(To<HeroSpoils>(again, "Joe"));
+        Assert.Contains(again, o => o.To == "Joe" && o.Message is Notice n && n.Text.Contains("nothing more to win"));
+        Assert.Single(To<HeroSpoils>(server.Handle("Joe", new HeroFell("Mira", [], 5, 0, 0)), "Mira")); // the other way round is its own count
+        now = now.AddMinutes(61);
+        Assert.Single(To<HeroSpoils>(server.Handle("Mira", new HeroFell("Joe", [], 120, 45, 0)), "Joe"));
 
         // And it all crosses the wire.
         var back = Assert.IsType<HeroSpoils>(Wire.Decode(Wire.Encode(spoils)));

@@ -32,9 +32,9 @@ public static class Graphics
         Humans.Enabled = Humans.WantedAt(q); // the realistic bodies above High, the figures at High and below
         terrain.ScanReach = q switch { Quality.High => 140, Quality.Ultra => 200, _ => 320 };
 
-        env.TonemapMode = q >= Quality.High ? Godot.Environment.ToneMapper.Agx : Godot.Environment.ToneMapper.Filmic;
+        env.TonemapMode = q >= Quality.Medium || !mobile ? Godot.Environment.ToneMapper.Agx : Godot.Environment.ToneMapper.Filmic; // AgX costs nothing: richer colour, softer highlights
         env.FogDensity = q switch { Quality.Low => 0.005f, Quality.Medium => 0.003f, Quality.High => 0.0022f, _ => 0.0017f };
-        env.GlowEnabled = q >= Quality.Medium;
+        env.GlowEnabled = q >= Quality.Medium || !mobile;
         env.GlowIntensity = 0.6f;
         env.GlowBloom = 0.05f;
         env.SsaoEnabled = q >= Quality.Medium && Full;
@@ -83,11 +83,11 @@ public static class Graphics
             RenderingServer.EnvironmentSetVolumetricFogFilterActive(true);
         }
         env.AdjustmentEnabled = true;
-        env.AdjustmentSaturation = q >= Quality.High ? 1.12f : 1.05f;
+        env.AdjustmentSaturation = q >= Quality.High ? 1.12f : 1.08f;
         env.AdjustmentContrast = 1.06f;
 
-        sun.ShadowEnabled = q >= Quality.Medium;
-        sun.DirectionalShadowMaxDistance = q switch { Quality.Low => 0, Quality.Medium => 80, Quality.High => 140, Quality.Ultra => 220, _ => 400 };
+        sun.ShadowEnabled = q >= Quality.Medium || !mobile; // even Low on a computer: short shadows, so people and things sit on the ground
+        sun.DirectionalShadowMaxDistance = q switch { Quality.Low => mobile ? 0 : 45, Quality.Medium => 80, Quality.High => 140, Quality.Ultra => 220, _ => 400 };
         sun.ShadowBlur = q >= Quality.High ? 1.5f : 1f;
         sun.LightAngularDistance = q >= Quality.High ? 0.6f : 0; // soft shadows
         sun.DirectionalShadowMode = q >= Quality.Medium ? DirectionalLight3D.ShadowMode.Parallel4Splits : DirectionalLight3D.ShadowMode.Parallel2Splits;
@@ -110,17 +110,21 @@ public static class Graphics
             DofBlurFarEnabled = q >= Quality.Ultra, DofBlurFarDistance = 450, DofBlurFarTransition = 400, DofBlurAmount = 0.04f,
         };
 
-        // Upscaling: phones render a little under screen size; Ultra uses FSR 2 as its anti-aliasing.
+        // Upscaling: phones render a little under screen size, and so does Low on a computer, sharpened back up by
+        // FSR rather than blurred; Ultra uses FSR 2 as its anti-aliasing.
         viewport.Scaling3DMode = q switch
         {
             >= Quality.Ultra when Full => Viewport.Scaling3DModeEnum.Fsr2,
-            Quality.Low or Quality.Medium when mobile => Viewport.Scaling3DModeEnum.Fsr,
+            Quality.Low => Viewport.Scaling3DModeEnum.Fsr,
+            Quality.Medium when mobile => Viewport.Scaling3DModeEnum.Fsr,
             _ => Viewport.Scaling3DModeEnum.Bilinear,
         };
-        viewport.Scaling3DScale = q switch { Quality.Low => 0.7f, Quality.Medium when mobile => 0.85f, _ => 1f };
-        viewport.Msaa3D = q == Quality.High ? Viewport.Msaa.Msaa2X : Viewport.Msaa.Disabled;
+        viewport.Scaling3DScale = q switch { Quality.Low => mobile ? 0.7f : 0.85f, Quality.Medium when mobile => 0.85f, _ => 1f };
+        viewport.FsrSharpness = 0.25f;
+        // Smooth edges at every setting: FXAA (nearly free) on Low, real multisampling on a computer from Medium.
+        viewport.Msaa3D = q == Quality.High || q == Quality.Medium && !mobile ? Viewport.Msaa.Msaa2X : Viewport.Msaa.Disabled;
         viewport.UseTaa = q == Quality.High && Full; // smooths the shimmer of grass and needles
-        viewport.ScreenSpaceAA = q == Quality.Medium ? Viewport.ScreenSpaceAAEnum.Fxaa : Viewport.ScreenSpaceAAEnum.Disabled;
+        viewport.ScreenSpaceAA = q == Quality.Low || q == Quality.Medium && mobile ? Viewport.ScreenSpaceAAEnum.Fxaa : Viewport.ScreenSpaceAAEnum.Disabled;
     }
 
     // ---- shaders --------------------------------------------------------------------------------

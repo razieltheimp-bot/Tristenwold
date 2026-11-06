@@ -1083,6 +1083,78 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--gear"))
+        {
+            // Close on the armoury's pieces laid out in a row, then heroes in armour, helms and hats, then the tails from behind (run with --humans).
+            var stand = new Vector3(-150, 0, -120);
+            main.TerrainNode.EnsureAround(stand, 1);
+            p.GlobalPosition = stand + new Vector3(0, 1, -12);
+            await Frames(30);
+            main.HudNode.Visible = false;
+            var ground = City.FloorAt(stand);
+            var rack = new (string Id, string? Tint, bool Metal, string? Glow)[]
+            {
+                ("1H_Sword", "#e4ecf4", true, null), ("2H_Sword", null, true, null), ("Knife", null, true, null), ("1H_Axe", null, false, null), ("2H_Axe", "#e4ecf4", true, null),
+                ("2H_Staff", null, false, null), ("1H_Wand", null, false, null), ("2H_Crossbow", null, false, null), ("Round_Shield", null, false, null), ("Badge_Shield", null, true, null),
+            };
+            var laid = new List<Node3D>();
+            for (var i = 0; i < rack.Length; i++)
+            {
+                var piece = Armoury.Make(rack[i].Id, rack[i].Tint is { } t ? new Color(t) : null, rack[i].Metal, rack[i].Glow)!;
+                main.AddChild(piece);
+                var shield = Armoury.IsShield(rack[i].Id);
+                piece.GlobalPosition = stand with { Y = ground } + new Vector3((i - (rack.Length - 1) / 2f) * 0.36f, shield ? 0.75f : 0.25f, 0);
+                if (shield) piece.Scale = Vector3.One * 0.45f;
+                if (rack[i].Id is "2H_Sword" or "2H_Axe" or "2H_Staff") piece.Scale = Vector3.One * 0.7f;
+                laid.Add(piece);
+            }
+            await Frames(20);
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(0, 0.75f, 2.3f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(0, 0.6f, 0), Vector3.Up);
+            cam.MakeCurrent();
+            await Shot("gear-rack");
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(-0.9f, 0.62f, 0.75f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(-0.9f, 0.55f, 0), Vector3.Up);
+            await Shot("gear-blades");
+            foreach (var n in laid) n.QueueFree();
+            // Heroes kitted out.
+            var who = new (string Class, Tristinwold.Gameplay.Avatar Look, string[] Gear)[]
+            {
+                ("Paladin", Tristinwold.Gameplay.Avatar.For("Paladin") with { Headwear = "none" }, ["steel_plate", "steel_helm", "steel_sword", "iron_shield"]),
+                ("Barbarian", Tristinwold.Gameplay.Avatar.For("Barbarian") with { Headwear = "none" }, ["fur_armor", "horned_hat", "iron_axe"]),
+                ("Wizard", Tristinwold.Gameplay.Avatar.For("Wizard") with { Headwear = "none" }, ["wizard_hat"]),
+                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none" }, ["leather_armor", "leather_cap", "steel_sword"]),
+                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none", Race = Tristinwold.Gameplay.Races.Dragonkind, Dragon = "Red" }, ["iron_mail"]),
+                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none", Race = "ape" }, []),
+                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none", Race = "lizard" }, []),
+            };
+            var row = new List<Figure>();
+            for (var i = 0; i < who.Length; i++)
+            {
+                var f = Figure.Create(who[i].Class, who[i].Look);
+                main.AddChild(f);
+                f.GlobalPosition = stand with { Y = ground } + new Vector3((i - (who.Length - 1) / 2f) * 1.1f, 0, 0);
+                f.RotationDegrees = new Vector3(0, 180, 0); // facing the lens
+                var pack = new Tristinwold.Gameplay.Pack();
+                foreach (var g in who[i].Gear) { pack.Add(g); pack.Equip(g); }
+                if (pack.Worn.Count > 0) Wardrobe.Wear(f, pack);
+                row.Add(f);
+            }
+            await Frames(40);
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(0, 1.35f, 4.6f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(0, 1.0f, 0), Vector3.Up);
+            await Shot("gear-heroes");
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(-1.6f, 1.6f, 2.0f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(-1.6f, 1.3f, 0), Vector3.Up);
+            await Shot("gear-heads");
+            foreach (var f in row) f.RotationDegrees = new Vector3(0, -45, 0);
+            await Frames(10);
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(2.2f, 1.2f, 3.0f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(2.2f, 0.8f, 0), Vector3.Up);
+            await Shot("gear-tails");
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--forged"))
         {
             // A row of knights, each holding a sword off a different forge, so the differences show.

@@ -729,21 +729,13 @@ public partial class Figure : Body
         // A dragonkind's tail, from the small of the back, down and out behind, tapering.
         if ((blood is not null || a.Race is "ape" or "lizard") && Box("body") is { } body && skeleton.FindBone("hips") is var hips and >= 0 && Hang("hips") is { } low)
         {
-            var scales = Matte(new Color(blood?.Hex ?? (a.Race == "ape" ? "#3e2c20" : "#5f8a4a")), 0.55f);
+            var hex = blood?.Hex ?? (a.Race == "ape" ? "#3e2c20" : "#5f8a4a");
+            var scales = Matte(new Color(hex), a.Race == "ape" ? 0.85f : 0.45f);
+            var ridge = Matte(new Color(hex).Darkened(0.4f), 0.4f);
             var at = skeleton.GetBoneGlobalRest(hips).Origin + new Vector3(0, -body.Size.Y * 0.05f, -body.Size.Z * 0.42f);
-            var dir = new Vector3(0, -0.55f, -1).Normalized();
-            for (var i = 0; i < 6; i++)
-            {
-                var len = body.Size.Y * 0.22f;
-                var r0 = body.Size.X * (0.16f - i * 0.024f);
-                low.AddChild(new MeshInstance3D
-                {
-                    Mesh = new CylinderMesh { TopRadius = Mathf.Max(0.005f, r0 - body.Size.X * 0.024f), BottomRadius = r0, Height = len, RadialSegments = 10 },
-                    Transform = new Transform3D(new Basis(new Quaternion(Vector3.Up, dir)), at + dir * len / 2), MaterialOverride = scales,
-                });
-                at += dir * len * 0.95f;
-                dir = (dir + new Vector3(0, 0.22f, 0)).Normalized(); // curling up towards the tip
-            }
+            var kind = blood is not null ? Tails.Kind.Dragon : a.Race == "ape" ? Tails.Kind.Ape : Tails.Kind.Lizard;
+            // One smooth piece, tapering and curling up towards the tip; a dragon's spined, with a spade at the end.
+            low.AddChild(Tails.Make(at, new Vector3(0, -0.55f, -1), body.Size.Y * 1.3f, body.Size.X * (kind == Tails.Kind.Ape ? 0.09f : 0.16f), 1.3f, scales, kind, ridge));
         }
     }
 

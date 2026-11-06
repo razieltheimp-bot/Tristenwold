@@ -526,14 +526,15 @@ public partial class Figure
             garb = garb with { Outfit = garb.Outfit with { Cap = new Color(helm.Tint ?? (helm.Metal ? "#9a9ea6" : "#5a4a3a")) } };
         if (garb != _garb) Redress(garb);
         Regarment(pack.WornIn(Tristinwold.Gameplay.Slot.Body) is { } worn ? (new Color(worn.Tint ?? "#8a6a48"), worn.Metal) : null,
-            pack.WornIn(Tristinwold.Gameplay.Slot.Head) is { } hat ? new Color(hat.Tint ?? (hat.Metal ? "#9a9ea6" : "#5a4a3a")) : null);
+            pack.WornIn(Tristinwold.Gameplay.Slot.Head) is { } hat ? new Color(hat.Tint ?? (hat.Metal ? "#9a9ea6" : "#5a4a3a")) : null,
+            pack.WornIn(Tristinwold.Gameplay.Slot.Head) is { } piece2 ? Garments.HeadOf(piece2.Id, piece2.Look, piece2.Metal) : null);
     }
 
     /// <summary>The medieval kit over the clothes (see <see cref="Garments"/>), put on fresh: the look's own, or the armour and helm worn.</summary>
-    void Regarment((Color Tint, bool Metal)? armour, Color? helm)
+    void Regarment((Color Tint, bool Metal)? armour, Color? helm, string? helmKind = null)
     {
         foreach (var n in _garments) if (IsInstanceValid(n)) { n.GetParent()?.RemoveChild(n); n.QueueFree(); }
-        _garments = _skeleton is not null && _garb is not null ? Garments.Dress(_skeleton, _garmentLook, _garb.Outfit, _top, armour, helm, _wear, _cut, _kin, _beard) : [];
+        _garments = _skeleton is not null && _garb is not null ? Garments.Dress(_skeleton, _garmentLook, _garb.Outfit, _top, armour, helm, _wear, _cut, _kin, _beard, helmKind) : [];
     }
 
     /// <summary>How many kit pieces hang on this body (the self-test counts).</summary>
@@ -613,6 +614,17 @@ public partial class Figure
                     break;
                 default: space.AddChild(Cone(root, new Vector3(side * 0.3f, 0.55f, -1), size * 1.1f, size * 0.14f, horn)); break;
             }
+        }
+        // And a dragon's tail, from the small of the back: scaled in their blood's colour, spined, a spade at the tip.
+        if (_skeleton.FindBone("Hips") is var hips and >= 0)
+        {
+            var low = new BoneAttachment3D { BoneName = "Hips" };
+            _skeleton.AddChild(low);
+            var back = new Node3D { Name = "Adorn_Tail", Transform = _skeleton.GetBoneGlobalRest(hips).AffineInverse() };
+            low.AddChild(back);
+            var scales = new StandardMaterial3D { AlbedoColor = new Color(blood.Hex).Darkened(0.1f), Roughness = 0.42f, MetallicSpecular = 0.55f, RimEnabled = true, Rim = 0.3f, RimTint = 0.6f };
+            var at = _skeleton.GetBoneGlobalRest(hips).Origin + new Vector3(0, -0.02f, -0.11f);
+            back.AddChild(Tails.Make(at, new Vector3(0, -0.9f, -0.55f), 0.95f, 0.075f, 0.95f, scales, Tails.Kind.Dragon, horn));
         }
     }
 

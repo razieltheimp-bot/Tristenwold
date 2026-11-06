@@ -111,15 +111,25 @@ public static class Styled
             albedo *= mix(1.0, 0.9 + 0.2 * coarse, cloth) * mix(1.0, 0.96 + 0.08 * fine, cloth);
             albedo *= mix(1.0, 0.94 + 0.12 * brushed, metal);
             albedo *= mix(1.0, 0.98 + 0.04 * coarse, skin);
+            // Steel painted near white reads as chalk in the sun: hold it to a polished steel's grey, keeping its hue.
+            float bright = dot(albedo, vec3(0.3, 0.59, 0.11));
+            albedo = mix(albedo, albedo * min(1.0, 0.7 / max(bright, 0.001)), metal);
+            // A little shade under things (the underside of an arm, a brim, a pommel), as light from above would leave it.
+            albedo *= mix(0.84, 1.0, smoothstep(-0.7, 0.35, obj_normal.y));
+            // Skin a touch warmer and blushed where it's thin.
+            albedo = mix(albedo, albedo * vec3(1.04, 0.98, 0.95), skin);
             ALBEDO = albedo;
-            METALLIC = 0.85 * metal;
-            ROUGHNESS = metal * (0.28 + 0.22 * brushed) + skin * 0.55 + cloth * (0.78 + 0.18 * fine);
-            SPECULAR = metal * 0.6 + skin * 0.35 + cloth * 0.22;
-            SSS_STRENGTH = 0.3 * skin;
+            METALLIC = 0.9 * metal;
+            ROUGHNESS = metal * (0.22 + 0.24 * brushed) + skin * (0.48 + 0.12 * fine) + cloth * (0.78 + 0.18 * fine);
+            SPECULAR = metal * 0.65 + skin * 0.4 + cloth * 0.22;
+            SSS_STRENGTH = 0.38 * skin;
+            // Steel has a lacquered shine over the brushing; leather and cloth a faint one.
+            CLEARCOAT = metal * 0.45 + cloth * 0.05;
+            CLEARCOAT_ROUGHNESS = 0.25;
             // A little bump from the fine grain: cloth and steel aren't flat.
             NORMAL = normalize(NORMAL + (fine - 0.5) * (0.14 * cloth + 0.06 * metal) * TANGENT + (coarse - 0.5) * 0.06 * cloth * BINORMAL);
-            RIM = 0.3;
-            RIM_TINT = 0.65;
+            RIM = 0.3 + 0.2 * metal;
+            RIM_TINT = 0.65 - 0.25 * skin;
             EMISSION = glow * glow_energy;
         }
         """;

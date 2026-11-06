@@ -2862,6 +2862,14 @@ public partial class SelfTest(Main main) : Node
             "and you keep everything: only the bounty is gone, collected");
         await Until(() => !p.Downed, 8);
 
+        // Again within the hour: nothing more for her, and a new bounty stands.
+        main.Standing.Bounty = 15;
+        for (var i = 0; i < 10 && !p.Downed; i++) main.HandleForTest(new HeroStruck("Mira", 1e6, DamageKind.Physical, AttackKind.Weapon, true));
+        Check(p.Downed && main.LastHeroMessage is HeroFell { Crowns: 0, GearCrowns: 0, Bounty: 0, Items.Count: 0 } && main.Standing.Bounty == 15,
+            "beaten by her again within the hour: she wins nothing more, and the new bounty stands");
+        main.Standing.Bounty = 0;
+        await Until(() => !p.Downed, 8);
+
         // You put her down: yours for it.
         var crowns = p.Crowns;
         main.HandleForTest(new HeroSpoils("Mira", [new("mana_tonic", 3)], 100, 50, 25));

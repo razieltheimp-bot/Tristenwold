@@ -16,15 +16,27 @@ public static class Armoury
     /// <summary>Steel, iron, bronze and the rest, with a little scratch-roughness; a tint paints the metal (dragonbone pale, a cinder axe black).</summary>
     public static StandardMaterial3D Metal(Color? tint = null, float rough = 0.32f, string? glow = null) => new()
     {
-        AlbedoColor = tint ?? new Color("#c4c8cc"), Metallic = 0.92f, Roughness = rough, MetallicSpecular = 0.75f,
-        AnisotropyEnabled = true, Anisotropy = 0.35f,
+        AlbedoColor = Steel(tint ?? new Color("#b4b9bf")), Metallic = 0.92f, Roughness = rough, MetallicSpecular = 0.7f,
+        AnisotropyEnabled = true, Anisotropy = 0.35f, ClearcoatEnabled = true, Clearcoat = 0.35f, ClearcoatRoughness = 0.2f,
+        RimEnabled = true, Rim = 0.2f, RimTint = 0.4f,
         EmissionEnabled = glow is not null, Emission = glow is null ? Colors.Black : new Color(glow), EmissionEnergyMultiplier = 0.8f,
+    };
+
+    /// <summary>A metal's colour held to what polished metal looks like: painted near white, it reads as chalk in the sun.</summary>
+    static Color Steel(Color c) => c.V > 0.74f ? Color.FromHsv(c.H, c.S, 0.74f, c.A) : c;
+
+    /// <summary>The bright, smooth edge ground onto a blade or an axe's bit.</summary>
+    public static StandardMaterial3D Edge(Material of) => new()
+    {
+        AlbedoColor = ((StandardMaterial3D)of).AlbedoColor.Lightened(0.18f), Metallic = 0.95f, Roughness = 0.14f, MetallicSpecular = 0.8f,
+        RimEnabled = true, Rim = 0.25f, RimTint = 0.3f,
+        EmissionEnabled = ((StandardMaterial3D)of).EmissionEnabled, Emission = ((StandardMaterial3D)of).Emission, EmissionEnergyMultiplier = ((StandardMaterial3D)of).EmissionEnergyMultiplier,
     };
     public static StandardMaterial3D Iron => Metal(new Color("#8a8c90"), 0.48f);
     public static StandardMaterial3D Bronze => Metal(new Color("#b08a4a"), 0.4f);
     public static StandardMaterial3D Brass => Metal(new Color("#c8a048"), 0.36f);
-    public static StandardMaterial3D Wood(string hex = "#6a4a2c") => new() { AlbedoColor = new Color(hex), Roughness = 0.82f, MetallicSpecular = 0.2f };
-    public static StandardMaterial3D Leather(string hex = "#3a2a1c") => new() { AlbedoColor = new Color(hex), Roughness = 0.9f, MetallicSpecular = 0.15f };
+    public static StandardMaterial3D Wood(string hex = "#6a4a2c") => new() { AlbedoColor = new Color(hex), Roughness = 0.74f, MetallicSpecular = 0.25f, ClearcoatEnabled = true, Clearcoat = 0.15f, ClearcoatRoughness = 0.5f }; // oiled
+    public static StandardMaterial3D Leather(string hex = "#3a2a1c") => new() { AlbedoColor = new Color(hex), Roughness = 0.8f, MetallicSpecular = 0.2f, RimEnabled = true, Rim = 0.15f, RimTint = 0.6f };
     public static StandardMaterial3D Cloth(string hex) => new() { AlbedoColor = new Color(hex), Roughness = 0.95f, MetallicSpecular = 0.1f };
 
     static MeshInstance3D Part(Mesh mesh, Material m, Vector3 at, Vector3? turn = null, Vector3? scale = null) => new()
@@ -33,22 +45,58 @@ public static class Armoury
         CastShadow = GeometryInstance3D.ShadowCastingSetting.On,
     };
 
-    /// <summary>A blade: a long box tapering to the point (a prism), with a fuller down the middle and a bevelled edge suggested by a thinner spine.</summary>
+    /// <summary>
+    /// A blade in one piece: straight, narrowing a little to the shoulder of the point and then curving in to it, with a
+    /// flat down each face and a bevel ground to each edge (the edges polished bright), and a dark fuller down the middle.
+    /// </summary>
     static Node3D Blade(float length, float width, float thick, Material steel, float taper = 0.55f)
     {
         var blade = new Node3D { Name = "Blade" };
-        var body = length * 0.82f;
-        // The body of the blade narrows a little toward the point; the last fifth is the point itself.
-        blade.AddChild(Part(new PrismMesh { Size = new Vector3(width, body, thick), LeftToRight = 0.5f }, steel, new Vector3(0, body / 2, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1)));
-        blade.AddChild(Part(new PrismMesh { Size = new Vector3(width, body, thick), LeftToRight = 0.5f }, steel, new Vector3(0, body / 2, 0), new Vector3(180, 0, 0)));
-        blade.AddChild(Part(new PrismMesh { Size = new Vector3(width * taper, length - body, thick * 0.8f), LeftToRight = 0.5f }, steel, new Vector3(0, body + (length - body) / 2, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1)));
-        blade.AddChild(Part(new PrismMesh { Size = new Vector3(width * taper, length - body, thick * 0.8f), LeftToRight = 0.5f }, steel, new Vector3(0, body + (length - body) / 2, 0), new Vector3(180, 0, 0)));
-        // The point: a flat wedge.
-        blade.AddChild(Part(new PrismMesh { Size = new Vector3(width * taper, (length - body) * 0.6f, thick * 0.8f), LeftToRight = 0.5f }, steel, new Vector3(0, length - (length - body) * 0.3f, 0), new Vector3(0, 0, 0), new Vector3(1, 0.6f, 1)));
+        var body = length * 0.8f;
+        const int n = 14;
+        float Half(float y) => y <= body ? width / 2 * (1 - 0.18f * (1 - taper) * y / body) : width / 2 * (1 - 0.18f * (1 - taper)) * (1 - Mathf.Pow((y - body) / (length - body), 1.5f));
+        float Thick(float y) => thick * 0.6f * Mathf.Max(0.15f, Half(y) / (width / 2));
+        // The cross-section, round from one edge: edge, bevel, flat, flat, bevel, edge (as fractions of the half-width, and of the thickness).
+        var ring = new (float X, float Z)[] { (-1, 0), (-0.55f, 1), (0.55f, 1), (1, 0), (0.55f, -1), (-0.55f, -1) };
+        var flats = new SurfaceTool();
+        var edges = new SurfaceTool();
+        flats.Begin(Mesh.PrimitiveType.Triangles);
+        edges.Begin(Mesh.PrimitiveType.Triangles);
+        static void Tri(SurfaceTool st, Vector3 a, Vector3 b, Vector3 c, Vector3 n)
+        {
+            if ((c - a).Cross(b - a).Dot(n) < 0) (b, c) = (c, b);
+            st.SetNormal(n); st.AddVertex(a); st.SetNormal(n); st.AddVertex(b); st.SetNormal(n); st.AddVertex(c);
+        }
+        for (var i = 0; i < n; i++)
+        {
+            float y0 = length * i / n, y1 = length * (i + 1) / n;
+            for (var k = 0; k < ring.Length; k++)
+            {
+                var (p, q) = (ring[k], ring[(k + 1) % ring.Length]);
+                var a = new Vector3(p.X * Half(y0), y0, p.Z * Thick(y0));
+                var b = new Vector3(q.X * Half(y0), y0, q.Z * Thick(y0));
+                var c = new Vector3(q.X * Half(y1), y1, q.Z * Thick(y1));
+                var d = new Vector3(p.X * Half(y1), y1, p.Z * Thick(y1));
+                var mid = (a + b + c + d) / 4;
+                var normal = (b - a).Cross(d - a).Normalized();
+                if (normal.Dot(mid with { Y = 0 } - new Vector3(0, 0, 0)) < 0) normal = -normal; // outward
+                var st = p.Z == q.Z ? flats : edges; // the two faces are flats; the four sloped strips are the ground edge
+                Tri(st, a, b, c, normal);
+                Tri(st, a, c, d, normal);
+            }
+        }
+        // The base, closed where it meets the guard.
+        for (var k = 1; k < ring.Length - 1; k++)
+            Tri(flats, new Vector3(ring[0].X * Half(0), 0, 0), new Vector3(ring[k].X * Half(0), 0, ring[k].Z * Thick(0)), new Vector3(ring[k + 1].X * Half(0), 0, ring[k + 1].Z * Thick(0)), Vector3.Down);
+        var mesh = flats.Commit();
+        edges.Commit(mesh);
+        mesh.SurfaceSetMaterial(0, steel);
+        mesh.SurfaceSetMaterial(1, Edge(steel));
+        blade.AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.On });
         // A fuller: a shallow dark groove down each face.
-        var groove = new StandardMaterial3D { AlbedoColor = ((StandardMaterial3D)steel).AlbedoColor.Darkened(0.35f), Metallic = 0.9f, Roughness = 0.5f };
+        var groove = new StandardMaterial3D { AlbedoColor = ((StandardMaterial3D)steel).AlbedoColor.Darkened(0.3f), Metallic = 0.9f, Roughness = 0.45f };
         foreach (var side in new[] { -1f, 1f })
-            blade.AddChild(Part(new BoxMesh { Size = new Vector3(width * 0.18f, body * 0.85f, thick * 0.3f) }, groove, new Vector3(0, body * 0.5f, side * thick * 0.42f)));
+            blade.AddChild(Part(new BoxMesh { Size = new Vector3(width * 0.16f, body * 0.72f, thick * 0.2f) }, groove, new Vector3(0, body * 0.42f, side * thick * 0.56f)));
         return blade;
     }
 
@@ -58,8 +106,15 @@ public static class Armoury
         into.AddChild(Part(new CylinderMesh { TopRadius = gripRadius, BottomRadius = gripRadius * 1.08f, Height = gripLength, RadialSegments = 12 }, Leather(leather), new Vector3(0, 0, 0)));
         for (var i = 0; i < 5; i++) // the wrap's turns
             into.AddChild(Part(new TorusMesh { InnerRadius = gripRadius * 0.95f, OuterRadius = gripRadius * 1.12f, Rings = 14, RingSegments = 8 }, Leather("#2a1e14"), new Vector3(0, -gripLength / 2 + gripLength * (i + 0.5f) / 5, 0)));
-        into.AddChild(Part(new BoxMesh { Size = new Vector3(guardWidth, guardThick, guardThick * 1.6f) }, guardMetal, new Vector3(0, gripLength / 2 + guardThick / 2, 0)));
-        into.AddChild(Part(new SphereMesh { Radius = gripRadius * 1.5f, Height = gripRadius * 3, RadialSegments = 14, Rings = 8 }, guardMetal, new Vector3(0, -gripLength / 2 - gripRadius * 1.2f, 0)));
+        // The guard: a bar, swelling at the middle where it sits on the blade, its quillons ending in knobs.
+        into.AddChild(Part(new CapsuleMesh { Radius = guardThick * 0.6f, Height = guardWidth, RadialSegments = 10, Rings = 4 }, guardMetal, new Vector3(0, gripLength / 2 + guardThick / 2, 0), new Vector3(0, 0, 90)));
+        into.AddChild(Part(new BoxMesh { Size = new Vector3(guardThick * 2.6f, guardThick * 1.6f, guardThick * 1.8f) }, guardMetal, new Vector3(0, gripLength / 2 + guardThick * 0.7f, 0)));
+        foreach (var side in new[] { -1f, 1f })
+            into.AddChild(Part(new SphereMesh { Radius = guardThick * 0.85f, Height = guardThick * 1.7f, RadialSegments = 10, Rings = 6 }, guardMetal, new Vector3(side * guardWidth / 2, gripLength / 2 + guardThick / 2, 0)));
+        // The pommel, and the peened nut that holds it all together.
+        into.AddChild(Part(new SphereMesh { Radius = gripRadius * 1.5f, Height = gripRadius * 3, RadialSegments = 14, Rings = 8 }, guardMetal, new Vector3(0, -gripLength / 2 - gripRadius * 1.2f, 0), scale: new Vector3(1, 0.85f, 1)));
+        into.AddChild(Part(new CylinderMesh { TopRadius = gripRadius * 0.5f, BottomRadius = gripRadius * 0.6f, Height = gripRadius * 0.8f, RadialSegments = 8 }, guardMetal, new Vector3(0, -gripLength / 2 - gripRadius * 2.6f, 0)));
+        into.AddChild(Part(new CylinderMesh { TopRadius = gripRadius * 1.15f, BottomRadius = gripRadius * 1.1f, Height = gripRadius * 0.6f, RadialSegments = 12 }, guardMetal, new Vector3(0, gripLength / 2 - gripRadius * 0.2f, 0))); // the ferrule under the guard
     }
 
     public static Node3D Sword(bool twoHanded, Color? tint = null, string? glow = null)
@@ -95,11 +150,22 @@ public static class Armoury
         var y = haft - 0.16f;
         // The head: a socket round the haft and a flared bit, bevelled to the edge.
         piece.AddChild(Part(new CylinderMesh { TopRadius = 0.028f, BottomRadius = 0.028f, Height = 0.1f, RadialSegments = 10 }, head, new Vector3(0, y, 0)));
+        var edge = Edge(head);
         foreach (var side in twoHanded ? new[] { -1f, 1f } : [1f])
         {
             piece.AddChild(Part(new PrismMesh { Size = new Vector3(0.16f, 0.14f, 0.012f), LeftToRight = 1 }, head, new Vector3(side * 0.085f, y, 0), new Vector3(0, 0, side * 90)));
             piece.AddChild(Part(new BoxMesh { Size = new Vector3(0.09f, 0.06f, 0.02f) }, head, new Vector3(side * 0.045f, y, 0)));
+            // The bit: a bright, curved edge ground along the end, standing a hair proud of the head.
+            piece.AddChild(Part(new CylinderMesh { TopRadius = 0.004f, BottomRadius = 0.004f, Height = 0.165f, RadialSegments = 6 }, edge, new Vector3(side * 0.162f, y, 0), scale: new Vector3(1, 1, 3.2f)));
+            foreach (var face in new[] { -1f, 1f }) // rivets through the cheek
+                piece.AddChild(Part(new SphereMesh { Radius = 0.006f, Height = 0.012f, RadialSegments = 8, Rings = 4 }, Iron, new Vector3(side * 0.05f, y + 0.012f, face * 0.011f)));
         }
+        // Iron bands on the haft under the head, and a leather wrap where the hands go.
+        foreach (var dy in new[] { -0.07f, -0.1f })
+            piece.AddChild(Part(new TorusMesh { InnerRadius = 0.016f, OuterRadius = 0.022f, Rings = 14, RingSegments = 6 }, Iron, new Vector3(0, y + dy, 0)));
+        for (var i = 0; i < 4; i++)
+            piece.AddChild(Part(new TorusMesh { InnerRadius = 0.018f, OuterRadius = 0.024f, Rings = 14, RingSegments = 6 }, Leather("#2a1e14"), new Vector3(0, -0.06f + i * 0.04f, 0)));
+        piece.AddChild(Part(new CylinderMesh { TopRadius = 0.021f, BottomRadius = 0.023f, Height = 0.03f, RadialSegments = 10 }, Iron, new Vector3(0, -0.1f, 0))); // the butt cap
         if (!twoHanded) piece.AddChild(Part(new PrismMesh { Size = new Vector3(0.05f, 0.05f, 0.02f) }, head, new Vector3(-0.035f, y, 0), new Vector3(0, 0, -90))); // a hammer poll behind
         return piece;
     }
@@ -113,6 +179,9 @@ public static class Armoury
         // A knotted head holding a stone that glows.
         for (var i = 0; i < 3; i++)
             piece.AddChild(Part(new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.014f, Height = 0.16f, RadialSegments = 7 }, Wood("#4a3220"), new Vector3(Mathf.Cos(i * 2.1f) * 0.03f, 1.36f, Mathf.Sin(i * 2.1f) * 0.03f), new Vector3(Mathf.Sin(i * 2.1f) * 25, 0, -Mathf.Cos(i * 2.1f) * 25)));
+        foreach (var y in new[] { 0.2f, 0.75f, 1.22f }) // brass bands up the shaft
+            piece.AddChild(Part(new TorusMesh { InnerRadius = 0.016f, OuterRadius = 0.023f, Rings = 16, RingSegments = 6 }, Brass, new Vector3(0, y, 0)));
+        piece.AddChild(Part(new TorusMesh { InnerRadius = 0.04f, OuterRadius = 0.05f, Rings = 20, RingSegments = 6 }, Brass, new Vector3(0, 1.4f, 0), new Vector3(90, 0, 0))); // a ring cradling the stone
         var stone = new StandardMaterial3D { AlbedoColor = new Color(glow ?? "#7fb8ff"), EmissionEnabled = true, Emission = new Color(glow ?? "#7fb8ff"), EmissionEnergyMultiplier = 1.6f, Roughness = 0.2f, Transparency = BaseMaterial3D.TransparencyEnum.Alpha };
         stone.AlbedoColor = stone.AlbedoColor with { A = 0.85f };
         piece.AddChild(Part(new SphereMesh { Radius = 0.045f, Height = 0.09f }, stone, new Vector3(0, 1.4f, 0)));
@@ -124,7 +193,8 @@ public static class Armoury
     {
         var piece = new Node3D { Name = "1H_Wand" };
         piece.AddChild(Part(new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.012f, Height = 0.38f, RadialSegments = 8 }, Wood("#3a2a1c"), new Vector3(0, 0.12f, 0)));
-        piece.AddChild(Part(new TorusMesh { InnerRadius = 0.01f, OuterRadius = 0.016f }, Brass, new Vector3(0, 0.04f, 0)));
+        foreach (var y in new[] { 0.04f, 0.12f, 0.2f, 0.27f }) // brass collars, closer together toward the tip
+            piece.AddChild(Part(new TorusMesh { InnerRadius = 0.008f - y * 0.012f, OuterRadius = 0.014f - y * 0.016f, Rings = 12, RingSegments = 6 }, Brass, new Vector3(0, y, 0)));
         var stone = new StandardMaterial3D { AlbedoColor = new Color(glow ?? "#d0a0ff"), EmissionEnabled = true, Emission = new Color(glow ?? "#d0a0ff"), EmissionEnergyMultiplier = 1.4f, Roughness = 0.2f };
         piece.AddChild(Part(new SphereMesh { Radius = 0.016f, Height = 0.032f }, stone, new Vector3(0, 0.32f, 0)));
         return piece;
@@ -159,6 +229,7 @@ public static class Armoury
             var a = i * Mathf.Tau / 8;
             piece.AddChild(Part(new SphereMesh { Radius = 0.012f, Height = 0.024f }, Iron, new Vector3(Mathf.Cos(a) * 0.3f, Mathf.Sin(a) * 0.3f, 0.014f)));
         }
+        piece.AddChild(Part(new TorusMesh { InnerRadius = 0.2f, OuterRadius = 0.225f, Rings = 36, RingSegments = 4 }, Cloth(metal ? "#2a3a6a" : "#a83a2a"), new Vector3(0, 0, 0.013f), new Vector3(90, 0, 0), new Vector3(1, 0.2f, 1))); // a painted ring
         // Planking lines on the face, and a grip bar behind.
         foreach (var x in new[] { -0.18f, 0, 0.18f })
             piece.AddChild(Part(new BoxMesh { Size = new Vector3(0.006f, 0.6f, 0.004f) }, Leather("#2a1e14"), new Vector3(x, 0, 0.015f)));
@@ -174,6 +245,12 @@ public static class Armoury
         piece.AddChild(Part(new BoxMesh { Size = new Vector3(0.46f, 0.3f, 0.025f) }, face, new Vector3(0, 0.2f, 0)));
         piece.AddChild(Part(new PrismMesh { Size = new Vector3(0.46f, 0.36f, 0.025f), LeftToRight = 0.5f }, face, new Vector3(0, -0.13f, 0), new Vector3(0, 0, 180)));
         piece.AddChild(Part(new BoxMesh { Size = new Vector3(0.5f, 0.03f, 0.03f) }, Iron, new Vector3(0, 0.355f, 0)));
+        foreach (var side in new[] { -1f, 1f })
+        {
+            piece.AddChild(Part(new BoxMesh { Size = new Vector3(0.02f, 0.3f, 0.03f) }, Iron, new Vector3(side * 0.235f, 0.2f, 0))); // the rim down the sides
+            piece.AddChild(Part(new BoxMesh { Size = new Vector3(0.02f, 0.4f, 0.03f) }, Iron, new Vector3(side * 0.118f, -0.13f, 0), new Vector3(0, 0, side * -32))); // and down to the point
+        }
+        for (var i = 0; i < 6; i++) piece.AddChild(Part(new SphereMesh { Radius = 0.009f, Height = 0.018f, RadialSegments = 8, Rings = 4 }, Brass, new Vector3(-0.2f + i * 0.08f, 0.32f, 0.017f)));
         var badge = Cloth("#a82a2a");
         piece.AddChild(Part(new BoxMesh { Size = new Vector3(0.06f, 0.3f, 0.006f) }, badge, new Vector3(0, 0.08f, 0.015f)));
         piece.AddChild(Part(new BoxMesh { Size = new Vector3(0.24f, 0.06f, 0.006f) }, badge, new Vector3(0, 0.14f, 0.015f)));

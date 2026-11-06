@@ -47,6 +47,8 @@ public sealed partial class ServerCore
     readonly Dictionary<string, (string Area, DateTime Left)> _lastLeft = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Where each player online was last seen (not saved: it means nothing once they're gone).</summary>
     readonly Dictionary<string, Moved> _sights = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>When each winner last had spoils from each loser ("winner|loser"): once an hour, so friends can't farm each other.</summary>
+    readonly Dictionary<string, DateTime> _spoiled = new(StringComparer.OrdinalIgnoreCase);
 
     public CampaignState State { get; }
     public DeviantWorld World { get; private set; }
@@ -152,6 +154,8 @@ public sealed partial class ServerCore
     /// <summary>The most one blow between heroes may do, and the most of anything one fall may hand over.</summary>
     public const double MostBlow = 1_000_000;
     public const int MostSpoil = 10_000_000;
+    /// <summary>How long before beating the same hero again pays again.</summary>
+    public static readonly TimeSpan SpoilsEvery = TimeSpan.FromHours(1);
 
     /// <summary>A hero struck another: the blow goes to the one it landed on, whose game decides what it does.</summary>
     IReadOnlyList<Outgoing> OnStrikeHero(string player, StrikeHero s)
@@ -166,6 +170,18 @@ public sealed partial class ServerCore
     {
         var killer = _online.FirstOrDefault(o => o.Equals(f.Killer?.Trim(), StringComparison.OrdinalIgnoreCase));
         if (killer is null || killer.Equals(player, StringComparison.OrdinalIgnoreCase)) return [];
+        var now = _clock();
+        var pair = $"{killer}|{player}";
+        if (_spoiled.TryGetValue(pair, out var last) && now - last < SpoilsEvery)
+        {
+            var wait = (int)Math.Ceiling((SpoilsEvery - (now - last)).TotalMinutes);
+            return
+            [
+                new(killer, new Notice(NoticeKind.World, $"You've beaten {player} again, but there's nothing more to win from them for {wait} minute{(wait == 1 ? "" : "s")}.")),
+                new(null, new Notice(NoticeKind.World, $"{killer} has cut down {player}."), Except: killer),
+            ];
+        }
+        _spoiled[pair] = now;
         static int Fair(int n) => Math.Clamp(n, 0, MostSpoil);
         var items = (f.Items ?? []).Where(i => !string.IsNullOrWhiteSpace(i.Id) && i.N > 0).Take(500)
             .Select(i => new SpoilItem(Clip(i.Id, 80), Fair(i.N))).ToList();

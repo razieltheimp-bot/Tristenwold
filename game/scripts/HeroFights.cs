@@ -12,7 +12,8 @@ namespace Tristinwold.Game;
 ///
 /// A hero put down by another loses nothing. The winner gets a copy of everything the loser carried, except that
 /// weapons and armour come as what they're worth in crowns; a purse as full as the loser's; and any bounty on the
-/// loser's head, which is then paid and gone (see <see cref="Gameplay.Spoils"/>).
+/// loser's head, which is then paid and gone (see <see cref="Gameplay.Spoils"/>). That's once an hour for each
+/// winner from each loser, so friends can't farm each other.
 /// </summary>
 public partial class Main
 {
@@ -26,6 +27,10 @@ public partial class Main
     /// <summary>When the last blow from another player landed: a fall long after it isn't theirs.</summary>
     double _heroBlowAt = double.MinValue;
     const double FallCounts = 30;
+
+    /// <summary>When each player last won spoils from this hero: once an hour, no more (the server keeps count too).</summary>
+    readonly Dictionary<string, double> _paidTo = new(StringComparer.OrdinalIgnoreCase);
+    public const double SpoilsEvery = 3600;
 
     /// <summary>The last thing sent about a fight between heroes (for the self-test, which has no server).</summary>
     public Message? LastHeroMessage { get; private set; }
@@ -89,6 +94,14 @@ public partial class Main
     void FellToHero()
     {
         if (_player.LastHitBy is not { } by || !IsInstanceValid(by) || by.Hero is not { } killer || _clock - _heroBlowAt > FallCounts) return;
+        _heroFeuds.Remove(killer);
+        if (_paidTo.TryGetValue(killer, out var paid) && _clock - paid < SpoilsEvery)
+        {
+            Tell(new HeroFell(killer, [], 0, 0, 0)); // they've had their spoils from you this hour: nothing more, and the bounty stands
+            _hud.Toast($"{by.Stats.Name} has beaten you again, but they won nothing by it: they've had their spoils from you this hour. You keep everything you had.", 8);
+            return;
+        }
+        _paidTo[killer] = _clock;
         var haul = Gameplay.Spoils.Of(_player.Pack, _player.Crowns);
         var bounty = _standing.Bounty;
         if (bounty > 0)
@@ -96,7 +109,6 @@ public partial class Main
             _standing.Bounty = 0; // collected: the Watch has what it wanted
             SyncOutlaw();
         }
-        _heroFeuds.Remove(killer);
         Tell(new HeroFell(killer, [.. haul.Items.Select(i => new SpoilItem(i.Id, i.N))], haul.Crowns, haul.GearCrowns, bounty));
         _hud.Toast($"{by.Stats.Name} has beaten you. You keep everything you had{(bounty > 0 ? $"; they collect the {bounty} crowns on your head, and the Watch stops looking for you" : "")}.", 9);
     }
