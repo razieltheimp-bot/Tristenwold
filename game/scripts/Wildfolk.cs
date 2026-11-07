@@ -353,13 +353,17 @@ public static class Wildfolk
 }
 
 /// <summary>
-/// A pair of wings for a creature that has none in its model, riding on a back bone: leathery bat wings (an arm,
-/// fingers fanning from the wrist, a membrane between them) or feathered ones (long dark primaries fanned from the
-/// arm). They beat slowly as it stands, and hard when it takes to the air (see <see cref="Flying"/>).
+/// A pair of wings for a creature that has none in its model, riding on a back bone, built as real wings are: an arm
+/// out to the wrist and a hand beyond it, folding at the wrist. A bird's (feathered) has rows of feathers, each a real
+/// feather's shape: small coverts over the roots, the long secondaries off the arm, and the primaries off the hand that
+/// splay into fingers at the tip. A bat's (leathery) has an arm, fingers fanning from the wrist and the skin between.
+/// At rest they fold against its sides as a bird's do, the wrist forward and the flight feathers lying back along its
+/// flank and over its tail; in the air (see <see cref="Flying"/>) they open wide and beat.
 /// </summary>
 public partial class FlapWings : Node3D
 {
-    readonly List<(Node3D Pivot, float Side)> _wings = [];
+    sealed record Wing(Node3D Shoulder, Node3D Hand, float Side, List<(Node3D Pivot, float Open)> Primaries);
+    readonly List<Wing> _wings = [];
     float _phase, _beat = 1.2f, _rate = 1.2f, _open;
 
     /// <summary>Beating hard to fly (a kipine's dive, a winged ape's leap, any of them up in the air).</summary>
@@ -377,78 +381,178 @@ public partial class FlapWings : Node3D
         var w = new FlapWings { _rate = beat };
         var holder = g.Hold(bone, between);
         holder.AddChild(w);
-        var membrane = new StandardMaterial3D
+        StandardMaterial3D Mat(Color c, float rough = 0.85f) => new()
         {
-            AlbedoColor = skin, Roughness = 0.75f, CullMode = BaseMaterial3D.CullModeEnum.Disabled, BacklightEnabled = !feathered,
-            Backlight = skin * 0.35f,
+            AlbedoColor = c, Roughness = rough, CullMode = BaseMaterial3D.CullModeEnum.Disabled, BacklightEnabled = !feathered, Backlight = c * 0.35f,
+            RimEnabled = true, Rim = 0.25f, RimTint = 0.5f,
         };
-        var bone3 = new StandardMaterial3D { AlbedoColor = bones, Roughness = 0.6f };
+        var paints = new Paints(Mat(skin), Mat(skin.Lightened(0.08f)), Mat(skin.Darkened(0.18f)), bars is { } dark ? Mat(dark) : null,
+            new StandardMaterial3D { AlbedoColor = feathered ? skin.Darkened(0.12f) : bones, Roughness = 0.6f, RimEnabled = true, Rim = 0.2f });
         foreach (var side in new[] { -1f, 1f })
         {
-            var pivot = new Node3D { Position = new Vector3(side * apart, 0, 0) };
-            w.AddChild(pivot);
+            var shoulder = new Node3D { Position = new Vector3(side * apart, 0, 0) };
+            w.AddChild(shoulder);
             var wing = new Node3D { Scale = new Vector3(side, 1, 1) }; // the left wing is the right one mirrored
-            pivot.AddChild(wing);
-            if (feathered) Feathers(wing, span, membrane, bone3, bars is { } dark ? new StandardMaterial3D { AlbedoColor = dark, Roughness = 0.8f, CullMode = BaseMaterial3D.CullModeEnum.Disabled } : null);
-            else Membrane(wing, span, membrane, bone3);
-            w._wings.Add((pivot, side));
+            shoulder.AddChild(wing);
+            var wrist = (feathered ? new Vector3(0.42f, 0.08f, 0.02f) : new Vector3(0.45f, 0.18f, 0.05f)) * span;
+            var hand = new Node3D { Position = wrist };
+            wing.AddChild(hand);
+            var primaries = new List<(Node3D, float)>();
+            if (feathered) Feathered(wing, hand, wrist, span, paints, primaries);
+            else Leathery(wing, hand, wrist, span, paints);
+            w._wings.Add(new Wing(shoulder, hand, side, primaries));
         }
+        w.Pose(0);
         return w;
     }
 
-    /// <summary>A bat's wing, reaching out along +X and back along +Z (the body's back).</summary>
-    static void Membrane(Node3D wing, float s, Material skin, Material bone)
+    sealed record Paints(Material Feather, Material Covert, Material Flight, Material? Bar, Material Bone);
+
+    /// <summary>A bird's wing: coverts, secondaries off the arm; primaries (each on its own pivot, to fan and close) off the hand.</summary>
+    static void Feathered(Node3D arm, Node3D hand, Vector3 wrist, float s, Paints p, List<(Node3D, float)> primaries)
     {
-        var shoulder = Vector3.Zero;
-        var wrist = new Vector3(0.45f, 0.22f, 0.05f) * s;
-        Vector3[] tips = [new Vector3(1f, 0.12f, 0.2f) * s, new Vector3(0.88f, -0.2f, 0.42f) * s, new Vector3(0.62f, -0.38f, 0.55f) * s, new Vector3(0.32f, -0.42f, 0.5f) * s];
+        // The leading edge: a smooth, tapering arm to the wrist, then the hand.
+        arm.AddChild(Tails.Tube(Vector3.Zero, wrist, wrist.Length(), s * 0.04f, Vector3.Zero, 0.6f, 1, p.Bone, 6, 10).Mesh);
+        var handWay = new Vector3(1, -0.04f, 0.1f).Normalized();
+        hand.AddChild(Tails.Tube(Vector3.Zero, handWay, s * 0.42f, s * 0.026f, Vector3.Zero, 0.4f, 1, p.Bone, 6, 8).Mesh);
+        // Off the arm: the secondaries, long and broad, pointing back; over their roots two rows of coverts.
+        for (var k = 0; k < 12; k++)
+        {
+            var f = k / 11f;
+            var root = wrist * (0.04f + 0.94f * f);
+            Feather(arm, root + Vector3.Down * s * 0.004f, new Vector3(0.1f * f, -0.04f, 1), s * (0.33f + 0.07f * f), s * 0.08f, k % 3 == 1 && p.Bar is { } bar ? bar : p.Flight);
+        }
+        for (var k = 0; k < 11; k++)
+        {
+            var f = k / 10f;
+            Feather(arm, wrist * (0.03f + 0.95f * f) + Vector3.Up * s * 0.006f, new Vector3(0.12f * f, -0.03f, 1), s * 0.19f, s * 0.075f, k % 3 == 2 && p.Bar is { } bar ? bar : p.Feather);
+            Feather(arm, wrist * (0.05f + 0.93f * f) + Vector3.Up * s * 0.012f, new Vector3(0.15f * f, -0.02f, 1), s * 0.1f, s * 0.07f, p.Covert);
+        }
+        // Off the hand: the primaries, fanning from pointing back to pointing out, longest past the middle, the outer
+        // ones narrower so the tip splays into fingers.
+        for (var k = 0; k < 10; k++)
+        {
+            var f = k / 9f;
+            var pivot = new Node3D { Position = handWay * s * 0.42f * (0.04f + 0.92f * f) + Vector3.Down * s * 0.004f };
+            hand.AddChild(pivot);
+            Feather(pivot, Vector3.Zero, Vector3.Back, s * (0.36f + 0.26f * Mathf.Sin(Mathf.Pi * 0.85f * f)), s * 0.075f * (1 - 0.35f * f), k % 3 == 1 && p.Bar is { } bar ? bar : p.Flight);
+            primaries.Add((pivot, Mathf.Lerp(0.18f, 1.3f, f)));
+        }
+        for (var k = 0; k < 8; k++)
+        {
+            var f = k / 7f;
+            Feather(hand, handWay * s * 0.42f * (0.03f + 0.85f * f) + Vector3.Up * s * 0.008f, new Vector3(0.5f + 0.4f * f, -0.02f, 1 - 0.3f * f), s * 0.17f, s * 0.07f, p.Feather);
+        }
+    }
+
+    /// <summary>A bat's wing: an arm to the wrist, fingers fanning from it, the skin stretched between them and back to the flank.</summary>
+    static void Leathery(Node3D arm, Node3D hand, Vector3 wrist, float s, Paints p)
+    {
+        Vector3[] tips = [new Vector3(0.55f, -0.06f, 0.15f) * s, new Vector3(0.43f, -0.38f, 0.37f) * s, new Vector3(0.17f, -0.56f, 0.5f) * s, new Vector3(-0.13f, -0.6f, 0.45f) * s]; // from the wrist
         var flank = new Vector3(0.05f, -0.3f, 0.35f) * s;
+        var inner = new SurfaceTool();
+        inner.Begin(Mesh.PrimitiveType.Triangles);
+        inner.AddVertex(Vector3.Zero); inner.AddVertex(wrist); inner.AddVertex(flank);
+        inner.GenerateNormals();
+        arm.AddChild(new MeshInstance3D { Mesh = inner.Commit(), MaterialOverride = p.Feather });
+        var outer = new SurfaceTool();
+        outer.Begin(Mesh.PrimitiveType.Triangles);
+        // The skin between the fingers sags a little between their tips.
+        for (var i = 0; i < tips.Length - 1; i++)
+        {
+            var sag = (tips[i] + tips[i + 1]) * 0.42f;
+            outer.AddVertex(Vector3.Zero); outer.AddVertex(tips[i]); outer.AddVertex(sag);
+            outer.AddVertex(Vector3.Zero); outer.AddVertex(sag); outer.AddVertex(tips[i + 1]);
+        }
+        outer.AddVertex(Vector3.Zero); outer.AddVertex(tips[^1]); outer.AddVertex(flank - wrist);
+        outer.GenerateNormals();
+        hand.AddChild(new MeshInstance3D { Mesh = outer.Commit(), MaterialOverride = p.Feather });
+        arm.AddChild(Tails.Tube(Vector3.Zero, wrist, wrist.Length(), s * 0.035f, Vector3.Zero, 0.6f, 1, p.Bone, 6, 10).Mesh);
+        foreach (var tip in tips)
+            hand.AddChild(Tails.Tube(Vector3.Zero, tip, tip.Length(), s * 0.016f, Vector3.Zero, 0.25f, 1, p.Bone, 6, 8).Mesh);
+        // A claw at the wrist.
+        hand.AddChild(Tails.Tube(Vector3.Zero, new Vector3(-0.2f, 0.6f, -0.6f), s * 0.07f, s * 0.018f, new Vector3(0, -1.2f, 0), 0.05f, 1, p.Bone, 4, 6).Mesh);
+    }
+
+    static ArrayMesh? _feather;
+
+    /// <summary>
+    /// One feather, along +Z from its root, one unit long and one wide: narrow at the quill, broadest a third of the
+    /// way, tapering to a rounded point, its middle raised along the shaft and drooping a little to the tip.
+    /// </summary>
+    static ArrayMesh FeatherMesh()
+    {
+        if (_feather is not null) return _feather;
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
-        void Tri(Vector3 a, Vector3 b, Vector3 c) { st.AddVertex(a); st.AddVertex(b); st.AddVertex(c); }
-        Tri(shoulder, wrist, tips[0]);
-        for (var i = 0; i < tips.Length - 1; i++) Tri(wrist, tips[i], tips[i + 1]);
-        Tri(wrist, tips[^1], flank);
-        Tri(shoulder, wrist, flank);
-        st.GenerateNormals();
-        wing.AddChild(new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = skin });
-        Rod(wing, shoulder, wrist, s * 0.03f, bone);
-        foreach (var tip in tips) Rod(wing, wrist, tip, s * 0.012f, bone);
-    }
-
-    /// <summary>A bird's wing: the arm, and long feathers fanned back from it, longest at the tip.</summary>
-    static void Feathers(Node3D wing, float s, Material feather, Material bone, Material? bar = null)
-    {
-        Rod(wing, Vector3.Zero, new Vector3(0.55f, 0.15f, 0) * s, s * 0.04f, bone);
-        // Flight feathers, each a long flat taper, overlapping; then a row of short coverts over their roots.
-        var quill = new SphereMesh { Radius = 0.5f, Height = 1, RadialSegments = 10, Rings = 5 };
-        foreach (var (count, reach, scale) in new[] { (18, 1f, 1f), (12, 0.45f, 0.55f) })
-            for (var i = 0; i < count; i++)
+        const int n = 10;
+        Vector3 P(int i, float across)
+        {
+            var t = i / (float)n;
+            var half = 0.5f * Mathf.Pow(Mathf.Sin(Mathf.Pi * Mathf.Pow(t, 0.62f)), 0.75f) + 0.06f * (1 - t);
+            return new Vector3(across * half, 0.08f * half * (1 - across * across) - 0.05f * t * t, t);
+        }
+        for (var i = 0; i < n; i++)
+            foreach (var (a, b) in new[] { (-1f, 0f), (0f, 1f) })
             {
-                var f = i / (count - 1f);
-                var root = new Vector3(0.04f + f * 0.56f, 0.15f * f + (scale < 1 ? 0.01f : 0), 0) * s;
-                var length = s * (0.3f + f * 0.5f) * reach;
-                var dir = new Vector3(f * 0.75f, -0.3f + f * 0.15f, 1 - f * 0.5f).Normalized();
-                var basis = Basis.LookingAt(dir, Vector3.Up) * Basis.FromScale(new Vector3(s * 0.085f * scale, s * 0.012f, length)); // broad across, thin through, long back: each its own way
-                wing.AddChild(new MeshInstance3D { Mesh = quill, MaterialOverride = bar is not null && i % 3 == 1 ? bar : feather, Transform = new Transform3D(basis, root + dir * length * 0.45f) }); // every third feather dark, for an owl's bars
+                st.AddVertex(P(i, a)); st.AddVertex(P(i + 1, a)); st.AddVertex(P(i + 1, b));
+                st.AddVertex(P(i, a)); st.AddVertex(P(i + 1, b)); st.AddVertex(P(i, b));
             }
+        st.GenerateNormals();
+        return _feather = st.Commit();
     }
 
-    static void Rod(Node3D into, Vector3 a, Vector3 b, float radius, Material m) => into.AddChild(new MeshInstance3D
+    /// <summary>A feather from a root, pointing a way, lying flat in the wing (its face up).</summary>
+    static void Feather(Node3D into, Vector3 root, Vector3 way, float length, float width, Material m)
     {
-        Mesh = new CylinderMesh { TopRadius = radius * 0.6f, BottomRadius = radius, Height = a.DistanceTo(b), RadialSegments = 5, Rings = 1 },
-        MaterialOverride = m, Transform = new Transform3D(Graft.Along(b - a), (a + b) / 2),
-    });
+        var z = way.Normalized();
+        var x = Vector3.Up.Cross(z).Normalized();
+        var y = z.Cross(x);
+        into.AddChild(new MeshInstance3D
+        {
+            Mesh = FeatherMesh(), MaterialOverride = m, CastShadow = GeometryInstance3D.ShadowCastingSetting.On,
+            Transform = new Transform3D(new Basis(x * width, y * width, z * length), root),
+        });
+    }
+
+    /// <summary>
+    /// Folded, the whole wing lies back along the creature's side: the arm runs back from the shoulder, a little down
+    /// and clear of the flank, the feathers hang down over it, and the closed primaries carry on back past the tail.
+    /// </summary>
+    static readonly Basis Folded = MakeFolded();
+
+    static Basis MakeFolded()
+    {
+        var x = new Vector3(0.15f, -0.2f, 0.95f).Normalized();
+        var face = new Vector3(-1, 0, 0); // the wing's top against the body, its underside out
+        var y = (face - x * x.Dot(face)).Normalized();
+        return new Basis(x, y, x.Cross(y));
+    }
+
+    static readonly Basis Mirror = Basis.FromScale(new Vector3(-1, 1, 1));
+
+    void Pose(float flap)
+    {
+        var fold = 1 - _open;
+        var spread = new Quaternion(new Basis(Vector3.Back, flap + 0.12f)); // out level, rising and falling with the beat
+        var q = spread.Slerp(new Quaternion(Folded), fold);
+        foreach (var w in _wings)
+        {
+            var b = new Basis(q);
+            w.Shoulder.Basis = w.Side < 0 ? Mirror * b * Mirror : b;
+            w.Hand.Rotation = new Vector3(0, -0.3f * fold, Mathf.Sin(_phase - 0.7f) * 0.3f * _open);
+            foreach (var (pivot, open) in w.Primaries)
+                pivot.Rotation = new Vector3(0, Mathf.Lerp(1.45f, open, _open), 0); // closed, they lie along the hand; open, they fan
+        }
+    }
 
     public override void _Process(double delta)
     {
-        var rate = Flying ? _rate * 2.6f : _rate;
+        var rate = Flying ? _rate * 2.6f : _rate * 0.35f;
         _beat = Mathf.MoveToward(_beat, rate, (float)delta * 3);
         _phase += (float)delta * _beat * Mathf.Tau;
-        // Half open and drooping at rest, stirring now and then; flung wide and beating hard in the air.
+        // Folded at rest, stirring a little; flung wide and beating hard in the air.
         _open = Mathf.MoveToward(_open, Flying ? 1 : 0, (float)delta * 2.5f);
-        var flap = Mathf.Sin(_phase) * Mathf.Lerp(0.08f, 0.75f, _open);
-        foreach (var (pivot, side) in _wings)
-            pivot.Rotation = new Vector3(0, -side * (1 - _open) * 0.45f, side * (flap + Mathf.Lerp(-0.5f, 0.15f, _open))); // at rest half open and drooping by its sides, the tips crossing over the tail: the wing's all one piece, so swung right back the feathers swing across too and the two lie one on the other
+        Pose(Mathf.Sin(_phase) * Mathf.Lerp(0.03f, 0.75f, _open));
     }
 }

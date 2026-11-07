@@ -1092,7 +1092,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             await Frames(30);
             main.HudNode.Visible = false;
             var ground = City.FloorAt(stand);
-            async Task Row(string name, string[] kinds, float gap, Vector3 lens, Vector3 look, float shift = 0)
+            async Task Row(string name, string[] kinds, float gap, Vector3 lens, Vector3 look, float shift = 0, bool spread = false)
             {
                 var stand0 = stand;
                 stand += new Vector3(shift, 0, 0);
@@ -1107,6 +1107,8 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                     e.RotationDegrees = new Vector3(0, 90, 0);
                     row.Add(e);
                 }
+                await Frames(2);
+                if (spread) foreach (var e in row) foreach (var w in e.Figure.FindChildren("*", "Node3D", true, false).OfType<FlapWings>()) w.Flying = true;
                 await Frames(40);
                 cam.GlobalPosition = stand with { Y = ground } + lens;
                 cam.LookAt(stand with { Y = ground } + look, Vector3.Up);
@@ -1121,6 +1123,9 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             await Row("beasts-crossings", ["sky_fox", "jackalope", "pegasus", "griffon"], 2.6f, new Vector3(0, 1.6f, 7.5f), new Vector3(0, 0.8f, 0), shift: 30);
             await Row("beasts-kipine", ["kipine"], 1, new Vector3(-3.4f, 2.1f, 1.8f), new Vector3(-1.0f, 1.6f, 0));
             await Row("beasts-jackalope", ["jackalope", "sky_fox"], 1.4f, new Vector3(0.3f, 0.9f, 2.6f), new Vector3(0, 0.35f, 0), shift: 30);
+            await Row("beasts-spread", ["griffon", "kipine", "pegasus"], 5.5f, new Vector3(0, 4.5f, 13f), new Vector3(0, 1.6f, 0), shift: 30, spread: true);
+            await Row("beasts-spread2", ["winged_ape", "dire_imp", "sky_fox"], 4.5f, new Vector3(0, 3.5f, 10f), new Vector3(0, 1.3f, 0), shift: -30, spread: true);
+            await Row("beasts-winged", ["winged_ape", "dire_imp", "imp"], 2.4f, new Vector3(0, 1.8f, 6.5f), new Vector3(0, 1.0f, 0), shift: -30);
             await Row("beasts-serpents", ["ember_wyrm", "sea_serpent", "leviathan"], 9f, new Vector3(0, 9f, 24f), new Vector3(0, 1.5f, 0));
             await Row("beasts-wyrm", ["ember_wyrm"], 1, new Vector3(-6.5f, 2.6f, 4.5f), new Vector3(-0.5f, 0.9f, 0));
             await Row("beasts-seaserpent", ["sea_serpent"], 1, new Vector3(-8f, 3.5f, 7f), new Vector3(1f, 1.4f, 0));
@@ -1141,9 +1146,9 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                 await Frames(60);
                 GD.Print($"flight {k}: {string.Join(", ", fliers.Select(f => $"{f.Kind.Id} {f.State} airborne={f.Airborne} wants {f.AltitudeForTest:0.0} up {f.GlobalPosition.Y - City.FloorAt(f.GlobalPosition):0.0}"))}");
             }
-            var mid = (fliers[0].GlobalPosition + fliers[1].GlobalPosition) / 2;
+            var mid = fliers[1].GlobalPosition;
             GD.Print($"fliers: {string.Join(", ", fliers.Select(f => $"{f.Kind.Id} canfly={f.CanFly} airborne={f.Airborne} up {f.GlobalPosition.Y - City.FloorAt(f.GlobalPosition):0.0} m"))}");
-            cam.GlobalPosition = mid + new Vector3(0, -4f, 14f);
+            cam.GlobalPosition = mid + new Vector3(4f, 1.5f, 6f);
             cam.LookAt(mid, Vector3.Up);
             await Shot("beasts-flying");
             GetTree().Quit();
