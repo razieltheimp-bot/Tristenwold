@@ -72,6 +72,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--raiders-only")) { await RaidersTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--opensea-only")) { await OpenSeaTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--colony-only")) { await ColonyGuardTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); await FleetTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pupils-only")) { await PupilTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--refuge-only")) { await GrowthTest(); Finish(0); return; }
@@ -3912,6 +3913,91 @@ public partial class SelfTest(Main main) : Node
     }
 
     /// <summary>The hero's own ship taken out from the berth and steered like a wagon; and a colony on an island nobody lives on.</summary>
+    /// <summary>A colony keeps itself: its settlers fight till there's a barracks, then guards are hired and stand their posts, then the wall goes up.</summary>
+    async Task ColonyGuardTest()
+    {
+        var (p, hud, city) = (main.PlayerNode, main.HudNode, main.Economy);
+        Vector3? open = null; // open country, well away from any town, the way a colony wants it
+        for (var x = 5400; x >= -5400 && open is null; x -= 600)
+            for (var z = 5400; z >= -5400 && open is null; z -= 600)
+                if (main.NoRoomForColonyForTest(new Vector3(x, 0, z)) is null) open = new Vector3(x, 0, z);
+        if (open is not { } site) { Check(false, "open country for a colony"); return; }
+        p.StandUp(site);
+        await Teleport(site);
+        await Frames(20);
+        while (p.Hero.Level < 9) main.GainXp(Hero.XpToNext(p.Hero.Level));
+        p.Crowns += 5000;
+        main.FoundColonyForTest();
+        var colony = city.HallOf(p.Company, HallKind.Colony);
+        if (colony is null) { Check(false, "a colony to keep"); return; }
+        colony.Members = 6;
+        city.Growth[colony.Town] = Settling.Chamber;
+        main.RedrawHallsForTest();
+        await Frames(10);
+        main.TendColoniesForTest();
+        var heart = new Vector3((float)colony.X, 0, (float)colony.Z);
+        heart.Y = City.FloorAt(heart);
+        Check(main.ColonySettlersForTest(colony) >= 6, $"its settlers are about the yard ({main.ColonySettlersForTest(colony)})");
+        var steward = main.Locals.Concat(main.SharedFolkForTest).First(x => x.Npc.Id == $"hall:{colony.Key}");
+        main.Talk(steward);
+        Check(!hud.Options.Any(o => o.StartsWith("Hire a town guard")), "no guards to hire before there's a barracks");
+        Check(hud.Choose("How do we stand") && hud.TalkText.Contains("settlers fight"), "the reeve says the settlers defend it themselves");
+        hud.EndTalk();
+        Check(Settling.Next(Settling.Chamber)?.Stage == Settling.Barracks && Settling.Next(Settling.Barracks)?.Stage == Settling.Walls, "after the chamber comes the barracks, and only then the wall");
+
+        // Something comes in: the settlers drop their tools and see it off.
+        p.GlobalPosition = heart + new Vector3(40, 2, 40);
+        var wolf = Enemy.Create(Bestiary.Get("wolf"), heart + new Vector3(2, 0.5f, 1));
+        main.AddEnemy(wolf);
+        wolf.Carried = true;
+        await Frames(3);
+        var was = wolf.Stats.Health;
+        for (var i = 0; i < 80 && wolf.State != EnemyState.Dead; i++) { await Frames(4); main.TendColoniesForTest(); }
+        Check(wolf.State == EnemyState.Dead || wolf.Stats.Health < was * 0.5, $"a wolf in the yard: the settlers go at it ({(wolf.State == EnemyState.Dead ? "dead" : $"{wolf.Stats.Health:0} of {was:0}")})");
+        Check(hud.Heard("take up arms"), "and you hear about it");
+        if (IsInstanceValid(wolf)) wolf.QueueFree();
+
+        // The barracks: now guards can be hired, and they stand their posts.
+        city.Growth[colony.Town] = Settling.Barracks;
+        main.RedrawHallsForTest();
+        await Frames(10);
+        Check(GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>().Any(n => Buildings.KindOf(n) == "barracks" && n.GlobalPosition.DistanceTo(heart) < 60), "the barracks stands in the colony");
+        steward = main.Locals.Concat(main.SharedFolkForTest).First(x => x.Npc.Id == $"hall:{colony.Key}");
+        var crowns = p.Crowns;
+        main.Talk(steward);
+        Check(hud.Choose("Hire a town guard") && colony.Guards == 1 && p.Crowns == crowns - ColonyDefence.GuardCost, "with a barracks, the reeve hires a town guard");
+        hud.EndTalk();
+        main.Talk(steward);
+        hud.Choose("Hire a town guard");
+        hud.EndTalk();
+        main.TendColoniesForTest();
+        await Frames(5);
+        var guards = main.ColonyGuardsForTest(colony);
+        Check(guards.Count == 2 && guards.All(g => g.Allied && g.GlobalPosition.DistanceTo(heart) < 40), $"and they stand their posts ({guards.Count})");
+        var bandit = Enemy.Create(Bestiary.Get("bandit"), heart + new Vector3(-3, 0.5f, 2));
+        main.AddEnemy(bandit);
+        bandit.Carried = true;
+        await Frames(3);
+        main.TendColoniesForTest();
+        await Frames(3);
+        Check(guards.Any(g => g.Rival == bandit), $"a bandit comes in, and the guard turns out for it ({string.Join(", ", guards.Select(g => $"{g.State} at {(g.Rival is { } r && IsInstanceValid(r) ? r.Kind.Id : "nothing")}"))}; bandit friendly {bandit.Friendly}, {bandit.GlobalPosition.DistanceTo(heart):0} m in)");
+        Check(hud.Heard("guard turns out"), "and the settlers leave it to them");
+        bandit.QueueFree();
+        var till = colony.Till = 100;
+        city.TendHalls(Halls.JobSeconds);
+        Check(colony.Till == till + 3 * colony.Members - 2 * ColonyDefence.Wage, $"the guards' wages come out of the till ({colony.Till})");
+
+        // The wall, now there's a barracks to man it.
+        city.Growth[colony.Town] = Settling.Walls;
+        main.RedrawHallsForTest();
+        await Frames(10);
+        var wall = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>().Where(n => IsInstanceValid(n) && n.GlobalPosition.DistanceTo(heart) < 70).ToList();
+        Check(wall.Count(n => Buildings.KindOf(n) == "wall_low") >= 10 && wall.Count(n => Buildings.KindOf(n) == "gate") == 1, $"a fortified stone wall goes round it, with a gatehouse ({wall.Count(n => Buildings.KindOf(n) == "wall_low")} lengths)");
+        await Frames(10);
+        main.TendColoniesForTest();
+        Check(main.ColonyGuardsForTest(colony).Count == 2, "and the guards are still at their posts behind it");
+    }
+
     async Task OpenSeaTest()
     {
         var (p, sea, city) = (main.PlayerNode, main.Sea, main.Economy);
@@ -4015,16 +4101,17 @@ public partial class SelfTest(Main main) : Node
         if (colony is not null)
         {
             var wasGrown = city.GrownOf(colony.Town);
-            city.Grown[colony.Town] = Settling.Walls;
+            city.Growth[colony.Town] = Settling.Walls;
             main.RedrawHallsForTest();
             await Frames(5);
             var heart = new Vector3((float)colony.X, 0, (float)colony.Z);
-            var near = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>().Where(n => IsInstanceValid(n) && n.IsInsideTree() && new Vector2(n.GlobalPosition.X - heart.X, n.GlobalPosition.Z - heart.Z).Length() < 70).ToList();
+            var near = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>().Where(n => IsInstanceValid(n) && n.IsInsideTree() && new Vector2(n.GlobalPosition.X - heart.X, n.GlobalPosition.Z - heart.Z).Length() < 70
+                && Buildings.KindOf(n) is not ("wall_low" or "gate")).ToList();
             var clash = near.SelectMany((a, i) => near.Skip(i + 1).Where(b => Buildings.Overlap(Buildings.Footprint(a), Buildings.Footprint(b))).Select(b => $"{Buildings.KindOf(a)} and {Buildings.KindOf(b)}")).ToList();
             Check(near.Count >= 10 && clash.Count == 0, $"a grown colony's {near.Count} buildings don't run into each other{(clash.Count > 0 ? $" ({string.Join("; ", clash)})" : "")}");
             var stallAt = new Vector3(heart.X, 0, heart.Z) + (main.ColonyStallSpotForTest(colony) - heart) with { Y = 0 };
             Check(near.All(n => Buildings.Footprint(n).All(f => f.Centre.DistanceTo(new Vector2(stallAt.X, stallAt.Z)) > Mathf.Max(f.HalfU, f.HalfV) + 2)), "and leave room in the yard for its market stall");
-            city.Grown[colony.Town] = wasGrown;
+            city.Growth[colony.Town] = wasGrown;
             main.RedrawHallsForTest();
         }
 

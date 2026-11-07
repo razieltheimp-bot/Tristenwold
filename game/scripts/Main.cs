@@ -829,6 +829,7 @@ public partial class Main : Node3D
         TendCaravans(delta);
         TendRide();
         TendSea(delta);
+        TendColonies(delta);
         TendIsle();
         TendHunted();
         TendMine(delta);

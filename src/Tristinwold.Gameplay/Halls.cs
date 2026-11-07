@@ -40,6 +40,8 @@ public sealed class Hall
     public int Founded { get; set; }
     /// <summary>Which of its founder's colonies this is: 0 for the first, 2 for the second, and so on. Other halls are one to a founder.</summary>
     public int Number { get; set; }
+    /// <summary>A colony's town guards, hired once it has its barracks. Their wages come out of the till.</summary>
+    public int Guards { get; set; }
 
     [JsonIgnore] public string Key => Number > 1 ? $"{Halls.KeyOf(Owner, Kind)}{Number}" : Halls.KeyOf(Owner, Kind);
     /// <summary>A colony as a place with a council: the town it's kept under.</summary>
@@ -152,7 +154,7 @@ public static class Halls
                     break;
                 case HallKind.Colony:
                     for (var i = 0; i < n; i++) Put(h, Settled[rng.Next(Settled.Length)]);
-                    h.Till += 3 * n;
+                    h.Till = Math.Max(0, h.Till + 3 * n - ColonyDefence.Wage * h.Guards); // the guards are paid first
                     break;
                 case HallKind.Spire:
                     for (var i = 0; i < (n + 1) / 2; i++) Put(h, Shelves[rng.Next(Shelves.Length)]);
@@ -172,6 +174,31 @@ public static class Halls
         if (h.Chest.Values.Sum() >= MostInChest) return;
         h.Chest[id] = h.Chest.GetValueOrDefault(id) + 1;
     }
+}
+
+/// <summary>
+/// Who keeps a colony safe. Until it has a barracks, nobody but its own settlers: they put down their tools and go at
+/// anything that comes in, with whatever's to hand, and more settlers are more of a crowd. With a barracks it can hire
+/// town guards, paid out of its till, and then the settlers leave it to them (and only take up arms again if every guard
+/// is down). The guards are what man the wall that comes after.
+/// </summary>
+public static class ColonyDefence
+{
+    /// <summary>What a town guard costs to take on, and what each one takes from the till every round of work.</summary>
+    public const int GuardCost = 150, Wage = 2;
+    /// <summary>How far past its fence a colony's people go after something, and how close a settler closes to strike.</summary>
+    public const double Range = 14, Reach = 3.5;
+    /// <summary>Seconds between one settler's blows; how long the barracks takes to train up a fallen guard's replacement.</summary>
+    public const double Every = 2.4, Replace = 150;
+
+    /// <summary>How many guards a colony can keep: more the more people there are to protect.</summary>
+    public static int MostGuards(Hall h) => Math.Clamp(1 + h.Members / 2, 1, 6);
+
+    /// <summary>What a settler's blow takes off a foe (a share of its health): a crowd of them can see off a wolf or a bandit, not a deviant.</summary>
+    public static double Blow(bool close, bool deviant) => deviant ? (close ? 0.02 : 0.008) : close ? 0.06 : 0.025;
+
+    /// <summary>Whether the settlers fight: always before the barracks, and after it only if no guard's standing.</summary>
+    public static bool SettlersFight(bool barracks, int guardsStanding) => !barracks || guardsStanding == 0;
 }
 
 public sealed partial class CityEconomy
@@ -221,6 +248,9 @@ public sealed partial class CityEconomy
                 Halls[key].Till = Math.Min(Gameplay.Halls.MostInTill, Halls[key].Till + crowns);
                 return true;
             case "hall_low": Halls[key].LowUntil = Day + 1; return true;
+            case "hall_guard" when Halls[key] is { Kind: HallKind.Colony } g && GrownOf(g.Town) >= Settling.Barracks && g.Guards < ColonyDefence.MostGuards(g):
+                g.Guards++;
+                return true;
             case "hall_served" when a.Item is { Length: > 0 and <= 60 } who: Halls[key].Served[who] = Day; return true;
             case "hall_close":
                 if (Halls[key].Kind == HallKind.Colony) Councils.Remove(Halls[key].Town);

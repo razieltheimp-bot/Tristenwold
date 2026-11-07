@@ -50,6 +50,42 @@ public class SettlingTests
     }
 
     [Fact]
+    public void A_colony_hires_guards_only_once_it_has_a_barracks_and_they_are_paid_from_the_till()
+    {
+        var city = CityEconomy.Start(5);
+        var hall = new Hall { Owner = "Ana", Hero = "Ana", Kind = HallKind.Colony, Name = "Ana's Colony", X = 900, Z = 900 };
+        Assert.True(city.Apply(CityAction.HallFound(hall)));
+        var colony = city.HallOf("Ana", HallKind.Colony)!;
+        Assert.False(city.Apply(CityAction.HallGuard(colony.Key))); // no barracks yet: the settlers defend it
+        Assert.True(ColonyDefence.SettlersFight(barracks: false, guardsStanding: 0));
+        for (var s = Settling.Market; s <= Settling.Barracks; s++) Assert.True(city.Apply(CityAction.Grew(colony.Town, s)));
+        colony.Members = 4;
+        for (var i = 0; i < ColonyDefence.MostGuards(colony); i++) Assert.True(city.Apply(CityAction.HallGuard(colony.Key)));
+        Assert.False(city.Apply(CityAction.HallGuard(colony.Key))); // more people, more guards; not past that
+        Assert.Equal(3, colony.Guards);
+        Assert.False(ColonyDefence.SettlersFight(barracks: true, guardsStanding: 2));
+        Assert.True(ColonyDefence.SettlersFight(barracks: true, guardsStanding: 0)); // every guard down: they take up arms again
+        colony.Till = 50;
+        city.TendHalls(Halls.JobSeconds);
+        Assert.Equal(50 + 3 * 4 - ColonyDefence.Wage * 3, colony.Till);
+        Assert.True(ColonyDefence.Blow(close: true, deviant: false) > ColonyDefence.Blow(close: true, deviant: true));
+    }
+
+    [Fact]
+    public void A_world_saved_before_the_barracks_keeps_its_walls()
+    {
+        var old = """{"Grown":{"camp:rimecrag":4,"camp:holt":3,"colony:Ana":2}}""";
+        var city = System.Text.Json.JsonSerializer.Deserialize<CityEconomy>(old)!;
+        Assert.Equal(Settling.Walls, city.GrownOf("camp:rimecrag")); // had its palisade: keeps it, and has its barracks
+        Assert.Equal(Settling.Chamber, city.GrownOf("camp:holt"));
+        Assert.Equal(Settling.Market, city.GrownOf("colony:Ana"));
+        Assert.Equal(Settling.Barracks, Settling.Next(Settling.Chamber)!.Stage);
+        var saved = System.Text.Json.JsonSerializer.Serialize(city);
+        Assert.DoesNotContain("\"Grown\"", saved);
+        Assert.Equal(Settling.Walls, System.Text.Json.JsonSerializer.Deserialize<CityEconomy>(saved)!.GrownOf("camp:rimecrag"));
+    }
+
+    [Fact]
     public void A_refuge_grows_a_step_at_a_time_and_a_colony_starts_with_its_tavern()
     {
         var city = CityEconomy.Start(5);

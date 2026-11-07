@@ -262,14 +262,15 @@ public partial class Enemy : Fighter
 
     /// <summary>
     /// A blow from one of the townsfolk (a stone, a bottle, a smith's hammer): a share of its health. It hurts, but it
-    /// never finishes it: that's for the hero, or the Watch.
+    /// never finishes it: that's for the hero, or the Watch. A colony's settlers, defending their own, may <paramref name="finish"/> it.
     /// </summary>
-    public void Pelted(double share)
+    public void Pelted(double share, bool finish = false)
     {
         if (State == EnemyState.Dead) return;
-        var blow = Math.Min(Stats.MaxHealth * share, Stats.Health - Stats.MaxHealth * TownDefence.FloorShare);
+        var blow = Math.Min(Stats.MaxHealth * share, Stats.Health - (finish ? 0 : Stats.MaxHealth * TownDefence.FloorShare));
         if (blow <= 0) return;
         Stats.Lose(blow);
+        if (Stats.Dead) { Die(); return; }
         Figure.Hurt();
         RefreshPlate();
     }

@@ -721,6 +721,43 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--colonywall"))
+        {
+            // A colony grown to its barracks and its first fortified wall, with its guards at their posts.
+            Vector3? isle = null;
+            for (var x = -5400; x <= 5400 && isle is null; x += 600)
+                for (var z = -5400; z <= 5400 && isle is null; z += 600)
+                    if (main.NoRoomForColonyForTest(new Vector3(x, 0, z)) is null) isle = new Vector3(x, 0, z);
+            if (isle is { } land)
+            {
+                main.TerrainNode.EnsureAround(land, 1);
+                main.PlayerNode.GlobalPosition = land with { Y = (float)main.World.Height(land.X, land.Z) + 1 };
+                await Frames(30);
+                while (main.PlayerNode.Hero.Level < 9) main.GainXp(Hero.XpToNext(main.PlayerNode.Hero.Level));
+                main.PlayerNode.Crowns += 2000;
+                main.FoundColonyForTest();
+                if (main.Economy.HallOf(main.PlayerNode.Company, HallKind.Colony) is { } h)
+                {
+                    h.Members = 6;
+                    h.Guards = 3;
+                    main.Economy.Growth[h.Town] = Settling.Walls;
+                    main.RedrawHallsForTest();
+                    await Frames(20);
+                    main.TendColoniesForTest();
+                    await Frames(30);
+                    var c = new Vector3((float)h.X, 0, (float)h.Z);
+                    c.Y = City.FloorAt(c);
+                    var gate = Mathf.Atan2(-c.Z, -c.X);
+                    var outward = new Vector3(Mathf.Cos(gate), 0, Mathf.Sin(gate));
+                    main.PlayerNode.GlobalPosition = c + outward * 60 + Vector3.Up * 2;
+                    await From("colonywall-gate", c + outward * 52 + Vector3.Up * 6, c + outward * 20 + Vector3.Up * 3);
+                    await From("colonywall-above", c + outward * 45 + new Vector3(0, 40, 0) + outward.Cross(Vector3.Up) * 30, c);
+                    await From("colonywall-yard", c - outward * 6 + Vector3.Up * 3, c + outward * 18 + Vector3.Up * 2);
+                }
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--colonyshop"))
         {
             // A colony founded out in open country, and an apprentice keeping its market stall.

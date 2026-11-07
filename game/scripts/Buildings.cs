@@ -221,6 +221,7 @@ public static class Buildings
             case "tower": Tower(b, rng, roof); break;
             case "church": Church(b, rng); break;
             case "keep": Keep(b, rng); break;
+            case "barracks": Barracks(b, roof); break;
             case "windmill": Windmill(b, rng); break;
             case "well": Well(b, roof); break;
             case "wall": WallSegment(b, 10, 7, 2.4f); break;
@@ -406,6 +407,37 @@ public static class Buildings
             b.Pop();
         }
         b.Solid(new Vector3(0, h / 2, 0), new Vector3(s + 4, h, s + 4));
+    }
+
+    /// <summary>A town's barracks: a squat stone hall with slit windows and a walk round its flat roof, a watch turret at
+    /// the back corner, and spear racks either side of the door.</summary>
+    static void Barracks(Builder b, Surface roof)
+    {
+        const float w = 9, d = 12, h = 5.6f;
+        b.Plinth(w, d, 0.4f);
+        b.Walls(w, d, 0.4f, h, Surface.Stone);
+        b.SlitWindows(w, d, 2.8f, 2);
+        b.Door(0, 0.4f, d / 2, 2f, 2.9f);
+        b.Box(Surface.Planks, new Vector3(-w / 2, h + 0.2f, -d / 2), new Vector3(w / 2, h + 0.4f, d / 2)); // the roof walk
+        b.Battlements(w, d, h + 0.4f);
+        b.Push(new Vector3(-w / 2, 0, -d / 2));
+        b.Round(1.9f, 0, h + 3.6f, Surface.Stone, 12);
+        b.Cone(2.4f, h + 3.6f, h + 6.4f, roof == Surface.Thatch ? Surface.Shingle : roof, 12);
+        b.Pop();
+        foreach (var side in new[] { -1f, 1f })
+        {
+            var (x, z) = (side * 2.7f, d / 2 + 0.45f);
+            foreach (var post in new[] { -0.75f, 0.75f }) b.Beam(new Vector3(x + post, 0.4f, z), new Vector3(x + post, 2.1f, z), 0.12f, Surface.Timber);
+            b.Beam(new Vector3(x - 0.75f, 1.9f, z), new Vector3(x + 0.75f, 1.9f, z), 0.1f, Surface.Timber);
+            b.Beam(new Vector3(x - 0.75f, 0.9f, z), new Vector3(x + 0.75f, 0.9f, z), 0.08f, Surface.Timber);
+            for (var k = 0; k < 4; k++) // the spears racked
+            {
+                var sx = x - 0.5f + k * 0.33f;
+                b.Beam(new Vector3(sx, 0.45f, z + 0.12f), new Vector3(sx, 2.6f, z + 0.04f), 0.05f, Surface.Timber);
+                b.Box(Surface.DarkStone, new Vector3(sx - 0.05f, 2.6f, z - 0.01f), new Vector3(sx + 0.05f, 2.85f, z + 0.09f));
+            }
+        }
+        b.Solid(new Vector3(0, h / 2, 0), new Vector3(w, h + 1, d));
     }
 
     static void Windmill(Builder b, Rng rng)

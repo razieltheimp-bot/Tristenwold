@@ -6,12 +6,12 @@ public sealed record GrowthStep(int Stage, string Name, string Builds, IReadOnly
 /// <summary>
 /// A refuge grows into a town as heroes bring it what it needs, a step at a time: a tavern (somewhere to stay, a bar to
 /// make it home at), then a market (traders, a general store), then a council chamber (a council sits, and a hero can
-/// win a seat on it), then a palisade and more homes, and it's a town. A colony is founded with its tavern already up,
-/// and goes on from there.
+/// win a seat on it), then a barracks (town guards can be hired; till then its own people defend it), and only then a
+/// fortified wall and more homes, and it's a town. A colony is founded with its tavern already up, and goes on from there.
 /// </summary>
 public static class Settling
 {
-    public const int Tavern = 1, Market = 2, Chamber = 3, Walls = 4;
+    public const int Tavern = 1, Market = 2, Chamber = 3, Barracks = 4, Walls = 5;
     /// <summary>Where a hero's colony starts: it's founded with its tavern.</summary>
     public const int ColonyStarts = Tavern;
 
@@ -23,8 +23,10 @@ public static class Settling
             "Traders come, and a general store opens."),
         new(Chamber, "a council chamber", "council", [("stone_block", 14), ("pine_log", 8)], 300,
             "A council sits, and a hero can win a seat on it."),
-        new(Walls, "a palisade and more homes", "house", [("pine_log", 24), ("stone_block", 8), ("iron_nails", 20)], 400,
-            "Walls, and room for more families: it's a town now."),
+        new(Barracks, "a barracks", "barracks", [("stone_block", 16), ("pine_log", 10), ("iron_ingot", 6)], 350,
+            "Town guards can be hired to keep the place: till now its own people have had to defend it. And with men to man it, a wall can go up."),
+        new(Walls, "a fortified wall and more homes", "house", [("stone_block", 30), ("pine_log", 16), ("iron_nails", 20)], 500,
+            "A stone wall with a gatehouse, and room for more families: it's a town now."),
     ];
 
     public static GrowthStep? Next(int stage) => Steps.FirstOrDefault(s => s.Stage == stage + 1);
@@ -36,15 +38,30 @@ public static class Settling
 public sealed partial class CityEconomy
 {
     /// <summary>How far each refuge or colony has grown (see <see cref="Settling"/>): refuges start at 0, colonies at their tavern.</summary>
-    public Dictionary<string, int> Grown { get; set; } = [];
+    public Dictionary<string, int> Growth { get; set; } = [];
 
-    public int GrownOf(string town) => Grown.TryGetValue(town, out var n) ? n : Settling.IsColony(town) ? Settling.ColonyStarts : 0;
+    /// <summary>
+    /// How growth was kept before the barracks came in, when the walls were step 4: a world saved then is read into
+    /// <see cref="Growth"/>, a place that had its walls keeping them (and getting its barracks for nothing). Never written.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, int>? Grown
+    {
+        get => null;
+        set
+        {
+            if (value is null) return;
+            foreach (var (town, n) in value) Growth.TryAdd(town, n >= Settling.Barracks ? Settling.Walls : n);
+        }
+    }
+
+    public int GrownOf(string town) => Growth.TryGetValue(town, out var n) ? n : Settling.IsColony(town) ? Settling.ColonyStarts : 0;
 
     /// <summary>The next step built, for everyone: only ever the next one.</summary>
     bool Grow(string town, int to)
     {
         if (town.Length is 0 or > 80 || to != GrownOf(town) + 1 || to > Settling.Steps.Count) return false;
-        Grown[town] = to;
+        Growth[town] = to;
         return true;
     }
 }

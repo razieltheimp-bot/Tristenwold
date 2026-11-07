@@ -108,6 +108,7 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction HallPay(string key, int crowns) => new("hall_pay", Crowns: crowns, Contract: key);
     public static CityAction HallTake(string key, string item, int crowns) => new("hall_take", item, crowns, key);
     public static CityAction HallLow(string key) => new("hall_low", Contract: key);
+    public static CityAction HallGuard(string key) => new("hall_guard", Contract: key);
     public static CityAction HallServed(string key, string who) => new("hall_served", who, Contract: key);
     public static CityAction HallClose(string key) => new("hall_close", Contract: key);
     /// <summary>A druid's tree, set in the ground for everyone.</summary>

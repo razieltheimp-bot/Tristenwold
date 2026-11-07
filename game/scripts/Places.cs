@@ -869,12 +869,13 @@ public partial class Places(Main main, WorldGen world) : Node3D
         return (doorAt.X, doorAt.Z);
     }
 
-    /// <summary>A refuge as far as it's grown (see Settling): a tavern, a market, a council chamber, a palisade and more homes.</summary>
+    /// <summary>A refuge as far as it's grown (see Settling): a tavern, a market, a council chamber, a barracks, a wall and more homes.</summary>
     void Refuge(Node3D parent, Settlement s, string colour, Built b)
     {
         var stage = main.Economy.GrownOf(s.Id);
         if (stage >= Settling.Tavern) Building(parent, s, "tavern", colour, s.Radius * 0.85, -s.Radius * 0.2, 0, name: $"The {s.Name.Replace(" Refuge", "")} Rest");
         if (stage >= Settling.Market) TownShop(b, parent, s, TownTrade.General, colour, -0.6, s.Radius * 0.9);
+        if (stage >= Settling.Barracks) Building(parent, s, "barracks", colour, -s.Radius * 0.55, -s.Radius * 0.75, 0);
         if (stage >= Settling.Walls)
         {
             Palisade(parent, s);

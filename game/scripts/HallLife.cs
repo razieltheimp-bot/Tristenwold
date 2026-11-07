@@ -131,6 +131,7 @@ public partial class Main
             kinds.Insert(0, "tavern");
             if (grown >= Settling.Market) kinds.Add("store");
             if (grown >= Settling.Chamber) kinds.Add("longhall");
+            if (grown >= Settling.Barracks) kinds.Add("barracks");
             if (grown >= Settling.Walls) kinds.AddRange(["house", "house"]);
         }
         // Round the yard, each building given as much of the ring as it's wide (and a gap), so none runs into the next;
@@ -144,7 +145,9 @@ public partial class Main
             var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * ring;
             Buildings.Place(root, kinds[i], at with { Y = City.FloorAt(at) }, Mathf.Atan2(centre.X - at.X, centre.Z - at.Z), i + 7, roof, inside: kinds[i] == "longhall" && h.Kind == HallKind.Colony ? "council" : null);
         }
-        var panels = (int)(Mathf.Tau * yard / FencePanel);
+        var walled = h.Kind == HallKind.Colony && _city.GrownOf(h.Town) >= Settling.Walls;
+        if (walled) FortifiedWall(root, centre, yard, gate, h.Key);
+        var panels = walled ? 0 : (int)(Mathf.Tau * yard / FencePanel);
         for (var i = 0; i < panels; i++)
         {
             var a = gate + (i + 0.5f) / panels * Mathf.Tau;
@@ -152,8 +155,8 @@ public partial class Main
             var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * yard;
             Models.Place(root, "medieval/neutral/fence_wood_straight.gltf", at with { Y = City.FloorAt(at) }, 1.8f * yard / HallYard * (int)(Mathf.Tau * HallYard / FencePanel) / panels, -a + Mathf.Pi / 2);
         }
-        var gateAt = centre + new Vector3(Mathf.Cos(gate), 0, Mathf.Sin(gate)) * (yard + 1.5f);
-        root.AddChild(new Label3D { Text = h.Name, Position = gateAt with { Y = City.FloorAt(gateAt) + 3.4f }, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 56, OutlineSize = 12, PixelSize = 0.012f, Modulate = new Color("#ffd27a") });
+        var gateAt = centre + new Vector3(Mathf.Cos(gate), 0, Mathf.Sin(gate)) * (yard + (walled ? 6 : 1.5f));
+        root.AddChild(new Label3D { Text = h.Name, Position = gateAt with { Y = City.FloorAt(gateAt) + (walled ? 7.5f : 3.4f) }, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 56, OutlineSize = 12, PixelSize = 0.012f, Modulate = new Color("#ffd27a") });
         if (h.Kind == HallKind.FightClub) // the pit: a ring of posts and rope in the middle of the yard
             for (var i = 0; i < 12; i++)
             {
@@ -164,6 +167,7 @@ public partial class Main
         if (h.Kind == HallKind.Chapel || h.Kind == HallKind.Monastery)
             root.AddChild(new OmniLight3D { Position = centre + Vector3.Up * 3, LightColor = new Color("#ffe8b0"), LightEnergy = 0.7f, OmniRange = 14 });
         // Its people, about the yard.
+        var people = new List<Body>();
         for (var i = 0; i < Math.Min(h.Members, 8); i++)
         {
             var a = gate + 0.6f + i * Mathf.Tau / Math.Max(4, Math.Min(h.Members, 8));
@@ -172,7 +176,28 @@ public partial class Main
             root.AddChild(body);
             body.GlobalPosition = at with { Y = City.FloorAt(at) };
             body.Rotation = new Vector3(0, Mathf.Atan2(centre.X - at.X, centre.Z - at.Z), 0);
+            people.Add(body);
         }
+        if (h.Kind == HallKind.Colony) Encamp(h, centre, yard, people); // they keep it safe
+    }
+
+    /// <summary>A colony's first fortified wall: stone, crenellated, all the way round the yard, with a gatehouse at the way in.</summary>
+    static void FortifiedWall(Node3D root, Vector3 centre, float yard, float gate, string key)
+    {
+        var r = yard + 1.5f;
+        const float length = 8;
+        var count = Mathf.CeilToInt(Mathf.Tau * r / (length - 0.6f)); // overlapping a little at the joins, so the curve has no gaps
+        var gap = (6.6f + length / 2) / r; // the gatehouse's width, each side of the way in
+        var seed = Math.Abs(key.GetHashCode());
+        for (var i = 0; i < count; i++)
+        {
+            var a = gate + (i + 0.5f) / count * Mathf.Tau;
+            if (Math.Abs(Mathf.Wrap(a - gate, -Mathf.Pi, Mathf.Pi)) < gap) continue;
+            var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * r;
+            Buildings.Place(root, "wall_low", at with { Y = City.FloorAt(at) - 0.3f }, Mathf.Atan2(centre.X - at.X, centre.Z - at.Z), seed + i, door: false);
+        }
+        var gateAt = centre + new Vector3(Mathf.Cos(gate), 0, Mathf.Sin(gate)) * r;
+        Buildings.Place(root, "gate", gateAt with { Y = City.FloorAt(gateAt) - 0.3f }, Mathf.Atan2(centre.X - gateAt.X, centre.Z - gateAt.Z), seed, door: false);
     }
 
     /// <summary>
@@ -217,6 +242,8 @@ public partial class Main
             }
             if (h.Members < Halls.MostMembers(_player.Hero.Level))
                 yield return ($"Take on another {plan.Member} ({plan.RecruitCost} crowns)", () => Recruit(person, h));
+            if (h.Kind == HallKind.Colony && _city.GrownOf(h.Town) >= Settling.Barracks && h.Guards < ColonyDefence.MostGuards(h))
+                yield return ($"Hire a town guard ({ColonyDefence.GuardCost} crowns, {ColonyDefence.Wage} a round from the till)", () => HireGuard(person, h));
             if (h.Till > 0) yield return ($"Empty the till ({h.Till} crowns)", () =>
             {
                 var take = h.Till;
@@ -252,9 +279,23 @@ public partial class Main
         var plan = h.Plan;
         var lines = new List<string> { $"{h.Members} {(h.Members == 1 ? plan.Member : plan.Members)}, room for {Halls.MostMembers(_player.Hero.Level)}. {h.Till} crowns in the till." };
         if (h.Kind == HallKind.ThievesGuild) lines.Add(_city.Day < h.LowUntil ? "We're lying low." : h.Heat > Halls.CaughtAt ? "The Watch is hot on us. Lie low, or lose someone." : "The Watch hasn't noticed us.");
+        if (h.Kind == HallKind.Colony)
+            lines.Add(_city.GrownOf(h.Town) < Settling.Barracks ? "No barracks yet, so if anything comes at us the settlers fight it off themselves. Build one and we can hire guards."
+                : h.Guards == 0 ? $"The barracks stands empty. Hire guards (up to {ColonyDefence.MostGuards(h)}) and the settlers can stick to their work."
+                : $"{h.Guards} town guard{(h.Guards == 1 ? "" : "s")} keep{(h.Guards == 1 ? "s" : "")} the place, of {ColonyDefence.MostGuards(h)} we could have.{(_city.GrownOf(h.Town) < Settling.Walls ? " With them to man it, we can put a wall up." : "")}");
         if (h.Kind is HallKind.FightClub or HallKind.Monastery) lines.Add($"Our {(h.Kind == HallKind.FightClub ? "fighters" : "teaching")}: {h.Prowess:0.0} of 10.");
         if (h.Chest.Count > 0) lines.Add("In the stores: " + string.Join(", ", h.Chest.Select(kv => Items.Count(kv.Key, kv.Value))) + ".");
         return string.Join(" ", lines);
+    }
+
+    void HireGuard(Person person, Hall h)
+    {
+        if (_player.Crowns < ColonyDefence.GuardCost) { Sound.Ui("error"); Say(person, $"A guard wants paying before they'll take the post. {ColonyDefence.GuardCost} crowns."); return; }
+        _player.Crowns -= ColonyDefence.GuardCost;
+        DoCity(CityAction.HallGuard(h.Key));
+        Sound.Ui("coin");
+        Save();
+        Say(person, $"Signed on at the barracks, and out to the post by tonight. That's {h.Guards} guard{(h.Guards == 1 ? "" : "s")}; the settlers can keep to their work now. Room for {ColonyDefence.MostGuards(h)} with the people we've got.");
     }
 
     void Recruit(Person person, Hall h)
