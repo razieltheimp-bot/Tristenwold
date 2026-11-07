@@ -105,8 +105,15 @@ public static class KitDesigns
     static Material DarkLeather => M("#2e1e14");
     static Material Iron => M("#5a5e66", true);
     static Material Steel => M("#c8d0da", true);
-    static Material Gold => M("#e0b040"); // left to read as its colour: forced metal, the cartoon shader greys it
-    static Material Brass => M("#c8964a");
+    static Material Gold => Shiny("#d8a030");
+    static Material Brass => Shiny("#b8863a");
+
+    /// <summary>Gold and brass in a plain metal material: the cartoon shader reads a warm colour as skin, or greys it if it's forced to metal.</summary>
+    static Material Shiny(string hex)
+    {
+        if (Mats.TryGetValue(hex, out var m)) return m;
+        return Mats[hex] = new StandardMaterial3D { AlbedoColor = new Color(hex), Metallic = 0.85f, Roughness = 0.32f, RimEnabled = true, Rim = 0.2f };
+    }
     static Material Bone => M("#efe4c8");
     static Material Wood => M("#6a4a2c");
 
