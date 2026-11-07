@@ -24,7 +24,7 @@ public sealed class Graft
         for (Node? n = s; n is not null && n != body; n = n.GetParent())
             if (n is Node3D n3) t = n3.Transform * t;
         _toBody = t;
-        Box = Models.Bounds(body);
+        Box = body is Animal { Measured: { } measured } ? measured : Models.Bounds(body);
         Tall = Box.End.Y;
     }
 
@@ -363,12 +363,10 @@ public static class Lairfolk
         return c;
     }
 
-    /// <summary>What Irohe calls up out of his fire: a long, lean serpent-dragon of flame, all glow and embers, that flies low.</summary>
+    /// <summary>What Irohe calls up out of his fire: an ember wyrm made all of flame (see <see cref="Game.Serpent"/>), all glow and embers.</summary>
     static Body? Serpent()
     {
-        if (Creature.Create("dragon.glb", 1.4f, coat: "dragons/red.png", glow: "dragons/red_corrupt_glow.png") is not { } c) return null;
-        foreach (var m in c.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>()) m.Scale = new Vector3(0.6f, 0.6f, 1.9f) * m.Scale; // drawn out long: a serpent, not a dragon
-        Recoat(c, m => { m.EmissionEnabled = true; m.Emission = new Color("#ff6a1a"); m.EmissionEnergyMultiplier = 1.4f; });
+        var c = Game.Serpent.Create(Game.Serpent.Look.Flame);
         c.AddChild(Placed(Light("#ff7a2a", 2.4f, 9, flicker: 0.3f), new Vector3(0, 1.2f, 0)));
         c.AddChild(Placed(Motes(new Color(1f, 0.55f, 0.15f, 0.9f), 0.12f, 40, new Vector3(0.5f, 0.4f, 2f), 1.2f), new Vector3(0, 1f, 0)));
         return c;

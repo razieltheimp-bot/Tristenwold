@@ -33,6 +33,15 @@ ANIMALS = {
     "bear_black": ("fauna/bear_black.xml", None),
     "boar": ("fauna/boar.xml", None),
     "hawk": ("fauna/hawk.xml", "animal_hawk.png"),
+    "bear_white": ("fauna/bear_white.xml", None),
+    "goat": ("fauna/goat.xml", None),
+    "fox_arctic": ("fauna/fox_arctic.xml", None),
+    "crocodile": ("fauna/crocodile.xml", None),
+    "tiger": ("fauna/tiger.xml", None),
+    "lioness": ("fauna/lioness.xml", None),
+    "bull": ("fauna/bull.xml", None),
+    "rabbit": ("fauna/rabbit1.xml", None),
+    "mastiff": ("fauna/mastiff.xml", None),
 }
 
 # 0 A.D.'s animation names, folded into the game's five.
@@ -76,14 +85,26 @@ def build(repo, name, actor, pick, work):
     files = {}
     for kind, rel in [("mesh", f"meshes/{mesh}"), ("texture", f"textures/skins/{texture}")] + [(c, f"animation/{f}") for c, f in clips.items()]:
         path = os.path.join(work, kind + os.path.splitext(rel)[1])
+        data = git(repo, f"{ART}/{rel}")
+        if path.endswith(".dae"):
+            # A few meshes (the rabbit's) name a texture with no texcoord, which Blender's importer refuses: the
+            # material is replaced below anyway, so give it one.
+            data = re.sub(rb'<texture texture="([^"]*)"\s*/>', rb'<texture texture="\1" texcoord="UVMap"/>', data)
         with open(path, "wb") as f:
-            f.write(git(repo, f"{ART}/{rel}"))
+            f.write(data)
         files[kind] = path
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.wm.collada_import(filepath=files["mesh"])
     rig = next(o for o in bpy.context.scene.objects if o.type == "ARMATURE")
     bodies = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+    # Some rigs (the tiger's, the lioness's, the crocodile's, the rabbit's) carry a scale on the armature that the
+    # glTF export puts on the skeleton but not the mesh, leaving the mesh's own numbers a hundredth of the size it's
+    # drawn: apply every rotation and scale first, so mesh and skeleton agree.
+    if not os.environ.get("ZERO_AD_NO_APPLY"):
+        bpy.ops.object.select_all(action="SELECT")
+        bpy.context.view_layer.objects.active = rig
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
     # The fur.
     image = bpy.data.images.load(files["texture"])
@@ -113,7 +134,9 @@ def build(repo, name, actor, pick, work):
             # These animations carry a scale that undoes the rig's own (2.5 on the pelvis against 0.4
             # on the armature), and positions measured in that scaled space: keep only the rotations,
             # which are the walk itself, or the animal balloons and floats.
-            for curve in [c for c in action.fcurves if c.data_path.endswith((".scale", ".location"))]:
+            # Some (the tiger's, the goat's) also scale and move the whole armature object: drop those too, and keep
+            # only the bones' rotations.
+            for curve in [c for c in action.fcurves if not (c.data_path.startswith("pose.bones") and "rotation" in c.data_path)]:
                 action.fcurves.remove(curve)
             action.name = clip
             action.use_fake_user = True

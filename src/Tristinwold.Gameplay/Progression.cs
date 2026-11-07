@@ -239,7 +239,7 @@ public sealed class Bond
     [JsonIgnore]
     public bool Steed => IsSteed(KindId);
 
-    public static bool IsSteed(string kindId) => kindId is "horse" or "wild_horse";
+    public static bool IsSteed(string kindId) => kindId is "horse" or "wild_horse" or "pegasus";
 
     [JsonIgnore]
     public string Stage => Role switch
@@ -342,6 +342,13 @@ public sealed class Bond
         "wolf" or "ice_wolf" or "fox" => "Savage Bite",
         "bear" => "Maul",
         "boar" or "deer" => "Gore",
+        "black_bear" or "white_bear" => "Maul",
+        "tiger" or "crag_lion" or "griffon" => "Rake",
+        "crocodile" => "Death Roll",
+        "aurochs" or "mountain_goat" => "Horn Charge",
+        "feral_hound" or "arctic_fox" or "sky_fox" or "hare" or "jackalope" => "Savage Bite",
+        "pegasus" => "Hoof Strike",
+        "ember_wyrm" => "Searing Bite",
         "frost_troll" or "goblin" => "Club Smash",
         "spriggan" => "Thorn Lash",
         "giant_rat" => "Gnaw",
@@ -359,6 +366,8 @@ public static class Taming
     /// <summary>The young of these can be raised: beasts and monsters (not people, and not the dead).</summary>
     public static bool Tameable(string kindId) => kindId is "giant_rat" or "wolf" or "ice_wolf" or "bear" or "frost_troll" or "mud_crab"
         or "spriggan" or "goblin" or "boar" or "deer" or "fox" or "kipine" or "deathcrest_ape" or "winged_ape" or "hawk" or "wild_horse"
+        or "black_bear" or "white_bear" or "tiger" or "crag_lion" or "crocodile" or "aurochs" or "feral_hound" or "arctic_fox" or "mountain_goat"
+        or "hare" or "sky_fox" or "jackalope" or "pegasus" or "griffon" or "ember_wyrm"
         || (kindId.StartsWith("dragon_") && !kindId.EndsWith("_corrupt"));
 
     /// <summary>What its young is called.</summary>
@@ -374,6 +383,21 @@ public static class Taming
         "winged_ape" => "Winged Ape Infant",
         "deer" => "Fawn",
         "boar" => "Boarlet",
+        "black_bear" => "Black Bear Cub",
+        "white_bear" => "White Bear Cub",
+        "tiger" => "Tiger Cub",
+        "crag_lion" => "Lion Cub",
+        "crocodile" => "Crocodile Hatchling",
+        "aurochs" => "Aurochs Calf",
+        "feral_hound" => "Hound Pup",
+        "arctic_fox" => "Snow Fox Kit",
+        "mountain_goat" => "Kid",
+        "hare" => "Leveret",
+        "sky_fox" => "Sky Fox Kit",
+        "jackalope" => "Jackalope Kit",
+        "pegasus" => "Winged Foal",
+        "griffon" => "Griffon Chick",
+        "ember_wyrm" => "Ember Hatchling",
         "giant_rat" => "Giant Rat Kit",
         "mud_crab" => "Mud Crab Hatchling",
         "spriggan" => "Spriggan Sapling",

@@ -6,10 +6,14 @@ namespace Tristinwold.Game;
 /// Tails, all in one smooth piece: a tube that tapers from the root to the tip and curls up along its length, rather
 /// than a stack of cones. A dragon's has a ridge of spines down its back and a spade at the tip; a lizard's a row of
 /// low scales; an ape's is long, thin and plain. Built in whatever space the root is given in (a body's, a bone's).
+/// The same smooth tube (<see cref="Tube"/>) makes horns, antler beams and beaks.
 /// </summary>
 public static class Tails
 {
     public enum Kind { Dragon, Lizard, Ape }
+
+    /// <summary>A tube as built: the mesh, the line down its middle, which way is "up" off it at each point, and its radius there.</summary>
+    public sealed record Built(MeshInstance3D Mesh, Vector3[] Path, Vector3[] Ups, Func<int, float> Radius);
 
     /// <param name="root">Where it grows from.</param>
     /// <param name="way">Which way it sets off.</param>
@@ -19,21 +23,69 @@ public static class Tails
     public static Node3D Make(Vector3 root, Vector3 way, float length, float thick, float curl, Material skin, Kind kind, Material? ridge = null)
     {
         var tail = new Node3D { Name = "Tail" };
-        const int n = 16, sides = 12;
+        const int n = 16;
+        var b = Tube(root, way, length, thick, Vector3.Up * curl, kind == Kind.Ape ? 0.35f : 0.12f, kind == Kind.Ape ? 0.5f : 0.9f, skin, n, 12, 0.85f);
+        b.Mesh.Name = "TailBody";
+        tail.AddChild(b.Mesh);
+        var (path, ups, radius) = (b.Path, b.Ups, b.Radius);
+        var end = (path[n] - path[n - 1]).Normalized();
+
+        MeshInstance3D Spine(Vector3 at, Vector3 point, float height, float width, Material m) => new()
+        {
+            Mesh = new CylinderMesh { TopRadius = 0.001f, BottomRadius = width, Height = height, RadialSegments = 6, Rings = 1 },
+            Transform = new Transform3D(new Basis(new Quaternion(Vector3.Up, point.Normalized())) * Basis.FromScale(new Vector3(1, 1, 0.45f)), at + point.Normalized() * height * 0.4f),
+            MaterialOverride = m,
+        };
+        switch (kind)
+        {
+            case Kind.Dragon:
+            {
+                var spines = ridge ?? skin;
+                for (var i = 1; i < n - 3; i += 2)
+                {
+                    var back = (path[i + 1] - path[i]).Normalized();
+                    tail.AddChild(Spine(path[i] + ups[i] * radius(i) * 0.8f, ups[i] - back * 0.6f, radius(i) * 1.1f, radius(i) * 0.35f, spines));
+                }
+                // The spade: a flat, pointed blade of hide at the tip.
+                var basis = Basis.LookingAt(-end, ups[n]);
+                tail.AddChild(new MeshInstance3D
+                {
+                    Mesh = new SphereMesh { Radius = 1, Height = 2, RadialSegments = 12, Rings = 6 }, MaterialOverride = spines,
+                    Transform = new Transform3D(basis * Basis.FromScale(new Vector3(thick * 0.55f, thick * 0.12f, thick * 0.8f)), path[n] + end * thick * 0.45f),
+                });
+                break;
+            }
+            case Kind.Lizard:
+            {
+                var scales = ridge ?? skin;
+                for (var i = 1; i < n - 2; i++)
+                {
+                    var back = (path[i + 1] - path[i]).Normalized();
+                    tail.AddChild(Spine(path[i] + ups[i] * radius(i) * 0.78f, ups[i] - back * 0.9f, radius(i) * 0.45f, radius(i) * 0.3f, scales));
+                }
+                break;
+            }
+        }
+        return tail;
+    }
+
+    /// <summary>
+    /// A smooth tube along a curve: off from <paramref name="root"/> along <paramref name="way"/>, its heading turned by
+    /// <paramref name="bend"/> over its length, tapering from <paramref name="thick"/> to <paramref name="tip"/> of that
+    /// (a <paramref name="taper"/> under 1 keeps it full longer), rounded at the end. <paramref name="flat"/> squashes it
+    /// top to bottom (1 is round).
+    /// </summary>
+    public static Built Tube(Vector3 root, Vector3 way, float length, float thick, Vector3 bend, float tip, float taper, Material material, int n = 12, int sides = 10, float flat = 1)
+    {
         var path = new Vector3[n + 1];
         var heading = way.Normalized();
         path[0] = root;
         for (var i = 1; i <= n; i++)
         {
             path[i] = path[i - 1] + heading * length / n;
-            heading = (heading + Vector3.Up * curl / n).Normalized();
+            heading = (heading + bend / n).Normalized();
         }
-        var tip = kind == Kind.Ape ? 0.35f : 0.12f;
-        float Radius(int i)
-        {
-            var t = (float)i / n;
-            return thick * (tip + (1 - tip) * Mathf.Pow(1 - t, kind == Kind.Ape ? 0.5f : 0.9f));
-        }
+        float Radius(int i) => thick * (tip + (1 - tip) * Mathf.Pow(1 - (float)i / n, taper));
 
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
@@ -51,9 +103,8 @@ public static class Tails
             for (var k = 0; k <= sides; k++)
             {
                 var a = Mathf.Tau * k / sides;
-                norms[i, k] = side * Mathf.Cos(a) + up * Mathf.Sin(a);
-                // A little flatter top to bottom, as a real tail is.
-                rings[i, k] = path[i] + side * Mathf.Cos(a) * Radius(i) + up * Mathf.Sin(a) * Radius(i) * 0.85f;
+                norms[i, k] = (side * Mathf.Cos(a) + up * Mathf.Sin(a) / flat).Normalized();
+                rings[i, k] = path[i] + side * Mathf.Cos(a) * Radius(i) + up * Mathf.Sin(a) * Radius(i) * flat;
             }
         }
         void Tri(Vector3 a, Vector3 b, Vector3 c, Vector3 na, Vector3 nb, Vector3 nc)
@@ -73,45 +124,6 @@ public static class Tails
         var end = (path[n] - path[n - 1]).Normalized();
         var cap = path[n] + end * Radius(n);
         for (var k = 0; k < sides; k++) Tri(rings[n, k], rings[n, k + 1], cap, norms[n, k], norms[n, k + 1], end);
-
-        tail.AddChild(new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = skin, Name = "TailBody" });
-
-        MeshInstance3D Spine(Vector3 at, Vector3 point, float height, float width, Material m) => new()
-        {
-            Mesh = new CylinderMesh { TopRadius = 0.001f, BottomRadius = width, Height = height, RadialSegments = 6, Rings = 1 },
-            Transform = new Transform3D(new Basis(new Quaternion(Vector3.Up, point.Normalized())) * Basis.FromScale(new Vector3(1, 1, 0.45f)), at + point.Normalized() * height * 0.4f),
-            MaterialOverride = m,
-        };
-        switch (kind)
-        {
-            case Kind.Dragon:
-            {
-                var spines = ridge ?? skin;
-                for (var i = 1; i < n - 3; i += 2)
-                {
-                    var back = (path[i + 1] - path[i]).Normalized();
-                    tail.AddChild(Spine(path[i] + ups[i] * Radius(i) * 0.8f, ups[i] - back * 0.6f, Radius(i) * 1.1f, Radius(i) * 0.35f, spines));
-                }
-                // The spade: a flat, pointed blade of hide at the tip.
-                var basis = Basis.LookingAt(-end, ups[n]);
-                tail.AddChild(new MeshInstance3D
-                {
-                    Mesh = new SphereMesh { Radius = 1, Height = 2, RadialSegments = 12, Rings = 6 }, MaterialOverride = spines,
-                    Transform = new Transform3D(basis * Basis.FromScale(new Vector3(thick * 0.55f, thick * 0.12f, thick * 0.8f)), path[n] + end * thick * 0.45f),
-                });
-                break;
-            }
-            case Kind.Lizard:
-            {
-                var scales = ridge ?? skin;
-                for (var i = 1; i < n - 2; i++)
-                {
-                    var back = (path[i + 1] - path[i]).Normalized();
-                    tail.AddChild(Spine(path[i] + ups[i] * Radius(i) * 0.78f, ups[i] - back * 0.9f, Radius(i) * 0.45f, Radius(i) * 0.3f, scales));
-                }
-                break;
-            }
-        }
-        return tail;
+        return new Built(new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = material }, path, ups, Radius);
     }
 }

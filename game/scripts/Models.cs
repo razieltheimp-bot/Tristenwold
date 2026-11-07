@@ -296,6 +296,21 @@ public abstract partial class Body : Node3D
         "hawk" => (Body?)Creature.Create("hawk.glb", 0.35f) ?? Beast.Rat(),
         "bear" => (Body?)Creature.Create(GD.Randf() < 0.3f ? "bear_black.glb" : "bear.glb", 1.5f) ?? Beast.Bear(),
         "mud_crab" => Beast.Crab(),
+        // Serpents, built whole and rippling (see Serpent).
+        "sea_serpent" => Serpent.Create(Serpent.Look.Sea),
+        "leviathan" => Serpent.Create(Serpent.Look.Leviathan),
+        "ember_wyrm" => Serpent.Create(Serpent.Look.Land),
+        // More of the wilds, from 0 A.D. like the wolf and the bears.
+        "black_bear" => (Body?)Creature.Create("bear_black.glb", 1.4f) ?? Beast.Bear(),
+        "white_bear" => (Body?)Creature.Create("bear_white.glb", 1.9f) ?? Beast.Bear(),
+        "tiger" => (Body?)Creature.Create("tiger.glb", 1.15f) ?? Beast.Wolf(new Color("#d8a050")),
+        "crag_lion" => (Body?)Creature.Create("lioness.glb", 1.25f) ?? Beast.Wolf(new Color("#c8a060")),
+        "crocodile" => (Body?)Creature.Create("crocodile.glb", 0.55f) ?? Beast.Crab(),
+        "aurochs" => (Body?)Creature.Create("bull.glb", 1.75f) ?? Beast.Bear(),
+        "feral_hound" => (Body?)Creature.Create("mastiff.glb", 0.85f) ?? Beast.Wolf(new Color("#6a5a48")),
+        "arctic_fox" => (Body?)Creature.Create("fox_arctic.glb", 0.5f) ?? Beast.Wolf(new Color("#eef0f2")),
+        "mountain_goat" => (Body?)Creature.Create("goat.glb", 1.0f) ?? Beast.Wolf(new Color("#e8e2d4")),
+        "hare" => (Body?)Creature.Create("rabbit.glb", 0.35f) ?? Beast.Rat(),
         // Farm and town animals, birds, fish and whales: Quaternius's packs (CC0).
         "cow" => (Body?)Creature.Create("cow.glb", 1.45f) ?? Beast.Bear(),
         "horse" or "wild_horse" => (Body?)Creature.Create("horse.glb", 1.75f, look == "wild_horse" ? new Color("#8a6a4a") : null) ?? Beast.Wolf(new Color("#6a4a30")),
@@ -1194,13 +1209,39 @@ public abstract partial class Animal : Body
         Model = model;
         AddChild(model);
         var box = Models.Bounds(model);
+        // A few converted animals (the lioness, the rabbit) keep their mesh at another scale from their skeleton, and
+        // the skeleton is what they're drawn by: when the two disagree by a long way, measure by the bones (and a little
+        // over, for the fur and ears beyond the last bone).
+        var bones = BoneBox(model);
+        var byBones = modelHeight is null && bones is { } bb && bb.Size.Y > 0 && box.Size.Y > 0 && (bb.Size.Y > box.Size.Y * 3 || bb.Size.Y < box.Size.Y / 3);
+        if (byBones) box = new Aabb(bones!.Value.Position, bones.Value.Size with { Y = bones.Value.Size.Y * 1.18f });
         var tall = modelHeight ?? box.Size.Y;
         if (tall > 0) model.Scale = Vector3.One * (height / tall);
         model.RotationDegrees = new Vector3(0, yaw, 0);
         // Stand on the ground: some models (the dragon) have their origin mid-body, not at the feet.
         if (modelHeight is null && tall > 0) model.Position = model.Position with { Y = -box.Position.Y * model.Scale.Y };
+        if (byBones) Measured = model.Transform * box;
         _meshes.AddRange(model.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>());
         return true;
+    }
+
+    /// <summary>Its true box in its own space, where the mesh's own measure couldn't be trusted (see <see cref="Load"/>).</summary>
+    public Aabb? Measured { get; private set; }
+
+    /// <summary>The box round a model's bones at rest, in the model's own space.</summary>
+    static Aabb? BoneBox(Node3D model)
+    {
+        if (model.FindChildren("*", "Skeleton3D", true, false).OfType<Skeleton3D>().FirstOrDefault() is not { } s || s.GetBoneCount() == 0) return null;
+        var t = Transform3D.Identity;
+        for (Node? n = s; n is not null && n != model; n = n.GetParent())
+            if (n is Node3D n3) t = n3.Transform * t;
+        Aabb? box = null;
+        for (var i = 0; i < s.GetBoneCount(); i++)
+        {
+            var p = t * s.GetBoneGlobalRest(i).Origin;
+            box = box is { } b ? b.Expand(p) : new Aabb(p, Vector3.Zero);
+        }
+        return box;
     }
 
     /// <summary>Paints the model with another texture (a dragon's colour), shiny if metallic.</summary>
@@ -1393,7 +1434,11 @@ public partial class Creature : Animal
         _wings = DragonWings.Grow(Model, 4.5f * 1.55f / Model.Scale.X, membrane, bone, metallic, glow);
     }
 
-    public bool Winged => _wings is not null;
+    public bool Winged => _wings is not null || Flaps is not null;
+
+    /// <summary>Wings grown on a beast that has none in its model (a kipine's, a winged ape's): with them it can fly, as a dragon does.</summary>
+    public FlapWings? Flaps { get; set; }
+    bool _flapping;
 
     /// <summary>Grows ice spikes on a frost dragon's back (violet-black ice on a corrupted one).</summary>
     public void Freeze(bool corrupt = false) => IceRidge.Grow(Model, corrupt);
@@ -1455,7 +1500,8 @@ public partial class Creature : Animal
 
     public override void Move(float speed, bool grounded, bool swimming)
     {
-        _flying = _wings is not null && !grounded && !Dead;
+        _flying = Winged && !grounded && !Dead;
+        if (Flaps is { } flaps && _flying != _flapping) flaps.Flying = _flapping = _flying; // beating hard while it's up, folding them when it lands
         _speed = speed;
         if (Dead || _busy > 0) return;
         if (_flying) { Play("Idle", 0.5f); return; } // legs tucked, the wings do the work

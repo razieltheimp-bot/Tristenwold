@@ -239,7 +239,9 @@ public static class Quests
     static string Plural(string kindId) => kindId switch
     {
         "bandit" => "bandits", "draugr" => "draugr", "wolf" => "wolves", "ice_wolf" => "ice wolves", "bear" => "bears",
-        "frost_troll" => "trolls", "boar" => "boars", "goblin" => "goblins", "giant_rat" => "giant rats", "mud_crab" => "mud crabs", "spriggan" => "spriggans",
+        "frost_troll" => "trolls", "boar" => "boars", "crocodile" => "crocodiles", "aurochs" => "aurochs", "feral_hound" => "feral hounds", "tiger" => "snow tigers",
+        "crag_lion" => "crag lions", "black_bear" => "black bears", "white_bear" => "white bears", "griffon" => "griffons",
+        "sea_serpent" => "sea serpents", "leviathan" => "leviathans", "ember_wyrm" => "ember wyrms", "goblin" => "goblins", "giant_rat" => "giant rats", "mud_crab" => "mud crabs", "spriggan" => "spriggans",
         _ => Bestiary.Get(kindId).Name.ToLowerInvariant() + "s",
     };
 

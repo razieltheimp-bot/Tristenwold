@@ -1083,6 +1083,72 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--beasts"))
+        {
+            // The new beasts of the wilds in rows, side on; the crossings and the kipine close; then a winged ape and a griffon up in the air.
+            var stand = new Vector3(-150, 0, -120);
+            main.TerrainNode.EnsureAround(stand, 1);
+            p.GlobalPosition = stand + new Vector3(0, 1, -16);
+            await Frames(30);
+            main.HudNode.Visible = false;
+            var ground = City.FloorAt(stand);
+            async Task Row(string name, string[] kinds, float gap, Vector3 lens, Vector3 look, float shift = 0)
+            {
+                var stand0 = stand;
+                stand += new Vector3(shift, 0, 0);
+                var row = new List<Enemy>();
+                for (var i = 0; i < kinds.Length; i++)
+                {
+                    var e = Enemy.Create(Bestiary.Get(kinds[i]), stand);
+                    e.Carried = true;
+                    main.AddChild(e);
+                    var at = stand + new Vector3((i - (kinds.Length - 1) / 2f) * gap, 0, 0);
+                    e.GlobalPosition = at with { Y = City.FloorAt(at) };
+                    e.RotationDegrees = new Vector3(0, 90, 0);
+                    row.Add(e);
+                }
+                await Frames(40);
+                cam.GlobalPosition = stand with { Y = ground } + lens;
+                cam.LookAt(stand with { Y = ground } + look, Vector3.Up);
+                cam.MakeCurrent();
+                await Shot(name);
+                foreach (var e in row) e.QueueFree();
+                await Frames(2);
+                stand = stand0;
+            }
+            await Row("beasts-big", ["black_bear", "white_bear", "tiger", "crag_lion", "aurochs", "crocodile"], 3.0f, new Vector3(0, 2.2f, 10.5f), new Vector3(0, 0.8f, 0));
+            await Row("beasts-small", ["feral_hound", "arctic_fox", "mountain_goat", "hare"], 1.6f, new Vector3(0, 1.1f, 5.0f), new Vector3(0, 0.45f, 0));
+            await Row("beasts-crossings", ["sky_fox", "jackalope", "pegasus", "griffon"], 2.6f, new Vector3(0, 1.6f, 7.5f), new Vector3(0, 0.8f, 0), shift: 30);
+            await Row("beasts-kipine", ["kipine"], 1, new Vector3(-3.4f, 2.1f, 1.8f), new Vector3(-1.0f, 1.6f, 0));
+            await Row("beasts-jackalope", ["jackalope", "sky_fox"], 1.4f, new Vector3(0.3f, 0.9f, 2.6f), new Vector3(0, 0.35f, 0), shift: 30);
+            await Row("beasts-serpents", ["ember_wyrm", "sea_serpent", "leviathan"], 9f, new Vector3(0, 9f, 24f), new Vector3(0, 1.5f, 0));
+            await Row("beasts-wyrm", ["ember_wyrm"], 1, new Vector3(-6.5f, 2.6f, 4.5f), new Vector3(-0.5f, 0.9f, 0));
+            await Row("beasts-seaserpent", ["sea_serpent"], 1, new Vector3(-8f, 3.5f, 7f), new Vector3(1f, 1.4f, 0));
+            // Up in the air: they take off as dragons do (with nobody near to come down and fight).
+            p.GlobalPosition = stand + new Vector3(0, 1, -90);
+            var fliers = new List<Enemy>();
+            foreach (var (kind, dx) in new[] { ("winged_ape", -3f), ("griffon", 3f) })
+            {
+                var e = Enemy.Create(Bestiary.Get(kind), stand + new Vector3(dx, 0, 0));
+                main.AddChild(e);
+                var at = stand + new Vector3(dx, 0, 0);
+                e.GlobalPosition = at with { Y = City.FloorAt(at) + 0.3f };
+                e.TakeOff(9, 120);
+                fliers.Add(e);
+            }
+            for (var k = 0; k < 4; k++)
+            {
+                await Frames(60);
+                GD.Print($"flight {k}: {string.Join(", ", fliers.Select(f => $"{f.Kind.Id} {f.State} airborne={f.Airborne} wants {f.AltitudeForTest:0.0} up {f.GlobalPosition.Y - City.FloorAt(f.GlobalPosition):0.0}"))}");
+            }
+            var mid = (fliers[0].GlobalPosition + fliers[1].GlobalPosition) / 2;
+            GD.Print($"fliers: {string.Join(", ", fliers.Select(f => $"{f.Kind.Id} canfly={f.CanFly} airborne={f.Airborne} up {f.GlobalPosition.Y - City.FloorAt(f.GlobalPosition):0.0} m"))}");
+            cam.GlobalPosition = mid + new Vector3(0, -4f, 14f);
+            cam.LookAt(mid, Vector3.Up);
+            await Shot("beasts-flying");
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--gear"))
         {
             // Close on the armoury's pieces laid out in a row, then heroes in armour, helms and hats, then the tails from behind (run with --humans).

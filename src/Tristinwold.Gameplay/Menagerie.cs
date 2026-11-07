@@ -34,6 +34,18 @@ public static class Menagerie
         new("spriggan", 3, 5, "Grown from a seed of the old woods. It heals the ground it walks on, and hates fire."),
         new("bear", 4, 3, "A cave bear cub. In a year it'll be bigger than you, and much stronger."),
         new("kipine", 4, 4, "Part owl, part bear, part stag, with wings. Mind the antlers."),
+        new("hare", 1, 1, "It won't fight for you, but it'll never be caught."),
+        new("arctic_fox", 1, 1, "White as snow, and it hides in it."),
+        new("jackalope", 1, 2, "A hare with antlers. Yes, really. It headbutts."),
+        new("feral_hound", 2, 2, "Born wild in the hills. Raised by hand, it's as loyal as any dog."),
+        new("sky_fox", 2, 3, "A fox with an eagle's wings. It flies off, and it comes back. Usually."),
+        new("black_bear", 3, 3, "Smaller than a cave bear, and a good deal friendlier."),
+        new("crocodile", 3, 4, "It will never love you. It will bite whatever you point at."),
+        new("crag_lion", 4, 4, "From the high rocks. Proud, and it hunts like nothing else."),
+        new("tiger", 4, 4, "A snow tiger cub. Grown, it's the most beautiful thing that will ever try to eat you."),
+        new("pegasus", 4, 4, "A winged foal. Grown, it'll carry you over the mountains."),
+        new("white_bear", 5, 4, "A white bear cub. The biggest bear there is, and it knows it."),
+        new("griffon", 5, 5, "A griffon chick. Half eagle, half lion, all temper. Fly one and nothing on the ground can touch you."),
         new("frost_troll", 5, 5, "A troll whelp. It'll break anything that comes for you, and anything you leave lying about."),
     ];
 

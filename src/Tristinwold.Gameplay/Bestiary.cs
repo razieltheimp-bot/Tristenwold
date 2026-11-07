@@ -72,9 +72,29 @@ public static class Bestiary
         new("spriggan", "Spriggan", 140, 14, 4.5, 30, 2.0, 1.4, DamageKind.Poison, "#8a7a3a", 2.0),
         new("goblin", "Goblin", 75, 9, 5.2, 30, 1.6, 1.0, DamageKind.Physical, "#6a8a4a", 1.3),
         new("boar", "Wild Boar", 90, 10, 6.0, 30, 1.5, 1.1, DamageKind.Physical, "#4a3a2e", 0.9),
+        // More of the wilds: bears black and white, the great cats, crocodiles in the marsh, wild cattle and hounds.
+        new("black_bear", "Black Bear", 200, 16, 5.2, 50, 2.0, 1.6, DamageKind.Physical, "#2a2420", 1.4),
+        new("white_bear", "White Bear", 380, 26, 5.0, 80, 2.4, 1.8, DamageKind.Physical, "#e8e4da", 1.9),
+        new("tiger", "Snow Tiger", 300, 26, 7.2, 40, 2.2, 1.0, DamageKind.Physical, "#d8a050", 1.15),
+        new("crag_lion", "Crag Lion", 240, 22, 7.0, 30, 2.0, 1.0, DamageKind.Physical, "#c8a060", 1.1),
+        new("crocodile", "Marsh Crocodile", 240, 22, 4.0, 140, 2.2, 1.6, DamageKind.Physical, "#4a5a34", 0.55),
+        new("aurochs", "Aurochs", 300, 20, 6.0, 80, 2.2, 1.6, DamageKind.Physical, "#2e2620", 1.75, Wary: true),
+        new("feral_hound", "Feral Hound", 60, 9, 7.0, 10, 1.5, 0.9, DamageKind.Physical, "#6a5a48", 0.85),
+        // The strange crossings of the wilds: no one knows how they came to be, and they don't say.
+        new("griffon", "Griffon", 420, 28, 7.0, 70, 2.4, 1.2, DamageKind.Physical, "#b08a50", 1.5),
+        // Serpents: in the open sea, rolling through the waves, and on land, snaking over the high ground with fire on their backs.
+        new("sea_serpent", "Sea Serpent", 520, 28, 7.5, 90, 4.0, 1.4, DamageKind.Physical, "#2f8ea6", 2.4),
+        new("leviathan", "Leviathan", 2400, 52, 6.0, 220, 7.0, 2.0, DamageKind.Physical, "#3a4250", 4.8),
+        new("ember_wyrm", "Ember Wyrm", 460, 26, 6.8, 100, 3.2, 1.2, DamageKind.Fire, "#c25420", 1.5),
         // Quarry: they bolt when they see you.
         new("deer", "Deer", 50, 4, 8.5, 0, 1.4, 1.2, DamageKind.Physical, "#8a6a48", 1.3, Timid: true),
         new("fox", "Red Fox", 25, 3, 7.5, 0, 1.0, 1.0, DamageKind.Physical, "#c06a30", 0.5, Timid: true),
+        new("arctic_fox", "Arctic Fox", 28, 3, 7.5, 0, 1.0, 1.0, DamageKind.Physical, "#eef0f2", 0.5, Timid: true),
+        new("mountain_goat", "Mountain Goat", 60, 6, 7.5, 20, 1.4, 1.2, DamageKind.Physical, "#e8e2d4", 1.0, Timid: true),
+        new("hare", "Hare", 12, 1, 9.0, 0, 0.6, 1.0, DamageKind.Physical, "#a08a6a", 0.35, Timid: true),
+        new("sky_fox", "Sky Fox", 30, 4, 8.0, 0, 1.0, 1.0, DamageKind.Physical, "#c86a30", 0.55, Timid: true),
+        new("jackalope", "Jackalope", 20, 3, 9.0, 0, 0.7, 1.0, DamageKind.Physical, "#9a7a5a", 0.4, Timid: true),
+        new("pegasus", "Winged Horse", 180, 8, 10.5, 20, 1.8, 1.4, DamageKind.Physical, "#f0eee8", 1.8, Timid: true),
         // Farm and town animals, and wild horses on the open land: they run, they don't fight.
         new("cow", "Cow", 120, 4, 4.5, 10, 1.6, 1.4, DamageKind.Physical, "#e8e4dc", 1.45, Timid: true),
         new("sheep", "Sheep", 50, 2, 5.0, 5, 1.0, 1.2, DamageKind.Physical, "#e8e4d8", 0.95, Timid: true),

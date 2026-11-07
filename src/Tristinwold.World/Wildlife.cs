@@ -55,6 +55,7 @@ public static class Wildlife
         "dire_imp" => [Trick.Vanish],
         "imp" => [Trick.Shift],
         "winged_ape" => [Trick.Throw, Trick.Dive],
+        "griffon" => [Trick.Dive],
         _ => [],
     };
 
@@ -66,8 +67,12 @@ public static class Wildlife
     /// <summary>Nothing that hunts people lives this close to Tristinwold.</summary>
     public const double SafeRadius = 450;
 
+    /// <summary>What lives in the sea and won't leave it.</summary>
+    public static bool Aquatic(string kind) => kind is "sea_serpent" or "leviathan";
+
     /// <summary>Animals that run rather than fight.</summary>
-    public static readonly IReadOnlySet<string> Timid = new HashSet<string> { "deer", "fox", "wild_horse", "cow", "sheep", "pig", "hen", "horse", "dog", "cat" };
+    public static readonly IReadOnlySet<string> Timid = new HashSet<string> { "deer", "fox", "wild_horse", "cow", "sheep", "pig", "hen", "horse", "dog", "cat",
+        "arctic_fox", "mountain_goat", "hare", "sky_fox", "jackalope", "pegasus" };
 
     public static IEnumerable<Herd> Near(WorldGen world, double x, double z, double radius)
     {
@@ -86,6 +91,14 @@ public static class Wildlife
         var x = (cx + 0.15 + rng.NextDouble() * 0.7) * Cell;
         var z = (cz + 0.15 + rng.NextDouble() * 0.7) * Cell;
         var h = world.Height(x, z);
+        if (h < WorldGen.WaterLevel - 4)
+        {
+            // Open water: now and then a sea serpent, and far out a leviathan; never in sight of Tristinwold's harbour.
+            var far = WorldGen.Danger(x, z);
+            if (Math.Sqrt(x * x + z * z) < SafeRadius * 1.6 || !rng.Chance(Math.Min(0.25, 0.06 * far))) return null;
+            var deep = far > 3 && rng.Chance(0.18) ? "leviathan" : "sea_serpent";
+            return new Herd($"wild_{cx}_{cz}", deep, x, z, deep == "sea_serpent" && rng.Chance(0.3) ? 2 : 1, 40);
+        }
         if (h < WorldGen.WaterLevel + 0.6) return null;
         // Settlements keep their own: no wild animals wander through a town or a bandit camp.
         if (world.SettlementsNear(x, z, 60).Any(s => s.DistanceTo(x, z) < s.Radius + (s.IsCity ? 90 : 40))) return null;
@@ -101,12 +114,18 @@ public static class Wildlife
         var d = safe ? 0 : danger;
         (string, double)[] choices = biome switch
         {
-            Biome.AutumnForest => [("deer", 4), ("fox", 2), ("wild_horse", 1.2), ("wolf", 0.8 * d), ("bear", 0.3 * d), ("spriggan", 0.25 * d), ("boar", 0.7 * d), ("goblin", 0.4 * d), ("kipine", 0.18 * d), ("imp", 0.12 * d)],
-            Biome.PineForest => [("deer", 3.5), ("fox", 1.5), ("wolf", 1.1 * d), ("bear", 0.6 * d), ("boar", 0.5 * d), ("goblin", 0.4 * d), ("kipine", 0.25 * d), ("deathcrest_ape", 0.15 * d), ("winged_ape", 0.12 * d)],
-            Biome.Marsh => [("goblin", 0.3 * d), ("giant_rat", 3), ("mud_crab", near ? 3 : 0.5), ("deer", 1), ("wolf", 0.5 * d), ("deathcrest_ape", 0.35 * d), ("dire_imp", 0.2 * d)],
-            Biome.Tundra => [("deer", 2), ("fox", 1), ("wild_horse", 1.5), ("wolf", 2 * d), ("ice_wolf", 1 * d), ("bear", 0.5 * d), ("winged_ape", 0.2 * d)],
-            Biome.Snowfield => [("ice_wolf", 1.4 * Math.Max(d, 0.1)), ("frost_troll", 0.5 * d), ("deer", 0.8), ("fox", 0.8)],
-            _ => [("bear", 1.5 * Math.Max(d, 0.1)), ("frost_troll", 1 * d), ("wolf", 1.5 * d), ("deer", 0.6), ("goblin", 0.6 * d), ("deathcrest_ape", 0.4 * d), ("dire_imp", 0.3 * d), ("winged_ape", 0.4 * d)],
+            Biome.AutumnForest => [("deer", 4), ("fox", 2), ("wild_horse", 1.2), ("wolf", 0.8 * d), ("bear", 0.3 * d), ("spriggan", 0.25 * d), ("boar", 0.7 * d), ("goblin", 0.4 * d), ("kipine", 0.18 * d), ("imp", 0.12 * d),
+                ("hare", 1.6), ("aurochs", 0.5), ("feral_hound", 0.35 * d), ("jackalope", 0.25), ("sky_fox", 0.3), ("griffon", 0.06 * d), ("ember_wyrm", 0.05 * d)],
+            Biome.PineForest => [("deer", 3.5), ("fox", 1.5), ("wolf", 1.1 * d), ("bear", 0.6 * d), ("boar", 0.5 * d), ("goblin", 0.4 * d), ("kipine", 0.25 * d), ("deathcrest_ape", 0.15 * d), ("winged_ape", 0.12 * d),
+                ("hare", 1), ("black_bear", 0.5 * d), ("tiger", 0.15 * d), ("sky_fox", 0.25), ("jackalope", 0.15)],
+            Biome.Marsh => [("goblin", 0.3 * d), ("giant_rat", 3), ("mud_crab", near ? 3 : 0.5), ("deer", 1), ("wolf", 0.5 * d), ("deathcrest_ape", 0.35 * d), ("dire_imp", 0.2 * d),
+                ("crocodile", near ? 1.4 * d : 0.15 * d), ("feral_hound", 0.3 * d), ("hare", 0.5)],
+            Biome.Tundra => [("deer", 2), ("fox", 1), ("wild_horse", 1.5), ("wolf", 2 * d), ("ice_wolf", 1 * d), ("bear", 0.5 * d), ("winged_ape", 0.2 * d),
+                ("arctic_fox", 0.8), ("aurochs", 1), ("hare", 0.8), ("pegasus", 0.3), ("white_bear", 0.2 * d)],
+            Biome.Snowfield => [("ice_wolf", 1.4 * Math.Max(d, 0.1)), ("frost_troll", 0.5 * d), ("deer", 0.8), ("fox", 0.8),
+                ("white_bear", 0.6 * Math.Max(d, 0.1)), ("arctic_fox", 1.2), ("tiger", 0.25 * d)],
+            _ => [("bear", 1.5 * Math.Max(d, 0.1)), ("frost_troll", 1 * d), ("wolf", 1.5 * d), ("deer", 0.6), ("goblin", 0.6 * d), ("deathcrest_ape", 0.4 * d), ("dire_imp", 0.3 * d), ("winged_ape", 0.4 * d),
+                ("mountain_goat", 2), ("crag_lion", 0.6 * d), ("griffon", 0.25 * d), ("pegasus", 0.2), ("ember_wyrm", 0.2 * d)],
         };
         if (near && biome != Biome.Snowfield) choices = [.. choices, ("mud_crab", 1.5)];
         choices = [.. choices.Where(c => c.Item2 > 0)];
@@ -128,9 +147,16 @@ public static class Wildlife
             "deathcrest_ape" => 3 + rng.Next(2) + extra, // they hunt in packs
             "imp" => 3 + rng.Next(3),
             "winged_ape" => 2 + rng.Next(2),
+            "hare" => 2 + rng.Next(3),
+            "arctic_fox" or "sky_fox" or "jackalope" => 1 + rng.Next(2),
+            "mountain_goat" => 2 + rng.Next(3),
+            "aurochs" => 3 + rng.Next(3),
+            "pegasus" => 2 + rng.Next(3),
+            "feral_hound" => 3 + rng.Next(2) + extra,
+            "crocodile" or "crag_lion" => 1 + rng.Next(2),
             _ => 1, // bears, trolls, kipines and dire imps keep to themselves (a dire imp has its band)
         };
-        var roam = kind switch { "deer" => 22, "wild_horse" => 30, "fox" => 18, "wolf" or "ice_wolf" or "deathcrest_ape" => 16, "kipine" => 24, "mud_crab" => 6, _ => 10 };
+        var roam = kind switch { "hare" => 14, "aurochs" => 26, "mountain_goat" => 18, "pegasus" => 34, "sky_fox" => 22, "griffon" => 30, "feral_hound" => 16, "crocodile" => 8, "deer" => 22, "wild_horse" => 30, "fox" => 18, "wolf" or "ice_wolf" or "deathcrest_ape" => 16, "kipine" => 24, "mud_crab" => 6, _ => 10 };
         // About a third of herds have young with them; a lone bear or troll sometimes has a cub. Fiends don't.
         var fiend = kind is "imp" or "dire_imp";
         var young = !fiend && rng.Chance(count > 1 ? 0.4 : 0.25) ? 1 + (count > 3 && rng.Chance(0.3) ? 1 : 0) : 0;

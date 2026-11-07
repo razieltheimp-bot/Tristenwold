@@ -19,12 +19,13 @@ public class WildlifeTests
     }
 
     [Fact]
-    public void Every_herd_is_a_real_creature_on_dry_land_outside_settlements()
+    public void Every_herd_is_a_real_creature_on_dry_land_outside_settlements_but_the_sea_serpents_in_deep_water()
     {
         foreach (var h in Wildlife.Near(World, 0, -3000, 3000))
         {
             Assert.Equal(h.KindId, Bestiary.Get(h.KindId).Id);
-            Assert.True(World.Height(h.X, h.Z) > WorldGen.WaterLevel, $"{h.Id} is in the water");
+            if (Wildlife.Aquatic(h.KindId)) Assert.True(World.Height(h.X, h.Z) < WorldGen.WaterLevel - 4, $"{h.Id} is out of its depth");
+            else Assert.True(World.Height(h.X, h.Z) > WorldGen.WaterLevel, $"{h.Id} is in the water");
             Assert.DoesNotContain(World.SettlementsNear(h.X, h.Z, 0), s => s.DistanceTo(h.X, h.Z) < s.Radius);
             Assert.InRange(h.Count, 1, 8);
         }
@@ -34,7 +35,8 @@ public class WildlifeTests
     public void Home_is_safe_and_the_far_wilds_are_not()
     {
         var home = Wildlife.Near(World, 0, 0, Wildlife.SafeRadius - 20).ToList();
-        Assert.All(home, h => Assert.Contains(h.KindId, new[] { "deer", "fox", "wild_horse", "giant_rat", "mud_crab" }));
+        // Nothing near home hunts people: only what runs, what leaves you be, and the merely annoying.
+        Assert.All(home, h => Assert.True(Wildlife.Timid.Contains(h.KindId) || h.KindId is "giant_rat" or "mud_crab" || Bestiary.Get(h.KindId).Wary, h.KindId));
         var far = Wildlife.Near(World, 0, -6000, 1500).ToList();
         Assert.Contains(far, h => !Wildlife.Timid.Contains(h.KindId));
         Assert.Contains(Wildlife.Near(World, 0, -2000, 2000), h => Wildlife.Timid.Contains(h.KindId));

@@ -372,6 +372,7 @@ public partial class Enemy : Fighter
     public bool Airborne { get; private set; }
 
     float _altitude;
+    public float AltitudeForTest => _altitude;
     double _flightClock = 10 + Random.Shared.NextDouble() * 20;
 
     Player? _target;
@@ -815,6 +816,8 @@ public partial class Enemy : Fighter
                 break;
         }
         if (Rooted > 0 || Stunned > 0) move = Vector3.Zero; // pinned, or seeing stars
+        // A sea serpent keeps to deep water: it won't come up the beach after you.
+        if (move != Vector3.Zero && Tristinwold.World.Wildlife.Aquatic(Kind.Id) && Tristinwold.World.WorldGen.WaterLevel - City.FloorAt(GlobalPosition + move.Normalized() * 4) < 2.5f) move = Vector3.Zero;
         if (CanFly && Leader is null) move = Fly(move, speed, bulk, delta);
         if (State != EnemyState.Fighting || Airborne) FaceAlong(move, delta);
         if (Airborne || _altitude > 0) Hover(delta, move);

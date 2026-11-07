@@ -649,7 +649,10 @@ public partial class Main
         var meat = victim.Kind.Id switch
         {
             "deer" or "boar" or "frost_troll" or "horse" or "wild_horse" or "cow" => 2,
-            "bear" => 3,
+            "bear" or "black_bear" or "white_bear" or "aurochs" or "crocodile" or "sea_serpent" or "ember_wyrm" => 3,
+            "leviathan" => 6,
+            "tiger" or "crag_lion" or "mountain_goat" or "pegasus" or "griffon" or "feral_hound" => 2,
+            "hare" or "arctic_fox" or "sky_fox" or "jackalope" => 1,
             "wolf" or "ice_wolf" or "fox" or "giant_rat" or "mud_crab" or "goblin" => 1,
             _ when victim.IsDragon => 4,
             _ => 0,
