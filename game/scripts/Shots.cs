@@ -1231,6 +1231,82 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--kit"))
+        {
+            // Each of the game's own weapons and shields under the KayKit piece it was made from, five to a picture.
+            var stand = new Vector3(-100, 0, 60);
+            main.TerrainNode.EnsureAround(stand, 1);
+            p.GlobalPosition = stand + new Vector3(0, 1, 14);
+            await Frames(30);
+            main.HudNode.Visible = false;
+            var ground = City.FloorAt(stand);
+            var ids = KitDesigns.All.ToList();
+            foreach (var look in new[] { "Knight/1H_Sword", "Knight/2H_Sword", "Barbarian/1H_Axe", "Barbarian/2H_Axe", "Rogue/Knife", "Mage/2H_Staff", "Mage/1H_Wand", "Rogue/1H_Crossbow", "Knight/Round_Shield", "Knight/Rectangle_Shield", "Knight/Badge_Shield" })
+            {
+                var parts = look.Split('/');
+                var src = Models.Scene($"characters/{parts[0]}.glb")?.Instantiate() as Node3D;
+                if (src?.FindChild(parts[1], true, false) is MeshInstance3D o)
+                    GD.Print($"PROBE {look}: glb aabb {o.Mesh.GetAabb()} xform {o.Transform} | ours {KitDesigns.Base(parts[1])?.GetAabb()}");
+                else GD.Print($"PROBE {look}: not found");
+                src?.Free();
+            }
+            var groups = ids.Chunk(5).Select(c => c.ToList()).ToArray();
+            var names = groups.Select((_, g) => $"kit-{g + 1}").ToArray();
+            for (var g = 0; g < groups.Length; g++)
+            {
+                var laid = new List<Node3D>();
+                var row = groups[g];
+                for (var i = 0; i < row.Count; i++)
+                {
+                    var item = Tristinwold.Gameplay.Items.Get(row[i])!;
+                    var x = (i - (row.Count - 1) / 2f) * 0.72f;
+                    var ours = KitDesigns.Build(item, Transform3D.Identity);
+                    var piece = item.Look?.Split('/') is [_, var name] ? name : "";
+                    var theirs = KitDesigns.Base(piece) is { } m ? new MeshInstance3D { Mesh = m } : null;
+                    foreach (var (node, up) in new[] { (ours, 0.35f), ((Node3D?)theirs, 1.35f) }) // KayKit's above, ours below
+                    {
+                        if (node is null) continue;
+                        if (node is MeshInstance3D mi && node == theirs) Styled.Apply(mi);
+                        main.AddChild(node);
+                        node.Scale = Vector3.One * 0.42f;
+                        node.GlobalPosition = stand with { Y = ground } + new Vector3(x, up, 0);
+                        if (item.Slot == Tristinwold.Gameplay.Slot.Offhand) node.GlobalPosition += Vector3.Up * 0.2f;
+                        if (piece.Contains("Crossbow")) node.RotationDegrees = new Vector3(-90, 0, 0);
+                        laid.Add(node);
+                    }
+                    GD.Print($"kit {row[i]}: {item.Name}");
+                }
+                await Frames(20);
+                cam.GlobalPosition = stand with { Y = ground } + new Vector3(0, 1.05f, 3.1f);
+                cam.LookAt(stand with { Y = ground } + new Vector3(0, 1.05f, 0), Vector3.Up);
+                cam.MakeCurrent();
+                await Shot(names[g]);
+                foreach (var n in laid) n.QueueFree();
+            }
+            // And on heroes, the way they're seen in the game.
+            var who = new (string Class, string[] Gear)[]
+            {
+                ("Paladin", []), // KayKit's own sword and shield, to compare
+                ("Paladin", ["steel_sword", "steel_shield"]), ("Barbarian", ["steel_greataxe"]), ("Thief", ["shadow_dagger", "parrying_dagger"]),
+                ("Wizard", ["storm_staff"]), ("Barbarian", ["sorens_reaver"]), ("Paladin", ["dragonbone_sword", "hollow_shield"]), ("Ranger", ["heavy_crossbow"]),
+            };
+            for (var i = 0; i < who.Length; i++)
+            {
+                var f = Figure.Create(who[i].Class, Tristinwold.Gameplay.Avatar.For(who[i].Class) with { Headwear = "none" });
+                main.AddChild(f);
+                f.GlobalPosition = stand with { Y = ground } + new Vector3((i - (who.Length - 1) / 2f) * 1.1f, 0, 0);
+                f.RotationDegrees = new Vector3(0, 180, 0);
+                var pack = new Tristinwold.Gameplay.Pack();
+                foreach (var gear in who[i].Gear) { pack.Add(gear); pack.Equip(gear); }
+                Wardrobe.Wear(f, pack);
+            }
+            await Frames(40);
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(0, 1.35f, 4.8f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(0, 1.0f, 0), Vector3.Up);
+            await Shot("kit-heroes");
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--forged"))
         {
             // A row of knights, each holding a sword off a different forge, so the differences show.

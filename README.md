@@ -700,7 +700,12 @@ mage, the rogues, the barbarian and the rest, mixed and matched in the character
 their own now rather than KayKit's flat palette as it comes: each swatch of the palette is read for what it stands for,
 the greys as brushed steel with a metal sheen and scratches, the warm tones as skin with a little scattering,
 everything else as cloth and leather with a fine weave and a bump to it, laid on from every side so nothing is
-stretched. Worn gear and tints paint through the same material. What they carry is KayKit's own kit. Townsfolk
+stretched. Worn gear and tints paint through the same material. What heroes carry is the game's own make of KayKit's
+kit (`game/scripts/KitDesigns.cs`, from the Adventurers pack's weapons in `game/assets/kaykit/weapons`, CC0): every
+sword, axe, dagger, staff, crossbow and shield in the shops and the hoards reshaped and built onto (a longsword's
+longer blade and knobbed quillons, Wyrmfang's bone teeth, a flamberge's waved blade, a bearded axe, a crescent axe, a
+stiletto, an amethyst staff's crystals, a kite shield, an iron boss and bands), so no two are the same piece in a
+different colour; `--shots DIR --town --kit` sets each beside KayKit's original. Townsfolk
 don't stand like posts: every few seconds someone shifts their weight and turns, makes a small gesture, or takes a
 few steps and back where the way is clear; talking to someone holds them still, facing you.
 

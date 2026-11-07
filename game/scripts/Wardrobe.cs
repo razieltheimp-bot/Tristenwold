@@ -63,6 +63,7 @@ public static class Wardrobe
         if (!Sources.TryGetValue(parts[0], out var source))
             Sources[parts[0]] = source = Models.Scene($"characters/{parts[0]}.glb")?.Instantiate() as Node3D;
         if (source?.FindChild(parts[1], true, false) is not MeshInstance3D original) return null;
+        if (KitDesigns.Build(item, original.Transform) is { } designed) return designed; // the game's own make of it
         var copy = new MeshInstance3D { Mesh = original.Mesh, Transform = original.Transform, Name = $"Worn_{item.Id}" };
         Styled.Apply(copy);
         if ((item.Tint ?? (item.Forged ? "#c8ccd4" : null)) is { } tint) Paint(copy, new Color(tint), item.Metal, item.Glow, item.Forged ? 0.22f : 0.9f);
@@ -86,7 +87,7 @@ public static class Wardrobe
 
     /// <summary>Paints a piece (or the body): its own texture with the colour multiplied in, shining if metal,
     /// glowing if it has a glow.</summary>
-    static void Paint(MeshInstance3D m, Color tint, bool metal, string? glow, float strength = 0.9f)
+    public static void Paint(MeshInstance3D m, Color tint, bool metal, string? glow, float strength = 0.9f)
     {
         for (var s = 0; s < m.GetSurfaceOverrideMaterialCount(); s++)
             m.SetSurfaceOverrideMaterial(s, Styled.Painted(m.GetActiveMaterial(s), tint, glow, glow is null ? 0 : strength, metal ? true : null));
