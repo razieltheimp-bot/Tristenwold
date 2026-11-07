@@ -1108,7 +1108,9 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
                     row.Add(e);
                 }
                 await Frames(2);
-                if (spread) foreach (var e in row) foreach (var w in e.Figure.FindChildren("*", "Node3D", true, false).OfType<FlapWings>()) w.Flying = true;
+                if (spread) foreach (var e in row) foreach (var w in e.Figure.FindChildren("*", "Node3D", true, false))
+                    if (w is FlapWings f) f.Flying = true;
+                    else if (w is DragonWings dw) dw.Spread = true;
                 await Frames(40);
                 cam.GlobalPosition = stand with { Y = ground } + lens;
                 cam.LookAt(stand with { Y = ground } + look, Vector3.Up);
@@ -1123,6 +1125,9 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             await Row("beasts-crossings", ["sky_fox", "jackalope", "pegasus", "griffon"], 2.6f, new Vector3(0, 1.6f, 7.5f), new Vector3(0, 0.8f, 0), shift: 30);
             await Row("beasts-kipine", ["kipine"], 1, new Vector3(-3.4f, 2.1f, 1.8f), new Vector3(-1.0f, 1.6f, 0));
             await Row("beasts-jackalope", ["jackalope", "sky_fox"], 1.4f, new Vector3(0.3f, 0.9f, 2.6f), new Vector3(0, 0.35f, 0), shift: 30);
+            await Row("beasts-dragons", ["dragon_red"], 1, new Vector3(7f, 5.5f, 9f), new Vector3(0, 2.2f, 0), shift: 76);
+            await Row("beasts-dragons-spread", ["dragon_red"], 1, new Vector3(4f, 9f, 13f), new Vector3(0, 3.2f, 0), shift: 76, spread: true);
+            await Row("beasts-dragons-under", ["dragon_silver"], 1, new Vector3(2f, 1.2f, 12f), new Vector3(0, 4.5f, 0), shift: 76, spread: true);
             await Row("beasts-spread", ["griffon", "kipine", "pegasus"], 5.5f, new Vector3(0, 4.5f, 13f), new Vector3(0, 1.6f, 0), shift: 30, spread: true);
             await Row("beasts-spread2", ["winged_ape", "dire_imp", "sky_fox"], 4.5f, new Vector3(0, 3.5f, 10f), new Vector3(0, 1.3f, 0), shift: -30, spread: true);
             await Row("beasts-winged", ["winged_ape", "dire_imp", "imp"], 2.4f, new Vector3(0, 1.8f, 6.5f), new Vector3(0, 1.0f, 0), shift: -30);
