@@ -90,6 +90,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--dragons-only")) { await DragonsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--seahunt-only")) { await SeaHuntTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--climb-only")) { await ClimbTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--stealth-only")) { await StealthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--lairs-only")) { await LairTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sound-only"))
@@ -1405,6 +1406,49 @@ public partial class SelfTest(Main main) : Node
         Check(save is { Quests.Count: 4 } && save.Crowns == main.PlayerNode.Crowns, $"{c.Character.Name}'s progress is on the server under {account}'s account");
         var sheet = loaded!.Characters.Single(x => x.Name == c.Character.Name);
         Check(sheet.Crowns == main.PlayerNode.Crowns, $"the login screen will show {sheet.Crowns} crowns at {sheet.Where}");
+    }
+
+    /// <summary>A rogue's shadows: foes lose them, nothing sees them, and the first blow out of them lands harder.</summary>
+    async Task StealthTest()
+    {
+        var p = main.PlayerNode;
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        await Teleport(new Vector3(60, 0, 300));
+        var knew = p.Hero.Learned.Keys.ToList();
+        var ranger = !p.Hero.Knows("Assassin");
+        if (ranger) p.Hero.Learned["Assassin"] = [];
+        Check(p.CanHide && p.ShadowSeconds == 10, $"an assassin can hide in the shadows, for ten seconds ({p.Class.Id}, knows {string.Join(", ", p.Hero.Classes)})");
+        var at = p.GlobalPosition + new Vector3(5, 0, 0);
+        var bandit = Enemy.Create(Bestiary.Get("bandit"), at with { Y = City.FloorAt(at) + 0.5f }, 1);
+        bandit.Stats.Heal(1e6);
+        main.AddEnemy(bandit);
+        await Frames(5);
+        bandit.Provoke(p);
+        await Frames(30);
+        Check(bandit.State == EnemyState.Fighting, "a bandit comes at you");
+        p.HideForTest();
+        await Frames(10);
+        Check(p.Hidden && bandit.State != EnemyState.Fighting, "into the shadows, and it loses you");
+        var health = p.Stats.Health;
+        await Frames(180);
+        Check(p.Hidden && bandit.State != EnemyState.Fighting && p.Stats.Health >= health, $"three seconds on, five metres off, it still can't find you ({bandit.GlobalPosition.DistanceTo(p.GlobalPosition):0} m)");
+        // Out of the shadows the blow lands half again as hard.
+        double Average(bool hidden)
+        {
+            var total = 0.0;
+            for (var i = 0; i < 40; i++)
+            {
+                bandit.Stats.Heal(1e6);
+                if (hidden) p.HideForTest();
+                total += p.StrikeForTest(bandit, 10);
+            }
+            return total / 40;
+        }
+        var (plain, sneak) = (Average(false), Average(true));
+        Check(sneak > plain * 1.3 && !p.Hidden, $"a sneak attack does more ({sneak:0.0} against {plain:0.0} a blow), and brings you out of the shadows");
+        bandit.QueueFree();
+        if (ranger) foreach (var k in p.Hero.Learned.Keys.Except(knew).ToList()) p.Hero.Learned.Remove(k);
+        Check(Tristinwold.Gameplay.Classes.Get("Ranger").Calling == Tristinwold.Gameplay.Calling.Rogue, "(a ranger is a rogue, and doesn't hide: only thieves and assassins do)");
     }
 
     /// <summary>Climbing: walking into a wall does nothing for a hero who can't; with gear from the shop they climb it, and over the top.</summary>

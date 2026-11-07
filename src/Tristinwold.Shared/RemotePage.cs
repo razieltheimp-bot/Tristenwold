@@ -89,7 +89,7 @@ public static class RemotePage
             <div id="drop">
               <button data-a="map">Map</button><button data-a="journal">Quests</button><button data-a="pack">Pack</button>
               <button data-a="party">Party</button><button data-a="skills">Skills</button><button data-a="drink">Heal</button>
-              <button data-a="rest">Rest</button><button data-a="draw_on">Fight players</button><button data-a="menu">World</button><button data-a="game_menu">Menu</button>
+              <button data-a="rest">Rest</button><button data-a="draw_on">Fight players</button><button data-a="stealth">Hide</button><button data-a="menu">World</button><button data-a="game_menu">Menu</button>
               <button id="keys2">⌨︎ Type</button>
             </div>
             <button class="q" data-a="quick_1"><b>1</b><i></i></button><button class="q" data-a="quick_2"><b>2</b><i></i></button><button class="q" data-a="quick_3"><b>3</b><i></i></button><button class="q" data-a="quick_4"><b>4</b><i></i></button><button class="q" data-a="quick_5"><b>5</b><i></i></button>

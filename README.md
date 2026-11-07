@@ -194,6 +194,7 @@ and an Apple developer account).
 | Left / right mouse | your class's main attack / its signature move |
 | Q | your class's third move (a wizard or sorcerer switches between fire, frost and shock) |
 | R | limit break, once the gold bar is full |
+| F | a thief or assassin slips into the shadows (6 or 10 seconds): foes lose you, and your first blow out of them is a sneak attack, half again as hard |
 | E | talk to someone, pick something up, or tame a youngling |
 | K | skills: spend the points your levels bring |
 | P | your party: companions, feeding them, sending them home or calling them |
@@ -280,6 +281,12 @@ one when you make a character; learn another later from its teacher at the guild
 
 Kills and jobs bring experience. Each level adds health, mana and stamina and a skill point; spend points (K)
 to rank a move up to 5, each rank 15% stronger. Joining another class gives the points back.
+
+**Stealth** (F, or Hide on a phone). A Thief or an Assassin (not a Ranger: they're the open woods' rogue) can slip into
+the shadows for a moment: six seconds for a thief, ten for an assassin, for a little stamina, and again a quarter of a
+minute after. Every foe nearby loses them, nothing new sees them, and they go dim and see-through; the first blow out
+of the shadows is a **sneak attack**, half again as hard (an assassin's backstab on top), and brings them out. A blow
+that finds them does too. `--selftest --stealth-only` walks through it.
 
 **Every class has a trade** (`src/Tristinwold.Gameplay/Perks.cs`, on the character sheet): a Martial Artist is charged
 a tenth less in every shop; a Barbarian hauls, cuts and digs like two and is paid for it; a Paladin's good name gets a

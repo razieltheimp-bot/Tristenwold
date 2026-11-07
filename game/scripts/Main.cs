@@ -1232,7 +1232,7 @@ public partial class Main : Node3D
         Key("limit", Godot.Key.R); Key("cycle_element", Godot.Key.Q); Key("menu", Godot.Key.F10); Key("rest", Godot.Key.T);
         Key("interact", Godot.Key.E); Key("map", Godot.Key.M); Key("journal", Godot.Key.J);
         Key("party", Godot.Key.P); Key("skills", Godot.Key.K); Key("ride", Godot.Key.V); Key("descend", Godot.Key.C);
-        Key("pack", Godot.Key.I); Key("drink", Godot.Key.H); Key("draw_on", Godot.Key.B);
+        Key("pack", Godot.Key.I); Key("drink", Godot.Key.H); Key("draw_on", Godot.Key.B); Key("stealth", Godot.Key.F);
         Key("save", Godot.Key.F5); Key("game_menu", Godot.Key.Escape);
         foreach (var (name, key) in new[] { ("1", Godot.Key.Key1), ("2", Godot.Key.Key2), ("3", Godot.Key.Key3), ("4", Godot.Key.Key4), ("5", Godot.Key.Key5), ("6", Godot.Key.Key6), ("7", Godot.Key.Key7), ("8", Godot.Key.Key8), ("9", Godot.Key.Key9), ("0", Godot.Key.Key0) })
             Key($"quick_{name}", key);

@@ -336,6 +336,7 @@ public partial class Player : Fighter
         }
         Stats.Tick(delta, InFight);
         TickSuit(delta);
+        TickShadow(delta);
         TrackFall(delta);
         _rage -= delta;
         TickBerserk(delta);
@@ -422,6 +423,7 @@ public partial class Player : Fighter
         if (Input.IsActionJustPressed("spell")) Cast();
         if (Input.IsActionJustPressed("cycle_element")) Use(Class.Utility);
         if (Input.IsActionJustPressed("limit")) LimitBreak();
+        if (Input.IsActionJustPressed("stealth")) Hide();
     }
 
     /// <summary>Set by the game while a fight is on, for regeneration.</summary>
@@ -1242,6 +1244,11 @@ public partial class Player : Fighter
         if (attack == AttackKind.Weapon && !crit && !sureCrit && _rng.Chance(Forging.Glances(Pack.ToHit))) damage *= Forging.GlanceDamage; // it only glances
         if ((sureCrit || _smoke) && !crit) { damage *= 2; crit = true; }
         _smoke = false;
+        if (Hidden) // out of the shadows: a sneak attack, and they've seen you now
+        {
+            damage *= SneakAttack;
+            Unhide($"Sneak attack on {target.Stats.Name}!");
+        }
         if (Class.Id == "Assassin" && !target.FightingCompany) damage *= 1 + Class.Passive.Power * Hero.Power("backstab");
         if (_rage > 0) damage *= 1 + 0.6 * Hero.MovePower("rage");
         if (_merged > Now) damage *= 1 + Classes.Move("merge")!.Power * Hero.MovePower("merge"); // the golem's weight behind every blow
@@ -1296,6 +1303,7 @@ public partial class Player : Fighter
     public void TakeHit(double damage, DamageKind kind, AttackKind attack, bool crit, Enemy from)
     {
         if (Downed || Safe) return; // nobody fights in a tavern
+        if (Hidden) Unhide("A blow finds you, and the shadows are gone.");
         LastHitBy = from;
         if (Class.Id == "MartialArtist" && _rng.Chance(Class.Passive.Power + 0.03 * (Hero.Rank("evasion") - 1)))
         {
@@ -1546,6 +1554,68 @@ public partial class Player : Fighter
 
     /// <summary>For the self-test.</summary>
     public void ClimbForTest(Vector3 normal) { _climbing = true; _wallNormal = normal; _offWall = 0; }
+
+    // ---- stealth: a rogue's shadows -----------------------------------------------------------------------------
+
+    double _shadow, _shadowReady;
+    Node3D? _shaded;
+
+    /// <summary>In the shadows: nothing sees them, and the first blow out of them is a sneak attack.</summary>
+    public bool Hidden => _shadow > 0;
+
+    /// <summary>How much harder a blow from the shadows lands, the stamina hiding takes, and how long before they can hide again.</summary>
+    public const double SneakAttack = 1.5, ShadowStamina = 20, ShadowRest = 15;
+
+    /// <summary>Who can melt into the shadows: a thief or an assassin (not a ranger, who's a rogue of the open woods).</summary>
+    public bool CanHide => Hero.Knows("Thief") || Hero.Knows("Assassin");
+
+    /// <summary>How long the shadows hold them: an assassin's craft, ten seconds; a thief's, six.</summary>
+    public double ShadowSeconds => Hero.Knows("Assassin") ? 10 : 6;
+
+    /// <summary>Into the shadows (F): every foe nearby loses them, and nothing new will see them till they strike or it runs out.</summary>
+    public void Hide()
+    {
+        if (Downed || Scripted || Seat is not null) return;
+        if (!CanHide) { Said?.Invoke("Only a thief or an assassin knows how to melt into the shadows."); return; }
+        if (Hidden) return;
+        if (Mount is not null || Swimming) { Said?.Invoke("Not from there."); return; }
+        if (_shadowReady > Now) { Said?.Invoke($"Not yet: {Math.Ceiling(_shadowReady - Now)} seconds before you can hide again."); return; }
+        if (Stats.Stamina < ShadowStamina) { Said?.Invoke("You're too winded to hide."); return; }
+        Stats.Spend(AttackKind.Weapon, ShadowStamina);
+        _shadow = ShadowSeconds;
+        _shadowReady = Now + ShadowSeconds + ShadowRest;
+        foreach (var e in Foes().Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < 45).ToList()) e.LoseTrack(_shadow);
+        Effects.Smoke(GetParent(), GlobalPosition + Vector3.Up, 1.2f);
+        Sound.At("move/jump", GlobalPosition, -12, 0.6f);
+        Shade(true);
+        Said?.Invoke($"You slip into the shadows ({ShadowSeconds:0}s). Strike from them for a sneak attack.");
+    }
+
+    void Unhide(string? said = null)
+    {
+        if (!Hidden) return;
+        _shadow = 0;
+        Shade(false);
+        if (said is not null) Said?.Invoke(said);
+    }
+
+    void TickShadow(double delta)
+    {
+        if (!Hidden) return;
+        if ((_shadow -= delta) <= 0) { _shadow = 0.0001; Unhide("The shadows let you go."); return; }
+        if (_shaded != Figure) Shade(true); // a new body (gear changed, a shape taken): into the shadows with it
+    }
+
+    /// <summary>The figure gone dim and see-through in the shadows, or back to itself.</summary>
+    void Shade(bool on)
+    {
+        foreach (var g in Figure.FindChildren("*", "GeometryInstance3D", true, false).OfType<GeometryInstance3D>()) g.Transparency = on ? 0.65f : 0;
+        _shaded = on ? Figure : null;
+    }
+
+    /// <summary>For the self-test.</summary>
+    public void HideForTest() { _shadowReady = 0; Stats.Restore(0, 100); Hide(); }
+    public double StrikeForTest(Enemy e, double damage) => Strike(e, damage, DamageKind.Physical, AttackKind.Weapon);
 
     /// <summary>Other players' heroes this hero's blows reach now (stand-ins, see <see cref="Enemy.Hero"/>): the game says who.</summary>
     public Func<IEnumerable<Enemy>>? Rivals { get; set; }

@@ -722,7 +722,7 @@ public partial class Enemy : Fighter
 
         // Wary creatures (metallic dragons) leave people alone unless attacked; friends and the young never start it.
         var player = _target ?? Player.Local;
-        if (State == EnemyState.Idle && !Kind.Wary && !Friendly && !Kin && !Young && _ignore <= 0 && player is not null && !player.Downed
+        if (State == EnemyState.Idle && !Kind.Wary && !Friendly && !Kin && !Young && _ignore <= 0 && player is not null && !player.Downed && !player.Hidden
             && (!SeaHunter || InTheSea(player.GlobalPosition))
             && player.GlobalPosition.DistanceTo(GlobalPosition) < (SeaHunter ? 30 : Kind.Timid ? 16 : 14) * MathF.Sqrt(bulk))
             Provoke(player);
@@ -785,7 +785,7 @@ public partial class Enemy : Fighter
                 break;
 
             case EnemyState.Fighting when _target is not null:
-                if (_target.Downed || _target.Safe || _target.GlobalPosition.DistanceTo(Home) > Math.Max(IsDragon ? 250 : 60, Roam * 3))
+                if (_target.Downed || _target.Safe || _target.Hidden || _target.GlobalPosition.DistanceTo(Home) > Math.Max(IsDragon ? 250 : 60, Roam * 3))
                 {
                     _target = null;
                     State = EnemyState.Idle;
