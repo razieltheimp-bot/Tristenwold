@@ -56,6 +56,7 @@ public partial class Main
     void TendMasters()
     {
         if (!_sea.Fleet.Any(f => f.Mastered || f.Plan.Count > 0)) return;
+        TendHarbours();
         var news = _sea.TendFleet(_guilds.PlaySeconds, Dock, id => _bonds.FirstOrDefault(b => b.Id == id), _lootRng);
         foreach (var n in news)
         {

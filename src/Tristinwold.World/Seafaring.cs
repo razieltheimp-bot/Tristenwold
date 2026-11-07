@@ -90,7 +90,7 @@ public static partial class Seas
     /// <summary>What there is to find, nearest first.</summary>
     public static IEnumerable<SeaPort> ToChart => Ports.Where(p => !Home.Contains(p.Id)).Concat(Uncharted);
 
-    public static SeaPort? Get(string id) => id == Brasswake.Market.Id ? Brasswake.Market : Ports.Concat(Uncharted).FirstOrDefault(p => p.Id == id);
+    public static SeaPort? Get(string id) => id == Brasswake.Market.Id ? Brasswake.Market : Harbours.TryGetValue(id, out var h) ? h.Port : Ports.Concat(Uncharted).FirstOrDefault(p => p.Id == id);
 }
 
 /// <summary>

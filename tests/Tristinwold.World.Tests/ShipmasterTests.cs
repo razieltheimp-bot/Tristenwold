@@ -182,6 +182,29 @@ public class ShipmasterTests
     }
 
     [Fact]
+    public void A_colony_by_the_sea_is_a_harbour_and_she_hands_over_her_takings_there()
+    {
+        var w = new Waters();
+        var colony = Seas.Harbour("harbour:test-colony", "Gullhaven", 2200, 300, [Good.Fish, Good.Timber], [Good.Bread, Good.Iron]);
+        try
+        {
+            Assert.Equal(2, Seas.Between(Seas.Tristinwold, colony.Id)); // as far out as it really is
+            Assert.Contains(w.Sea.Known, p => p.Id == colony.Id);
+            w.Sea.PaysAt = [colony.Id];
+            SeaBook.TakeCommand(w.Ship, w.Lad);
+            SeaBook.StakeHer(w.Ship, 1500);
+            Assert.True(w.Sea.Order(w.Ship, ["port:greywater", colony.Id], true, w.Now));
+            var news = new List<ShipNews>();
+            for (var i = 0; i < 10; i++) news.AddRange(w.Sail(new Rng((ulong)(70 + i))));
+            Assert.Contains(news, n => n.Crowns > 0 && n.Text.Contains("Gullhaven"));
+            Assert.True(w.Sea.Markets.ContainsKey(colony.Id), "she trades at the colony's own market");
+            Assert.False(w.Sea.Pays("port:greywater"));
+            Assert.True(w.Sea.Pays(Seas.Tristinwold));
+        }
+        finally { Seas.Harbours.Remove(colony.Id); }
+    }
+
+    [Fact]
     public void Masterless_she_comes_home()
     {
         var w = new Waters();

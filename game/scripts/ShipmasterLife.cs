@@ -29,6 +29,7 @@ public partial class Main
     /// <summary>The orders the hero can send a ship's master, and how she stands.</summary>
     void ShipOrders(Person? person, FleetShip f)
     {
+        TendHarbours(); // the hero's own places on the water are on her charts
         var now = _guilds.PlaySeconds;
         void Back() { if (person is not null) FleetList(person); else ShowParty(); }
         void Send(IReadOnlyList<string> stops, bool loop, string said)
@@ -128,6 +129,52 @@ public partial class Main
         else if (was >= SeaBook.Seaworthy && _sea.Hull < SeaBook.Seaworthy) _hud.Toast($"{_sea.ShipName} is badly holed ({_sea.Hull:0}%). Get her to Osric's yard before she goes down.", 8);
     }
 
+    readonly Dictionary<string, bool> _coastal = [];
+
+    /// <summary>Deep water within a short walk of a place, where a ship can lie off it.</summary>
+    bool Coastal(string key, double x, double z)
+    {
+        if (_coastal.TryGetValue(key, out var known)) return known;
+        var found = false;
+        for (var r = 40.0; r <= 320 && !found; r += 20)
+            for (var a = 0.0; a < Math.Tau && !found; a += Math.Tau / 16)
+                found = _world.Height(x + Math.Cos(a) * r, z + Math.Sin(a) * r) < WorldGen.WaterLevel - 3;
+        return _coastal[key] = found;
+    }
+
+    /// <summary>
+    /// The hero's own places on the water, as harbours for their ships: each colony by the sea, and their hometown if
+    /// it's on the coast (a port town on the charts counts as it is). A ship's master hands over her takings at any of
+    /// them, as in Tristinwold.
+    /// </summary>
+    void TendHarbours()
+    {
+        var pays = new HashSet<string>();
+        var mine = new HashSet<string>();
+        foreach (var h in _city.ColoniesOf(_player.Company).ToList())
+        {
+            if (!Coastal(h.Town, h.X, h.Z)) continue;
+            var id = $"harbour:{h.Town}";
+            Seas.Harbour(id, h.Name, h.X, h.Z, [Good.Fish, Good.Timber, Good.Stone], [Good.Bread, Good.Iron, Good.Ale]);
+            pays.Add(id);
+            mine.Add(id);
+        }
+        if (_story.Home is { } home && !Settling.IsColony(home.Id))
+        {
+            if (Seas.Ports.Concat(Seas.Uncharted).FirstOrDefault(p => p.Name == home.Name) is { } port) pays.Add(port.Id);
+            else if (Coastal(home.Id, home.X, home.Z) && _world.Find(home.Id) is { } town && TownMarkets.Trades(town))
+            {
+                var market = TownMarkets.For(town);
+                var id = $"harbour:{home.Id}";
+                Seas.Harbour(id, home.Name, home.X, home.Z, [.. market.Makes], [.. market.Wants]);
+                pays.Add(id);
+                mine.Add(id);
+            }
+        }
+        foreach (var gone in Seas.Harbours.Keys.Where(k => !mine.Contains(k)).ToList()) Seas.Harbours.Remove(gone);
+        _sea.PaysAt = pays;
+    }
+
     int _countryLevel = 1;
 
     /// <summary>Walking out into wilder country than the hero's ready for: a word of warning, each time it gets worse.</summary>
@@ -141,6 +188,13 @@ public partial class Main
         _countryLevel = level;
         if (level >= hero + 3) _hud.Toast($"Wild country: what lives out here is a match for a level {level} hero, and you're level {hero}. Tristinwold's that way.", 7);
         else if (level > hero) _hud.Toast($"The wilds get harder here: level {level} country.", 5);
+    }
+
+    /// <summary>Someone after the hero won't be put off by the water: word of it, when they're close enough to see.</summary>
+    void OnTookBoat(Enemy e, bool hired)
+    {
+        if (e.GlobalPosition.DistanceTo(_player.GlobalPosition) > 120) return;
+        _hud.Toast(hired ? $"{e.Stats.Name} throws a fisherman a purse for his boat, and rows out after you!" : $"{e.Stats.Name} cuts a boat loose from the shore and rows out after you!", 6);
     }
 
     /// <summary>For the self-test.</summary>

@@ -88,8 +88,28 @@ public static partial class Seas
         ["port:halcyon"] = 160, ["port:cinderisles"] = 240, ["port:pearlatoll"] = 210, ["port:verdane"] = 60, ["port:ostmark"] = 30,
     };
 
-    static double Leagues(string id) => id == Tristinwold ? 0 : Get(id)?.Leagues ?? 1;
-    static double Bearing(string id) => Bearings.GetValueOrDefault(id, WorldGen.StableHash(id) % 360);
+    static double Leagues(string id) => id == Tristinwold ? 0 : Harbours.TryGetValue(id, out var h) ? h.Leagues : Get(id)?.Leagues ?? 1;
+    static double Bearing(string id) => Harbours.TryGetValue(id, out var h) ? h.Bearing : Bearings.GetValueOrDefault(id, WorldGen.StableHash(id) % 360);
+
+    /// <summary>
+    /// A hero's own places on the coast that their ships can put in at: a colony by the sea, or a hometown that's on the
+    /// water. The game tells this what there is (they're the hero's, not the world's charts); each is a port with a small
+    /// market of what its people make, as far out as it really lies.
+    /// </summary>
+    public static readonly Dictionary<string, (SeaPort Port, double Leagues, double Bearing)> Harbours = [];
+
+    /// <summary>A metre's worth of a league on the sea charts (a day's sailing).</summary>
+    public const double LeagueMetres = 900;
+
+    /// <summary>Makes a place on the coast a harbour for the hero's ships (or updates it): its id, name, where it is, and what it makes and wants.</summary>
+    public static SeaPort Harbour(string id, string name, double x, double z, Good[] makes, Good[] wants)
+    {
+        var leagues = Math.Max(0.5, Math.Sqrt(x * x + z * z) / LeagueMetres);
+        var bearing = (Math.Atan2(x, -z) * 180 / Math.PI + 360) % 360;
+        var port = new SeaPort(id, name, Math.Max(1, (int)Math.Round(leagues)), 0.15, makes, wants, $"{name}, your own harbour");
+        Harbours[id] = (port, leagues, bearing);
+        return port;
+    }
 
     /// <summary>Days of sailing between two ports (Tristinwold among them): at least one.</summary>
     public static int Between(string a, string b)
@@ -179,7 +199,15 @@ public sealed partial class SeaBook
 
     /// <summary>Every port the hero's ships know the way to: the two at the start, and everything charted since.</summary>
     public IEnumerable<SeaPort> Known =>
-        Seas.Ports.Where(p => Seas.Home.Contains(p.Id) || Charted.Contains(p.Id)).Concat(Seas.Uncharted.Where(p => Charted.Contains(p.Id)));
+        Seas.Ports.Where(p => Seas.Home.Contains(p.Id) || Charted.Contains(p.Id)).Concat(Seas.Uncharted.Where(p => Charted.Contains(p.Id))).Concat(Seas.Harbours.Values.Select(h => h.Port));
+
+    /// <summary>
+    /// Where a ship's master hands over what she's made beyond her stake: Tristinwold, and the hero's own places on the
+    /// water (their hometown, their colonies by the sea), as the game says.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore] public HashSet<string> PaysAt { get; set; } = [];
+
+    public bool Pays(string port) => port == Seas.Tristinwold || PaysAt.Contains(port);
 
     /// <summary>The nearest land nobody's charted yet, if there's any left.</summary>
     public SeaPort? Unfound => Seas.ToChart.FirstOrDefault(p => !Charted.Contains(p.Id));
@@ -367,11 +395,11 @@ public sealed partial class SeaBook
             var said = Unload(f, here, next);
             if (said is not null) f.Note(said);
             Mend(f);
-            if (port == Seas.Tristinwold && f.Purse > f.Stake)
+            if (Pays(port) && f.Purse > f.Stake)
             {
                 var home = f.Purse - f.Stake;
                 f.Purse = f.Stake;
-                news.Add(new(f, $"{f.Name} is in Tristinwold harbour. {f.MasterName} sends up {home} crowns from her trading{(said is null ? "" : $": {said}")}.", home));
+                news.Add(new(f, $"{f.Name} is in {(port == Seas.Tristinwold ? "Tristinwold harbour" : $"at {Seas.NameOf(port)}")}. {f.MasterName} sends you {home} crowns from her trading{(said is null ? "" : $": {said}")}.", home));
             }
             else if (said is not null && port != Seas.Tristinwold && f.Plan.Count == 0)
                 news.Add(new(f, $"{f.Name} has made {here.Name}. {said}"));

@@ -829,15 +829,80 @@ public partial class Enemy : Fighter
         if (Rooted > 0 || Stunned > 0) move = Vector3.Zero; // pinned, or seeing stars
         // A sea serpent keeps to deep water: it won't come up the beach after you.
         if (move != Vector3.Zero && Tristinwold.World.Wildlife.Aquatic(Kind.Id) && Tristinwold.World.WorldGen.WaterLevel - City.FloorAt(GlobalPosition + move.Normalized() * 4) < 2.5f) move = Vector3.Zero;
-        // And nothing of the land swims out after you: a deviant, a bandit or a bear without a ship of its own waits on
-        // the shore while you're in deep water or aboard yours. (Anything already in the water can still make for land.)
-        if (move != Vector3.Zero && !Friendly && Hero is null && !CanFly && !Tristinwold.World.Wildlife.Aquatic(Kind.Id)
-            && Tristinwold.World.WorldGen.WaterLevel - City.FloorAt(GlobalPosition + move.Normalized() * 1.5f) is var ahead && ahead > SwimDepth - 0.2f && ahead > Depth) move = Vector3.Zero;
+        // And nothing of the land swims out after you: a bear or a wolf waits on the shore while you're in deep water or
+        // aboard your ship. (Anything already in the water can still make for land.) A bandit or a deviant waits a
+        // moment, then hires a boat or steals one, and rows out after you.
+        if (_boat is null && move != Vector3.Zero && !Friendly && Hero is null && !CanFly && !Tristinwold.World.Wildlife.Aquatic(Kind.Id)
+            && Tristinwold.World.WorldGen.WaterLevel - City.FloorAt(GlobalPosition + move.Normalized() * 1.5f) is var ahead && ahead > SwimDepth - 0.2f && ahead > Depth)
+        {
+            if (Boatman && State == EnemyState.Fighting && _target is not null && (_shoreWait += delta) > ShoreWait) TakeBoat();
+            else move = Vector3.Zero;
+        }
+        else if (_boat is null) _shoreWait = 0;
         if (CanFly && Leader is null) move = Fly(move, speed, bulk, delta);
         if (State != EnemyState.Fighting || Airborne) FaceAlong(move, delta);
-        if (Airborne || _altitude > 0) Hover(delta, move);
+        if (_boat is not null) Row(delta, move);
+        else if (Airborne || _altitude > 0) Hover(delta, move);
         else FallAndSlide(delta, move);
-        Figure.Move(GroundSpeed, IsOnFloor() && !Airborne, Swimming);
+        Figure.Move(_boat is null ? GroundSpeed : 0, (IsOnFloor() || _boat is not null) && !Airborne, Swimming && _boat is null);
+    }
+
+    // ---- boats: what bandits and deviants take to the water in ------------------------------------------------------
+
+    Node3D? _boat;
+    double _shoreWait, _afloat;
+    /// <summary>How long one waits on the shore, held up by the water, before going to find a boat.</summary>
+    public const double ShoreWait = 3;
+
+    /// <summary>Hired a boat (true) or stole one, to row out after someone.</summary>
+    public static event Action<Enemy, bool>? TookBoat;
+
+    /// <summary>In a boat, rowing.</summary>
+    public bool Afloat => _boat is not null;
+
+    /// <summary>Someone with hands and a purse (or no scruples): a person, not a beast, and not a child.</summary>
+    bool Boatman => Figure is Figure && !Young && Bond is null;
+
+    /// <summary>A rowing boat, hired off the shore or cut loose from it, and out onto the water after their quarry.</summary>
+    void TakeBoat()
+    {
+        var wood = BuildingMaterials.For(Surface.Timber);
+        _boat = new Node3D { Name = "Boat" };
+        _boat.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(1.15f, 0.42f, 2.9f) }, MaterialOverride = wood, Position = new Vector3(0, -0.12f, 0) });
+        foreach (var side in new[] { -1f, 1f })
+        {
+            _boat.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.08f, 0.2f, 3.0f) }, MaterialOverride = wood, Position = new Vector3(side * 0.6f, 0.12f, 0) }); // gunwales
+            _boat.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(1.6f, 0.05f, 0.1f) }, MaterialOverride = wood, Position = new Vector3(side * 0.9f, 0.15f, 0.2f), Rotation = new Vector3(0, 0, side * 0.35f) }); // oars
+        }
+        _boat.AddChild(new MeshInstance3D { Mesh = new PrismMesh { Size = new Vector3(1.15f, 0.42f, 0.6f) }, MaterialOverride = wood, Position = new Vector3(0, -0.12f, -1.7f), Rotation = new Vector3(Mathf.Pi / 2, 0, 0) }); // the bow
+        AddChild(_boat);
+        _afloat = 0;
+        _shoreWait = 0;
+        Roam = Math.Max(Roam, 50); // a boat takes them further from where they started
+        TookBoat?.Invoke(this, _rng.Chance(0.5));
+    }
+
+    /// <summary>Rowing: on the surface, where they're steering; and run up on the shore, they climb out and leave the boat there.</summary>
+    void Row(double delta, Vector3 move)
+    {
+        _afloat += delta;
+        var v = move * 0.85f;
+        v.Y = ((float)Tristinwold.World.WorldGen.WaterLevel + 0.15f - GlobalPosition.Y) * 4f;
+        Velocity = v;
+        MoveAndSlide();
+        _boat!.Rotation = new Vector3(Mathf.Sin((float)_afloat * 1.7f) * 0.04f, 0, Mathf.Sin((float)_afloat * 1.3f) * 0.05f);
+        if (_afloat > 2.5 && Tristinwold.World.WorldGen.WaterLevel - City.FloorAt(GlobalPosition) < 0.7f) LeaveBoat();
+    }
+
+    /// <summary>Out of the boat onto the shore: it's left lying there a while.</summary>
+    void LeaveBoat()
+    {
+        if (_boat is not { } boat) return;
+        _boat = null;
+        var at = boat.GlobalTransform;
+        boat.Reparent(GetParent());
+        boat.GlobalTransform = at;
+        GetTree().CreateTimer(120).Timeout += () => { if (IsInstanceValid(boat)) boat.QueueFree(); };
     }
 
     /// <summary>Keeps up with its hero: trots after them, runs to catch up, and finds them again if left far behind.</summary>

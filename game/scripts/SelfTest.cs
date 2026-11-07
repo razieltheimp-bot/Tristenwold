@@ -1481,12 +1481,25 @@ public partial class SelfTest(Main main) : Node
         main.AddEnemy(bandit);
         await Frames(5);
         bandit.Provoke(p); // it's after you
+        var wolf0 = Enemy.Create(Bestiary.Get("wolf"), (land - outward * 3 + new Vector3(outward.Z, 0, -outward.X) * 6) with { Y = City.FloorAt(land - outward * 3) + 0.5f }, Northwood.DangerFor(3));
+        wolf0.Roam = 30;
+        main.AddEnemy(wolf0);
+        await Frames(5);
+        wolf0.Provoke(p);
         var gap = bandit.GlobalPosition.DistanceTo(p.GlobalPosition);
-        await Frames(360);
+        await Until(() => bandit.Depth > -0.3f || bandit.GlobalPosition.DistanceTo(p.GlobalPosition) < gap - 12, 5);
+        await Frames(30);
         Check(p.Swimming, $"the hero's swimming ({WorldGen.WaterLevel - w.Height(swim.X, swim.Z):0.0} m of water)");
-        Check(bandit.State == EnemyState.Fighting && bandit.Depth < Fighter.SwimDepth && bandit.GlobalPosition.DistanceTo(p.GlobalPosition) > 3,
-            $"a bandit chasing you stops at the water's edge ({gap:0} m off, then {bandit.GlobalPosition.DistanceTo(p.GlobalPosition):0} m, {bandit.Depth:0.0} m deep)");
+        var edge = bandit.GlobalPosition.DistanceTo(p.GlobalPosition);
+        Check(bandit.State == EnemyState.Fighting && !bandit.Afloat && bandit.Depth < Fighter.SwimDepth && edge > 3,
+            $"a bandit chasing you stops at the water's edge ({gap:0} m off, then {edge:0} m, {bandit.Depth:0.0} m deep)");
+        await Until(() => bandit.Afloat, Enemy.ShoreWait + 3);
+        Check(bandit.Afloat, "then hires a boat or steals one");
+        await Until(() => bandit.GlobalPosition.DistanceTo(p.GlobalPosition) < 4, 10);
+        Check(bandit.Afloat && bandit.GlobalPosition.DistanceTo(p.GlobalPosition) < edge - 2, $"and rows out after you ({edge:0} m, then {bandit.GlobalPosition.DistanceTo(p.GlobalPosition):0} m)");
+        Check(!wolf0.Afloat && wolf0.Depth < Fighter.SwimDepth, $"a wolf stays on the shore ({wolf0.Depth:0.0} m deep)");
         bandit.QueueFree();
+        wolf0.QueueFree();
 
         // A sea serpent in the deep water: it comes for the swimmer.
         var serpentAt = swim + outward * 22;

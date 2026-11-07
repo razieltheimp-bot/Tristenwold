@@ -107,6 +107,7 @@ public partial class Main
         Enemy.Turned += OnTurned;
         Enemy.SparEnded += OnSparEnded;
         Enemy.Landed += OnSeaBite;
+        Enemy.TookBoat += OnTookBoat;
         Enemy.Slain += OnDrifterSlain;
         _player.WentDown += OnDrifterWin;
         Enemy.Slain += OnUndyingSlain;
@@ -128,6 +129,7 @@ public partial class Main
     {
         Enemy.Slain -= OnSlain;
         Enemy.Landed -= OnSeaBite;
+        Enemy.TookBoat -= OnTookBoat;
         Enemy.RanOff -= OnRanOff;
         Enemy.Felled -= OnFelled;
         Enemy.Turned -= OnTurned;
