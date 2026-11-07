@@ -1,7 +1,7 @@
 # Creatures
 
 - `wolf.glb`, `ice_wolf.glb`, `fox.glb`, `bear.glb`, `bear_black.glb`, `boar.glb`, `hawk.glb`: converted from
-  0 A.D. by Wildfire Games, CC-BY-SA 3.0. See CREDITS-0AD.md. These files are under the same licence.
+  Wildfire Games' open art, CC-BY-SA 3.0. See CREDITS-ANIMALS.md for the full credit. These files are under the same licence.
 - `deer_pm.glb`: DeerArmature by Polygonal Mind, CC0, from https://github.com/ToxSam/cc0-models-Polygonal-Mind
   (catalogued in https://github.com/ToxSam/open-source-3D-assets).
 - `giant_rat.glb`, `goblin.glb`, `forest_monster.glb`, `troll.glb`, `dragon.glb`: from OpenGameArt.org, see

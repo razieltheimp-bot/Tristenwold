@@ -71,7 +71,7 @@ public static class Homestead
     }
 
     /// <summary>Whether a companion's free to work at home: not at the hero's heels, not in a wagon's shafts, and not keeping shop somewhere else.</summary>
-    public static bool Free(Bond b) => !b.Following && !b.Hitched && b.Keeps is null or Keeping.Home;
+    public static bool Free(Bond b) => !b.Following && !b.Hitched && b.Sails is null && b.Keeps is null or Keeping.Home;
 
     /// <summary>What each worked station does in this much time: what came of it, in the chest now.</summary>
     public static List<(string Id, int N)> Tick(House h, int workers, double seconds)

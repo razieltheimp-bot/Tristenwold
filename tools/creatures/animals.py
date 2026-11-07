@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Converts animals from 0 A.D. (Wildfire Games, art CC-BY-SA 3.0) into the game's creature models.
+Converts the CC-BY-SA 3.0 animal art credited in game/assets/creatures/CREDITS-ANIMALS.md into the game's
+creature models.
 
-0 A.D. describes each animal as an "actor": a COLLADA mesh, a fur texture, and a separate COLLADA
-file per animation (idle, walk, run, attack, death), sometimes pulled in from shared variant
-files. This follows those references in a checkout of the 0 A.D. repository, then has Blender put
-each animal together, with its texture and all of its animations as named clips, and saves it as
-one .glb in game/assets/creatures. The converted models keep 0 A.D.'s licence (CC-BY-SA 3.0).
+The source describes each animal as an "actor": a COLLADA mesh, a fur texture, and a separate COLLADA file per
+animation (idle, walk, run, attack, death), sometimes pulled in from shared variant files. This follows those
+references in a checkout of the source repository (its address is in the credits), then has Blender put each animal
+together, with its texture and all of its animations as named clips, and saves it as one .glb in
+game/assets/creatures. The converted models keep the source's licence (CC-BY-SA 3.0).
 
 Needs Blender 4.5 as a Python module (COLLADA was dropped in Blender 5):
   uv venv --python 3.11 blender45 && uv pip install --python blender45/bin/python "bpy>=4.5,<4.6"
-  git clone --depth 1 --filter=blob:none --no-checkout https://github.com/0ad/0ad 0ad
-  blender45/bin/python tools/creatures/zero_ad.py 0ad [only-this-animal]
+  blender45/bin/python tools/creatures/animals.py <checkout of the source repository> [only-this-animal]
 """
 import os
 import re
@@ -24,7 +24,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 OUT = os.path.join(ROOT, "game", "assets", "creatures")
 ART = "binaries/data/mods/public/art"
 
-# game name -> (0 A.D. actor, which fur texture to use when it has several)
+# game name -> (source actor, which fur texture to use when it has several)
 ANIMALS = {
     "wolf": ("fauna/wolf.xml", "animal_wolf_grey.png"),
     "ice_wolf": ("fauna/arctic_wolf.xml", None),
@@ -44,7 +44,7 @@ ANIMALS = {
     "mastiff": ("fauna/mastiff.xml", None),
 }
 
-# 0 A.D.'s animation names, folded into the game's five.
+# The source's animation names, folded into the game's five.
 CLIPS = {"idle": "Idle", "walk": "Walk", "run": "Run", "attack_melee": "Attack", "death": "Death"}
 
 
@@ -101,7 +101,7 @@ def build(repo, name, actor, pick, work):
     # Some rigs (the tiger's, the lioness's, the crocodile's, the rabbit's) carry a scale on the armature that the
     # glTF export puts on the skeleton but not the mesh, leaving the mesh's own numbers a hundredth of the size it's
     # drawn: apply every rotation and scale first, so mesh and skeleton agree.
-    if not os.environ.get("ZERO_AD_NO_APPLY"):
+    if not os.environ.get("CONVERT_NO_APPLY"):
         bpy.ops.object.select_all(action="SELECT")
         bpy.context.view_layer.objects.active = rig
         bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
@@ -159,12 +159,12 @@ def main():
             continue
         with tempfile.TemporaryDirectory() as work:
             build(repo, name, actor, pick, work)
-    with open(os.path.join(OUT, "CREDITS-0AD.md"), "w") as f:
-        f.write("# Animals from 0 A.D.\n\n")
-        f.write("These creatures are converted from 0 A.D. by Wildfire Games (https://play0ad.com,\n")
-        f.write("https://github.com/0ad/0ad), whose art is licensed CC-BY-SA 3.0\n")
-        f.write("(https://creativecommons.org/licenses/by-sa/3.0/). The converted .glb files are released under\n")
-        f.write("the same licence. Converted by tools/creatures/zero_ad.py:\n\n")
+    # The credit (required by the licence) stays as it's written in the file; only the list of animals is redone.
+    credits = os.path.join(OUT, "CREDITS-ANIMALS.md")
+    with open(credits) as f:
+        head = f.read().split("\n- ")[0].rstrip("\n") + "\n\n"
+    with open(credits, "w") as f:
+        f.write(head)
         for name, (actor, _) in ANIMALS.items():
             f.write(f"- {name}.glb: {actor}\n")
 

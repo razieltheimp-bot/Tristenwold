@@ -1334,9 +1334,9 @@ and strum, a harp glissando, two drums, a horn call and a sung chord) are synthe
 Other 3D models: the KayKit packs by Kay Lousberg (www.kaylousberg.com): Adventurers, Skeletons, Medieval Hexagon,
 Dungeon Remastered and Halloween Bits. They are CC0 (free for any use) and live in `game/assets/kaykit`.
 Creatures (`game/assets/creatures`, see its CREDITS.md): wolves, ice wolves, foxes, brown and black bears, wild
-boars and hawks come from 0 A.D. by Wildfire Games (art CC-BY-SA 3.0, so the converted models carry the same
-licence), each with its own idle, walk, run, attack and death; `tools/creatures/zero_ad.py` converts them from a
-checkout of github.com/0ad/0ad. Giant rats, goblins, forest monsters (spriggans), trolls and the frost dragon
+boars and hawks are converted from Wildfire Games' open art (CC-BY-SA 3.0, so the converted models carry the same
+licence; the full credit is in `game/assets/creatures/CREDITS-ANIMALS.md`), each with its own idle, walk, run, attack
+and death; `tools/creatures/animals.py` converts them. Giant rats, goblins, forest monsters (spriggans), trolls and the frost dragon
 come from OpenGameArt: CDmir's rat, goblin and forest monster and Drummyfish/Cethiel's dragon are CC0, and
 piacenti's Troll Mauler is CC-BY 3.0 (`tools/creatures/oga.py` converts them). The deer is Polygonal Mind's (CC0),
 its legs walked in code. Mud crabs are still built from shapes. The KayKit characters are re-proportioned as

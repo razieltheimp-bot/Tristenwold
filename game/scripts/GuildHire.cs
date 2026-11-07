@@ -29,9 +29,18 @@ public partial class Main
         var roof = rng.Chance(0.5) ? Surface.Slate : Surface.Shingle;
         for (var i = 0; i < count; i++)
         {
-            var a = gate + (i + 1f) / (count + 1) * Mathf.Tau;
-            var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * CompoundBuildings;
-            Buildings.Place(this, kinds[i], at with { Y = City.FloorAt(at) }, Mathf.Atan2(centre.X - at.X, centre.Z - at.Z), i + 3, roof);
+            // Its slot round the yard, or a little either side of it if that's flatter; on a hillside too steep for any of them it isn't built.
+            var best = (Rise: float.MaxValue, At: Vector3.Zero, Yaw: 0f);
+            foreach (var nudge in new[] { 0f, 0.12f, -0.12f, 0.24f, -0.24f })
+            {
+                var a = gate + (i + 1f) / (count + 1) * Mathf.Tau + nudge;
+                var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * CompoundBuildings;
+                var yaw = Mathf.Atan2(centre.X - at.X, centre.Z - at.Z);
+                var rise = Buildings.Rise(kinds[i], i + 3, at, yaw);
+                if (rise < best.Rise - 0.3f) best = (rise, at, yaw);
+            }
+            if (best.Rise > 3.5f) continue;
+            Buildings.Place(this, kinds[i], best.At with { Y = City.FloorAt(best.At) }, best.Yaw, i + 3, roof);
         }
         var panels = (int)(Mathf.Tau * CompoundFence / FencePanel);
         for (var i = 0; i < panels; i++)

@@ -198,6 +198,7 @@ public partial class Main
         TendSite();
         TendVessel();
         TendFleet(1); // the fleet in the harbour, and its runs
+        TendCountry();
         if (!_sea.Skyboat) { _skyboat?.QueueFree(); _skyboat = null; return; }
         if (_skyboat is { Aboard: true }) return;
         var at = new Vector3((float)_sea.SkyX, 0, (float)_sea.SkyZ);

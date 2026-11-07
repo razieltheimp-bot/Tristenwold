@@ -88,6 +88,9 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--ageing-only")) { await AgeingTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--wild-only")) { await StrangeWildsTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--dragons-only")) { await DragonsTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--seahunt-only")) { await SeaHuntTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--climb-only")) { await ClimbTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--lairs-only")) { await LairTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--trade-only")) { await TradeTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--sound-only"))
             {
@@ -1402,6 +1405,109 @@ public partial class SelfTest(Main main) : Node
         Check(save is { Quests.Count: 4 } && save.Crowns == main.PlayerNode.Crowns, $"{c.Character.Name}'s progress is on the server under {account}'s account");
         var sheet = loaded!.Characters.Single(x => x.Name == c.Character.Name);
         Check(sheet.Crowns == main.PlayerNode.Crowns, $"the login screen will show {sheet.Crowns} crowns at {sheet.Where}");
+    }
+
+    /// <summary>Climbing: walking into a wall does nothing for a hero who can't; with gear from the shop they climb it, and over the top.</summary>
+    async Task ClimbTest()
+    {
+        var p = main.PlayerNode;
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        await Teleport(new Vector3(60, 0, 260));
+        await Frames(10);
+        var forward = -(p.GlobalTransform.Basis.Z with { Y = 0 }).Normalized();
+        var foot = p.GlobalPosition;
+        var ground = City.FloorAt(foot);
+        // A wall of our own, six metres high, three ahead.
+        var wall = new StaticBody3D();
+        wall.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(12, 6, 3) } });
+        wall.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(12, 6, 3) } });
+        main.AddChild(wall);
+        wall.GlobalPosition = foot with { Y = ground + 3 } + forward * 4.5f;
+        wall.LookAt(wall.GlobalPosition + forward, Vector3.Up);
+        await Frames(5);
+        p.Pack.Take(Climbing.Gear);
+        var by = p.ClimbsBy;
+        Input.ActionPress("move_forward");
+        if (by is null)
+        {
+            await Frames(120);
+            Check(!p.Climbing && p.GlobalPosition.Y < ground + 1.5f, $"without climbing in them, a hero walks into a wall and stops ({p.GlobalPosition.Y - ground:0.0} m up)");
+            p.Pack.Add(Climbing.Gear);
+            by = p.ClimbsBy;
+        }
+        Check(by is not null, $"climbing gear lets anyone climb ({by})");
+        await Until(() => p.Climbing, 3);
+        Check(p.Climbing, "walking into the wall, they take hold of it");
+        await Until(() => p.GlobalPosition.Y > ground + 3, 4);
+        Check(p.GlobalPosition.Y > ground + 3, $"and climb it ({p.GlobalPosition.Y - ground:0.0} m up)");
+        await Until(() => !p.Climbing, 6);
+        Input.ActionRelease("move_forward"); // up and over: they stop pushing
+        await Until(() => p.IsOnFloor(), 3);
+        Input.ActionRelease("move_forward");
+        Check(!p.Climbing && p.GlobalPosition.Y > ground + 5.5f, $"and over the top onto it ({p.GlobalPosition.Y - ground:0.0} m up, climbing {p.Climbing})");
+        p.Pack.Take(Climbing.Gear);
+        wall.QueueFree();
+        await Teleport(foot);
+    }
+
+    /// <summary>
+    /// The water's edge: nothing from the land swims out after you, and what lives in the sea hunts everything in it,
+    /// swimmer or beast, and lets go of what gets out.
+    /// </summary>
+    async Task SeaHuntTest()
+    {
+        var (p, w) = (main.PlayerNode, main.World);
+        foreach (var c in p.Companions().ToList()) c.QueueFree();
+        var (dx, dz) = FindDeepWater(0, -1500);
+        var deep = new Vector3((float)dx, 0, (float)dz);
+        // Walk out of the water to the nearest shore.
+        Vector3? shore = null;
+        for (var r = 4f; r < 600 && shore is null; r += 2)
+            for (var a = 0f; a < Mathf.Tau && shore is null; a += 0.1f)
+            {
+                var at = deep + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * r;
+                if (w.Height(at.X, at.Z) > WorldGen.WaterLevel + 0.8) shore = at;
+            }
+        if (shore is not { } land) { Check(false, "a shore by deep water"); return; }
+        var outward = (deep - land) with { Y = 0 };
+        outward = outward.Normalized();
+        // The hero a little way out, in water over their head; a bandit up the beach.
+        var swim = land + outward * 2;
+        for (var i = 0; i < 80 && WorldGen.WaterLevel - w.Height(swim.X, swim.Z) < 3; i++) swim += outward * 1.5f;
+        await Teleport(swim);
+        await Frames(30);
+        var bandit = Enemy.Create(Bestiary.Get("raider"), (land - outward * 3) with { Y = City.FloorAt(land - outward * 3) + 0.5f }, Northwood.DangerFor(3));
+        bandit.Roam = 30;
+        main.AddEnemy(bandit);
+        await Frames(5);
+        bandit.Provoke(p); // it's after you
+        var gap = bandit.GlobalPosition.DistanceTo(p.GlobalPosition);
+        await Frames(360);
+        Check(p.Swimming, $"the hero's swimming ({WorldGen.WaterLevel - w.Height(swim.X, swim.Z):0.0} m of water)");
+        Check(bandit.State == EnemyState.Fighting && bandit.Depth < Fighter.SwimDepth && bandit.GlobalPosition.DistanceTo(p.GlobalPosition) > 3,
+            $"a bandit chasing you stops at the water's edge ({gap:0} m off, then {bandit.GlobalPosition.DistanceTo(p.GlobalPosition):0} m, {bandit.Depth:0.0} m deep)");
+        bandit.QueueFree();
+
+        // A sea serpent in the deep water: it comes for the swimmer.
+        var serpentAt = swim + outward * 22;
+        var serpent = Enemy.Create(Bestiary.Get("sea_serpent"), serpentAt with { Y = (float)WorldGen.WaterLevel - 1 }, Northwood.DangerFor(3));
+        main.AddEnemy(serpent);
+        var start = serpent.GlobalPosition.DistanceTo(p.GlobalPosition);
+        await Until(() => serpent.State == EnemyState.Fighting, 4);
+        await Frames(90);
+        Check(serpent.State == EnemyState.Fighting && serpent.GlobalPosition.DistanceTo(p.GlobalPosition) < start,
+            $"a sea serpent hunts a swimmer ({start:0} m, then {serpent.GlobalPosition.DistanceTo(p.GlobalPosition):0} m)");
+
+        // Out of the water and up the beach, the hero's let go; and it goes for whatever else is swimming.
+        await Teleport(land - outward * 12);
+        await Until(() => serpent.State != EnemyState.Fighting, 3);
+        Check(serpent.State != EnemyState.Fighting, "out of the water, the serpent lets you go");
+        var wolf = Enemy.Create(Bestiary.Get("wolf"), (serpent.GlobalPosition + outward * 6) with { Y = (float)WorldGen.WaterLevel - 1.2f }, Northwood.DangerFor(3));
+        main.AddEnemy(wolf);
+        var full = wolf.Stats.Health;
+        await Until(() => wolf.Stats.Health < full || wolf.State == EnemyState.Dead, 6);
+        Check(wolf.Stats.Health < full || wolf.State == EnemyState.Dead, "and goes after a wolf swimming in its water: it hunts everything in the sea");
+        foreach (var e in new[] { serpent, wolf }) if (GodotObject.IsInstanceValid(e)) e.QueueFree();
     }
 
     (double X, double Z) FindDeepWater(double x, double z)
@@ -3166,6 +3272,26 @@ public partial class SelfTest(Main main) : Node
         f.RunBack = main.PlaySecondsForTest - 1;
         main.TendFleetForTest();
         Check(!f.Away && p.Crowns > purse, $"and comes home with crowns ({p.Crowns - purse})");
+
+        // An apprentice in command: sent orders, she sails, makes port and trades there.
+        var mate = new Bond { Name = "Pell", Role = BondRole.Squire, Level = 6, Following = false };
+        main.AddBondForTest(mate);
+        main.GiveCommandForTest(f, mate);
+        Check(f.Master == mate.Id && mate.Sails == f.Name && !mate.Following, "an apprentice takes command of her");
+        SeaBook.StakeHer(f, 800);
+        Check(sea.Order(f, ["port:greywater"], false, main.PlaySecondsForTest), "and is sent word to sail to Greywater");
+        main.TendMastersForTest();
+        main.TendFleetForTest();
+        Check(f.Sailing && main.FleetVesselForTest(f) is null, $"she casts off ({string.Join("; ", f.Log)})");
+        f.Arrives = main.PlaySecondsForTest - 1;
+        main.TendMastersForTest();
+        Check(f.At == "port:greywater" && sea.Markets.ContainsKey("port:greywater"), $"she makes port at Greywater and trades there ({string.Join("; ", f.Log)})");
+        f.At = null;
+        f.Plan.Clear();
+        var had = p.Crowns;
+        main.StandDownForTest(f);
+        Check(!f.Mastered && mate.Sails is null && p.Crowns >= had, "brought ashore, her purse comes home with them");
+        main.RemoveBondForTest(mate);
         main.HireHandsForTest(null);
         Check(sea.Hands == SeaBook.HandsFor(ShipSize.Medium) && sea.CrewSaves > 0.3, "hands for the ship you sail patch and pump while you fight: a third off what boarders do to her");
         main.MakeFlagshipForTest(f);
@@ -3816,6 +3942,23 @@ public partial class SelfTest(Main main) : Node
         Check(colony is { Members: 1 } && city.CouncilOf(Halls.ColonyTown(p.Company)).Heroes.Contains(p.Company), $"a hero can found a colony there, and sits on its council ({colony?.Name})");
         city.TendHalls(Halls.JobSeconds * 4);
         Check(colony is { Till: > 0 } && colony.Chest.Values.Sum() > 0, $"and its settlers fish, cut and quarry while you're away ({string.Join(", ", colony?.Chest.Select(kv => $"{kv.Value} {kv.Key}") ?? [])})");
+
+        // Grown all the way to a walled town, its buildings still keep out of each other's way and inside its fence.
+        if (colony is not null)
+        {
+            var wasGrown = city.GrownOf(colony.Town);
+            city.Grown[colony.Town] = Settling.Walls;
+            main.RedrawHallsForTest();
+            await Frames(5);
+            var heart = new Vector3((float)colony.X, 0, (float)colony.Z);
+            var near = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>().Where(n => IsInstanceValid(n) && n.IsInsideTree() && new Vector2(n.GlobalPosition.X - heart.X, n.GlobalPosition.Z - heart.Z).Length() < 70).ToList();
+            var clash = near.SelectMany((a, i) => near.Skip(i + 1).Where(b => Buildings.Overlap(Buildings.Footprint(a), Buildings.Footprint(b))).Select(b => $"{Buildings.KindOf(a)} and {Buildings.KindOf(b)}")).ToList();
+            Check(near.Count >= 10 && clash.Count == 0, $"a grown colony's {near.Count} buildings don't run into each other{(clash.Count > 0 ? $" ({string.Join("; ", clash)})" : "")}");
+            var stallAt = new Vector3(heart.X, 0, heart.Z) + (main.ColonyStallSpotForTest(colony) - heart) with { Y = 0 };
+            Check(near.All(n => Buildings.Footprint(n).All(f => f.Centre.DistanceTo(new Vector2(stallAt.X, stallAt.Z)) > Mathf.Max(f.HalfU, f.HalfV) + 2)), "and leave room in the yard for its market stall");
+            city.Grown[colony.Town] = wasGrown;
+            main.RedrawHallsForTest();
+        }
 
         // An apprentice sent to keep a market stall in the colony's yard: customers come to it, as to a shop at home.
         var lad = new Bond { Id = "test/wyn", KindId = "apprentice", Role = BondRole.Apprentice, Name = "Wyn", Race = "human", JoinAge = 15, Following = false };

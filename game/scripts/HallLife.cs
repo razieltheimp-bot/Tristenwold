@@ -133,23 +133,26 @@ public partial class Main
             if (grown >= Settling.Chamber) kinds.Add("longhall");
             if (grown >= Settling.Walls) kinds.AddRange(["house", "house"]);
         }
-        var count = kinds.Count;
-        var ring = HallRing * (count > 6 ? 1 + (count - 6) * 0.12f : 1);
-        for (var i = 0; i < count; i++)
+        // Round the yard, each building given as much of the ring as it's wide (and a gap), so none runs into the next;
+        // the ring and the fence let out as a colony grows, rather than its buildings crowding into each other.
+        var (ring, yard, angles) = HallLayout(kinds, roof);
+        var cursor = gate + angles[^1] / 2; // the last is the gap left for the gate
+        for (var i = 0; i < kinds.Count; i++)
         {
-            var a = gate + (i + 1f) / (count + 1) * Mathf.Tau;
+            var a = cursor + angles[i] / 2;
+            cursor += angles[i];
             var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * ring;
             Buildings.Place(root, kinds[i], at with { Y = City.FloorAt(at) }, Mathf.Atan2(centre.X - at.X, centre.Z - at.Z), i + 7, roof, inside: kinds[i] == "longhall" && h.Kind == HallKind.Colony ? "council" : null);
         }
-        var panels = (int)(Mathf.Tau * HallYard / FencePanel);
+        var panels = (int)(Mathf.Tau * yard / FencePanel);
         for (var i = 0; i < panels; i++)
         {
             var a = gate + (i + 0.5f) / panels * Mathf.Tau;
             if (Math.Abs(Mathf.Wrap(a - gate, -Mathf.Pi, Mathf.Pi)) < 0.26f) continue;
-            var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * HallYard;
-            Models.Place(root, "medieval/neutral/fence_wood_straight.gltf", at with { Y = City.FloorAt(at) }, 1.8f, -a + Mathf.Pi / 2);
+            var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * yard;
+            Models.Place(root, "medieval/neutral/fence_wood_straight.gltf", at with { Y = City.FloorAt(at) }, 1.8f * yard / HallYard * (int)(Mathf.Tau * HallYard / FencePanel) / panels, -a + Mathf.Pi / 2);
         }
-        var gateAt = centre + new Vector3(Mathf.Cos(gate), 0, Mathf.Sin(gate)) * (HallYard + 1.5f);
+        var gateAt = centre + new Vector3(Mathf.Cos(gate), 0, Mathf.Sin(gate)) * (yard + 1.5f);
         root.AddChild(new Label3D { Text = h.Name, Position = gateAt with { Y = City.FloorAt(gateAt) + 3.4f }, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 56, OutlineSize = 12, PixelSize = 0.012f, Modulate = new Color("#ffd27a") });
         if (h.Kind == HallKind.FightClub) // the pit: a ring of posts and rope in the middle of the yard
             for (var i = 0; i < 12; i++)
@@ -170,6 +173,31 @@ public partial class Main
             body.GlobalPosition = at with { Y = City.FloorAt(at) };
             body.Rotation = new Vector3(0, Mathf.Atan2(centre.X - at.X, centre.Z - at.Z), 0);
         }
+    }
+
+    /// <summary>
+    /// How a hall's buildings go round its yard: the ring their middles stand on, the fence round the lot, and the share
+    /// of the circle each one takes (as wide as it is at its inner face, plus a gap), the gate's gap last. The ring lets out
+    /// till they all fit.
+    /// </summary>
+    public static (float Ring, float Yard, float[] Angles) HallLayout(IReadOnlyList<string> kinds, Surface roof)
+    {
+        const float gap = 3f, gateWidth = 9f;
+        var sizes = kinds.Select((k, i) => Buildings.Extent(k, i + 7, roof)).ToList();
+        var ring = HallRing;
+        float[] angles;
+        while (true)
+        {
+            // Each takes the angle its inner corners need (they're the ones that meet), with nothing nearer the middle than the yard's heart.
+            var inner = sizes.Select(s => ring - s.Front).ToList();
+            angles = [.. sizes.Select((s, i) => 2 * Mathf.Atan((s.HalfWidth + gap / 2) / Mathf.Max(1, inner[i]))), 2 * Mathf.Atan(gateWidth / 2 / Mathf.Max(1, ring))];
+            if (angles.Sum() <= Mathf.Tau && inner.All(r => r >= 6.5f) || ring > 80) break;
+            ring += 0.5f;
+        }
+        var spare = (Mathf.Tau - angles.Sum()) / angles.Length;
+        for (var i = 0; i < angles.Length; i++) angles[i] += spare;
+        var yard = Mathf.Max(HallYard, ring + sizes.Select(s => s.Back).DefaultIfEmpty(0).Max() + 2.5f);
+        return (ring, yard, angles);
     }
 
     /// <summary>What a hall's steward can do: business for its founder, and its service for anyone.</summary>
@@ -437,6 +465,8 @@ public partial class Main
 
     /// <summary>For the self-test.</summary>
     public void TendHallsForTest() { TendHallFronts(); TendGrove(); }
+    public void RedrawHallsForTest() { foreach (var f in _hallFronts.Values) f.Root.Free(); _hallFronts.Clear(); TendHallFronts(); }
+    public Vector3 ColonyStallSpotForTest(Hall h) => ColonyStall(h).At;
     public int ShownGroveForTest => _shownGrove.Count;
     public IEnumerable<Person> SharedFolkForTest => SharedFolk;
     public void FoundHallForTest() { if (MyHallPlan is { } plan) FoundHall(plan); }

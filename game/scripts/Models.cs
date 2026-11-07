@@ -300,7 +300,7 @@ public abstract partial class Body : Node3D
         "sea_serpent" => Serpent.Create(Serpent.Look.Sea),
         "leviathan" => Serpent.Create(Serpent.Look.Leviathan),
         "ember_wyrm" => Serpent.Create(Serpent.Look.Land),
-        // More of the wilds, from 0 A.D. like the wolf and the bears.
+        // More of the wilds, converted like the wolf and the bears (see CREDITS-ANIMALS.md).
         "black_bear" => (Body?)Creature.Create("bear_black.glb", 1.4f) ?? Beast.Bear(),
         "white_bear" => (Body?)Creature.Create("bear_white.glb", 1.9f) ?? Beast.Bear(),
         "tiger" => (Body?)Creature.Create("tiger.glb", 1.15f) ?? Beast.Wolf(new Color("#d8a050")),
@@ -1373,7 +1373,7 @@ public partial class Deer : Animal
 
 /// <summary>
 /// A creature from a converted model, each with its own idle, walk, run, attack and death: wolves,
-/// ice wolves, foxes, bears, boars and hawks from 0 A.D. (tools/creatures/zero_ad.py), and giant
+/// ice wolves, foxes, bears, boars and hawks (tools/creatures/animals.py; see CREDITS-ANIMALS.md), and giant
 /// rats, goblins, forest monsters, trolls and a dragon from OpenGameArt (tools/creatures/oga.py).
 /// </summary>
 public partial class Creature : Animal

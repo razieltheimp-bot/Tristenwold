@@ -13,7 +13,7 @@ public class StrangeWildsTests
     {
         var w = WorldGen.Default;
         var herds = Wildlife.Near(w, 0, 0, 3000).Where(h => Strange.Contains(h.KindId)).ToList();
-        foreach (var kind in Strange) Assert.Contains(herds, h => h.KindId == kind);
+        foreach (var kind in Strange) Assert.Contains(herds, h => h.KindId == kind || h.Band == kind); // lesser imps go about in a dire imp's band, if not on their own
         Assert.All(herds, h => Assert.True(h.DistanceTo(0, 0) > Wildlife.SafeRadius, $"{h.KindId} at {h.X:0},{h.Z:0}"));
         foreach (var kind in Strange)
         {

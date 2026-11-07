@@ -641,6 +641,8 @@ public partial class Enemy : Fighter
         }
         // The guard comes to whoever's in trouble in its streets, from further off when it's the hero being set on.
         if (Watch) return all.Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < (e.FightingCompany || e.Raider ? 95 : 70) && Disturbs(e)).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
+        // A sea serpent or a leviathan: anything at all that's in the deep water with it, swimmer, beast or company.
+        if (SeaHunter) return all.Where(e => !Wildlife.Aquatic(e.Kind.Id) && e.Hero is null && e.GlobalPosition.DistanceTo(GlobalPosition) < 60 && InTheSea(e.GlobalPosition)).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
         var sight = IsDragon ? 120 : 60;
         // Mad with the Rift: anything at all, the nearest first.
         if (Frenzy > 0) return all.Where(e => e.GlobalPosition.DistanceTo(GlobalPosition) < 90).MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
@@ -649,11 +651,17 @@ public partial class Enemy : Fighter
             .MinBy(e => e.GlobalPosition.DistanceTo(GlobalPosition));
     }
 
+    /// <summary>What lives in the sea and hunts in it: it doesn't care whether what's in its water is a ship, a swimmer or a beast.</summary>
+    bool SeaHunter => Wildlife.Aquatic(Kind.Id) && !Friendly;
+
+    /// <summary>Over water deep enough for a sea serpent to reach: swimming, or on a deck out on it.</summary>
+    public static bool InTheSea(Vector3 at) => Tristinwold.World.WorldGen.WaterLevel - City.FloorAt(at) > 1.6f;
+
     /// <summary>A deathcrest ape: it hunts the walking dead (and eats them).</summary>
     bool Hunter => Wildlife.HuntsUndead(Kind.Id);
 
     /// <summary>Picks fights with other creatures by itself: warring and hostile dragons, knights, companions, the apes that hunt the dead.</summary>
-    bool SeeksFoes => !Young && (Watch || Foe is not null || Leader is not null || Hunter || Side is Side.Alliance or Side.Chromatic or Side.Corrupted or Side.Metallic);
+    bool SeeksFoes => !Young && (Watch || Foe is not null || Leader is not null || Hunter || SeaHunter || Side is Side.Alliance or Side.Chromatic or Side.Corrupted or Side.Metallic);
 
     /// <summary>Takes another shape (an imp turning into a raven to get away).</summary>
     public void Reshape(string look) => Restyle(look);
@@ -715,8 +723,11 @@ public partial class Enemy : Fighter
         // Wary creatures (metallic dragons) leave people alone unless attacked; friends and the young never start it.
         var player = _target ?? Player.Local;
         if (State == EnemyState.Idle && !Kind.Wary && !Friendly && !Kin && !Young && _ignore <= 0 && player is not null && !player.Downed
-            && player.GlobalPosition.DistanceTo(GlobalPosition) < (Kind.Timid ? 16 : 14) * MathF.Sqrt(bulk))
+            && (!SeaHunter || InTheSea(player.GlobalPosition))
+            && player.GlobalPosition.DistanceTo(GlobalPosition) < (SeaHunter ? 30 : Kind.Timid ? 16 : 14) * MathF.Sqrt(bulk))
             Provoke(player);
+        // A sea serpent hunts whatever's in its water, and lets go of whatever gets out of it.
+        if (SeaHunter && _target is not null && !InTheSea(_target.GlobalPosition)) { _target = null; State = EnemyState.Idle; }
 
         // Looking about for a fight: the enemy flight in a war, hostile dragons, the company's foes.
         if (SeeksFoes && _target is null && (_rival is null || !IsInstanceValid(_rival) || _rival.State == EnemyState.Dead) && (_lookForRival -= delta) <= 0)
@@ -818,6 +829,10 @@ public partial class Enemy : Fighter
         if (Rooted > 0 || Stunned > 0) move = Vector3.Zero; // pinned, or seeing stars
         // A sea serpent keeps to deep water: it won't come up the beach after you.
         if (move != Vector3.Zero && Tristinwold.World.Wildlife.Aquatic(Kind.Id) && Tristinwold.World.WorldGen.WaterLevel - City.FloorAt(GlobalPosition + move.Normalized() * 4) < 2.5f) move = Vector3.Zero;
+        // And nothing of the land swims out after you: a deviant, a bandit or a bear without a ship of its own waits on
+        // the shore while you're in deep water or aboard yours. (Anything already in the water can still make for land.)
+        if (move != Vector3.Zero && !Friendly && Hero is null && !CanFly && !Tristinwold.World.Wildlife.Aquatic(Kind.Id)
+            && Tristinwold.World.WorldGen.WaterLevel - City.FloorAt(GlobalPosition + move.Normalized() * 1.5f) is var ahead && ahead > SwimDepth - 0.2f && ahead > Depth) move = Vector3.Zero;
         if (CanFly && Leader is null) move = Fly(move, speed, bulk, delta);
         if (State != EnemyState.Fighting || Airborne) FaceAlong(move, delta);
         if (Airborne || _altitude > 0) Hover(delta, move);

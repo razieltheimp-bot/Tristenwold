@@ -137,7 +137,7 @@ public partial class Main
         var centre = new Vector3((float)h.X, 0, (float)h.Z);
         var gate = Mathf.Atan2(-centre.Z, -centre.X); // as the hall's laid out (see HallCompound)
         var a = gate - 0.75f;
-        var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 7.5f;
+        var at = centre + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * 5f; // in the yard, clear of the buildings round it (which keep 6.5 m off the middle)
         var yaw = Mathf.Atan2(centre.X - at.X, centre.Z - at.Z);
         var keeper = at + new Basis(Vector3.Up, yaw) * new Vector3(1.4f, 0, 1.8f);
         return (at with { Y = City.FloorAt(at) }, yaw, keeper with { Y = City.FloorAt(keeper) });

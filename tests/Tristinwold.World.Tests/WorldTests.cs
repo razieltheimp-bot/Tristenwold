@@ -193,4 +193,20 @@ public class WorldTests(ITestOutputHelper output)
         Assert.Equal(wolf.Health, wolf.NewCombatant().MaxHealth);
         Assert.True(wolf.NewCombatant(WorldGen.Danger(0, -8000)).MaxHealth > wolf.Health * 2);
     }
+
+    [Fact]
+    public void Home_country_is_level_one_out_to_the_nearest_towns_and_it_climbs_every_way_from_there()
+    {
+        var w = new WorldGen();
+        var first = w.SettlementsNear(0, 0, 1500).Where(s => s.Kind is SettlementKind.Town && !Northwood.Inside(s.X, s.Z)).MinBy(s => s.DistanceTo(0, 0))!;
+        Assert.Equal(1, WorldGen.LevelAt(first.X, first.Z), 1); // the nearest town is still home country
+        Assert.Equal(1, WorldGen.Danger(300, 300));
+        foreach (var (dx, dz) in new[] { (1.0, 0.0), (0.0, 1.0), (-0.7, 0.7), (0.6, 0.8) })
+        {
+            var (near, far) = (WorldGen.LevelAt(dx * 1500, dz * 1500), WorldGen.LevelAt(dx * 4000, dz * 4000));
+            if (Northwood.Inside(dx * 1500, dz * 1500)) continue;
+            Assert.True(near > 2 && far > near + 10, $"({dx},{dz}): level {near:0.0} at 1.5 km, {far:0.0} at 4 km");
+        }
+        Assert.True(WorldGen.Danger(4000, 0) > WorldGen.Danger(2000, 0));
+    }
 }

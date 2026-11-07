@@ -583,19 +583,52 @@ public partial class Places(Main main, WorldGen world) : Node3D
     Node3D? Building(Node3D parent, Settlement s, string kind, string colour, double dx, double dz, float yaw, float scale = 7.5f, string? name = null, string? inside = null)
     {
         kind = Buildings.KindFor(kind);
-        var at = new Vector2((float)(s.X + dx), (float)(s.Z + dz));
         var room = kind switch { "keep" => 16f, "church" => 12f, "longhall" or "tavern" or "barn" => 8f, "well" => 2.5f, _ => 6f };
-        if (_lots.Any(l => l.At.DistanceTo(at) < l.Room + room)) return null;
+        var size = kind == "keep" ? (s.Kind == SettlementKind.City ? 1f : 0.82f) : 1f;
+        var seed = (int)(WorldGen.StableHash(s.Id) % 1000) + _lots.Count + 1;
+        if (_lots.Any(l => l.At.DistanceTo(new Vector2((float)(s.X + dx), (float)(s.Z + dz))) < l.Room + room)) return null; // taken
+        // On a slope, a step or two to where the ground's flatter (but no nearer anything else that's there).
+        var (bx, bz, rise) = (dx, dz, float.MaxValue);
+        foreach (var (ox, oz) in Steps)
+        {
+            var spot = new Vector2((float)(s.X + dx + ox), (float)(s.Z + dz + oz));
+            if (_lots.Any(l => l.At.DistanceTo(spot) < l.Room + room) || UnderHollowheart(spot, room)) continue;
+            var face = (dx + ox) * (dx + ox) + (dz + oz) * (dz + oz) > 1 ? Mathf.Atan2(-(float)(dx + ox), -(float)(dz + oz)) : yaw;
+            var r = kind == "well" ? 0 : Buildings.Rise(kind, seed, new Vector3(spot.X, 0, spot.Y), face, size);
+            if (r < rise - 0.4f) (bx, bz, rise) = (dx + ox, dz + oz, r);
+            if (rise < 1.2f) break;
+        }
+        if (rise == float.MaxValue) return null;
+        (dx, dz) = (bx, bz);
+        var at = new Vector2((float)(s.X + dx), (float)(s.Z + dz));
         _lots.Add((at, room));
         var facing = dx * dx + dz * dz > 1 ? Mathf.Atan2(-(float)dx, -(float)dz) : yaw;
-        var size = kind == "keep" ? (s.Kind == SettlementKind.City ? 1f : 0.82f) : 1f;
-        var b = Buildings.Place(parent, kind, Ground(s.X + dx, s.Z + dz), facing, (int)(WorldGen.StableHash(s.Id) % 1000) + _lots.Count, Buildings.RoofFor(colour), size, inside: inside);
+        var b = Buildings.Place(parent, kind, Ground(s.X + dx, s.Z + dz), facing, seed, Buildings.RoofFor(colour), size, inside: inside);
         if (name is not null) Label(parent, b.Position + new Vector3(0, Buildings.HeightOf(b) + 2.5f, 0), name, 0.02f);
         if (name is null && kind is "house" or "cottage" or "barn") _raised.Add(b);
         return b;
     }
 
     readonly List<Node3D> _raised = [];
+
+    /// <summary>Where a building might step to off a slope (or out from under Hollowheart's decks): its own spot first, then a little way off, then further.</summary>
+    static readonly (double X, double Z)[] Steps = [(0, 0), .. new[] { 3.0, 6.0, 9.0 }.SelectMany(r => Enumerable.Range(0, 8).Select(i => (r * Math.Cos(i * Math.PI / 4), r * Math.Sin(i * Math.PI / 4))))];
+
+    /// <summary>In among Hollowheart's great trees: in their roots, or under the bridges that run between their decks.</summary>
+    static bool UnderHollowheart(Vector2 at, float room)
+    {
+        var trees = Northwood.Hearts;
+        if (at.DistanceTo(new Vector2((float)Northwood.VillageX, (float)Northwood.VillageZ)) > 120) return false;
+        if (trees.Any(t => at.DistanceTo(new Vector2((float)t.X, (float)t.Z)) < t.Radius + room + 2)) return true;
+        var hub = new Vector2((float)trees[0].X, (float)trees[0].Z);
+        foreach (var t in trees.Skip(1))
+        {
+            var end = new Vector2((float)t.X, (float)t.Z);
+            var along = Mathf.Clamp((at - hub).Dot(end - hub) / (end - hub).LengthSquared(), 0, 1);
+            if (at.DistanceTo(hub + (end - hub) * along) < room + Forest.DeckWide / 2 + 1) return true;
+        }
+        return false;
+    }
 
     /// <summary>What the years have done to a place: homes the dragon burned, still ash; new ones up beyond the old; and the carpenter at work.</summary>
     void Fabric(Node3D parent, Settlement s, Rng rng, Built b)
@@ -810,7 +843,13 @@ public partial class Places(Main main, WorldGen world) : Node3D
         if (s.Id == "city:tristinwold")
         {
             // On the Crown, by the castle, its door out to the ring.
-            var at = new Vector3((float)(s.X + ux * 17), 0, (float)(s.Z + uz * 17));
+            // Far enough out from the castle (as it's turned) that the hall's back doesn't run into it.
+            var (cw, cb, cf) = Buildings.Extent("castle", 0, Surface.ClayTile);
+            var (cx, cz) = (new Vector2(Mathf.Cos(1.57f), -Mathf.Sin(1.57f)), new Vector2(Mathf.Sin(1.57f), Mathf.Cos(1.57f)));
+            var u = new Vector2((float)ux, (float)uz);
+            var castleReach = Mathf.Abs(u.Dot(cx)) * cw + Mathf.Max(0, u.Dot(cz)) * cf + Mathf.Max(0, -u.Dot(cz)) * cb;
+            var reach = Mathf.Max(17, castleReach + Buildings.Extent("longhall", 7100, Surface.Slate, 0.9f).Back + 1.5f);
+            var at = new Vector3((float)(s.X + ux * reach), 0, (float)(s.Z + uz * reach));
             hall = Buildings.Place(parent, "longhall", at with { Y = City.FloorAt(at) }, Mathf.Atan2((float)ux, (float)uz), 7100, Surface.Slate, 0.9f, inside: "council");
             (ux, uz) = (-ux, -uz);
         }

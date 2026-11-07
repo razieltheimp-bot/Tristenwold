@@ -160,6 +160,8 @@ public sealed class Bond
     public bool Hitched { get; set; }
     /// <summary>Keeping shop for the hero (see <see cref="Keeping"/>): at home, at the wagon or aboard the ship; null when not.</summary>
     public string? Keeps { get; set; }
+    /// <summary>In command of a ship of the hero's fleet (her name), sailing on the hero's orders: away from the company till they're brought ashore.</summary>
+    public string? Sails { get; set; }
     /// <summary>The class an apprentice or squire is learning: their hero's, unless the hero has had them trained another way. Null in an older save.</summary>
     public string? Trains { get; set; }
     /// <summary>What the hero has given them to wear and carry (see <see cref="Kit"/>), by slot.</summary>
@@ -507,6 +509,7 @@ public static class PartyRules
     /// <summary>Whether this one can join those following, as things stand (it isn't counted itself).</summary>
     public static bool MayFollow(IReadOnlyCollection<Bond> bonds, Bond who, bool freePets, bool freeApprentices = false)
     {
+        if (who.Sails is not null) return false; // away at sea, in command of a ship
         if (who.Machine) return true; // a golem comes with the calling, and a saboteur makes as many mites as they like
         var others = bonds.Where(b => b != who && b.Following).ToList();
         if (IsApprentice(who)) return freeApprentices || others.Count(IsApprentice) < MaxApprentices;

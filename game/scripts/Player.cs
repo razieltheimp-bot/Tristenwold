@@ -329,6 +329,7 @@ public partial class Player : Fighter
         if (Downed)
         {
             _downTimer -= delta;
+            _climbing = false;
             if (_downTimer <= 0) Rise();
             FallAndSlide(delta, Vector3.Zero);
             return;
@@ -388,13 +389,20 @@ public partial class Player : Fighter
                 Velocity = Velocity with { Y = JumpSpeed * (float)Math.Sqrt(Pack.JumpHeight) }; // twice the speed would be four times the height
                 if (!Swimming) { Figure.Perform("Jump_Start", 0.22, 1.5f); Sound.At("move/jump", GlobalPosition, -6); } // a crouch and a spring
             }
-            if (_jetting) Jet(dir, speed, delta);
-            else FallAndSlide(delta, dir * speed);
+            if (_jetting) _climbing = false;
+            if (_climbing) Clamber(input, delta);
+            else if (_jetting) Jet(dir, speed, delta);
+            else
+            {
+                FallAndSlide(delta, dir * speed);
+                Grip(dir);
+            }
             Steps(delta);
 
             // The body turns to run the way you're going; it faces forward to strike or cast.
             var acting = Now < _actingUntil;
-            var target = acting ? 0 : input == Vector2.Zero ? Figure.Rotation.Y : Mathf.Atan2(-input.X, -input.Y); // -Z is forward
+            var wall = Basis.Inverse() * -_wallNormal; // on a wall, facing into it
+            var target = _climbing ? Mathf.Atan2(-wall.X, -wall.Z) : acting ? 0 : input == Vector2.Zero ? Figure.Rotation.Y : Mathf.Atan2(-input.X, -input.Y); // -Z is forward
             var before = Figure.Rotation.Y;
             var yaw = Mathf.LerpAngle(before, target, (float)Math.Min(1, delta * 12));
             // Leaning into the turn and forward into a sprint, more the faster you go, and easing back upright.
@@ -404,7 +412,7 @@ public partial class Player : Fighter
             var stoop = IsOnFloor() && sprint ? -0.12f * pace : 0;
             var ease = (float)Math.Min(1, delta * 8);
             Figure.Rotation = new Vector3(Mathf.Lerp(Figure.Rotation.X, stoop, ease), yaw, Mathf.Lerp(Figure.Rotation.Z, lean, ease));
-            Figure.Move(GroundSpeed, IsOnFloor(), Swimming);
+            Figure.Move(_climbing ? (input == Vector2.Zero ? 0 : WalkSpeed * 0.6f) : GroundSpeed, IsOnFloor() || _climbing, Swimming);
         }
         // The view widens a little at a sprint, and settles back when you slow.
         var widen = GroundSpeed > WalkSpeed * 1.15f ? 82f : 75f;
@@ -1467,6 +1475,77 @@ public partial class Player : Fighter
     IEnumerable<Enemy> Foes() =>
         GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e.State != EnemyState.Dead && !e.Friendly && !e.Kin)
             .Concat(Rivals?.Invoke().Where(IsInstanceValid) ?? []);
+
+    // ---- climbing ------------------------------------------------------------------------------------------------
+
+    bool _climbing;
+    Vector3 _wallNormal = Vector3.Back;
+    double _offWall;
+    bool _toldClimb;
+
+    /// <summary>On a wall or a cliff face, climbing.</summary>
+    public bool Climbing => _climbing;
+
+    /// <summary>What lets this hero climb just now (see <see cref="Gameplay.Climbing"/>), or null.</summary>
+    public string? ClimbsBy => Gameplay.Climbing.Why(Hero.Classes, Race.Id, Form ?? _hybrid, _possessing && _hybrid is null && Hero.Knows("EtherAeronaut"),
+        Companions().Count(c => c.Bond?.Role == BondRole.Mite), Pack.Count(Gameplay.Climbing.Gear) > 0);
+
+    /// <summary>Walking into a wall or a cliff, for a hero who can: they take hold of it.</summary>
+    void Grip(Vector3 dir)
+    {
+        if (dir == Vector3.Zero || Swimming || Mount is not null || !IsOnWall()) return;
+        var n = GetWallNormal();
+        if (Mathf.Abs(n.Y) > 0.6f || dir.Dot(-n with { Y = 0 }) < 0.6f) return;
+        if (!WallAhead(-n, 1.3f)) return; // only a kerb or a crate, below the chest: they step or jump up it
+        if (ClimbsBy is not { } by) return;
+        _climbing = true;
+        _wallNormal = (n with { Y = 0 }).Normalized();
+        _offWall = 0;
+        if (!_toldClimb) { _toldClimb = true; Said?.Invoke($"You climb, by {by}: forward to go up, sideways along, jump to push off."); }
+    }
+
+    /// <summary>On the wall: up, down and along it, holding on; over the top when it runs out; off it with a jump. It tires them.</summary>
+    void Clamber(Vector2 input, double delta)
+    {
+        var face = -_wallNormal;
+        var right = face.Cross(Vector3.Up).Normalized();
+        if (Input.IsActionJustPressed("jump"))
+        {
+            _climbing = false;
+            Velocity = _wallNormal * 6 + Vector3.Up * 5; // kicked off the wall
+            MoveAndSlide();
+            return;
+        }
+        var (up, side) = (-input.Y, input.X);
+        var moving = up != 0 || side != 0;
+        if (moving && Class.Id != "Thief") Stats.Spend(AttackKind.Weapon, Gameplay.Climbing.StaminaPerSecond * delta);
+        var spent = Stats.Stamina < 1 && Class.Id != "Thief";
+        Velocity = Vector3.Up * (spent ? -2.5f : up * Gameplay.Climbing.Speed) + right * side * Gameplay.Climbing.Speed * 0.8f + face * 2.5f;
+        MoveAndSlide();
+        _fallen = 0;
+        if (IsOnWall() && GetWallNormal() is var n && Mathf.Abs(n.Y) < 0.7f)
+        {
+            _wallNormal = (n with { Y = 0 }).Normalized();
+            _offWall = 0;
+        }
+        else if ((_offWall += delta) > 0.1)
+        {
+            _climbing = false;
+            if (up > 0) Velocity = Vector3.Up * 4f + face * 2.5f; // over the top, onto the ledge
+        }
+        if (IsOnFloor() && up < 0) _climbing = false; // climbed back down to the ground
+    }
+
+    /// <summary>Whether there's something solid just ahead at this height above their feet.</summary>
+    bool WallAhead(Vector3 way, float height)
+    {
+        var from = GlobalPosition + Vector3.Up * height;
+        var hit = GetWorld3D().DirectSpaceState.IntersectRay(PhysicsRayQueryParameters3D.Create(from, from + (way with { Y = 0 }).Normalized() * 1.2f, CollisionMask, [GetRid()]));
+        return hit.Count > 0;
+    }
+
+    /// <summary>For the self-test.</summary>
+    public void ClimbForTest(Vector3 normal) { _climbing = true; _wallNormal = normal; _offWall = 0; }
 
     /// <summary>Other players' heroes this hero's blows reach now (stand-ins, see <see cref="Enemy.Hero"/>): the game says who.</summary>
     public Func<IEnumerable<Enemy>>? Rivals { get; set; }

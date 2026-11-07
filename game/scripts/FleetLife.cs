@@ -27,7 +27,8 @@ public partial class Main
         if ((_fleetTick -= delta) <= 0)
         {
             _fleetTick = 5;
-            foreach (var f in _sea.Fleet.Where(f => f.Away && _guilds.PlaySeconds >= f.RunBack).ToList()) FleetHome(f);
+            foreach (var f in _sea.Fleet.Where(f => f.RunTo is not null && _guilds.PlaySeconds >= f.RunBack).ToList()) FleetHome(f);
+            TendMasters();
         }
         var pos = _player.GlobalPosition;
         var near = new Vector2(150 - pos.X, 5 - pos.Z).Length() < 320 && _indoors is null && _cave is null && _atSea is null;
@@ -46,6 +47,29 @@ public partial class Main
             ship.Hands(f.Hands);
             _fleetDrawn[f] = ship;
         }
+    }
+
+    /// <summary>A market a ship's master can trade at: a port's over the sea, or the Exchange at home.</summary>
+    IDock? Dock(string id) => id == Seas.Tristinwold ? new HomeDock(_city) : Seas.Get(id) is { } p && p.Id != Brasswake.Port ? new PortDock(_sea.Market(p, _city.Day)) : null;
+
+    /// <summary>The fleet's masters about the hero's orders: word of what's come of it, and the crowns they send home.</summary>
+    void TendMasters()
+    {
+        if (!_sea.Fleet.Any(f => f.Mastered || f.Plan.Count > 0)) return;
+        var news = _sea.TendFleet(_guilds.PlaySeconds, Dock, id => _bonds.FirstOrDefault(b => b.Id == id), _lootRng);
+        foreach (var n in news)
+        {
+            if (n.Crowns > 0)
+            {
+                _player.Crowns += n.Crowns;
+                _sea.Profit += n.Crowns;
+                Sound.Ui("coin", -4);
+            }
+            _hud.Toast(n.Text, 9);
+            _hud.Log(n.Text);
+        }
+        foreach (var b in _bonds.Where(b => b.Sails is not null && _sea.Fleet.All(f => f.Master != b.Id))) b.Sails = null; // her master's ship is gone: they're home
+        if (news.Count > 0) Save();
     }
 
     void FleetHome(FleetShip f)
@@ -83,7 +107,7 @@ public partial class Main
 
     void FleetList(Person? person)
     {
-        var options = _sea.Fleet.Select(f => ($"{f.Name}, a {SeaBook.Hulls[f.Size].Name}: {(f.Away ? $"away to {Seas.Ports.FirstOrDefault(p => p.Id == f.RunTo)?.Name}, home in {FleetDue(f)}" : $"{f.Hands}/{f.Crew} hands, hull {f.Hull:0}%")}", (Action)(() => FleetShipMenu(person, f)))).ToList();
+        var options = _sea.Fleet.Select(f => ($"{f.Name}, a {SeaBook.Hulls[f.Size].Name}: {(f.RunTo is not null ? $"away to {Seas.Ports.FirstOrDefault(p => p.Id == f.RunTo)?.Name}, home in {FleetDue(f)}" : f.Mastered ? $"{f.MasterName} in command, {f.Whereabouts(_guilds.PlaySeconds)}" : f.Away ? f.Whereabouts(_guilds.PlaySeconds) : $"{f.Hands}/{f.Crew} hands, hull {f.Hull:0}%")}", (Action)(() => FleetShipMenu(person, f)))).ToList();
         options.Add(("Done.", _hud.EndTalk));
         _hud.Talk("Your fleet", $"Your own ship, {_sea.ShipName}, and {_sea.Fleet.Count} more of your own. A ship with a full crew can be sent trading while you're about your business.", [.. options]);
     }
@@ -97,8 +121,13 @@ public partial class Main
     void FleetShipMenu(Person? person, FleetShip f)
     {
         var hull = SeaBook.Hulls[f.Size];
-        if (f.Away) { _hud.Talk(f.Name, $"Away to {Seas.Ports.FirstOrDefault(p => p.Id == f.RunTo)?.Name} with {f.Hands} hands. Home in {FleetDue(f)}.", ("Back", () => FleetList(person))); return; }
+        if (f.Mastered) { ShipOrders(person, f); return; }
+        if (f.RunTo is not null) { _hud.Talk(f.Name, $"Away to {Seas.Ports.FirstOrDefault(p => p.Id == f.RunTo)?.Name} with {f.Hands} hands. Home in {FleetDue(f)}.", ("Back", () => FleetList(person))); return; }
+        if (f.Away) { _hud.Talk(f.Name, $"Her hands are bringing her home: she's {f.Whereabouts(_guilds.PlaySeconds)}.", ("Back", () => FleetList(person))); return; }
         var options = new List<(string, Action)>();
+        // One of the company can take command of her, and sail her on the hero's orders.
+        foreach (var b in _bonds.Where(b => Keeping.CanKeep(b) && b.Sails is null && b.Keeps is null).ToList())
+            options.Add(($"Put {b.Name} in command of her. (level {b.Level}; they'll sail and trade on your orders)", () => GiveCommand(person, f, b)));
         if (f.Hands < f.Crew) options.Add(($"Sign on hands. ({f.Hands}/{f.Crew}; {SeaBook.HandWage} crowns a hand)", () => HireHands(person, f)));
         if (f.Crewed && f.Hull >= SeaBook.Seaworthy)
             foreach (var port in Seas.Ports.Where(p => p.Leagues <= 3).OrderBy(p => p.Leagues).Take(6))
@@ -147,6 +176,7 @@ public partial class Main
     {
         if (AboardShip || _sea.Voyage is not null) { _hud.Toast("Not while you're sailing her.", 4); return; }
         if (_sea.ShipShopOpen) { _hud.Toast($"Bring your shopkeeper off {_sea.ShipName} first.", 5); return; }
+        if (f.Mastered) { _hud.Toast($"Bring {f.MasterName} ashore from {f.Name} first.", 5); return; }
         var was = _sea.ShipName;
         _sea.Flagship(f);
         var old = f; // they swap places as well as roles: she lies where the old one did, and the old one takes her berth in the line

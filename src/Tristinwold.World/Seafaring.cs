@@ -28,7 +28,7 @@ public sealed record SeaPort(string Id, string Name, int Leagues, double Pirates
 }
 
 /// <summary>The ports Tristinwold's ships sail to, nearest first.</summary>
-public static class Seas
+public static partial class Seas
 {
     /// <summary>The worst names on the water, worst first.</summary>
     public static readonly IReadOnlyList<Flagship> Flagships =
@@ -163,7 +163,7 @@ public enum ShipSize { Small, Medium, Large }
 /// hired to crew her (ordinary sailors, not the hero's company: they don't count against apprentices or hirelings, and
 /// they're no use in a fight), and, while she's away on a trading run, where to, when she's due home, and how it went.
 /// </summary>
-public sealed class FleetShip
+public sealed partial class FleetShip
 {
     public string Name { get; set; } = "";
     public ShipSize Size { get; set; } = ShipSize.Small;
@@ -182,12 +182,12 @@ public sealed class FleetShip
     public double RunHarm { get; set; }
     public bool RunPirates { get; set; }
 
-    [System.Text.Json.Serialization.JsonIgnore] public bool Away => RunTo is not null;
+    [System.Text.Json.Serialization.JsonIgnore] public bool Away => RunTo is not null || At is not null || Bound is not null;
     [System.Text.Json.Serialization.JsonIgnore] public int Crew => SeaBook.HandsFor(Size);
     [System.Text.Json.Serialization.JsonIgnore] public bool Crewed => Hands >= Crew;
 }
 
-public sealed class SeaBook
+public sealed partial class SeaBook
 {
     public SeaRank Rank { get; set; }
     public int Voyages { get; set; }

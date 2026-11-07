@@ -316,6 +316,7 @@ public static class Items
         // ---- tools of the town's trades ----------------------------------------------------------------
         new("fishing_rod", "Fishing Rod", ItemKind.Tool, 12, "Ash rod, horsehair line, a bone hook. Face open water and press E to cast."),
         new("pickaxe", "Pickaxe", ItemKind.Tool, 18, "For ore veins. Walk up to one and press E."),
+        new("climbing_gear", "Climbing Gear", ItemKind.Tool, 60, "Rope, iron spikes, a hammer and a pair of hand-claws. Carry it, and walk into a wall or a cliff to climb it: forward to go up, jump to push off."),
         new("woodcutters_axe", "Woodcutter's Axe", ItemKind.Tool, 15, "A broad, heavy bit. For felling trees at a woodlot."),
         new("tinderbox", "Tinderbox", ItemKind.Tool, 5, "Flint, steel and char-cloth. With a log, light a fire anywhere outside town (from your pack, I)."),
         new("spade", "Spade", ItemKind.Tool, 8, "For digging where a treasure map says."),

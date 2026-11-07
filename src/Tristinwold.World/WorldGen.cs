@@ -191,7 +191,18 @@ public sealed class WorldGen
     };
 
     /// <summary>How hard the wilds are here: 1 at Tristinwold, rising the further you go.</summary>
-    public static double Danger(double x, double z) => Northwood.Inside(x, z) ? Northwood.DangerFor(Northwood.Level(x, z)) : 1 + Math.Sqrt(x * x + z * z) / 4000;
+    public static double Danger(double x, double z) => Northwood.DangerFor(LevelAt(x, z));
+
+    /// <summary>
+    /// Home country: out as far as the nearest towns on the road (Greywater and Druitt), the wilds are level one,
+    /// there for a new hero to cut their teeth on. Past that, another level every <see cref="LevelEvery"/> metres
+    /// further out, whichever way you go, so a hero who wanders too far too soon finds out.
+    /// </summary>
+    public const double HomeCountry = 950, LevelEvery = 200;
+
+    /// <summary>What level a hero wants to be to hold their own here (the Northwood keeps its own reckoning).</summary>
+    public static double LevelAt(double x, double z) =>
+        Northwood.Inside(x, z) ? Northwood.Level(x, z) : 1 + Math.Max(0, Math.Sqrt(x * x + z * z) - HomeCountry) / LevelEvery;
 
     // ---- where things are ---------------------------------------------------------------------
 

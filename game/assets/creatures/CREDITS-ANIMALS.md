@@ -1,9 +1,9 @@
-# Animals from 0 A.D.
+# Converted animals (CC-BY-SA 3.0)
 
 These creatures are converted from 0 A.D. by Wildfire Games (https://play0ad.com,
 https://github.com/0ad/0ad), whose art is licensed CC-BY-SA 3.0
 (https://creativecommons.org/licenses/by-sa/3.0/). The converted .glb files are released under
-the same licence. Converted by tools/creatures/zero_ad.py:
+the same licence. Converted by tools/creatures/animals.py:
 
 - wolf.glb: fauna/wolf.xml
 - ice_wolf.glb: fauna/arctic_wolf.xml

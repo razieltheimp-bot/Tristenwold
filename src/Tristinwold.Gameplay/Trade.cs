@@ -420,7 +420,7 @@ public static class Shops
 {
     public static readonly Shop Provisions = new("shop:provisions", "Hollis's Provisions", "Hollis Brandt",
         "Bread, rope, leather, meat for your beasts. If it keeps you alive on the road, I sell it.",
-        ["bread", "travel_rations", "ale", "meat", "linen", "leather", "coal", "healing_draught", "traveller_cloak", "alchemist_kit", "fishing_rod", "tinderbox", "spade", "snare"]);
+        ["bread", "travel_rations", "ale", "meat", "linen", "leather", "coal", "healing_draught", "traveller_cloak", "alchemist_kit", "fishing_rod", "tinderbox", "spade", "snare", "climbing_gear"]);
 
     public static readonly Shop Smithy = new("shop:smithy", "The Anvil Gate", "Hulda Ironhand",
         "Steel's honest. People aren't. What do you need hitting, or hitting you less?",
@@ -447,7 +447,7 @@ public static class Shops
     /// <summary>The Greyhollow quarry and mine, west of the walls: picks, stone and ore.</summary>
     public static readonly Shop Quarry = new("shop:quarry", "Greyhollow Quarry", "Dagna Flint",
         "Stone for the walls, ore for the smelters, coal for everyone. Grab a pick and swing it, if you've the arms for it.",
-        ["pickaxe", "stone_block", "iron_ore", "coal", "tinderbox", "bread", "healing_draught"], Trade: Job.Mining);
+        ["pickaxe", "stone_block", "iron_ore", "coal", "tinderbox", "bread", "healing_draught", "climbing_gear"], Trade: Job.Mining);
 
     /// <summary>Hollin's woodlot, south-west of the walls: axes and timber.</summary>
     public static readonly Shop Woodlot = new("shop:woodlot", "Hollin's Woodlot", "Hollin Ashby",

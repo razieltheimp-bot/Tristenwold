@@ -41,6 +41,25 @@ public static class Buildings
         return body;
     }
 
+    /// <summary>How far a building reaches from where it's placed, before it's turned: half its width (along X), and how far it runs back (-Z) and forward to its door (+Z).</summary>
+    public static (float HalfWidth, float Back, float Front) Extent(string kind, int seed, Surface roof = Surface.Slate, float scale = 1)
+    {
+        var solids = Get(kind, Math.Abs(seed) % Variants, roof).Solids;
+        if (solids.Count == 0) return (4 * scale, 4 * scale, 4 * scale);
+        var half = solids.Max(s => Mathf.Abs(s.Centre.X) + s.Size.X / 2);
+        return (half * scale, solids.Max(s => s.Size.Z / 2 - s.Centre.Z) * scale, solids.Max(s => s.Centre.Z + s.Size.Z / 2) * scale);
+    }
+
+    /// <summary>How far the ground rises under a building from its lowest corner to its highest, if it stood here turned this way.</summary>
+    public static float Rise(string kind, int seed, Vector3 at, float yaw, float scale = 1)
+    {
+        var (half, back, front) = Extent(KindFor(kind), seed, Surface.Slate, scale);
+        var turn = new Basis(Vector3.Up, yaw);
+        var heights = new[] { (0f, 0f), (-half, -back), (half, -back), (-half, front), (half, front) }
+            .Select(c => City.FloorAt(at + turn * new Vector3(c.Item1, 0, c.Item2))).ToList();
+        return heights.Max() - heights.Min();
+    }
+
     /// <summary>The buildings you can walk into, and where each one's door is (on the front, +Z, in the middle).</summary>
     static readonly List<(Node3D Body, string Kind, int Seed, float Front)> Doors = [];
 

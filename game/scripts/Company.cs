@@ -106,6 +106,7 @@ public partial class Main
         Enemy.Felled += OnFelled;
         Enemy.Turned += OnTurned;
         Enemy.SparEnded += OnSparEnded;
+        Enemy.Landed += OnSeaBite;
         Enemy.Slain += OnDrifterSlain;
         _player.WentDown += OnDrifterWin;
         Enemy.Slain += OnUndyingSlain;
@@ -126,6 +127,7 @@ public partial class Main
     void TearDownCompany()
     {
         Enemy.Slain -= OnSlain;
+        Enemy.Landed -= OnSeaBite;
         Enemy.RanOff -= OnRanOff;
         Enemy.Felled -= OnFelled;
         Enemy.Turned -= OnTurned;
@@ -1070,7 +1072,7 @@ public partial class Main
         {
             var body = BodyOf(b);
             var kind = Bestiary.Get(b.KindId).Name.ToLowerInvariant();
-            var state = !b.Following ? (b.Keeps is { } keeps ? $"keeping shop {ShopCalled(keeps)}" : b.Hitched ? "hitched to your wagon" : _pursuits.House.IsHome ? "at home" : "waiting at the Gallows Perch") : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
+            var state = !b.Following ? (b.Sails is not null && ShipOf(b) is { } ship ? $"in command of {ship.Name}, {ship.Whereabouts(_guilds.PlaySeconds)}" : b.Keeps is { } keeps ? $"keeping shop {ShopCalled(keeps)}" : b.Hitched ? "hitched to your wagon" : _pursuits.House.IsHome ? "at home" : "waiting at the Gallows Perch") : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
             return $"{b.Name}: {b.Stage} {(b.Role is BondRole.Pet or BondRole.Dragon ? kind : "")}, level {b.Level} ({b.Xp}/{Bond.XpToNext(b.Level)} xp), {state}{(b.Eats ? $", {b.Fed:0}% fed" : "")}. Knows: {(b.Skills.Any() ? string.Join(", ", b.Skills.Select(s => s.Name)) : "nothing yet")}.";
         }
         // Each of the company, and right under them what can be done for them.
@@ -1090,6 +1092,11 @@ public partial class Main
                 if (bond.Hitched) { if (MayFollow(bond)) options.Add(($"Unhitch {bond.Name} to ride", () => { Unhitch(bond); Save(); ShowParty(); })); continue; }
                 if (_player.Mount?.Bond != bond && _bonds.Count(b => b.Hitched) < TradeBook.MaxHorses) options.Add(($"Hitch {bond.Name} to the wagon", () => { HitchToWagon(bond); Save(); ShowParty(); })); // what you're riding can't pull as well
                 if (!bond.Following && MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
+                continue;
+            }
+            if (bond.Sails is not null && ShipOf(bond) is { } commands) // at sea in command of a ship: orders go to them by word
+            {
+                options.Add(($"Send word to {bond.Name} aboard {commands.Name}", () => ShipOrders(null, commands)));
                 continue;
             }
             options.AddRange(KeepingOptions(bond)); // an apprentice or squire can be set to keep shop
