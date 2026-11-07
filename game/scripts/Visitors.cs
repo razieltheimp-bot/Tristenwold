@@ -22,11 +22,14 @@ public partial class Visitors : Node3D
     /// <summary>Where a player was last seen, if they're about.</summary>
     public Vector3? Where(string player) => _here.TryGetValue(player, out var v) ? v.Target : null;
 
+    /// <summary>Whether a player's hero is about and in the shadows (for the self-test).</summary>
+    public bool HiddenForTest(string player) => _here.TryGetValue(player, out var v) && v.Hidden && v.GetChildren().OfType<Body>().All(b => !b.Visible);
+
     /// <summary>The stand-in for a player's hero, if they're about.</summary>
     public Enemy? StandIn(string player) => _here.TryGetValue(player, out var v) && IsInstanceValid(v.Stand) ? v.Stand : null;
 
     /// <summary>Every player about, as stand-ins.</summary>
-    public IEnumerable<Enemy> StandIns => _here.Values.Select(v => v.Stand).Where(IsInstanceValid);
+    public IEnumerable<Enemy> StandIns => _here.Values.Where(v => !v.Hidden).Select(v => v.Stand).Where(IsInstanceValid); // a hero in the shadows can't be picked out to strike
 
     /// <summary>What a player's hero is called, if they're about.</summary>
     public string? NameOf(string player) => StandIn(player)?.Stats.Name;
@@ -81,6 +84,8 @@ public partial class Visitors : Node3D
         public string Player = "";
         public Enemy Stand = null!;
         bool _marked;
+        /// <summary>In the shadows: not drawn, no name over them, and not there to be struck.</summary>
+        public bool Hidden;
 
         public void Take(Moved m, double now)
         {
@@ -92,6 +97,9 @@ public partial class Visitors : Node3D
             _yaw = m.Yaw;
             _speed = m.Speed;
             if (_plate is not null && _plate.Text != m.Name) _plate.Text = m.Name;
+            Hidden = m.Hidden;
+            if (_figure is not null) _figure.Visible = !Hidden;
+            if (_plate is not null) _plate.Visible = !Hidden;
             if (m.Clip is { } clip && m.Beat != _beat)
             {
                 if (_beat >= 0 && _figure is not null)
@@ -123,6 +131,7 @@ public partial class Visitors : Node3D
                 Position = new Vector3(0, Math.Max(1.6f, top) + 0.45f, 0),
             };
             AddChild(_plate);
+            _figure.Visible = _plate.Visible = !m.Hidden;
         }
 
         public void Flinch() => _figure?.Hurt();

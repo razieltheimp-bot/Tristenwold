@@ -1447,6 +1447,17 @@ public partial class SelfTest(Main main) : Node
         var (plain, sneak) = (Average(false), Average(true));
         Check(sneak > plain * 1.3 && !p.Hidden, $"a sneak attack does more ({sneak:0.0} against {plain:0.0} a blow), and brings you out of the shadows");
         bandit.QueueFree();
+        // Other players don't see a hero in the shadows either.
+        p.HideForTest();
+        Check(p.Report().Hidden, "hidden, what this hero tells the server says so");
+        var visitors = main.VisitorsNode;
+        var near = p.GlobalPosition + new Vector3(3, 0, 3);
+        visitors.Seen("Shade", new Moved("Rogue", null, "Shade", near.X, City.FloorAt(near), near.Z, 0, 0, null, 0, Hidden: true));
+        await Frames(5);
+        Check(visitors.HiddenForTest("Shade") && visitors.StandIns.All(s => s.Stats.Name != "Shade"), "another player in the shadows isn't drawn, has no name over them, and can't be picked out to strike");
+        visitors.Seen("Shade", new Moved("Rogue", null, "Shade", near.X, City.FloorAt(near), near.Z, 0, 0, null, 0));
+        await Frames(5);
+        Check(!visitors.HiddenForTest("Shade") && visitors.StandIns.Any(s => s.Stats.Name == "Shade"), "and out of them, they're there again");
         if (ranger) foreach (var k in p.Hero.Learned.Keys.Except(knew).ToList()) p.Hero.Learned.Remove(k);
         Check(Tristinwold.Gameplay.Classes.Get("Ranger").Calling == Tristinwold.Gameplay.Calling.Rogue, "(a ranger is a rogue, and doesn't hide: only thieves and assassins do)");
     }

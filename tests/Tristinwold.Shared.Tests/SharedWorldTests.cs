@@ -117,6 +117,21 @@ public class SharedWorldTests
     }
 
     [Fact]
+    public void A_rogue_in_the_shadows_is_hidden_from_everyone_else_until_they_come_out()
+    {
+        var server = NewServer();
+        server.Connect(Hi("Joe"));
+        server.Connect(Hi("Mira"));
+        var hid = new Moved("Rogue", null, "Joe", 10, 0, -3, 0, 0, null, 0, Hidden: true);
+        Assert.True(Assert.Single(To<Seen>(server.Handle("Joe", hid), "Mira")).Where.Hidden);
+        // Through the wire as well as the server: the flag survives being written down and read back.
+        var back = (Moved)System.Text.Json.JsonSerializer.Deserialize<Message>(System.Text.Json.JsonSerializer.Serialize<Message>(hid))!;
+        Assert.True(back.Hidden);
+        Assert.False(Assert.Single(To<Seen>(server.Handle("Joe", hid with { Hidden = false }), "Mira")).Where.Hidden);
+        Assert.False(new Moved("Knight", null, "Old", 0, 0, 0, 0, 0, null, 0).Hidden); // an older game's never are
+    }
+
+    [Fact]
     public void A_blow_between_heroes_goes_to_the_one_struck_and_a_fall_pays_the_winner_once_an_hour()
     {
         var now = new DateTime(2026, 11, 6, 12, 0, 0, DateTimeKind.Utc);

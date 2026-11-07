@@ -79,9 +79,10 @@ public sealed record CityTrade(Gameplay.CityAction Action) : Message;
 /// Where this player's hero is and what they're doing, a few times a second while it changes, so friends on
 /// the same server see them walk by. <paramref name="Look"/> and <paramref name="Avatar"/> say what to draw
 /// (the class look and the character page's choices); <paramref name="Clip"/> is the last move performed (a
-/// swing, a spell, a jump) and <paramref name="Beat"/> counts them, so each is played once.
+/// swing, a spell, a jump) and <paramref name="Beat"/> counts them, so each is played once. <paramref name="Hidden"/>:
+/// a rogue in the shadows, whom nobody else's game draws.
 /// </summary>
-public sealed record Moved(string Look, string? Avatar, string Name, float X, float Y, float Z, float Yaw, float Speed, string? Clip, int Beat) : Message;
+public sealed record Moved(string Look, string? Avatar, string Name, float X, float Y, float Z, float Yaw, float Speed, string? Clip, int Beat, bool Hidden = false) : Message;
 
 /// <summary>
 /// This hero's blow landed on another player's hero (any blow, any reason: there's no asking). The harm is worked

@@ -448,7 +448,7 @@ public partial class Player : Fighter
     public Moved Report()
     {
         var p = GlobalPosition;
-        return new Moved(Class.Look, Avatar, Stats.Name, p.X, p.Y, p.Z, Figure.GlobalRotation.Y, Frozen ? 0 : GroundSpeed, Figure.Recent, Figure.Beat);
+        return new Moved(Class.Look, Avatar, Stats.Name, p.X, p.Y, p.Z, Figure.GlobalRotation.Y, Frozen ? 0 : GroundSpeed, Figure.Recent, Figure.Beat, Hidden);
     }
 
     public bool Swing() => Mount is not null ? DragonStrike() : (_elemental is not null || _merged > Now && _possessing) && InFront(5.5, 70).Any() ? Slam() : Use(Class.Primary);

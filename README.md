@@ -284,7 +284,8 @@ to rank a move up to 5, each rank 15% stronger. Joining another class gives the 
 
 **Stealth** (F, or Hide on a phone). A Thief or an Assassin (not a Ranger: they're the open woods' rogue) can slip into
 the shadows for a moment: six seconds for a thief, ten for an assassin, for a little stamina, and again a quarter of a
-minute after. Every foe nearby loses them, nothing new sees them, and they go dim and see-through; the first blow out
+minute after. Every foe nearby loses them, nothing new sees them, and they go dim and see-through (and vanish altogether
+from other players' games: no figure, no name, nothing to strike); the first blow out
 of the shadows is a **sneak attack**, half again as hard (an assassin's backstab on top), and brings them out. A blow
 that finds them does too. `--selftest --stealth-only` walks through it.
 
