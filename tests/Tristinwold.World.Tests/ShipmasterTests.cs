@@ -205,6 +205,31 @@ public class ShipmasterTests
     }
 
     [Fact]
+    public void A_landing_far_from_its_colony_has_a_wagon_road_raiders_can_rob()
+    {
+        Assert.Equal(0, Seas.WagonRisk(60));
+        Assert.True(Seas.WagonRisk(400) > 0 && Seas.WagonRisk(2000) > Seas.WagonRisk(400) && Seas.WagonRisk(1e5) <= 0.35);
+        var (robbed, paid) = (0, 0);
+        for (var seed = 1UL; seed <= 40; seed++)
+        {
+            var w = new Waters();
+            var landing = Seas.Harbour("harbour:far-colony", "Farstead Landing", 1800, 0, [Good.Fish], [Good.Bread], inland: 2400);
+            w.Sea.PaysAt = [landing.Id];
+            SeaBook.TakeCommand(w.Ship, w.Lad);
+            SeaBook.StakeHer(w.Ship, 100);
+            w.Ship.Purse += 1000; // takings aboard
+            w.Sea.Order(w.Ship, [landing.Id], false, w.Now);
+            var news = new List<ShipNews>();
+            for (var i = 0; i < 3; i++) news.AddRange(w.Sail(new Rng(seed)));
+            Seas.Harbours.Remove(landing.Id);
+            paid += news.Sum(n => n.Crowns);
+            if (news.Any(n => n.Text.Contains("Raiders fell on the wagons"))) robbed++;
+        }
+        Assert.InRange(robbed, 2, 30);
+        Assert.True(paid > 0);
+    }
+
+    [Fact]
     public void Masterless_she_comes_home()
     {
         var w = new Waters();

@@ -1,3 +1,4 @@
+using Godot;
 using Tristinwold.Gameplay;
 using Tristinwold.World;
 
@@ -153,9 +154,10 @@ public partial class Main
         var mine = new HashSet<string>();
         foreach (var h in _city.ColoniesOf(_player.Company).ToList())
         {
-            if (!Coastal(h.Town, h.X, h.Z)) continue;
+            // Every colony has a harbour, on the nearest coast: by the colony, or a landing with a wagon road up to it.
+            if (LandingOf(h) is not { } l) continue;
             var id = $"harbour:{h.Town}";
-            Seas.Harbour(id, h.Name, h.X, h.Z, [Good.Fish, Good.Timber, Good.Stone], [Good.Bread, Good.Iron, Good.Ale]);
+            Seas.Harbour(id, LandingName(h, l), l.Sea.X, l.Sea.Z, [Good.Fish, Good.Timber, Good.Stone], [Good.Bread, Good.Iron, Good.Ale], l.Inland);
             pays.Add(id);
             mine.Add(id);
         }
@@ -173,6 +175,91 @@ public partial class Main
         }
         foreach (var gone in Seas.Harbours.Keys.Where(k => !mine.Contains(k)).ToList()) Seas.Harbours.Remove(gone);
         _sea.PaysAt = pays;
+    }
+
+    /// <summary>A colony's harbour: where ships lie off it, the shore its pier runs out from, which way the sea is, and how far the wagon road runs up to the colony.</summary>
+    readonly record struct Landing(Vector3 Sea, Vector3 Shore, Vector3 Seaward, float Inland);
+
+    readonly Dictionary<string, Landing?> _landings = [];
+    readonly Dictionary<string, Node3D> _landingDrawn = [];
+
+    static string LandingName(Hall h, Landing l) => l.Inland >= Seas.WagonRoad ? $"{h.Name} Landing" : h.Name;
+
+    /// <summary>The nearest deep water to a colony, and the shore in front of it on the way back to the colony: where its harbour is.</summary>
+    Landing? LandingOf(Hall h)
+    {
+        if (_landings.TryGetValue(h.Town, out var known)) return known;
+        Landing? found = null;
+        var home = new Vector3((float)h.X, 0, (float)h.Z);
+        for (var r = 0f; r <= 5000 && found is null; r += 40)
+            for (var a = 0f; a < Mathf.Tau && found is null; a += Mathf.Tau / Math.Max(8, (int)(r / 25)))
+            {
+                var sea = home + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * r;
+                if (_world.Height(sea.X, sea.Z) >= WorldGen.WaterLevel - 3) continue;
+                // Back towards the colony to where the land comes up out of the water.
+                var way = (home - sea) with { Y = 0 };
+                var length = way.Length();
+                way = length > 0.1f ? way / length : Vector3.Forward;
+                var shore = sea;
+                for (var s = 0f; s < length && _world.Height(shore.X, shore.Z) < WorldGen.WaterLevel + 0.4; s += 3) shore = sea + way * s;
+                found = new Landing(sea, shore with { Y = (float)_world.Height(shore.X, shore.Z) }, -way, new Vector2(shore.X - home.X, shore.Z - home.Z).Length());
+            }
+        return _landings[h.Town] = found;
+    }
+
+    /// <summary>
+    /// Each colony's landing drawn when the hero's near it: a pier out into the water, its name, and, where the colony's
+    /// inland, a wagon station with a cart and the goods waiting to go up the road. Wagons on a road are something to
+    /// rob: now and then there are raiders at the station.
+    /// </summary>
+    void TendLandings()
+    {
+        var pos = _player.GlobalPosition;
+        var colonies = _city.ColoniesOf(_player.Company).ToList();
+        foreach (var key in _landingDrawn.Keys.ToList())
+            if (colonies.FirstOrDefault(h => h.Town == key) is not { } still || LandingOf(still) is not { } l || l.Shore.DistanceTo(pos with { Y = l.Shore.Y }) > 320)
+            {
+                if (IsInstanceValid(_landingDrawn[key])) _landingDrawn[key].QueueFree();
+                _landingDrawn.Remove(key);
+            }
+        if (_indoors is not null || _cave is not null || _atSea is not null || _isle is not null) return;
+        foreach (var h in colonies)
+        {
+            if (_landingDrawn.ContainsKey(h.Town) || LandingOf(h) is not { } l || l.Shore.DistanceTo(pos with { Y = l.Shore.Y }) > 260 || !_terrain.HasGround(l.Shore)) continue;
+            var root = new Node3D { Name = $"Landing_{h.Number}" };
+            AddChild(root);
+            _landingDrawn[h.Town] = root;
+            var yaw = Mathf.Atan2(-l.Seaward.Z, l.Seaward.X); // the pier's length runs out to sea
+            var pierAt = l.Shore + l.Seaward * 21;
+            Buildings.Place(root, "pier", pierAt with { Y = (float)WorldGen.WaterLevel + 0.6f }, yaw, h.Number);
+            var name = LandingName(h, l);
+            var signAt = l.Shore - l.Seaward * 3;
+            root.AddChild(new Label3D { Text = name, Position = signAt with { Y = City.FloorAt(signAt) + 3.4f }, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 52, OutlineSize = 12, PixelSize = 0.012f, Modulate = new Color("#ffd27a") });
+            if (l.Inland < Seas.WagonRoad) continue;
+            // The wagon station: a cart waiting at the head of the road, and the goods stacked by it.
+            var side = new Vector3(-l.Seaward.Z, 0, l.Seaward.X);
+            var station = l.Shore - l.Seaward * 9 + side * 4;
+            Models.Place(root, Cargo + "cart.glb", station with { Y = City.FloorAt(station) }, 2.6f, yaw + Mathf.Pi / 2);
+            foreach (var (dx, dz, file) in new[] { (3.2f, 1.5f, "crate_apples.glb"), (3.6f, -0.6f, "barrel_apples.glb"), (2.4f, -1.8f, "bag.glb"), (4.4f, 0.6f, "crate_apples.glb") })
+            {
+                var at = station + side * dx + l.Seaward * dz;
+                Models.Place(root, Cargo + file, at with { Y = City.FloorAt(at) }, 1.1f, dx, solid: false);
+            }
+            root.AddChild(new Label3D { Text = $"Wagon station: {Mathf.Round(l.Inland)} m up the road to {h.Name}", Position = station with { Y = City.FloorAt(station) + 3.2f }, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 36, OutlineSize = 10, PixelSize = 0.01f, Modulate = new Color("#e8dcc0") });
+            // Raiders, sometimes, after the goods.
+            if (_lootRng.Chance(Math.Min(0.5, Seas.WagonRisk(l.Inland) * 1.5)))
+            {
+                var danger = WorldGen.Danger(station.X, station.Z);
+                for (var i = 0; i < 2 + _lootRng.Next(2); i++)
+                {
+                    var at = station + side * (i * 1.6f - 2) - l.Seaward * 4;
+                    var raider = Enemy.Create(Bestiary.Get("bandit"), at with { Y = City.FloorAt(at) + 0.5f }, danger);
+                    raider.Roam = 12;
+                    AddEnemy(raider);
+                }
+                _hud.Toast($"Raiders are at the wagons at {name}!", 6);
+            }
+        }
     }
 
     int _countryLevel = 1;
@@ -200,6 +287,10 @@ public partial class Main
     /// <summary>For the self-test.</summary>
     public void GiveCommandForTest(FleetShip f, Bond b) => GiveCommand(null, f, b);
     public void TendMastersForTest() => TendMasters();
+    public void TendHarboursForTest() => TendHarbours();
+    public void TendLandingsForTest() => TendLandings();
+    public (Vector3 Shore, Vector3 Seaward, float Inland)? LandingForTest(Hall h) => LandingOf(h) is { } l ? (l.Shore, l.Seaward, l.Inland) : null;
+    public Node3D? LandingDrawnForTest(Hall h) => _landingDrawn.GetValueOrDefault(h.Town);
     public void RemoveBondForTest(Bond b) => _bonds.Remove(b);
     public void StandDownForTest(FleetShip f) => _player.Crowns += SeaBook.StandDown(f, _bonds.FirstOrDefault(x => x.Id == f.Master), Dock(Seas.Tristinwold)!);
 }

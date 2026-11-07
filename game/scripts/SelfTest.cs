@@ -3973,6 +3973,24 @@ public partial class SelfTest(Main main) : Node
             main.RedrawHallsForTest();
         }
 
+        // Its harbour, on the nearest coast: a pier, and a wagon station if the colony's inland.
+        if (colony is not null)
+        {
+            main.TendHarboursForTest();
+            var landing = main.LandingForTest(colony);
+            Check(landing is not null && Seas.Harbours.ContainsKey($"harbour:{colony.Town}") && main.Sea.Pays($"harbour:{colony.Town}"),
+                $"every colony has a harbour on the nearest coast ({(landing is { } l ? $"{l.Inland:0} m from it" : "none")})");
+            if (landing is { } at)
+            {
+                await Teleport(at.Shore - at.Seaward * 12);
+                main.TendLandingsForTest();
+                Check(main.LandingDrawnForTest(colony) is { } drawn && drawn.GetChildren().OfType<StaticBody3D>().Any() && (at.Inland < Seas.WagonRoad || drawn.GetChildren().Count > 6),
+                    $"with a pier{(at.Inland >= Seas.WagonRoad ? " and a wagon station for the road up to the colony" : "")}");
+                foreach (var e in main.Enemies().Where(e => e.Kind.Id == "bandit" && e.GlobalPosition.DistanceTo(at.Shore) < 40).ToList()) e.QueueFree();
+                await Teleport(new Vector3((float)colony.X, 0, (float)colony.Z));
+            }
+        }
+
         // An apprentice sent to keep a market stall in the colony's yard: customers come to it, as to a shop at home.
         var lad = new Bond { Id = "test/wyn", KindId = "apprentice", Role = BondRole.Apprentice, Name = "Wyn", Race = "human", JoinAge = 15, Following = false };
         main.AddBondForTest(lad);

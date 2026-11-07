@@ -89,6 +89,12 @@ public static partial class Seas
     };
 
     static double Leagues(string id) => id == Tristinwold ? 0 : Harbours.TryGetValue(id, out var h) ? h.Leagues : Get(id)?.Leagues ?? 1;
+
+    /// <summary>A wagon road this long or longer from a harbour up to its colony is a road raiders can lie in wait on.</summary>
+    public const double WagonRoad = 150;
+
+    /// <summary>The chance raiders fall on a harbour's wagons on a run up to its colony, by how far it is.</summary>
+    public static double WagonRisk(double inland) => inland < WagonRoad ? 0 : Math.Min(0.35, 0.08 + inland / 4000);
     static double Bearing(string id) => Harbours.TryGetValue(id, out var h) ? h.Bearing : Bearings.GetValueOrDefault(id, WorldGen.StableHash(id) % 360);
 
     /// <summary>
@@ -96,18 +102,21 @@ public static partial class Seas
     /// water. The game tells this what there is (they're the hero's, not the world's charts); each is a port with a small
     /// market of what its people make, as far out as it really lies.
     /// </summary>
-    public static readonly Dictionary<string, (SeaPort Port, double Leagues, double Bearing)> Harbours = [];
+    public static readonly Dictionary<string, (SeaPort Port, double Leagues, double Bearing, double Inland)> Harbours = [];
 
     /// <summary>A metre's worth of a league on the sea charts (a day's sailing).</summary>
     public const double LeagueMetres = 900;
 
-    /// <summary>Makes a place on the coast a harbour for the hero's ships (or updates it): its id, name, where it is, and what it makes and wants.</summary>
-    public static SeaPort Harbour(string id, string name, double x, double z, Good[] makes, Good[] wants)
+    /// <summary>
+    /// Makes a place on the coast a harbour for the hero's ships (or updates it): its id, name, where it is, what it
+    /// makes and wants, and how far its goods go by wagon to the place it serves (a colony inland of its landing).
+    /// </summary>
+    public static SeaPort Harbour(string id, string name, double x, double z, Good[] makes, Good[] wants, double inland = 0)
     {
         var leagues = Math.Max(0.5, Math.Sqrt(x * x + z * z) / LeagueMetres);
         var bearing = (Math.Atan2(x, -z) * 180 / Math.PI + 360) % 360;
         var port = new SeaPort(id, name, Math.Max(1, (int)Math.Round(leagues)), 0.15, makes, wants, $"{name}, your own harbour");
-        Harbours[id] = (port, leagues, bearing);
+        Harbours[id] = (port, leagues, bearing, inland);
         return port;
     }
 
@@ -399,6 +408,14 @@ public sealed partial class SeaBook
             {
                 var home = f.Purse - f.Stake;
                 f.Purse = f.Stake;
+                // Up the wagon road from a landing to its colony, raiders may be waiting for the takings.
+                if (Seas.Harbours.TryGetValue(port, out var hb) && rng.Chance(Seas.WagonRisk(hb.Inland)))
+                {
+                    var lost = (int)(home * (0.4 + 0.3 * rng.NextDouble()));
+                    home -= lost;
+                    f.Note($"Raiders on the wagon road from {Seas.NameOf(port)}: {lost} crowns lost.");
+                    news.Add(new(f, $"Raiders fell on the wagons on the road up from {Seas.NameOf(port)} and got away with {lost} crowns of {f.Name}'s takings."));
+                }
                 news.Add(new(f, $"{f.Name} is in {(port == Seas.Tristinwold ? "Tristinwold harbour" : $"at {Seas.NameOf(port)}")}. {f.MasterName} sends you {home} crowns from her trading{(said is null ? "" : $": {said}")}.", home));
             }
             else if (said is not null && port != Seas.Tristinwold && f.Plan.Count == 0)
