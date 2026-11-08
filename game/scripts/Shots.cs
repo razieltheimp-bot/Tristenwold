@@ -721,6 +721,28 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             GetTree().Quit();
             return;
         }
+        if (OS.GetCmdlineUserArgs().Contains("--treecouncil"))
+        {
+            // Hollowheart's council door, in the foot of a great tree.
+            var town = main.World.Find("city:hollowheart")!;
+            main.TerrainNode.EnsureAround(new Vector3((float)town.X, 0, (float)town.Z), 1);
+            main.PlayerNode.GlobalPosition = new Vector3((float)town.X + 4, (float)main.World.Height(town.X + 4, town.Z + 4) + 1, (float)town.Z + 4);
+            await Frames(120);
+            var clerk = main.PlacesNode.People.FirstOrDefault(x => x.Npc.Id == "city:hollowheart" + TownCouncils.ClerkId);
+            if (clerk is not null && Buildings.DoorNear(clerk.GlobalPosition) is { } way)
+            {
+                var outward = (way.Step - clerk.GlobalPosition) with { Y = 0 };
+                var door = way.Step - (way.Step - clerk.GlobalPosition).Normalized() * 0;
+                main.PlayerNode.GlobalPosition = way.Step + Vector3.Up;
+                await Frames(30);
+                var dir = (way.Step - new Vector3((float)Northwood.Hearts.MinBy(t => (t.X - way.Step.X) * (t.X - way.Step.X) + (t.Z - way.Step.Z) * (t.Z - way.Step.Z))!.X, way.Step.Y, (float)Northwood.Hearts.MinBy(t => (t.X - way.Step.X) * (t.X - way.Step.X) + (t.Z - way.Step.Z) * (t.Z - way.Step.Z))!.Z)) with { Y = 0 };
+                dir = dir.Normalized();
+                await From("treecouncil-door", way.Step + dir * 9 + Vector3.Up * 3, way.Step - dir * 2 + Vector3.Up * 2.2f);
+                await From("treecouncil-wide", way.Step + dir * 22 + dir.Cross(Vector3.Up) * 8 + Vector3.Up * 9, way.Step - dir * 4 + Vector3.Up * 5);
+            }
+            GetTree().Quit();
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--colonywall"))
         {
             // A colony grown to its barracks and its first fortified wall, with its guards at their posts.

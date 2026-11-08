@@ -73,6 +73,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--sea-only")) { await SeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--opensea-only")) { await OpenSeaTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--colony-only")) { await ColonyGuardTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--council-only")) { await CouncilAboutTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); await FleetTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pupils-only")) { await PupilTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--refuge-only")) { await GrowthTest(); Finish(0); return; }
@@ -3913,6 +3914,59 @@ public partial class SelfTest(Main main) : Node
     }
 
     /// <summary>The hero's own ship taken out from the berth and steered like a wagon; and a colony on an island nobody lives on.</summary>
+    /// <summary>A town's council walks its streets, so a letter for it can be handed over; or any of the town's guards will take it.</summary>
+    async Task CouncilAboutTest()
+    {
+        var (p, hud) = (main.PlayerNode, main.HudNode);
+        foreach (var id in new[] { "city:hollowheart", "city:greywater", "city:tristinwold" })
+        {
+            var town = main.World.Find(id)!;
+            await Teleport(new Vector3((float)town.X + 4, 0, (float)town.Z + 4));
+            await Frames(120);
+            var folk = main.PlacesNode.People.Where(x => IsInstanceValid(x) && x.Npc.HomeId == id).ToList();
+            var members = folk.Where(x => TownCouncils.IsMember(x.Npc.Id) && !x.Npc.Id.EndsWith(TownCouncils.ClerkId)).ToList();
+            Check(members.Count >= 3, $"{town.Name}'s councillors are out in the town ({members.Count}: {string.Join(", ", members.Select(m => m.Npc.Name))})");
+            Check(members.All(m => Mathf.Abs(m.GlobalPosition.Y - City.FloorAt(m.GlobalPosition)) < 1.5f), "on the ground where anyone can walk up to them");
+            if (id == "city:hollowheart")
+            {
+                // Its council meets inside a great tree, not in a stone hall dropped among the trunks.
+                var halls = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>().Where(n => IsInstanceValid(n) && Buildings.KindOf(n) == "longhall" && town.DistanceTo(n.GlobalPosition.X, n.GlobalPosition.Z) < town.Radius + 20).ToList();
+                Check(halls.Count == 0, $"no stone council hall among Hollowheart's trees ({halls.Count})");
+                var seat = main.CouncilChambers.FirstOrDefault(kv => kv.Value == id);
+                var clerk = folk.FirstOrDefault(x => x.Npc.Id.EndsWith(TownCouncils.ClerkId));
+                Check(seat.Value == id && clerk is not null && Buildings.DoorNear(clerk.GlobalPosition) is { Kind: "council" }, "its chamber's door is in a great tree, and the clerk stands by it");
+                if (clerk is not null && Buildings.DoorNear(clerk.GlobalPosition) is { } way)
+                {
+                    await Teleport(way.Step);
+                    await Frames(10);
+                    main.GoInsideForTest(way.Kind, way.Seed, way.Step);
+                    await Frames(30);
+                    Check(main.CouncilFolkForTest.Count >= 3, $"inside, the council at its table ({main.CouncilFolkForTest.Count})");
+                    main.GoOutsideForTest();
+                    await Frames(60);
+                    Check(p.GlobalPosition.DistanceTo(way.Step) < 4 && Mathf.Abs(p.GlobalPosition.Y - City.FloorAt(p.GlobalPosition)) < 2, $"and out again, on the ground by the tree ({p.GlobalPosition.DistanceTo(way.Step):0.0} m from the door)");
+                }
+            }
+            var start = members.Select(m => m.GlobalPosition).ToList();
+            await Frames(900);
+            Check(members.Where(IsInstanceValid).Select((m, i) => m.GlobalPosition.DistanceTo(start[i])).Any(d => d > 1), "and they walk about");
+            var guards = folk.Where(x => QuestLog.KeepsTheTown(x.Npc)).ToList();
+            var guard = guards.FirstOrDefault();
+            Check(guard is not null, $"{town.Name} has a guard to talk to ({guard?.Npc.Name}, {guard?.Npc.Occupation})");
+            if (guard is null) continue;
+            Check(guards.All(g => g.Rounds is { Length: > 1 }), "and its guards walk a beat round the town");
+            var q = new Quest($"test-letter-{id}", QuestKind.Deliver, $"A letter for {town.Name}", "Take it.", "test/giver", "Ada Giver", "city:tristinwold", "Tristinwold",
+                0, 0, id, town.Name, town.X, town.Z, 40, Item: "letter", PersonId: $"{id}/council", PersonName: $"the council of {town.Name}");
+            main.Journal.Accept(q);
+            var crowns = p.Crowns;
+            await Teleport(guard.GlobalPosition + new Vector3(1.5f, 0, 0));
+            main.Talk(guard);
+            Check(hud.Choose("Will you see this letter gets to") && main.Journal.Get(q.Id)?.Stage == QuestStage.Done && p.Crowns > crowns,
+                $"{guard.Npc.First} the guard takes the letter for the council, and the job's paid ({p.Crowns - crowns} crowns)");
+            hud.EndTalk();
+        }
+    }
+
     /// <summary>A colony keeps itself: its settlers fight till there's a barracks, then guards are hired and stand their posts, then the wall goes up.</summary>
     async Task ColonyGuardTest()
     {

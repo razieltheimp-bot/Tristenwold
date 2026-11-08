@@ -970,6 +970,15 @@ public partial class Main : Node3D
         List<(string, Action)> options = [("Who are you?", () => Say(person, npc.Backstory)), ("What do you care about?", () => Say(person, npc.InterestsSpeech))];
         if (!People.IsYouth(npc)) options.Add(work);
         options.AddRange(MoreTalk(person));
+        if (QuestLog.KeepsTheTown(npc))
+            foreach (var q in _journal.ForTheGuard(npc.HomeId).ToList()) // a guard will see a delivery for their town gets there
+                options.Add(($"Will you see this {q.Item} gets to {q.PersonName}?", () =>
+                {
+                    if (_journal.HandToGuard(q.Id, npc.First) is not { } done) return;
+                    Apply(done);
+                    Save();
+                    Say(person, $"I know where to find {(QuestLog.ForCouncil(q) ? "the council" : q.PersonName?.Split(' ')[0] ?? "them")}. It'll be there tonight. Off you go.");
+                }));
         options.Add(("Heard any news?", () => Say(person, Rumour(npc))));
         options.Add(("Farewell.", _hud.EndTalk));
         _hud.Talk(Who(npc), text, [.. options]);

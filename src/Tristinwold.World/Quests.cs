@@ -109,6 +109,27 @@ public sealed class QuestLog
     /// <summary>A delivery to a town's council, not to one person in it.</summary>
     public static bool ForCouncil(Quest q) => q.PersonId is { } p && p.EndsWith("/council");
 
+    /// <summary>One of a town's guards: they'll see a delivery for their town to whoever it's for.</summary>
+    public static bool KeepsTheTown(Npc npc)
+    {
+        var job = npc.Occupation.ToLowerInvariant();
+        return !job.Contains("guardian") && (job.Contains("guard") || job.Contains("watch") || job.Contains("warden") || job.Contains("sentry") || job.Contains("lookout"));
+    }
+
+    /// <summary>The deliveries still to make to this town, which any of its guards will take.</summary>
+    public IEnumerable<Quest> ForTheGuard(string townId) =>
+        Open.Where(e => e.Quest.Kind == QuestKind.Deliver && e.Stage == QuestStage.Active && e.Quest.TargetId == townId).Select(e => e.Quest);
+
+    /// <summary>A town guard takes a delivery for their town, to see it gets where it's going: the job's done, and paid.</summary>
+    public QuestUpdate? HandToGuard(string questId, string guardName)
+    {
+        var e = Open.FirstOrDefault(e => e.Quest.Id == questId && e.Quest.Kind == QuestKind.Deliver && e.Stage == QuestStage.Active);
+        if (e is null) return null;
+        e.Stage = QuestStage.Done;
+        var q = e.Quest;
+        return new QuestUpdate(q, e.Stage, $"{guardName} takes the {q.Item} and promises {q.PersonName} will have it by nightfall. You're paid {q.Reward} crowns.", q.Reward);
+    }
+
     /// <summary>The company spoke to someone: a recipient, a captive, or a giver waiting on news.</summary>
     public IEnumerable<QuestUpdate> TalkedTo(string npcId)
     {

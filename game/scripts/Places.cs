@@ -61,6 +61,17 @@ public partial class Person : StaticBody3D
     bool _strolling, _homing;
 
     /// <summary>
+    /// Somewhere to walk: spots about the town, walked one after another with a pause at each, round and round (a
+    /// councillor about the town's business). Null, and they stand about where they are like anyone.
+    /// </summary>
+    public Vector3[]? Rounds { get; set; }
+    int _leg;
+    double _lookAhead;
+
+    /// <summary>Walking pace on a round.</summary>
+    const float Pace = 1.25f;
+
+    /// <summary>
     /// Life in the standing about: every few seconds they shift their weight and turn a little, look about, make a
     /// small gesture, or take a few steps (a short stroll from where they stand and back, where the way is clear), and
     /// their head follows whoever comes near. Talking to someone holds them still and facing you.
@@ -68,6 +79,7 @@ public partial class Person : StaticBody3D
     public override void _Process(double delta)
     {
         if (!Captive && Afraid(delta)) return;
+        if (Rounds is { Length: > 1 } rounds) { Walk(rounds, delta); return; }
         if (_strolling) { Stroll(delta); return; }
         _next -= delta;
         if (_busy > 0) { _busy -= delta; return; }
@@ -78,6 +90,41 @@ public partial class Person : StaticBody3D
         if (roll < 0.45f) Shift();
         else if (roll < 0.65f) Gesture();
         else if (roll < 0.9f) BeginStroll();
+    }
+
+    /// <summary>On their round: walk to the next spot, stop a while (a turn, a gesture), then on to the one after. Anything in the way, and they take the next spot instead.</summary>
+    void Walk(Vector3[] rounds, double delta)
+    {
+        if (_busy > 0) { _busy -= delta; return; }
+        var goal = rounds[_leg % rounds.Length];
+        var to = goal - GlobalPosition;
+        to.Y = 0;
+        var step = (float)delta * Pace;
+        if (to.Length() <= step + 0.05f)
+        {
+            Figure.Move(0, true, false);
+            _leg = (_leg + 1) % rounds.Length;
+            _busy = 4 + GD.Randf() * 7; // a stop: a word with someone, a look about
+            if (GD.Randf() < 0.5f) Gesture(); else Shift();
+            _homeYaw = Rotation.Y;
+            return;
+        }
+        if ((_lookAhead -= delta) <= 0)
+        {
+            _lookAhead = 0.5;
+            var space = GetWorld3D().DirectSpaceState;
+            var ahead = PhysicsRayQueryParameters3D.Create(GlobalPosition + Vector3.Up * 0.9f, GlobalPosition + Vector3.Up * 0.9f + to.Normalized() * 1.2f);
+            ahead.Exclude = [GetRid()];
+            if (space.IntersectRay(ahead).Count > 0) { _leg = (_leg + 1) % rounds.Length; _busy = 1; Figure.Move(0, true, false); return; } // the way's blocked: somewhere else
+        }
+        var next = GlobalPosition + to.Normalized() * step;
+        var down = PhysicsRayQueryParameters3D.Create(next + Vector3.Up * 1.2f, next - Vector3.Up * 2.5f);
+        down.Exclude = [GetRid()];
+        var ground = GetWorld3D().DirectSpaceState.IntersectRay(down);
+        next.Y = ground.Count > 0 ? ground["position"].AsVector3().Y : goal.Y;
+        GlobalPosition = next;
+        Face(next + to);
+        Figure.Move(Pace, true, false);
     }
 
     /// <summary>A shift of the weight: a small turn, eased, as someone does when they've stood a while.</summary>
@@ -316,6 +363,7 @@ public partial class Person : StaticBody3D
         var to = who - GlobalPosition;
         to.Y = 0;
         if (_strolling) { _strolling = false; Figure.Move(0, true, false); }
+        if (Rounds is not null) Figure.Move(0, true, false);
         _busy = 12; // held in talk
         if (to.LengthSquared() > 0.01f) LookAt(GlobalPosition + to, Vector3.Up);
         Figure.Talk();
@@ -491,8 +539,10 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
         // Its people as they are this year: aged, the old gone, the children born since (see Ageing). Anyone who has
         // left home to follow the company isn't here.
+        // Its guards walk their beat round it.
         foreach (var npc in Ageing.Villagers(world, s, Calendar.Years(main.Economy.Day)).Where(n => Gone?.Invoke(n.Id) != true))
-            b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z) }));
+            b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z), Rounds = QuestLog.KeepsTheTown(npc) ? Patrol(s, npc.X, npc.Z) : null }));
+        if (TownCouncils.Keeps(s)) Wardens(root, s, b);
         // A town that's been well fed has more of its children growing up (see Handiwork): youngsters about the place.
         foreach (var youth in Youngsters(s, main.Economy.FedYouths(s.Id)).Where(n => Gone?.Invoke(n.Id) != true))
             b.People.Add(Add(root, new Person { Npc = youth, Look = "youth", Position = Ground(youth.X, youth.Z) }));
@@ -556,6 +606,13 @@ public partial class Places(Main main, WorldGen world) : Node3D
     {
         (x, z) = Northwood.OutOfTrunks(x, z); // never in one of Hollowheart's great trees
         return new((float)x, (float)world.Height(x, z), (float)z);
+    }
+
+    /// <summary>Where someone walking about stands: on the ground, or on whatever's built over it (Tristinwold's raised Crown).</summary>
+    Vector3 Stand(double x, double z)
+    {
+        var at = Ground(x, z);
+        return at with { Y = Mathf.Max(at.Y, City.FloorAt(at)) };
     }
 
     static T Add<T>(Node3D parent, T node) where T : Node3D
@@ -811,7 +868,8 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     /// <summary>
     /// A place's council: its chamber, those still living at the table inside it (see Main.PeopleTheCouncil), and its
-    /// clerk at the door, who sees to the business whoever's left. A member's years can run out like anyone's.
+    /// clerk at the door, who sees to the business whoever's left. The members are out about the town as well, walking
+    /// its streets, so anyone with council business can find one. A member's years can run out like anyone's.
     /// </summary>
     void Council(Node3D parent, Settlement s, Built b)
     {
@@ -826,10 +884,55 @@ public partial class Places(Main main, WorldGen world) : Node3D
         var chamber = CouncilChamber(parent, s, clerk);
         var (cx, cz) = chamber is { } door ? (door.X, door.Z) : (clerk.X, clerk.Z);
         b.People.Add(Add(parent, new Person { Npc = clerk with { X = cx, Z = cz }, Look = "townsfolk", Position = Ground(cx, cz) }));
-        // With nowhere to meet (no room for a chamber), they stand about as they always have.
-        if (chamber is null)
-            foreach (var m in members.Where(m => !economy.CouncilOf(s.Id).Fallen.Contains(m.Id)))
-                b.People.Add(Add(parent, new Person { Npc = m with { Age = (int)(m.Age + years) }, Look = "priest", Position = Ground(m.X, m.Z) }));
+        // Out about the town, chamber or no: each walks a round of its streets, from their seat in toward the middle and
+        // round, stopping here and there, so anyone with council business can find one.
+        var i = 0;
+        foreach (var m in members.Where(m => !economy.CouncilOf(s.Id).Fallen.Contains(m.Id)))
+        {
+            var home = Stand(m.X, m.Z);
+            var (ox, oz) = (m.X - s.X, m.Z - s.Z);
+            var a = Math.Atan2(oz, ox);
+            var reach = Math.Sqrt(ox * ox + oz * oz);
+            Vector3 Spot(double turn, double share) => Stand(s.X + Math.Cos(a + turn) * reach * share, s.Z + Math.Sin(a + turn) * reach * share);
+            var round = new[] { home, Spot(0.35, 0.65), Spot(0.9 + i * 0.3, 0.45), Spot(-0.5, 0.7), Spot(-0.15, 1.1) };
+            b.People.Add(Add(parent, new Person { Npc = m with { Age = (int)(m.Age + years), X = home.X, Z = home.Z }, Look = "priest", Position = home, Rounds = round }));
+            i++;
+        }
+    }
+
+    /// <summary>A guard's beat: six spots on a ring through the town, from where they stand round and back.</summary>
+    Vector3[] Patrol(Settlement s, double x, double z, double share = 0.55)
+    {
+        var start = Math.Atan2(z - s.Z, x - s.X);
+        var r = s.Id == "city:tristinwold" ? 60 : Math.Max(10, s.Radius * share); // in the capital, the ring road inside the walls
+        return [.. Enumerable.Range(0, 6).Select(k => Stand(s.X + Math.Cos(start + k * Math.Tau / 6) * r, s.Z + Math.Sin(start + k * Math.Tau / 6) * r))];
+    }
+
+    /// <summary>
+    /// Two of a town's guards on the beat, walking round it, whom anyone can stop and talk to: they know where everyone
+    /// is, and will see a letter or a parcel for the town gets where it's going. In Hollowheart, two of the Apekin
+    /// wardens who walk the wood's paths between the great trees.
+    /// </summary>
+    void Wardens(Node3D parent, Settlement s, Built b)
+    {
+        var rng = new Rng((ulong)WorldGen.StableHash(s.Id) ^ 0x3A2D);
+        var wood = s.Id == "city:hollowheart";
+        for (var i = 0; i < 2; i++)
+        {
+            var sex = rng.Chance(0.5) ? Sex.Female : Sex.Male;
+            var name = Names.Person(rng, sex);
+            var a = 0.8 + i * Math.PI;
+            var reach = s.Id == "city:tristinwold" ? 60 : s.Radius * 0.5;
+            var (x, z) = Northwood.OutOfTrunks(s.X + Math.Cos(a) * reach, s.Z + Math.Sin(a) * reach);
+            var npc = wood
+                ? new Npc($"{s.Id}/warden{i}", name, sex, 30 + rng.Next(20), "warden of Hollowheart", s.Id, s.Name,
+                    $"{name} walks Hollowheart's paths from root to root, and knows where everyone in the wood can be found.", ["the wood", "the guardians"], "watchful",
+                    "Mind the roots. What do you need?", x, z, Race: "ape")
+                : new Npc($"{s.Id}/beat{i}", name, sex, 26 + rng.Next(25), $"town guard of {s.Name}", s.Id, s.Name,
+                    $"{name} walks the beat in {s.Name}, and knows every door on it and who's behind it.", ["the town", "the roads"], "steady",
+                    "Keep it peaceful. Need something?", x, z);
+            b.People.Add(Add(parent, new Person { Npc = npc, Look = "guard", Position = Stand(x, z), Rounds = Patrol(s, x, z, 0.45 + i * 0.15) }));
+        }
     }
 
     /// <summary>The council chamber: a long hall out past where the clerk stands, its door to the town, its table inside. Where its door is, or null if there's no room for it.</summary>
@@ -839,6 +942,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
         var (ox, oz) = (clerk.X - s.X, clerk.Z - s.Z);
         var away = Math.Sqrt(ox * ox + oz * oz);
         var (ux, uz) = away > 1 ? (ox / away, oz / away) : (1.0, 0.0);
+        if (s.Id == "city:hollowheart") return TreeChamber(parent, s, clerk);
         Node3D? hall = null;
         if (s.Id == "city:tristinwold")
         {
@@ -867,6 +971,45 @@ public partial class Places(Main main, WorldGen world) : Node3D
         // The clerk at its door.
         var doorAt = hall.Position + hall.Basis.Z * 6.5f;
         return (doorAt.X, doorAt.Z);
+    }
+
+    /// <summary>
+    /// Hollowheart's council meets inside one of its great trees: an arched door set into the flare of the roots, a hood
+    /// of bark over it, a lantern either side and the council's name carved above. Where its door is.
+    /// </summary>
+    (double X, double Z)? TreeChamber(Node3D parent, Settlement s, Npc clerk)
+    {
+        var tree = Northwood.Hearts.MinBy(t => (t.X - clerk.X) * (t.X - clerk.X) + (t.Z - clerk.Z) * (t.Z - clerk.Z));
+        if (tree is null) return null;
+        var (dx, dz) = (s.X - tree.X, s.Z - tree.Z); // its door faces into the village
+        var len = Math.Sqrt(dx * dx + dz * dz);
+        var (ux, uz) = len > 0.1 ? (dx / len, dz / len) : (1.0, 0.0);
+        var reach = tree.Radius * Northwood.RootSpread * 0.97;
+        var foot = new Vector3((float)(tree.X + ux * reach), 0, (float)(tree.Z + uz * reach));
+        foot.Y = Mathf.Max((float)world.Height(foot.X, foot.Z), City.FloorAt(foot));
+        var door = new Node3D { Name = "CouncilTreeDoor", Position = foot, Rotation = new Vector3(0, Mathf.Atan2((float)ux, (float)uz), 0) };
+        parent.AddChild(door);
+        var bark = BuildingMaterials.For(Surface.Timber);
+        var wood = new StandardMaterial3D { AlbedoColor = new Color("#4a3020"), Roughness = 0.85f };
+        void Box(Vector3 at, Vector3 size, Material m) => door.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = size }, MaterialOverride = m, Position = at });
+        Box(new Vector3(0, 1.4f, -0.2f), new Vector3(1.8f, 2.8f, 0.3f), wood); // the door itself, set back in the frame
+        for (var k = 0; k < 4; k++) Box(new Vector3(-0.67f + k * 0.45f, 1.4f, -0.04f), new Vector3(0.05f, 2.7f, 0.04f), bark); // its planks
+        foreach (var side in new[] { -1f, 1f }) Box(new Vector3(side * 1.05f, 1.55f, 0), new Vector3(0.35f, 3.1f, 0.5f), bark); // the posts
+        door.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 1.25f, BottomRadius = 1.25f, Height = 0.5f, RadialSegments = 16 }, MaterialOverride = bark,
+            Position = new Vector3(0, 3.05f, 0), Rotation = new Vector3(Mathf.Pi / 2, 0, 0), Scale = new Vector3(1, 1, 0.55f) }); // the arch over it
+        Box(new Vector3(0, 3.7f, 0.35f), new Vector3(3.2f, 0.25f, 1.2f), bark); // a hood of bark
+        foreach (var side in new[] { -1f, 1f })
+        {
+            Box(new Vector3(side * 1.55f, 2.3f, 0.25f), new Vector3(0.25f, 0.35f, 0.25f), new StandardMaterial3D { AlbedoColor = new Color("#ffd890"), EmissionEnabled = true, Emission = new Color("#ffb040"), EmissionEnergyMultiplier = 2 });
+            door.AddChild(new OmniLight3D { Position = new Vector3(side * 1.55f, 2.3f, 0.6f), LightColor = new Color("#ffc070"), LightEnergy = 0.6f, OmniRange = 6 });
+        }
+        door.AddChild(new StaticBody3D { Name = "frame" }); // (the tree itself is what stops you)
+        var seed = 7300 + (int)Math.Abs(WorldGen.StableHash(s.Id) % 500);
+        Buildings.Door(door, "council", seed);
+        main.CouncilChambers[seed] = s.Id;
+        Label(parent, foot + Vector3.Up * 4.6f + new Vector3((float)ux, 0, (float)uz) * 0.6f, $"The Council of {s.Name}", 0.02f);
+        var step = foot + new Vector3((float)ux, 0, (float)uz) * 2.2f;
+        return (step.X, step.Z);
     }
 
     /// <summary>A refuge as far as it's grown (see Settling): a tavern, a market, a council chamber, a barracks, a wall and more homes.</summary>
