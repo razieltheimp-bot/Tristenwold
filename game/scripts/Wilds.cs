@@ -38,11 +38,16 @@ public partial class Wilds(Main main, WorldGen world, Terrain terrain) : Node
 
     public void Update(Vector3 player, double clock)
     {
+        // Indoors the hero is in a room built high over the middle of the map, not out in the land: the wilds wait,
+        // as they were at the door, till they come out. (Counted from up there, every herd was out of reach and put
+        // away, and brought straight back, twice a second, for as long as anyone sat in a tavern.)
+        if (main.IndoorsNode is not null) return;
         foreach (var (id, members) in _herds.ToList())
         {
             if (members.All(e => !IsInstanceValid(e) || e.State == EnemyState.Dead) && !_gone.ContainsKey(id)) _gone[id] = clock;
             var far = members.Any(e => IsInstanceValid(e) && e.IsDragon) ? DragonFar : Far;
-            var anyNear = members.Any(e => IsInstanceValid(e) && e.GlobalPosition.DistanceTo(player) < far);
+            // Measured across the land, as they're brought out: a hero up a cliff or aloft isn't further from them.
+            var anyNear = members.Any(e => IsInstanceValid(e) && new Vector2(e.GlobalPosition.X - player.X, e.GlobalPosition.Z - player.Z).Length() < far);
             if (anyNear) continue;
             foreach (var e in members.Where(IsInstanceValid)) e.QueueFree();
             _herds.Remove(id);

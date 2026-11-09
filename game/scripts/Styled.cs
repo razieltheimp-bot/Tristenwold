@@ -17,6 +17,9 @@ public static class Styled
     static Texture2D? _grain;
     static readonly Dictionary<Material, ShaderMaterial> Done = [];
 
+    /// <summary>How many styled materials are kept for sharing (for tests: it shouldn't grow as figures come and go).</summary>
+    public static int Kept => Done.Count;
+
     /// <summary>A fine seamless noise, laid over everything: the weave of cloth, the brushing of steel.</summary>
     internal static Texture2D Grain => _grain ??= new NoiseTexture2D
     {
@@ -39,7 +42,10 @@ public static class Styled
         m.SetShaderParameter("grain_tex", Grain);
         m.SetShaderParameter("force", 0f);
         m.SetShaderParameter("force_metal", 0f);
-        if (original is not null) Done[original] = m;
+        // Kept for sharing only when the original is one of the game's own (from a model file): a figure's own copy
+        // (tinted, say) is styled for that figure alone and goes with it. Keeping those too held every tinted figure
+        // ever made on the graphics card, till it ran out of room and the game fell over.
+        if (original is not null && !string.IsNullOrEmpty(original.ResourcePath)) Done[original] = m;
         return m;
     }
 
