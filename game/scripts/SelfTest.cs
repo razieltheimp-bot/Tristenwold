@@ -43,6 +43,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--summoner-only")) { await SummonerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pets-only")) { await PetDeathTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forfeit-only")) { await ForfeitTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--youths-only")) { await YouthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ride-only")) { await TheRide(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
@@ -2994,6 +2995,7 @@ public partial class SelfTest(Main main) : Node
         await SummonerTest();
         await PetDeathTest();
         await ForfeitTest();
+        await YouthTest();
         await FleetTest();
         await HeroFightTest();
         await SleeperTest();
@@ -3379,6 +3381,33 @@ public partial class SelfTest(Main main) : Node
         var beast = main.LittleRobotOfForTest(lad);
         Check(beast is { Kind.Id: "wolf" } && beast.Figure is not Figure, $"trained as a shapeshifter: an acolyte with a wolf at their heels, a real beast ({beast?.Kind.Id}, {beast?.Figure.GetType().Name})");
         foreach (var c in p.Companions().ToList()) c.QueueFree();
+    }
+
+    /// <summary>
+    /// A town's young: this hero's own, named from the big pool; take one on as an apprentice and another turns up in their
+    /// place, with a new name.
+    /// </summary>
+    async Task YouthTest()
+    {
+        var p = main.PlayerNode;
+        var world = main.World;
+        var town = world.SettlementsNear(0, 0, 3000).First(s => !s.Hostile && s.Id != "city:tristinwold" && world.YouthsOf(s).Count > 0);
+        var y = world.YouthsOf(town)[0];
+        Check(world.YouthSalt != 0, "this hero's towns have their own children");
+        await Teleport(new Vector3((float)y.X + 2, 0, (float)y.Z + 2));
+        await Until(() => main.PlacesNode.IsBuilt(town.Id), 10);
+        var youth = main.PlacesNode.People.FirstOrDefault(x => x.Npc.Id == y.Id);
+        Check(youth is not null && youth.Npc.Name == y.Name, $"{y.Name}, a youth of {town.Name}, is about the place");
+        if (youth is null) return;
+        (p.Hero.Level, p.Crowns) = (Math.Max(p.Hero.Level, Main.RecruitLevel), Math.Max(p.Crowns, 200));
+        Check(main.Recruit(youth), $"{y.Name} goes off with you");
+        main.PlacesNode.Rebuild(town.Id);
+        await Frames(2);
+        await Until(() => main.PlacesNode.IsBuilt(town.Id), 10);
+        await Frames(5);
+        var newcomer = main.PlacesNode.People.FirstOrDefault(x => x.Npc.Id == $"{y.Id}/n0");
+        Check(newcomer is not null && newcomer.Npc.Name != y.Name && People.IsYouth(newcomer.Npc), $"and someone new turns up in {town.Name}: {newcomer?.Npc.Name}");
+        if (main.BondForTest(y.Id) is { } bond) main.RemoveBondForTest(bond);
     }
 
     /// <summary>

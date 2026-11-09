@@ -366,6 +366,7 @@ public partial class Main
 
     // ---- for the self-test ----
     public void AddBondForTest(Bond bond) => _bonds.Add(bond);
+    public Bond? BondForTest(string id) => _bonds.FirstOrDefault(b => b.Id == id);
     public IEnumerable<string> KeepingOptionsForTest(Bond bond) => KeepingOptions(bond).Select(o => o.Item1);
     public void StartKeepingForTest(Bond bond, string place) => StartKeeping(bond, place);
     public void StopKeepingForTest(Bond bond) => StopKeeping(bond);

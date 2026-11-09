@@ -544,8 +544,11 @@ public partial class Places(Main main, WorldGen world) : Node3D
             b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z), Rounds = QuestLog.KeepsTheTown(npc) ? Patrol(s, npc.X, npc.Z) : null }));
         if (TownCouncils.Keeps(s)) Wardens(root, s, b);
         // A town that's been well fed has more of its children growing up (see Handiwork): youngsters about the place.
-        foreach (var youth in Youngsters(s, main.Economy.FedYouths(s.Id)).Where(n => Gone?.Invoke(n.Id) != true))
+        foreach (var youth in Youngsters(s, main.Economy.FedYouths(s.Id), world.YouthSalt).Select(n => Stayed(s, n)))
             b.People.Add(Add(root, new Person { Npc = youth, Look = "youth", Position = Ground(youth.X, youth.Z) }));
+        // A young one who went off with the company is followed by another: a new face, and a new name.
+        foreach (var left in world.YouthsOf(s).Where(y => Gone?.Invoke(y.Id) == true))
+            b.People.Add(Add(root, new Person { Npc = Stayed(s, left), Position = Ground(left.X, left.Z) }));
 
         // The animals people keep, near the people who keep them (in the open, where people stand).
         foreach (var (kind, count) in Livestock.Of(s, rng))
@@ -738,15 +741,23 @@ public partial class Places(Main main, WorldGen world) : Node3D
     }
 
     /// <summary>The well-fed youngsters a place has besides its own folk: the same ones each time for the same place, by number.</summary>
-    public static IEnumerable<Npc> Youngsters(Settlement s, int count)
+    /// <summary>This young one, or if they've gone off with the company, the first newcomer since who hasn't.</summary>
+    Npc Stayed(Settlement s, Npc young)
+    {
+        if (Gone?.Invoke(young.Id) != true) return young;
+        for (var k = 0; ; k++)
+            if (Tristinwold.World.People.Newcomer(world, s, young, k) is var next && Gone?.Invoke(next.Id) != true) return next;
+    }
+
+    public static IEnumerable<Npc> Youngsters(Settlement s, int count, ulong salt = 0)
     {
         for (var i = 0; i < count; i++)
         {
-            var rng = new Rng((ulong)WorldGen.StableHash(s.Id) ^ (ulong)(i + 1) * 0x9E3779B97F4A7C15UL);
+            var rng = new Rng((ulong)WorldGen.StableHash(s.Id) ^ salt ^ (ulong)(i + 1) * 0x9E3779B97F4A7C15UL);
             var sex = rng.Chance(0.5) ? Tristinwold.World.Sex.Female : Tristinwold.World.Sex.Male;
             var a = rng.NextDouble() * Math.Tau;
             var r = s.Radius * (0.2 + rng.NextDouble() * 0.4);
-            yield return new Npc($"{s.Id}/youngster{i}", Names.Person(rng, sex), sex, 12 + rng.Next(4), "a well-fed youngster", s.Id, s.Name,
+            yield return new Npc($"{s.Id}/youngster{i}", Names.Young(rng, sex), sex, 12 + rng.Next(4), "a well-fed youngster", s.Id, s.Name,
                 "Grew up on full plates, as more and more of the children here have lately, and is looking for something to do with all that.",
                 ["dreams", "gossip"], "cheerful", "Are you a hero? A real one? Do you need anyone?", s.X + Math.Cos(a) * r, s.Z + Math.Sin(a) * r);
         }

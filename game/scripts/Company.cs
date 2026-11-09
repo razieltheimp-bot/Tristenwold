@@ -827,7 +827,8 @@ public partial class Main
         if (!FreeApprentices && _bonds.Count(PartyRules.IsApprentice) >= PartyRules.MaxApprentices) { Say(person, $"You've {PartyRules.MaxApprentices} already. Who'd teach me?"); return false; }
         if (_player.Crowns < RecruitFee) { Say(person, $"My family can't spare me for nothing. {RecruitFee} crowns, for their trouble."); return false; }
         _player.Crowns -= RecruitFee;
-        var bond = new Bond { Id = npc.Id, KindId = kind, Role = role, Trains = _player.Class.Id, Name = npc.First, Race = npc.Race, JoinAge = npc.Age, JoinDay = _city.Day };
+        var called = _bonds.Any(b => b.Name.Split(' ')[0].Equals(npc.First, StringComparison.OrdinalIgnoreCase)) ? npc.Name : npc.First; // two Tobins: the new one keeps their whole name
+        var bond = new Bond { Id = npc.Id, KindId = kind, Role = role, Trains = _player.Class.Id, Name = called, Race = npc.Race, JoinAge = npc.Age, JoinDay = _city.Day };
         _bonds.Add(bond);
         bond.Following = MayFollow(bond);
         var at = person.GlobalPosition;

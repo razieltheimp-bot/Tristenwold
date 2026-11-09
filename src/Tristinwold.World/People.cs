@@ -198,13 +198,13 @@ public static class People
     internal static IReadOnlyList<Npc> Youths(WorldGen world, Settlement s)
     {
         if (s.Hostile || s.People == 0 || s.Kind is SettlementKind.Shrine or SettlementKind.Mine or SettlementKind.HuntingCamp) return [];
-        var rng = Noise.Dice(world.Seed, 5, WorldGen.StableHash(s.Id));
+        var rng = Noise.Dice(world.Seed ^ world.YouthSalt, 5, WorldGen.StableHash(s.Id));
         var count = s.Kind switch { SettlementKind.City => 3, SettlementKind.Town => 2 + rng.Next(2), SettlementKind.Hamlet => 1 + rng.Next(2), _ => rng.Next(2) };
         var youths = new List<Npc>();
         for (var i = 0; i < count; i++)
         {
             var sex = rng.PickWeighted<Sex>([(Sex.Female, 0.47), (Sex.Male, 0.47), (Sex.Other, 0.06)]);
-            var name = Names.Person(rng, sex, false);
+            var name = Names.Young(rng, sex);
             var angle = rng.NextDouble() * Math.Tau;
             var r = s.Radius * (0.2 + rng.NextDouble() * 0.3);
             if (s.Id == "city:tristinwold") (angle, r) = (i % 2 == 0 ? Math.PI - 0.2 : 0.2, 70 + i * 7);
@@ -214,6 +214,21 @@ public static class People
             youths.Add(npc with { Backstory = Fill(rng, story, npc, s, world) });
         }
         return youths;
+    }
+
+    /// <summary>
+    /// Another young one, come along to take the place of one who left with a hero: the <paramref name="k"/>-th since,
+    /// for the place <paramref name="left"/> stood. A new face and a new name, the same age as the young usually are.
+    /// </summary>
+    public static Npc Newcomer(WorldGen world, Settlement s, Npc left, int k)
+    {
+        var id = $"{left.Id}/n{k}";
+        var rng = new Rng((ulong)WorldGen.StableHash(id) ^ world.YouthSalt ^ 0x5EED);
+        var sex = rng.PickWeighted<Sex>([(Sex.Female, 0.47), (Sex.Male, 0.47), (Sex.Other, 0.06)]);
+        var name = Names.Young(rng, sex);
+        var npc = left with { Id = id, Name = name, Sex = sex, Age = 11 + rng.Next(6), Occupation = rng.Pick(YouthJobs), X = left.X + rng.NextDouble() * 3 - 1.5, Z = left.Z + rng.NextDouble() * 3 - 1.5 };
+        var story = "{First} came to {home} not long ago, to live with a " + rng.Pick(Parents) + ", and works as a " + npc.Occupation + ". {They} dream{s} " + rng.Pick(Dreams) + ".";
+        return npc with { Backstory = Fill(rng, story, npc, s, world) };
     }
 
     static readonly string[] YouthGreetings =

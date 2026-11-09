@@ -82,6 +82,43 @@ public static class Names
 
     public static string Family(Rng rng) => rng.Pick(FamilyHeads) + rng.Pick(FamilyTails);
 
+    // The young get names from a far bigger pool than their elders, so a company of apprentices isn't all Tobins.
+    static readonly string[] Girls =
+    [
+        .. Women,
+        "Aelis", "Ailsa", "Annika", "Aris", "Aud", "Bera", "Bryn", "Cerys", "Dalla", "Dorte", "Eydis", "Elske", "Embla", "Esja",
+        "Fenna", "Frida", "Gerd", "Greta", "Gyda", "Halla", "Hedda", "Helka", "Isolde", "Jenna", "Juna", "Katla", "Kelsa",
+        "Lena", "Lotta", "Lyra", "Malla", "Marit", "Nessa", "Nora", "Orla", "Pella", "Quill", "Rhona", "Rika", "Saga",
+        "Selka", "Signy", "Siv", "Svala", "Tilda", "Tyra", "Ulla", "Vala", "Vera", "Wren", "Ylva", "Ada", "Brisa", "Cilla",
+        "Dessa", "Elsa", "Fia", "Gala", "Hanne", "Iona", "Jessa", "Kaia", "Lise", "Moira", "Nell", "Olwen", "Petra", "Rosa",
+    ];
+
+    static readonly string[] Boys =
+    [
+        .. Men,
+        "Alder", "Ansel", "Ari", "Asger", "Baldur", "Benno", "Birger", "Brand", "Calder", "Colm", "Dain", "Dorian", "Einar",
+        "Elric", "Erland", "Fenn", "Frode", "Gisli", "Gunnar", "Hakon", "Hallam", "Harald", "Idris", "Ingolf", "Jonas",
+        "Kalle", "Kjell", "Lars", "Loki", "Lukas", "Mads", "Morten", "Nils", "Odd", "Olaf", "Osric", "Pell", "Quinn",
+        "Rafe", "Rolf", "Rune", "Sigurd", "Snorri", "Soren", "Stig", "Teodor", "Tor", "Trygve", "Ulric", "Valdis", "Wulf",
+        "Yorick", "Alrik", "Bastian", "Corin", "Dunstan", "Emeric", "Falk", "Gideon", "Hob", "Ivo", "Jasper", "Kit", "Linus",
+    ];
+
+    static readonly string[] YoungEither = [.. Either, "Arin", "Bay", "Cass", "Dell", "Emry", "Fable", "Glen", "Hollis", "Ivy", "Jun", "Kestrel", "Lark", "Merrow", "Nix", "Pip", "Robin", "Sky", "Tam", "Wynter", "Zephyr"];
+
+    /// <summary>A young person's first name, from the far bigger pool kept for the young.</summary>
+    public static string YoungGiven(Rng rng, Sex sex) => sex switch
+    {
+        Sex.Female => rng.Pick(Girls),
+        Sex.Male => rng.Pick(Boys),
+        _ => rng.Chance(0.5) ? rng.Pick(YoungEither) : rng.Pick(rng.Chance(0.5) ? Girls : Boys),
+    };
+
+    /// <summary>A young person's whole name.</summary>
+    public static string Young(Rng rng, Sex sex) => $"{YoungGiven(rng, sex)} {Family(rng)}";
+
+    /// <summary>How many first names the young can have, for each sex (and for the rest).</summary>
+    public static (int Girls, int Boys, int Either) YoungPool => (Girls.Distinct().Count(), Boys.Distinct().Count(), YoungEither.Distinct().Count());
+
     public static string Person(Rng rng, Sex sex, bool ashborn = false) =>
         ashborn ? rng.Pick(Ashborn) + (rng.Chance(0.4) ? " of the " + rng.Pick(["Rift", "Ash", "Seventh Gate", "Long Burn"]) : "")
                 : $"{Given(rng, sex)} {Family(rng)}";

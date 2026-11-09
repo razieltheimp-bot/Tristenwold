@@ -257,6 +257,17 @@ public sealed class WorldGen
     /// <summary>The young people of a settlement (not counted in <see cref="Settlement.People"/>).</summary>
     public IReadOnlyList<Npc> YouthsOf(Settlement s) => _youths.GetOrAdd(s.Id, _ => Born(World.People.Youths(this, s), s));
 
+    /// <summary>
+    /// What makes one hero's town children different from another's (the game sets it from the company): the young of a
+    /// town aren't the same faces with the same names for everyone who ever plays.
+    /// </summary>
+    public ulong YouthSalt
+    {
+        get => _youthSalt;
+        set { if (_youthSalt != value) { _youthSalt = value; _youths.Clear(); } }
+    }
+    ulong _youthSalt;
+
     /// <summary>Each one's people (see <see cref="Ageing.RaceFor"/>), and their age as it is in that people's years.</summary>
     static IReadOnlyList<Npc> Born(IReadOnlyList<Npc> people, Settlement s) =>
         [.. people.Select(n => Ageing.RaceFor(n.Id, s) is var race && race == "human" ? n : n with { Race = race, Age = Ageing.InYearsOf(race, n.Age) })];

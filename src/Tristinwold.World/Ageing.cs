@@ -155,7 +155,7 @@ public static class Ageing
         var rng = new Rng((ulong)WorldGen.StableHash($"{founder.Id}/g{k}") ^ 0xB1A7);
         var sex = rng.PickWeighted<Sex>([(Sex.Female, 0.47), (Sex.Male, 0.47), (Sex.Other, 0.06)]);
         var family = founder.Name.Split(' ').Last();
-        var first = Names.Person(rng, sex, false).Split(' ')[0];
+        var first = Names.YoungGiven(rng, sex);
         var angle = rng.NextDouble() * Math.Tau;
         var r = s.Radius * (0.2 + rng.NextDouble() * 0.3);
         return founder with

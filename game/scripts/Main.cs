@@ -1082,6 +1082,7 @@ public partial class Main : Node3D
     void Load()
     {
         var company = string.Concat(_player.Company.Where(char.IsLetterOrDigit));
+        _world.YouthSalt = (ulong)WorldGen.StableHash("young:" + _player.Company.Trim().ToLowerInvariant()); // this hero's town children, not everyone's
         _savePath = _args.GetValueOrDefault("save", $"user://saves/{(company.Length > 0 ? company : "company")}.json");
         var scripted = _args.ContainsKey("selftest") || _args.ContainsKey("shots");
         if (scripted && !_args.ContainsKey("save")) _savePath = "user://saves/selftest.json";
