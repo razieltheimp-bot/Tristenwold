@@ -185,6 +185,9 @@ public partial class Enemy : Fighter
     /// <summary>A companion's bond with its hero: its level, its hunger, what it has learned.</summary>
     public Bond? Bond { get; private set; }
 
+    /// <summary>What it carried off from the hero it struck down, when no shared world keeps it: bring it down to take it back.</summary>
+    public Hoard Plunder { get; set; } = new();
+
     /// <summary>The hero it follows (a companion, or a summoned familiar).</summary>
     public Player? Leader { get; set; }
 

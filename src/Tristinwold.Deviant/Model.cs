@@ -2,6 +2,31 @@ using System.Text.Json.Serialization;
 
 namespace Tristinwold.Deviant;
 
+/// <summary>
+/// What a deviant carries off from a hero it killed: half their crowns and half their goods (by item id). Whoever
+/// brings it down takes it back.
+/// </summary>
+public sealed class Hoard
+{
+    public int Crowns { get; set; }
+    public Dictionary<string, int> Items { get; set; } = [];
+
+    [JsonIgnore]
+    public bool Empty => Crowns <= 0 && Items.Values.All(n => n <= 0);
+
+    public void Add(Hoard more)
+    {
+        Crowns += Math.Max(0, more.Crowns);
+        foreach (var (id, n) in more.Items.Where(kv => kv.Value > 0)) Items[id] = Items.GetValueOrDefault(id) + n;
+    }
+
+    public Hoard Copy() => new() { Crowns = Crowns, Items = new(Items) };
+
+    /// <summary>Put into words: "40 crowns, 3 iron ore, 2 oak logs".</summary>
+    public string Describe(Func<string, int, string> name) =>
+        string.Join(", ", (Crowns > 0 ? [$"{Crowns} crowns"] : Array.Empty<string>()).Concat(Items.Where(kv => kv.Value > 0).OrderBy(kv => kv.Key).Select(kv => name(kv.Key, kv.Value))));
+}
+
 /// <summary>Place in the hierarchy. Higher ranks hit harder and are harder to kill for good.</summary>
 public enum Rank { Stray = 0, Ringleader = 1, Scourge = 2, Tyrant = 3 }
 
@@ -104,6 +129,8 @@ public sealed class Deviant
     /// <summary>Per-player memory, keyed by player id, so a deviant can single out one friend.</summary>
     public Dictionary<string, PlayerRecord> Players { get; init; } = [];
     public HashSet<Guid> Rivals { get; init; } = [];
+    /// <summary>What it carried off from heroes it killed, until someone brings it down and takes it back.</summary>
+    public Hoard Carried { get; init; } = new();
     public Guid? PactSworn { get; set; }
     /// <summary>Blood oaths: those it rose under, and those who rose under it. Sworn deviants never hunt one another.</summary>
     public HashSet<Guid> Oaths { get; init; } = [];

@@ -512,6 +512,22 @@ public static class PartyRules
     public static bool IsMount(Bond b) => b.Role == BondRole.Dragon ? b.Rideable : b.Steed && b.Rideable;
     public static bool IsPet(Bond b) => !IsApprentice(b) && !IsMount(b) && !b.Machine;
 
+    /// <summary>
+    /// A Ranger (the beastmaster's way) and a Shapeshifter (who runs with the pack) keep their beasts: struck down, a beast
+    /// of theirs gets up when the fighting's over, and they can bring it round on the spot (<see cref="RestoreMana"/>).
+    /// </summary>
+    public static bool KeepsPets(string classId) => classId is "Ranger" or "Shapeshifter";
+
+    /// <summary>
+    /// Whether a companion struck down is dead for good: a dragon, an apprentice or squire, a wrecked mite (see
+    /// <see cref="Bond.DiesIfFelled"/>), and every beast (pets and steeds alike), unless the hero is a Ranger or a
+    /// Shapeshifter (<see cref="KeepsPets"/>). An artificer's golem is mended, not mourned.
+    /// </summary>
+    public static bool Dies(Bond b, string classId) => b.DiesIfFelled || b.Role == BondRole.Pet && !KeepsPets(classId);
+
+    /// <summary>What it costs a Ranger or a Shapeshifter to bring a beast of theirs round on the spot: this share of their mana.</summary>
+    public const double RestoreMana = 0.2;
+
     /// <summary>The hero, and every apprentice at their side.</summary>
     public static int Riders(IEnumerable<Bond> bonds) => 1 + bonds.Count(b => b.Following && IsApprentice(b));
 

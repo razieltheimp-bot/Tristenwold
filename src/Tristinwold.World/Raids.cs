@@ -436,6 +436,8 @@ public sealed class Roamer
     public ulong Seed { get; set; }
     /// <summary>Its id on the shared world's roster, when there is a shared world.</summary>
     public Guid? DeviantId { get; set; }
+    /// <summary>What it carried off from the hero when it beat them, playing alone (on a server the roster keeps it): theirs again when they bring it down.</summary>
+    public Tristinwold.Deviant.Hoard Carried { get; set; } = new();
 
     [JsonIgnore]
     public Raid? Lair => RaidId.Length == 0 ? null : Raids.Get(RaidId);

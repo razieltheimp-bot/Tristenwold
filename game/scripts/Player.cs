@@ -90,6 +90,8 @@ public partial class Player : Fighter
 
     /// <summary>The last foe to land a blow on the hero (the one that put them down, when they fall).</summary>
     public Enemy? LastHitBy { get; private set; }
+    /// <summary>When that was (seconds since the game started).</summary>
+    public double LastHitAt { get; private set; }
 
     /// <summary>The ring brought them back: they wake at the Gallows Perch.</summary>
     public event Action? Woke;
@@ -1306,6 +1308,7 @@ public partial class Player : Fighter
         if (Downed || Safe) return; // nobody fights in a tavern
         if (Hidden) Unhide("A blow finds you, and the shadows are gone.");
         LastHitBy = from;
+        LastHitAt = Time.GetTicksMsec() / 1000.0;
         if (Class.Id == "MartialArtist" && _rng.Chance(Class.Passive.Power + 0.03 * (Hero.Rank("evasion") - 1)))
         {
             Figure.Perform("Dodge_Left", 0.4, 1.6f);

@@ -43,6 +43,38 @@ public class DeviantWorldTests
     }
 
     [Fact]
+    public void The_one_that_kills_a_hero_carries_off_what_they_dropped_and_gives_it_up_when_brought_down()
+    {
+        var world = new DeviantWorld(3);
+        var dropped = new Hoard { Crowns = 40, Items = { ["iron_ore"] = 3, ["oak_log"] = 2 } };
+        // The killing blow came from the smaller wolf: it rises, not the biggest, and it carries the hoard.
+        world.RecordBattle(Report(BattleResult.Defeat, Enemy(0, maxHp: 80), Enemy(1, maxHp: 300)) with { KillerSlot = 0, Dropped = dropped });
+        var n = Assert.Single(world.Living);
+        Assert.Equal(40, n.Carried.Crowns);
+        Assert.Equal(3, n.Carried.Items["iron_ore"]);
+        Assert.Empty(world.TakeRecovered());
+
+        // It kills again: more on its back.
+        world.RecordBattle(Report(BattleResult.Defeat, Enemy(0, deviant: n.Id)) with { KillerSlot = 0, Dropped = new Hoard { Crowns = 10, Items = { ["iron_ore"] = 1 } } });
+        Assert.Equal(50, n.Carried.Crowns);
+        Assert.Equal(4, n.Carried.Items["iron_ore"]);
+
+        // Saved and loaded, still carrying it.
+        var back = DeviantWorld.FromJson(world.ToJson());
+        Assert.Equal(50, back.Find(n.Id)!.Carried.Crowns);
+
+        // Brought down for good: whoever did it gets it all back, and it carries nothing.
+        world.RecordBattle(Report(BattleResult.Victory, Enemy(0, killed: true, deviant: n.Id, blow: DamageKind.Fire)));
+        if (n.Alive) return; // it got up and ran (BeatingDeath): it keeps its hoard
+        var r = Assert.Single(world.TakeRecovered());
+        Assert.Equal("Joe", r.By);
+        Assert.Equal(50, r.Hoard.Crowns);
+        Assert.Equal(2, r.Hoard.Items["oak_log"]);
+        Assert.True(n.Carried.Empty);
+        Assert.Empty(world.TakeRecovered());
+    }
+
+    [Fact]
     public void Wiping_the_party_turns_the_toughest_survivor_into_a_captain()
     {
         var world = new DeviantWorld(1);

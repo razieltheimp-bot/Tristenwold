@@ -185,9 +185,20 @@ public sealed class DeviantWorld
 
     // ---- Battle results --------------------------------------------------------------------
 
+    readonly List<Recovery> _recovered = [];
+
+    /// <summary>The hoards taken back from deviants brought down since this was last asked, for the game to hand out.</summary>
+    public IReadOnlyList<Recovery> TakeRecovered()
+    {
+        var all = _recovered.ToList();
+        _recovered.Clear();
+        return all;
+    }
+
     public IReadOnlyList<WorldEvent> RecordBattle(BattleReport report)
     {
         var events = new List<WorldEvent>();
+        Deviant? carrier = null; // in a defeat, who carries off what the hero dropped
         var deviantsInBattle = report.Enemies
             .Where(e => e.DeviantId is not null)
             .Select(e => (Enemy: e, Deviant: Find(e.DeviantId!.Value)))
@@ -201,7 +212,10 @@ public sealed class DeviantWorld
             foreach (var p in report.Players) n.Player(p).Memory |= Memory.MetPlayer;
 
             if (report.Result == BattleResult.Defeat)
+            {
                 Triumph(n, report, events);
+                if (carrier is null || enemy.Slot == report.KillerSlot) carrier = n;
+            }
             else if (report.Result == BattleResult.PartyEscaped)
                 PlayerFled(n, report, events);
             else if (enemy.Escaped)
@@ -214,7 +228,9 @@ public sealed class DeviantWorld
         // away itself, gets a name. This is how the roster fills up.
         if (deviantsInBattle.Count == 0)
         {
-            var survivor = report.Enemies.Where(e => !e.Killed).OrderByDescending(e => e.MaxHealth).FirstOrDefault();
+            // In a defeat, the one that struck the hero down rises, if it's still standing.
+            var survivor = report.Enemies.FirstOrDefault(e => !e.Killed && report.Result == BattleResult.Defeat && e.Slot == report.KillerSlot)
+                ?? report.Enemies.Where(e => !e.Killed).OrderByDescending(e => e.MaxHealth).FirstOrDefault();
             if (survivor is not null)
             {
                 var (rank, memory) = report.Result switch
@@ -224,8 +240,13 @@ public sealed class DeviantWorld
                     _ when survivor.Escaped => (Rank.Stray, Memory.FledFromPlayer),
                     _ => (Rank.Stray, Memory.None),
                 };
-                if (memory != Memory.None) Birth(survivor, rank, memory, report, events);
+                if (memory != Memory.None) carrier = Birth(survivor, rank, memory, report, events);
             }
+        }
+        if (report.Result == BattleResult.Defeat && carrier is not null && report.Dropped is { Empty: false } dropped)
+        {
+            carrier.Carried.Add(dropped);
+            Log(carrier, $"Carries off what {Party(report)} dropped: {dropped.Crowns} crowns and {dropped.Items.Values.Sum()} goods.");
         }
 
         UpdateHierarchy(events);
@@ -286,6 +307,12 @@ public sealed class DeviantWorld
 
         // Down and stayed down: it had its chance to run for it in the fight (see BeatingDeath), and it's dead.
         n.Alive = false;
+        if (!n.Carried.Empty) // what it carried off, back to whoever brought it down
+        {
+            _recovered.Add(new Recovery(killer, n.Id, n.FullName, n.Carried.Copy()));
+            n.Carried.Crowns = 0;
+            n.Carried.Items.Clear();
+        }
         Log(n, $"Slain by {killer ?? "the party"} in {report.AreaId}.");
         events.Add(new(WorldEventKind.Slain, n.Id, $"{n.FullName} has been slain by {killer ?? "the party"}!"));
 
@@ -301,7 +328,7 @@ public sealed class DeviantWorld
         }
     }
 
-    void Birth(EnemyReport enemy, Rank rank, Memory memory, BattleReport report, List<WorldEvent> events)
+    Deviant Birth(EnemyReport enemy, Rank rank, Memory memory, BattleReport report, List<WorldEvent> events)
     {
         if (rank == Rank.Stray && Strays.Count() >= Rules.MaxStrays)
         {
@@ -344,6 +371,7 @@ public sealed class DeviantWorld
             : $"after escaping {Party(report)}";
         Log(n, $"Rose from the ranks of {n.Species} in {report.AreaId} {why}.");
         events.Add(new(WorldEventKind.Born, n.Id, $"A {n.Species} named {n.FullName} rose to {rank} {why}."));
+        return n;
     }
 
     // ---- Traits, scars, names ---------------------------------------------------------------

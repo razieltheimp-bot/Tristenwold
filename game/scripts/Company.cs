@@ -317,7 +317,8 @@ public partial class Main
             _hud.Toast($"{bond.Name} goes down, and the rot lets go a little. It'll follow you now, but only a druid can get it out.", 9);
             return;
         }
-        if (bond.Blighted && !bond.Rotted && !bond.DiesIfFelled)
+        var dies = PartyRules.Dies(bond, _player.Class.Id);
+        if (bond.Blighted && !bond.Rotted && !dies)
         {
             e.Rot(_player);
             _hud.Toast($"{bond.Name} fell with the rot in its blood, and something else gets up. It doesn't know you. Knock it out and get it to a druid!", 10);
@@ -329,9 +330,11 @@ public partial class Main
             _hud.Toast($"The Rift's hold on {bond.Name} breaks. {bond.Name} will get up when the fighting is over, yours again.", 10);
             return;
         }
-        if (!bond.DiesIfFelled)
+        if (!dies)
         {
-            _hud.Toast($"{bond.Name} is down! {bond.Name} will get up when the fighting is over.");
+            _hud.Toast(bond.Role == BondRole.Pet
+                ? $"{bond.Name} is down! {bond.Name} will get up when the fighting is over, or bring {bond.Name} round now from your company (P)."
+                : $"{bond.Name} is down! {bond.Name} will get up when the fighting is over.");
             return;
         }
         if (bond.Gear.Count > 0) // what you gave them, back to you
@@ -358,6 +361,11 @@ public partial class Main
             StableSpareMounts();
         }
         else if (bond.Role == BondRole.Mite) _hud.Log($"{bond.Name} is scrap.");
+        else if (bond.Role == BondRole.Pet)
+        {
+            _hud.Toast($"{bond.Name} is dead. Only a Ranger or a Shapeshifter keeps a beast through a fight like that.", 12);
+            _hud.Log($"{bond.Name} fell in battle, and doesn't get up.");
+        }
         else _hud.Toast($"{bond.Name} is dead.", 10);
         Save();
     }
@@ -643,6 +651,12 @@ public partial class Main
         }
         if (victim.Bond is not null || !byCompany) return;
         SummonerSlain(victim);
+        if (!victim.Plunder.Empty) // what it carried off from you, back again
+        {
+            TakeBack(victim.Stats.Name, victim.Plunder.Copy());
+            victim.Plunder.Crowns = 0;
+            victim.Plunder.Items.Clear();
+        }
         if (victim.SiteId is { } site)
         {
             foreach (var u in _journal.Killed(site).ToList()) Apply(u);
@@ -1094,6 +1108,8 @@ public partial class Main
             var options = new List<(string Label, Action Then)>();
             groups.Add((Line(bond), options));
             if (bond.Following && bond.Eats) options.Add(($"Feed {bond.Name} (meat: {_player.Meat}, fish: {FishInPack})", () => { Feed(bond); ShowParty(); }));
+            if (bond.Role == BondRole.Pet && PartyRules.KeepsPets(_player.Class.Id) && BodyOf(bond) is { State: EnemyState.Dead } fallen)
+                options.Add(($"Bring {bond.Name} round ({_player.Stats.MaxMana * PartyRules.RestoreMana:0} mana)", () => { Restore(bond, fallen); ShowParty(); }));
             options.Add(($"{bond.Name}'s gear{(bond.Gear.Count > 0 ? $" ({bond.Gear.Count} worn)" : "")}", () => GearMenu(bond))); // weapons and armour from your pack
             if (!PartyRules.IsApprentice(bond)) options.Add(($"Rename {bond.Name}", () => AskName(bond))); // a person comes with a name of their own
             else options.Add(($"Train {bond.Name} another way", () => RetrainMenu(bond))); // but a different calling, if the hero likes
@@ -1116,6 +1132,19 @@ public partial class Main
             else if (MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
         }
         _hud.TalkGroups("Your company", $"{_bonds.Count(b => b.Following)} with you, {_bonds.Count(b => !b.Following)} elsewhere. Meat {_player.Meat}, fish {FishInPack}.", groups, ("Close", _hud.EndTalk));
+    }
+
+    /// <summary>A Ranger or a Shapeshifter brings a beast of theirs round on the spot, fighting or not.</summary>
+    public bool Restore(Bond bond, Enemy body)
+    {
+        if (!PartyRules.KeepsPets(_player.Class.Id) || bond.Role != BondRole.Pet || body.State != EnemyState.Dead) return false;
+        if (!_player.Stats.Spend(AttackKind.Spell, _player.Stats.MaxMana * PartyRules.RestoreMana)) { Sound.Ui("error"); _hud.Toast($"Not enough mana to bring {bond.Name} round.", 4); return false; }
+        body.Revive();
+        body.Stats.Heal(body.Stats.MaxHealth * 0.6);
+        body.RefreshPlate();
+        Effects.Rise(body, DamageKind.Sun);
+        _hud.Toast($"{bond.Name} gets up, shakes it off, and goes back in.", 5);
+        return true;
     }
 
     /// <summary>A name for a pet, a mount or a machine, typed in by the hero.</summary>

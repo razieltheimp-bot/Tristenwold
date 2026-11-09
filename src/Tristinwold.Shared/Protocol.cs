@@ -16,6 +16,7 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(SaveProgress), "save_progress")]
 [JsonDerivedType(typeof(Presence), "presence")]
 [JsonDerivedType(typeof(ReportBattle), "report_battle")]
+[JsonDerivedType(typeof(HoardRecovered), "hoard_recovered")]
 [JsonDerivedType(typeof(Rested), "rested")]
 [JsonDerivedType(typeof(ClaimContract), "claim_contract")]
 [JsonDerivedType(typeof(AbandonContract), "abandon_contract")]
@@ -59,6 +60,9 @@ public sealed record Hello(string Player, string Password, int ProtocolVersion, 
 public sealed record Presence(string Area, IReadOnlyList<string> Party) : Message;
 
 public sealed record ReportBattle(BattleReport Report) : Message;
+
+/// <summary>A deviant you brought down was carrying what it took from heroes it killed: it's yours.</summary>
+public sealed record HoardRecovered(string From, int Crowns, IReadOnlyDictionary<string, int> Items) : Message;
 
 /// <summary>The group saved or slept; the world advances a day.</summary>
 public sealed record Rested : Message;

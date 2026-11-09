@@ -404,7 +404,7 @@ public partial class Main : Node3D
         _player.Said += text => _hud.Toast(text);
         _player.Sheltered = () => InTavern; // nobody lays a hand on anyone in a tavern
         _player.LimitUsed += (a, c) => _hud.LimitBanner(a.Name, a.Text, c);
-        _player.WentDown += () => { _tracker.Downed(); _hud.Center("You have fallen."); };
+        _player.WentDown += StruckDown;
         _player.Struck += (enemy, hit, kind) =>
         {
             if (enemy.Sparring || enemy.Yielded || enemy.HeroesRival || enemy.Hero is not null) return; // a duel in the yard, or a fight with another player, isn't a battle
@@ -712,6 +712,7 @@ public partial class Main : Node3D
             case Welcome w: _hud.Toast($"{_player.Company}'s company joins {w.Campaign}."); break;
             case Rejected r: _hud.Toast($"The server turned us away: {Wire.Explain(r.Reason)}", 12); break;
             case Notice n: _hud.Toast(n.From is null ? n.Text : n.Kind == NoticeKind.Vann ? $"{n.From}: \"{n.Text}\"" : $"{n.From}: {n.Text}"); break;
+            case HoardRecovered h: TakeBack(h.From, new Hoard { Crowns = h.Crowns, Items = new(h.Items) }); break;
             case DeviantAppears a:
                 foreach (var spawn in a.Spawns)
                 {

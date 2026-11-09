@@ -301,6 +301,8 @@ public partial class Roamers(Main main) : Node
         Out? o = null;
         var brain = raid is null ? null : new BossBrain(main, raid, r.Name, spot => o?.Adds.Add(Add(raid, spot, r.Name)));
         o = new Out(r, body, brain);
+        if (body.Plunder.Empty) body.Plunder = r.Carried; // what it carries goes where it goes
+        else { r.Carried.Add(body.Plunder); body.Plunder = r.Carried; }
         Strengthen(o);
         body.Think = (e, delta) => { brain?.Think(e, delta); Hunt(o, e, delta); };
         body.Struck = (amount, kind, attack, by) => Learn(o, amount, kind, attack, by);

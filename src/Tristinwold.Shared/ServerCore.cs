@@ -243,9 +243,25 @@ public sealed partial class ServerCore
 
     IReadOnlyList<Outgoing> OnBattle(string player, BattleReport report)
     {
-        // Each table only speaks for itself.
-        var events = World.RecordBattle(report with { Players = [player], AreaId = State.Place(Clip(report.AreaId, 80)) });
-        return WorldChanged(events);
+        // Each table only speaks for itself, and what a hero dropped is kept within reason.
+        var events = World.RecordBattle(report with { Players = [player], AreaId = State.Place(Clip(report.AreaId, 80)), Dropped = Sane(report.Dropped) });
+        var outgoing = WorldChanged(events).ToList();
+        foreach (var r in World.TakeRecovered()) // what the deviants they brought down were carrying, to whoever's report it was
+            outgoing.Add(new(player, new HoardRecovered(r.Name, r.Hoard.Crowns, r.Hoard.Items)));
+        return outgoing;
+    }
+
+    /// <summary>The most kinds of goods, and of any one, a hero can drop in one fall.</summary>
+    const int MostDroppedKinds = 200, MostDroppedEach = 100_000;
+
+    /// <summary>A dropped hoard as the server will keep it: no negatives, nothing absurd, short names.</summary>
+    static Hoard? Sane(Hoard? h)
+    {
+        if (h is null) return null;
+        var items = h.Items.Where(kv => kv.Value > 0 && !string.IsNullOrWhiteSpace(kv.Key) && kv.Key.Length <= 64).Take(MostDroppedKinds)
+            .ToDictionary(kv => kv.Key, kv => Math.Min(kv.Value, MostDroppedEach));
+        var sane = new Hoard { Crowns = Math.Clamp(h.Crowns, 0, MostSpoil), Items = items };
+        return sane.Empty ? null : sane;
     }
 
     IReadOnlyList<Outgoing> OnEncounter(string player, EncounterStarted e)

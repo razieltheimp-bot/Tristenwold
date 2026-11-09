@@ -21,13 +21,21 @@ public sealed record EnemyReport(
     /// <summary>The actor base the game can spawn this kind from (its kind in the bestiary, say "bandit").</summary>
     string? BaseForm = null);
 
-/// <summary>What the game layer hands the deviant world after every battle.</summary>
+/// <summary>
+/// What the game layer hands the deviant world after every battle. In a defeat, <paramref name="KillerSlot"/> is the
+/// enemy that struck the hero down, and <paramref name="Dropped"/> what it carried off (half their crowns and goods).
+/// </summary>
 public sealed record BattleReport(
     string AreaId,
     BattleResult Result,
     IReadOnlyList<EnemyReport> Enemies,
     IReadOnlyList<string> Players,
-    int PartyLevel = 1);
+    int PartyLevel = 1,
+    int? KillerSlot = null,
+    Hoard? Dropped = null);
+
+/// <summary>A deviant brought down that was carrying a hoard: who brought it down (if known), its name, and what it had.</summary>
+public sealed record Recovery(string? By, Guid DeviantId, string Name, Hoard Hoard);
 
 /// <summary>An enemy about to fight the player, before any deviant takes its place.</summary>
 public sealed record FormationSlot(int Slot, string Kind, string Species, string? BaseForm = null);

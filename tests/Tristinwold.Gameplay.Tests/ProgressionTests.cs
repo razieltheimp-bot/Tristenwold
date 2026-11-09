@@ -1,3 +1,4 @@
+using Tristinwold.Deviant;
 using Tristinwold.Gameplay;
 
 namespace Tristinwold.Gameplay.Tests;
@@ -64,6 +65,56 @@ public class ProgressionTests
         var squire = new Bond { KindId = "squire", Role = BondRole.Squire };
         squire.Tick(Bond.HungerSeconds * 2);
         Assert.False(squire.Hungry); // people feed themselves
+    }
+
+    [Fact]
+    public void A_hero_struck_down_drops_half_their_crowns_and_half_their_goods_but_keeps_their_gear()
+    {
+        var pack = new Pack();
+        pack.Add("iron_ore", 7);
+        pack.Add("oak_log", 4);
+        pack.Add("herring", 1); // half of one is nothing
+        pack.Add("healing_draught", 4);
+        var sword = Items.All.First(i => i.Kind == ItemKind.Gear).Id;
+        pack.Add(sword);
+        var hoard = Forfeit.Halve(pack, 101);
+        Assert.Equal(50, hoard.Crowns);
+        Assert.Equal(3, hoard.Items["iron_ore"]);
+        Assert.Equal(2, hoard.Items["oak_log"]);
+        Assert.False(hoard.Items.ContainsKey("herring"));
+        Assert.Equal(4, pack.Count("iron_ore"));
+        Assert.Equal(2, pack.Count("oak_log"));
+        Assert.Equal(1, pack.Count("herring"));
+        Assert.Equal(4, pack.Count("healing_draught")); // not goods
+        Assert.Equal(1, pack.Count(sword)); // nor gear
+        Assert.All(hoard.Items.Keys, id => Assert.True(Forfeit.Forfeits(Items.Get(id)!)));
+
+        // Taken back off whatever killed them.
+        Assert.Equal(50, Forfeit.Recover(pack, hoard));
+        Assert.Equal(7, pack.Count("iron_ore"));
+        Assert.Equal(0, Forfeit.Recover(pack, new Hoard { Items = { ["no_such_thing"] = 5 } }));
+        Assert.Equal(0, pack.Count("no_such_thing"));
+    }
+
+    [Fact]
+    public void Every_beast_struck_down_is_dead_unless_its_hero_is_a_Ranger_or_a_Shapeshifter()
+    {
+        var wolf = new Bond { KindId = "wolf", Role = BondRole.Pet };
+        var horse = new Bond { KindId = "horse", Role = BondRole.Pet };
+        foreach (var hero in new[] { "Paladin", "Wizard", "Barbarian", "Stormdruid", "Spiritcaller" })
+        {
+            Assert.True(PartyRules.Dies(wolf, hero));
+            Assert.True(PartyRules.Dies(horse, hero));
+        }
+        foreach (var keeper in new[] { "Ranger", "Shapeshifter" })
+        {
+            Assert.True(PartyRules.KeepsPets(keeper));
+            Assert.False(PartyRules.Dies(wolf, keeper));
+            Assert.False(PartyRules.Dies(horse, keeper));
+            Assert.True(PartyRules.Dies(new Bond { KindId = "dragon_gold", Role = BondRole.Dragon }, keeper)); // a dragon is a dragon
+            Assert.True(PartyRules.Dies(new Bond { Role = BondRole.Apprentice }, keeper));
+        }
+        Assert.False(PartyRules.Dies(new Bond { Role = BondRole.Golem }, "Paladin")); // a golem is mended
     }
 
     [Fact]

@@ -41,6 +41,8 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--sleepers-only")) { await SleeperTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--shipvisit-only")) { await ShipVisitTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--summoner-only")) { await SummonerTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--pets-only")) { await PetDeathTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--forfeit-only")) { await ForfeitTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ride-only")) { await TheRide(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
@@ -2990,6 +2992,8 @@ public partial class SelfTest(Main main) : Node
         await KeeperTest();
         await ShipVisitTest();
         await SummonerTest();
+        await PetDeathTest();
+        await ForfeitTest();
         await FleetTest();
         await HeroFightTest();
         await SleeperTest();
@@ -3375,6 +3379,97 @@ public partial class SelfTest(Main main) : Node
         var beast = main.LittleRobotOfForTest(lad);
         Check(beast is { Kind.Id: "wolf" } && beast.Figure is not Figure, $"trained as a shapeshifter: an acolyte with a wolf at their heels, a real beast ({beast?.Kind.Id}, {beast?.Figure.GetType().Name})");
         foreach (var c in p.Companions().ToList()) c.QueueFree();
+    }
+
+    /// <summary>
+    /// Struck down by a wolf out in the wilds (playing alone): the hero wakes with half their crowns and half their goods,
+    /// gear and potions untouched; the wolf carries the rest off; and brought down, it gives it all back.
+    /// </summary>
+    async Task ForfeitTest()
+    {
+        var p = main.PlayerNode;
+        var here = new Vector3(0, 0, 420);
+        await Teleport(here);
+        p.Crowns = 100;
+        foreach (var id in new[] { "iron_ore", "oak_log", "healing_draught" }) if (p.Pack.Count(id) > 0) p.Pack.Take(id, p.Pack.Count(id));
+        p.Pack.Add("iron_ore", 6);
+        p.Pack.Add("oak_log", 4);
+        p.Pack.Add("healing_draught", 2);
+        var wolf = Enemy.Create(Bestiary.Get("wolf"), (here + new Vector3(0, 0, -4)) with { Y = City.FloorAt(here) + 0.5f });
+        main.AddEnemy(wolf);
+        wolf.Provoke(p);
+        await Frames(10);
+        p.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, wolf);
+        await Frames(5);
+        Check(p.Downed && p.Crowns == 50 && p.Pack.Count("iron_ore") == 3 && p.Pack.Count("oak_log") == 2 && p.Pack.Count("healing_draught") == 2,
+            $"struck down: half the crowns and half the goods are gone, the potions kept ({p.Crowns} crowns, {p.Pack.Count("iron_ore")} ore, {p.Pack.Count("oak_log")} logs)");
+        Check(wolf.Plunder.Crowns == 50 && wolf.Plunder.Items.GetValueOrDefault("iron_ore") == 3 && main.HudNode.Heard("takes half of what you carried"),
+            $"and the wolf carries them off ({wolf.Plunder.Crowns} crowns)");
+        var roamer = main.RaidLog.Roamers.FirstOrDefault(r => r.Carried == wolf.Plunder);
+        Check(roamer is null || roamer.Carried.Crowns == 50, $"named for it, it keeps them as it roams ({roamer?.Title ?? "not named"})");
+        await Until(() => !p.Downed, 10);
+        var crowns = p.Crowns;
+        wolf.TakeHit(1e9, DamageKind.Physical, AttackKind.Weapon, false, p);
+        await Frames(5);
+        Check(p.Crowns >= crowns + 50 && p.Pack.Count("iron_ore") == 6 && p.Pack.Count("oak_log") == 4 && main.HudNode.Heard("You take back what"),
+            $"brought down, it gives it all back ({p.Crowns - crowns} crowns, {p.Pack.Count("iron_ore")} ore)");
+        Check(wolf.Plunder.Empty, "and carries nothing now");
+
+        // A wolf that takes a name for beating you keeps what it took on its record as it roams, until it's brought down.
+        main.RoamersNode.WildDeviants = true;
+        var crownsBefore = p.Crowns;
+        var other = Enemy.Create(Bestiary.Get("wolf"), (here + new Vector3(3, 0, -4)) with { Y = City.FloorAt(here) + 0.5f });
+        main.AddEnemy(other);
+        other.Provoke(p);
+        await Frames(10);
+        p.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, other);
+        await Frames(5);
+        var named = main.RaidLog.Roamers.FirstOrDefault(r => r.Carried.Crowns > 0);
+        main.RoamersNode.WildDeviants = false;
+        Check(named is not null && named.Carried.Crowns == crownsBefore / 2 && named.Carried.Items.GetValueOrDefault("iron_ore") == 3 && other.Plunder == named.Carried,
+            $"a wolf named for beating you carries it on its record ({named?.Title}: {named?.Carried.Crowns} crowns)");
+        var saved = System.Text.Json.JsonSerializer.Serialize(named);
+        Check(saved.Contains("\"Carried\"") && saved.Contains("iron_ore"), "and its record keeps it in the save");
+        var have = p.Crowns;
+        if (IsInstanceValid(other)) other.TakeHit(1e9, DamageKind.Physical, AttackKind.Weapon, false, p); // (before the hero's up and gone, and it with them)
+        await Frames(5);
+        Check(p.Crowns >= have + crownsBefore / 2 && p.Pack.Count("iron_ore") == 6, "brought down, it gives it back with the price on its head");
+        await Until(() => !p.Downed, 10);
+    }
+
+    /// <summary>
+    /// A beast struck down: a Ranger's (or a Shapeshifter's) is only down, and they can bring it round on the spot for
+    /// some mana; anyone else's is dead.
+    /// </summary>
+    async Task PetDeathTest()
+    {
+        var p = main.PlayerNode;
+        var classWas = p.Class.Id;
+        p.Join("Ranger");
+        var before = main.CompanionBodies.Select(e => e.Bond).ToHashSet();
+        var at = p.GlobalPosition + new Vector3(3, 0, 2);
+        var pup = Enemy.Create(Bestiary.Get("wolf"), at with { Y = City.FloorAt(at) + 0.5f }, young: true);
+        main.AddEnemy(pup);
+        p.Meat = Math.Max(p.Meat, 3);
+        await Frames(5);
+        Check(main.Tame(pup), "a ranger tames a wolf pup");
+        await Frames(10);
+        var wolf = main.CompanionBodies.FirstOrDefault(e => e.Bond is not null && !before.Contains(e.Bond));
+        Check(wolf is not null, "and it follows");
+        if (wolf is null) { p.Join(classWas); return; }
+        wolf.Shelled(1e9, false);
+        await Frames(5);
+        Check(wolf.State == EnemyState.Dead && main.CompanionBodies.Contains(wolf), $"struck down, the ranger's {wolf.Bond!.Name} is only down");
+        p.Stats.Restore(p.Stats.MaxMana);
+        var mana = p.Stats.Mana;
+        Check(main.Restore(wolf.Bond!, wolf) && wolf.State != EnemyState.Dead && p.Stats.Mana < mana, "and the ranger brings it round on the spot, for some mana");
+        p.Join("Paladin");
+        var bond = wolf.Bond!;
+        Check(!main.Restore(bond, wolf), "a paladin can't");
+        wolf.Shelled(1e9, false);
+        await Frames(5);
+        Check(!main.CompanionBodies.Any(e => e.Bond == bond) && main.HudNode.Heard("Only a Ranger or a Shapeshifter"), $"and a paladin's {bond.Name}, struck down, is dead");
+        p.Join(classWas);
     }
 
     /// <summary>

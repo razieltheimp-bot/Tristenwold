@@ -277,6 +277,32 @@ public class SharedWorldTests
     }
 
     [Fact]
+    public void A_deviant_carries_off_what_a_hero_dropped_and_whoever_brings_it_down_gets_it_back()
+    {
+        var server = NewServer();
+        server.Connect(Hi("Joe"));
+        server.Connect(Hi("Mira"));
+        var dropped = new Hoard { Crowns = 60, Items = { ["coal"] = 4, ["bad"] = -3, [new string('x', 200)] = 2 } };
+        server.Handle("Joe", new ReportBattle(new BattleReport("The Docks", BattleResult.Defeat,
+            [new EnemyReport(0, "Draugr", "Draugr Wight", 900, Killed: false, Escaped: false)], ["Joe"], KillerSlot: 0, Dropped: dropped)));
+        var deviant = Assert.Single(server.World.Living);
+        Assert.Equal(60, deviant.Carried.Crowns);
+        Assert.Equal(["coal"], deviant.Carried.Items.Keys); // nothing negative, nothing absurd
+
+        // Mira brings it down (it may get up and run: then it keeps its hoard, and she tries again).
+        IReadOnlyList<Outgoing> outs = [];
+        for (var i = 0; i < 40 && deviant.Alive; i++)
+            outs = server.Handle("Mira", new ReportBattle(new BattleReport("The Docks", BattleResult.Victory,
+                [new EnemyReport(0, "Draugr", "Draugr Wight", 900, Killed: true, Escaped: false, DeviantId: deviant.Id, KillingBlow: DamageKind.Fire, KilledBy: "Mira")], ["Mira"])));
+        Assert.False(deviant.Alive);
+        var got = Assert.Single(To<HoardRecovered>(outs, "Mira"));
+        Assert.Equal(60, got.Crowns);
+        Assert.Equal(4, got.Items["coal"]);
+        Assert.Empty(To<HoardRecovered>(outs, "Joe"));
+        Assert.True(deviant.Carried.Empty);
+    }
+
+    [Fact]
     public void Each_table_fights_in_its_own_game_but_shares_one_deviant_world()
     {
         var server = NewServer();

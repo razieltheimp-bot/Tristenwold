@@ -36,6 +36,8 @@ public sealed class EncounterTracker(
     readonly List<long> _unannounced = [];
     int _nextSlot;
     bool _active, _downed;
+    long? _killer;
+    Hoard? _dropped;
     Vector3 _playerStart, _playerLast;
     double _announceAt;
     string _area = "";
@@ -99,9 +101,12 @@ public sealed class EncounterTracker(
         t.Blow = blow;
     }
 
-    public void Downed()
+    /// <summary>The hero went down: by which enemy (if one did it), and what that enemy carried off.</summary>
+    public void Downed(long? killer = null, Hoard? dropped = null)
     {
-        if (_active) _downed = true;
+        if (!_active) return;
+        _downed = true;
+        (_killer, _dropped) = (killer, dropped);
     }
 
     public void Tick(double now, Vector3 player, Func<long, bool> stillFighting, Func<long, Vector3?> posOf)
@@ -148,7 +153,9 @@ public sealed class EncounterTracker(
             DeviantId: t.DeviantId,
             KillingBlow: t.Killed || t.RanOff ? t.Blow ?? DamageKind.Physical : null,
             KilledBy: t.Killed ? t.KilledBy : null,
-            BaseForm: t.Kind)).ToList(), [company], PartyLevel: 5));
+            BaseForm: t.Kind)).ToList(), [company], PartyLevel: 5,
+            KillerSlot: result == BattleResult.Defeat && _killer is { } k && _byId.TryGetValue(k, out var killer) ? killer.Slot : null,
+            Dropped: result == BattleResult.Defeat ? _dropped : null));
 
         _byId.Clear();
         _bySlot.Clear();
@@ -156,5 +163,6 @@ public sealed class EncounterTracker(
         _nextSlot = 0;
         _active = false;
         _downed = false;
+        (_killer, _dropped) = (null, null);
     }
 }
