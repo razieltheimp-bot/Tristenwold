@@ -21,7 +21,7 @@ public partial class StartScreen : CanvasLayer
     public string? DefaultServer { get; init; }
 
     /// <summary>The shared world's outside link, filled in for everyone. If the link's address changes, change it here and rebuild.</summary>
-    const string SharedWorld = "https://desktop-3qfmc9u.tail590fd7.ts.net"; // the host's permanent address, through Tailscale Funnel
+    const string SharedWorld = "https://tw.velocitydrip.com"; // the shared world's home, on Caleb's server
 
     const string SettingsPath = "user://settings.json";
     const string LocalCharactersPath = "user://characters.json";
@@ -384,7 +384,7 @@ public partial class StartScreen : CanvasLayer
         }
         catch (JsonException) { }
         var saved = _settings.GetValueOrDefault("server", "");
-        _server.Text = saved.Length == 0 || saved.Contains("trycloudflare.com") ? DefaultServer ?? SharedWorld : saved; // an old outside link is a dead one
+        _server.Text = saved.Length == 0 || saved.Contains("trycloudflare.com") || saved.Contains("tail590fd7.ts.net") ? DefaultServer ?? SharedWorld : saved; // an old outside link (a tunnel, the old laptop's) is a dead one
         _serverPassword.Text = _settings.GetValueOrDefault("serverPassword", "");
         _account.Text = _settings.GetValueOrDefault("account", "");
         _quality.Selected = (int)(Enum.TryParse<Graphics.Quality>(_settings.GetValueOrDefault("quality", ""), out var q) ? q : Graphics.Default);
