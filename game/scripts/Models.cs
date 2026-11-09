@@ -234,7 +234,7 @@ public abstract partial class Body : Node3D
     /// (frost) dragon spread great wings and fly; the frost dragon keeps its small wings and stays on the ground,
     /// with a ridge of ice spikes grown down its back.
     /// </summary>
-    static Body Dragon(string colour, bool corrupt = false)
+    internal static Body Dragon(string colour, bool corrupt = false)
     {
         var metallic = colour is "gold" or "silver" or "bronze" or "copper" or "brass";
         var coat = corrupt ? $"dragons/{colour}_corrupt.png" : $"dragons/{colour}.png";
@@ -323,6 +323,7 @@ public abstract partial class Body : Node3D
         "songbird" => (Body?)Creature.Create("songbird.glb", 0.18f) ?? Beast.Rat(),
         "fish" => (Body?)Creature.Create("fish.glb", 0.35f) ?? Beast.Rat(),
         "whale" => (Body?)Creature.Create("whale.glb", 4f) ?? Beast.Bear(),
+        _ when Summonfolk.For(look) is { } summoned => summoned,
         _ when Lairfolk.For(look) is { } lairfolk => lairfolk,
         _ when Wildfolk.For(look) is { } wildfolk => wildfolk,
         _ => Figure.Create(look),
@@ -394,6 +395,9 @@ public partial class Figure : Body
         ["elemental_fire"] = new("Barbarian", [], 1.8f, new Color("#ff7a2a"), 0.9f, Unarmed: true),
         ["elemental_storm"] = new("Barbarian", [], 1.8f, new Color("#8a9aff"), 0.8f, Unarmed: true),
         ["elemental_water"] = new("Barbarian", [], 1.8f, new Color("#3a8ad0"), 0.5f, Unarmed: true),
+        ["shicene_form"] = new("Mage", [], 0.74f, new Color("#c8ecff"), 0.7f, Unarmed: true),
+        ["lumira_form"] = new("Mage", [], 0.74f, new Color("#ffe8b0"), 0.9f, Unarmed: true),
+        ["braz"] = new("Mage", ["2H_Staff", "Spellbook"], 0.7f, new Color("#c89c88")), // Braz Algún: the Summoner's teacher, staff and book of flesh
         ["elemental_frost"] = new("Barbarian", [], 1.8f, new Color("#c8ecff"), 0.6f, Unarmed: true),
         // The drifters (see Drifters): each built on a real body from their own look, carrying what they carry.
         ["drifter_broly"] = new("Barbarian", [], 0.74f, Unarmed: true),

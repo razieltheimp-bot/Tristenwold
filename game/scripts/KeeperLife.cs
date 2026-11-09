@@ -1,5 +1,6 @@
 using Godot;
 using Tristinwold.Gameplay;
+using Tristinwold.Shared;
 using Tristinwold.World;
 
 namespace Tristinwold.Game;
@@ -170,6 +171,21 @@ public partial class Main
     void PullShipShop()
     {
         if (_sea.ShipShopOpen && _city.StoreOf(ShipShopKey) is { } s) ShipHouse.Mirror(PlayerStore.Copy(s.House));
+    }
+
+    /// <summary>
+    /// The hero's shops away from home (the wagon's, the ship's, a colony's stall) put back in the world if it's lost them
+    /// or never heard of them: set up offline or in a world of the hero's own, or on a server restarted since. Each goes
+    /// back where it stands, as the hero last saw it, so other heroes find it again. The house's counter sees to itself
+    /// (<see cref="SyncStore"/>).
+    /// </summary>
+    void RestoreShops()
+    {
+        if (_client?.Status == ClientStatus.Connected && !_sharedCity) return; // the server's copy hasn't arrived yet
+        if (_trade is { ShopOpen: true, OwnWagon: true } && _city.StoreOf(WagonShopKey) is null) PushWagonShop();
+        if (_sea is { ShipShopOpen: true, OwnShip: true } && _city.StoreOf(ShipShopKey) is null) PushShipShop(); // not while she's under way
+        foreach (var place in _pursuits.ColonyShopsOpen.ToList())
+            if (_city.StoreOf(ColonyShopKey(place)) is null) PushColonyShop(place);
     }
 
     /// <summary>Under way: the ship's shop shuts and its keeper goes below; tied up again, it opens where she lies.</summary>
@@ -364,4 +380,5 @@ public partial class Main
     public Vector3? ColonyStallForTest => ColonyAt(Keeping.Colony) is { } h ? ColonyStall(h).At : null;
     public bool ColonyStallDrawnForTest => _colonyStalls.TryGetValue(Keeping.Colony, out var s) && IsInstanceValid(s);
     public string ShipShopKeyForTest => ShipShopKey;
+    public void RestoreShopsForTest() => RestoreShops();
 }

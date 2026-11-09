@@ -42,7 +42,9 @@ public partial class Main
         _city.Renown = renown;
         _city.NextDayAt = _guilds.PlaySeconds + Math.Max(0, s.City.NextDayAt - s.Seconds);
         _trade.Roads = _city.Roads; // the roads are the city's: everyone's
+        var first = !_sharedCity;
         _sharedCity = true;
+        if (first) RestoreShops(); // the server's had a restart, or never had them: our wagon, ship and stalls go back up at once
     }
 
     /// <summary>Does something to the city here and now, and on the server too.</summary>

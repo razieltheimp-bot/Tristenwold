@@ -33,6 +33,7 @@ public partial class Main
         PullWagonShop();
         PullShipShop();
         TendKeepers();
+        RestoreShops();
         TendStoreFronts();
         TendHallFronts();
         TendGrove();
@@ -341,11 +342,15 @@ public partial class Main
         _bonds.Remove(bond);
         _companions.Remove(e);
         GetTree().CreateTimer(8).Timeout += () => { if (IsInstanceValid(e)) e.QueueFree(); };
-        if (bond.Role == BondRole.Dragon && _saga.Stage == SagaStage.Raising)
+        if (bond.Role == BondRole.Dragon && _saga.Stage is SagaStage.Raising or SagaStage.Knighted)
         {
+            var grown = _saga.Stage == SagaStage.Knighted;
             _saga.Lose();
-            _hud.Toast($"{bond.Name} is dead. Too young, too small. Ser Aldric will find you another egg, if you have the heart for it.", 12);
+            _hud.Toast(grown
+                ? $"{bond.Name} is dead. A dragon doesn't get up from that. Go to Ser Aldric: there'll be another egg, and you'll raise it from the shell, and kneel again."
+                : $"{bond.Name} is dead. Too young, too small. Ser Aldric will find you another egg, if you have the heart for it.", 14);
         }
+        else if (bond.Role == BondRole.Dragon) _hud.Toast($"{bond.Name} is dead. A dragon doesn't get up from that.", 12);
         else if (PartyRules.IsApprentice(bond))
         {
             _hud.Toast($"{bond.Name} is dead. They followed you here, and they don't get up.", 12);
@@ -637,6 +642,7 @@ public partial class Main
             Callable.From(Save).CallDeferred();
         }
         if (victim.Bond is not null || !byCompany) return;
+        SummonerSlain(victim);
         if (victim.SiteId is { } site)
         {
             foreach (var u in _journal.Killed(site).ToList()) Apply(u);
@@ -826,6 +832,7 @@ public partial class Main
         Townsfolk(new Npc("eyrie/aldric", DragonSaga.Knight, Sex.Male, 0, "knight-commander of the Order of the Eyrie", "city:tristinwold", "Tristinwold",
             "Ser Aldric has ridden Auriel, a gold dragon older than the city walls, for thirty years. He keeps the Order's rookery on the hill west of Tristinwold, and he is looking for people worth trusting with an egg.",
             ["the stars", "old battles"], "proud", "Mind the dragons. They mind you.", DragonSaga.RookeryX + 8, DragonSaga.RookeryZ + 6));
+        AddBraz();
     }
 
     /// <summary>The extra things you can say to someone, beyond the usual: join a guild, take on a youth, the Dragon Knight's road.</summary>
@@ -867,6 +874,7 @@ public partial class Main
             yield return ($"Would you become my {word}? ({RecruitFee} crowns to your family)", () => Recruit(person));
         }
         if (npc.Id == "eyrie/aldric") foreach (var o in Aldric(person)) yield return o;
+        if (npc.Id == BrazId) foreach (var o in Braz(person)) yield return o;
         foreach (var o in StoryTalk(person)) yield return o;
         foreach (var o in CaravanTalk(person)) yield return o;
         foreach (var o in SeaTalk(person)) yield return o;
@@ -939,6 +947,7 @@ public partial class Main
             case SagaStage.NotStarted:
                 yield return ("How do I become a Dragon Knight?", () =>
                 {
+                    if (_player.Hero.Level < DragonSaga.MinLevel) { Say(person, $"You? You'd be a dragon's breakfast. Come back when you've lived a while out there (level {DragonSaga.MinLevel})."); return; }
                     if (DragonSaga.Matriarch(_world) is null) { Say(person, "There's no clutch to be had this year. Ask me again."); return; }
                     _hud.Talk(Who(person.Npc),
                         "Every knight of the Eyrie raised their dragon from the egg, and every one of them earned it. I don't hand out eggs to whoever walks up the hill. " +

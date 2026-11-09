@@ -138,7 +138,7 @@ public partial class Main
         if (_city.StoreOf(owner) is not { Open: true } s) { Say(person, "We're shut. Try again another day."); return; }
         var options = _player.Pack.Contents.Where(c => !c.Item.Bound && s.House.Buying.Contains(c.Item.Id)).Select(c =>
         {
-            var offer = _city.StoreOffer(c.Item);
+            var offer = StorePays(c.Item, s);
             return ($"{c.Item.Name} ({c.N}): {offer} crowns each", (Action)(() =>
             {
                 if (s.House.Till < offer) { Sound.Ui("error"); Say(person, "There's not that much in the till just now."); return; }
@@ -151,8 +151,65 @@ public partial class Main
             }));
         }).ToList();
         options.Add(("That's all.", () => Say(person, "Pleasure.")));
-        _hud.Talk($"{s.Name}: selling", $"A crown over what you'd get in town, while the till lasts: {s.House.Till} crowns in it.", [.. options]);
+        _hud.Talk($"{s.Name}: selling", $"A crown over what {TownShops(s)} would give you, while the till lasts: {s.House.Till} crowns in it.", [.. options]);
     }
+
+    static Vector3 StoreSpot(PlayerStore s) => new((float)s.X, 0, (float)s.Z);
+
+    /// <summary>The shops a store's prices are set against, in words: its own town's, or the town's in general out in the wilds.</summary>
+    string TownShops(PlayerStore s) => TownHere(StoreSpot(s)) is { } town && _world.Find(town) is { } t ? $"{t.Name}'s shops" : "the shops in town";
+
+    /// <summary>What the shops of the town a store stands in would pay this hero for something, with all that makes it more or less (their trade, their name there).</summary>
+    int TownPays(Item item, Vector3 at) => Math.Max(1, (int)Math.Round(_city.Offer(item) * PerkSell * (TownHere(at) is { } town ? RepSellAt(town) : 1)));
+
+    /// <summary>
+    /// What a hero's shop pays for something: a crown better than the town it stands in would pay this hero, whatever
+    /// the town (out in the wilds, a crown better than Tristinwold's market). Never more than it asks for the same
+    /// thing, so nobody can buy it back off the shelf and sell it to the counter for a profit.
+    /// </summary>
+    int StorePays(Item item, PlayerStore s) => Math.Max(1, Math.Min(_city.StorePrice(item), TownPays(item, StoreSpot(s)) + 1));
+
+    // ---- aboard another hero's ship ----
+
+    /// <summary>Another hero's ship, tied up with a shop aboard: up her side to trade at her rail, or ashore again.</summary>
+    (string Verb, Action Act)? MooredAction(Vector3 pos)
+    {
+        foreach (var (front, _) in _storeFronts.Values)
+        {
+            if (!IsInstanceValid(front) || front.GetChildren().OfType<OwnVessel>().FirstOrDefault() is not { } ship) continue;
+            if (ship.OnDeck(pos)) return ("step ashore", () => StepOff(ship));
+            if (pos.DistanceTo(ship.GlobalPosition with { Y = pos.Y }) <= 10) return ($"go aboard {ship.Called}", () => StepOn(ship));
+        }
+        return null;
+    }
+
+    /// <summary>Up the side of another hero's ship, onto her deck a few steps from whoever keeps shop at her rail.</summary>
+    void StepOn(OwnVessel ship)
+    {
+        if (_player.Mount is not null) { _hud.Toast("Get down first.", 3); return; }
+        _player.GlobalPosition = ship.GlobalTransform * OwnVessel.CrewSpots[1] + Vector3.Up * 0.3f;
+        _player.Velocity = Vector3.Zero;
+        _player.ResetPhysicsInterpolation();
+        _hud.Toast($"Aboard {ship.Called}. Her shopkeeper's at the rail; E at the rail to step ashore.", 5);
+    }
+
+    void StepOff(OwnVessel ship)
+    {
+        if (ShoreBeside(ship) is not { } step) { _hud.Toast("No pier or shore close enough to step onto.", 4); return; }
+        _player.GlobalPosition = step with { Y = City.FloorAt(step) + 0.3f };
+        _player.Velocity = Vector3.Zero;
+        _player.ResetPhysicsInterpolation();
+    }
+
+    // ---- for the self-test ----
+
+    public IEnumerable<Person> StoreKeepersForTest => _storeFronts.Values.Select(f => f.Keeper).Where(IsInstanceValid);
+    public Vector3? ShoreBesideForTest(OwnVessel ship) => ShoreBeside(ship);
+    public string? MooredVerbForTest => MooredAction(_player.GlobalPosition)?.Verb;
+    public void MooredActForTest() => MooredAction(_player.GlobalPosition)?.Act();
+    public OwnVessel? MooredShipForTest(string owner) => _storeFronts.TryGetValue(owner, out var f) && IsInstanceValid(f.Front) ? f.Front.GetChildren().OfType<OwnVessel>().FirstOrDefault() : null;
+    public int StorePaysForTest(Item item, string owner) => StorePays(item, _city.StoreOf(owner)!);
+    public int TownPaysForTest(Item item, Vector3 at) => TownPays(item, at);
 
     /// <summary>For the self-test.</summary>
     public void TendStoresForTest() { SyncStore(); TendStoreFronts(); }

@@ -148,13 +148,7 @@ public partial class Main
     void LeaveVessel()
     {
         if (_vessel is not { } ship) return;
-        Vector3? dry = null;
-        for (var r = 4f; r <= 12 && dry is null; r += 2)
-            for (var a = 0; a < 16 && dry is null; a++)
-            {
-                var probe = ship.GlobalPosition + new Vector3(Mathf.Cos(a * Mathf.Tau / 16), 0, Mathf.Sin(a * Mathf.Tau / 16)) * r;
-                if (City.OnPier(probe) || _world.Height(probe.X, probe.Z) > WorldGen.WaterLevel + 0.3) dry = probe;
-            }
+        var dry = ShoreBeside(ship);
         if (ship.OnLand) dry = ship.GlobalPosition + ship.GlobalTransform.Basis.X * 4;
         if (dry is not { } step) { _hud.Toast(ship.GlobalPosition.Y > OwnVessel.Floor(ship.GlobalPosition) + 1 ? "Bring her down first (C)." : "No shore or pier close enough to step onto. Bring her in alongside.", 4); return; }
         ship.Aboard = false;
@@ -166,6 +160,18 @@ public partial class Main
         CrewTo(ashore, null); // they come ashore with you
         ShipShopUnderWay(false);
         Save();
+    }
+
+    /// <summary>The nearest pier or dry ground beside a ship, to step ashore onto, if there's any close.</summary>
+    Vector3? ShoreBeside(OwnVessel ship)
+    {
+        for (var r = 4f; r <= 12; r += 2)
+            for (var a = 0; a < 16; a++)
+            {
+                var probe = ship.GlobalPosition + new Vector3(Mathf.Cos(a * Mathf.Tau / 16), 0, Mathf.Sin(a * Mathf.Tau / 16)) * r;
+                if (City.OnPier(probe) || _world.Height(probe.X, probe.Z) > WorldGen.WaterLevel + 0.3) return probe;
+            }
+        return null;
     }
 
     /// <summary>For the self-test.</summary>

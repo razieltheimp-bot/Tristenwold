@@ -29,6 +29,7 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         if (town) { await Town(); return; }
         if (audit) { await Audit(); return; }
         if (OS.GetCmdlineUserArgs().Contains("--overlaps")) { await Overlaps(); return; }
+        if (OS.GetCmdlineUserArgs().Contains("--summons")) { await SummonPortraits(); return; }
         if (spells) { await Spells(); return; }
         if (quick) { await Quick(); return; }
 
@@ -340,6 +341,51 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
         var air = kipine.GlobalPosition;
         Look(p.GlobalPosition with { Y = 1.6f } + new Vector3(3, 0, 2), air with { Y = air.Y - City.FloorAt(air) });
         await Shot("wild-kipine-dive");
+        GetTree().Quit();
+    }
+
+    /// <summary>The Summoner's road: Braz Algún and Bubbles at the Binding Stones, then each great one of the road, two views each (--summons).</summary>
+    async Task SummonPortraits()
+    {
+        var p = main.PlayerNode;
+        var cam = new Camera3D { Far = 2000, Fov = 50 };
+        void Look(Vector3 eye, Vector3 at) { cam.GlobalPosition = eye; cam.LookAt(at, Vector3.Up); }
+        var stones = new Vector3((float)Summons.StonesX, 0, (float)Summons.StonesZ);
+        await Go(stones + new Vector3(4, 0, 9), 90);
+        p.Frozen = true;
+        p.Visible = false;
+        main.HudNode.Visible = false;
+        main.AddChild(cam);
+        cam.MakeCurrent();
+        var floor = City.FloorAt(stones);
+        Look(stones + new Vector3(-2.5f, floor + 2.4f, 9.5f), stones + new Vector3(1.2f, floor + 1.5f, 0.8f));
+        await Frames(30);
+        await Shot("summon-0-braz-and-bubbles");
+        Look(stones + new Vector3(-6, floor + 6, 14), stones + new Vector3(0, floor + 1.5f, 0));
+        await Shot("summon-0-binding-stones");
+
+        var here = new Vector3(0, 0, 420);
+        await Go(here + new Vector3(0, 0, 40), 100);
+        foreach (var t in Summons.Trials)
+        {
+            var s = Summons.Get(t.Id)!;
+            var e = Enemy.Create(Bestiary.Get(t.Kind), here with { Y = City.FloorAt(here) + 0.5f }, size: t.Id == Summons.Draxon ? DragonSize.Giant : DragonSize.Normal, look: t.Id);
+            main.AddEnemy(e);
+            e.Roam = 0;
+            await Frames(50);
+            e.LookAt(e.GlobalPosition + new Vector3(0.6f, 0, 1), Vector3.Up);
+            var size = t.Id == Summons.Draxon ? 10.5f : (float)e.Kind.Height + s.Rise;
+            var ground = City.FloorAt(here);
+            for (var i = 0; i < 2; i++)
+            {
+                var from = (i == 0 ? new Vector3(1.3f, 0, 2.4f) : new Vector3(-2.2f, 0, -1.4f)) * size;
+                Look(here + from + Vector3.Up * (ground + size * 0.7f), here + Vector3.Up * (ground + size * 0.5f));
+                await Frames(25);
+                await Shot($"summon-{t.Step}-{t.Id}-{i}");
+            }
+            e.QueueFree();
+            await Frames(5);
+        }
         GetTree().Quit();
     }
 

@@ -326,6 +326,7 @@ public partial class Player : Fighter
 
     public override void _PhysicsProcess(double delta)
     {
+        TendSummons(delta);
         if (Downed)
         {
             _downTimer -= delta;

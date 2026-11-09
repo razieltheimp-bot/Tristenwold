@@ -55,6 +55,32 @@ public sealed class Group
     public GroupView ToView(bool online) => new(Player, Area, Party, online);
 }
 
+/// <summary>A player who's gone: their hero, asleep where they left, for anyone to see, or to fight.</summary>
+public sealed class Sleeper
+{
+    public required string Player { get; init; }
+    public string Name { get; set; } = "";
+    public string Look { get; set; } = "";
+    public string? Avatar { get; set; }
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+    public float Yaw { get; set; }
+    public int Crowns { get; set; }
+    public double MaxHealth { get; set; } = 100;
+    public double Health { get; set; } = 100;
+    public bool Safe { get; set; }
+    public bool Fallen { get; set; }
+    public DateTime LastBlow { get; set; }
+    /// <summary>Everyone who went for them while they slept, first blow first.</summary>
+    public List<string> Attackers { get; set; } = [];
+    public string? Killer { get; set; }
+    /// <summary>What the killer won (a copy: nothing left the sleeper).</summary>
+    public int Taken { get; set; }
+
+    public SleeperView ToView() => new(Player, Name, Look, Avatar, X, Y, Z, Yaw, MaxHealth > 0 ? Math.Clamp(Health / MaxHealth, 0, 1) : 0, Safe, Fallen);
+}
+
 /// <summary>Everything the groups share, saved by the server between sessions.</summary>
 public sealed class CampaignState
 {
@@ -77,6 +103,14 @@ public sealed class CampaignState
     public string Place(string area) =>
         Stage.FirstOrDefault(p => p.Equals(area, StringComparison.OrdinalIgnoreCase)) ?? area;
 
+
+    /// <summary>Every player who's gone, left asleep where they were (see <see cref="Sleeper"/>), by player.</summary>
+    public Dictionary<string, Sleeper> Sleepers
+    {
+        get => _sleepers;
+        set => _sleepers = new(value ?? [], StringComparer.OrdinalIgnoreCase); // a name's a name, however it's written, after a reload too
+    }
+    Dictionary<string, Sleeper> _sleepers = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Things Vann has said lately, so he doesn't repeat himself (and so a voice model has memory).</summary>
     public List<string> VannMemory { get; set; } = [];

@@ -93,6 +93,8 @@ public sealed partial class ServerCore
         group.LastSeen = _clock();
         _online.Add(name);
         Dirty = true;
+        var asleep = State.Sleepers.ContainsKey(name);
+        var away = WakeUp(name);
 
         var outgoing = new List<Outgoing>
         {
@@ -106,15 +108,19 @@ public sealed partial class ServerCore
         // Everyone already out there, where they were last seen, so the newcomer sees them at once.
         foreach (var (other, where) in _sights)
             if (!other.Equals(name, StringComparison.OrdinalIgnoreCase)) outgoing.Add(new(name, new Seen(other, where)));
+        // Everyone who's gone, asleep where they left; and if this one was asleep too, they're up now (and told what they missed).
+        outgoing.Add(new(asleep ? null : name, SleepersMessage()));
+        if (away is not null) outgoing.Add(new(name, away));
         return outgoing;
     }
 
     public IReadOnlyList<Outgoing> Disconnect(string player)
     {
         if (!_online.Remove(player)) return [];
+        FallAsleep(player);
         _sights.Remove(player);
         if (State.Groups.TryGetValue(player, out var g) && g.Area.Length > 0) _lastLeft[player] = (g.Area, _clock());
-        return [new(null, RosterMessage())];
+        return [new(null, RosterMessage()), new(null, SleepersMessage())];
     }
 
     // ---- Player messages ------------------------------------------------------------------------
@@ -139,6 +145,7 @@ public sealed partial class ServerCore
             Moved m => OnMoved(player, m),
             StrikeHero s => OnStrikeHero(player, s),
             HeroFell f => OnHeroFell(player, f),
+            SleepSpot s => OnSleepSpot(player, s),
             _ => [],
         };
     }
@@ -160,8 +167,10 @@ public sealed partial class ServerCore
     /// <summary>A hero struck another: the blow goes to the one it landed on, whose game decides what it does.</summary>
     IReadOnlyList<Outgoing> OnStrikeHero(string player, StrikeHero s)
     {
-        var target = _online.FirstOrDefault(o => o.Equals(s.Target?.Trim(), StringComparison.OrdinalIgnoreCase));
-        if (target is null || target.Equals(player, StringComparison.OrdinalIgnoreCase) || !double.IsFinite(s.Damage) || s.Damage <= 0) return [];
+        if (!double.IsFinite(s.Damage) || s.Damage <= 0 || s.Target is null) return [];
+        var target = _online.FirstOrDefault(o => o.Equals(s.Target.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (target is null) return StrikeSleeper(player, s); // gone: their hero's asleep, if it's anywhere
+        if (target.Equals(player, StringComparison.OrdinalIgnoreCase)) return [];
         return [new(target, new HeroStruck(player, Math.Min(s.Damage, MostBlow), s.Kind, s.Attack, s.Crit))];
     }
 

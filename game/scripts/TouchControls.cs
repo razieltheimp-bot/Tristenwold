@@ -36,6 +36,7 @@ public partial class TouchControls : Control
         new("ride", "Ride", s => new(s.X - 395, s.Y - 300), 32),
         new("descend", "Dive", s => new(s.X - 105, s.Y - 375), 30),
         new("stealth", "Hide", s => new(s.X - 250, s.Y - 360), 30),
+        new("summon", "Summon", s => new(s.X - 395, s.Y - 410), 30),
         new("game_menu", "Menu", s => new(s.X - 124, 258), 28), // under the little map
     ];
 

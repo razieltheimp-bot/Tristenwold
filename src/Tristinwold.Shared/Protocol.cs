@@ -27,6 +27,7 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(Moved), "moved")]
 [JsonDerivedType(typeof(StrikeHero), "strike_hero")]
 [JsonDerivedType(typeof(HeroFell), "hero_fell")]
+[JsonDerivedType(typeof(SleepSpot), "sleep_spot")]
 // server -> client
 [JsonDerivedType(typeof(Welcome), "welcome")]
 [JsonDerivedType(typeof(Rejected), "rejected")]
@@ -44,6 +45,8 @@ namespace Tristinwold.Shared;
 [JsonDerivedType(typeof(Seen), "seen")]
 [JsonDerivedType(typeof(HeroStruck), "hero_struck")]
 [JsonDerivedType(typeof(HeroSpoils), "hero_spoils")]
+[JsonDerivedType(typeof(Sleepers), "sleepers")]
+[JsonDerivedType(typeof(WhileAway), "while_away")]
 public abstract record Message;
 
 // ---- client -> server ----------------------------------------------------------------------
@@ -99,6 +102,14 @@ public sealed record HeroFell(string Killer, IReadOnlyList<SpoilItem> Items, int
 
 public sealed record SpoilItem(string Id, int N);
 
+/// <summary>
+/// Where this hero would lie if the player left now, and what's on them: sent now and then while it changes. When the
+/// player goes, the server leaves their hero there asleep (see <see cref="Sleepers"/>), where it's this spot that
+/// counts, not the last step seen: a hero indoors sleeps at the door they came in by, as their save has it.
+/// <paramref name="Safe"/>: in a tavern, where nobody fights.
+/// </summary>
+public sealed record SleepSpot(float X, float Y, float Z, float Yaw, int Crowns, double MaxHealth, bool Safe) : Message;
+
 // ---- server -> client ----------------------------------------------------------------------
 
 public sealed record Welcome(string Player, string Campaign, IReadOnlyList<string> Flags) : Message;
@@ -145,6 +156,22 @@ public sealed record HeroStruck(string From, double Damage, DamageKind Kind, Gam
 /// <summary>This hero put another player's hero down: what's theirs for it (see <see cref="HeroFell"/>).</summary>
 public sealed record HeroSpoils(string From, IReadOnlyList<SpoilItem> Items, int Crowns, int GearCrowns, int Bounty) : Message;
 
+/// <summary>
+/// Every player who's gone, asleep where they left: drawn where they stand, shifting about a little, and there to be
+/// struck by anyone ready to fight (B). Sent whole to a newcomer and to everyone whenever it changes.
+/// </summary>
+public sealed record Sleepers(IReadOnlyList<SleeperView> All) : Message;
+
+/// <param name="Health">How much fight is left in them, 0 to 1.</param>
+/// <param name="Fallen">Cut down: they lie where they fell until their player comes back.</param>
+public sealed record SleeperView(string Player, string Name, string Look, string? Avatar, float X, float Y, float Z, float Yaw, double Health, bool Safe, bool Fallen);
+
+/// <summary>
+/// Back from being away: who went for this hero while they slept, and who cut them down and what that one won by it
+/// (a share of the purse, as a copy: nothing left this hero). They wake where they lay all the same.
+/// </summary>
+public sealed record WhileAway(IReadOnlyList<string> Attackers, string? Killer, int Taken) : Message;
+
 // ---- views (what players may see) ------------------------------------------------------------
 
 public enum ContractStatus { Open, Claimed, Done }
@@ -158,7 +185,7 @@ public sealed record GroupView(string Player, string Area, IReadOnlyList<string>
 
 public static class Wire
 {
-    public const int ProtocolVersion = 13; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council; 11: buildings moved apart, Korrin's storehouse, the dock warehouse; 12: council chambers in every town, refuges that grow, more dock thugs; 13: many colonies to a hero, and heroes fighting heroes
+    public const int ProtocolVersion = 14; // 2: the shared city; 3: deviants; 4: their new ranks; 5: players see each other; 6: the new map; 7: longer piers at Tristinwold, and Lu at the sieges; 8: the king's roads cut through the land; 9: spur roads to every trading place; 10: every town's own shops and council; 11: buildings moved apart, Korrin's storehouse, the dock warehouse; 12: council chambers in every town, refuges that grow, more dock thugs; 13: many colonies to a hero, and heroes fighting heroes; 14: heroes left asleep where their players go
     public const int DefaultPort = 7777;
 
     /// <summary>

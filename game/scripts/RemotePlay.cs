@@ -240,7 +240,7 @@ public partial class RemotePlay(Main main, int port, bool tunnel, string cloudfl
     static readonly HashSet<string> PadActions =
     [
         "attack", "spell", "limit", "jump", "interact", "cycle_element", "sprint", "ride", "descend",
-        "map", "journal", "pack", "party", "skills", "drink", "rest", "menu", "game_menu", "draw_on", "stealth",
+        "map", "journal", "pack", "party", "skills", "drink", "rest", "menu", "game_menu", "draw_on", "stealth", "summon",
         "quick_1", "quick_2", "quick_3", "quick_4", "quick_5", "quick_6", "quick_7", "quick_8", "quick_9", "quick_0",
     ];
 

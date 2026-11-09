@@ -67,7 +67,7 @@ public class ProgressionTests
     }
 
     [Fact]
-    public void A_dragon_can_carry_its_knight_from_level_ten_and_is_lost_if_it_falls_younger()
+    public void A_dragon_can_carry_its_knight_from_level_ten_and_is_lost_if_it_falls_at_any_age()
     {
         var dragon = new Bond { KindId = "dragon_gold", Role = BondRole.Dragon };
         Assert.True(dragon.DiesIfFelled);
@@ -75,7 +75,7 @@ public class ProgressionTests
         Assert.Equal("hatchling", dragon.Stage);
         while (dragon.Level < 10) dragon.Gain(Bond.XpToNext(dragon.Level));
         Assert.True(dragon.Rideable);
-        Assert.False(dragon.DiesIfFelled);
+        Assert.True(dragon.DiesIfFelled); // grown or not: struck down, it's dead, and it's another egg
         Assert.Equal(1, dragon.Size);
         Assert.Contains(dragon.Skills, s => s.Id == "breath");
     }

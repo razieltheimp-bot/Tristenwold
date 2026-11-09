@@ -119,10 +119,10 @@ public sealed class DragonSaga
         Name = Dragons.NameFor(rng), Fed = 70,
     };
 
-    /// <summary>The hatchling died: Ser Aldric will find you another egg.</summary>
+    /// <summary>The dragon died, hatchling or grown: Ser Aldric will find you another egg, and a knight starts over raising it (and kneels again when it's grown).</summary>
     public void Lose()
     {
-        if (Stage != SagaStage.Raising) return;
+        if (Stage is not (SagaStage.Raising or SagaStage.Knighted)) return;
         Lost++;
         Stage = SagaStage.SeekEgg;
         Warmth = 0;

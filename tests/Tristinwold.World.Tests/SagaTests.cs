@@ -112,6 +112,11 @@ public class SagaTests
         again.Lose();
         Assert.Equal(SagaStage.SeekEgg, again.Stage);
         Assert.Equal(1, again.Lost);
+
+        // And a knight's grown dragon lost: another egg, raised from the start, and kneel again.
+        saga.Lose();
+        Assert.Equal(SagaStage.SeekEgg, saga.Stage);
+        Assert.Equal(1, saga.Lost);
     }
 
     [Fact]

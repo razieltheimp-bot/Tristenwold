@@ -166,6 +166,97 @@ public class SharedWorldTests
     }
 
     [Fact]
+    public void A_player_who_goes_is_left_asleep_where_they_were_for_everyone_to_see()
+    {
+        var server = NewServer();
+        server.Connect(Hi("Joe"));
+        server.Connect(Hi("Mira"));
+        server.Handle("Joe", new Moved("Knight", "head=1", "Sir Joe", 10, 0.5f, -3, 1.2f, 3.8f, null, 0));
+        server.Handle("Joe", new SleepSpot(12, 0.5f, -4, 0.7f, 500, 240, false)); // indoors: the save has him at the door
+
+        var outs = server.Disconnect("Joe");
+        var lying = Assert.Single(Assert.Single(To<Sleepers>(outs, "Mira")).All);
+        Assert.Equal(("Joe", "Sir Joe", "Knight", "head=1", 12f, -4f, 0.7f, 1.0, false, false),
+            (lying.Player, lying.Name, lying.Look, lying.Avatar, lying.X, lying.Z, lying.Yaw, lying.Health, lying.Safe, lying.Fallen));
+
+        // A newcomer sees him too, and so does a server that's been restarted (it's in the campaign file).
+        Assert.Equal("Joe", Assert.Single(Assert.Single(To<Sleepers>(server.Connect(Hi("Dax")), "Dax")).All).Player);
+        var json = System.Text.Json.JsonSerializer.Serialize(server.State, Wire.Options);
+        var reloaded = System.Text.Json.JsonSerializer.Deserialize<CampaignState>(json, Wire.Options)!;
+        Assert.Equal(240, reloaded.Sleepers["joe"].MaxHealth);
+
+        // Back again: up and gone from the world's view, nothing to tell (nobody touched him).
+        var back = server.Connect(Hi("Joe"));
+        Assert.Empty(Assert.Single(To<Sleepers>(back, "Mira")).All);
+        Assert.Empty(To<WhileAway>(back, "Joe"));
+
+        // Someone who never stepped out leaves nothing behind.
+        server.Connect(Hi("Pell"));
+        Assert.Empty(Assert.Single(To<Sleepers>(server.Disconnect("Pell"), "Mira")).All);
+    }
+
+    [Fact]
+    public void A_sleeper_can_be_cut_down_for_a_share_of_their_purse_and_hears_of_it_on_waking()
+    {
+        var now = new DateTime(2026, 11, 8, 12, 0, 0, DateTimeKind.Utc);
+        var server = new ServerCore(CampaignState.SavedMan(), Quiet, seed: 1, clock: () => now);
+        server.Connect(Hi("Joe"));
+        server.Connect(Hi("Mira"));
+        server.Connect(Hi("Dax"));
+        server.Handle("Joe", new Moved("Knight", null, "Sir Joe", 10, 0, -3, 0, 0, null, 0));
+        server.Handle("Joe", new SleepSpot(10, 0, -3, 0, 500, 100, false));
+        server.Disconnect("Joe");
+
+        // A blow lands on him, not on anyone's game: he's down to 60 of 100.
+        var hit = server.Handle("Mira", new StrikeHero("joe", 40, DamageKind.Physical, AttackKind.Weapon, false));
+        Assert.Empty(To<HeroStruck>(hit, "Joe"));
+        Assert.Equal(0.6, Assert.Single(Assert.Single(To<Sleepers>(hit, "Dax")).All).Health, 3);
+
+        // Left alone a while, he's whole again.
+        now = now.AddMinutes(3);
+        var fresh = server.Handle("Dax", new StrikeHero("Joe", 10, DamageKind.Physical, AttackKind.Weapon, false));
+        Assert.Equal(0.9, Assert.Single(Assert.Single(To<Sleepers>(fresh, "Mira")).All).Health, 3);
+
+        // Cut down: Dax wins a tenth of the purse (a copy), everyone hears, and he lies where he fell.
+        var fell = server.Handle("Dax", new StrikeHero("Joe", 1000, DamageKind.Physical, AttackKind.Weapon, true));
+        var spoils = Assert.Single(To<HeroSpoils>(fell, "Dax"));
+        Assert.Equal(("Joe", 50, 0, 0), (spoils.From, spoils.Crowns, spoils.GearCrowns, spoils.Bounty));
+        Assert.Contains(fell, o => o.Except == "Dax" && o.Message is Notice n && n.Text.Contains("where they slept"));
+        Assert.True(Assert.Single(Assert.Single(To<Sleepers>(fell, "Mira")).All).Fallen);
+        Assert.Empty(server.Handle("Mira", new StrikeHero("Joe", 10, DamageKind.Physical, AttackKind.Weapon, false))); // nothing left to strike
+
+        // He comes back: told who went for him and what was won, and he's up.
+        var back = server.Connect(Hi("Joe"));
+        var news = Assert.Single(To<WhileAway>(back, "Joe"));
+        Assert.Equal(["Mira", "Dax"], news.Attackers);
+        Assert.Equal(("Dax", 50), (news.Killer, news.Taken));
+        Assert.Empty(Assert.Single(To<Sleepers>(back, "Mira")).All);
+        Assert.IsType<WhileAway>(Wire.Decode(Wire.Encode(news)));
+        Assert.IsType<Sleepers>(Wire.Decode(Wire.Encode(Assert.Single(To<Sleepers>(fell, "Mira")))));
+
+        // Asleep again, and cut down again within the hour: nothing more for Dax, the same count as any fall.
+        server.Handle("Joe", new SleepSpot(10, 0, -3, 0, 500, 100, false));
+        server.Disconnect("Joe");
+        var again = server.Handle("Dax", new StrikeHero("Joe", 1000, DamageKind.Physical, AttackKind.Weapon, true));
+        Assert.Empty(To<HeroSpoils>(again, "Dax"));
+        Assert.Contains(again, o => o.To == "Dax" && o.Message is Notice n && n.Text.Contains("nothing more to win"));
+    }
+
+    [Fact]
+    public void Nobody_fights_a_sleeper_in_a_tavern_or_themselves()
+    {
+        var server = NewServer();
+        server.Connect(Hi("Joe"));
+        server.Connect(Hi("Mira"));
+        server.Handle("Joe", new Moved("Knight", null, "Sir Joe", 10, 0, -3, 0, 0, null, 0));
+        server.Handle("Joe", new SleepSpot(10, 0, -3, 0, 500, 100, Safe: true));
+        server.Disconnect("Joe");
+        Assert.True(Assert.Single(server.SleepersMessage().All).Safe);
+        Assert.Empty(server.Handle("Mira", new StrikeHero("Joe", 1000, DamageKind.Physical, AttackKind.Weapon, true)));
+        Assert.Empty(server.Handle("Mira", new SleepSpot(float.NaN, 0, 0, 0, 5, 100, false))); // nonsense is ignored
+    }
+
+    [Fact]
     public void Dead_drops_reach_the_next_group_unless_vann_intercepts_them()
     {
         var server = NewServer();

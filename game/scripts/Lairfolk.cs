@@ -33,6 +33,9 @@ public sealed class Graft
 
     public bool Has(string bone) => _s.FindBone(bone) >= 0;
 
+    /// <summary>Every bone's name.</summary>
+    public IEnumerable<string> Bones => Enumerable.Range(0, _s.GetBoneCount()).Select(_s.GetBoneName);
+
     Transform3D Rest(string bone) => _s.FindBone(bone) is var i and >= 0 ? _s.GetBoneGlobalRest(i) : Transform3D.Identity;
 
     /// <summary>Where a bone is in the body at rest, in metres.</summary>

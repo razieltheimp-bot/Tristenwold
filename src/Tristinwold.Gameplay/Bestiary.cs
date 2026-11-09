@@ -151,6 +151,13 @@ public static class Bestiary
         new("guardian_bark", "Forest Guardian", 4400, 56, 4.4, 90, 4.5, 2.0, DamageKind.Physical, "#8a6a4a", 7.5, Wary: true),
         new("guardian_elder", "Forest Guardian", 6000, 42, 3.2, 140, 5, 2.6, DamageKind.Frost, "#3a6a5a", 8.5, Wary: true),
         new("guardian_blight", "Corrupted Guardian", 6200, 60, 4.2, 100, 4.5, 2.1, DamageKind.Poison, "#2e4a2e", 8, Wary: true),
+        // The great ones of the Summoner's road, one of each in all the world (see Summons): Draxon is a dragon of the Rift, grown giant.
+        new("orrogh", "Orrogh, the Stone-Heart", 1600, 26, 3.8, 220, 3.6, 2.0, DamageKind.Physical, "#8a8478", 6),
+        new("lumira", "Lumira, the Dawnmoth", 1900, 24, 6.0, 90, 4.0, 1.4, DamageKind.Sun, "#ffe8a0", 5),
+        new("quvirn", "Quvirn, the Storm-Beast", 2800, 38, 6.4, 130, 3.8, 1.3, DamageKind.Shock, "#4a4a8a", 5.5),
+        new("aegrath", "Aegrath, the Brass Colossus", 3000, 36, 3.6, 300, 4.2, 2.0, DamageKind.Physical, "#c09a44", 7.5),
+        new("blaze", "Blaze, the Living Pyre", 3400, 44, 4.6, 150, 4.0, 1.7, DamageKind.Fire, "#ff6a20", 7.5),
+        new("shicene", "Shicene, the Winter Wing", 3600, 40, 5.6, 110, 4.4, 1.6, DamageKind.Frost, "#c8ecff", 7.5),
         new("hollow_soldier", "Hollow Soldier", 60, 8, 4.2, 80, 1.9, 1.3, DamageKind.Frost, "#9ad0e0", 1.8),
         new("crystal_basilisk", "Crystal Basilisk", 800, 24, 4.2, 200, 3.2, 1.7, DamageKind.Shock, "#5a3a7a", 2.4),
         new("crystal_rat", "Crystal Rat", 40, 6, 5.5, 60, 1.4, 1.0, DamageKind.Shock, "#7a5aa8", 0.7),

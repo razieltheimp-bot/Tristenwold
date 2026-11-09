@@ -319,6 +319,13 @@ public static class Loot
         "golem" => [("scrap_iron", 0.9, 1, 3), ("iron_nails", 0.7, 2, 4)],
         "clockwork_mite" => [("scrap_iron", 1, 1, 1), ("iron_nails", 0.7, 1, 2)],
         "forge_golem" => [("scrap_iron", 1, 3, 5), ("iron_ingot", 0.8, 1, 2), ("coal", 0.8, 2, 4)],
+        // The great ones of the Summoner's road (what's left when one is beaten; its spirit goes to the ring).
+        "orrogh" => [("stone_block", 1, 3, 5), ("rough_garnet", 0.8, 1, 2), ("troll_hide", 0.6, 1, 1)],
+        "lumira" => [("feather", 1, 3, 6), ("pearl", 0.8, 1, 2), ("ectoplasm", 0.6, 1, 2)],
+        "quvirn" => [("storm_feather", 1, 2, 4), ("big_cat_fang", 0.9, 1, 3), ("rift_crystal", 0.5, 1, 1)],
+        "aegrath" => [("scrap_iron", 1, 4, 7), ("steel_ingot", 0.9, 1, 3), ("gold_ingot", 0.5, 1, 1)],
+        "blaze" => [("ember_ash", 1, 3, 6), ("brimstone", 0.9, 2, 3), ("coal", 0.8, 3, 5)],
+        "shicene" => [("frost_pelt", 0.9, 1, 1), ("sapphire", 0.8, 1, 2), ("rough_sapphire", 0.8, 1, 3)],
         "cinder_warden" => [("ember_ash", 1, 2, 4), ("bone_dust", 0.8, 1, 3), ("ancient_coin", 0.7, 2, 4)],
         "goblin_king" => [("goblin_trinket", 1, 2, 4), ("scrap_iron", 0.9, 2, 4), ("ancient_coin", 0.6, 1, 3)],
         "briar_mother" => [("heartwood", 1, 2, 3), ("ladys_mantle", 0.9, 2, 4)],

@@ -38,6 +38,9 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--feud-only")) { await TheFeud(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--tavern-only")) { await TheTavern(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--herofight-only")) { await HeroFightTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--sleepers-only")) { await SleeperTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--shipvisit-only")) { await ShipVisitTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--summoner-only")) { await SummonerTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ride-only")) { await TheRide(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
@@ -817,6 +820,12 @@ public partial class SelfTest(Main main) : Node
         await Until(() => main.RiderFlightsNode.Landed, 10);
         Check(main.RiderFlightsNode.Landed && main.RiderFlightsNode.Landings >= 1, "a dragon rider of the Order comes down at the rookery");
         var aldric = main.Locals.First(x => x.Npc.Id == "eyrie/aldric");
+        var levelWas = p.Hero.Level;
+        p.Hero.Level = DragonSaga.MinLevel - 1;
+        main.Talk(aldric);
+        Check(main.HudNode.Choose("How do I become") && main.Saga.Stage == SagaStage.NotStarted, "Ser Aldric won't so much as talk eggs with a hero below level 5");
+        main.HudNode.EndTalk();
+        p.Hero.Level = Math.Max(levelWas, DragonSaga.MinLevel);
         main.Talk(aldric);
         Check(main.HudNode.Choose("How do I become") && main.HudNode.TalkText.Contains("earned"), "Ser Aldric doesn't hand out eggs: you earn one");
         Check(main.HudNode.Choose("I'll earn it") && main.Saga.Stage == SagaStage.Proving, "you take up the road: prove yourself");
@@ -2748,6 +2757,9 @@ public partial class SelfTest(Main main) : Node
         main.OpenWagonShopForTest();
         await Frames(5);
         Check(city.StoreOf(main.WagonShopKeyForTest) is { Wagon: true } && main.WagonNode is { Teamed: false }, "parked, she opens up as a shop, and won't roll while she's open");
+        city.Stores.Remove(main.WagonShopKeyForTest);
+        main.RestoreShopsForTest();
+        Check(city.StoreOf(main.WagonShopKeyForTest) is { Wagon: true }, "lost by the world, her shop goes back up where she stands");
         main.CloseWagonShopForTest();
         Check(city.StoreOf(main.WagonShopKeyForTest) is null, "and closes up to get back on the road");
 
@@ -2976,8 +2988,99 @@ public partial class SelfTest(Main main) : Node
         await HandiworkTest();
         await PanicTest();
         await KeeperTest();
+        await ShipVisitTest();
+        await SummonerTest();
         await FleetTest();
         await HeroFightTest();
+        await SleeperTest();
+    }
+
+    /// <summary>
+    /// A player who's gone, left asleep where they were: drawn there with "(asleep)" over them, shuffling a few feet
+    /// about the spot, struck only once B is drawn (the blow goes to the server), lying down when cut down, safe in a
+    /// tavern; their purse's share for whoever wins; and, coming back, word of who went for this hero while they slept.
+    /// </summary>
+    async Task SleeperTest()
+    {
+        var (p, visitors) = (main.PlayerNode, main.VisitorsNode);
+        await Teleport(City.PlayerStart + new Vector3(0, 0, 6));
+        await Frames(10);
+        var at = p.GlobalPosition - p.GlobalTransform.Basis.Z * 1.8f;
+        SleeperView Joe(double health = 1, bool safe = false, bool fallen = false) => new("Joe", "Sir Joe", "Knight", null, at.X, at.Y, at.Z, 0, health, safe, fallen);
+        visitors.Sleepers([Joe(), new(p.Company, "Me", "Wizard", null, at.X + 3, at.Y, at.Z, 0, 1, false, false)], p.Company);
+        await Frames(10);
+        Check(visitors.AsleepCount == 1 && visitors.SleeperPlate("Joe") == "Sir Joe (asleep)", $"a player who's gone stands where they left, asleep ({visitors.SleeperPlate("Joe")}), and this hero's own sleeper isn't drawn");
+        Check(visitors.StandIn("Joe") is { Hero: "Joe" } && visitors.NameOf("Joe") == "Sir Joe", "with a stand-in there to be struck");
+
+        // They shuffle about a little, never far.
+        var farthest = 0f;
+        var moved = false;
+        for (var i = 0; i < 40; i++)
+        {
+            await Frames(10);
+            if (visitors.SleeperAt("Joe") is not { } now) break;
+            var off = new Vector2(now.X - at.X, now.Z - at.Z).Length();
+            farthest = Math.Max(farthest, off);
+            moved |= off > 0.2f;
+        }
+        Check(moved && farthest <= Visitors.SleeperStray + 0.1f, $"and shuffles a few feet about the spot (at most {farthest:0.00} m away)");
+
+        // Not drawn on players: a swing doesn't touch him. Drawn: it goes to the server.
+        var mark = main.LastHeroMessage;
+        for (var i = 0; i < 2; i++)
+        {
+            p.Face(visitors.StandIn("Joe")!.GlobalPosition);
+            p.CoolForTest();
+            p.Stats.Restore(p.Stats.MaxMana, p.Stats.MaxStamina);
+            p.Swing();
+            await Frames(40);
+        }
+        Check(main.LastHeroMessage == mark, "not drawn on players, a swing leaves him be");
+        main.DrawOnHeroesForTest();
+        for (var i = 0; i < 6 && main.LastHeroMessage is not StrikeHero { Target: "Joe" }; i++)
+        {
+            var joe = visitors.StandIn("Joe")!.GlobalPosition; // he shuffles about: step up to him
+            var back = (p.GlobalPosition - joe) with { Y = 0 };
+            p.GlobalPosition = joe + (back.Length() > 0.1f ? back.Normalized() : Vector3.Back) * 1.2f + Vector3.Up * 0.2f;
+            await Frames(3);
+            p.Face(joe);
+            p.CoolForTest();
+            p.Stats.Restore(p.Stats.MaxMana, p.Stats.MaxStamina);
+            p.Swing();
+            await Frames(40);
+        }
+        Check(main.LastHeroMessage is StrikeHero { Target: "Joe", Damage: > 0 }, $"drawn (B), a swing lands on him and goes to the server ({main.LastHeroMessage})");
+
+        // The server says how he's faring, and when he's down.
+        main.HandleForTest(new Sleepers([Joe(0.6)]));
+        Check(visitors.SleeperPlate("Joe") == "Sir Joe (asleep, 60%)", $"his wounds show by his name ({visitors.SleeperPlate("Joe")})");
+        main.HandleForTest(new Sleepers([Joe(0, fallen: true)]));
+        await Frames(5);
+        Check(visitors.SleeperPlate("Joe") == "Sir Joe (cut down)" && visitors.StandIn("Joe") is null && !visitors.StandIns.Any(e => e.Hero == "Joe"),
+            "cut down, he lies where he fell, and there's nothing more to strike");
+        var crowns = p.Crowns;
+        main.HandleForTest(new HeroSpoils("Joe", [], 50, 0, 0));
+        Check(p.Crowns == crowns + 50, $"his purse's share is the winner's ({crowns} to {p.Crowns})");
+
+        // Asleep in a tavern, nobody can touch him.
+        main.HandleForTest(new Sleepers([Joe(safe: true)]));
+        Check(visitors.StandIn("Joe") is null, "asleep in a tavern, he can't be struck");
+        main.DrawOnHeroesForTest();
+
+        // Gone from the list (he's back in the game): gone from the world.
+        main.HandleForTest(new Sleepers([]));
+        await Frames(5);
+        Check(visitors.AsleepCount == 0 && visitors.SleeperAt("Joe") is null, "and when he's back in the game, his sleeper's gone");
+
+        // This hero's own sleep: where they'd lie, and word on waking.
+        var spot = main.SleepSpotForTest;
+        Check(spot is not null && new Vector2(spot.X - p.GlobalPosition.X, spot.Z - p.GlobalPosition.Z).Length() < 1 && spot.Crowns == p.Crowns && spot.MaxHealth == p.Stats.MaxHealth,
+            "the server is told where this hero would lie, with their purse and health");
+        main.HandleForTest(new WhileAway(["Mira", "Dax"], "Dax", 40));
+        Check(main.HudNode.Heard("While you were away, Mira and Dax went for you where you slept, and Dax cut you down, winning 40 crowns"),
+            $"back again, you hear who went for you while you slept ({main.HudNode.Recent(1)})");
+        main.HandleForTest(new WhileAway(["Mira"], null, 0));
+        Check(main.HudNode.Heard("Mira went for you where you slept, but you held on"), "or that you held on");
     }
 
     /// <summary>
@@ -3274,6 +3377,130 @@ public partial class SelfTest(Main main) : Node
         foreach (var c in p.Companions().ToList()) c.QueueFree();
     }
 
+    /// <summary>
+    /// The Summoner's road: Braz Algún at the Binding Stones won't mark a green hero's ring; at level 8 she sends them after
+    /// the first great one; it waits in its lair, and beaten, it's bound; Braz names them a Summoner; G calls it, and it
+    /// strikes; the ring needs a breath after; and Draxon's fire turns what it leaves standing to the summoner's side.
+    /// </summary>
+    async Task SummonerTest()
+    {
+        var p = main.PlayerNode;
+        var hero = p.Hero;
+        var level = hero.Level;
+        (hero.Summoner, hero.Bound, hero.Calls, hero.Seeking, hero.Level) = (SummonerStep.None, [], null, null, Summons.MinLevel - 1);
+        var stones = new Vector3((float)Summons.StonesX, 0, (float)Summons.StonesZ);
+        await Teleport(stones + new Vector3(2, 0, 4));
+        var braz = main.Locals.FirstOrDefault(x => x.Npc.Id == "summoner/braz");
+        Check(braz is not null, "Braz Algún keeps the Binding Stones, west of the walls");
+        if (braz is null) { hero.Level = level; return; }
+        main.Talk(braz);
+        Check(main.HudNode.Choose("Teach me") && hero.Summoner == SummonerStep.None, "she won't mark the ring of a hero below level 5");
+        main.HudNode.EndTalk();
+        hero.Level = Summons.MinLevel;
+        main.Talk(braz);
+        Check(main.HudNode.Choose("Teach me") && hero.Summoner == SummonerStep.Marked && hero.Seeking == Summons.Orrogh && main.HudNode.TalkText.Contains("level 10"),
+            $"at level 5 she marks your ring and sends you after Orrogh, and tells you to wait for level 10 ({hero.Seeking})");
+        hero.Level = 10;
+        main.HudNode.EndTalk();
+
+        var (lx, lz) = main.LairForTest(Summons.Orrogh);
+        await Teleport(new Vector3((float)lx + 30, 0, (float)lz + 30));
+        main.TendSummonerForTest();
+        await Frames(10);
+        var orrogh = main.GreatOneForTest(Summons.Orrogh);
+        Check(orrogh is { } o && o.Stats.Name.StartsWith("Orrogh") && o.Stats.MaxHealth >= 1500, $"Orrogh waits in the Broken Barrow ({orrogh?.Stats.Name}, {orrogh?.Stats.MaxHealth} health)");
+        orrogh?.TakeHit(orrogh.Stats.Health + 100000, DamageKind.Physical, AttackKind.Weapon, false, p);
+        await Frames(10);
+        Check(hero.Bound.Contains(Summons.Orrogh) && Summons.Callable(hero) is null, "beaten, Orrogh's spirit catches on your ring, but it won't answer until Braz has seen it");
+        await Teleport(stones + new Vector3(2, 0, 4));
+        main.Talk(braz);
+        Check(main.HudNode.Choose("I beat") && hero.Summoner == SummonerStep.Summoner && Summons.Callable(hero)?.Id == Summons.Orrogh, "Braz names you a Summoner");
+        main.HudNode.EndTalk();
+
+        // G calls it: it strikes as it comes, and the ring needs a breath after.
+        var at = p.GlobalPosition + new Vector3(6, 0, 4);
+        var wolf = Enemy.Create(Bestiary.Get("wolf"), at with { Y = City.FloorAt(at) + 0.5f }, danger: 6);
+        main.AddEnemy(wolf);
+        wolf.Roam = 0;
+        p.Stats.Restore(p.Stats.MaxMana);
+        p.ReadySummonForTest();
+        var full = wolf.Stats.Health;
+        main.CallSummonForTest();
+        Check(p.Summoning && p.Stats.Mana <= p.Stats.MaxMana * 0.51, "G calls Orrogh up out of the ground, for half your mana");
+        await Until(() => !IsInstanceValid(wolf) || wolf.Stats.Health < full, 3);
+        Check(!IsInstanceValid(wolf) || wolf.Stats.Health < full, "and his stamp splits the ground under the wolf");
+        await Until(() => !p.Summoning, Summons.Stays + 2);
+        Check(!p.Summoning, "he goes back into the ring");
+        p.Stats.Restore(p.Stats.MaxMana);
+        Check(Summons.Callable(hero) is { } called && p.CantSummon(called)?.Contains("cold") == true, "and the ring needs a breath before it answers again");
+        if (IsInstanceValid(wolf)) wolf.QueueFree();
+
+        // Draxon, the King of Beasts: what his fire leaves standing fights for you.
+        hero.Bound.Add(Summons.Draxon);
+        Check(main.HudNode is not null && Summons.Choose(hero, Summons.Draxon), "a summoner chooses who answers the ring");
+        var boar = Enemy.Create(Bestiary.Get("boar"), (p.GlobalPosition + new Vector3(5, 0, 5)) with { Y = City.FloorAt(p.GlobalPosition + new Vector3(5, 0, 5)) + 0.5f }, danger: 40);
+        main.AddEnemy(boar);
+        boar.Roam = 0;
+        p.Stats.Restore(p.Stats.MaxMana);
+        p.ReadySummonForTest();
+        main.CallSummonForTest();
+        await Until(() => !IsInstanceValid(boar) || boar.Leader == p, 3);
+        Check(IsInstanceValid(boar) && boar.Leader == p && boar.Friendly, "Draxon's green fire corrupts the boar, and it fights for you");
+        if (IsInstanceValid(boar)) boar.QueueFree();
+        await Until(() => !p.Summoning, Summons.Stays + 2);
+
+        // A called beast can be killed, and then it's torn out of the ring: that step of the road to walk again.
+        Summons.Choose(hero, Summons.Orrogh);
+        p.Stats.Restore(p.Stats.MaxMana);
+        p.ReadySummonForTest();
+        main.CallSummonForTest();
+        var beastNow = p.SummonedBeast;
+        Check(beastNow is { Friendly: true } && beastNow.Stats.Health > 0, "a called beast is a fighter on your side, that foes can strike");
+        beastNow?.Shelled(1e9, false);
+        await Until(() => !hero.Bound.Contains(Summons.Orrogh), 3);
+        Check(!hero.Bound.Contains(Summons.Orrogh) && main.HudNode.Heard("torn out of your ring"), "struck down, Orrogh is torn out of your ring");
+        Check(Summons.ReadyFor(hero)?.Id == Summons.Orrogh, "and Braz will send you after Orrogh again");
+
+        (hero.Summoner, hero.Bound, hero.Calls, hero.Seeking, hero.Level) = (SummonerStep.None, [], null, null, level);
+    }
+
+    /// <summary>
+    /// Another hero's ship tied up at the docks with a shop aboard: drawn for everyone, E to go up her side and onto her
+    /// deck by her shopkeeper, E at the rail to step ashore; and her counter pays a crown over the town's shops.
+    /// </summary>
+    async Task ShipVisitTest()
+    {
+        var (p, city) = (main.PlayerNode, main.Economy);
+        main.Sea.OwnShip = false; // the berth is hers today
+        const string owner = "Joe" + PlayerStore.ShipMark;
+        var house = new House { Owned = true, Built = Housing.Stages.Count, IsHome = true, Furniture = ["shop_counter"], ForSale = ["iron_ingot"], Buying = ["iron_ingot"], Till = 500 };
+        house.Chest["iron_ingot"] = 3;
+        city.Stores[owner] = new PlayerStore { Owner = owner, Name = "Gull, Joe's ship", X = Main.ShipBerth.X, Z = Main.ShipBerth.Z, Workers = 1, Ship = true, House = house };
+        await Teleport(new Vector3(138, 0, 0));
+        main.TendStoresForTest();
+        await Frames(10);
+        var ship = main.MooredShipForTest(owner);
+        Check(ship is not null, "another hero's ship, tied up with a shop aboard, is drawn at the docks");
+        if (ship is not null && main.ShoreBesideForTest(ship) is { } pier) await Teleport(pier); // on the pier beside her
+        Check(main.MooredVerbForTest == "go aboard Gull, Joe's ship", $"from the pier, E takes you up her side ({main.MooredVerbForTest}, {(ship is null ? -1 : p.GlobalPosition.DistanceTo(ship.GlobalPosition with { Y = p.GlobalPosition.Y })):0.0} m off)");
+        main.MooredActForTest();
+        await Frames(30);
+        Check(ship is not null && ship.OnDeck(p.GlobalPosition), "and you're on her deck, and stay there");
+        Check(main.StoreKeepersForTest.Any(k => k.Npc.Id == $"store:{owner}" && k.GlobalPosition.DistanceTo(p.GlobalPosition) < 3.5f), "close enough to talk to her shopkeeper");
+
+        var iron = Items.Get("iron_ingot")!;
+        var town = main.TownPaysForTest(iron, Main.ShipBerth);
+        var pays = main.StorePaysForTest(iron, owner);
+        Check(pays == Math.Min(city.StorePrice(iron), town + 1) && pays > town, $"her counter pays a crown over the town's shops for ingots ({pays} against {town})");
+
+        Check(main.MooredVerbForTest == "step ashore", "at her rail, E to step ashore");
+        main.MooredActForTest();
+        await Frames(10);
+        Check(ship is not null && !ship.OnDeck(p.GlobalPosition) && main.MooredVerbForTest?.StartsWith("go aboard") == true, "and you're back on the pier");
+        city.Stores.Remove(owner);
+        main.TendStoresForTest();
+    }
+
     /// <summary>An apprentice set to keep shop aboard the hero's ship: goods put out sell a little at a time, the till's the hero's, the shop shuts while she sails and opens where she ties up.</summary>
     async Task KeeperTest()
     {
@@ -3305,8 +3532,13 @@ public partial class SelfTest(Main main) : Node
             Check(main.HudNode.Choose("I'll take the takings") && p.Crowns == purse + 4 * Homestead.SellsFor("iron_ingot"), "and the takings are yours");
             main.HudNode.EndTalk();
         }
+        city.Stores.Remove(main.ShipShopKeyForTest); // the world's lost her shop (a server restarted, or she tied up offline)
+        main.RestoreShopsForTest();
+        Check(city.StoreOf(main.ShipShopKeyForTest) is { Ship: true, House.Chest: var lost } && lost.GetValueOrDefault("iron_ingot") == 2, "lost by the world, her shop goes back up where she lies, the shelves as they were");
         main.BoardVesselForTest();
         Check(city.StoreOf(main.ShipShopKeyForTest) is null && main.KeeperForTest(lad) is null, "taking her out shuts the shop, and Tobin goes below");
+        main.RestoreShopsForTest();
+        Check(city.StoreOf(main.ShipShopKeyForTest) is null, "and isn't put back up while she's under way");
         main.LeaveVesselForTest();
         Check(city.StoreOf(main.ShipShopKeyForTest) is { House.Chest: var c } && c.GetValueOrDefault("iron_ingot") == 2, "tied up again, the shop opens where she lies, the shelves as they were");
         main.StopKeepingForTest(lad);

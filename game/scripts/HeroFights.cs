@@ -14,6 +14,11 @@ namespace Tristinwold.Game;
 /// weapons and armour come as what they're worth in crowns; a purse as full as the loser's; and any bounty on the
 /// loser's head, which is then paid and gone (see <see cref="Gameplay.Spoils"/>). That's once an hour for each
 /// winner from each loser, so friends can't farm each other.
+///
+/// A player who's gone is left asleep where they were (see <see cref="Visitors.Sleepers"/>), and can be fought the same
+/// way: the server counts the blows, and whoever cuts them down wins a share of their purse, as a copy. This game
+/// keeps the server told where this hero would lie (<see cref="SleepSpot"/>), and hears, on coming back, who went for
+/// them while they slept (<see cref="WhileAway"/>). They wake where they lay all the same.
 /// </summary>
 public partial class Main
 {
@@ -123,9 +128,45 @@ public partial class Main
         _hud.Toast($"You've beaten {_visitors.NameOf(s.From) ?? s.From}. Yours for it: {Gameplay.Spoils.Tell(items, s.Crowns, s.GearCrowns, s.Bounty)}.", 10);
     }
 
+    // ---- asleep ----
+
+    SleepSpot? _spotSent;
+    double _spotAt;
+
+    /// <summary>Keeps the server told where this hero would lie if the player left now, and what's on them, whenever that changes.</summary>
+    void TendSleepSpot()
+    {
+        if (_client?.Status != ClientStatus.Connected) { _spotSent = null; return; } // a new connection starts afresh
+        if (_clock - _spotAt < 2) return;
+        _spotAt = _clock;
+        if (SpotNow() is not { } spot) return;
+        if (_spotSent is { } last && last.Crowns == spot.Crowns && last.Safe == spot.Safe && Math.Abs(last.MaxHealth - spot.MaxHealth) < 1
+            && new Vector3(last.X - spot.X, last.Y - spot.Y, last.Z - spot.Z).Length() < 0.5f) return;
+        _spotSent = spot;
+        _client.Send(spot);
+    }
+
+    /// <summary>Where this hero would lie if the player left now (where the save has them), and what's on them.</summary>
+    SleepSpot? SpotNow() => Here() is { } here ? new SleepSpot(here.X, here.Y, here.Z, here.Facing, _player.Crowns, _player.Stats.MaxHealth, _player.Safe) : null;
+
+    /// <summary>Back in the game: who went for this hero while they slept, and who cut them down. Nothing was lost by it.</summary>
+    void HeardWhileAway(WhileAway w)
+    {
+        static string And(IReadOnlyList<string> names) =>
+            names.Count <= 1 ? string.Concat(names) : $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}";
+        var attackers = w.Attackers.Count > 0 ? w.Attackers : w.Killer is { } k ? [k] : [];
+        var text = w.Killer is { } killer
+            ? $"While you were away, {And(attackers)} went for you where you slept, and {killer} cut you down" +
+              (w.Taken > 0 ? $", winning {w.Taken} crowns by it (a copy: your purse is as full as you left it)." : ".") +
+              " You wake where you lay, none the worse."
+            : $"While you were away, {And(attackers)} went for you where you slept, but you held on. You wake where you lay.";
+        _hud.Toast(text, 14);
+    }
+
     // ---- for the self-test ----
 
     public void DrawOnHeroesForTest() => DrawOnHeroes();
+    public SleepSpot? SleepSpotForTest => SpotNow();
     public bool DrawnForTest => _drawn;
     public bool FightingHeroForTest(string player) => FightingHero(player);
 }

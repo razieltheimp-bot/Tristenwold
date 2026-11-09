@@ -735,6 +735,8 @@ public partial class Main : Node3D
             case Seen s: _visitors.Seen(s.Player, s.Where); break;
             case HeroStruck h: StruckByHero(h); break;
             case HeroSpoils s: TakeSpoils(s); break;
+            case Sleepers s: _visitors.Sleepers(s.All, _player.Company); break;
+            case WhileAway w: HeardWhileAway(w); break;
             case DeviantSnapshot s: _hud.ShowDeviants(s.WorldJson); _deviantJson = s.WorldJson; break;
             case DeviantEvents e:
                 foreach (var ev in e.Events)
@@ -811,6 +813,7 @@ public partial class Main : Node3D
                 _client.Send(report);
             }
         }
+        TendSleepSpot();
 
         foreach (var e in Enemies().Where(e => e.FightingCompany && !e.Sparring && !e.Yielded && !e.HeroesRival))
             _tracker.Engaged(e.Id, e.Kind.Id, e.Kind.Name, e.Stats.MaxHealth, ToNumerics(e.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, e.DeviantId);
@@ -827,6 +830,7 @@ public partial class Main : Node3D
         TendFarLairs();
         TendStory();
         TendCaravans(delta);
+        TendSummoner(delta);
         TendRide();
         TendSea(delta);
         TendColonies(delta);
@@ -865,17 +869,18 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("pack") && !_hud.Talking) ShowPack();
         if (Input.IsActionJustPressed("drink")) QuickDrink();
         if (Input.IsActionJustPressed("draw_on") && !_hud.Talking) DrawOnHeroes();
+        if (Input.IsActionJustPressed("summon") && !_hud.Talking) CallSummon();
         if (Input.IsActionJustPressed("ride")) ToggleRide();
         if (Input.IsActionJustPressed("rest") && !_tracker.InFight) Rest();
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills\nI: pack   H: heal   1-0: quick keys   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_visitors.Count > 0 || _drawn ? $"   B: {(_drawn ? "stop fighting players" : "fight players")}" : "")}{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}{(_player.Possessing ? _player.Class.Id == "EtherAeronaut" ? $"   Suit: {_player.SuitLeft:0}s ({_player.FlightSecondsLeft:0}s of flight)" : $"   Half-form: {_player.SuitLeft:0}s" : "")}");
+        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills\nI: pack   H: heal   1-0: quick keys   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_visitors.Count > 0 || _drawn ? $"   B: {(_drawn ? "stop fighting players" : "fight players")}" : "")}{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}{(Summons.Callable(_player.Hero) is { } called ? $"   G: summon {called.Name}{(_player.SummonReadyIn > 0 ? $" ({_player.SummonReadyIn:0}s)" : "")}" : "")}{(_player.Possessing ? _player.Class.Id == "EtherAeronaut" ? $"   Suit: {_player.SuitLeft:0}s ({_player.FlightSecondsLeft:0}s of flight)" : $"   Half-form: {_player.SuitLeft:0}s" : "")}");
         var saga = _saga.Objective(Dragon, _player.Hero.Level) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
         if (StoryLine(pos) is { } story) saga = [story, .. saga];
         // The nearest lair that suits the hero, and the nearest deviant out roaming.
         if (_suited is { } raid && LairOf(raid).Tracker(pos, Direction) is { } raidLine) saga = [.. saga, raidLine];
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
         if (_raiders.Tracker(pos, Direction) is { } clanLine) saga = [.. saga, clanLine];
-        saga = [.. saga, .. KorrinLines(pos), .. HeistLines(pos), .. WarlordLines(pos), .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. IsleLines(pos), .. StandingLines(pos), .. ArtificerLines(pos), .. ShadowLines(pos), .. PursuitLines(pos)];
+        saga = [.. saga, .. KorrinLines(pos), .. HeistLines(pos), .. WarlordLines(pos), .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. IsleLines(pos), .. StandingLines(pos), .. ArtificerLines(pos), .. ShadowLines(pos), .. PursuitLines(pos), .. SummonerLines(pos)];
         _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
         _hud.Party(PartyLines());
     }
@@ -932,7 +937,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return TavernAction(pos) ?? DeepAction(pos) ?? SyndicateAction(pos) ?? SmithyAction(pos) ?? VaultAction(pos) ?? StashAction(pos) ?? IndoorAction(pos) ?? TankAction(pos) ?? ChapelAction(pos) ?? SkyAction(pos) ?? VesselAction(pos) ?? FleetAction(pos) ?? SiteAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? IsleAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
+        return TavernAction(pos) ?? DeepAction(pos) ?? SyndicateAction(pos) ?? SmithyAction(pos) ?? VaultAction(pos) ?? StashAction(pos) ?? IndoorAction(pos) ?? TankAction(pos) ?? ChapelAction(pos) ?? SkyAction(pos) ?? VesselAction(pos) ?? MooredAction(pos) ?? FleetAction(pos) ?? SiteAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? IsleAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>
@@ -1242,7 +1247,7 @@ public partial class Main : Node3D
         Key("limit", Godot.Key.R); Key("cycle_element", Godot.Key.Q); Key("menu", Godot.Key.F10); Key("rest", Godot.Key.T);
         Key("interact", Godot.Key.E); Key("map", Godot.Key.M); Key("journal", Godot.Key.J);
         Key("party", Godot.Key.P); Key("skills", Godot.Key.K); Key("ride", Godot.Key.V); Key("descend", Godot.Key.C);
-        Key("pack", Godot.Key.I); Key("drink", Godot.Key.H); Key("draw_on", Godot.Key.B); Key("stealth", Godot.Key.F);
+        Key("pack", Godot.Key.I); Key("drink", Godot.Key.H); Key("draw_on", Godot.Key.B); Key("summon", Godot.Key.G); Key("stealth", Godot.Key.F);
         Key("save", Godot.Key.F5); Key("game_menu", Godot.Key.Escape);
         foreach (var (name, key) in new[] { ("1", Godot.Key.Key1), ("2", Godot.Key.Key2), ("3", Godot.Key.Key3), ("4", Godot.Key.Key4), ("5", Godot.Key.Key5), ("6", Godot.Key.Key6), ("7", Godot.Key.Key7), ("8", Godot.Key.Key8), ("9", Godot.Key.Key9), ("0", Godot.Key.Key0) })
             Key($"quick_{name}", key);

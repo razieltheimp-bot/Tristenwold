@@ -23,6 +23,15 @@ public sealed class Hero
     /// <summary>What's on the quick keys, 1 to 0.</summary>
     public QuickBar Bar { get; set; } = new();
 
+    /// <summary>How far along the Summoner's road with Braz Algún they are.</summary>
+    public SummonerStep Summoner { get; set; }
+    /// <summary>The great beasts beaten and bound to their ring, by the summon's id: theirs to call.</summary>
+    public List<string> Bound { get; set; } = [];
+    /// <summary>The beast G calls.</summary>
+    public string? Calls { get; set; }
+    /// <summary>The great one of the road Braz has sent them after (a summon's id), if any.</summary>
+    public string? Seeking { get; set; }
+
     /// <summary>Experience needed to go from a level to the next.</summary>
     public static int XpToNext(int level) => (int)Math.Round(80 * Math.Pow(level, 1.4));
 
@@ -169,7 +178,7 @@ public sealed class Bond
 
     /// <summary>A dragon too young to fly is lost for good if it falls; anything else is only knocked out.</summary>
     [JsonIgnore]
-    public bool DiesIfFelled => Role == BondRole.Dragon && Level < 10 || Role is BondRole.Squire or BondRole.Apprentice or BondRole.Mite; // apprentices are mortal, and a mite wrecked is scrap: no getting up after the fight
+    public bool DiesIfFelled => Role is BondRole.Dragon or BondRole.Squire or BondRole.Apprentice or BondRole.Mite; // a dragon struck down is dead at any age, apprentices are mortal, and a mite wrecked is scrap: no getting up after the fight
 
     /// <summary>An apprentice's people, how old they were when they joined, and the day they did: they age, and in the end they die of it.</summary>
     public string? Race { get; set; }
