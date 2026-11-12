@@ -416,12 +416,19 @@ public partial class Cave(Main main, MineBook book) : Node3D
     }
 
     /// <summary>Rock and mortar across the drift to the deep.</summary>
+    /// <summary>
+    /// The old face, walled across the drift: wide enough to run well into the rock on both sides, its foot sunk into
+    /// the floor and its top into the roof, square across the drift, so the walls' rough edges leave no gap to squeeze
+    /// past or climb over. Only what's in the drift shows: it reads as part of the rock. Nobody gets by till it's broken.
+    /// </summary>
     void RaiseWall()
     {
         var at = FaceAt;
-        var wall = new StaticBody3D { Position = at + Vector3.Up * 2.2f };
-        wall.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(7, 5.4f, 1.6f) }, MaterialOverride = BuildingMaterials.For(Surface.Stone) });
-        wall.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(7, 5.4f, 1.6f) } });
+        var (from, to) = (Greyhollow.Room("old_face"), Greyhollow.Room("breach"));
+        var size = new Vector3((float)(Greyhollow.HalfWidth * 2 + Cell * 4 + 2), 9, 2.6f); // the drift, its rough walls, and more besides
+        var wall = new StaticBody3D { Position = at + Vector3.Up * 3f, Rotation = new Vector3(0, Mathf.Atan2((float)(to.X - from.X), (float)(to.Z - from.Z)), 0) };
+        wall.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = size }, MaterialOverride = Rock() });
+        wall.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size } });
         AddChild(wall);
         _wall = wall;
     }

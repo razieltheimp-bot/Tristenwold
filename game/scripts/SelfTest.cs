@@ -44,6 +44,8 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--pets-only")) { await PetDeathTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forfeit-only")) { await ForfeitTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--youths-only")) { await YouthTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--heartwood-only")) { await HeartwoodTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--swimjump-only")) { await SwimJumpTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ride-only")) { await TheRide(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
@@ -2996,6 +2998,8 @@ public partial class SelfTest(Main main) : Node
         await PetDeathTest();
         await ForfeitTest();
         await YouthTest();
+        await HeartwoodTest();
+        await SwimJumpTest();
         await FleetTest();
         await HeroFightTest();
         await SleeperTest();
@@ -3381,6 +3385,71 @@ public partial class SelfTest(Main main) : Node
         var beast = main.LittleRobotOfForTest(lad);
         Check(beast is { Kind.Id: "wolf" } && beast.Figure is not Figure, $"trained as a shapeshifter: an acolyte with a wolf at their heels, a real beast ({beast?.Kind.Id}, {beast?.Figure.GetType().Name})");
         foreach (var c in p.Companions().ToList()) c.QueueFree();
+    }
+
+    /// <summary>Swimming in deep water, a jump lifts the hero well up out of it: enough to get up onto a dock or a bank.</summary>
+    async Task SwimJumpTest()
+    {
+        var p = main.PlayerNode;
+        var lake = FindDeepWater(0, -1500);
+        await Teleport(new Vector3((float)lake.X, 0, (float)lake.Z));
+        await Frames(120);
+        Check(p.Swimming, "swimming in deep water");
+        var start = p.GlobalPosition.Y;
+        var top = start;
+        var fastest = 0f;
+        var wasSwimming = p.Swimming;
+        Input.ActionPress("jump");
+        await Frames(2);
+        Input.ActionRelease("jump");
+        for (var i = 0; i < 90; i++) { await Frames(1); top = Math.Max(top, p.GlobalPosition.Y); fastest = Math.Max(fastest, p.Velocity.Y); }
+        Check(top - start > 2.2f, $"a jump from the water lifts the hero {top - start:0.0} m (enough for a dock's edge; up at {fastest:0.0} m/s, swimming as it began: {wasSwimming})");
+    }
+
+    /// <summary>
+    /// Hollowheart's great trees: under the low stretch of each ramp the root is solid, so nothing walks in under it and
+    /// wedges; and those walking their rounds about the village go round the trees and never end up in one.
+    /// </summary>
+    async Task HeartwoodTest()
+    {
+        var trees = Northwood.Hearts;
+        var first = trees[1];
+        await Teleport(new Vector3((float)(first.X + Northwood.Clearance(first) + 6), 0, (float)first.Z));
+        await Until(() => main.PlacesNode.IsBuilt("city:hollowheart"), 15);
+        await Frames(30);
+        var space = main.GetWorld3D().DirectSpaceState;
+        for (var i = 0; i < trees.Count; i++)
+        {
+            var t = trees[i];
+            var centre = new Vector3((float)t.X, 0, (float)t.Z);
+            var foot = City.FloorAt(centre) - 0.5f;
+            var top = Forest.RampTop(t, i + 1);
+            foreach (var gap in new[] { 1.2f, 2.0f, 3.0f })
+            {
+                // Waist-high, in toward the trunk, under the ramp where it's only this far off the ground.
+                var along = gap / Northwood.DeckHeight;
+                var a = along * 2 * Mathf.Tau + top;
+                var dir = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
+                var girth = Forest.Girth((float)t.Radius, along * Northwood.DeckHeight / (float)t.Height, a);
+                var y = foot + 0.5f + gap * 0.5f;
+                var ray = PhysicsRayQueryParameters3D.Create(centre + dir * (girth + 10) + Vector3.Up * y, centre + Vector3.Up * y);
+                ray.Exclude = [main.PlayerNode.GetRid()];
+                var hit = space.IntersectRay(ray);
+                var stopped = hit.Count > 0 ? new Vector2(hit["position"].AsVector3().X - centre.X, hit["position"].AsVector3().Z - centre.Z).Length() : 0;
+                Check(stopped > girth + 1.5f, $"tree {i + 1}, {gap} m under its ramp: solid root, not a gap ({stopped:0.0} m out, trunk at {girth:0.0} m)");
+            }
+        }
+        // The village's walkers, after a good while walking their rounds.
+        var walkers = main.PlacesNode.People.Where(p => p.Rounds is not null && new Vector2(p.GlobalPosition.X - (float)Northwood.VillageX, p.GlobalPosition.Z - (float)Northwood.VillageZ).Length() < 140).ToList();
+        Check(walkers.Count > 0, $"Hollowheart's wardens and council walk their rounds ({walkers.Count})");
+        var worst = 0.0;
+        for (var s = 0; s < 12; s++)
+        {
+            await Frames(60);
+            foreach (var w in walkers.Where(IsInstanceValid))
+                if (Northwood.InRoots(w.GlobalPosition.X, w.GlobalPosition.Z, 0.8)) worst = Math.Max(worst, 1);
+        }
+        Check(worst == 0, "and none of them ever walks into a great tree");
     }
 
     /// <summary>
@@ -6016,6 +6085,30 @@ public partial class SelfTest(Main main) : Node
         var (p, hud, book, cave) = (main.PlayerNode, main.HudNode, main.MineLog, main.CaveNode);
         if (cave is null) { Check(false, "down the mine for the old face"); return; }
         Check(cave.WallStands && cave.Dens.All(e => e.Kind.Id == "giant_rat"), "the deep is walled off, and only rats live on this side of it");
+        {
+            // Every way along the drift, at every height and every point across it: the face stops it. No squeezing by at
+            // the rough edges of the walls, and no getting over the top.
+            var (from, to) = (Greyhollow.Room("old_face"), Greyhollow.Room("breach"));
+            var dir = new Vector3((float)(to.X - from.X), 0, (float)(to.Z - from.Z)).Normalized();
+            var across = new Vector3(dir.Z, 0, -dir.X);
+            var face = Cave.FaceAt;
+            var space = main.GetWorld3D().DirectSpaceState;
+            var (tried, through) = (0, new List<string>());
+            for (var side = -6f; side <= 6f; side += 0.5f)
+                foreach (var up in new[] { 0.3f, 1f, 2f, 3f, 4f, 4.8f, 5.6f })
+                {
+                    var (fx, fz, _) = Greyhollow.Face; // the mine's own map, where Cave.At puts it in the world
+                    var (mx, mz) = (fx - dir.X * 4 + across.X * side, fz - dir.Z * 4 + across.Z * side);
+                    if (!Greyhollow.Open(mx, mz) || up > Greyhollow.Headroom(mx, mz) - 0.3) continue; // in the rock, or the roof
+                    var start = Cave.At(mx, mz) + Vector3.Up * up;
+                    tried++;
+                    var ray = PhysicsRayQueryParameters3D.Create(start, start + dir * 9);
+                    ray.Exclude = [p.GetRid()];
+                    var hit = space.IntersectRay(ray);
+                    if (hit.Count == 0 || (hit["position"].AsVector3() - face).Dot(dir) > 1.4f) through.Add($"{side:0.0} across, {up} up");
+                }
+            Check(tried > 30 && through.Count == 0, $"and the face fills the drift, wall to wall and floor to roof ({tried} ways tried; through at: {string.Join("; ", through.Take(6))})");
+        }
         book.Worked = MineBook.VeinsToProve - 1;
         Check(book.VeinWorked() && book.Stage == MineStage.AtTheFace, "enough veins, and Dagna's ready to send you to the old face");
         await Teleport(Cave.FaceAt + new Vector3(0, 0, 3));

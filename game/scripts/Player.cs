@@ -390,8 +390,9 @@ public partial class Player : Fighter
             }
             else if (Input.IsActionJustPressed("jump") && (IsOnFloor() || Swimming))
             {
-                Velocity = Velocity with { Y = JumpSpeed * (float)Math.Sqrt(Pack.JumpHeight) }; // twice the speed would be four times the height
+                Velocity = Velocity with { Y = JumpSpeed * (float)Math.Sqrt(Pack.JumpHeight) * (Swimming ? 1.5f : 1f) }; // twice the speed would be four times the height; out of the water, half again, enough to get up onto a dock or a bank
                 if (!Swimming) { Figure.Perform("Jump_Start", 0.22, 1.5f); Sound.At("move/jump", GlobalPosition, -6); } // a crouch and a spring
+                else Breach(); // up and out of the water, the water letting go
             }
             if (_jetting) _climbing = false;
             if (_climbing) Clamber(input, delta);

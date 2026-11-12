@@ -65,8 +65,9 @@ public partial class Person : StaticBody3D
     /// councillor about the town's business). Null, and they stand about where they are like anyone.
     /// </summary>
     public Vector3[]? Rounds { get; set; }
-    int _leg;
-    double _lookAhead;
+    int _leg, _turnedBack, _side;
+    double _lookAhead, _stuck;
+    float _lastGap = float.MaxValue;
 
     /// <summary>Walking pace on a round.</summary>
     const float Pace = 1.25f;
@@ -97,12 +98,28 @@ public partial class Person : StaticBody3D
     {
         if (_busy > 0) { _busy -= delta; return; }
         var goal = rounds[_leg % rounds.Length];
-        var to = goal - GlobalPosition;
-        to.Y = 0;
+        var gap = new Vector2(goal.X - GlobalPosition.X, goal.Z - GlobalPosition.Z).Length();
+        // Not getting any nearer for a while, or turned back at every stop in turn: stuck. Straight to the next stop
+        // (each is clear of the trees and walls), rather than stand pressed against something for ever.
+        _stuck = gap < _lastGap - 0.05f ? 0 : _stuck + delta;
+        _lastGap = Math.Min(_lastGap, gap);
+        if (_stuck > 12 || _turnedBack > rounds.Length)
+        {
+            _leg = (_leg + 1) % rounds.Length;
+            GlobalPosition = rounds[_leg];
+            (_stuck, _turnedBack, _lastGap) = (0, 0, float.MaxValue);
+            Figure.Move(0, true, false);
+            _busy = 2;
+            return;
+        }
+        // Round one of Hollowheart's great trees, not into it.
+        var (wx, wz) = Northwood.Around(GlobalPosition.X, GlobalPosition.Z, goal.X, goal.Z, ref _side);
+        var to = new Vector3((float)wx - GlobalPosition.X, 0, (float)wz - GlobalPosition.Z);
         var step = (float)delta * Pace;
-        if (to.Length() <= step + 0.05f)
+        if (gap <= step + 0.05f)
         {
             Figure.Move(0, true, false);
+            (_stuck, _turnedBack, _lastGap) = (0, 0, float.MaxValue);
             _leg = (_leg + 1) % rounds.Length;
             _busy = 4 + GD.Randf() * 7; // a stop: a word with someone, a look about
             if (GD.Randf() < 0.5f) Gesture(); else Shift();
@@ -115,7 +132,7 @@ public partial class Person : StaticBody3D
             var space = GetWorld3D().DirectSpaceState;
             var ahead = PhysicsRayQueryParameters3D.Create(GlobalPosition + Vector3.Up * 0.9f, GlobalPosition + Vector3.Up * 0.9f + to.Normalized() * 1.2f);
             ahead.Exclude = [GetRid()];
-            if (space.IntersectRay(ahead).Count > 0) { _leg = (_leg + 1) % rounds.Length; _busy = 1; Figure.Move(0, true, false); return; } // the way's blocked: somewhere else
+            if (space.IntersectRay(ahead).Count > 0) { _leg = (_leg + 1) % rounds.Length; _turnedBack++; _lastGap = float.MaxValue; _busy = 1; Figure.Move(0, true, false); return; } // the way's blocked: somewhere else
         }
         var next = GlobalPosition + to.Normalized() * step;
         var down = PhysicsRayQueryParameters3D.Create(next + Vector3.Up * 1.2f, next - Vector3.Up * 2.5f);
@@ -894,7 +911,10 @@ public partial class Places(Main main, WorldGen world) : Node3D
         var clerk = TownCouncils.Clerk(s);
         var chamber = CouncilChamber(parent, s, clerk);
         var (cx, cz) = chamber is { } door ? (door.X, door.Z) : (clerk.X, clerk.Z);
-        b.People.Add(Add(parent, new Person { Npc = clerk with { X = cx, Z = cz }, Look = "townsfolk", Position = Ground(cx, cz) }));
+        // By the chamber's door: in Hollowheart that's in a great tree's root, so the clerk stands just where the door
+        // puts them (on open ground in front of it), not pushed out past the roots like everyone else.
+        var clerkAt = chamber is not null && s.Id == "city:hollowheart" ? new Vector3((float)cx, Mathf.Max((float)world.Height(cx, cz), City.FloorAt(new Vector3((float)cx, 0, (float)cz))), (float)cz) : Ground(cx, cz);
+        b.People.Add(Add(parent, new Person { Npc = clerk with { X = cx, Z = cz }, Look = "townsfolk", Position = clerkAt }));
         // Out about the town, chamber or no: each walks a round of its streets, from their seat in toward the middle and
         // round, stopping here and there, so anyone with council business can find one.
         var i = 0;

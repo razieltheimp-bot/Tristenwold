@@ -280,7 +280,7 @@ public partial class Forest(Main main) : Node3D
         return m;
     }
 
-    static float Girth(float radius, float t, float round) =>
+    internal static float Girth(float radius, float t, float round) =>
         radius * (0.42f + 0.58f * Mathf.Pow(1 - t, 1.5f)) * (1 + 1.1f * Mathf.Exp(-t * 16)) * (1 + 0.14f * Mathf.Sin(round * 5 + t * 8) * Mathf.Exp(-t * 3));
 
     static void Solid(Node3D parent, ArrayMesh mesh, Material m, Vector3 at)
@@ -364,6 +364,20 @@ public partial class Forest(Main main) : Node3D
             var way = c <= 1 ? inner + c * 2.9f : inner + 3.1f;
             return new Vector3(Mathf.Cos(a) * way, y + (c >= 2 ? rail * (1 - landing) : 0), Mathf.Sin(a) * way);
         }), bark, at);
+        // Under the ramp's first turn, where the gap beneath it is lower than a tall person could walk under, the root is
+        // grown solid down into the ground, with a wall across its end: nobody wanders under there and wedges. Further
+        // round, the ramp is high enough to walk under, and the way to its foot stays open.
+        const float headroom = 4f;
+        var skirt = (int)Mathf.Ceil(headroom / climb * turns * 44);
+        Vector3 Under(int r, float outBy, bool ground)
+        {
+            var t = r / (turns * 44);
+            var a = t * turns * Mathf.Tau + top;
+            var way = Girth(radius, t * climb / high, a) - 0.3f + outBy;
+            return new Vector3(Mathf.Cos(a) * way, ground ? -3f : t * climb + 0.48f, Mathf.Sin(a) * way);
+        }
+        Solid(this, Grid(skirt, 1, (r, c) => Under(r, 2.9f, c == 0)), bark, at);
+        Solid(this, Grid(1, 1, (r, c) => Under(skirt, c == 0 ? -0.6f : 2.9f, r == 0)), bark, at);
         // A deck grown round the trunk: the village's upper street, six metres wide, with a railing of root round its rim
         // except where the ramp comes in and where the bridges leave.
         Solid(this, Grid(3, 40, (r, c) =>

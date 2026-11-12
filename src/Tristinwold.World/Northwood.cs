@@ -168,16 +168,92 @@ public static class Northwood
     /// </summary>
     public static (double X, double Z) OutOfTrunks(double x, double z)
     {
-        foreach (var t in Hearts)
+        // The trees stand close and their roots run together: pushed out of one, a spot may be in the next, so keep
+        // pushing until it's clear of them all (and if it's caught between them, out from the village's middle).
+        for (var pass = 0; pass < 8; pass++)
         {
-            var (dx, dz) = (x - t.X, z - t.Z);
-            var d = Math.Sqrt(dx * dx + dz * dz);
-            var clear = t.Radius * RootSpread + 2;
-            if (d >= clear) continue;
-            var (ux, uz) = d < 0.01 ? (0.0, 1.0) : (dx / d, dz / d);
-            (x, z) = (t.X + ux * clear, t.Z + uz * clear);
+            var moved = false;
+            foreach (var t in Hearts)
+            {
+                var (dx, dz) = (x - t.X, z - t.Z);
+                var d = Math.Sqrt(dx * dx + dz * dz);
+                var clear = t.Radius * RootSpread + 2;
+                if (d >= clear) continue;
+                var (ux, uz) = d < 0.01 ? (0.0, 1.0) : (dx / d, dz / d);
+                (x, z) = (t.X + ux * clear, t.Z + uz * clear);
+                moved = true;
+            }
+            if (!moved) return (x, z);
+        }
+        while (InRoots(x, z))
+        {
+            var (dx, dz) = (x - VillageX, z - VillageZ);
+            var d = Math.Max(0.01, Math.Sqrt(dx * dx + dz * dz));
+            (x, z) = (x + dx / d * 2, z + dz / d * 2);
         }
         return (x, z);
+    }
+
+    /// <summary>How far from a great tree's centre anyone walking keeps (its roots, and a step more).</summary>
+    public static double Clearance(HeartTree t) => t.Radius * RootSpread + 2;
+
+    /// <summary>Whether a spot is in the roots of any of Hollowheart's great trees (within <see cref="Clearance"/>, less <paramref name="slack"/>).</summary>
+    public static bool InRoots(double x, double z, double slack = 0) =>
+        Hearts.Any(t => (x - t.X) * (x - t.X) + (z - t.Z) * (z - t.Z) < Math.Pow(Clearance(t) - slack, 2));
+
+    /// <summary>Whether the straight way between two spots runs through any great tree's roots.</summary>
+    public static bool Blocked(double x, double z, double gx, double gz, double slack = 0)
+    {
+        foreach (var t in Hearts)
+        {
+            var (sx, sz) = (gx - x, gz - z);
+            var len2 = sx * sx + sz * sz;
+            var u = len2 < 1e-9 ? 0 : Math.Clamp(((t.X - x) * sx + (t.Z - z) * sz) / len2, 0, 1);
+            var (cx, cz) = (x + sx * u - t.X, z + sz * u - t.Z);
+            if (cx * cx + cz * cz < Math.Pow(Clearance(t) - slack, 2)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Where to head next, walking from (<paramref name="x"/>, <paramref name="z"/>) to (<paramref name="gx"/>,
+    /// <paramref name="gz"/>): straight there if no great tree's roots are in the way; otherwise a few metres on in the
+    /// nearest direction to it that is clear, turning a little at a time, so a walker works its way round the trees, one
+    /// or several, as anyone would. <paramref name="side"/> is the way they're going round (1 or -1; 0 when nothing's in
+    /// the way): kept from step to step, so nobody dithers between two trees, turning one way and then the other.
+    /// Someone already in the roots is sent straight out first.
+    /// </summary>
+    public static (double X, double Z) Around(double x, double z, double gx, double gz, ref int side, double look = 6)
+    {
+        if (InRoots(x, z, 0.5)) return OutOfTrunks(x, z);
+        if (!Blocked(x, z, gx, gz, 0.3)) { side = 0; return (gx, gz); }
+        var heading = Math.Atan2(gz - z, gx - x);
+        var dist = Math.Min(look, Math.Sqrt((gx - x) * (gx - x) + (gz - z) * (gz - z)));
+        int[] ways = side == 0 ? [1, -1] : [side];
+        foreach (var way in ways)
+            for (var k = 1; k <= 34; k++)
+            {
+                var a = heading + way * k * Math.PI / 18;
+                var (px, pz) = (x + Math.Cos(a) * dist, z + Math.Sin(a) * dist);
+                if (Blocked(x, z, px, pz, 0.3)) continue;
+                if (side == 0)
+                {
+                    // Choosing which way round: the way that turns least, unless the other way turns no more.
+                    var other = Enumerable.Range(1, k).FirstOrDefault(j => !Blocked(x, z, x + Math.Cos(heading - way * j * Math.PI / 18) * dist, z + Math.Sin(heading - way * j * Math.PI / 18) * dist, 0.3));
+                    side = other > 0 && other < k ? -way : way;
+                    if (side != way) { a = heading - way * other * Math.PI / 18; (px, pz) = (x + Math.Cos(a) * dist, z + Math.Sin(a) * dist); }
+                }
+                return (px, pz);
+            }
+        side = -side; // all the way round that way and still blocked: try the other way
+        return OutOfTrunks(x + (x - gx) * 0.1, z + (z - gz) * 0.1);
+    }
+
+    /// <summary><see cref="Around(double, double, double, double, ref int, double)"/> for a single step, with no way round kept.</summary>
+    public static (double X, double Z) Around(double x, double z, double gx, double gz)
+    {
+        var side = 0;
+        return Around(x, z, gx, gz, ref side);
     }
 
     /// <summary>How far a great tree's roots spread at the ground, for its girth (its trunk swells to this at its foot).</summary>

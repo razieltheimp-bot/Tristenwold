@@ -99,8 +99,15 @@ public abstract partial class Fighter : CharacterBody3D
     /// quick enough to feel sharp, slow enough that it has weight. Less in the air, and in water.</summary>
     const float Speeding = 28, Stopping = 40, AirControl = 0.3f;
 
+    /// <summary>Seconds left of a leap up out of the water, when the water doesn't hold them back (see <see cref="Breach"/>).</summary>
+    double _breaching;
+
+    /// <summary>A leap up out of the water: for a moment the water lets go, so the leap carries them up and out.</summary>
+    protected void Breach() => _breaching = 0.4;
+
     protected void FallAndSlide(double delta, Vector3 horizontal)
     {
+        _breaching -= delta;
         // The land here isn't built yet (right after a long jump across the map, or a wake at home): stand on top of where
         // it will be until it is, rather than fall through it.
         if (City.GroundBuilt?.Invoke(GlobalPosition) == false && City.Below?.Invoke(GlobalPosition) is null && City.Afloat?.Invoke(GlobalPosition) is null)
@@ -111,7 +118,7 @@ public abstract partial class Fighter : CharacterBody3D
             return;
         }
         var v = Velocity;
-        var swimming = Depth > SwimDepth - 0.1f;
+        var swimming = Depth > SwimDepth - 0.1f && _breaching <= 0;
         var want = new Vector2(horizontal.X, horizontal.Z) * (swimming ? 0.55f : 1);
         var now = new Vector2(v.X, v.Z);
         var rate = want.LengthSquared() > now.LengthSquared() * 0.98f && want.LengthSquared() > 0.01f ? Speeding : Stopping;
@@ -757,6 +764,8 @@ public partial class Enemy : Fighter
                 {
                     _wanderTimer = 3 + _rng.NextDouble() * 4;
                     _wanderTo = Home + new Vector3((float)(_rng.NextDouble() * 2 - 1) * Roam, 0, (float)(_rng.NextDouble() * 2 - 1) * Roam);
+                    var (wx, wz) = Northwood.OutOfTrunks(_wanderTo.X, _wanderTo.Z); // never into one of Hollowheart's great trees
+                    _wanderTo = _wanderTo with { X = (float)wx, Z = (float)wz };
                 }
                 var toWander = _wanderTo - GlobalPosition;
                 toWander.Y = 0;
