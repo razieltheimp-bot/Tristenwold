@@ -62,7 +62,6 @@ public partial class Main
 
     void TendUndying(double delta)
     {
-        StackPlates();
         TendMeteors(delta);
         if ((_undyingTick -= delta) > 0) return;
         _undyingTick = 1;

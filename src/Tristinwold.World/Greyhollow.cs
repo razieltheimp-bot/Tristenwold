@@ -54,6 +54,9 @@ public static class Greyhollow
     /// <summary>Where a little mine's door stands, north of the middle of the place.</summary>
     public static double SmallDoorZ(Settlement s) => s.Z - s.Radius * 0.1;
 
+    /// <summary>Where a country mine's stone mouth stands: in the cutting, set back so its back wall (5.8 m behind its front) is past the cutting's end and into the heap.</summary>
+    public static double SmallMouthZ(Settlement s) => SmallDoorZ(s) - 1.6;
+
     /// <summary>The same thing in small for a mine out in the country: a heap of rock behind the workings, with a level cutting in to its door.</summary>
     public static double SmallHill(Settlement s, double x, double z)
     {

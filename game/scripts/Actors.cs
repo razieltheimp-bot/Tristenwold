@@ -30,6 +30,7 @@ public abstract partial class Fighter : CharacterBody3D
         _shape = new CollisionShape3D();
         AddChild(_shape);
         Plate = new Label3D { Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 30, OutlineSize = 8, PixelSize = 0.008f };
+        Nameplates.Adopt(Plate);
         AddChild(Plate);
         Resize(height, radius);
     }
@@ -44,14 +45,13 @@ public abstract partial class Fighter : CharacterBody3D
         AddChild(Figure);
     }
 
-    /// <summary>Sets how big it is to bump into, and where its name floats.</summary>
+    /// <summary>Sets how big it is to bump into, and where its name is drawn (at the chest).</summary>
     protected void Resize(float height, float radius)
     {
         var h = Math.Max(height, radius * 2);
         _shape.Shape = new CapsuleShape3D { Radius = radius, Height = h };
         _shape.Position = new Vector3(0, h / 2, 0);
-        Plate.Position = new Vector3(0, height + 0.45f, 0);
-        Plate.PixelSize = 0.008f * Math.Max(1, height / 4);
+        Plate.Position = new Vector3(0, height * 0.78f, 0);
     }
 
     /// <summary>Turns the body to face where it's going.</summary>
@@ -446,21 +446,12 @@ public partial class Enemy : Fighter
         // The name and the bars float just over the figure's actual head (a golem built big, a dragon grown), and a
         // companion's show through its own body, so they're never lost behind it.
         var top = FigureTop();
-        if (top > 0) Plate.Position = Plate.Position with { Y = Math.Max(Plate.Position.Y, top + 0.4f) };
-        if (Bond is not null) { Plate.NoDepthTest = true; Plate.RenderPriority = 10; Plate.FontSize = 34; Plate.OutlineSize = 10; }
-        _plateY = Plate.Position.Y;
+        if (top > 0) Plate.Position = Plate.Position with { Y = Math.Max(Plate.Position.Y, top * 0.78f) };
+        if (Bond is not null) Plate.NoDepthTest = true; // (see Nameplates: a companion's name shows wherever it is)
     }
 
-    float _plateY = -1;
-
-    /// <summary>Where its plate floats, over its head: lifted when another's would be drawn over it (see Main.StackPlates).</summary>
+    /// <summary>Where its name is drawn: at its chest (see <see cref="Nameplates"/>).</summary>
     public Vector3 PlateAt => Plate.GlobalPosition;
-
-    public void LiftPlate(float by)
-    {
-        if (_plateY < 0) _plateY = Plate.Position.Y;
-        Plate.Position = Plate.Position with { Y = _plateY + by };
-    }
 
     /// <summary>How high the figure's meshes reach, in this body's own space (their rest shapes, through every transform down to them).</summary>
     float FigureTop()
@@ -552,15 +543,17 @@ public partial class Enemy : Fighter
 
     public void RefreshPlate()
     {
-        var bar = new string('|', (int)Math.Ceiling(Stats.Health / Stats.MaxHealth * 20));
-        Plate.Text = State == EnemyState.Dead ? (Bond is not null ? $"{Stats.Name} (down)" : "")
-            : Bond is not null ? $"{Stats.Name}, level {Bond.Level} {Bond.Stage}{(Bond.Hungry ? ", hungry" : "")}\n{bar}"
-            : Rider ? $"Dragon Knight {Stats.Name}\n{bar}"
-            : $"{Stats.Name}\n{bar}";
-        if (State != EnemyState.Dead && Frenzy > 0) Plate.Text = $"FRENZIED\n{Plate.Text}";
+        // The name, and what they are under it; their health is a bar drawn under that (see Nameplates).
+        Plate.Text = State == EnemyState.Dead ? (Bond is not null ? $"{Stats.Name}\ndown" : "")
+            : Bond is not null ? $"{Stats.Name}\nLv {Bond.Level} {Capital(Bond.Stage)}{(Bond.Hungry ? ", hungry" : "")}"
+            : Rider ? $"{Stats.Name}\nDragon Knight"
+            : Stats.Name;
+        if (State != EnemyState.Dead && Frenzy > 0) Plate.Text += "\nFRENZIED";
         else if (State != EnemyState.Dead && Infection > 0.05 && !Corrupted) Plate.Text += $"\nRift {Infection:P0}";
         Plate.Modulate = Frenzy > 0 ? new Color("#d890ff") : Leader is not null ? new Color("#a8e0a0") : Friendly || Kin ? new Color("#a8c8f0") : DeviantId is null && !Named ? new Color("#e8dcc4") : new Color("#ff7a5a");
     }
+
+    static string Capital(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
     public void Provoke(Player by)
     {
@@ -691,9 +684,47 @@ public partial class Enemy : Fighter
     /// <summary>Something else is moving it (a shapeshifter on the wing): it goes where it's put, and the ground has no say.</summary>
     public bool Carried { get; set; }
 
+    /// <summary>The hero this one lets walk through it (and walks through), indoors and underground.</summary>
+    Player? _givingWay;
+
+    /// <summary>
+    /// Indoors and underground, a hero's own company and the hero pass through one another: in a tunnel or a small room
+    /// a crowd of apprentices would otherwise wall their own leader in. Out under the sky they keep their bulk.
+    /// </summary>
+    void GiveWay()
+    {
+        var leader = Leader is { } l && IsInstanceValid(l) ? l : null;
+        if (leader != _seenThrough)
+        {
+            // Wherever they are, the hero's camera looks past their own company rather than pulling in to them.
+            if (_seenThrough is { } was && IsInstanceValid(was)) was.CameraSeesThrough(this, false);
+            leader?.CameraSeesThrough(this, true);
+            _seenThrough = leader;
+        }
+        var want = leader is not null && leader.GlobalPosition.Y > Cave.Threshold ? leader : null;
+        if (want == _givingWay) return;
+        if (_givingWay is { } old && IsInstanceValid(old)) { RemoveCollisionExceptionWith(old); old.RemoveCollisionExceptionWith(this); }
+        if (want is not null) { AddCollisionExceptionWith(want); want.AddCollisionExceptionWith(this); }
+        _givingWay = want;
+    }
+
+    /// <summary>Whether this one and its hero pass through each other just now (for tests).</summary>
+    public bool GivingWay => _givingWay is not null;
+
+    Player? _seenThrough;
+
+    public override void _ExitTree()
+    {
+        if (_givingWay is { } old && IsInstanceValid(old)) old.RemoveCollisionExceptionWith(this);
+        _givingWay = null;
+        if (_seenThrough is { } was && IsInstanceValid(was)) was.CameraSeesThrough(this, false);
+        _seenThrough = null;
+    }
+
     public override void _PhysicsProcess(double delta)
     {
         if (Hero is not null) return; // another player's hero: their own game moves them
+        GiveWay();
         if (Carried && State != EnemyState.Dead) return;
         if (State == EnemyState.Dead)
         {

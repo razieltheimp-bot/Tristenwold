@@ -12,7 +12,8 @@ namespace Tristinwold.Game;
 public static class Buildings
 {
     /// <summary>A built variant: its mesh and the boxes to collide with.</summary>
-    sealed record Design(ArrayMesh Mesh, List<(Vector3 Centre, Vector3 Size)> Solids, float Height);
+    /// <param name="Hulls">Solid shapes that aren't upright boxes: the roofs, so they can be climbed onto and stood on.</param>
+    sealed record Design(ArrayMesh Mesh, List<(Vector3 Centre, Vector3 Size)> Solids, float Height, List<Vector3[]> Hulls);
 
     static readonly Dictionary<string, Design> Cache = [];
     const int Variants = 6;
@@ -31,6 +32,8 @@ public static class Buildings
         body.AddChild(new MeshInstance3D { Mesh = design.Mesh });
         foreach (var (centre, size) in design.Solids.Where(_ => solid))
             body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size }, Position = centre });
+        foreach (var hull in design.Hulls.Where(_ => solid))
+            body.AddChild(new CollisionShape3D { Shape = new ConvexPolygonShape3D { Points = hull } });
         body.SetMeta("height", design.Height * scale);
         body.SetMeta("seed", seed);
         body.SetMeta("kind", kind);
@@ -96,6 +99,16 @@ public static class Buildings
             var step = body.ToGlobal(new Vector3(0, 0, front + 0.6f));
             if (new Vector2(step.X - pos.X, step.Z - pos.Z).Length() < within && Mathf.Abs(step.Y - pos.Y) < 4) yield return step;
         }
+    }
+
+    /// <summary>What a building's door opens onto from now on (Tristinwold's keep, where its council sits); and where its doorstep is.</summary>
+    public static Vector3? Rehouse(Node3D building, string inside, int seed)
+    {
+        var i = Doors.FindIndex(d => d.Body == building);
+        if (i < 0) return null;
+        var front = Doors[i].Front;
+        Doors[i] = (building, inside, seed, front);
+        return building.ToGlobal(new Vector3(0, 0, front + 1.6f));
     }
 
     /// <summary>Boards a building's door up: nobody goes in now.</summary>
@@ -644,6 +657,11 @@ public static class Buildings
 
         public void Solid(Vector3 centre, Vector3 size) => _solids.Add((centre, size));
 
+        readonly List<Vector3[]> _hulls = [];
+
+        /// <summary>Something solid that isn't an upright box (a roof): the smallest solid that holds all these points, where they're drawn.</summary>
+        public void Hull(params Vector3[] points) => _hulls.Add([.. points.Select(p => p + _offset)]);
+
         SurfaceTool Tool(Surface s)
         {
             if (_tools.TryGetValue(s, out var t)) return t;
@@ -875,6 +893,10 @@ public static class Buildings
                 Beam(Rot(eave + new Vector3(0, -0.07f, 0), yaw), Rot(eave + new Vector3(2 * halfL, -0.07f, 0), yaw), 0.16f, Surface.Timber);
             }
             Beam(Rot(new Vector3(-halfL, ridge + 0.05f, 0), yaw), Rot(new Vector3(halfL, ridge + 0.05f, 0), yaw), 0.22f, roof == Surface.Thatch ? Surface.Thatch : Surface.Timber);
+            // The roof's solid, eaves to ridge, so it can be climbed onto and stood on.
+            var (e0, e1) = (span / 2 + overhang, -(span / 2 + overhang));
+            Hull(Rot(new Vector3(-halfL, eaveY, e0), yaw), Rot(new Vector3(halfL, eaveY, e0), yaw), Rot(new Vector3(-halfL, eaveY, e1), yaw), Rot(new Vector3(halfL, eaveY, e1), yaw),
+                Rot(new Vector3(-halfL, ridge + 0.1f, 0), yaw), Rot(new Vector3(halfL, ridge + 0.1f, 0), yaw));
             foreach (var e in new[] { 1f, -1f })
             {
                 // Bargeboards up the gable edges, and the gable wall itself.
@@ -896,6 +918,7 @@ public static class Buildings
             var across = new Vector3(0, 0, width);
             Quad(roof, high, low - high, across, Vector3.Up);
             Quad(Surface.Planks, high + Vector3.Down * 0.12f, low - high, across, Vector3.Down);
+            Hull(high, high + across, low, low + across, high + Vector3.Down * 0.15f, high + across + Vector3.Down * 0.15f, low + Vector3.Down * 0.15f, low + across + Vector3.Down * 0.15f);
         }
 
         public void Chimney(Vector3 at, float top, float size = 0.75f)
@@ -926,6 +949,7 @@ public static class Buildings
             var h = s / 2;
             Vector3[] c = [new(-h, baseY, h), new(h, baseY, h), new(h, baseY, -h), new(-h, baseY, -h)];
             var top = new Vector3(0, apex, 0);
+            Hull([.. c, top]);
             for (var i = 0; i < 4; i++)
             {
                 var a = c[i];
@@ -970,6 +994,7 @@ public static class Buildings
         public void Cone(float radius, float y0, float apex, Surface roof, int sides)
         {
             var slant = new Vector2(radius, apex - y0).Length();
+            Hull([.. Enumerable.Range(0, sides).Select(i => new Vector3(Mathf.Sin(i * Mathf.Tau / sides) * radius, y0, Mathf.Cos(i * Mathf.Tau / sides) * radius)), new Vector3(0, apex, 0)]);
             for (var i = 0; i < sides; i++)
             {
                 var a0 = i * Mathf.Tau / sides;
@@ -991,7 +1016,7 @@ public static class Buildings
                 tool.Commit(mesh);
                 mesh.SurfaceSetMaterial(mesh.GetSurfaceCount() - 1, BuildingMaterials.For(surface));
             }
-            return new Design(mesh, [.. _solids], _height);
+            return new Design(mesh, [.. _solids], _height, [.. _hulls]);
         }
     }
 }

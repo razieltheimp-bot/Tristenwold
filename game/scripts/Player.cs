@@ -120,7 +120,10 @@ public partial class Player : Fighter
         Plate.Text = "";
         _pivot = new Node3D { Position = new Vector3(0, 1.6f * size, 0) };
         AddChild(_pivot);
-        _arm = new SpringArm3D { SpringLength = 5 * Math.Max(1, size), Position = new Vector3(0.6f, 0, 0) };
+        // The camera on a round-ended arm that keeps a hand's breadth off anything solid behind the hero, so it pulls in
+        // close rather than going into a wall (a thin ray let its near edge into the stone).
+        _arm = new SpringArm3D { SpringLength = 5 * Math.Max(1, size), Position = new Vector3(Shoulder, 0, 0), Shape = new SphereShape3D { Radius = 0.3f }, Margin = 0.2f };
+        _arm.AddExcludedObject(GetRid());
         _pivot.AddChild(_arm);
         _arm.AddChild(Camera = new Camera3D { Current = true, Far = 1500 });
         if (DisplayServer.GetName() != "headless") Input.MouseMode = Input.MouseModeEnum.Captured;
@@ -130,6 +133,43 @@ public partial class Player : Fighter
     /// <summary>Where the hero's sitting (a wagon's box, a ship's wheel), seen through their own eyes. They go where it goes.</summary>
     public Func<Vector3>? Seat { get; private set; }
     (float Length, Vector3 At) _armWas;
+
+    /// <summary>How far to the right of the hero's head the camera's arm starts (over the shoulder).</summary>
+    const float Shoulder = 0.6f;
+
+    /// <summary>
+    /// With a wall at the hero's right, or behind and to the right at a slant, the arm's ball would start inside it, and a
+    /// ball that starts inside a wall doesn't see that wall at all: so the same ball is swept out from the hero's head to
+    /// the shoulder first, and the shoulder comes in as far as it has to.
+    /// </summary>
+    void KeepCameraClear()
+    {
+        if (Seat is not null || _arm.SpringLength <= 0 || !_pivot.IsInsideTree()) return;
+        var sweep = new PhysicsShapeQueryParameters3D
+        {
+            Shape = _arm.Shape,
+            Transform = new Transform3D(Basis.Identity, _pivot.GlobalPosition),
+            Motion = _pivot.GlobalBasis.X.Normalized() * Shoulder,
+            CollisionMask = 1,
+            Exclude = [GetRid()],
+            Margin = 0.05f,
+        };
+        var safe = GetWorld3D().DirectSpaceState.CastMotion(sweep);
+        _arm.Position = _arm.Position with { X = Shoulder * (safe.Length > 0 ? safe[0] : 1) };
+    }
+
+    /// <summary>The camera looks past one of the hero's own company standing behind them, instead of pulling in to it.</summary>
+    public void CameraSeesThrough(CollisionObject3D body, bool through)
+    {
+        if (through) _arm.AddExcludedObject(body.GetRid());
+        else _arm.RemoveExcludedObject(body.GetRid());
+    }
+
+    /// <summary>Where the camera's arm starts and how far it reaches just now (for the self-test).</summary>
+    public (Vector3 Shoulder, float Reach) CameraArm => (_arm.GlobalPosition, _arm.GetHitLength());
+
+    /// <summary>Turns the view to face this way (for the self-test).</summary>
+    public void LookToward(float yaw, float pitch) { Rotation = Rotation with { Y = yaw }; _pivot.Rotation = new Vector3(pitch, 0, 0); }
 
     public void SitAt(Func<Vector3> seat)
     {
@@ -328,6 +368,7 @@ public partial class Player : Fighter
 
     public override void _PhysicsProcess(double delta)
     {
+        KeepCameraClear();
         TendSummons(delta);
         if (Downed)
         {

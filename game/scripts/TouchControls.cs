@@ -13,6 +13,11 @@ public partial class TouchControls : Control
     sealed record Pad(string Action, string Label, Func<Vector2, Vector2> Centre, float Radius, bool Toggle = false);
 
     public Action<Vector2>? Look { get; set; }
+
+    /// <summary>Places on the screen that scroll instead (the quest panel): a finger put down there drags this.</summary>
+    public Func<Vector2, bool>? ScrollsHere { get; set; }
+    public Action<Vector2>? Scroll { get; set; }
+    int _scrollFinger = -1;
     public Func<string, string?>? LabelFor { get; set; } // lets the game relabel a button (the spell's element, say)
     public Func<string, bool>? Lit { get; set; }        // glowing buttons: limit ready, something to talk to
 
@@ -89,6 +94,7 @@ public partial class TouchControls : Control
             _stickFinger = finger;
             _stickBase = _stickAt = at;
         }
+        else if (_scrollFinger < 0 && ScrollsHere?.Invoke(at) == true) _scrollFinger = finger;
         else if (_lookFinger < 0) _lookFinger = finger;
         QueueRedraw();
     }
@@ -103,6 +109,7 @@ public partial class TouchControls : Control
             Axis("move_back", "move_forward", v.Y);
             QueueRedraw();
         }
+        else if (finger == _scrollFinger) Scroll?.Invoke(relative);
         else if (finger == _lookFinger) Look?.Invoke(relative * LookSpeed);
     }
 
@@ -114,6 +121,7 @@ public partial class TouchControls : Control
             foreach (var a in new[] { "move_left", "move_right", "move_forward", "move_back" }) Input.ActionRelease(a);
         }
         if (finger == _lookFinger) _lookFinger = -1;
+        if (finger == _scrollFinger) _scrollFinger = -1;
         if (_held.Remove(finger, out var pad)) Input.ActionRelease(pad.Action);
         QueueRedraw();
     }
@@ -130,7 +138,7 @@ public partial class TouchControls : Control
     {
         foreach (var finger in _held.Keys.ToList()) Up(finger);
         if (_stickFinger >= 0) Up(_stickFinger);
-        _lookFinger = -1;
+        _lookFinger = _scrollFinger = -1;
     }
 
     public override void _Process(double delta) => QueueRedraw();

@@ -15,7 +15,8 @@ public partial class Person : StaticBody3D
     /// <summary>How they look, if not as their trade suggests (a guild teacher in their class's kit).</summary>
     public string? Look { get; init; }
     public Body Figure { get; private set; } = null!;
-    readonly Label3D _plate = new() { Position = new Vector3(0, 2.35f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 28, OutlineSize = 8, PixelSize = 0.006f, Modulate = new Color("#a8d8a0") };
+    // (at the chest: see Nameplates)
+    readonly Label3D _plate = new() { Position = new Vector3(0, 1.4f, 0), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 28, OutlineSize = 8, PixelSize = 0.006f, Modulate = new Color("#a8d8a0") };
 
     /// <summary>What someone of this trade wears and carries.</summary>
     public static string LookFor(Npc npc, bool captive = false)
@@ -45,6 +46,7 @@ public partial class Person : StaticBody3D
             ?? Tristinwold.Game.Body.For(look);
         AddChild(Figure);
         AddChild(new CollisionShape3D { Shape = new CapsuleShape3D { Radius = 0.38f, Height = 1.75f }, Position = new Vector3(0, 0.88f, 0) });
+        Nameplates.Adopt(_plate);
         AddChild(_plate);
         RotationDegrees = new Vector3(0, (float)(Noise.Unit((ulong)WorldGen.StableHash(Npc.Id)) * 360), 0);
         Mark(false);
@@ -657,7 +659,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
     /// A generated building at an offset from the settlement's centre, front door towards the centre.
     /// Returns null (and builds nothing) if another building already stands there.
     /// </summary>
-    Node3D? Building(Node3D parent, Settlement s, string kind, string colour, double dx, double dz, float yaw, float scale = 7.5f, string? name = null, string? inside = null)
+    Node3D? Building(Node3D parent, Settlement s, string kind, string colour, double dx, double dz, float yaw, float scale = 7.5f, string? name = null, string? inside = null, bool stay = false)
     {
         kind = Buildings.KindFor(kind);
         var room = kind switch { "keep" => 16f, "church" => 12f, "longhall" or "tavern" or "barn" => 8f, "well" => 2.5f, _ => 6f };
@@ -666,7 +668,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
         if (_lots.Any(l => l.At.DistanceTo(new Vector2((float)(s.X + dx), (float)(s.Z + dz))) < l.Room + room)) return null; // taken
         // On a slope, a step or two to where the ground's flatter (but no nearer anything else that's there).
         var (bx, bz, rise) = (dx, dz, float.MaxValue);
-        foreach (var (ox, oz) in Steps)
+        foreach (var (ox, oz) in stay ? Here : Steps) // (something set into a hillside stays where it was meant to go, slope or no slope)
         {
             var spot = new Vector2((float)(s.X + dx + ox), (float)(s.Z + dz + oz));
             if (_lots.Any(l => l.At.DistanceTo(spot) < l.Room + room) || UnderHollowheart(spot, room)) continue;
@@ -689,6 +691,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
     readonly List<Node3D> _raised = [];
 
     /// <summary>Where a building might step to off a slope (or out from under Hollowheart's decks): its own spot first, then a little way off, then further.</summary>
+    static readonly (double X, double Z)[] Here = [(0, 0)];
     static readonly (double X, double Z)[] Steps = [(0, 0), .. new[] { 3.0, 6.0, 9.0 }.SelectMany(r => Enumerable.Range(0, 8).Select(i => (r * Math.Cos(i * Math.PI / 4), r * Math.Sin(i * Math.PI / 4))))];
 
     /// <summary>In among Hollowheart's great trees: in their roots, or under the bridges that run between their decks.</summary>
@@ -881,7 +884,10 @@ public partial class Places(Main main, WorldGen world) : Node3D
             var scale = path.StartsWith("ph:") ? 1f : path.StartsWith("dungeon") ? 0.5f : 5f;
             var a = rng.NextDouble() * Mathf.Tau;
             var r = s.Radius * (0.15 + rng.NextDouble() * spread);
-            Prop(parent, s, path, Math.Cos(a) * r, Math.Sin(a) * r, scale, (float)rng.NextDouble() * Mathf.Tau);
+            var turn = (float)rng.NextDouble() * Mathf.Tau;
+            var spot = new Vector2((float)(s.X + Math.Cos(a) * r), (float)(s.Z + Math.Sin(a) * r));
+            if (_lots.Any(l => l.At.DistanceTo(spot) < l.Room + 1)) continue; // not jammed against a building (or into a mine's mouth)
+            Prop(parent, s, path, Math.Cos(a) * r, Math.Sin(a) * r, scale, turn);
         }
     }
 
@@ -966,6 +972,9 @@ public partial class Places(Main main, WorldGen world) : Node3D
         }
     }
 
+    /// <summary>The council chamber in Tristinwold's keep (its seed, standing in for a hall's).</summary>
+    public const int KeepCouncil = 7099;
+
     /// <summary>The council chamber: a long hall out past where the clerk stands, its door to the town, its table inside. Where its door is, or null if there's no room for it.</summary>
     (double X, double Z)? CouncilChamber(Node3D parent, Settlement s, Npc clerk)
     {
@@ -977,16 +986,15 @@ public partial class Places(Main main, WorldGen world) : Node3D
         Node3D? hall = null;
         if (s.Id == "city:tristinwold")
         {
-            // On the Crown, by the castle, its door out to the ring.
-            // Far enough out from the castle (as it's turned) that the hall's back doesn't run into it.
-            var (cw, cb, cf) = Buildings.Extent("castle", 0, Surface.ClayTile);
-            var (cx, cz) = (new Vector2(Mathf.Cos(1.57f), -Mathf.Sin(1.57f)), new Vector2(Mathf.Sin(1.57f), Mathf.Cos(1.57f)));
-            var u = new Vector2((float)ux, (float)uz);
-            var castleReach = Mathf.Abs(u.Dot(cx)) * cw + Mathf.Max(0, u.Dot(cz)) * cf + Mathf.Max(0, -u.Dot(cz)) * cb;
-            var reach = Mathf.Max(17, castleReach + Buildings.Extent("longhall", 7100, Surface.Slate, 0.9f).Back + 1.5f);
-            var at = new Vector3((float)(s.X + ux * reach), 0, (float)(s.Z + uz * reach));
-            hall = Buildings.Place(parent, "longhall", at with { Y = City.FloorAt(at) }, Mathf.Atan2((float)ux, (float)uz), 7100, Surface.Slate, 0.9f, inside: "council");
-            (ux, uz) = (-ux, -uz);
+            // Tristinwold's council sits in the keep on the Crown: its great door opens onto the council chamber, and the
+            // clerk stands on its step.
+            var keep = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>()
+                .Where(n => n.HasMeta("kind") && n.GetMeta("kind").AsString() == "castle")
+                .MinBy(n => new Vector2(n.GlobalPosition.X - (float)s.X, n.GlobalPosition.Z - (float)s.Z).Length());
+            if (keep is null || Buildings.Rehouse(keep, "council", KeepCouncil) is not { } step) return null;
+            main.CouncilChambers[KeepCouncil] = s.Id;
+            Label(parent, step + new Vector3(0, 5.5f, 0), $"The Council of {s.Name}", 0.02f);
+            return (step.X, step.Z);
         }
         else
             foreach (var (turn, reach) in new[] { (0.0, 8.0), (0.5, 9.0), (-0.5, 9.0), (1.0, 11.0), (-1.0, 11.0), (Math.PI, 8.0) })
@@ -1192,7 +1200,9 @@ public partial class Places(Main main, WorldGen world) : Node3D
 
     void Mine(Node3D parent, Settlement s, Rng rng, string colour, Built b)
     {
-        if (Building(parent, s, "mine_portal", colour, 0, -s.Radius * 0.1, 0, 9) is { } mouth) // a way down, for anyone who'll take it
+        // A way down, for anyone who'll take it: set into the cutting in the mine's heap, and far enough back that its back
+        // is in the rock, with no gap behind it for anyone to wander into.
+        if (Building(parent, s, "mine_portal", colour, 0, Greyhollow.SmallMouthZ(s) - s.Z, 0, 9, stay: true) is { } mouth)
         {
             var seed = (int)Math.Abs(WorldGen.StableHash(s.Id) % 1_000_000);
             main.Shafts[seed] = s;
@@ -1206,7 +1216,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
         Cottages(parent, s, colour, (1.1, 0.9), (-1.1, 0.9));
         TownShop(b, parent, s, TownTrade.Mine, colour, 0.6, s.Radius * 0.7, Building(parent, s, "cottage", colour, s.Radius * 0.6, s.Radius * 0.4, -0.6f, 6.5f));
         Building(parent, s, "tavern", colour, -s.Radius * 0.58, s.Radius * 0.28, 0.9f, 6); // the miners' tap
-        Prop(parent, s, "medieval/props/resource_stone.gltf", 4, -6, 6);
+        Prop(parent, s, "medieval/props/resource_stone.gltf", 7.5, Greyhollow.SmallMouthZ(s) - s.Z + 4, 6); // the spoil, out beside the mouth on the town side
         Prop(parent, s, "medieval/props/wheelbarrow.gltf", 2, 5, 5, 0.8f);
         Clutter(parent, s, rng, 3, 0.4);
     }

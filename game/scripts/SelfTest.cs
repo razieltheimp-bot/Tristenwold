@@ -46,6 +46,10 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--youths-only")) { await YouthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--heartwood-only")) { await HeartwoodTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--swimjump-only")) { await SwimJumpTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--minemouth-only")) { await MineMouthTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--partyway-only")) { await PartyWayTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--plates-only")) { await PlatesTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--camera-only")) { await CameraWallTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ride-only")) { await TheRide(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--forge-only")) { await TheForge(); Finish(0); return; }
@@ -3000,6 +3004,10 @@ public partial class SelfTest(Main main) : Node
         await YouthTest();
         await HeartwoodTest();
         await SwimJumpTest();
+        await MineMouthTest();
+        await PartyWayTest();
+        await PlatesTest();
+        await CameraWallTest();
         await FleetTest();
         await HeroFightTest();
         await SleeperTest();
@@ -3404,6 +3412,334 @@ public partial class SelfTest(Main main) : Node
         Input.ActionRelease("jump");
         for (var i = 0; i < 90; i++) { await Frames(1); top = Math.Max(top, p.GlobalPosition.Y); fastest = Math.Max(fastest, p.Velocity.Y); }
         Check(top - start > 2.2f, $"a jump from the water lifts the hero {top - start:0.0} m (enough for a dock's edge; up at {fastest:0.0} m/s, swimming as it began: {wasSwimming})");
+    }
+
+    /// <summary>
+    /// With their back to a wall (at the Exchange's gate, along the inner wall), the camera pulls in close to the hero
+    /// instead of going into the stone, whichever way they look. And a house's roof is solid: a hero put on it stands on it.
+    /// </summary>
+    async Task CameraWallTest()
+    {
+        var p = main.PlayerNode;
+        var space = p.GetWorld3D().DirectSpaceState;
+        var spots = new List<Vector3> { new(60, 0, 3) };
+        foreach (var deg in new[] { 30f, 120f, 250f, 320f })
+        {
+            var a = Mathf.DegToRad(deg);
+            spots.Add(new Vector3(Mathf.Cos(a) * (City.InnerRadius - 0.9f), 0, Mathf.Sin(a) * (City.InnerRadius - 0.9f)));
+        }
+        var bad = new List<string>();
+        var looks = 0;
+        foreach (var spot in spots)
+        {
+            await Teleport(spot);
+            await Frames(10);
+            for (var turn = 0; turn < 12; turn++)
+                foreach (var pitch in new[] { -0.35f, 0.2f })
+                {
+                    p.LookToward(turn * Mathf.Tau / 12, pitch);
+                    await Frames(4);
+                    looks++;
+                    // The camera hangs off an arm from over the hero's shoulder: nothing solid at the camera, and nothing
+                    // between it and the shoulder, or between the shoulder and the hero's head.
+                    var cam = p.Camera.GlobalPosition;
+                    var head = p.GlobalPosition + Vector3.Up * 1.6f * (p.Appearance?.Size ?? 1);
+                    var shoulder = p.CameraArm.Shoulder;
+                    var inside = space.IntersectPoint(new PhysicsPointQueryParameters3D { Position = cam, Exclude = [p.GetRid()] }, 1).Count > 0;
+                    string? Through(Vector3 a, Vector3 b)
+                    {
+                        var hit = space.IntersectRay(PhysicsRayQueryParameters3D.Create(a, b, 1, [p.GetRid()]));
+                        return hit.Count == 0 ? null : (hit["collider"].As<Node>()?.GetMeta("kind", "").AsString() is { Length: > 0 } k ? k : hit["collider"].As<Node>()?.Name.ToString());
+                    }
+                    var wall = Through(shoulder, cam) ?? Through(head, shoulder);
+                    if (inside || wall is not null) bad.Add($"({spot.X:0},{spot.Z:0}) facing {turn * 30}°{(inside ? " inside" : $" through {wall}")} (arm {p.CameraArm.Reach:0.0} m)");
+                }
+        }
+        Check(bad.Count == 0, $"with a wall behind or beside the hero, the camera stays out of the stone ({looks} looks; wrong at {bad.Count}: {string.Join("; ", bad.Take(5))})");
+
+        // A house roof in the city: solid from above, and a hero put up there stays up there.
+        await Teleport(new Vector3(-70, 0, 20));
+        await Frames(10);
+        var house = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>()
+            .Where(n => n.HasMeta("kind") && n.GetMeta("kind").AsString() is "house" or "cottage")
+            .MinBy(n => n.GlobalPosition.DistanceTo(p.GlobalPosition));
+        Check(house is not null, "a house nearby");
+        if (house is null) return;
+        var foot = house.GlobalPosition;
+        var down = PhysicsRayQueryParameters3D.Create(foot + Vector3.Up * 40, foot, 1, [p.GetRid()]);
+        var roof = space.IntersectRay(down);
+        var roofY = roof.Count > 0 ? roof["position"].AsVector3().Y - foot.Y : 0;
+        Check(roofY > 3.5f && roof["collider"].As<Node>() == house, $"its roof is solid ({roofY:0.0} m up)");
+        p.GlobalPosition = foot + Vector3.Up * (roofY + 0.6f);
+        p.Velocity = Vector3.Zero;
+        await Frames(90);
+        var up = p.GlobalPosition.Y - foot.Y;
+        Check(up > 3.2f, $"and a hero put on it stands on it ({up:0.0} m up after a moment)");
+    }
+
+    /// <summary>
+    /// Names drawn small and flat on the screen at the chest, the same size near or far; where two would print over each
+    /// other the nearer one stays and the other fades back; right up close a name fades out; the thin health bar shows only
+    /// on the hurt or the fighting. And the quests and news hang in a narrow column under the mini-map, folding what won't
+    /// fit, clear of the mini-map and the party list at every size of window and with the touch controls up.
+    /// </summary>
+    async Task PlatesTest()
+    {
+        var (p, hud) = (main.PlayerNode, main.HudNode);
+        await Teleport(new Vector3(-150, 0, -120));
+        await Frames(10);
+        var camera = GetViewport().GetCamera3D();
+        var ahead = (-camera.GlobalBasis.Z with { Y = 0 }).Normalized();
+        var side = new Vector3(ahead.Z, 0, -ahead.X);
+        var placed = new List<Enemy>();
+        Enemy Stand(float metres, float across = 0)
+        {
+            var at = camera.GlobalPosition + ahead * metres + side * across;
+            var e = Enemy.Create(Bestiary.Get("bandit"), at with { Y = City.FloorAt(at) + 0.05f });
+            main.AddEnemy(e);
+            e.Carried = true; // stands where it's put
+            placed.Add(e);
+            return e;
+        }
+        Nameplates.Shown? PlateOf(Enemy e) => hud.Plates.Plates.Cast<Nameplates.Shown?>().FirstOrDefault(s => s!.Value.Label.GetParent() == e);
+
+        var near = Stand(6, -3);
+        var far = Stand(26, 6);
+        await Frames(40);
+        var (a, b) = (PlateOf(near), PlateOf(far));
+        Check(a is not null && b is not null, $"names drawn for one near and one far ({hud.Plates.Plates.Count} drawn)");
+        if (a is null || b is null) return;
+        Check(Mathf.Abs(a.Value.Box.Size.Y - b.Value.Box.Size.Y) < 0.5f && a.Value.Box.Size.Y < 40, $"the same small size near and far ({a.Value.Box.Size.Y:0} and {b.Value.Box.Size.Y:0} px high)");
+        var chest = near.PlateAt.Y - near.GlobalPosition.Y;
+        Check(chest > 0.8f && chest < 1.6f, $"at the chest, not floating over the head ({chest:0.00} m up)");
+        Check(a.Value.Health is null, "no health bar on someone unhurt and not fighting");
+        near.Stats.Lose(near.Stats.MaxHealth * 0.6);
+        await Frames(3);
+        Check(PlateOf(near)?.Health is > 0.3f and < 0.5f, $"a thin bar once they're hurt ({PlateOf(near)?.Health:0.00})");
+
+        // One right behind another: the nearer stays, the other fades back.
+        var front = Stand(9);
+        var behind = Stand(10);
+        var centre = hud.Plates.GetViewportRect().GetCenter();
+        await Frames(60);
+        var (f, k) = (PlateOf(front), PlateOf(behind));
+        Check(f is { Alpha: > 0.9f } && k is { Alpha: < 0.35f }, $"two in a line: the nearer full ({f?.Alpha:0.00}), the one behind faded back ({k?.Alpha:0.00})");
+        Check(f is not null && Mathf.Abs(f.Value.At.X - centre.X) < 40, $"and drawn where they stand on the screen ({f?.At.X:0} across, the middle at {centre.X:0})");
+        // Right up against the camera: no name at all.
+        var close = Stand(1.2f);
+        await Frames(40);
+        Check(PlateOf(close) is null or { Alpha: < 0.05f }, $"right up close, the name fades out ({PlateOf(close)?.Alpha:0.00})");
+        foreach (var e in placed.Where(IsInstanceValid)) e.QueueFree();
+        await Frames(2);
+
+        // The quest panel: one short line each, the same thing once, in order, six in view and the rest a scroll away.
+        var (cut, at) = Hud.Shorten("Dock work: carry the crate to the warehouse by the east gate (2.9 km north-west). 3 to go, 4 crowns each.");
+        Check(cut == "Dock work: carry the crate to the warehouse by the east gate" && at == "2.9 km NW", $"a long line cut to one short one (\"{cut}\", \"{at}\")");
+        var lines = new List<string>
+        {
+            "Starter work: the caravan yard by the west gate is hiring guards for the city's caravans. Ask Garrick Wain (310 m west)",
+            "Bandit trouble: recover an heirloom sword (1.2 km east)",
+            "Raid: Bitterwell Fort, awake (2.9 km north-west)",
+            "The Rings of Tristinwold: find the second ring (4.0 km south)",
+            "Bandit trouble: recover an heirloom sword (1.2 km east)",
+            "Deviant: the Pale Stag (800 m north)",
+        };
+        lines.AddRange(Enumerable.Range(1, 6).Select(i => $"Quest {i}: go and see someone a long way off about something that matters a great deal (2.{i} km north)"));
+        hud.Track(lines, tracked: lines[3]);
+        var rows = hud.QuestRows;
+        Check(rows.Count == 11 && rows.Count(r => r.Text.StartsWith("Bandit trouble")) == 1 && rows.First(r => r.Text.StartsWith("Bandit trouble")).Count == 2,
+            $"twelve lines, the heirloom sword twice: eleven rows, the sword once (×{rows.FirstOrDefault(r => r.Text.StartsWith("Bandit trouble")).Count})");
+        Check(rows[0].Kind == Hud.QuestRow.Tracked && rows[0].Text.StartsWith("The Rings") && rows[1].Kind == Hud.QuestRow.Threat && rows[2].Kind == Hud.QuestRow.Threat && rows[^1].Kind == Hud.QuestRow.Work,
+            $"tracked first, then the threats, then quests, then work ({string.Join(" | ", rows.Select(r => $"{r.Kind}:{r.Text[..Math.Min(14, r.Text.Length)]}"))})");
+        Check(hud.QuestsTitle == "▾ Quests & news (11)", $"the header counts them (\"{hud.QuestsTitle}\")");
+        Check(hud.Tracked.Count() == 11 && hud.Tracked.First() == lines[3], "and the whole of each is still there for the asking");
+        hud.Party(Enumerable.Range(1, 14).Select(i => $"Apprentice {i}  lv 4  ||||||||||"));
+        hud.Relayout();
+        await Frames(2);
+        Check(hud.QuestRowsInView is >= 5 and <= 6, $"five or six rows in view ({hud.QuestRowsInView})");
+        hud.ScrollQuests(3);
+        await Frames(2);
+        var scrolled = hud.QuestScroll;
+        hud.ScrollQuests(-10);
+        await Frames(2);
+        Check(scrolled > 20 && hud.QuestScroll == 0, $"and the wheel scrolls it ({scrolled} px down, then back to {hud.QuestScroll})");
+        var open = hud.ColumnBox.Size.Y;
+        hud.FoldQuests();
+        var folded = hud.ColumnBox.Size.Y;
+        Check(hud.QuestsFolded && folded < 30 && folded < open && hud.QuestsTitle == "▸ Quests & news (11)", $"the ▾ folds it to one line ({open:0} px to {folded:0} px, \"{hud.QuestsTitle}\")");
+        hud.FoldQuests();
+        Check(!hud.QuestsFolded && Mathf.Abs(hud.ColumnBox.Size.Y - open) < 1, "and opens it again");
+
+        var window = GetWindow();
+        var size = window.Size;
+        foreach (var (w, h, touch) in new[] { (1280, 720, false), (1920, 1080, false), (1024, 768, false), (2400, 1080, true), (1280, 720, true) })
+        {
+            window.Size = new Vector2I(w, h);
+            hud.TouchEnabled = touch;
+            await Frames(3);
+            hud.Track(lines);
+            hud.Party(Enumerable.Range(1, 14).Select(i => $"Apprentice {i}  lv 4  ||||||||||"));
+            hud.Relayout();
+            var (col, map, party) = (hud.ColumnBox, hud.MapBox, hud.PartyBox);
+            var where = $"{w}x{h}{(touch ? " touch" : "")}: map {map.Position.X:0},{map.Position.Y:0} {map.Size.X:0}x{map.Size.Y:0}, quests {col.Position.X:0},{col.Position.Y:0} {col.Size.X:0}x{col.Size.Y:0}, party {party.Position.Y:0}-{party.End.Y:0}";
+            Check(Mathf.Abs(col.Position.X - map.Position.X) < 1 && Mathf.Abs(col.Size.X - map.Size.X) < 1 && col.Position.Y >= map.End.Y, $"the quests hang under the mini-map, as wide as it ({where})");
+            Check(!col.Intersects(map) && !col.Intersects(party) && !party.Intersects(map) && col.Size.Y > 30, $"and mini-map, quests and party never overlap ({where})");
+        }
+        window.Size = size;
+        hud.TouchEnabled = main.TouchMode;
+
+        // In a fight the column steps back to half, and comes back after.
+        hud.InFight = true;
+        hud.Relayout(1);
+        var fighting = hud.ColumnStrength;
+        hud.InFight = false;
+        hud.Relayout(1);
+        Check(Mathf.Abs(fighting - 0.5f) < 0.01f && hud.ColumnStrength > 0.99f, $"in a fight the quests fade to half ({fighting:0.00}), and back after ({hud.ColumnStrength:0.00})");
+    }
+
+    /// <summary>
+    /// A big company down a mine: indoors and underground the hero walks straight through their own apprentices (and they
+    /// through the hero), so a crowd in a tunnel can't wall them in. Out under the sky the company keeps its bulk.
+    /// </summary>
+    async Task PartyWayTest()
+    {
+        var p = main.PlayerNode;
+        var crowd = new List<Enemy>();
+        Enemy Follower(Vector3 at)
+        {
+            var e = Enemy.Create(Bestiary.Get("bandit"), at with { Y = p.GlobalPosition.Y });
+            e.Leader = p;
+            main.AddEnemy(e);
+            crowd.Add(e);
+            return e;
+        }
+        // Whether the hero, moving that way, would run into one of their own.
+        bool Blocked(Vector3 dir)
+        {
+            var hit = new KinematicCollision3D();
+            var from = p.GlobalTransform with { Origin = p.GlobalPosition + Vector3.Up * 0.15f };
+            if (!p.TestMove(from, dir * 3, hit, maxCollisions: 6)) return false;
+            return Enumerable.Range(0, hit.GetCollisionCount()).Any(i => hit.GetCollider(i) is Enemy e && crowd.Contains(e));
+        }
+
+        // Out in the open: one of them stood in the way is in the way.
+        var mine = main.World.SettlementsNear(0, 0, 4000).First(s => s.Kind == SettlementKind.Mine && !s.Hostile);
+        await Teleport(new Vector3((float)mine.X + 4, 0, (float)mine.Z + 8));
+        await Until(() => main.PlacesNode.IsBuilt(mine.Id), 8);
+        var one = Follower(p.GlobalPosition + Vector3.Right * 1.5f);
+        await Frames(2);
+        one.GlobalPosition = p.GlobalPosition + Vector3.Right * 1.5f;
+        string Hits(Vector3 dir)
+        {
+            var hit = new KinematicCollision3D();
+            var from = p.GlobalTransform with { Origin = p.GlobalPosition + Vector3.Up * 0.15f };
+            var any = p.TestMove(from, dir * 3, hit, maxCollisions: 6);
+            return any ? string.Join(", ", Enumerable.Range(0, hit.GetCollisionCount()).Select(i => (hit.GetCollider(i) as Node)?.Name.ToString() ?? "?")) : "nothing";
+        }
+        Check(!one.GivingWay && Blocked(Vector3.Right), $"out under the sky, an apprentice stood in your way is in your way (hit {Hits(Vector3.Right)}; {one.Name} {one.GlobalPosition - p.GlobalPosition}, layer {one.CollisionLayer}, hero mask {p.CollisionMask})");
+
+        // Down the mine with a dozen of them packed all round.
+        var seed = main.Shafts.First(s => s.Value.Id == mine.Id).Key;
+        main.GoInsideForTest("mineshaft", seed, p.GlobalPosition);
+        await Frames(20);
+        Check(main.IndoorsNode is not null && p.GlobalPosition.Y > Indoors.Threshold, $"down {mine.Name}'s shaft");
+        for (var i = 0; i < 11; i++) Follower(p.GlobalPosition);
+        var ways = Enumerable.Range(0, crowd.Count).Select(i => new Vector3(Mathf.Cos(i * Mathf.Tau / crowd.Count), 0, Mathf.Sin(i * Mathf.Tau / crowd.Count))).ToList();
+        await Frames(3);
+        for (var i = 0; i < crowd.Count; i++) crowd[i].GlobalPosition = p.GlobalPosition + ways[i] * 1.1f;
+        Check(crowd.All(e => e.GivingWay), $"underground, all {crowd.Count} of them give way to their hero");
+        var walledBy = ways.Where(Blocked).ToList();
+        Check(walledBy.Count == 0, $"and none of them stops the hero, whichever way they go ({walledBy.Count} of {ways.Count} ways blocked by the company)");
+
+        // Back up into the daylight: solid again.
+        main.GoOutsideForTest();
+        await Frames(20);
+        Check(crowd.All(e => !IsInstanceValid(e) || !e.GivingWay), "back out under the sky, they keep their bulk again");
+        foreach (var e in crowd.Where(IsInstanceValid)) e.QueueFree();
+        await Frames(2);
+    }
+
+    /// <summary>
+    /// A country mine's stone mouth stands in the cutting in its heap, with its back in the rock: walk the ground all round
+    /// it, and there's no low ground anywhere behind it or beside it that can't be walked back out of to the front.
+    /// </summary>
+    async Task MineMouthTest()
+    {
+        var p = main.PlayerNode;
+        var mines = main.World.SettlementsNear(0, 0, 6000).Where(s => s.Kind == SettlementKind.Mine).OrderBy(s => s.X * s.X + s.Z * s.Z).Take(3).ToList();
+        Check(mines.Count > 0, "country mines to look at");
+        foreach (var mine in mines)
+        {
+            await Teleport(new Vector3((float)mine.X + 4, 0, (float)mine.Z + 8));
+            await Until(() => main.PlacesNode.IsBuilt(mine.Id), 10);
+            await Frames(30);
+            var mz = (float)Greyhollow.SmallMouthZ(mine);
+            var portal = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>()
+                .Where(n => n.HasMeta("kind") && n.GetMeta("kind").AsString() == "mine_portal")
+                .MinBy(n => new Vector2(n.GlobalPosition.X - (float)mine.X, n.GlobalPosition.Z - mz).Length());
+            var off = portal is null ? 99 : new Vector2(portal.GlobalPosition.X - (float)mine.X, portal.GlobalPosition.Z - mz).Length();
+            var turned = portal is null ? 0 : Mathf.Abs(Mathf.Wrap(portal.GlobalRotation.Y, -Mathf.Pi, Mathf.Pi));
+            Check(off < 0.5f && turned < 0.1f, $"{mine.Name}'s mouth stands in its cutting, facing out of the hill ({off:0.0} m from where it's meant to be, turned {Mathf.RadToDeg(turned):0}°)");
+            // The ground, every half metre, and whether there's room to stand on it.
+            var space = main.GetWorld3D().DirectSpaceState;
+            const float cell = 0.5f;
+            var (nx, nz) = (49, 45); // 24 m across, 22 m from 12 behind the front to 10 in front
+            var ground = new float?[nx, nz];
+            var ball = new SphereShape3D { Radius = 0.45f }; // a hero's girth, or a bit over: a gap a body can't really get through doesn't count
+            for (var i = 0; i < nx; i++)
+                for (var j = 0; j < nz; j++)
+                {
+                    var (x, z) = ((float)mine.X - 12 + i * cell, mz - 12 + j * cell);
+                    var top = City.FloorAt(new Vector3(x, 0, z)) + 30;
+                    var ray = PhysicsRayQueryParameters3D.Create(new Vector3(x, top, z), new Vector3(x, top - 60, z));
+                    ray.Exclude = [p.GetRid()];
+                    var hit = space.IntersectRay(ray);
+                    if (hit.Count == 0 || hit["normal"].AsVector3().Y < 0.7f) continue; // nothing, or too steep to stand on (a body slides off)
+                    var g = hit["position"].AsVector3().Y;
+                    var room = true;
+                    foreach (var up in new[] { 0.8f, 1.5f })
+                    {
+                        var q = new PhysicsShapeQueryParameters3D { Shape = ball, Transform = new Transform3D(Basis.Identity, new Vector3(x, g + up, z)), Exclude = [p.GetRid()] };
+                        if (space.IntersectShape(q, 1).Count > 0) room = false;
+                    }
+                    if (room) ground[i, j] = g;
+                }
+
+            // Everywhere a body can get to from the front of the mouth (a short step up, or a drop down of any height), and
+            // everywhere it can get back to the front from. A spot it can get to and not get back from is a pocket.
+            var (si, sj) = (24, 30); // 3 m in front of the mouth
+            var floor = ground[si, sj];
+            Check(floor is not null, $"room to stand in front of {mine.Name}'s mouth");
+            if (floor is null) continue;
+            bool[,] Spread(bool outward)
+            {
+                var seen = new bool[nx, nz];
+                var todo = new Queue<(int, int)>([(si, sj)]);
+                seen[si, sj] = true;
+                while (todo.TryDequeue(out var c))
+                    foreach (var (di, dj) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
+                    {
+                        var (a, b) = (c.Item1 + di, c.Item2 + dj);
+                        if (a < 0 || b < 0 || a >= nx || b >= nz || seen[a, b] || ground[a, b] is not { } g) continue;
+                        var here = ground[c.Item1, c.Item2]!.Value;
+                        var climb = outward ? g - here : here - g; // the step up, going the way the body goes
+                        if (climb > 0.45f) continue;
+                        seen[a, b] = true;
+                        todo.Enqueue((a, b));
+                    }
+                return seen;
+            }
+            var (into, outOf) = (Spread(true), Spread(false));
+            var pockets = new List<string>();
+            for (var i = 0; i < nx; i++)
+                for (var j = 0; j < nz; j++)
+                {
+                    var (x, z) = (-12 + i * cell, -12 + j * cell);
+                    if (Mathf.Abs(x) > 10 || i < 2 || j < 2 || i >= nx - 2 || j >= nz - 2 || !into[i, j] || outOf[i, j]) continue; // (not the edge of the sweep, where the way back may go round outside it)
+                    pockets.Add($"{x:0.0} across, {-z:0.0} back");
+                }
+            Check(pockets.Count == 0, $"and no pocket by it to get stuck in ({pockets.Count} spots: {string.Join("; ", pockets.Take(6))})");
+        }
     }
 
     /// <summary>
@@ -4352,14 +4688,19 @@ public partial class SelfTest(Main main) : Node
             var members = folk.Where(x => TownCouncils.IsMember(x.Npc.Id) && !x.Npc.Id.EndsWith(TownCouncils.ClerkId)).ToList();
             Check(members.Count >= 3, $"{town.Name}'s councillors are out in the town ({members.Count}: {string.Join(", ", members.Select(m => m.Npc.Name))})");
             Check(members.All(m => Mathf.Abs(m.GlobalPosition.Y - City.FloorAt(m.GlobalPosition)) < 1.5f), "on the ground where anyone can walk up to them");
-            if (id == "city:hollowheart")
+            if (id is "city:hollowheart" or "city:tristinwold")
             {
-                // Its council meets inside a great tree, not in a stone hall dropped among the trunks.
-                var halls = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>().Where(n => IsInstanceValid(n) && Buildings.KindOf(n) == "longhall" && town.DistanceTo(n.GlobalPosition.X, n.GlobalPosition.Z) < town.Radius + 20).ToList();
-                Check(halls.Count == 0, $"no stone council hall among Hollowheart's trees ({halls.Count})");
+                // Hollowheart's council meets inside a great tree, and Tristinwold's in the keep: no long hall dropped in
+                // among the trunks, or squeezed onto the Crown with its door to the wall.
+                var where = id == "city:hollowheart" ? "in a great tree" : "the keep's";
+                var halls = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>().Where(n => IsInstanceValid(n) && Buildings.KindOf(n) == "longhall" && n.GetMeta("seed", 0).AsInt32() == 7100).ToList();
+                if (id == "city:hollowheart") halls = GetTree().GetNodesInGroup(Buildings.Group).OfType<Node3D>().Where(n => IsInstanceValid(n) && Buildings.KindOf(n) == "longhall" && town.DistanceTo(n.GlobalPosition.X, n.GlobalPosition.Z) < town.Radius + 20).ToList();
+                Check(halls.Count == 0, $"no separate council hall in {town.Name} ({halls.Count})");
                 var seat = main.CouncilChambers.FirstOrDefault(kv => kv.Value == id);
                 var clerk = folk.FirstOrDefault(x => x.Npc.Id.EndsWith(TownCouncils.ClerkId));
-                Check(seat.Value == id && clerk is not null && Buildings.DoorNear(clerk.GlobalPosition) is { Kind: "council" }, "its chamber's door is in a great tree, and the clerk stands by it");
+                var keepDoor = clerk is null ? null : Buildings.DoorNear(clerk.GlobalPosition);
+                Check(seat.Value == id && keepDoor is { Kind: "council" } && (id != "city:tristinwold" || keepDoor.Value.Seed == Places.KeepCouncil),
+                    $"its chamber's door is {where}, and the clerk stands by it ({keepDoor?.Kind} {keepDoor?.Seed})");
                 if (clerk is not null && Buildings.DoorNear(clerk.GlobalPosition) is { } way)
                 {
                     await Teleport(way.Step);

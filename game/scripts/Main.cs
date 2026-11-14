@@ -874,7 +874,10 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("ride")) ToggleRide();
         if (Input.IsActionJustPressed("rest") && !_tracker.InFight) Rest();
         var status = _client is null ? "alone" : $"{_player.Company} | {_client.Status}{(_client.Status != ClientStatus.Connected && _client.LastError is { } err ? $" ({err})" : "")}";
-        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills\nI: pack   H: heal   1-0: quick keys   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_visitors.Count > 0 || _drawn ? $"   B: {(_drawn ? "stop fighting players" : "fight players")}" : "")}{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}{(Summons.Callable(_player.Hero) is { } called ? $"   G: summon {called.Name}{(_player.SummonReadyIn > 0 ? $" ({_player.SummonReadyIn:0}s)" : "")}" : "")}{(_player.Possessing ? _player.Class.Id == "EtherAeronaut" ? $"   Suit: {_player.SuitLeft:0}s ({_player.FlightSecondsLeft:0}s of flight)" : $"   Half-form: {_player.SuitLeft:0}s" : "")}");
+        _hud.InFight = _tracker.InFight;
+        // The keys, while the hero's new to them; after a few minutes only the way to the menu stays.
+        var keysUntil = _keysUntil ??= Time.GetTicksMsec() / 1000.0 + 300;
+        _hud.Update(_player, _skies?.Line is { Length: > 0 } sky ? $"{_area}    {sky}" : _area, TouchMode ? status : Time.GetTicksMsec() / 1000.0 > keysUntil ? status + "    Esc: menu" : status + $"    Esc: menu   F5: save   M: map   J: journal   E: talk   K: skills\nI: pack   H: heal   1-0: quick keys   P: party   T: rest   Q: {_player.Class.Utility.Name.ToLowerInvariant()}   R: limit{(_visitors.Count > 0 || _drawn ? $"   B: {(_drawn ? "stop fighting players" : "fight players")}" : "")}{(_bonds.Any(b => b.Rideable && b.Following) ? "   V: ride" : "")}{(Summons.Callable(_player.Hero) is { } called ? $"   G: summon {called.Name}{(_player.SummonReadyIn > 0 ? $" ({_player.SummonReadyIn:0}s)" : "")}" : "")}{(_player.Possessing ? _player.Class.Id == "EtherAeronaut" ? $"   Suit: {_player.SuitLeft:0}s ({_player.FlightSecondsLeft:0}s of flight)" : $"   Half-form: {_player.SuitLeft:0}s" : "")}");
         var saga = _saga.Objective(Dragon, _player.Hero.Level) is { } next ? [$"The Dragon Knight: {next}{(_saga.Goal(Dragon) is { } g ? $" ({Direction(pos, g)})" : "")}"] : Array.Empty<string>();
         if (StoryLine(pos) is { } story) saga = [story, .. saga];
         // The nearest lair that suits the hero, and the nearest deviant out roaming.
@@ -882,9 +885,13 @@ public partial class Main : Node3D
         if (_roamers.Tracker(pos, Direction) is { } roamerLine) saga = [.. saga, roamerLine];
         if (_raiders.Tracker(pos, Direction) is { } clanLine) saga = [.. saga, clanLine];
         saga = [.. saga, .. KorrinLines(pos), .. HeistLines(pos), .. WarlordLines(pos), .. TownLines(pos), .. CaravanLines(pos), .. SeaLines(pos), .. IsleLines(pos), .. StandingLines(pos), .. ArtificerLines(pos), .. ShadowLines(pos), .. PursuitLines(pos), .. SummonerLines(pos)];
-        _hud.Track(saga.Concat(_journal.Open.Take(4).Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})")));
+        // The panel lists them all and scrolls; the tracked one at the top is the main story, or failing that the first quest.
+        var quests = _journal.Open.Select(e => $"{e.Quest.Title}: {e.Objective} ({Direction(pos, e.Goal)})").ToList();
+        _hud.Track(saga.Concat(quests), tracked: saga.FirstOrDefault(l => l.StartsWith("The Rings of Tristinwold")) ?? quests.FirstOrDefault() ?? saga.FirstOrDefault());
         _hud.Party(PartyLines());
     }
+
+    double? _keysUntil;
 
     // ---- exploring ----------------------------------------------------------------------------
 
@@ -1236,6 +1243,9 @@ public partial class Main : Node3D
             var key = a[i][2..];
             _args[key] = i + 1 < a.Length && !a[i + 1].StartsWith("--") ? a[++i] : "true";
         }
+        // Passwords can come in the environment instead, so they don't show in the list of running programs.
+        foreach (var (key, name) in new[] { ("secret", "TRISTINWOLD_SECRET"), ("password", "TRISTINWOLD_SERVER_PASSWORD") })
+            if (!_args.ContainsKey(key) && System.Environment.GetEnvironmentVariable(name) is { Length: > 0 } value) _args[key] = value;
     }
 
     static void DefineInputs(bool mouseButtons)

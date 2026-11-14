@@ -234,8 +234,9 @@ public partial class Visitors : Node3D
             {
                 Text = Asleep ? $"{m.Name} (asleep)" : m.Name, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 34, OutlineSize = 10, PixelSize = 0.008f,
                 NoDepthTest = true, RenderPriority = 10, Modulate = new Color(Asleep ? "#b8c4d0" : "#dff4ff"),
-                Position = new Vector3(0, Math.Max(1.6f, top) + 0.45f, 0),
+                Position = new Vector3(0, Math.Max(1.6f, top) * 0.78f, 0), // at the chest (see Nameplates)
             };
+            Nameplates.Adopt(_plate);
             AddChild(_plate);
             _figure.Visible = _plate.Visible = !m.Hidden;
         }
