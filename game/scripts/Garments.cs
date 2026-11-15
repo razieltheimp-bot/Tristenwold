@@ -412,7 +412,7 @@ public static class Garments
     {
         var fur = new StandardMaterial3D { AlbedoColor = new Color("#17151a"), Roughness = 0.95f, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
         var skin = Cloth(new Color("#6a4638"));
-        var (black, red, white) = (Cloth(new Color("#121214")), Cloth(new Color("#9c1c1c")), Cloth(new Color("#ecebe6")));
+        var (black, white) = (Cloth(new Color("#121214")), Cloth(new Color("#ecebe6")));
         var boot = Armoury.Leather("#17120f");
         var torsoH = m.Neck.Y - m.Hips.Y;
         var chest = Hang(sk, "Chest", made);
@@ -473,15 +473,11 @@ public static class Garments
         var hips = Hang(sk, "Hips", made);
         var r0 = m.HipHalf + 0.01f;
         hips.AddChild(Part(new CylinderMesh { TopRadius = r0 * 0.98f, BottomRadius = r0 * 1.04f, Height = 0.26f, RadialSegments = 28 }, black, new Vector3(0, m.Hips.Y - 0.02f, 0), scale: new Vector3(1, 1, 0.86f)));
-        hips.AddChild(Part(new TorusMesh { InnerRadius = r0 - 0.03f, OuterRadius = r0 + 0.035f, Rings = 36, RingSegments = 12 }, red, new Vector3(0, m.Hips.Y + 0.11f, 0), scale: new Vector3(1, 1.7f, 0.88f)));
-        var knot = new Vector3(left * r0 * 0.7f, m.Hips.Y + 0.1f, r0 * 0.66f);
-        hips.AddChild(Part(new SphereMesh { Radius = 0.042f, Height = 0.084f, RadialSegments = 12, Rings = 6 }, red, knot, scale: new Vector3(1.2f, 0.9f, 0.8f)));
-        foreach (var (lean, length) in new[] { (6f, 0.46f), (-4f, 0.36f) })
-            hips.AddChild(Part(Drape(0.075f, length, 0.01f, 0.35f, 4, 8), red, knot + new Vector3(0, -0.02f, 0.02f), new Vector3(0, left * 20, left * lean)));
+        Sash(sk, hips, r0, m.Hips.Y + 0.11f, left);
         // The white cloak: over the right shoulder, a fold of it falling down the front of that side, and the rest
         // hanging behind him to the backs of his knees, wrapping a little round his back.
         var shoulder = new Vector3(right * m.ShoulderHalf * 0.82f, m.Neck.Y - 0.03f, -0.01f);
-        chest.AddChild(Part(new SphereMesh { Radius = 0.13f, Height = 0.26f, RadialSegments = 18, Rings = 10 }, white, shoulder + new Vector3(0, 0.02f, 0), scale: new Vector3(1.15f, 0.55f, 1.3f)));
+        chest.AddChild(Part(new SphereMesh { Radius = 0.1f, Height = 0.2f, RadialSegments = 18, Rings = 10 }, white, shoulder, scale: new Vector3(1.1f, 0.42f, 1.15f)));
         chest.AddChild(Part(Drape(0.26f, torsoH * 0.62f, 0.05f, 0.3f), white, shoulder + new Vector3(right * 0.02f, 0, front * 0.75f), new Vector3(0, right * 12, right * 4)));
         chest.AddChild(Part(Drape(m.ShoulderHalf * 1.5f, m.Neck.Y * 0.68f, 0.16f, 0.45f, 12, 16, lean: -0.05f), white,
             new Vector3(right * m.ShoulderHalf * 0.35f, m.Neck.Y + 0.01f, -m.ShoulderHalf * 0.62f), new Vector3(0, 180, right * -7)));
@@ -644,12 +640,13 @@ public static class Garments
     /// </summary>
     static void Mane(Node3D head, Vector3 crown, Color colour, float big = 1)
     {
-        var (mesh, hair) = _mane ??= MakeMane(colour);
+        if (!Manes.TryGetValue(colour, out var made)) Manes[colour] = made = MakeMane(colour);
+        var (mesh, hair) = made;
         head.AddChild(new MeshInstance3D { Mesh = mesh, MaterialOverride = hair, Position = crown, Scale = Vector3.One * big });
     }
 
-    /// <summary>Made once and shared: every Turlin wears the same head of hair, in whatever shape he's come back.</summary>
-    static (ArrayMesh, StandardMaterial3D)? _mane;
+    /// <summary>Made once for each colour and shared: every Turlin wears the same head of hair, in whatever shape he's come back.</summary>
+    static readonly Dictionary<Color, (ArrayMesh, StandardMaterial3D)> Manes = [];
 
     static (ArrayMesh, StandardMaterial3D) MakeMane(Color colour)
     {
@@ -734,8 +731,9 @@ public static class Garments
     }
 
     /// <summary>
-    /// What Turlin comes back as: a great ape stood up on a man's frame, all brown fur and muscle with a bare, lined face
-    /// and a short crest. The frame is a person's, so it stands on its own feet, walks and swings like one.
+    /// What Turlin comes back as: a great ape stood up on a man's frame, all brown fur and muscle with a bare, lined face.
+    /// The frame is a person's, so it stands on its own feet, walks and swings like one. Turlin's still wears what he wore
+    /// as a man (but the cloak): black trousers and boots and the red sash; his hair stands up in great spikes, silver.
     /// </summary>
     static void GreatApe(Skeleton3D sk, Measure m, List<Node> made, Color? coat = null, Color? eyes = null)
     {
@@ -786,18 +784,39 @@ public static class Garments
             Muscle($"{side}LowerLeg", 0.2f, 0.066f, 0.42f, new Vector3(0, 0, 0.01f), fur);
             Muscle($"{side}Foot", 0.06f, 0.075f, 0.28f, Vector3.Zero, bare);
         }
-        // What's left of his plates: the long blue ones at his waist, edged in white.
-        var (plate, edge) = (Cloth(new Color("#3f5c96")), Cloth(new Color("#dfe1e8")));
         var hips = Hang(sk, "Hips", made);
-        Mass(hips, new Vector3(0, m.Hips.Y + 0.02f, -0.01f), m.HipHalf * 1.15f, 0.32f, new Vector3(1, 1, 0.9f));
         var r0 = m.HipHalf * 1.15f;
-        if (turlin) hips.AddChild(Part(new TorusMesh { InnerRadius = r0 - 0.025f, OuterRadius = r0 + 0.03f, Rings = 36, RingSegments = 10 }, edge, new Vector3(0, m.Hips.Y + 0.13f, 0), scale: new Vector3(1, 0.8f, 0.92f)));
-        var flap = Drape(m.HipHalf * 0.72f, m.Hips.Y * 0.5f, m.HipHalf * 0.2f, 0.14f, 8, 12, lean: 0.04f);
-        foreach (var side in turlin ? new[] { -1f, 1f } : [])
+        if (!turlin) Mass(hips, new Vector3(0, m.Hips.Y + 0.02f, -0.01f), r0, 0.32f, new Vector3(1, 1, 0.9f));
+        else
         {
-            hips.AddChild(Part(flap, plate, new Vector3(side * m.HipHalf * 0.6f, m.Hips.Y + 0.1f, r0 * 0.96f), new Vector3(0, side * 14, side * 5)));
-            hips.AddChild(Part(new BoxMesh { Size = new Vector3(0.02f, m.Hips.Y * 0.48f, 0.02f) }, edge, new Vector3(side * m.HipHalf * 0.3f, m.Hips.Y * 0.84f, r0 * 1.08f), new Vector3(0, 0, side * 5)));
-            hips.AddChild(Part(flap, plate, new Vector3(side * r0, m.Hips.Y + 0.1f, -0.02f), new Vector3(0, side * 90, 0)));
+            // Black trousers over the great legs, into black boots; the red sash at his waist, knotted at his left hip.
+            var (black, boot) = (Cloth(new Color("#121214")), Armoury.Leather("#17120f"));
+            hips.AddChild(Part(new SphereMesh { Radius = r0, Height = 0.34f, RadialSegments = 20, Rings = 10 }, black, new Vector3(0, m.Hips.Y + 0.02f, -0.01f), scale: new Vector3(1.04f, 1, 0.94f)));
+            foreach (var side in new[] { "Left", "Right" })
+            {
+                if (sk.FindBone($"{side}UpperLeg") is var ti && ti >= 0)
+                {
+                    var rest = sk.GetBoneGlobalRest(ti);
+                    var along = rest.Basis.Y.Normalized();
+                    Hang(sk, $"{side}UpperLeg", made).AddChild(Aim(Part(new CapsuleMesh { Radius = 0.158f, Height = 0.56f, RadialSegments = 18, Rings = 6 }, black, rest.Origin + along * 0.2f), along));
+                }
+                if (sk.FindBone($"{side}LowerLeg") is var si && si >= 0)
+                {
+                    var rest = sk.GetBoneGlobalRest(si);
+                    var along = rest.Basis.Y.Normalized();
+                    var shin = Hang(sk, $"{side}LowerLeg", made);
+                    shin.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.14f, BottomRadius = 0.112f, Height = 0.32f, RadialSegments = 18 }, black, rest.Origin + along * 0.15f), along));
+                    shin.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.1f, BottomRadius = 0.108f, Height = 0.16f, RadialSegments = 18 }, boot, rest.Origin + along * 0.36f), along));
+                }
+                if (sk.FindBone($"{side}Foot") is var fi && fi >= 0)
+                {
+                    var rest = sk.GetBoneGlobalRest(fi);
+                    var along = rest.Basis.Y.Normalized();
+                    Hang(sk, $"{side}Foot", made).AddChild(Aim(Part(new CapsuleMesh { Radius = 0.088f, Height = 0.32f, RadialSegments = 14, Rings = 6 }, boot, rest.Origin + along * 0.07f), along));
+                }
+            }
+            var left = sk.FindBone("LeftUpperLeg") is var lb && lb >= 0 && sk.GetBoneGlobalRest(lb).Origin.X < 0 ? -1f : 1f;
+            Sash(sk, hips, r0 * 1.02f, m.Hips.Y + 0.13f, left, 1.3f);
         }
         var head = Hang(sk, "Head", made);
         var at = new Vector3(0, m.Top - 0.11f, 0.01f);
@@ -816,8 +835,8 @@ public static class Garments
             Face(new Vector3(side * 0.155f, 0.03f, 0), 0.05f, new Vector3(0.4f, 1.1f, 0.85f), bare); // an ear
         }
         Face(new Vector3(0, -0.09f, 0.19f), 0.06f, new Vector3(1, 0.1f, 0.5f), dark); // the mouth
-        // The same hair he had as a man, made for a bigger head.
-        if (turlin) Mane(head, new Vector3(0, m.Top - 0.075f, -0.016f) + new Vector3(0, 0.02f, 0), new Color("#121014"), 1.3f);
+        // His great spiked mane, gone silver like his hair as a man, made for a bigger head.
+        if (turlin) Mane(head, new Vector3(0, m.Top - 0.075f, -0.016f) + new Vector3(0, 0.02f, 0), new Color("#d9dde6"), 1.3f);
         // His tail, loose and long, out behind him and curling up at the end.
         var (root, tail) = (new Vector3(0, m.Hips.Y, -m.HipHalf * 1.2f), new Vector3(0.25f, -0.55f, -1).Normalized());
         var (links, thin) = turlin ? (20, 1f) : (11, 0.7f); // a shorter tail on a smaller ape
@@ -1180,18 +1199,7 @@ public static class Garments
                     Lock(crown + new Vector3(i * 0.032f, 0.03f, -0.1f + Mathf.Abs(i) * 0.008f), new Vector3(i * 0.04f, -1, -0.28f), 0.3f, 0.034f);
                 break;
             case "Silverfall":
-                // Long and straight, to the middle of the back: a fall of it behind, a long lock either side of the face
-                // down over the chest, and a few short ones over the brow.
-                Crop();
-                for (var i = -6; i <= 6; i++)
-                    Lock(crown + new Vector3(i * 0.019f, 0.01f - Mathf.Abs(i) * 0.004f, -0.09f), new Vector3(i * 0.05f, -1, -0.32f), 0.78f - Mathf.Abs(i) * 0.025f, 0.03f);
-                foreach (var side in new[] { -1f, 1f })
-                {
-                    Lock(crown + new Vector3(side * 0.112f, -0.02f, 0.02f), new Vector3(side * 0.12f, -1, 0.2f), 0.52f, 0.026f);
-                    Lock(crown + new Vector3(side * 0.1f, 0, -0.03f), new Vector3(side * 0.18f, -1, -0.05f), 0.6f, 0.028f);
-                }
-                for (var i = -1; i <= 1; i++)
-                    Lock(crown + new Vector3(i * 0.035f, 0.06f, 0.09f), new Vector3(i * 0.35f, -1, 0.55f), 0.15f, 0.016f);
+                Silverfall(head, crown, hair);
                 break;
             case "Twintails":
                 Crop();
@@ -1202,6 +1210,41 @@ public static class Garments
                 }
                 break;
         }
+    }
+
+    /// <summary>
+    /// Turlin's hair: long and straight, to the middle of the back. A fall of it behind, a long lock either side of the
+    /// face down over the shoulders, and a short fringe parted and swept aside, so the face is clear. <paramref name="big"/>
+    /// sizes it for a bigger head (the great ape he comes back as).
+    /// </summary>
+    static void Silverfall(Node3D head, Vector3 crown, Material hair, float big = 1)
+    {
+        head.AddChild(Part(new SphereMesh { Radius = 0.122f * big, Height = 0.244f * big, RadialSegments = 24, Rings = 12 }, hair, crown, new Vector3(-16, 0, 0), new Vector3(1.02f, 0.86f, 1.06f)));
+        void Lock(Vector3 from, Vector3 way, float length, float width)
+        {
+            var part = Part(new CapsuleMesh { Radius = width * big, Height = length * big, RadialSegments = 12, Rings = 6 }, hair, crown + from * big + way.Normalized() * length * big / 2);
+            head.AddChild(part);
+            Aim(part, way.Normalized());
+        }
+        for (var i = -6; i <= 6; i++)
+            Lock(new Vector3(i * 0.019f, 0.01f - Mathf.Abs(i) * 0.004f, -0.09f), new Vector3(i * 0.05f, -1, -0.32f), 0.78f - Mathf.Abs(i) * 0.025f, 0.03f);
+        foreach (var side in new[] { -1f, 1f })
+        {
+            Lock(new Vector3(side * 0.118f, -0.03f, -0.015f), new Vector3(side * 0.16f, -1, 0.1f), 0.52f, 0.024f);
+            Lock(new Vector3(side * 0.1f, 0, -0.03f), new Vector3(side * 0.18f, -1, -0.05f), 0.6f, 0.028f);
+            Lock(new Vector3(side * 0.03f, 0.07f, 0.075f), new Vector3(side * 1, -0.35f, 0.2f), 0.1f, 0.016f); // the fringe, parted, swept back off the brow
+        }
+    }
+
+    /// <summary>Turlin's red sash: a band round the waist at <paramref name="y"/>, knotted at his left hip with its two ends hanging.</summary>
+    static void Sash(Skeleton3D sk, Node3D hips, float r0, float y, float left, float big = 1)
+    {
+        var red = Cloth(new Color("#9c1c1c"));
+        hips.AddChild(Part(new TorusMesh { InnerRadius = r0 - 0.012f * big, OuterRadius = r0 + 0.02f * big, Rings = 36, RingSegments = 10 }, red, new Vector3(0, y, 0), scale: new Vector3(1, 2.3f, 0.88f)));
+        var knot = new Vector3(left * r0 * 0.7f, y - 0.01f, r0 * 0.66f);
+        hips.AddChild(Part(new SphereMesh { Radius = 0.032f * big, Height = 0.064f * big, RadialSegments = 12, Rings = 6 }, red, knot, scale: new Vector3(1.2f, 0.9f, 0.8f)));
+        foreach (var (lean, length) in new[] { (6f, 0.46f), (-4f, 0.36f) })
+            hips.AddChild(Part(Drape(0.075f * big, length * big, 0.01f, 0.35f, 4, 8), red, knot + new Vector3(0, -0.02f, 0.02f), new Vector3(0, left * 20, left * lean)));
     }
 
     static Material Robe(Humans.Outfit outfit) => Cloth(outfit.Tunic, span: 2);
