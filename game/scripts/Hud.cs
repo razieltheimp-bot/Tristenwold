@@ -112,7 +112,11 @@ public partial class Hud : CanvasLayer
         talkBox.AddChild(_talkText = new Label { AutowrapMode = TextServer.AutowrapMode.Word });
         var optionScroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         optionScroll.AddChild(_talkOptions = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
-        talkBox.AddChild(optionScroll);
+        optionScroll.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        var talkRow = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        talkRow.AddChild(optionScroll);
+        talkRow.AddChild(Gear); // the hero in miniature, beside the pack's gear
+        talkBox.AddChild(talkRow);
         root.AddChild(_bar = MakeBar());
         root.AddChild(Touch);
         Touch.ScrollsHere = OnQuests; // a swipe on the quest panel scrolls it, rather than turning the view
@@ -339,6 +343,7 @@ public partial class Hud : CanvasLayer
     {
         _talk.Visible = true;
         _talk.AnchorTop = 0.4f;
+        Gear.Visible = false; // only the pack shows it
         _skillRows = 0;
         _talkWho.Text = who;
         _talkText.Text = text;
@@ -424,8 +429,15 @@ public partial class Hud : CanvasLayer
     public void EndTalk()
     {
         _talk.Visible = false;
+        Gear.Visible = false;
         UpdateMouse();
     }
+
+    /// <summary>The hero in miniature beside the replies, trying gear on (the pack shows it; any other talk hides it).</summary>
+    public GearPreview Gear { get; } = new() { Visible = false };
+
+    /// <summary>The buttons of the replies now showing, in order.</summary>
+    public IEnumerable<Button> OptionButtons => _talkOptions.GetChildren().OfType<Button>();
 
     /// <summary>Picks the first reply that starts with this text, as if clicked (for the self-test).</summary>
     public bool Choose(string startsWith)

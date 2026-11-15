@@ -162,7 +162,9 @@ public static class Graphics
         uniform float uv_scale = 1.0;
         varying float snow;
         varying vec3 world_normal;
+        varying vec3 world_pos;
         vec3 to_linear(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
+        """ + SeeThroughCode + """
         void vertex() {
             vec3 world = (MODEL_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
             float h = max(VERTEX.y, 0.0) * height_scale;
@@ -172,8 +174,10 @@ public static class Graphics
             VERTEX.z += cos(t * 0.83) * 0.009 * h * h * strength * gust / height_scale;
             snow = INSTANCE_CUSTOM.r;
             world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+            world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
         }
         void fragment() {
+            if (see_through(world_pos, FRAGCOORD.xy)) discard;
             vec4 tex = textured ? texture(albedo_tex, UV * uv_scale) : vec4(1.0);
             vec3 base = tex.rgb * to_linear(COLOR.rgb);
         #ifdef CUTOUT
@@ -192,6 +196,54 @@ public static class Graphics
             BACKLIGHT = base * 0.35;
         }
         """;
+
+    /// <summary>
+    /// Leaves out of the way of the camera, as third-person games do it: whatever of a tree or a bush is close round the
+    /// camera, or in a soft tube along the line from the camera to the hero's chest, is thinned to about a quarter by a
+    /// fine dither (cheap, and the same however the trees are batched). The tube stops short of the hero, so the leaves
+    /// round them and behind them stay. Where the camera and the hero are comes in as global uniforms, set each frame
+    /// (<see cref="Foliage.SeeThrough"/>); fade_on eases it in and out.
+    /// </summary>
+    const string SeeThroughCode = """
+        global uniform vec3 fade_eye;
+        global uniform vec3 fade_hero;
+        global uniform float fade_on;
+        float bayer2(vec2 a) { a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
+        float bayer4(vec2 a) { return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+        bool see_through(vec3 p, vec2 pixel) {
+            if (fade_on <= 0.0) return false;
+            vec3 seg = fade_hero - fade_eye;
+            float s = dot(p - fade_eye, seg) / max(dot(seg, seg), 0.0001);
+            float off = length(p - (fade_eye + seg * clamp(s, 0.0, 1.0)));
+            float tube = (1.0 - smoothstep(0.8, 1.5, off)) * step(0.0, s) * (1.0 - smoothstep(0.8, 0.94, s));
+            float ball = 1.0 - smoothstep(1.3, 2.0, distance(p, fade_eye));
+            float keep = 1.0 - 0.75 * max(tube, ball) * fade_on;
+            return keep < 0.999 && keep < bayer4(pixel);
+        }
+        """;
+
+    /// <summary>A plain leafy colour that thins out of the camera's way like the forest's leaves (Hollowheart's canopy, a grove's crowns).</summary>
+    public static ShaderMaterial FadingLeaves(Color colour)
+    {
+        var m = new ShaderMaterial { Shader = FadingLeavesShader };
+        m.SetShaderParameter("colour", colour);
+        return m;
+    }
+
+    static readonly Shader FadingLeavesShader = new()
+    {
+        Code = "shader_type spatial;\n" + """
+            uniform vec4 colour : source_color = vec4(0.25, 0.42, 0.2, 1.0);
+            varying vec3 world_pos;
+            """ + SeeThroughCode + """
+            void vertex() { world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+            void fragment() {
+                if (see_through(world_pos, FRAGCOORD.xy)) discard;
+                ALBEDO = colour.rgb;
+                ROUGHNESS = 0.95;
+            }
+            """,
+    };
 
     /// <summary>The terrain's photo textures: eight layers of ground, each in one slice of these arrays.</summary>
     public static TextureLayered? GroundAlbedo => _groundAlbedo ??= Load<TextureLayered>("res://assets/polyhaven/ground/albedo.jpg");

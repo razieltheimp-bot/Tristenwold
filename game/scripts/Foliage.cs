@@ -40,6 +40,35 @@ public static class Foliage
         return Cache[(kind, variant, fancy)] = b.Finish(Bark(fancy), kind == Kind.Bare ? null : Cards(cards, fancy));
     }
 
+    static float _seeThrough;
+
+    /// <summary>How far the leaves in the camera's way are thinned now (0 off, 1 fully), easing in and out.</summary>
+    public static float SeeThroughOn => _seeThrough;
+
+    /// <summary>The camera and the hero's chest, as last handed to the leaves.</summary>
+    public static (Vector3 Eye, Vector3 Hero) SeenFrom { get; private set; }
+
+    /// <summary>
+    /// Each frame, where the camera is and where the hero's chest is: leaves round the camera and in a tube along the
+    /// line between are thinned out of the way (see Graphics.SeeThroughCode), easing in or out over a fifth of a second.
+    /// </summary>
+    public static void SeeThrough(Vector3 eye, Vector3 hero, bool on, double delta)
+    {
+        _seeThrough = Mathf.MoveToward(_seeThrough, on ? 1 : 0, (float)delta / 0.2f);
+        SeenFrom = (eye, hero);
+        RenderingServer.GlobalShaderParameterSet("fade_eye", eye);
+        RenderingServer.GlobalShaderParameterSet("fade_hero", hero);
+        RenderingServer.GlobalShaderParameterSet("fade_on", _seeThrough);
+    }
+
+    /// <summary>For the plain (non-swaying) leaf and grass materials: thinned close round the camera, so it's never inside a bough.</summary>
+    static T NearFade<T>(T m) where T : BaseMaterial3D
+    {
+        m.DistanceFadeMode = BaseMaterial3D.DistanceFadeModeEnum.PixelDither;
+        (m.DistanceFadeMinDistance, m.DistanceFadeMaxDistance) = (0.6f, 2.0f);
+        return m;
+    }
+
     public static bool HasGrass => ResourceLoader.Exists(Root + "grass.png");
 
     /// <summary>A grass tuft: three photographed cards crossed like a star, about a metre across.</summary>
@@ -68,11 +97,11 @@ public static class Foliage
 
     public static Material GrassMaterial(bool sways) => sways
         ? Graphics.Swaying(1.6f, GD.Load<Texture2D>(Root + "grass.png"), 1.6f, cutout: true)
-        : new StandardMaterial3D
+        : NearFade(new StandardMaterial3D
         {
             AlbedoTexture = GD.Load<Texture2D>(Root + "grass.png"), VertexColorUseAsAlbedo = true, Roughness = 0.9f, CullMode = BaseMaterial3D.CullModeEnum.Disabled,
             Transparency = BaseMaterial3D.TransparencyEnum.AlphaScissor, AlphaScissorThreshold = 0.45f,
-        };
+        });
 
     // ---- materials -------------------------------------------------------------------------------
 
@@ -95,11 +124,11 @@ public static class Foliage
         var tex = GD.Load<Texture2D>(Root + file);
         m = fancy
             ? Graphics.Swaying(1, tex, HeightScale, cutout: true)
-            : new StandardMaterial3D
+            : NearFade(new StandardMaterial3D
             {
                 AlbedoTexture = tex, VertexColorUseAsAlbedo = true, Roughness = 0.9f, CullMode = BaseMaterial3D.CullModeEnum.Disabled,
                 Transparency = BaseMaterial3D.TransparencyEnum.AlphaScissor, AlphaScissorThreshold = 0.45f,
-            };
+            });
         return Materials[(file, fancy)] = m;
     }
 

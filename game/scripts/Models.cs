@@ -784,6 +784,23 @@ public partial class Figure : Body
     /// </summary>
     static Node3D? Craft(Skeleton3D skeleton, string bone, string item)
     {
+        if (item == "laurel") bone = "head"; // a wreath goes round the head, whoever holds it out
+        if (skeleton.FindBone(bone) < 0 || Crafted(item, skeleton) is not { } thing) return null;
+        var slot = new BoneAttachment3D { BoneName = bone };
+        skeleton.AddChild(slot);
+        if (bone is "RightHand" or "LeftHand")
+        {
+            // A real hand: made to KayKit's small scale, so brought to size, and gripped by the handle like anything forged.
+            thing.Scale = Vector3.One * 0.62f;
+            slot.AddChild(Armoury.InHand(bone, thing));
+        }
+        else slot.AddChild(thing);
+        return slot;
+    }
+
+    /// <summary>Something made from shapes ("lute", "hammer"), on its own: to be held, or drawn as a pack's icon.</summary>
+    public static Node3D? Crafted(string item, Skeleton3D? skeleton = null)
+    {
         var thing = new Node3D { Name = $"Craft_{item}" };
         StandardMaterial3D Paint(string hex, float rough = 0.65f) => new() { AlbedoColor = new Color(hex), Roughness = rough, RimEnabled = true, Rim = 0.25f };
         void Part(Mesh mesh, Material paint, Vector3 at, Vector3 turn = default, Vector3? scale = null) =>
@@ -840,12 +857,12 @@ public partial class Figure : Body
                 break;
             case "laurel":
             {
-                // Round the head, from the head's own size, like the beards and horns.
-                bone = "head";
+                // Round the head, from the head's own size, like the beards and horns (so only on a body).
+                if (skeleton is null) { thing.Free(); return null; }
                 var head = skeleton.GetChildren().OfType<MeshInstance3D>().Where(m => m.Skin is not null && Parts["head"].Any(end => m.Name.ToString().EndsWith(end)) && !m.Name.ToString().EndsWith("_Eyes"))
                     .Select(m => m.Transform * m.GetAabb()).Aggregate((Aabb?)null, (x, b) => x is { } y ? y.Merge(b) : b);
-                var i = skeleton.FindBone(bone);
-                if (head is not { } box || i < 0) return null;
+                var i = skeleton.FindBone("head");
+                if (head is not { } box || i < 0) { thing.Free(); return null; }
                 thing.Transform = skeleton.GetBoneGlobalRest(i).AffineInverse();
                 var (c, sz) = (box.GetCenter(), box.Size);
                 var leaf = Paint("#6f9a34", 0.8f);
@@ -859,19 +876,11 @@ public partial class Figure : Body
                 }
                 break;
             }
-            default: return null;
+            default:
+                thing.Free();
+                return null;
         }
-        if (skeleton.FindBone(bone) < 0) return null;
-        var slot = new BoneAttachment3D { BoneName = bone };
-        skeleton.AddChild(slot);
-        if (bone is "RightHand" or "LeftHand")
-        {
-            // A real hand: made to KayKit's small scale, so brought to size, and gripped by the handle like anything forged.
-            thing.Scale = Vector3.One * 0.62f;
-            slot.AddChild(Armoury.InHand(bone, thing));
-        }
-        else slot.AddChild(thing);
-        return slot;
+        return thing;
     }
 
     /// <summary>Puts something made from shapes (a fishing rod) in the right hand for a while; free the node to put it away.</summary>

@@ -34,6 +34,10 @@ public partial class Skies(Main main) : Node3D
         var known = RenderingServer.GlobalShaderParameterGetList();
         if (!known.Contains("season_snow")) RenderingServer.GlobalShaderParameterAdd("season_snow", RenderingServer.GlobalShaderParameterType.Float, 0f);
         if (!known.Contains("season_tint")) RenderingServer.GlobalShaderParameterAdd("season_tint", RenderingServer.GlobalShaderParameterType.Vec3, Vector3.One);
+        // Where the camera and the hero are, for the leaves between them to thin out of the way (Foliage.SeeThrough).
+        if (!known.Contains("fade_eye")) RenderingServer.GlobalShaderParameterAdd("fade_eye", RenderingServer.GlobalShaderParameterType.Vec3, Vector3.Zero);
+        if (!known.Contains("fade_hero")) RenderingServer.GlobalShaderParameterAdd("fade_hero", RenderingServer.GlobalShaderParameterType.Vec3, Vector3.Zero);
+        if (!known.Contains("fade_on")) RenderingServer.GlobalShaderParameterAdd("fade_on", RenderingServer.GlobalShaderParameterType.Float, 0f);
     }
 
     static CpuParticles3D Fall(int amount, float speed, Vector3 size, Color colour, float lifetime) => new()

@@ -49,6 +49,9 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--minemouth-only")) { await MineMouthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--partyway-only")) { await PartyWayTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--plates-only")) { await PlatesTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--gear-only")) { await GearPreviewTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--arch-only")) { await CouncilArchTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--woods-only")) { await ForestCameraTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--camera-only")) { await CameraWallTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ride-only")) { await TheRide(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
@@ -3483,6 +3486,210 @@ public partial class SelfTest(Main main) : Node
     /// on the hurt or the fighting. And the quests and news hang in a narrow column under the mini-map, folding what won't
     /// fit, clear of the mini-map and the party list at every size of window and with the touch controls up.
     /// </summary>
+    /// <summary>
+    /// The camera in the woods (the Heartwood's giants and great trees, and the woods out from Greywater): the leaves
+    /// are told each frame where the camera and the hero are, so they thin out of the way; and walking about and looking
+    /// round, the camera never ends up on the far side of a trunk from the hero, nor inside one of the great trees.
+    /// </summary>
+    async Task ForestCameraTest()
+    {
+        var p = main.PlayerNode;
+        var greywater = main.World.Find("city:greywater")!;
+        var heart = Northwood.Hearts[1];
+        var spots = new (string Name, Vector3 At)[]
+        {
+            ("by a great tree of Hollowheart", new Vector3((float)(heart.X + Northwood.Clearance(heart) + 1), 0, (float)heart.Z)),
+            ("among the Northwood's giants", new Vector3((float)Northwood.VillageX, 0, (float)Northwood.VillageZ - 150)),
+            ("in the woods out from Greywater", new Vector3((float)greywater.X + 150, 0, (float)greywater.Z + 90)),
+        };
+        var space = main.GetWorld3D().DirectSpaceState;
+        foreach (var (name, at) in spots)
+        {
+            await Teleport(at);
+            await Frames(90);
+            var camera = p.Camera;
+            var chest = p.GlobalPosition + Vector3.Up * 1.3f;
+            var ((eye, hero), on) = (Foliage.SeenFrom, Foliage.SeeThroughOn);
+            Check(on > 0.95f && eye.DistanceTo(camera.GlobalPosition) < 0.3f && hero.DistanceTo(chest) < 0.3f, $"{name}: the leaves know where the camera and the hero are (on {on:0.00})");
+            var behind = 0;
+            var looks = 0;
+            async Task Look()
+            {
+                await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+                await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+                looks++;
+                var from = p.GlobalPosition + Vector3.Up * 1.3f;
+                var ray = PhysicsRayQueryParameters3D.Create(from, camera.GlobalPosition);
+                ray.Exclude = [p.GetRid()];
+                if (space.IntersectRay(ray).Count > 0) behind++;
+                foreach (var t in Northwood.Hearts)
+                {
+                    var c = camera.GlobalPosition;
+                    var up = c.Y - (City.FloorAt(new Vector3((float)t.X, 0, (float)t.Z)) - 0.5f);
+                    if (up > 0 && up < t.Height && new Vector2(c.X - (float)t.X, c.Z - (float)t.Z).Length() < Forest.Girth((float)t.Radius, up / (float)t.Height, Mathf.Atan2(c.Z - (float)t.Z, c.X - (float)t.X)) - 0.3f) behind++;
+                }
+            }
+            for (var k = 0; k < 24; k++)
+            {
+                p.LookToward(k * Mathf.Tau / 24, 0);
+                await Look();
+            }
+            // And walking, turning as you go.
+            Input.ActionPress("move_forward");
+            for (var k = 0; k < 40; k++)
+            {
+                p.LookToward(k * 0.35f, 0);
+                await Look();
+            }
+            Input.ActionRelease("move_forward");
+            Check(behind == 0, $"{name}: looking round and walking, the camera never ends up behind or inside a trunk ({behind} of {looks} looks)");
+        }
+    }
+
+    /// <summary>
+    /// Hollowheart's council arch: nothing of the tree over the way in or the passage, walked straight into from the
+    /// square with no door to press, and out again onto open ground just outside it, facing out.
+    /// </summary>
+    async Task CouncilArchTest()
+    {
+        var p = main.PlayerNode;
+        var town = main.World.Find("city:hollowheart")!;
+        await Teleport(new Vector3((float)town.X + 4, 0, (float)town.Z + 4));
+        await Until(() => main.PlacesNode.IsBuilt("city:hollowheart"), 15);
+        await Frames(60);
+        var clerk = main.PlacesNode.People.FirstOrDefault(x => IsInstanceValid(x) && x.Npc.HomeId == town.Id && x.Npc.Id.EndsWith(TownCouncils.ClerkId));
+        var way = clerk is null ? null : Buildings.DoorNear(clerk.GlobalPosition);
+        Check(way is { Kind: "council" }, $"the clerk stands by the council's arch ({way?.Kind})");
+        if (way is not { } door || Buildings.OutwardAt(door.Step) is not { } outward) return;
+        var mouth = door.Step - outward * 1.6f;
+        var tree = Northwood.Hearts.FirstOrDefault(t => Forest.ArchOf(t) is not null);
+        var reach = tree is null ? 0 : new Vector2((float)tree.X - mouth.X, (float)tree.Z - mouth.Z).Length();
+        Check(tree is not null && Mathf.Abs(reach - (Forest.ArchOf(tree)!.Back + Places.ArchDeep)) < 1,
+            $"the arch is cut into a great tree, its mouth where the passage ends ({reach:0.0} m from the trunk's middle, back {(tree is null ? 0 : Forest.ArchOf(tree)!.Back):0.0} m)");
+        var floor = City.FloorAt(mouth);
+        var space = main.GetWorld3D().DirectSpaceState;
+        var struck = "";
+        float Over(Vector3 at, float from) // the first thing straight down from this high over the ground there, as a height over that ground
+        {
+            var ground = Mathf.Max(City.FloorAt(at), (float)main.World.Height(at.X, at.Z));
+            var ray = PhysicsRayQueryParameters3D.Create(at with { Y = ground + from }, at with { Y = ground - 3 });
+            var people = new Godot.Collections.Array<Rid> { p.GetRid() }; // (the tree overhead, not the townsfolk about)
+            ray.Exclude = people;
+            var hit = space.IntersectRay(ray);
+            for (var tries = 0; tries < 6 && hit.Count > 0 && hit["collider"].AsGodotObject() is Person someone; tries++)
+            {
+                people.Add(someone.GetRid());
+                ray.Exclude = people;
+                hit = space.IntersectRay(ray);
+            }
+            if (hit.Count > 0 && hit["collider"].AsGodotObject() is Node3D n)
+                struck = $"{n.GetParent()?.Name}/{n.Name} at {n.GlobalPosition.X:0.0},{n.GlobalPosition.Z:0.0} [{string.Join(", ", n.GetChildren().Select(c => c is MeshInstance3D m ? $"{m.Mesh?.GetType().Name} {m.Mesh?.GetAabb().Size}" : c.GetType().Name))}]";
+            return hit.Count > 0 ? hit["position"].AsVector3().Y - ground : -3;
+        }
+        var across = new Vector3(-outward.Z, 0, outward.X);
+        var (worst, where) = (0f, "");
+        foreach (var d in new[] { 0.5f, 2f, 4f, 6f, 8f })
+            foreach (var x in new[] { -1.2f, 0f, 1.2f })
+                if (Over(mouth + outward * d + across * x, 9) is var h && h > worst) (worst, where) = (h, $"{d} m out, {x} m across: {struck}");
+        Check(worst < 0.8f, $"nothing of the tree hangs over the way in: straight down, only the ground ({worst:0.0} m{(where.Length > 0 ? $" at {where}" : "")})");
+        var under = 0f;
+        foreach (var d in new[] { 0.6f, 1.6f, 2.6f }) under = Mathf.Max(under, Over(mouth - outward * d, Places.ArchRoof - 0.2f));
+        Check(under < 0.8f, $"and standing room under its roof all the way back ({under:0.0} m)");
+
+        // From out in the square: walk at it, and you're in.
+        await Teleport(mouth + outward * 12);
+        await Frames(20);
+        p.Face(mouth - outward * 3);
+        main.HudNode.EndTalk();
+        Input.ActionPress("move_forward");
+        for (var i = 0; i < 400 && main.IndoorsNode is null; i++) await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+        Input.ActionRelease("move_forward");
+        Check(main.IndoorsNode is { Kind: "council" }, $"walked from the square straight into the council chamber, nothing to press ({main.IndoorsNode?.Kind ?? $"still outside, {(p.GlobalPosition - mouth).Dot(outward):0.0} m out from the arch"})");
+        if (main.IndoorsNode is null) return;
+        await Frames(30);
+        main.GoOutsideForTest();
+        await Frames(30);
+        var outAt = p.GlobalPosition;
+        var facing = (-p.GlobalBasis.Z with { Y = 0 }).Normalized();
+        Check(outAt.DistanceTo(door.Step) < 2 && (outAt - mouth).Dot(outward) > 0.5f, $"out again on open ground just outside the arch ({(outAt - mouth).Dot(outward):0.0} m out)");
+        Check(facing.Dot(outward) > 0.9f, $"facing out, away from it ({facing.Dot(outward):0.00})");
+        Check(Over(outAt, 9) < 0.8f, "with nothing over their head");
+        Input.ActionPress("move_forward");
+        for (var i = 0; i < 90; i++) await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+        Input.ActionRelease("move_forward");
+        Check((p.GlobalPosition - mouth).Dot(outward) > 5, $"and walk away from it freely ({(p.GlobalPosition - mouth).Dot(outward):0.0} m out)");
+        Check(main.IndoorsNode is null, "without being taken back in");
+        // Nobody else goes in: anyone sent into the passage is put back out past the roots.
+        var (nx, nz) = Northwood.OutOfTrunks(mouth.X - outward.X * 2, mouth.Z - outward.Z * 2);
+        Check(new Vector2((float)nx - mouth.X, (float)nz - mouth.Z).Dot(new Vector2(outward.X, outward.Z)) > 0, "walkers are kept out of the passage");
+    }
+
+    /// <summary>The pack: a picture for each piece of gear, and the hero in miniature trying on what's pointed at.</summary>
+    async Task GearPreviewTest()
+    {
+        var hud = main.HudNode;
+        await Frames(10);
+        var pack = main.PlayerNode.Pack;
+        foreach (var slot in pack.Worn.Keys.ToList()) pack.Unequip(slot);
+        var ids = new[] { "iron_sword", "steel_sword", "iron_greatsword", "iron_shield", "iron_helm", "leather_armor", "orrery_ring", "iron_hammer" };
+        foreach (var id in ids) pack.Add(id);
+        pack.Equip("iron_sword");
+        main.ShowPack();
+        await Frames(5);
+        var gear = hud.Gear;
+        Check(gear.Visible, "the pack shows the hero in miniature beside the list");
+        Check(gear.Line == $"Wearing: +0 armour, +{0.1:P0} damage.", $"with what they wear under it ({gear.Line})");
+        var pieces = hud.OptionButtons.Where(b => b.Text.StartsWith("Wear ") || b.Text.StartsWith("Take off ")).ToList();
+        Check(pieces.Count >= ids.Length && pieces.All(b => b.Icon is { } i && i.GetWidth() == GearIcons.Size),
+            $"every piece of gear has its picture ({pieces.Count(b => b.Icon is not null)} of {pieces.Count})");
+        Check(hud.OptionButtons.Where(b => b.Text is "Close" or "Quick keys").All(b => b.Icon is null), "and nothing else has one");
+        var drawings = new[] { "iron_sword", "iron_shield", "iron_helm", "leather_armor", "orrery_ring" }.Select(id => GearIcons.Draw(Items.Get(id)!).GetImage()).ToList();
+        var filled = drawings.Select(img => Enumerable.Range(0, GearIcons.Size * GearIcons.Size).Count(i => img.GetPixel(i % GearIcons.Size, i / GearIcons.Size).A > 0.5f) / (float)(GearIcons.Size * GearIcons.Size)).ToList();
+        Check(drawings.Select(img => Convert.ToBase64String(img.GetData())).Distinct().Count() == drawings.Count && filled.All(f => f is > 0.06f and < 0.7f),
+            $"a blade, a shield, a helm, a tunic and a ring are each drawn as themselves (filled {string.Join(", ", filled.Select(f => f.ToString("P0")))})");
+
+        // Pointing at a piece: the little hero tries it on, and the line says what it changes. Nothing is really put on.
+        gear.TryOn(Items.Get("iron_helm")!);
+        Check(gear.TryingOn == "iron_helm" && gear.Line.Contains("+12 armour"), $"pointing at a helm says what it would change ({gear.Line})");
+        gear.SettleForTest();
+        await Until(() => gear.ShowingTrial, 10);
+        Check(gear.ShowingTrial, $"and the little hero puts it on ({gear.State})");
+        Check(pack.WornIn(Slot.Head) is null, "without the hero really putting it on");
+        gear.TryOn(Items.Get("steel_sword")!);
+        Check(gear.Line.Contains($"+{0.1:P0} damage"), $"a better sword: more damage ({gear.Line})");
+        gear.TakeOff();
+        await Frames(2);
+        Check(!gear.ShowingTrial && gear.TryingOn is null && gear.Line.StartsWith("Wearing"), "pointing away puts them back in what they wear");
+
+        // A greatsword needs both hands: trying it on shows the shield coming off.
+        pack.Equip("iron_shield");
+        main.ShowPack();
+        await Frames(3);
+        gear.TryOn(Items.Get("iron_greatsword")!);
+        Check(gear.Line.Contains("−18 armour") && gear.Line.Contains($"+{0.06:P0} damage"), $"a greatsword: the shield's armour goes, more damage ({gear.Line})");
+        gear.TakeOff();
+
+        // The mouse: on a piece tries it on, off it takes it off; what's worn already isn't tried on.
+        var steel = hud.OptionButtons.First(b => b.Text.StartsWith("Wear Steel Sword"));
+        steel.EmitSignal(Control.SignalName.MouseEntered);
+        Check(gear.TryingOn == "steel_sword", "the pointer on a piece tries it on");
+        steel.EmitSignal(Control.SignalName.MouseExited);
+        Check(gear.TryingOn is null, "and off it, takes it off");
+        hud.OptionButtons.First(b => b.Text.StartsWith("Take off")).EmitSignal(Control.SignalName.MouseEntered);
+        Check(gear.TryingOn is null, "pointing at what's worn already changes nothing");
+
+        // Putting it on for real, from the list, still works; and any other talk hides the little hero.
+        Check(hud.Choose("Wear Iron Helm"), "the helm is still put on from the list");
+        await Frames(3);
+        Check(pack.WornIn(Slot.Head)?.Id == "iron_helm" && gear.Visible && gear.Line.Contains("+30 armour"), $"and worn, the line counts it ({gear.Line})");
+        hud.Talk("Someone", "Well met.", ("Farewell", hud.EndTalk));
+        Check(!gear.Visible, "talking to anyone else hides it");
+        hud.EndTalk();
+        foreach (var slot in pack.Worn.Keys.ToList()) pack.Unequip(slot);
+        foreach (var id in ids) pack.Take(id, pack.Count(id));
+        main.PlayerNode.Dress();
+    }
+
     async Task PlatesTest()
     {
         var (p, hud) = (main.PlayerNode, main.HudNode);

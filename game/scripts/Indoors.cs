@@ -38,8 +38,16 @@ public partial class Main
         City.BelowName = null;
         _terrain.EnsureAround(_outside, 1);
         _player.GlobalPosition = _outside with { Y = Mathf.Max(_outside.Y, City.FloorAt(_outside)) + 0.4f }; // a door may be up a tree
+        if (Buildings.OutwardAt(_outside) is { } outward) _player.Face(_player.GlobalPosition + outward * 4); // out, facing away from the door
         _player.Velocity = Vector3.Zero;
         _player.ResetPhysicsInterpolation();
+    }
+
+    /// <summary>Walked to the back of an open way (Hollowheart's council arch): in, just as if E had been pressed at its door.</summary>
+    void TendOpenWays()
+    {
+        if (_indoors is not null || _cave is not null || _atSea is not null || _player.Mount is not null || _player.Downed) return;
+        if (Buildings.WalkedIn(_player.GlobalPosition) is { } way) GoInside(way.Kind, way.Seed, way.Step);
     }
 
     /// <summary>A room doesn't outlast the hero leaving it some other way (the ring), nor a game that was closed in it.</summary>
@@ -49,6 +57,7 @@ public partial class Main
         TendSkyboat(GetProcessDeltaTime());
         TendShaft();
         TendCrypt();
+        TendOpenWays();
         var above = _player.GlobalPosition.Y > Indoors.Threshold;
         if (!above && _indoors is not null)
         {

@@ -89,6 +89,37 @@ public static class Buildings
         return best;
     }
 
+    /// <summary>Doors that are open ways (Hollowheart's council arch): walking to the back of the passage takes you in, no knocking.</summary>
+    static readonly List<(Node3D At, float Depth, float Half)> Ways = [];
+
+    /// <summary>Makes a door an open way: a passage <paramref name="depth"/> deep (back along -Z from the door) and <paramref name="half"/> either side; reach its back and you're in.</summary>
+    public static void OpenWay(Node3D at, float depth, float half) => Ways.Add((at, depth, half));
+
+    /// <summary>The open way whose back someone at <paramref name="pos"/> has walked into, as <see cref="DoorNear"/> gives it.</summary>
+    public static (string Kind, int Seed, Vector3 Step)? WalkedIn(Vector3 pos)
+    {
+        Ways.RemoveAll(w => !GodotObject.IsInstanceValid(w.At));
+        foreach (var (at, depth, half) in Ways)
+        {
+            if (!at.IsInsideTree()) continue;
+            var local = at.ToLocal(pos);
+            if (Mathf.Abs(local.X) > half || local.Z > -depth + 1.3f || local.Z < -depth - 0.6f || Mathf.Abs(local.Y) > 2.5f) continue;
+            foreach (var (body, kind, seed, front) in Doors)
+                if (body == at) return (kind, seed, body.ToGlobal(new Vector3(0, 0, front + 1.6f)));
+        }
+        return null;
+    }
+
+    /// <summary>Which way is out of the door whose doorstep is at <paramref name="step"/> (to face someone coming out of it), if there's a door there.</summary>
+    public static Vector3? OutwardAt(Vector3 step)
+    {
+        Doors.RemoveAll(d => !GodotObject.IsInstanceValid(d.Body));
+        foreach (var (body, _, _, front) in Doors)
+            if (body.IsInsideTree() && body.ToGlobal(new Vector3(0, 0, front + 1.6f)).DistanceTo(step) < 0.5f)
+                return (body.GlobalBasis.Z with { Y = 0 }).Normalized();
+        return null;
+    }
+
     /// <summary>The spots outside every door within a distance (where townsfolk run to, to get in out of a raid).</summary>
     public static IEnumerable<Vector3> DoorsWithin(Vector3 pos, float within)
     {

@@ -53,6 +53,20 @@ public static class Wardrobe
         return a;
     }
 
+    /// <summary>
+    /// An item on its own, as a hero would carry it, for its icon in the pack: weapons and shields as the armoury makes
+    /// them for a real hand, things made from shapes as they're made, the rest as the piece put on a figure. Nothing for
+    /// what's only painted on (body armour) or too small to see (rings, amulets).
+    /// </summary>
+    public static Node3D? Model(Item item)
+    {
+        if (item.Look is null) return null;
+        if (item.Look.StartsWith('@')) return Figure.Crafted(item.Look[1..]);
+        var id = item.Look.Contains('/') ? item.Look.Split('/')[1] : item.Look;
+        if (Humans.Enabled && item.Slot is Slot.Weapon or Slot.Offhand && Armoury.Make(id, item.Tint is { } t ? new Color(t) : null, item.Metal, item.Glow) is { } made) return made;
+        return Piece(item);
+    }
+
     /// <summary>The piece for an item: borrowed from the model that has it ("Knight/Knight_Helmet"), or grown.</summary>
     static Node3D? Piece(Item item)
     {

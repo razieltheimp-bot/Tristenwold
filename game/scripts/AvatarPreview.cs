@@ -18,7 +18,13 @@ public partial class AvatarPreview : SubViewportContainer
         Stretch = true;
         CustomMinimumSize = new Vector2(300, 380);
         AddChild(_view);
-        _view.AddChild(new WorldEnvironment
+        Stage(_view, _turntable);
+    }
+
+    /// <summary>A hero's little stage: a warm backdrop, a light from the front and a cool one behind, a round plinth turning, and a camera on it.</summary>
+    public static void Stage(SubViewport view, Node3D turntable)
+    {
+        view.AddChild(new WorldEnvironment
         {
             Environment = new Godot.Environment
             {
@@ -27,16 +33,16 @@ public partial class AvatarPreview : SubViewportContainer
                 TonemapMode = Godot.Environment.ToneMapper.Filmic,
             },
         });
-        _view.AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-35, 35, 0), LightEnergy = 1.3f });
-        _view.AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-20, 200, 0), LightEnergy = 0.4f, LightColor = new Color("#a8c0ff") });
-        _view.AddChild(new MeshInstance3D
+        view.AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-35, 35, 0), LightEnergy = 1.3f });
+        view.AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-20, 200, 0), LightEnergy = 0.4f, LightColor = new Color("#a8c0ff") });
+        view.AddChild(new MeshInstance3D
         {
             Mesh = new CylinderMesh { TopRadius = 0.95f, BottomRadius = 1.0f, Height = 0.08f, RadialSegments = 40 },
             Position = new Vector3(0, -0.04f, 0), MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("#4a4034"), Roughness = 0.9f },
         });
-        _view.AddChild(_turntable);
+        view.AddChild(turntable);
         var camera = new Camera3D { Fov = 38 };
-        _view.AddChild(camera);
+        view.AddChild(camera);
         camera.Position = new Vector3(0, 1.3f, 4.3f);
         camera.LookAt(new Vector3(0, 1.05f, 0), Vector3.Up);
     }

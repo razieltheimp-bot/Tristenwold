@@ -1012,42 +1012,97 @@ public partial class Places(Main main, WorldGen world) : Node3D
         return (doorAt.X, doorAt.Z);
     }
 
+    /// <summary>Hollowheart's council arch: how wide and tall its opening is, how deep its passage, and how high its roof stands.</summary>
+    public const float ArchHalf = 1.75f, ArchHigh = 4.5f, ArchDeep = 3.5f, ArchRoof = 4.75f;
+
     /// <summary>
-    /// Hollowheart's council meets inside one of its great trees: an arched door set into the flare of the roots, a hood
-    /// of bark over it, a lantern either side and the council's name carved above. Where its door is.
+    /// Hollowheart's council meets inside one of its great trees, through a great open arch cut into the foot of the
+    /// trunk: a short passage of bark you walk straight into (no door to knock at), a hood of bark over its mouth, a
+    /// lantern either side and the council's name above. It faces into the village; where the tree's ramp passes low
+    /// over that side, the arch stands out past the ramp, and the root's flare in front of it is cut away, so nothing of
+    /// the tree hangs over the way in. Where its mouth is (the clerk stands just outside).
     /// </summary>
     (double X, double Z)? TreeChamber(Node3D parent, Settlement s, Npc clerk)
     {
         var tree = Northwood.Hearts.MinBy(t => (t.X - clerk.X) * (t.X - clerk.X) + (t.Z - clerk.Z) * (t.Z - clerk.Z));
         if (tree is null) return null;
-        var (dx, dz) = (s.X - tree.X, s.Z - tree.Z); // its door faces into the village
+        var number = 1;
+        while (number <= Northwood.Hearts.Count && Northwood.Hearts[number - 1] != tree) number++;
+        var (dx, dz) = (s.X - tree.X, s.Z - tree.Z); // it faces into the village
         var len = Math.Sqrt(dx * dx + dz * dz);
-        var (ux, uz) = len > 0.1 ? (dx / len, dz / len) : (1.0, 0.0);
-        var reach = tree.Radius * Northwood.RootSpread * 0.97;
-        var foot = new Vector3((float)(tree.X + ux * reach), 0, (float)(tree.Z + uz * reach));
+        var facing = len > 0.1 ? Mathf.Atan2((float)dz, (float)dx) : 0f;
+        // Turned only as far as it must be to keep clear of the hollows at the tree's foot and of the other trees' roots.
+        var hollows = Forest.GroundHollows(tree, number);
+        var angle = Enumerable.Range(0, 63).Select(k => facing + (k % 2 == 0 ? 1 : -1) * ((k + 1) / 2) * 0.1f).FirstOrDefault(a =>
+        {
+            if (hollows.Any(h => Mathf.Abs(Mathf.AngleDifference(a, h)) < 0.55f)) return false;
+            // Within the tree's roots, where walkers keep out (not out past the very foot of the ramp, standing in the clearing).
+            if (Forest.ArchBack(tree, number, a, ArchRoof) + ArchDeep > Northwood.Clearance(tree) - 0.5) return false;
+            var front = Forest.ArchBack(tree, number, a, ArchRoof) + ArchDeep + 4;
+            var (fx, fz) = (tree.X + Math.Cos(a) * front, tree.Z + Math.Sin(a) * front);
+            return !Northwood.Hearts.Any(o => o != tree && (fx - o.X) * (fx - o.X) + (fz - o.Z) * (fz - o.Z) < Math.Pow(Northwood.Clearance(o), 2));
+        }, facing);
+        var back = Forest.ArchBack(tree, number, angle, ArchRoof);
+        Forest.CutArch(tree, new Forest.Arch(angle, back, ArchHalf, ArchRoof));
+        var (ux, uz) = (Math.Cos(angle), Math.Sin(angle));
+        var mouth = back + ArchDeep;
+        var foot = new Vector3((float)(tree.X + ux * mouth), 0, (float)(tree.Z + uz * mouth));
         foot.Y = Mathf.Max((float)world.Height(foot.X, foot.Z), City.FloorAt(foot));
         var door = new Node3D { Name = "CouncilTreeDoor", Position = foot, Rotation = new Vector3(0, Mathf.Atan2((float)ux, (float)uz), 0) };
         parent.AddChild(door);
         var bark = BuildingMaterials.For(Surface.Timber);
         var wood = new StandardMaterial3D { AlbedoColor = new Color("#4a3020"), Roughness = 0.85f };
-        void Box(Vector3 at, Vector3 size, Material m) => door.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = size }, MaterialOverride = m, Position = at });
-        Box(new Vector3(0, 1.4f, -0.2f), new Vector3(1.8f, 2.8f, 0.3f), wood); // the door itself, set back in the frame
-        for (var k = 0; k < 4; k++) Box(new Vector3(-0.67f + k * 0.45f, 1.4f, -0.04f), new Vector3(0.05f, 2.7f, 0.04f), bark); // its planks
-        foreach (var side in new[] { -1f, 1f }) Box(new Vector3(side * 1.05f, 1.55f, 0), new Vector3(0.35f, 3.1f, 0.5f), bark); // the posts
-        door.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 1.25f, BottomRadius = 1.25f, Height = 0.5f, RadialSegments = 16 }, MaterialOverride = bark,
-            Position = new Vector3(0, 3.05f, 0), Rotation = new Vector3(Mathf.Pi / 2, 0, 0), Scale = new Vector3(1, 1, 0.55f) }); // the arch over it
-        Box(new Vector3(0, 3.7f, 0.35f), new Vector3(3.2f, 0.25f, 1.2f), bark); // a hood of bark
+        var dark = new StandardMaterial3D { AlbedoColor = new Color("#1e140c"), Roughness = 1 };
+        var frame = new StaticBody3D { Name = "frame" };
+        door.AddChild(frame);
+        void Box(Vector3 at, Vector3 size, Material m, bool solid = false)
+        {
+            door.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = size }, MaterialOverride = m, Position = at });
+            if (solid) frame.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size }, Position = at });
+        }
+        // The passage: walls of bark either side, a roof over it, and at its back the council's own doors, warm-lit.
+        foreach (var side in new[] { -1f, 1f }) Box(new Vector3(side * (ArchHalf + 0.35f), (ArchRoof + 0.3f) / 2, -ArchDeep / 2), new Vector3(0.7f, ArchRoof + 0.3f, ArchDeep + 0.3f), bark, solid: true);
+        Box(new Vector3(0, ArchRoof + 0.15f, -ArchDeep / 2), new Vector3(ArchHalf * 2 + 1.4f, 0.3f, ArchDeep + 0.3f), bark, solid: true);
+        Box(new Vector3(0, (ArchRoof + 0.3f) / 2, -ArchDeep - 0.15f), new Vector3(ArchHalf * 2 + 1.4f, ArchRoof + 0.3f, 0.3f), dark, solid: true);
         foreach (var side in new[] { -1f, 1f })
         {
-            Box(new Vector3(side * 1.55f, 2.3f, 0.25f), new Vector3(0.25f, 0.35f, 0.25f), new StandardMaterial3D { AlbedoColor = new Color("#ffd890"), EmissionEnabled = true, Emission = new Color("#ffb040"), EmissionEnergyMultiplier = 2 });
-            door.AddChild(new OmniLight3D { Position = new Vector3(side * 1.55f, 2.3f, 0.6f), LightColor = new Color("#ffc070"), LightEnergy = 0.6f, OmniRange = 6 });
+            Box(new Vector3(side * 0.62f, 1.7f, -ArchDeep + 0.02f), new Vector3(1.2f, 3.4f, 0.08f), wood); // the inner doors, standing open a crack
+            for (var k = 0; k < 3; k++) Box(new Vector3(side * (0.2f + k * 0.4f), 1.7f, -ArchDeep + 0.07f), new Vector3(0.04f, 3.3f, 0.03f), bark);
         }
-        door.AddChild(new StaticBody3D { Name = "frame" }); // (the tree itself is what stops you)
+        Box(new Vector3(0, 1.7f, -ArchDeep + 0.01f), new Vector3(0.06f, 3.4f, 0.06f), new StandardMaterial3D { AlbedoColor = new Color("#ffd890"), EmissionEnabled = true, Emission = new Color("#ffb040"), EmissionEnergyMultiplier = 2.5f }); // light between them
+        door.AddChild(new OmniLight3D { Position = new Vector3(0, 3.4f, -ArchDeep + 1.0f), LightColor = new Color("#ffc070"), LightEnergy = 0.9f, OmniRange = 6 });
+        Box(new Vector3(0, 0.03f, -ArchDeep / 2), new Vector3(ArchHalf * 2, 0.06f, ArchDeep), BuildingMaterials.For(Surface.Planks)); // boards underfoot
+        // The mouth: a round arch springing from posts of root, the bark filled in above its curve up to the roof.
+        var spring = ArchHigh - ArchHalf;
+        foreach (var side in new[] { -1f, 1f }) Box(new Vector3(side * (ArchHalf + 0.2f), spring / 2, 0.1f), new Vector3(0.45f, spring, 0.6f), bark);
+        for (var k = 0; k <= 8; k++)
+        {
+            var a = k * Mathf.Pi / 8;
+            door.AddChild(new MeshInstance3D
+            {
+                Mesh = new BoxMesh { Size = new Vector3(0.45f, 0.75f, 0.6f) }, MaterialOverride = bark,
+                Position = new Vector3(Mathf.Cos(a) * (ArchHalf + 0.2f), spring + Mathf.Sin(a) * (ArchHalf + 0.2f), 0.1f), Rotation = new Vector3(0, 0, a),
+            });
+        }
+        for (var y = spring; y < ArchRoof + 0.3f; y += 0.25f)
+        {
+            var clear = y + 0.125f - spring < ArchHalf ? Mathf.Sqrt(ArchHalf * ArchHalf - (y + 0.125f - spring) * (y + 0.125f - spring)) : 0;
+            var fill = ArchHalf + 0.7f - clear;
+            foreach (var side in new[] { -1f, 1f }) Box(new Vector3(side * (clear + fill / 2), y + 0.125f, -0.05f), new Vector3(fill, 0.26f, 0.3f), bark);
+        }
+        Box(new Vector3(0, ArchRoof + 0.45f, 0.4f), new Vector3(ArchHalf * 2 + 2.2f, 0.3f, 1.5f), bark); // a hood of bark
+        foreach (var side in new[] { -1f, 1f })
+        {
+            Box(new Vector3(side * (ArchHalf + 0.85f), 2.3f, 0.3f), new Vector3(0.25f, 0.35f, 0.25f), new StandardMaterial3D { AlbedoColor = new Color("#ffd890"), EmissionEnabled = true, Emission = new Color("#ffb040"), EmissionEnergyMultiplier = 2 });
+            door.AddChild(new OmniLight3D { Position = new Vector3(side * (ArchHalf + 0.85f), 2.3f, 0.7f), LightColor = new Color("#ffc070"), LightEnergy = 0.6f, OmniRange = 6 });
+        }
         var seed = 7300 + (int)Math.Abs(WorldGen.StableHash(s.Id) % 500);
         Buildings.Door(door, "council", seed);
+        Buildings.OpenWay(door, ArchDeep, ArchHalf); // walk to the back of it and you're in
         main.CouncilChambers[seed] = s.Id;
-        Label(parent, foot + Vector3.Up * 4.6f + new Vector3((float)ux, 0, (float)uz) * 0.6f, $"The Council of {s.Name}", 0.02f);
-        var step = foot + new Vector3((float)ux, 0, (float)uz) * 2.2f;
+        Label(parent, foot + Vector3.Up * (ArchRoof + 1.3f) + new Vector3((float)ux, 0, (float)uz) * 0.6f, $"The Council of {s.Name}", 0.02f);
+        // The clerk waits just outside, to one side of the mouth: by it, not in the way of anyone walking in.
+        var step = foot + new Vector3((float)ux, 0, (float)uz) * 1.6f + new Vector3((float)-uz, 0, (float)ux) * 2.5f;
         return (step.X, step.Z);
     }
 

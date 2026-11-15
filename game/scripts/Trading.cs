@@ -90,11 +90,22 @@ public partial class Main
                    $"Trades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j).ToLowerInvariant()} {pack.Level(j)}"))}.{(_player.Buffs is { } b ? $" Now: {b}." : "")}\n" +
                    (pack.Items.Count == 0 ? "Your pack is empty." : string.Join(", ", pack.Contents.Select(c => Items.Count(c.Item.Id, c.N))));
         var options = new List<(string, Action)>();
+        var gear = new Dictionary<string, (Item Item, bool Worn)>(); // which replies are a piece of gear, for its picture
         foreach (var slot in new[] { Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body, Slot.Cloak, Slot.Ring, Slot.Neck })
-            if (pack.WornIn(slot) is { } on) options.Add(($"Take off {on.Name}", () => { pack.Unequip(slot); Redress(); ShowPack(); }));
+            if (pack.WornIn(slot) is { } on)
+            {
+                var label = $"Take off {on.Name}";
+                options.Add((label, () => { pack.Unequip(slot); Redress(); ShowPack(); }));
+                gear[label] = (on, true);
+            }
         foreach (var (item, n) in pack.Contents)
         {
-            if (item.Wearable) options.Add(($"Wear {item.Name} ({item.Text})", () => { pack.Equip(item.Id); Sound.Ui("equip"); Redress(); ShowPack(); }));
+            if (item.Wearable)
+            {
+                var label = $"Wear {item.Name} ({item.Text})";
+                options.Add((label, () => WearFromPack(item)));
+                gear.TryAdd(label, (item, false));
+            }
             else if (item.Usable) options.Add(($"{(item.Kind == ItemKind.Food ? "Eat" : "Drink")} {item.Name} ({n}): {item.Text}", () => { Consume(item); ShowPack(); }));
         }
         if (pack.Count("alchemist_kit") > 0) options.Add(("Brew potions (alchemist's kit)", () => ShowCraft(Job.Herbalism, ShowPack)));
@@ -102,6 +113,33 @@ public partial class Main
         options.Add(("Quick keys", () => ShowQuickBar(ShowPack)));
         options.Add(("Close", _hud.EndTalk));
         _hud.Talk("Your pack", text, [.. options]);
+        _hud.Gear.Show(_player.LookAlike, pack);
+        foreach (var button in _hud.OptionButtons)
+        {
+            if (!gear.TryGetValue(button.Text, out var piece)) continue;
+            button.Icon = GearIcons.For(piece.Item, better => { if (IsInstanceValid(button)) button.Icon = better; });
+            button.AddThemeConstantOverride("icon_max_width", 32);
+            if (piece.Worn || TouchMode) continue; // on a phone a tap tries it on (WearFromPack)
+            button.MouseEntered += () => _hud.Gear.TryOn(piece.Item);
+            button.FocusEntered += () => _hud.Gear.TryOn(piece.Item);
+            button.MouseExited += _hud.Gear.TakeOff;
+            button.FocusExited += _hud.Gear.TakeOff;
+        }
+    }
+
+    /// <summary>Puts on gear from the pack. On a phone, with nothing to point with, the first tap tries it on in the preview and a second puts it on.</summary>
+    void WearFromPack(Item item)
+    {
+        if (TouchMode && _hud.Gear.TryingOn != item.Id)
+        {
+            _hud.Gear.TryOn(item);
+            _hud.Toast($"Tap it again to put on the {item.Name}.", 2);
+            return;
+        }
+        _player.Pack.Equip(item.Id);
+        Sound.Ui("equip");
+        Redress();
+        ShowPack();
     }
 
     void Redress()

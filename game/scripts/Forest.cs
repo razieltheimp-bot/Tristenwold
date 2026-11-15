@@ -250,7 +250,7 @@ public partial class Forest(Main main) : Node3D
     void Grove()
     {
         var fruit = new StandardMaterial3D { AlbedoColor = new Color("#8a2a1c"), Roughness = 0.5f, EmissionEnabled = true, Emission = new Color("#a02010"), EmissionEnergyMultiplier = 0.5f };
-        var (bark, leaf) = (Bark(), new StandardMaterial3D { AlbedoColor = new Color("#2e3a24"), Roughness = 0.95f });
+        var (bark, leaf) = (Bark(), Graphics.FadingLeaves(new Color("#2e3a24")));
         for (var i = 0; i < 5; i++)
         {
             var at = new Vector3((float)Northwood.GroveX + Mathf.Cos(i * 1.3f) * (4 + i * 3), 0, (float)Northwood.GroveZ + Mathf.Sin(i * 1.3f) * (4 + i * 3));
@@ -264,6 +264,7 @@ public partial class Forest(Main main) : Node3D
 
     public override void _ExitTree()
     {
+        if (_live == this) _live = null;
         Enemy.Slain -= OnSlain;
         Enemy.Landed -= OnLanded;
         main.PlayerNode.WentDown -= OnHeroDown;
@@ -283,7 +284,7 @@ public partial class Forest(Main main) : Node3D
     internal static float Girth(float radius, float t, float round) =>
         radius * (0.42f + 0.58f * Mathf.Pow(1 - t, 1.5f)) * (1 + 1.1f * Mathf.Exp(-t * 16)) * (1 + 0.14f * Mathf.Sin(round * 5 + t * 8) * Mathf.Exp(-t * 3));
 
-    static void Solid(Node3D parent, ArrayMesh mesh, Material m, Vector3 at)
+    static StaticBody3D Solid(Node3D parent, ArrayMesh mesh, Material m, Vector3 at)
     {
         var body = new StaticBody3D { Position = at };
         body.AddChild(new MeshInstance3D { Mesh = mesh, MaterialOverride = m });
@@ -291,6 +292,101 @@ public partial class Forest(Main main) : Node3D
         shape.BackfaceCollision = true;
         body.AddChild(new CollisionShape3D { Shape = shape });
         parent.AddChild(body);
+        return body;
+    }
+
+    // ---- an arch cut into a tree's foot (Hollowheart's council) ------------------------------------------------
+
+    /// <summary>
+    /// A walk-in arch cut into a heart-tree's foot: the way it faces (an angle round the tree), how far in from the
+    /// tree's middle the back of its passage is, half its width, and how high its roof is over the ground.
+    /// </summary>
+    public sealed record Arch(float Angle, float Back, float Half, float Top);
+
+    static readonly Dictionary<Northwood.HeartTree, Arch> Arches = [];
+    static Forest? _live;
+    readonly Dictionary<Northwood.HeartTree, StaticBody3D> _trunks = [];
+    Material? _bark;
+
+    /// <summary>Cuts an arch into a tree's foot: now, if the village is grown, or as it grows.</summary>
+    public static void CutArch(Northwood.HeartTree tree, Arch arch)
+    {
+        if (Arches.TryGetValue(tree, out var had) && had == arch) return;
+        Arches[tree] = arch;
+        _live?.Regrow(tree);
+    }
+
+    /// <summary>The arch cut into a tree, if there is one.</summary>
+    public static Arch? ArchOf(Northwood.HeartTree tree) => Arches.GetValueOrDefault(tree);
+
+    void Regrow(Northwood.HeartTree tree)
+    {
+        if (_bark is null || !_trunks.Remove(tree, out var old)) return;
+        old.QueueFree();
+        _trunks[tree] = Trunk(tree, _bark);
+    }
+
+    const int TrunkRows = 40, TrunkRound = 160;
+
+    /// <summary>
+    /// A heart-tree's trunk: rows closer together near the ground, where it swells into its roots, so the flare is
+    /// smooth. Where an arch is cut, the flare in front of it is cut back to the passage's back wall, leaving an open
+    /// way in from the clearing.
+    /// </summary>
+    StaticBody3D Trunk(Northwood.HeartTree tree, Material bark)
+    {
+        var at = new Vector3((float)tree.X, 0, (float)tree.Z);
+        at.Y = City.FloorAt(at) - 0.5f;
+        var (radius, high) = ((float)tree.Radius, (float)tree.Height);
+        var arch = ArchOf(tree);
+        return Solid(this, Grid(TrunkRows, TrunkRound, (r, c) =>
+        {
+            var (t, a) = (Mathf.Pow(r / (float)TrunkRows, 1.6f), c * Mathf.Tau / TrunkRound);
+            var g = Girth(radius, t, a);
+            if (arch is not null && g > arch.Back)
+            {
+                var off = Mathf.AngleDifference(arch.Angle, a);
+                if (Mathf.Abs(off) < Mathf.Pi / 2 && arch.Back * Mathf.Abs(Mathf.Sin(off)) < arch.Half + 0.35f) g = arch.Back;
+            }
+            return new Vector3(Mathf.Cos(a) * g, t * high, Mathf.Sin(a) * g);
+        }), bark, at);
+    }
+
+    /// <summary>How many times a heart-tree's ramp winds round it on its way up to the deck.</summary>
+    public const float RampTurns = 2;
+
+    /// <summary>The two hollows on the ground at a heart-tree's foot, as angles round it: where the ramp has already climbed clear over them.</summary>
+    public static float[] GroundHollows(Northwood.HeartTree tree, int seed)
+    {
+        var rise = Northwood.DeckHeight / (RampTurns * Mathf.Tau);
+        var a = RampTop(tree, seed) + 4.9f / rise * 1.035f;
+        return [a, a + 0.78f];
+    }
+
+    /// <summary>Where a heart-tree's ramp passes over an angle round it on its first turn: how high over the tree's foot, and how far out from its middle its outer edge reaches.</summary>
+    public static (float Height, float Reach) RampOver(Northwood.HeartTree tree, int seed, float angle)
+    {
+        var t = Mathf.PosMod(angle - RampTop(tree, seed), Mathf.Tau) / (RampTurns * Mathf.Tau);
+        return (t * Northwood.DeckHeight + 0.5f, Girth((float)tree.Radius, t * Northwood.DeckHeight / (float)tree.Height, angle) + 2.8f);
+    }
+
+    /// <summary>
+    /// How far in from a heart-tree's middle the back of an arch facing <paramref name="angle"/> goes, for a roof
+    /// <paramref name="top"/> over the ground: flush with the trunk just over the roof, so nothing of the tree hangs over the
+    /// way in; or, where the ramp passes low over that side, out past the ramp's edge, so the ramp is behind it.
+    /// </summary>
+    public static float ArchBack(Northwood.HeartTree tree, int seed, float angle, float top)
+    {
+        var (radius, high) = ((float)tree.Radius, (float)tree.Height);
+        var back = 0f;
+        for (var k = -6; k <= 6; k++)
+        {
+            var a = angle + k * 0.05f;
+            back = Mathf.Max(back, Girth(radius, (top + 0.8f) / high, a));
+            var (over, reach) = RampOver(tree, seed, a);
+            if (over - 0.5f < top + 1.2f) back = Mathf.Max(back, reach + 0.4f);
+        }
+        return back;
     }
 
     static ArrayMesh Grid(int rows, int columns, Func<int, int, Vector3> at)
@@ -336,12 +432,7 @@ public partial class Forest(Main main) : Node3D
         var at = new Vector3((float)tree.X, 0, (float)tree.Z);
         at.Y = City.FloorAt(at) - 0.5f;
         var (radius, high) = ((float)tree.Radius, (float)tree.Height);
-        Solid(this, Grid(26, 40, (r, c) =>
-        {
-            var (t, a) = (r / 26f, c * Mathf.Tau / 40);
-            var g = Girth(radius, t, a);
-            return new Vector3(Mathf.Cos(a) * g, t * high, Mathf.Sin(a) * g);
-        }), bark, at);
+        _trunks[tree] = Trunk(tree, bark);
         // Where the bridges leave this tree's deck: the ramp, the hollows and the railing all keep clear of them.
         var bridges = BridgesFrom(tree);
         // The ramp goes round the trunk twice as it climbs, hugging it, with a parapet of root along its outer edge. Near
@@ -402,7 +493,8 @@ public partial class Forest(Main main) : Node3D
             taken.Add(a);
             return a;
         }
-        float[] podAngles = [top + 4.9f / rise * 1.035f, top + 4.9f / rise * 1.035f + 0.78f, Pod(), Pod()];
+        var onGround = GroundHollows(tree, seed);
+        float[] podAngles = [onGround[0], onGround[1], Pod(), Pod()];
         for (var i = 0; i < 4; i++)
         {
             var a = podAngles[i];
@@ -469,8 +561,9 @@ public partial class Forest(Main main) : Node3D
 
     void BuildVillage()
     {
-        var bark = Bark();
-        var leaf = new StandardMaterial3D { AlbedoColor = new Color("#3f6a34"), Roughness = 0.95f };
+        var bark = _bark = Bark();
+        _live = this;
+        var leaf = Graphics.FadingLeaves(new Color("#3f6a34")); // the canopy thins out of the camera's way like any leaves
         var glow = new StandardMaterial3D { AlbedoColor = new Color("#b0ffc0"), EmissionEnabled = true, Emission = new Color("#60ffa0"), EmissionEnergyMultiplier = 1.6f };
         var trees = Northwood.Hearts;
         for (var i = 0; i < trees.Count; i++) Heart(trees[i], bark, leaf, glow, i + 1);

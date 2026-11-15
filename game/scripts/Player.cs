@@ -51,6 +51,9 @@ public partial class Player : Fighter
 
     Body MakeFigure() => Tristinwold.Game.Figure.Create(Class.Look, Gameplay.Avatar.Parse(Avatar, Class.Id) ?? (Humans.Enabled ? Gameplay.Avatar.For(Class.Id) : null));
 
+    /// <summary>A fresh body in the hero's own look (never a beast's or a golem's), for the pack's preview.</summary>
+    public Body LookAlike() => Avatar is null && !Humans.Enabled ? Body.For(Class.Look) : MakeFigure();
+
     /// <summary>Their rank in their guild ("Adept of the Iron Circle").</summary>
     public string GuildTitle { get; set; } = "";
 
@@ -364,6 +367,13 @@ public partial class Player : Fighter
         if (Frozen) return;
         RotateY(-by.X);
         _pivot.Rotation = new Vector3(Mathf.Clamp(_pivot.Rotation.X - by.Y, -1.2f, 0.6f), 0, 0);
+    }
+
+    public override void _Process(double delta)
+    {
+        // Leaves between the camera and the hero thin out of the way; trunks and walls still pull the camera in (KeepCameraClear and the arm).
+        if (Camera.IsInsideTree())
+            Foliage.SeeThrough(Camera.GlobalPosition, GlobalPosition + Vector3.Up * 1.3f, Camera.Current && _arm.SpringLength > 0.5f, delta);
     }
 
     public override void _PhysicsProcess(double delta)
