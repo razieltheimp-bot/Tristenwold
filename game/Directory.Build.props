@@ -1,0 +1,10 @@
+<Project>
+  <!-- Vann's court (ClaudePlayer.cs) is compiled in only when TRISTINWOLD_CLAUDE=1, so the players' builds never carry it.
+       Vann's own build (tools/vann/make-package.ps1) sets it. -->
+  <PropertyGroup Condition="'$(TRISTINWOLD_CLAUDE)' == '1'">
+    <DefineConstants>$(DefineConstants);CLAUDE_PLAYER</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TRISTINWOLD_CLAUDE)' == '1'">
+    <PackageReference Include="Anthropic" Version="13.3.0" />
+  </ItemGroup>
+</Project>
