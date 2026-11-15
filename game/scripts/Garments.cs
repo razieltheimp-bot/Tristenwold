@@ -1,4 +1,4 @@
-using Godot;
+﻿using Godot;
 
 namespace Tristinwold.Game;
 
@@ -403,18 +403,23 @@ public static class Garments
     }
 
     /// <summary>
-    /// Turlin as the hero first meets him: a man, covered in black fur but for his face and an open patch down his chest,
-    /// with long black hair in great spikes, a black monkey's tail (one turn of it wrapped round his waist), long blue
-    /// plates at his hips and forearms and blue boots, all edged in white, and the spiked fruit in his hand.
+    /// Turlin as the hero first meets him: a heavy man covered in black fur but for his face and an open patch down his
+    /// chest, bare to the waist. Black trousers and boots, a red sash knotted at his left hip with its ends hanging, a
+    /// white cloak thrown over his right shoulder and falling down his back, long silver hair to the middle of his back,
+    /// his long black monkey's tail coming out behind and curling up at the end, and the spiked fruit in his hand.
     /// </summary>
     static void Rival(Skeleton3D sk, Measure m, List<Node> made)
     {
         var fur = new StandardMaterial3D { AlbedoColor = new Color("#17151a"), Roughness = 0.95f, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
         var skin = Cloth(new Color("#6a4638"));
-        var (plate, edge) = (Cloth(new Color("#3f5c96")), Cloth(new Color("#dfe1e8")));
+        var (black, red, white) = (Cloth(new Color("#121214")), Cloth(new Color("#9c1c1c")), Cloth(new Color("#ecebe6")));
+        var boot = Armoury.Leather("#17120f");
         var torsoH = m.Neck.Y - m.Hips.Y;
         var chest = Hang(sk, "Chest", made);
         var front = m.ShoulderHalf * 0.8f;
+        // His left and his right, as the body has them.
+        var left = sk.FindBone("LeftUpperLeg") is var lb && lb >= 0 && sk.GetBoneGlobalRest(lb).Origin.X < 0 ? -1f : 1f;
+        var right = -left;
         // The bare chest, and the fur standing up along its edges.
         chest.AddChild(Part(Drape(m.ShoulderHalf * 1.25f, torsoH * 0.76f, m.ShoulderHalf * 0.44f, 0.1f), skin, new Vector3(0, m.Hips.Y + torsoH * 0.92f, front + 0.012f)));
         for (var i = 0; i < 20; i++)
@@ -426,6 +431,7 @@ public static class Garments
         }
         foreach (var side in new[] { "Left", "Right" })
         {
+            // Bare, furred arms, and black wraps at the wrists.
             if (sk.FindBone($"{side}UpperArm") is var ui && ui >= 0)
             {
                 var rest = sk.GetBoneGlobalRest(ui);
@@ -436,48 +442,50 @@ public static class Garments
             {
                 var rest = sk.GetBoneGlobalRest(li);
                 var along = rest.Basis.Y.Normalized();
-                var arm = Hang(sk, $"{side}LowerArm", made);
-                arm.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.072f, Height = 0.22f, RadialSegments = 18 }, plate, rest.Origin + along * 0.16f), along));
-                arm.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.058f, BottomRadius = 0.058f, Height = 0.03f, RadialSegments = 18 }, edge, rest.Origin + along * 0.27f), along));
-                arm.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.078f, BottomRadius = 0.1f, Height = 0.05f, RadialSegments = 18 }, edge, rest.Origin + along * 0.05f), along)); // the white flare at the elbow
+                Hang(sk, $"{side}LowerArm", made).AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.054f, Height = 0.07f, RadialSegments = 16 }, black, rest.Origin + along * 0.25f), along));
             }
         }
         foreach (var side in new[] { "Left", "Right" })
         {
-            // He's a heavy man: thick legs in black fur, in tall blue boots with a white cuff.
+            // Black trousers over his heavy legs, loose at the knee, into black boots.
             if (sk.FindBone($"{side}UpperLeg") is var ti && ti >= 0)
             {
                 var rest = sk.GetBoneGlobalRest(ti);
                 var along = rest.Basis.Y.Normalized();
-                Hang(sk, $"{side}UpperLeg", made).AddChild(Aim(Part(new CapsuleMesh { Radius = 0.095f, Height = 0.46f, RadialSegments = 14, Rings = 6 }, fur, rest.Origin + along * 0.19f), along));
+                Hang(sk, $"{side}UpperLeg", made).AddChild(Aim(Part(new CapsuleMesh { Radius = 0.108f, Height = 0.5f, RadialSegments = 16, Rings = 6 }, black, rest.Origin + along * 0.2f), along));
             }
             if (sk.FindBone($"{side}LowerLeg") is var si && si >= 0)
             {
                 var rest = sk.GetBoneGlobalRest(si);
                 var along = rest.Basis.Y.Normalized();
                 var shin = Hang(sk, $"{side}LowerLeg", made);
-                shin.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.058f, BottomRadius = 0.082f, Height = 0.32f, RadialSegments = 18 }, plate, rest.Origin + along * 0.22f), along));
-                shin.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.09f, BottomRadius = 0.09f, Height = 0.03f, RadialSegments = 18 }, edge, rest.Origin + along * 0.06f), along));
+                shin.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.094f, BottomRadius = 0.074f, Height = 0.3f, RadialSegments = 18 }, black, rest.Origin + along * 0.15f), along));
+                shin.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.066f, BottomRadius = 0.078f, Height = 0.16f, RadialSegments = 18 }, boot, rest.Origin + along * 0.36f), along)); // the boot's top
             }
             if (sk.FindBone($"{side}Foot") is var fi && fi >= 0)
             {
                 var rest = sk.GetBoneGlobalRest(fi);
                 var along = rest.Basis.Y.Normalized();
-                Hang(sk, $"{side}Foot", made).AddChild(Aim(Part(new CapsuleMesh { Radius = 0.062f, Height = 0.27f, RadialSegments = 14, Rings = 6 }, plate, rest.Origin + along * 0.07f), along));
+                Hang(sk, $"{side}Foot", made).AddChild(Aim(Part(new CapsuleMesh { Radius = 0.062f, Height = 0.27f, RadialSegments = 14, Rings = 6 }, boot, rest.Origin + along * 0.07f), along));
             }
         }
+        // The trousers' seat, and over it the red sash, knotted at his left hip with its two ends hanging.
         var hips = Hang(sk, "Hips", made);
         var r0 = m.HipHalf + 0.01f;
-        hips.AddChild(Part(new TorusMesh { InnerRadius = r0 - 0.035f, OuterRadius = r0 + 0.03f, Rings = 36, RingSegments = 12 }, fur, new Vector3(0, m.Hips.Y + 0.11f, 0), scale: new Vector3(1, 1.1f, 0.86f))); // a turn of his tail
-        var flap = Drape(m.HipHalf * 0.6f, m.Hips.Y * 0.56f, m.HipHalf * 0.2f, 0.14f, 8, 12, lean: 0.04f);
-        foreach (var side in new[] { -1f, 1f })
-        {
-            // Long plates front and side, split at the middle so a leg shows between them, each edged white.
-            hips.AddChild(Part(flap, plate, new Vector3(side * m.HipHalf * 0.56f, m.Hips.Y + 0.08f, r0 * 0.86f), new Vector3(0, side * 14, side * 5)));
-            hips.AddChild(Part(new BoxMesh { Size = new Vector3(0.02f, m.Hips.Y * 0.54f, 0.02f) }, edge, new Vector3(side * m.HipHalf * 0.3f, m.Hips.Y * 0.8f, r0 * 0.98f), new Vector3(0, 0, side * 5)));
-            hips.AddChild(Part(flap, plate, new Vector3(side * r0, m.Hips.Y + 0.08f, -0.02f), new Vector3(0, side * 90, 0)));
-        }
-        // The rest of the tail: long, thin and black, coming out behind and curling up at the end.
+        hips.AddChild(Part(new CylinderMesh { TopRadius = r0 * 0.98f, BottomRadius = r0 * 1.04f, Height = 0.26f, RadialSegments = 28 }, black, new Vector3(0, m.Hips.Y - 0.02f, 0), scale: new Vector3(1, 1, 0.86f)));
+        hips.AddChild(Part(new TorusMesh { InnerRadius = r0 - 0.03f, OuterRadius = r0 + 0.035f, Rings = 36, RingSegments = 12 }, red, new Vector3(0, m.Hips.Y + 0.11f, 0), scale: new Vector3(1, 1.7f, 0.88f)));
+        var knot = new Vector3(left * r0 * 0.7f, m.Hips.Y + 0.1f, r0 * 0.66f);
+        hips.AddChild(Part(new SphereMesh { Radius = 0.042f, Height = 0.084f, RadialSegments = 12, Rings = 6 }, red, knot, scale: new Vector3(1.2f, 0.9f, 0.8f)));
+        foreach (var (lean, length) in new[] { (6f, 0.46f), (-4f, 0.36f) })
+            hips.AddChild(Part(Drape(0.075f, length, 0.01f, 0.35f, 4, 8), red, knot + new Vector3(0, -0.02f, 0.02f), new Vector3(0, left * 20, left * lean)));
+        // The white cloak: over the right shoulder, a fold of it falling down the front of that side, and the rest
+        // hanging behind him to the backs of his knees, wrapping a little round his back.
+        var shoulder = new Vector3(right * m.ShoulderHalf * 0.82f, m.Neck.Y - 0.03f, -0.01f);
+        chest.AddChild(Part(new SphereMesh { Radius = 0.13f, Height = 0.26f, RadialSegments = 18, Rings = 10 }, white, shoulder + new Vector3(0, 0.02f, 0), scale: new Vector3(1.15f, 0.55f, 1.3f)));
+        chest.AddChild(Part(Drape(0.26f, torsoH * 0.62f, 0.05f, 0.3f), white, shoulder + new Vector3(right * 0.02f, 0, front * 0.75f), new Vector3(0, right * 12, right * 4)));
+        chest.AddChild(Part(Drape(m.ShoulderHalf * 1.5f, m.Neck.Y * 0.68f, 0.16f, 0.45f, 12, 16, lean: -0.05f), white,
+            new Vector3(right * m.ShoulderHalf * 0.35f, m.Neck.Y + 0.01f, -m.ShoulderHalf * 0.62f), new Vector3(0, 180, right * -7)));
+        // His tail: long, thin and black, coming out behind under the sash and curling up at the end.
         var (at0, way0) = (new Vector3(0, m.Hips.Y - 0.02f, -m.HipHalf * 0.85f), new Vector3(0, -0.6f, -1).Normalized());
         for (var i = 0; i < 14; i++)
         {
@@ -486,20 +494,21 @@ public static class Garments
             at0 += way0 * 0.135f;
             way0 = (way0 + new Vector3(0, i > 6 ? 0.34f : 0.12f, i > 9 ? 0.3f : 0)).Normalized();
         }
+        // The spiked fruit in his hand.
         if (sk.FindBone("RightHand") >= 0)
         {
             var rest = sk.GetBoneGlobalRest(sk.FindBone("RightHand"));
             var hand = Hang(sk, "RightHand", made);
-            var red = new StandardMaterial3D { AlbedoColor = new Color("#7a2416"), Roughness = 0.55f };
+            var fruit = new StandardMaterial3D { AlbedoColor = new Color("#7a2416"), Roughness = 0.55f };
             var at = rest.Origin + rest.Basis.Y.Normalized() * 0.12f + rest.Basis.Z.Normalized() * 0.03f;
-            hand.AddChild(Part(new SphereMesh { Radius = 0.058f, Height = 0.116f, RadialSegments = 12, Rings = 8 }, red, at));
+            hand.AddChild(Part(new SphereMesh { Radius = 0.058f, Height = 0.116f, RadialSegments = 12, Rings = 8 }, fruit, at));
             for (var i = 0; i < 8; i++)
             {
                 var way = new Vector3(Mathf.Cos(i * 2.4f), Mathf.Sin(i * 1.7f), Mathf.Sin(i * 2.4f)).Normalized();
-                hand.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.001f, BottomRadius = 0.012f, Height = 0.04f, RadialSegments = 6 }, red, at + way * 0.066f), way));
+                hand.AddChild(Aim(Part(new CylinderMesh { TopRadius = 0.001f, BottomRadius = 0.012f, Height = 0.04f, RadialSegments = 6 }, fruit, at + way * 0.066f), way));
             }
         }
-        Hair(sk, m, "Wildmane", new Color("#121014"), made);
+        Hair(sk, m, "Silverfall", new Color("#d9dde6"), made);
     }
 
     /// <summary>
@@ -1169,6 +1178,20 @@ public static class Garments
                 Crop();
                 for (var i = -3; i <= 3; i++)
                     Lock(crown + new Vector3(i * 0.032f, 0.03f, -0.1f + Mathf.Abs(i) * 0.008f), new Vector3(i * 0.04f, -1, -0.28f), 0.3f, 0.034f);
+                break;
+            case "Silverfall":
+                // Long and straight, to the middle of the back: a fall of it behind, a long lock either side of the face
+                // down over the chest, and a few short ones over the brow.
+                Crop();
+                for (var i = -6; i <= 6; i++)
+                    Lock(crown + new Vector3(i * 0.019f, 0.01f - Mathf.Abs(i) * 0.004f, -0.09f), new Vector3(i * 0.05f, -1, -0.32f), 0.78f - Mathf.Abs(i) * 0.025f, 0.03f);
+                foreach (var side in new[] { -1f, 1f })
+                {
+                    Lock(crown + new Vector3(side * 0.112f, -0.02f, 0.02f), new Vector3(side * 0.12f, -1, 0.2f), 0.52f, 0.026f);
+                    Lock(crown + new Vector3(side * 0.1f, 0, -0.03f), new Vector3(side * 0.18f, -1, -0.05f), 0.6f, 0.028f);
+                }
+                for (var i = -1; i <= 1; i++)
+                    Lock(crown + new Vector3(i * 0.035f, 0.06f, 0.09f), new Vector3(i * 0.35f, -1, 0.55f), 0.15f, 0.016f);
                 break;
             case "Twintails":
                 Crop();
