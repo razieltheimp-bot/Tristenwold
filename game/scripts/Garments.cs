@@ -638,17 +638,19 @@ public static class Garments
     /// A wild head of hair: hundreds of long, curved, tapering locks gathered in tufts, flung up and out from the crown and
     /// falling thick down his back and over his shoulders, all one mesh, streaked along its length so it reads as strands.
     /// </summary>
-    static void Mane(Node3D head, Vector3 crown, Color colour, float big = 1)
+    static void Mane(Node3D head, Vector3 crown, Color colour, float big = 1, bool swept = false)
     {
-        if (!Manes.TryGetValue(colour, out var made)) Manes[colour] = made = MakeMane(colour);
+        if (!Manes.TryGetValue((colour, swept), out var made)) Manes[(colour, swept)] = made = MakeMane(colour, swept);
         var (mesh, hair) = made;
         head.AddChild(new MeshInstance3D { Mesh = mesh, MaterialOverride = hair, Position = crown, Scale = Vector3.One * big });
     }
 
     /// <summary>Made once for each colour and shared: every Turlin wears the same head of hair, in whatever shape he's come back.</summary>
-    static readonly Dictionary<Color, (ArrayMesh, StandardMaterial3D)> Manes = [];
+    static readonly Dictionary<(Color, bool), (ArrayMesh, StandardMaterial3D)> Manes = [];
 
-    static (ArrayMesh, StandardMaterial3D) MakeMane(Color colour)
+    /// <param name="swept">Swept back (Turlin as the great ape): the spikes laid back off the crown and longer, fanning out
+    /// behind his head rather than standing up, and the fall down his back longer still.</param>
+    static (ArrayMesh, StandardMaterial3D) MakeMane(Color colour, bool swept = false)
     {
         var crown = Vector3.Zero;
         var streaks = new NoiseTexture2D
@@ -701,15 +703,16 @@ public static class Garments
                 Lock(root + new Vector3(Rand(-0.04f, 0.04f), Rand(-0.02f, 0.02f), Rand(-0.04f, 0.04f)), aim, sweep, length * Rand(0.5f, 0.88f), width * Rand(0.26f, 0.6f));
             }
         }
-        // Up and out from the crown, thick, each tuft curling away at its point.
+        // Up and out from the crown, thick, each tuft curling away at its point (swept: laid back and longer, out behind).
         foreach (var (x, y, z, length) in new[] { (0f, 1f, -0.1f, 0.5f), (-0.5f, 0.9f, -0.2f, 0.44f), (0.45f, 0.95f, -0.25f, 0.5f), (-0.9f, 0.55f, -0.3f, 0.46f), (0.9f, 0.5f, -0.35f, 0.44f), (-1f, 0.15f, -0.4f, 0.4f), (1f, 0.1f, -0.45f, 0.42f), (-0.9f, -0.2f, -0.5f, 0.36f), (0.9f, -0.25f, -0.5f, 0.36f), (0.2f, 0.8f, -0.8f, 0.42f), (-0.3f, 0.5f, -0.9f, 0.42f) })
         {
-            var way = new Vector3(x, y, z).Normalized();
-            Tuft(crown + way * 0.075f + Vector3.Up * 0.03f, way, new Vector3(x * 0.1f, 0.05f, -0.08f), length, 0.135f, 10);
+            var way = swept ? new Vector3(x * 0.75f, y * 0.4f - 0.05f, z - 0.95f).Normalized() : new Vector3(x, y, z).Normalized();
+            var reach = swept ? length * 1.4f : length;
+            Tuft(crown + way * 0.075f + Vector3.Up * 0.03f, way, swept ? new Vector3(x * 0.12f, 0.08f, -0.05f) : new Vector3(x * 0.1f, 0.05f, -0.08f), reach, 0.135f, 10);
         }
         // Down his back in a great thick fall.
         for (var i = -3; i <= 3; i++)
-            Tuft(crown + new Vector3(i * 0.04f, 0.02f, -0.09f), new Vector3(i * 0.1f, -1, -0.3f), new Vector3(i * 0.02f, 0, 0.14f), 0.76f + (3 - Math.Abs(i)) * 0.05f, 0.13f, 9);
+            Tuft(crown + new Vector3(i * 0.04f, 0.02f, -0.09f), new Vector3(i * 0.1f, -1, -0.3f), new Vector3(i * 0.02f, 0, 0.14f), (0.76f + (3 - Math.Abs(i)) * 0.05f) * (swept ? 1.35f : 1), 0.13f, 9);
         // Forward over his shoulders, framing the face, and a few locks at the brow.
         foreach (var side in new[] { -1f, 1f })
         {
@@ -733,7 +736,7 @@ public static class Garments
     /// <summary>
     /// What Turlin comes back as: a great ape stood up on a man's frame, all brown fur and muscle with a bare, lined face.
     /// The frame is a person's, so it stands on its own feet, walks and swings like one. Turlin's still wears what he wore
-    /// as a man (but the cloak): black trousers and boots and the red sash; his hair stands up in great spikes, silver.
+    /// as a man (but the cloak): black trousers and boots and the red sash; his hair is silver, long, in great spikes swept back.
     /// </summary>
     static void GreatApe(Skeleton3D sk, Measure m, List<Node> made, Color? coat = null, Color? eyes = null)
     {
@@ -836,7 +839,7 @@ public static class Garments
         }
         Face(new Vector3(0, -0.09f, 0.19f), 0.06f, new Vector3(1, 0.1f, 0.5f), dark); // the mouth
         // His great spiked mane, gone silver like his hair as a man, made for a bigger head.
-        if (turlin) Mane(head, new Vector3(0, m.Top - 0.075f, -0.016f) + new Vector3(0, 0.02f, 0), new Color("#d9dde6"), 1.3f);
+        if (turlin) Mane(head, new Vector3(0, m.Top - 0.075f, -0.016f) + new Vector3(0, 0.02f, 0), new Color("#d9dde6"), 1.3f, swept: true);
         // His tail, loose and long, out behind him and curling up at the end.
         var (root, tail) = (new Vector3(0, m.Hips.Y, -m.HipHalf * 1.2f), new Vector3(0.25f, -0.55f, -1).Normalized());
         var (links, thin) = turlin ? (20, 1f) : (11, 0.7f); // a shorter tail on a smaller ape
