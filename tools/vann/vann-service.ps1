@@ -1,5 +1,5 @@
-# Keeps Vann's court playing on this server, with no windows. The "Vann's court" scheduled task runs this as SYSTEM
-# whenever the machine starts (install.ps1 sets that up).
+# Keeps Vann's court playing on this server, with no windows. The "Vann's court" scheduled task runs this whenever the
+# machine starts, as the account chosen at install (a standard Windows account, or SYSTEM): install.ps1 sets that up.
 #   - Starts the court (court\run-vann.ps1), and starts it again a minute after it stops for any reason.
 #   - "stop" on Telegram: the court closes and this waits, reading Telegram, for "start" (or "restart").
 #   - Keeps Vann's game up to date by itself: every release on GitHub carries his build (Tristinwold-Vann-Windows.zip).
@@ -11,7 +11,8 @@ $ErrorActionPreference = 'Continue'
 $here = $PSScriptRoot
 $court = Join-Path $here 'court'
 $log = Join-Path $here 'service.log'
-$mutex = New-Object System.Threading.Mutex($false, 'Global\VannCourtService')
+try { $mutex = New-Object System.Threading.Mutex($false, 'Global\VannCourtService') }
+catch { $mutex = New-Object System.Threading.Mutex($false, 'Local\VannCourtService') } # a standard account may not make global ones
 if (-not $mutex.WaitOne(0)) { exit 0 } # one at a time
 . (Join-Path $here 'keys.ps1')
 

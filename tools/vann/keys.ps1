@@ -1,5 +1,5 @@
-# Vann's keys on the server: kept encrypted by Windows (DPAPI, tied to this one machine) in keys.dat, which only SYSTEM
-# (the court's service) and the administrators may read. Copied to any other machine, keys.dat can't be opened.
+# Vann's keys on the server: kept encrypted by Windows (DPAPI, tied to this one machine) in keys.dat, which only the
+# court's own account (read-only), SYSTEM and the administrators may read. Copied to any other machine, keys.dat can't be opened.
 #   Read-Vault           the keys, for the launcher (they go to the games in environment variables, never on a command line)
 #   Write-Vault $keys    saves them (set-keys.ps1)
 #   Open-Sealed $pass    the keys sealed on the owner's PC for the trip here (keys.sealed), opened with its passphrase
@@ -23,8 +23,21 @@ function Write-Vault($keys) {
     $json = ($keys | ConvertTo-Json -Compress)
     $bytes = [Security.Cryptography.ProtectedData]::Protect([Text.Encoding]::UTF8.GetBytes($json), $script:VaultEntropy, 'LocalMachine')
     [IO.File]::WriteAllBytes($script:VaultFile, $bytes)
-    # SYSTEM (S-1-5-18) and the Administrators group (S-1-5-32-544) only.
-    & icacls $script:VaultFile /inheritance:r /grant:r '*S-1-5-18:F' '*S-1-5-32-544:F' | Out-Null
+    Set-VaultAccess
+}
+
+# The Windows account the court runs as (install.ps1 asks; service-account.txt keeps it). Blank: SYSTEM.
+$script:AccountFile = Join-Path $PSScriptRoot 'service-account.txt'
+function Get-ServiceAccount { if (Test-Path $script:AccountFile) { (Get-Content $script:AccountFile -Raw).Trim() } else { '' } }
+
+# keys.dat: SYSTEM (S-1-5-18) and the Administrators group (S-1-5-32-544), plus read-only for the court's own account.
+function Set-VaultAccess {
+    if (-not (Test-Path $script:VaultFile)) { return }
+    $grants = @('*S-1-5-18:F', '*S-1-5-32-544:F')
+    $account = Get-ServiceAccount
+    if ($account) { $grants += "${account}:R" }
+    & icacls $script:VaultFile /inheritance:r /grant:r @grants | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Couldn't set who may read keys.dat (icacls exit $LASTEXITCODE)." }
 }
 
 # keys.sealed: AES-256 with a key stretched from a passphrase (PBKDF2-SHA256, 200,000 rounds), and an HMAC so a wrong
