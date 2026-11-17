@@ -106,15 +106,21 @@ public partial class Hud : CanvasLayer
 
         // A conversation: who, what they said, and what you can say back.
         // Long lists (a shop's stock, a full pack) scroll.
-        _talk = new PanelContainer { AnchorLeft = 0.2f, AnchorRight = 0.8f, AnchorTop = 0.4f, AnchorBottom = 0.97f, Visible = false };
+        _talk = new PanelContainer { AnchorLeft = 0.2f, AnchorRight = 0.8f, AnchorTop = 0.4f, AnchorBottom = 0.97f, Visible = false, ClipContents = true };
         var talkBox = new VBoxContainer();
         _talk.AddChild(talkBox);
         talkBox.AddChild(_talkWho = new Label { Modulate = new Color("#a8d8a0") });
         talkBox.AddChild(_talkText = new Label { AutowrapMode = TextServer.AutowrapMode.Word });
+        // The pack's contents, by section, in a scroll of their own so a full pack never pushes the replies off.
+        _packScroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, Visible = false };
+        _packScroll.AddChild(_packList = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        _packList.AddThemeConstantOverride("separation", 2);
+        talkBox.AddChild(_packScroll);
         var optionScroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         optionScroll.AddChild(_talkOptions = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
         optionScroll.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        var talkRow = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        var talkRow = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, SizeFlagsStretchRatio = 1.4f };
+        _talkRow = talkRow;
         talkRow.AddChild(optionScroll);
         talkRow.AddChild(Gear); // the hero in miniature, beside the pack's gear
         talkBox.AddChild(talkRow);
@@ -351,6 +357,7 @@ public partial class Hud : CanvasLayer
         _talk.Visible = true;
         _talk.AnchorTop = 0.4f;
         Gear.Visible = false; // only the pack shows it
+        _packScroll.Visible = false; // and its list of contents
         _skillRows = 0;
         _talkWho.Text = who;
         _talkText.Text = text;
@@ -359,7 +366,7 @@ public partial class Hud : CanvasLayer
         foreach (var (label, then) in options)
         {
             _options.Add((label, then));
-            var b = new Button { Text = label, Alignment = HorizontalAlignment.Left };
+            var b = new Button { Text = label, Alignment = HorizontalAlignment.Left, AutowrapMode = TextServer.AutowrapMode.WordSmart };
             b.Pressed += then;
             _talkOptions.AddChild(b);
         }
@@ -407,6 +414,42 @@ public partial class Hud : CanvasLayer
 
     /// <summary>The window gets the height of the screen, for a long list.</summary>
     public void TallTalk() => _talk.AnchorTop = 0.06f;
+
+    ScrollContainer _packScroll = new();
+    VBoxContainer _packList = new();
+    Control _talkRow = new();
+    readonly List<string> _packTitles = [];
+
+    /// <summary>
+    /// The pack's contents under the words, by section (equipped, trades, gear, materials, food), each a heading and its
+    /// things wrapped under it, in a scroll of their own that shares the window with the replies.
+    /// </summary>
+    public void PackSections(IEnumerable<(string Title, IReadOnlyList<string> Lines)> sections)
+    {
+        Clear(_packList);
+        _packTitles.Clear();
+        foreach (var (title, lines) in sections)
+        {
+            if (lines.Count == 0) continue;
+            _packTitles.Add(title);
+            _packList.AddChild(new Label { Text = title, LabelSettings = Small(13, new Color("#d8b46a")) });
+            _packList.AddChild(new Label { Text = string.Join(", ", lines), AutowrapMode = TextServer.AutowrapMode.WordSmart, Modulate = new Color("#e8dcc4"), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        }
+        _packScroll.ScrollVertical = 0;
+        _packScroll.Visible = _packTitles.Count > 0;
+    }
+
+    /// <summary>The pack's section headings, in order (for the self-test).</summary>
+    public IReadOnlyList<string> PackTitles => _packTitles;
+
+    /// <summary>All the words in the pack's list (for the self-test).</summary>
+    public string PackLines => string.Join("\n", _packList.GetChildren().OfType<Label>().Select(l => l.Text));
+
+    /// <summary>The talk window, the pack's list and the replies, as boxes on the screen (for the self-test).</summary>
+    public (Rect2 Window, Rect2 List, Rect2 Replies) TalkBoxes => (_talk.GetGlobalRect(), _packScroll.GetGlobalRect(), _talkRow.GetGlobalRect());
+
+    /// <summary>The widest reply's box (for the self-test: none runs past the window).</summary>
+    public Rect2 WidestReply => _talkOptions.GetChildren().OfType<Control>().Select(c => c.GetGlobalRect()).OrderByDescending(r => r.End.X).FirstOrDefault();
 
     /// <summary>
     /// An ability in the skills window, above the replies: its name, what it does, and a row of switches, one for each rank,

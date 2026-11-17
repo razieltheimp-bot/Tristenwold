@@ -80,15 +80,27 @@ public partial class Main
 
     // ---- the pack (I) ---------------------------------------------------------------------------
 
+    /// <summary>What's in the pack, by section, for the pack window: what's on, the trades, gear, materials, food and drink.</summary>
+    List<(string Title, IReadOnlyList<string> Lines)> PackSections(Pack pack, string worn)
+    {
+        string[] Of(Func<Item, bool> which) => [.. pack.Contents.Where(c => which(c.Item)).Select(c => Items.Count(c.Item.Id, c.N))];
+        return
+        [
+            ("Equipped", worn.Length > 0 ? worn.Split(", ") : ["nothing extra"]),
+            ("Trades", [.. Enum.GetValues<Job>().Select(j => $"{TradeName(j).ToLowerInvariant()} {pack.Level(j)}")]),
+            ("Gear", Of(i => i.Wearable || i.Kind == ItemKind.Tool)),
+            ("Materials", Of(i => !i.Wearable && i.Kind is ItemKind.Material or ItemKind.Herb or ItemKind.Trophy)),
+            ("Food & drink", Of(i => !i.Wearable && i.Kind is ItemKind.Food or ItemKind.Potion)),
+        ];
+    }
+
     public void ShowPack()
     {
         var pack = _player.Pack;
         var worn = string.Join(", ", new[] { Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body, Slot.Cloak, Slot.Ring, Slot.Neck }
             .Select(s => pack.WornIn(s) is { } i ? i.Name : null).Where(n => n is not null));
-        var text = $"{_player.Crowns} crowns, {_player.Meat} meat. Wearing: {(worn.Length > 0 ? worn : "nothing extra")} " +
-                   $"(+{pack.Armor:0} armour, +{pack.Damage:P0} damage).\n" +
-                   $"Trades: {string.Join(", ", Enum.GetValues<Job>().Select(j => $"{TradeName(j).ToLowerInvariant()} {pack.Level(j)}"))}.{(_player.Buffs is { } b ? $" Now: {b}." : "")}\n" +
-                   (pack.Items.Count == 0 ? "Your pack is empty." : string.Join(", ", pack.Contents.Select(c => Items.Count(c.Item.Id, c.N))));
+        var text = $"{_player.Crowns} crowns, {_player.Meat} meat. +{pack.Armor:0} armour, +{pack.Damage:P0} damage." +
+                   (_player.Buffs is { } b ? $" Now: {b}." : "") + (pack.Items.Count == 0 ? " Your pack is empty." : "");
         var options = new List<(string, Action)>();
         var gear = new Dictionary<string, (Item Item, bool Worn)>(); // which replies are a piece of gear, for its picture
         foreach (var slot in new[] { Slot.Weapon, Slot.Offhand, Slot.Head, Slot.Body, Slot.Cloak, Slot.Ring, Slot.Neck })
@@ -113,6 +125,8 @@ public partial class Main
         options.Add(("Quick keys", () => ShowQuickBar(ShowPack)));
         options.Add(("Close", _hud.EndTalk));
         _hud.Talk("Your pack", text, [.. options]);
+        _hud.TallTalk(); // room for the list and the replies, both inside the screen
+        _hud.PackSections(PackSections(pack, worn));
         _hud.Gear.Show(_player.LookAlike, pack);
         foreach (var button in _hud.OptionButtons)
         {
