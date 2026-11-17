@@ -38,12 +38,12 @@ public class SharedWorldTests
     }
 
     [Fact]
-    public void Wrong_password_duplicate_name_and_old_versions_are_rejected()
+    public void Wrong_password_and_old_versions_are_rejected_and_a_second_login_takes_over()
     {
         var server = NewServer(new ServerOptions { Password = "ring" });
         Assert.IsType<Rejected>(server.Connect(Hi("Joe", "nope"))[0].Message);
         Assert.IsType<Welcome>(server.Connect(Hi("Joe", "ring"))[0].Message);
-        Assert.IsType<Rejected>(server.Connect(Hi("joe", "ring"))[0].Message);
+        Assert.IsType<Welcome>(server.Connect(Hi("joe", "ring"))[0].Message); // a session left open is replaced, not refused
         Assert.IsType<Rejected>(server.Connect(Hi("Mira", "ring") with { ProtocolVersion = 0 })[0].Message);
     }
 

@@ -82,12 +82,24 @@ using var terminated = System.Runtime.InteropServices.PosixSignalRegistration.Cr
 
 // ---- TCP (tools, bots) ---------------------------------------------------------------------------
 
+var SilenceLimit = TimeSpan.FromSeconds(60); // no word from a game this long and its session ends
+
 async Task ServeTcpAsync(TcpClient tcp)
 {
     using var tcpScope = tcp;
     using var conn = new LineConnection(tcp.GetStream());
     var sink = new TcpSink(conn, shutdown.Token);
     string? player = null;
+    var why = "";
+    try
+    {
+        // A dead link (Wi-Fi gone, a laptop asleep) is noticed in about half a minute, not hours.
+        tcp.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+        tcp.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveTime, 15);
+        tcp.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveInterval, 5);
+        tcp.Client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.TcpKeepAliveRetryCount, 3);
+    }
+    catch (Exception ex) when (ex is SocketException or PlatformNotSupportedException) { }
     try
     {
         var first = await conn.ReadAsync(shutdown.Token);
@@ -99,14 +111,30 @@ async Task ServeTcpAsync(TcpClient tcp)
         if (first is not Hello hello) return;
         player = host.Join(hello, sink);
         if (player is null) return;
-        while (await conn.ReadAsync(shutdown.Token) is { } message) host.Receive(player, message);
+        // A game in play says where it is every few seconds: a minute of silence means it's gone.
+        while (true)
+        {
+            using var quiet = CancellationTokenSource.CreateLinkedTokenSource(sink.Token);
+            quiet.CancelAfter(SilenceLimit);
+            Message? message;
+            try { message = await conn.ReadAsync(quiet.Token); }
+            catch (OperationCanceledException) when (!sink.Token.IsCancellationRequested)
+            {
+                why = $"no word from the game for {SilenceLimit.TotalSeconds:0} s";
+                break;
+            }
+            if (message is null) { why = "the game closed the connection"; break; }
+            host.Receive(player, message);
+        }
     }
     catch (Exception ex) when (ex is IOException or OperationCanceledException or System.Text.Json.JsonException)
     {
+        why = ex is OperationCanceledException ? (sink.Replaced ? "replaced by a newer login" : "") : $"the connection dropped ({ex.Message})";
         if (ex is System.Text.Json.JsonException) Log($"Bad message from {player ?? tcp.Client.RemoteEndPoint?.ToString()}: {ex.Message}");
     }
     finally
     {
+        if (player is not null && why.Length > 0) Log($"{player}: session ended ({why}).");
         if (player is not null) host.Leave(player, sink);
     }
 }
@@ -201,7 +229,16 @@ Log("Server stopped.");
 if (telegram is not null) await telegram.SendAsync("The Tristinwold server has stopped.");
 return 0;
 
-sealed class TcpSink(LineConnection conn, CancellationToken ct) : IClientSink
+sealed class TcpSink(LineConnection conn, CancellationToken shutdown) : IClientSink
 {
-    public void Send(Message message) => _ = conn.WriteAsync(message, ct).ContinueWith(_ => { }, TaskScheduler.Default);
+    readonly CancellationTokenSource _closed = CancellationTokenSource.CreateLinkedTokenSource(shutdown);
+    /// <summary>Cancelled when the server stops or a newer login replaces this one.</summary>
+    public CancellationToken Token => _closed.Token;
+    public bool Replaced { get; private set; }
+    public void Send(Message message) => _ = conn.WriteAsync(message, _closed.Token).ContinueWith(_ => { }, TaskScheduler.Default);
+    public void Close()
+    {
+        Replaced = true;
+        try { _closed.Cancel(); } catch (ObjectDisposedException) { }
+    }
 }

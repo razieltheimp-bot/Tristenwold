@@ -82,8 +82,9 @@ public sealed partial class ServerCore
             return [new(name, new Rejected("Wrong password."))];
         if (name.Length is 0 or > 24)
             return [new(name, new Rejected("Pick a player name of 1-24 characters."))];
-        if (_online.Contains(name))
-            return [new(name, new Rejected($"{name} is already connected."))];
+        // Still online from an older session (the game closed or lost its connection before the server noticed): this login
+        // takes its place rather than being turned away. The host closes the old one.
+        var again = _online.Contains(name);
 
         if (!State.Groups.TryGetValue(name, out var group))
             State.Groups[name] = group = new Group { Player = name };
@@ -103,8 +104,8 @@ public sealed partial class ServerCore
             new(name, new Board(PublicBoard())),
             new(name, CityMessage()),
             new(null, RosterMessage()),
-            new(null, new Notice(NoticeKind.World, $"{name}'s company has arrived in Tristinwold."), Except: name),
         };
+        if (!again) outgoing.Add(new(null, new Notice(NoticeKind.World, $"{name}'s company has arrived in Tristinwold."), Except: name));
         // Everyone already out there, where they were last seen, so the newcomer sees them at once.
         foreach (var (other, where) in _sights)
             if (!other.Equals(name, StringComparison.OrdinalIgnoreCase)) outgoing.Add(new(name, new Seen(other, where)));

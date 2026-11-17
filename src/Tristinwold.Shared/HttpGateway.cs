@@ -49,6 +49,9 @@ public sealed class HttpGateway : IDisposable
         public string Player { get; } = player;
         public DateTime LastSeen { get; set; } = DateTime.UtcNow;
         public void Send(Message message) => _queue.Enqueue(message);
+        /// <summary>A newer login for this player took its place: its session just runs out.</summary>
+        public bool Replaced { get; private set; }
+        public void Close() => Replaced = true;
         public List<Message> Drain()
         {
             var list = new List<Message>();
@@ -284,7 +287,9 @@ public sealed class HttpGateway : IDisposable
         foreach (var (session, mailbox) in _sessions)
         {
             if (now - mailbox.LastSeen <= SessionTimeout) continue;
-            if (_sessions.TryRemove(session, out _)) _host.Leave(mailbox.Player, mailbox);
+            if (!_sessions.TryRemove(session, out _)) continue;
+            if (!mailbox.Replaced) _log?.Invoke($"{mailbox.Player}: session ended (no sync for {SessionTimeout.TotalSeconds:0} s).");
+            _host.Leave(mailbox.Player, mailbox);
         }
     }
 

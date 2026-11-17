@@ -5,6 +5,9 @@ public interface IClientSink
 {
     /// <summary>Must not block; called with the host's lock held.</summary>
     void Send(Message message);
+
+    /// <summary>Ends this connection (a newer login for the same player has replaced it). Must not block.</summary>
+    void Close() { }
 }
 
 /// <summary>
@@ -63,6 +66,7 @@ public sealed class SharedWorldHost(
                 sink.Send(new Rejected(refusal));
                 return null;
             }
+            _sinks.TryGetValue(hello.Player.Trim(), out var stale);
             var outgoing = core.Connect(hello);
             if (outgoing.Count > 0 && outgoing[0].Message is Rejected rejected)
             {
@@ -71,6 +75,11 @@ public sealed class SharedWorldHost(
                 return null;
             }
             var player = hello.Player.Trim();
+            if (stale is not null && stale != sink)
+            {
+                stale.Close();
+                _log($"{player}: an older session was still open (closed or lost without a goodbye); ended, and the new login takes its place.");
+            }
             _sinks[player] = sink;
             if (owner is not null) _accountOf[player] = owner;
             else _accountOf.Remove(player);
