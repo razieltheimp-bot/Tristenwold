@@ -23,6 +23,7 @@ public partial class Hud : CanvasLayer
     Button _questsHead = new(); // "▾ Quests & news (N)": folds the panel
     ScrollContainer _questScroll = new();
     bool _questsFolded;
+    readonly Label _lineProbe = new() { Text = "Ag", Visible = false }; // one line of the quest panel's text, for its height
 
     /// <summary>Everyone's names, drawn flat on the screen (see <see cref="Nameplates"/>).</summary>
     public Nameplates Plates { get; } = new();
@@ -136,7 +137,7 @@ public partial class Hud : CanvasLayer
     // ---- the right-hand column: mini-map, quests, (on a touch screen) the party ------------------
 
     const float MapSize = 200, MapMargin = 24, ColumnGap = 8;
-    const int RowsShown = 6, RowFont = 11, HeadFont = 10;
+    const int LinesShown = 7, RowFont = 11, HeadFont = 10;
 
     static LabelSettings Small(int size, Color colour) => new()
     {
@@ -171,6 +172,8 @@ public partial class Hud : CanvasLayer
         _questScroll.AddChild(_tracker = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, MouseFilter = Control.MouseFilterEnum.Pass });
         _tracker.AddThemeConstantOverride("separation", 1);
         box.AddChild(_questScroll);
+        _lineProbe.LabelSettings = Small(RowFont, Colors.White);
+        box.AddChild(_lineProbe);
         return panel;
     }
 
@@ -191,7 +194,7 @@ public partial class Hud : CanvasLayer
     public void ScrollQuests(float rows)
     {
         if (_questsFolded || !_column.Visible) return;
-        _questScroll.ScrollVertical = Math.Max(0, _questScroll.ScrollVertical + (int)Math.Round(rows * RowHeight));
+        _questScroll.ScrollVertical = Math.Max(0, _questScroll.ScrollVertical + (int)Math.Round(rows * OneLine));
     }
 
     /// <summary>Where the quest panel scroll is (for the self-test).</summary>
@@ -200,7 +203,11 @@ public partial class Hud : CanvasLayer
     /// <summary>Whether a point on the screen is on the quest panel (touches there scroll it instead of turning the view).</summary>
     public bool OnQuests(Vector2 at) => _column.Visible && _column.GetGlobalRect().HasPoint(at);
 
-    float RowHeight => _tracker.GetChildCount() == 0 ? 15 : _tracker.GetChild<Control>(0).GetCombinedMinimumSize().Y + 1;
+    /// <summary>One line of the quest panel: its shortest row (a row that wraps is two or three of these).</summary>
+    float OneLine => Math.Max(8, _lineProbe.GetCombinedMinimumSize().Y) + 1;
+
+    /// <summary>A row's height, and one line's (for the self-test: a long row wraps rather than running on).</summary>
+    public (float Row, float Line) QuestRowSize(int i) => (_tracker.GetChild<Control>(i).Size.Y, OneLine);
 
     public override void _UnhandledInput(InputEvent e)
     {
@@ -214,7 +221,7 @@ public partial class Hud : CanvasLayer
     }
 
     /// <summary>
-    /// The quest panel hangs under the mini-map, lined up with its left edge and as wide as it is, showing six rows at most
+    /// The quest panel hangs under the mini-map, lined up with its left edge and as wide as it is, showing seven lines at most
     /// (the rest a scroll away), and stops short of the party list (at the bottom right; on a touch screen, the party list
     /// goes under the quests instead). It steps back to half strength in a fight, or where it would print over someone's
     /// name or the words in the middle of the screen.
@@ -227,8 +234,8 @@ public partial class Hud : CanvasLayer
         _column.Position = new Vector2(left, top);
         _column.Visible = _tracker.GetChildCount() > 0;
         var frame = _column.GetThemeStylebox("panel").GetMinimumSize().Y + _questsHead.GetCombinedMinimumSize().Y + 1;
-        var rows = Math.Min(_tracker.GetChildCount(), RowsShown);
-        var wanted = !_column.Visible ? 0 : _questsFolded ? frame : frame + rows * RowHeight;
+        var content = Math.Min(_tracker.GetCombinedMinimumSize().Y, LinesShown * OneLine);
+        var wanted = !_column.Visible ? 0 : _questsFolded ? frame : frame + content;
         float room;
         var line = Math.Max(1, _party.GetLineHeight() + _party.GetThemeConstant("line_spacing"));
         if (_touchEnabled)
@@ -453,7 +460,7 @@ public partial class Hud : CanvasLayer
     // ---- quests ----------------------------------------------------------------------------
 
     /// <summary>What a quest-panel row is, in the order they're listed.</summary>
-    public enum QuestRow { Tracked, Threat, Quest, Work }
+    public enum QuestRow { Tracked, Quest, Work, News }
 
     /// <summary>One row of the quest panel: a short line, where it is, and the whole of it (for the pointer).</summary>
     public readonly record struct QuestEntry(QuestRow Kind, string Text, string Where, string Full, int Count);
@@ -461,9 +468,9 @@ public partial class Hud : CanvasLayer
     readonly List<QuestEntry> _entries = [];
 
     /// <summary>
-    /// The quests and news, each cut down to one short line ("Bitterwell Fort: clear 0/5" and "2.9 km NW" at the right),
-    /// the same thing twice shown once, in order: the tracked one bright at the top, then threats (deviants, raids, demons,
-    /// a rival), then the other quests, then work and news. The panel shows six and scrolls for the rest.
+    /// The quests and news, each cut down to its first clause ("Bitterwell Fort: clear 0/5" and "2.9 km NW" at the right)
+    /// and wrapped inside the panel, the same thing twice shown once, in order: the tracked one bright at the top, then the
+    /// other quests, then work, then world news (raids, deviants, demons, a rival). Seven lines show; the rest scroll.
     /// </summary>
     public void Track(IEnumerable<string> lines, string? tracked = null)
     {
@@ -491,14 +498,14 @@ public partial class Hud : CanvasLayer
         {
             var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Pass, TooltipText = e.Full };
             row.AddThemeConstantOverride("separation", 4);
-            var colour = e.Kind switch { QuestRow.Tracked => "#ffd27a", QuestRow.Threat => "#ff9a7a", QuestRow.Work => "#c8c0ac", _ => "#e6dcc4" };
+            var colour = e.Kind switch { QuestRow.Tracked => "#ffd84a", QuestRow.Quest => "#f2cf6b", QuestRow.Work => "#d9c78f", _ => "#ff9a7a" };
             row.AddChild(new Label
             {
-                Text = e.Count > 1 ? $"{e.Text} ×{e.Count}" : e.Text, ClipText = true, TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+                Text = e.Count > 1 ? $"{e.Text} ×{e.Count}" : e.Text, AutowrapMode = TextServer.AutowrapMode.WordSmart,
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, MouseFilter = Control.MouseFilterEnum.Pass, TooltipText = e.Full, LabelSettings = Small(RowFont, new Color(colour)),
             });
             if (e.Where.Length > 0)
-                row.AddChild(new Label { Text = e.Where, MouseFilter = Control.MouseFilterEnum.Ignore, LabelSettings = Small(RowFont - 1, new Color("#b8b0a0")) });
+                row.AddChild(new Label { Text = e.Where, MouseFilter = Control.MouseFilterEnum.Ignore, SizeFlagsVertical = Control.SizeFlags.ShrinkBegin, LabelSettings = Small(RowFont - 1, new Color("#b8b0a0")) });
             _tracker.AddChild(row);
         }
         TitleQuests();
@@ -530,8 +537,8 @@ public partial class Hud : CanvasLayer
     static QuestRow KindOf(string line)
     {
         bool Starts(params string[] heads) => heads.Any(h => line.StartsWith(h, StringComparison.OrdinalIgnoreCase));
-        if (Starts("Raid", "Deviant", "Hunted by", "KORRIN", "YOUR RIVAL", "Your rival", "Outlaw", "The ambush") || line.Contains("demon", StringComparison.OrdinalIgnoreCase)) return QuestRow.Threat;
-        if (Starts("Starter work", "Dock work", "Errand", "Shipyard", "Well rested", "Snares", "Inside ", "News")) return QuestRow.Work;
+        if (Starts("Raid", "Deviant", "Hunted by", "KORRIN", "YOUR RIVAL", "Your rival", "Outlaw", "The ambush", "News") || line.Contains("demon", StringComparison.OrdinalIgnoreCase)) return QuestRow.News;
+        if (Starts("Starter work", "Dock work", "Errand", "Shipyard", "Well rested", "Snares", "Inside ")) return QuestRow.Work;
         return QuestRow.Quest;
     }
 
@@ -547,7 +554,10 @@ public partial class Hud : CanvasLayer
     public string QuestsTitle => _questsHead.Text;
 
     /// <summary>How many rows show without scrolling (for the self-test).</summary>
-    public int QuestRowsInView => _questsFolded ? 0 : (int)Math.Floor(Math.Max(0, _questScroll.Size.Y + 1) / RowHeight);
+    public int QuestLinesInView => _questsFolded ? 0 : (int)Math.Floor(Math.Max(0, _questScroll.Size.Y + 1) / OneLine);
+
+    /// <summary>The quest scroll's height and one line's (for the self-test).</summary>
+    public (float Scroll, float Line) QuestViewSize => (_questScroll.Size.Y, OneLine);
 
     public void ShowJournal(QuestLog log)
     {

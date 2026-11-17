@@ -3739,7 +3739,8 @@ public partial class SelfTest(Main main) : Node
         foreach (var e in placed.Where(IsInstanceValid)) e.QueueFree();
         await Frames(2);
 
-        // The quest panel: one short line each, the same thing once, in order, six in view and the rest a scroll away.
+        // The quest panel: each cut to its first clause and wrapped, the same thing once, in order, seven lines in view and
+        // the rest a scroll away.
         var (cut, at) = Hud.Shorten("Dock work: carry the crate to the warehouse by the east gate (2.9 km north-west). 3 to go, 4 crowns each.");
         Check(cut == "Dock work: carry the crate to the warehouse by the east gate" && at == "2.9 km NW", $"a long line cut to one short one (\"{cut}\", \"{at}\")");
         var lines = new List<string>
@@ -3756,17 +3757,22 @@ public partial class SelfTest(Main main) : Node
         var rows = hud.QuestRows;
         Check(rows.Count == 11 && rows.Count(r => r.Text.StartsWith("Bandit trouble")) == 1 && rows.First(r => r.Text.StartsWith("Bandit trouble")).Count == 2,
             $"twelve lines, the heirloom sword twice: eleven rows, the sword once (×{rows.FirstOrDefault(r => r.Text.StartsWith("Bandit trouble")).Count})");
-        Check(rows[0].Kind == Hud.QuestRow.Tracked && rows[0].Text.StartsWith("The Rings") && rows[1].Kind == Hud.QuestRow.Threat && rows[2].Kind == Hud.QuestRow.Threat && rows[^1].Kind == Hud.QuestRow.Work,
-            $"tracked first, then the threats, then quests, then work ({string.Join(" | ", rows.Select(r => $"{r.Kind}:{r.Text[..Math.Min(14, r.Text.Length)]}"))})");
+        Check(rows[0].Kind == Hud.QuestRow.Tracked && rows[0].Text.StartsWith("The Rings") && rows[1].Kind == Hud.QuestRow.Quest
+              && rows[^3].Kind == Hud.QuestRow.Work && rows[^2].Kind == Hud.QuestRow.News && rows[^1].Kind == Hud.QuestRow.News,
+            $"tracked first, then the other quests, then work, then world news ({string.Join(" | ", rows.Select(r => $"{r.Kind}:{r.Text[..Math.Min(14, r.Text.Length)]}"))})");
         Check(hud.QuestsTitle == "▾ Quests & news (11)", $"the header counts them (\"{hud.QuestsTitle}\")");
         Check(hud.Tracked.Count() == 11 && hud.Tracked.First() == lines[3], "and the whole of each is still there for the asking");
         hud.Party(Enumerable.Range(1, 14).Select(i => $"Apprentice {i}  lv 4  ||||||||||"));
         hud.Relayout();
         await Frames(2);
         // (The game puts the hero's real company back in the party list each frame: a long one leaves the panel less room.)
-        var squeezed = hud.QuestRowsInView is >= 1 and < 5 && hud.PartyBox.Size.Y > 0 && hud.PartyBox.Position.Y - hud.ColumnBox.End.Y is >= 0 and < 40;
-        Check(hud.QuestRowsInView is >= 5 and <= 6 || squeezed,
-            $"five or six rows in view, or as many as fit above a long party list ({hud.QuestRowsInView}{(squeezed ? ", the party list just below" : "")})");
+        var squeezed = hud.QuestLinesInView is >= 1 and < 6 && hud.PartyBox.Size.Y > 0 && hud.PartyBox.Position.Y - hud.ColumnBox.End.Y is >= 0 and < 40;
+        Check(hud.QuestLinesInView is >= 6 and <= 8 || squeezed,
+            $"six to eight lines in view, or as many as fit above a long party list ({hud.QuestLinesInView}: {hud.QuestViewSize.Scroll:0} px at {hud.QuestViewSize.Line:0} px a line{(squeezed ? ", the party list just below" : "")})");
+        var longRow = rows.Select((r, i) => (r, i)).First(x => x.r.Text.StartsWith("Quest 1")).i;
+        var (rowTall, oneLine) = hud.QuestRowSize(longRow);
+        Check(rowTall > oneLine * 1.5f && hud.ColumnBox.Size.X <= hud.MapBox.Size.X + 1,
+            $"a long line wraps inside the panel ({rowTall:0} px tall against {oneLine:0} px a line, the panel {hud.ColumnBox.Size.X:0} px wide)");
         hud.ScrollQuests(3);
         await Frames(2);
         var scrolled = hud.QuestScroll;
@@ -3776,7 +3782,7 @@ public partial class SelfTest(Main main) : Node
         var open = hud.ColumnBox.Size.Y;
         hud.FoldQuests();
         var folded = hud.ColumnBox.Size.Y;
-        Check(hud.QuestsFolded && folded < 30 && folded < open && hud.QuestsTitle == "▸ Quests & news (11)", $"the ▾ folds it to one line ({open:0} px to {folded:0} px, \"{hud.QuestsTitle}\")");
+        Check(hud.QuestsFolded && folded < 30 && folded < open && hud.QuestsTitle.StartsWith("▸ Quests & news ("), $"the ▾ folds it to one line ({open:0} px to {folded:0} px, \"{hud.QuestsTitle}\")");
         hud.FoldQuests();
         Check(!hud.QuestsFolded && Mathf.Abs(hud.ColumnBox.Size.Y - open) < 1, "and opens it again");
 
