@@ -143,6 +143,19 @@ public static class City
         _letIn = null;
     }
 
+    /// <summary>
+    /// The top of Tristinwold's raised paving (the inner ring, the Crown) under a point that's sunk into it, or null where
+    /// there's no paving over it (outside the rings, or well below: underground, or a room set somewhere else).
+    /// </summary>
+    public static float? PavingAt(Vector3 p)
+    {
+        var r = new Vector2(p.X, p.Z).Length();
+        if (r >= InnerRadius) return null;
+        var top = r < CrownRadius ? CrownHeight : InnerHeight;
+        var ground = (float)WorldGen.Default.Height(p.X, p.Z);
+        return p.Y < top && p.Y > ground - 0.5f ? top : null;
+    }
+
     public static float FloorAt(Vector3 p)
     {
         if (Below?.Invoke(p) is { } rock) return rock;

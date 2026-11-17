@@ -48,9 +48,13 @@ public partial class Person : StaticBody3D
         AddChild(new CollisionShape3D { Shape = new CapsuleShape3D { Radius = 0.38f, Height = 1.75f }, Position = new Vector3(0, 0.88f, 0) });
         Nameplates.Adopt(_plate);
         AddChild(_plate);
+        GlobalPosition = OnFloor(GlobalPosition); // stood on the paving, not on the ground buried under it
         RotationDegrees = new Vector3(0, (float)(Noise.Unit((ulong)WorldGen.StableHash(Npc.Id)) * 360), 0);
         Mark(false);
     }
+
+    /// <summary>A point lifted onto the walkable floor if it's below it (Tristinwold's raised rings are paved over the ground).</summary>
+    public static Vector3 OnFloor(Vector3 p) => City.PavingAt(p) is { } top ? p with { Y = top } : p;
 
     /// <summary>A gold "!" over anyone with work to give.</summary>
     public void Mark(bool hasWork) => _plate.Text = $"{(hasWork ? "! " : "")}{Npc.Name}\n{Npc.Occupation}";
@@ -141,7 +145,7 @@ public partial class Person : StaticBody3D
         down.Exclude = [GetRid()];
         var ground = GetWorld3D().DirectSpaceState.IntersectRay(down);
         next.Y = ground.Count > 0 ? ground["position"].AsVector3().Y : goal.Y;
-        GlobalPosition = next;
+        GlobalPosition = OnFloor(next);
         Face(next + to);
         Figure.Move(Pace, true, false);
     }
@@ -207,7 +211,7 @@ public partial class Person : StaticBody3D
             wait.TweenCallback(Callable.From(() => _strolling = true));
             return;
         }
-        GlobalPosition += to.Normalized() * step;
+        GlobalPosition = OnFloor(GlobalPosition + to.Normalized() * step);
         Figure.Move(0.9f, true, false);
     }
 
@@ -560,14 +564,14 @@ public partial class Places(Main main, WorldGen world) : Node3D
         // left home to follow the company isn't here.
         // Its guards walk their beat round it.
         foreach (var npc in Ageing.Villagers(world, s, Calendar.Years(main.Economy.Day)).Where(n => Gone?.Invoke(n.Id) != true))
-            b.People.Add(Add(root, new Person { Npc = npc, Position = Ground(npc.X, npc.Z), Rounds = QuestLog.KeepsTheTown(npc) ? Patrol(s, npc.X, npc.Z) : null }));
+            b.People.Add(Add(root, new Person { Npc = npc, Position = Stand(npc.X, npc.Z), Rounds = QuestLog.KeepsTheTown(npc) ? Patrol(s, npc.X, npc.Z) : null }));
         if (TownCouncils.Keeps(s)) Wardens(root, s, b);
         // A town that's been well fed has more of its children growing up (see Handiwork): youngsters about the place.
         foreach (var youth in Youngsters(s, main.Economy.FedYouths(s.Id), world.YouthSalt).Select(n => Stayed(s, n)))
-            b.People.Add(Add(root, new Person { Npc = youth, Look = "youth", Position = Ground(youth.X, youth.Z) }));
+            b.People.Add(Add(root, new Person { Npc = youth, Look = "youth", Position = Stand(youth.X, youth.Z) }));
         // A young one who went off with the company is followed by another: a new face, and a new name.
         foreach (var left in world.YouthsOf(s).Where(y => Gone?.Invoke(y.Id) == true))
-            b.People.Add(Add(root, new Person { Npc = Stayed(s, left), Position = Ground(left.X, left.Z) }));
+            b.People.Add(Add(root, new Person { Npc = Stayed(s, left), Position = Stand(left.X, left.Z) }));
 
         // The animals people keep, near the people who keep them (in the open, where people stand).
         foreach (var (kind, count) in Livestock.Of(s, rng))
@@ -756,7 +760,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
         b.People.Add(Add(parent, new Person
         {
             Npc = new Npc($"{s.Id}/carpenter", $"{first} the Carpenter", Tristinwold.World.Sex.Other, 44, "carpenter", s.Id, s.Name, $"{first} has sawdust in everything and a pencil behind each ear, and is usually on the far side of a half-built wall.", ["trade"], "gruff", talk, cx + 3.4, cz),
-            Look = "worker", Position = Ground(cx + 3.4, cz),
+            Look = "worker", Position = Stand(cx + 3.4, cz),
         }));
     }
 
@@ -919,7 +923,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
         var (cx, cz) = chamber is { } door ? (door.X, door.Z) : (clerk.X, clerk.Z);
         // By the chamber's door: in Hollowheart that's in a great tree's root, so the clerk stands just where the door
         // puts them (on open ground in front of it), not pushed out past the roots like everyone else.
-        var clerkAt = chamber is not null && s.Id == "city:hollowheart" ? new Vector3((float)cx, Mathf.Max((float)world.Height(cx, cz), City.FloorAt(new Vector3((float)cx, 0, (float)cz))), (float)cz) : Ground(cx, cz);
+        var clerkAt = chamber is not null && s.Id == "city:hollowheart" ? new Vector3((float)cx, Mathf.Max((float)world.Height(cx, cz), City.FloorAt(new Vector3((float)cx, 0, (float)cz))), (float)cz) : Stand(cx, cz);
         b.People.Add(Add(parent, new Person { Npc = clerk with { X = cx, Z = cz }, Look = "townsfolk", Position = clerkAt }));
         // Out about the town, chamber or no: each walks a round of its streets, from their seat in toward the middle and
         // round, stopping here and there, so anyone with council business can find one.
@@ -1154,7 +1158,7 @@ public partial class Places(Main main, WorldGen world) : Node3D
         };
         var npc = new Npc(shop.Id, keeper, sex, 34 + rng.Next(30), who, s.Id, s.Name, story, ["trade", "the road"], "warm", shop.Greeting, x, z);
         var look = trade switch { TownTrade.Smith => "warmaster", TownTrade.Ranger => "hunter", _ => "worker" };
-        b.People.Add(Add(parent, new Person { Npc = npc, Look = look, Position = Ground(x, z) }));
+        b.People.Add(Add(parent, new Person { Npc = npc, Look = look, Position = Stand(x, z) }));
         if (building.HasMeta("seed")) main.ShopDoors[(int)building.GetMeta("seed")] = (npc, look); // and behind the counter, inside
     }
 

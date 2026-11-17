@@ -52,6 +52,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--gear-only")) { await GearPreviewTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--arch-only")) { await CouncilArchTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--woods-only")) { await ForestCameraTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--floors-only")) { await TownsfolkFloorTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--camera-only")) { await CameraWallTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--ride-only")) { await TheRide(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--helm-only")) { await TheHelm(); Finish(0); return; }
@@ -3639,6 +3640,28 @@ public partial class SelfTest(Main main) : Node
         var gear = hud.Gear;
         Check(gear.Visible, "the pack shows the hero in miniature beside the list");
         Check(gear.Line == $"Wearing: +0 armour, +{0.1:P0} damage.", $"with what they wear under it ({gear.Line})");
+
+        // A full pack: it stays inside the screen, the replies wrap inside it, and the contents scroll in their own box,
+        // by section, above the replies rather than over them.
+        var bulk = new (string Name, int N)[] { ("Bilberries", 21), ("Raspberries", 98), ("Potato", 9), ("Emberleaf", 2) };
+        var bulkIds = bulk.Select(b => (Id: Items.All.First(i => i.Name == b.Name).Id, b.N)).ToList();
+        var extra = Items.All.Where(i => i.Kind is ItemKind.Material or ItemKind.Herb && !bulkIds.Any(b => b.Id == i.Id)).Take(40).Select(i => i.Id).ToList();
+        foreach (var (id, n) in bulkIds) pack.Add(id, n);
+        foreach (var id in extra) pack.Add(id, 3);
+        main.ShowPack();
+        await Frames(5);
+        var screen = GetViewport().GetVisibleRect();
+        var (window, list, replies) = hud.TalkBoxes;
+        Check(screen.Encloses(window), $"the pack window stays inside the screen (window {window.Position.X:0},{window.Position.Y:0} {window.Size.X:0}x{window.Size.Y:0}, screen {screen.Size.X:0}x{screen.Size.Y:0})");
+        Check(hud.WidestReply.End.X <= window.End.X + 1, $"no reply runs past its right edge (widest ends at {hud.WidestReply.End.X:0}, the window at {window.End.X:0})");
+        Check(list.Size.Y > 20 && list.End.Y <= replies.Position.Y + 1, $"the contents scroll in their own box above the replies (list {list.Position.Y:0}-{list.End.Y:0}, replies from {replies.Position.Y:0})");
+        Check(hud.PackTitles.SequenceEqual(["Equipped", "Trades", "Gear", "Materials", "Food & drink"]), $"by section: {string.Join(", ", hud.PackTitles)}");
+        var listed = hud.PackLines;
+        Check(new[] { "21 Bilberries", "98 Raspberries", "9 Potatoes", "2 Emberleaves" }.All(w => listed.Contains(w)), "with counts that read right (21 Bilberries, 98 Raspberries, 9 Potatoes, 2 Emberleaves)");
+        foreach (var (id, n) in bulkIds) pack.Take(id, n);
+        foreach (var id in extra) pack.Take(id, 3);
+        main.ShowPack();
+        await Frames(3);
         var pieces = hud.OptionButtons.Where(b => b.Text.StartsWith("Wear ") || b.Text.StartsWith("Take off ")).ToList();
         Check(pieces.Count >= ids.Length && pieces.All(b => b.Icon is { } i && i.GetWidth() == GearIcons.Size),
             $"every piece of gear has its picture ({pieces.Count(b => b.Icon is not null)} of {pieces.Count})");
@@ -3688,6 +3711,36 @@ public partial class SelfTest(Main main) : Node
         foreach (var slot in pack.Worn.Keys.ToList()) pack.Unequip(slot);
         foreach (var id in ids) pack.Take(id, pack.Count(id));
         main.PlayerNode.Dress();
+    }
+
+    /// <summary>Townsfolk stand on Tristinwold's raised paving (the inner ring and the Crown), not sunk to the ground under it.</summary>
+    async Task TownsfolkFloorTest()
+    {
+        await Teleport(new Vector3(0, City.CrownHeight, 40));
+        await Frames(90);
+        var folk = GetTree().Root.FindChildren("*", "", true, false).OfType<Person>()
+            .Where(f => new Vector2(f.GlobalPosition.X, f.GlobalPosition.Z).Length() < City.InnerRadius).ToList();
+        var sunk = folk.Where(f => City.PavingAt(f.GlobalPosition) is not null).ToList();
+        Check(folk.Count > 0 && sunk.Count == 0, $"nobody inside the rings is sunk into the paving ({folk.Count} there; sunk: {string.Join(", ", sunk.Select(f => $"{f.Npc.Name} at {f.GlobalPosition.Y:0.0} m"))})");
+        var onRing = folk.Where(f => new Vector2(f.GlobalPosition.X, f.GlobalPosition.Z).Length() is var r && Mathf.Abs(f.GlobalPosition.Y - (r < City.CrownRadius ? City.CrownHeight : City.InnerHeight)) < 0.3f).Count();
+        Check(onRing == folk.Count, $"each one stands on the ring's paving ({onRing} of {folk.Count})");
+
+        // Someone put at ground height inside each ring stands up on it.
+        var npc = new Npc("selftest:apprentice", "Signy Testhollow", Sex.Female, 17, "apprentice smith", "city:tristinwold", "Tristinwold", "", [], "steady", "Hm?", 0, 0);
+        foreach (var (x, z, top) in new[] { (12f, 10f, City.CrownHeight), (40f, -20f, City.InnerHeight), (75f, 10f, (float?)null) })
+        {
+            var at = new Vector3(x, (float)WorldGen.Default.Height(x, z), z);
+            var placed = new Person { Npc = npc with { X = x, Z = z }, Position = at };
+            GetTree().Root.AddChild(placed);
+            await Frames(2);
+            var want = top ?? at.Y;
+            Check(Mathf.Abs(placed.GlobalPosition.Y - want) < 0.05f, $"placed at the ground {new Vector2(x, z).Length():0} m out, they stand at {placed.GlobalPosition.Y:0.00} m (the floor there is {want:0.00} m)");
+            placed.QueueFree();
+        }
+        // And walking from the street up onto the paving keeps them on top of it.
+        Check(Person.OnFloor(new Vector3(0, 0, 45)).Y == City.InnerHeight && Person.OnFloor(new Vector3(0, City.InnerHeight, 20)).Y == City.CrownHeight
+              && Person.OnFloor(new Vector3(0, 0, 80)).Y == 0 && Person.OnFloor(new Vector3(0, -30, 20)).Y == -30,
+            "a step onto the ring or the Crown lifts them onto it; outside the rings, and deep below (a mine), it leaves them be");
     }
 
     async Task PlatesTest()
