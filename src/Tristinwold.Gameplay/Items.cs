@@ -539,19 +539,59 @@ public static class Items
     public static string Count(string id, int n)
     {
         var name = Get(id)?.Name ?? id;
-        return n == 1 ? name : $"{n} {Plural(name)}";
+        return n == 1 ? name : name.StartsWith("The ", StringComparison.Ordinal) ? $"{name} ×{n}" : $"{n} {Plural(name)}";
     }
 
-    /// <summary>Things you count by the lump or the bolt, not one by one.</summary>
-    static readonly string[] Uncounted =
-    [
+    /// <summary>Things you count by the lump or the bolt, or whose plural is the same word (the last word of the name).</summary>
+    static readonly HashSet<string> Uncounted = new(StringComparer.OrdinalIgnoreCase)
+    {
         "Ash", "Dust", "Fat", "Leather", "Linen", "Iron", "Coal", "Essence", "Ectoplasm", "Brimstone", "Heartwood", "Chitin", "Bread",
-        "Rations", "Armour", "Mail", "Plate", "Leathers", "Mantle", "Healing",
-    ];
+        "Armour", "Mail", "Plate", "Lady's Mantle", "Healing", "Wool", "Venison", "Meat", "Garlic", "Rotwood", "Ale", "Mead", "Cider", "Wine",
+        "Tea", "Gear", "Ore", "Flax", "Silk", "Salt", "Moss", "Fish", "Herring", "Mackerel", "Cod", "Salmon", "Trout", "Carp", "Pike",
+        "Char", "Perch", "Bass", "Grouse", "Deer", "Sheep", "Honey", "Wax", "Pitch", "Tar", "Resin", "Ivory", "Bone Meal", "Charcoal",
+        "Clay", "Sand", "Glass", "Ink", "Oil", "Rice", "Grain", "Wheat", "Barley", "Oats", "Hay", "Straw", "Steel", "Bronze", "Copper",
+        "Tin", "Gold", "Silver", "Mithril", "Ichor", "Blood", "Venom", "Bile", "Slime", "Ember", "Soot",
+    };
 
-    static string Plural(string name) =>
-        Uncounted.Any(name.EndsWith) ? name
-        : name.EndsWith("sh") || name.EndsWith("ch") || name.EndsWith('s') ? name + "es"
-        : name.EndsWith('y') && !name.EndsWith("ey") ? name[..^1] + "ies"
-        : name + "s";
+    /// <summary>Plurals that aren't made by a rule (by the last word of the name).</summary>
+    static readonly Dictionary<string, string> Irregular = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Tooth"] = "Teeth", ["Foot"] = "Feet", ["Goose"] = "Geese", ["Mouse"] = "Mice", ["Louse"] = "Lice", ["Man"] = "Men",
+        ["Woman"] = "Women", ["Child"] = "Children", ["Ox"] = "Oxen", ["Knife"] = "Knives", ["Wife"] = "Wives", ["Life"] = "Lives",
+        ["Wolf"] = "Wolves", ["Loaf"] = "Loaves", ["Half"] = "Halves", ["Calf"] = "Calves", ["Thief"] = "Thieves", ["Shelf"] = "Shelves",
+        ["Hoof"] = "Hooves", ["Elf"] = "Elves", ["Dwarf"] = "Dwarves", ["Scarf"] = "Scarves", ["Sheaf"] = "Sheaves",
+        ["Potato"] = "Potatoes", ["Tomato"] = "Tomatoes", ["Hero"] = "Heroes", ["Echo"] = "Echoes", ["Cactus"] = "Cacti",
+        ["Fungus"] = "Fungi", ["Die"] = "Dice",
+    };
+
+    /// <summary>
+    /// "21 Bilberries", "9 Potatoes", "2 Emberleaves", "3 Elixirs of Might", "4 Salmon": names that are plural already stay as
+    /// they are, the same-plural and by-the-lump ones too, and in "X of Y" the X takes the plural. Names starting "The" are
+    /// one of a kind, so they're counted as "The Goblin King's Crown ×2".
+    /// </summary>
+    public static string Plural(string name)
+    {
+        if (name.StartsWith("The ", StringComparison.Ordinal)) return name;
+        var of = name.IndexOf(" of ", StringComparison.Ordinal);
+        if (of > 0) return Plural(name[..of]) + name[of..];
+        var space = name.LastIndexOf(' ');
+        var (head, word) = space < 0 ? ("", name) : (name[..(space + 1)], name[(space + 1)..]);
+        if (Uncounted.Contains(word) || Uncounted.Contains(name)) return name;
+        return head + PluralWord(word);
+    }
+
+    static string PluralWord(string w)
+    {
+        var lower = w.ToLowerInvariant();
+        if (Irregular.TryGetValue(w, out var irregular)) return irregular;
+        if (lower.EndsWith("leaf", StringComparison.Ordinal)) return w[..^1] + "ves"; // Emberleaf → Emberleaves
+        if (lower.EndsWith("ies", StringComparison.Ordinal) || lower.EndsWith("ves", StringComparison.Ordinal)) return w; // Bilberries, already plural
+        if (lower.EndsWith('s') && !lower.EndsWith("ss", StringComparison.Ordinal) && !lower.EndsWith("us", StringComparison.Ordinal) && !lower.EndsWith("is", StringComparison.Ordinal))
+            return w; // Spores, Nails, Rations, Leathers: already plural
+        if (lower.EndsWith("ss", StringComparison.Ordinal) || lower.EndsWith("us", StringComparison.Ordinal) || lower.EndsWith("is", StringComparison.Ordinal)
+            || lower.EndsWith('x') || lower.EndsWith('z') || lower.EndsWith("ch", StringComparison.Ordinal) || lower.EndsWith("sh", StringComparison.Ordinal))
+            return w + "es"; // Tinderboxes, Torches, Compasses
+        if (lower.Length > 1 && lower.EndsWith('y') && !"aeiou".Contains(lower[^2])) return w[..^1] + "ies"; // Snowberry → Snowberries
+        return w + "s";
+    }
 }
