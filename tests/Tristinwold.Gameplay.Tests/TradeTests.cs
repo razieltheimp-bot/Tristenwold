@@ -170,6 +170,24 @@ public class TradeTests
     }
 
     [Fact]
+    public void Staffs_bows_and_crossbows_in_every_material_can_be_forged_and_the_plain_ones_bought()
+    {
+        foreach (var (id, grip) in new[] { ("apprentice_staff", Grip.Caster), ("iron_staff", Grip.Caster), ("steel_staff", Grip.Caster), ("dragonbone_staff", Grip.Caster),
+                     ("wooden_bow", Grip.Ranged), ("iron_bow", Grip.Ranged), ("yew_longbow", Grip.Ranged), ("steel_bow", Grip.Ranged), ("dragonbone_bow", Grip.Ranged),
+                     ("wooden_crossbow", Grip.Ranged), ("hunting_crossbow", Grip.Ranged), ("steel_crossbow", Grip.Ranged), ("heavy_crossbow", Grip.Ranged), ("dragonbone_crossbow", Grip.Ranged) })
+        {
+            var item = Items.Get(id);
+            Assert.True(item is { Slot: Slot.Weapon } && item.Grip == grip, id);
+            Assert.True(Recipes.All.Any(r => r.Makes == id && r.Job == Job.Smithing), $"{id} can be forged");
+        }
+        foreach (var id in new[] { "iron_staff", "iron_bow", "wooden_bow", "wooden_crossbow" }) Assert.Contains(id, Shops.Smithy.Sells);
+        Assert.Contains("iron_staff", Shops.Apothecary.Sells);
+        foreach (var id in new[] { "steel_staff", "steel_bow", "steel_crossbow" }) Assert.Contains(id, Shops.GiltAnvil.Sells);
+        Assert.Contains("yew_longbow", Shops.Woodlot.Sells);
+        Assert.Contains("wooden_bow", Shops.ForTown("test", TownTrade.Ranger, "Test", "Test").Sells);
+    }
+
+    [Fact]
     public void Beasts_leave_what_they_would_and_dragons_leave_a_fortune()
     {
         var rng = new Rng(11);

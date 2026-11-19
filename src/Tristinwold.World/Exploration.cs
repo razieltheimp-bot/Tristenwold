@@ -112,6 +112,8 @@ public sealed class CompanySave
     public List<QuestEntry> Quests { get; set; } = [];
     public Hero? Hero { get; set; }
     public List<Bond> Companions { get; set; } = [];
+    /// <summary>Companions fallen for good whom this hero can still raise as bones (a Warlock's apprentices, a Sorcerer's beasts).</summary>
+    public List<Bond> Fallen { get; set; } = [];
     public DragonSaga? Saga { get; set; }
     /// <summary>How far along the main story: what the hero is, and the road from waking to warden of the Rings.</summary>
     public ImmortalSaga? Story { get; set; }

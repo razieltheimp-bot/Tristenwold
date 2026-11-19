@@ -1303,11 +1303,11 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             {
                 ("Paladin", Tristinwold.Gameplay.Avatar.For("Paladin") with { Headwear = "none" }, ["steel_plate", "steel_helm", "steel_sword", "iron_shield"]),
                 ("Barbarian", Tristinwold.Gameplay.Avatar.For("Barbarian") with { Headwear = "none" }, ["fur_armor", "horned_hat", "iron_axe"]),
-                ("Wizard", Tristinwold.Gameplay.Avatar.For("Wizard") with { Headwear = "none" }, ["wizard_hat"]),
+                ("Wizard", Tristinwold.Gameplay.Avatar.For("Wizard") with { Headwear = "none" }, ["wizard_hat", "steel_staff"]),
                 ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none" }, ["leather_armor", "leather_cap", "steel_sword"]),
-                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none", Race = Tristinwold.Gameplay.Races.Dragonkind, Dragon = "Red" }, ["iron_mail"]),
-                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none", Race = "ape" }, []),
-                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none", Race = "lizard" }, []),
+                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none", Race = Tristinwold.Gameplay.Races.Dragonkind, Dragon = "Red" }, ["iron_mail", "steel_bow"]),
+                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none", Race = "ape" }, ["yew_longbow"]),
+                ("Thief", Tristinwold.Gameplay.Avatar.For("Thief") with { Headwear = "none", Race = "lizard" }, ["iron_staff"]),
             };
             var row = new List<Figure>();
             for (var i = 0; i < who.Length; i++)
@@ -1328,6 +1328,21 @@ public partial class Shots(Main main, string dir, bool quick = false, string? dr
             cam.GlobalPosition = stand with { Y = ground } + new Vector3(-1.6f, 1.6f, 2.0f);
             cam.LookAt(stand with { Y = ground } + new Vector3(-1.6f, 1.3f, 0), Vector3.Up);
             await Shot("gear-heads");
+            // The dead raised: a Warlock's skeleton squire and apprentice, and a Sorcerer's bone wolf, beside the row.
+            var risen = new List<Node3D>();
+            foreach (var (look, x) in new[] { ("skel_squire", -1.2f), ("skel_apprentice", 0f), ("bones:wolf", 1.3f) })
+            {
+                var b = Body.For(look);
+                main.AddChild(b);
+                b.GlobalPosition = stand with { Y = ground } + new Vector3(x, 0, 2.2f);
+                b.RotationDegrees = new Vector3(0, look.StartsWith("bones:") ? 90 : 180, 0);
+                risen.Add(b);
+            }
+            await Frames(30);
+            cam.GlobalPosition = stand with { Y = ground } + new Vector3(0, 1.3f, 5.2f);
+            cam.LookAt(stand with { Y = ground } + new Vector3(0, 0.7f, 2.2f), Vector3.Up);
+            await Shot("gear-risen");
+            foreach (var b in risen) b.QueueFree();
             foreach (var f in row) f.RotationDegrees = new Vector3(0, -45, 0);
             await Frames(10);
             cam.GlobalPosition = stand with { Y = ground } + new Vector3(2.2f, 1.2f, 3.0f);

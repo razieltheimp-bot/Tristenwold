@@ -1113,6 +1113,7 @@ public partial class Main : Node3D
                 _herbs = save.Herbs ?? new HerbBook();
                 if (save.Hero is { } hero) _player.Become(hero);
                 _bonds.AddRange(save.Companions);
+                _fallen.AddRange(save.Fallen ?? []);
                 _saga = save.Saga ?? new DragonSaga();
                 _story = save.Story ?? new ImmortalSaga();
                 _trade = save.Trade ?? new TradeBook();
@@ -1142,7 +1143,9 @@ public partial class Main : Node3D
     /// <summary>Saves on this device and, for a logged-in character, on the server too.</summary>
     public string Save()
     {
-        var json = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade, _raiders?.Record ?? _raidRecord, _sea, _standing, _mine, _forest).ToJson();
+        var snapshot = CompanySave.Capture(_world.Seed, _player.Crowns, _explored, _journal, _player.Hero, _bonds, _saga, _player.Meat, _guilds, _raids, _player.Pack, _herbs, Here(), _city, _pursuits, _story, _trade, _raiders?.Record ?? _raidRecord, _sea, _standing, _mine, _forest);
+        snapshot.Fallen = [.. _fallen];
+        var json = snapshot.ToJson();
         using (var file = Godot.FileAccess.Open(_savePath, Godot.FileAccess.ModeFlags.Write)) file?.StoreString(json);
         _savedAt = _clock;
         if (Choice.Account is not null && _client?.Status == ClientStatus.Connected && json != _lastSent)

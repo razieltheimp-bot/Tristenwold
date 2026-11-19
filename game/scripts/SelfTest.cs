@@ -4172,6 +4172,38 @@ public partial class SelfTest(Main main) : Node
         wolf.Shelled(1e9, false);
         await Frames(5);
         Check(!main.CompanionBodies.Any(e => e.Bond == bond) && main.HudNode.Heard("Only a Ranger or a Shapeshifter"), $"and a paladin's {bond.Name}, struck down, is dead");
+        Check(!main.Fallen.Contains(bond), "and a paladin can't raise the dead");
+
+        // A Sorcerer's beast, struck down, waits to be raised, and comes back as bones.
+        p.Join("Sorcerer");
+        var grey = main.JoinForTest(new Bond { Name = "Grey", KindId = "wolf", Role = BondRole.Pet, Level = 4 });
+        await Frames(5);
+        grey.Shelled(1e9, false);
+        await Frames(5);
+        var greyBond = grey.Bond!;
+        Check(main.Fallen.Contains(greyBond) && main.HudNode.Heard("raise Grey as bones"), "a sorcerer's wolf, struck down, is dead, but the sorcerer can raise it");
+        p.Stats.Restore(p.Stats.MaxMana);
+        Check(main.RaiseFallen(greyBond) && main.Bonds.Any(b => b.Name == "Grey" && b.Undead && b.Level == 4 && !b.Eats)
+            && main.CompanionBodies.Any(e => e.Bond is { Undead: true, Name: "Grey" }) && !main.Fallen.Contains(greyBond),
+            "raised, it comes back as a skeleton wolf at its old level, and follows");
+
+        // A Warlock's apprentice, struck down, comes back as bones of the class they were learning, at level 1.
+        p.Join("Warlock");
+        var edda = main.JoinForTest(new Bond { Name = "Edda", KindId = "squire", Role = BondRole.Squire, Trains = "Paladin", Level = 6 });
+        await Frames(5);
+        edda.Shelled(1e9, false);
+        await Frames(5);
+        var eddaBond = edda.Bond!;
+        Check(main.Fallen.Contains(eddaBond), "a warlock's squire, struck down, can be raised");
+        p.Stats.Restore(p.Stats.MaxMana);
+        Check(main.RaiseFallen(eddaBond) && main.Bonds.Any(b => b.Name == "Edda" && b.Undead && b.Level == 1 && b.Trains == "Paladin" && b.Role == BondRole.Squire),
+            "raised, Edda is a skeleton squire at level 1, still learning the Paladin's way");
+        var bones = main.CompanionBodies.FirstOrDefault(e => e.Bond is { Undead: true, Name: "Edda" });
+        Check(bones is not null, "and Edda's bones follow the warlock");
+        bones?.Shelled(1e9, false);
+        await Frames(5);
+        Check(!main.Fallen.Any(f => f.Name == "Edda") && main.HudNode.Heard("Dust doesn't get up twice"), "struck down again, the bones are dust");
+        foreach (var b in main.Bonds.Where(b => b.Name is "Grey" or "Edda").ToList()) main.ForgetForTest(b);
         p.Join(classWas);
     }
 

@@ -154,6 +154,14 @@ public static class Recipes
         Forge(2, "iron_helm", ("iron_ingot", 2), ("leather", 1)),
         Forge(3, "iron_mail", ("iron_ingot", 4), ("leather", 2)),
         Forge(2, "hunting_crossbow", ("iron_ingot", 1), ("leather", 1), ("antler", 1)),
+        Forge(2, "iron_staff", ("iron_ingot", 2), ("oak_log", 1)),
+        Forge(2, "iron_bow", ("iron_ingot", 2), ("pine_log", 1), ("linen", 1)),
+        // Wood: staffs, wands and bows, strung with linen.
+        Forge(1, "apprentice_staff", ("oak_log", 2)),
+        Forge(1, "oak_wand", ("oak_log", 1)),
+        Forge(1, "wooden_bow", ("pine_log", 2), ("linen", 1)),
+        Forge(1, "wooden_crossbow", ("pine_log", 2), ("linen", 1), ("iron_ingot", 1)),
+        Forge(3, "yew_longbow", ("yew_log", 2), ("linen", 1)),
         // Leather and fur.
         Forge(1, "leather_armor", ("leather", 4)),
         Forge(1, "leather_cap", ("leather", 2)),
@@ -174,6 +182,9 @@ public static class Recipes
         Forge(4, "steel_helm", ("steel_ingot", 2), ("leather", 1)),
         Forge(5, "steel_plate", ("steel_ingot", 5), ("leather", 2)),
         Forge(5, "heavy_crossbow", ("steel_ingot", 2), ("leather", 1), ("antler", 1)),
+        Forge(4, "steel_crossbow", ("steel_ingot", 2), ("pine_log", 1), ("linen", 1)),
+        Forge(4, "steel_staff", ("steel_ingot", 2), ("oak_log", 1)),
+        Forge(4, "steel_bow", ("steel_ingot", 2), ("yew_log", 1), ("linen", 1)),
         // From the stranger things.
         Forge(5, "kipine_cloak", ("kipine_feather", 4), ("linen", 2)),
         Forge(6, "devilhide_armor", ("devil_hide", 3), ("leather", 2), ("brimstone", 2)),
@@ -182,6 +193,9 @@ public static class Recipes
         // Dragons.
         Forge(7, "dragonbone_sword", ("dragon_bone", 2), ("steel_ingot", 1), ("leather", 1)),
         Forge(8, "dragonbone_greatsword", ("dragon_bone", 4), ("steel_ingot", 1), ("leather", 1)),
+        Forge(7, "dragonbone_staff", ("dragon_bone", 2), ("heartwood", 1), ("steel_ingot", 1)),
+        Forge(7, "dragonbone_bow", ("dragon_bone", 2), ("yew_log", 1), ("linen", 1)),
+        Forge(8, "dragonbone_crossbow", ("dragon_bone", 3), ("steel_ingot", 1), ("leather", 1)),
         .. Items.DragonColours.Select(c => Forge(8, $"dragonscale_armor_{c.Id}", ($"dragon_scale_{c.Id}", 6), ("leather", 3), ("dragon_bone", 1))),
         .. Items.DragonColours.Select(c => Forge(7, $"dragonscale_helm_{c.Id}", ($"dragon_scale_{c.Id}", 3), ("leather", 1))),
         // Potions.
@@ -432,13 +446,13 @@ public static class Shops
     public static readonly Shop Smithy = new("shop:smithy", "The Anvil Gate", "Hulda Ironhand",
         "Steel's honest. People aren't. What do you need hitting, or hitting you less?",
         ["iron_ingot", "steel_ingot", "coal", "pine_log", "leather", "iron_dagger", "iron_sword", "iron_axe", "iron_hammer", "iron_mace", "iron_greatsword", "iron_greataxe",
-         "hunting_crossbow", "wooden_shield", "iron_shield", "leather_cap", "iron_helm", "horned_hat", "leather_armor", "iron_mail", "knight_cape"],
+         "hunting_crossbow", "wooden_crossbow", "wooden_bow", "iron_bow", "iron_staff", "wooden_shield", "iron_shield", "leather_cap", "iron_helm", "horned_hat", "leather_armor", "iron_mail", "knight_cape"],
         Forge: true);
 
     public static readonly Shop Apothecary = new("shop:apothecary", "Saffron's Remedies", "Old Saffron",
         "Herbs, tinctures, wands for the learned. Bring me what you pick in the wild, and I'll pay for it.",
         ["healing_draught", "mana_tonic", "stamina_brew", "alchemist_kit", "emberleaf", "ladys_mantle", "bluebell",
-         "oak_wand", "apprentice_staff", "spellbook", "wizard_hat"],
+         "oak_wand", "apprentice_staff", "iron_staff", "spellbook", "wizard_hat"],
         Bench: true);
 
     /// <summary>Young beasts, raised tame (see <see cref="Gameplay.Menagerie"/>), and meat to feed them.</summary>
@@ -459,7 +473,7 @@ public static class Shops
     /// <summary>Hollin's woodlot, south-west of the walls: axes and timber.</summary>
     public static readonly Shop Woodlot = new("shop:woodlot", "Hollin's Woodlot", "Hollin Ashby",
         "Pine for the fires, oak for the ships, and a yew or two for the bowyers. Fell what's marked, and I'll buy every log.",
-        ["woodcutters_axe", "pine_log", "oak_log", "bread", "tinderbox", "traveller_cloak"], Trade: Job.Woodcutting);
+        ["woodcutters_axe", "pine_log", "oak_log", "bread", "tinderbox", "traveller_cloak", "wooden_bow", "yew_longbow"], Trade: Job.Woodcutting);
 
     /// <summary>The Salt Barrel's kitchen, down by the south road: ale, hot food, and a hearth a hero can cook at.</summary>
     public static readonly Shop SaltBarrel = new("shop:salt_barrel", "The Salt Barrel", "Fenna Rook",
@@ -491,7 +505,7 @@ public static class Shops
 
     /// <summary>The inner ring's own smith and general store, for people who don't care to go down the ramp.</summary>
     public static readonly Shop GiltAnvil = new("shop:gilt_anvil", "The Gilt Anvil", "Sera Quillon",
-        "Up here they want their steel to look as good as it cuts. It does both.", Smithy.Sells, Forge: true);
+        "Up here they want their steel to look as good as it cuts. It does both.", [.. Smithy.Sells, "steel_staff", "steel_bow", "steel_crossbow"], Forge: true);
 
     public static readonly Shop HarrowGoods = new("shop:harrow_goods", "Harrow & Daughters", "Tamsin Harrow",
         "Four generations on the same corner. Anything you'd want, wrapped if you like.", Provisions.Sells);
@@ -510,7 +524,7 @@ public static class Shops
             TownTrade.Smith => new Shop(id, name, keeper, "Hot iron and fair prices. What do you need?", Smithy.Sells, Forge: true),
             TownTrade.General => new Shop(id, name, keeper, "If it keeps you alive on the road, it's on a shelf here somewhere.", Provisions.Sells),
             TownTrade.Mine => new Shop(id, name, keeper, "Ore's what we've got, and I'll buy what you've dug. Mind the cart.", ["pickaxe", "stone_block", "iron_ore", "coal", "tinderbox", "bread", "healing_draught"], Trade: Job.Mining),
-            TownTrade.Ranger => new Shop(id, name, keeper, "Pelts on the line, meat on the hook, and a few young ones out the back that lost their mothers.", ["meat", "wolf_pelt", "fox_pelt", "rabbit_pelt", "deer_hide", "leather", "snare", "travel_rations", "traveller_cloak", "hunting_crossbow"], Beasts: true),
+            TownTrade.Ranger => new Shop(id, name, keeper, "Pelts on the line, meat on the hook, and a few young ones out the back that lost their mothers.", ["meat", "wolf_pelt", "fox_pelt", "rabbit_pelt", "deer_hide", "leather", "snare", "travel_rations", "traveller_cloak", "hunting_crossbow", "wooden_bow", "yew_longbow"], Beasts: true),
             _ => new Shop(id, name, keeper, "All of it grown here, and you can taste it.", ["bread", "potato", "onion", "cabbage", "meat", "ale", "potato_seed", "onion_seed"], Trade: Job.Farming),
         };
     }

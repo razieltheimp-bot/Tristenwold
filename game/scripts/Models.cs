@@ -257,6 +257,23 @@ public abstract partial class Body : Node3D
         return f;
     }
 
+    /// <summary>
+    /// A beast raised from the dead: its own body, washed over in bone, with a faint green grave-light, so it reads as
+    /// the same beast come back as bones. Laid over every part, and again once the body has built itself.
+    /// </summary>
+    static Body Boned(Body body)
+    {
+        var bone = new StandardMaterial3D
+        {
+            AlbedoColor = new Color(0.9f, 0.88f, 0.78f, 0.72f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, Roughness = 0.85f,
+            EmissionEnabled = true, Emission = new Color("#9cffb0"), EmissionEnergyMultiplier = 0.18f, RimEnabled = true, Rim = 0.6f,
+        };
+        void Wash() { foreach (var m in body.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>()) m.MaterialOverlay = bone; }
+        Wash();
+        body.Ready += Wash;
+        return body;
+    }
+
     /// <summary>A dragon knight on a dragon.</summary>
     static Body Ridden(string dragonLook)
     {
@@ -285,6 +302,7 @@ public abstract partial class Body : Node3D
         "cinder_warden" => Burned(look, Cinder.Warden),
         "cinder_thrall" => Burned(look, Cinder.Thrall),
         _ when look.StartsWith("rider:") => Ridden(look[6..]),
+        _ when look.StartsWith("bones:") => Boned(For(look[6..])), // a Sorcerer's beast, raised from the dead
         _ when look.StartsWith("golem") => Clockwork.For(look.Contains(':') ? look[6..] : "Scrap"), // an artificer's machine, by its design
         _ when look.StartsWith("dragon_") && look.EndsWith("_corrupt") => Dragon(look[7..^8], corrupt: true),
         _ when look.StartsWith("dragon_") => Dragon(look[7..]),
@@ -383,6 +401,11 @@ public partial class Figure : Body
         ["acolyte"] = new("Mage", [], 0.6f, new Color("#a8c890"), Unarmed: true),
         ["laureate"] = new("Mage", ["Spellbook_open"], 0.76f, new Color("#ffe4a8"), 0.05f, LeftHand: "@laurel", Unarmed: true),
         ["familiar"] = new("Skeleton_Minion", [], 0.62f, new Color("#b080ff"), 0.7f),
+        // A Warlock's apprentices raised from the dead: bones of the calling they were learning, with a faint grave-light.
+        ["skel_squire"] = new("Skeleton_Warrior", [], 0.62f, new Color("#d8e8c8"), 0.25f, RightHand: "Skeleton_Blade", LeftHand: "Skeleton_Shield_Small_A"),
+        ["skel_apprentice"] = new("Skeleton_Mage", [], 0.62f, new Color("#d8e8c8"), 0.25f, RightHand: "Skeleton_Staff"),
+        ["skel_protege"] = new("Skeleton_Rogue", [], 0.62f, new Color("#d8e8c8"), 0.25f, RightHand: "Skeleton_Blade"),
+        ["skel_minion"] = new("Skeleton_Minion", [], 0.62f, new Color("#d8e8c8"), 0.25f),
         // The Ashen Crypt.
         ["cinder_warden"] = new("Skeleton_Warrior", [], 1.3f, new Color("#4a3a30")),
         ["cinder_thrall"] = new("Skeleton_Minion", [], 0.7f, new Color("#5a4636")),
@@ -782,6 +805,9 @@ public partial class Figure : Body
     /// poet's laurel (worn round the head, whatever <paramref name="bone"/> says). Sizes are in the hand slot's units,
     /// where a KayKit blade is about one and a half long.
     /// </summary>
+    /// <summary>Something made from shapes put in a hand of this skeleton (see <see cref="Wardrobe"/>): the slot it hangs from.</summary>
+    public static Node3D? CraftInHand(Skeleton3D skeleton, string bone, string item) => Craft(skeleton, bone, item);
+
     static Node3D? Craft(Skeleton3D skeleton, string bone, string item)
     {
         if (item == "laurel") bone = "head"; // a wreath goes round the head, whoever holds it out
@@ -850,6 +876,36 @@ public partial class Figure : Body
                     Part(new BoxMesh { Size = new Vector3(0.07f, 0.22f, 0.05f) }, Paint("#7a7e86", 0.4f), new Vector3(side * 0.12f, 0.88f, 0));
                 Part(new BoxMesh { Size = new Vector3(0.11f, 0.3f, 0.05f) }, Paint("#b08a4a"), new Vector3(0, -0.05f, 0)); // the brass grip
                 break;
+            case "bow_wood" or "bow_yew" or "bow_iron" or "bow_steel" or "bow_bone":
+            {
+                // Held at the grip, upright: two limbs on one arc bowing away from the target, the tips back towards the
+                // archer, and the string straight between them. A longbow is longer; metal bows have a binding at the grip.
+                var (hex, metal, length) = item switch
+                {
+                    "bow_yew" => ("#9a4a2a", false, 1.55f),
+                    "bow_iron" => ("#7e838a", true, 1.2f),
+                    "bow_steel" => ("#dfe6ee", true, 1.3f),
+                    "bow_bone" => ("#efe4c8", false, 1.35f),
+                    _ => ("#a8743e", false, 1.05f),
+                };
+                var limb = Paint(hex, metal ? 0.35f : 0.6f);
+                if (metal) limb.Metallic = 0.85f;
+                var arc = 0.55f; // radians either side of the grip
+                var radius = length / 2 / Mathf.Sin(arc);
+                const int Steps = 9;
+                for (var k = -Steps; k < Steps; k++)
+                {
+                    var (a, b) = (arc * k / Steps, arc * (k + 1) / Steps);
+                    var mid = (a + b) / 2;
+                    var thick = 0.028f * (1 - 0.5f * Mathf.Abs(mid) / arc); // thinning to the tips
+                    Part(new CylinderMesh { TopRadius = thick, BottomRadius = thick, Height = radius * (b - a) * 1.04f }, limb,
+                        new Vector3(0, radius * Mathf.Sin(mid), -radius * (1 - Mathf.Cos(mid))), new Vector3(Mathf.RadToDeg(-mid), 0, 0));
+                }
+                var back = -radius * (1 - Mathf.Cos(arc));
+                Part(new BoxMesh { Size = new Vector3(0.006f, length * 0.98f, 0.006f) }, Paint("#efe8d4", 0.4f), new Vector3(0, 0, back)); // the string
+                Part(new CylinderMesh { TopRadius = 0.036f, BottomRadius = 0.036f, Height = 0.14f }, Paint(metal ? "#4a3424" : "#3a2a1c", 0.8f), Vector3.Zero); // the grip
+                break;
+            }
             case "quill":
                 Part(new CylinderMesh { TopRadius = 0.012f, BottomRadius = 0.006f, Height = 0.5f }, Paint("#e8e0d0"), new Vector3(0, 0.15f, 0));
                 Part(new SphereMesh { Radius = 0.08f, Height = 0.4f }, Paint("#f6f2ea", 0.9f), new Vector3(0.03f, 0.28f, 0), new Vector3(0, 0, -10), new Vector3(0.6f, 1, 0.12f)); // the vane

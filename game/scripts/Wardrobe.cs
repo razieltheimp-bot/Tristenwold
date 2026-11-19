@@ -33,6 +33,12 @@ public static class Wardrobe
         {
             if (pack.WornIn(slot) is not { } item) continue;
             foreach (var m in meshes.Where(m => own.Any(o => m.Name.ToString().Contains(o)))) m.Visible = false;
+            if (item.Look?.StartsWith('@') == true) // made from shapes (a bow, a hammer, a mace): made for this hand, as a class's own lute or wrench is
+            {
+                foreach (var old in skeleton.GetChildren().OfType<BoneAttachment3D>().Where(b => b.BoneName == bone && b.GetChildren().Any(c => c.Name.ToString().StartsWith("Craft_"))).ToList()) old.QueueFree();
+                if (Figure.CraftInHand(skeleton, bone, item.Look[1..]) is not null && slot == Slot.Weapon) f.Held = item.Grip;
+                continue;
+            }
             var piece = Piece(item);
             if (piece is null) continue;
             Holder(skeleton, bone).AddChild(piece);

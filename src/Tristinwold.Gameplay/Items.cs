@@ -458,6 +458,18 @@ public static class Items
         Gear("apprentice_staff", "Apprentice's Staff", 60, Slot.Weapon, Grip.Caster, "Mage/2H_Staff", damage: 0.14),
         Gear("amethyst_staff", "Amethyst Staff", 380, Slot.Weapon, Grip.Caster, "Mage/2H_Staff", damage: 0.32, tint: "#9a6ad8", glow: "#9a50ff"),
         Gear("storm_staff", "Stormcaller's Staff", 560, Slot.Weapon, Grip.Caster, "Mage/2H_Staff", damage: 0.4, tint: "#6aa0f0", glow: "#8ad0ff"),
+        // Staffs in every metal, for the classes that cast through one, and bows beside the crossbows.
+        Gear("iron_staff", "Iron Staff", 70, Slot.Weapon, Grip.Caster, "Mage/2H_Staff", damage: 0.18, tint: "#8e939a", metal: true),
+        Gear("steel_staff", "Steel Staff", 160, Slot.Weapon, Grip.Caster, "Mage/2H_Staff", damage: 0.28, tint: "#e4ecf4", metal: true),
+        Gear("dragonbone_staff", "Dragonbone Staff", 540, Slot.Weapon, Grip.Caster, "Mage/2H_Staff", damage: 0.44, tint: "#efe4c8", glow: "#ffe8a0"),
+        Gear("wooden_bow", "Wooden Shortbow", 30, Slot.Weapon, Grip.Ranged, "@bow_wood", damage: 0.08),
+        Gear("iron_bow", "Iron Bow", 70, Slot.Weapon, Grip.Ranged, "@bow_iron", damage: 0.15),
+        Gear("yew_longbow", "Yew Longbow", 95, Slot.Weapon, Grip.Ranged, "@bow_yew", damage: 0.19),
+        Gear("steel_bow", "Steel Bow", 165, Slot.Weapon, Grip.Ranged, "@bow_steel", damage: 0.27),
+        Gear("dragonbone_bow", "Dragonbone Bow", 540, Slot.Weapon, Grip.Ranged, "@bow_bone", damage: 0.42),
+        Gear("wooden_crossbow", "Light Crossbow", 35, Slot.Weapon, Grip.Ranged, "Rogue/1H_Crossbow", damage: 0.07, tint: "#8a6038"),
+        Gear("steel_crossbow", "Steel Crossbow", 120, Slot.Weapon, Grip.Ranged, "Rogue/1H_Crossbow", damage: 0.2, tint: "#e4ecf4", metal: true),
+        Gear("dragonbone_crossbow", "Dragonbone Crossbow", 560, Slot.Weapon, Grip.Ranged, "Rogue/2H_Crossbow", damage: 0.44, tint: "#efe4c8"),
         // ---- shields and off-hands ------------------------------------------------------------------------
         Gear("wooden_shield", "Wooden Shield", 20, Slot.Offhand, Grip.None, "Barbarian/Barbarian_Round_Shield", armor: 10),
         Gear("iron_shield", "Iron Shield", 50, Slot.Offhand, Grip.None, "Knight/Round_Shield", armor: 18),

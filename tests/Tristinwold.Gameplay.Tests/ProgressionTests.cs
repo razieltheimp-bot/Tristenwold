@@ -215,4 +215,43 @@ public class CorruptionTests
         Assert.Equal(["Wizard", "Paladin"], back.Classes);
         Assert.Equal(3, back.Learned["Paladin"]["holy_light"]);
     }
+
+    [Fact]
+    public void A_Poet_and_a_Scribe_take_on_any_number_of_apprentices_and_a_Musician_keeps_any_number_of_beasts_but_loses_the_fallen()
+    {
+        Assert.True(PartyRules.FreeApprentices("Poet"));
+        Assert.True(PartyRules.FreeApprentices("Scribe"));
+        Assert.False(PartyRules.FreeApprentices("Musician"));
+        Assert.True(PartyRules.FreePets("Musician"));
+        Assert.False(PartyRules.KeepsPets("Musician"));
+        Assert.True(PartyRules.Dies(new Bond { Role = BondRole.Pet }, "Musician"));
+        var many = Enumerable.Range(0, 9).Select(_ => new Bond { Role = BondRole.Pet, Following = true }).ToList();
+        Assert.True(PartyRules.MayFollow(many, new Bond { Role = BondRole.Pet }, PartyRules.FreePets("Musician")));
+        Assert.False(PartyRules.MayFollow(many, new Bond { Role = BondRole.Pet }, PartyRules.FreePets("Poet")));
+    }
+
+    [Fact]
+    public void A_Warlock_raises_a_fallen_apprentice_as_bones_of_their_class_at_level_one_and_a_Sorcerer_raises_beasts()
+    {
+        var pupil = new Bond { Name = "Edda", KindId = "squire", Role = BondRole.Squire, Trains = "Paladin", Level = 7, Xp = 300, Race = "human", Gear = { [Slot.Weapon] = "iron_sword" } };
+        Assert.True(PartyRules.Raises("Warlock", pupil));
+        Assert.False(PartyRules.Raises("Sorcerer", pupil));
+        Assert.False(PartyRules.Raises("Wizard", pupil));
+        var bones = PartyRules.Raise(pupil);
+        Assert.Equal(("Edda", "squire", BondRole.Squire, "Paladin", 1, 0), (bones.Name, bones.KindId, bones.Role, bones.Trains, bones.Level, bones.Xp));
+        Assert.True(bones.Undead);
+        Assert.Empty(bones.Gear); // what they carried came back to the hero when they fell
+        Assert.False(PartyRules.Raises("Warlock", bones)); // dust doesn't get up twice
+        Assert.True(PartyRules.Dies(bones, "Warlock"));
+
+        var wolf = new Bond { Name = "Grey", KindId = "wolf", Role = BondRole.Pet, Level = 5 };
+        Assert.True(PartyRules.FreePets("Sorcerer"));
+        Assert.True(PartyRules.Raises("Sorcerer", wolf));
+        Assert.False(PartyRules.Raises("Warlock", wolf));
+        Assert.False(PartyRules.Raises("Musician", wolf));
+        var bonewolf = PartyRules.Raise(wolf);
+        Assert.Equal((5, true, false), (bonewolf.Level, bonewolf.Undead, bonewolf.Eats)); // the dead don't eat
+        var saved = System.Text.Json.JsonSerializer.Deserialize<Bond>(System.Text.Json.JsonSerializer.Serialize(bonewolf))!;
+        Assert.True(saved.Undead);
+    }
 }

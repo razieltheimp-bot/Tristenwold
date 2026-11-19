@@ -12,13 +12,13 @@ namespace Tristinwold.Game;
 /// </summary>
 public partial class Main
 {
-    /// <summary>A Ranger (the beastmaster's way) and a Shapeshifter (who runs with the pack) can have as many pets at their heels as they like.</summary>
-    bool FreePets => _player.Class.Id is "Ranger" or "Shapeshifter";
+    /// <summary>A Ranger, a Shapeshifter, a Musician and a Sorcerer can have as many pets at their heels as they like (see <see cref="PartyRules.FreePets"/>).</summary>
+    bool FreePets => PartyRules.FreePets(_player.Class.Id);
 
     /// <summary>Whether there's room for this one with the hero (see <see cref="PartyRules"/>).</summary>
     bool MayFollow(Bond bond) => PartyRules.MayFollow(_bonds, bond, FreePets, FreeApprentices);
 
-    /// <summary>A Paladin and a Wizard can take on as many apprentices as they like.</summary>
+    /// <summary>A Paladin, a Wizard, a Martial Artist, a Poet and a Scribe can take on as many apprentices as they like.</summary>
     bool FreeApprentices => PartyRules.FreeApprentices(_player.Class.Id);
 
     /// <summary>Where a companion not with the hero stays: their house, once they've listed it as home, or the Perch.</summary>
@@ -54,6 +54,24 @@ public partial class Main
     }
 
     readonly List<Bond> _bonds = [];
+
+    /// <summary>Companions fallen for good that this hero can still raise as bones (see <see cref="PartyRules.Raises"/>), oldest first.</summary>
+    readonly List<Bond> _fallen = [];
+
+    /// <summary>For the self-test: one joins the company on the spot, at the hero's side.</summary>
+    public Enemy JoinForTest(Bond bond)
+    {
+        _bonds.Add(bond);
+        return BringCompanion(bond);
+    }
+
+    /// <summary>For the self-test: who lies waiting to be raised.</summary>
+    public IReadOnlyList<Bond> Fallen => _fallen;
+
+    /// <summary>How one raised from the dead looks: a skeleton of their calling for a person, a beast's own body in bone for a beast.</summary>
+    static string Bones(Bond b) => PartyRules.IsApprentice(b)
+        ? b.KindId switch { "squire" => "skel_squire", "apprentice" => "skel_apprentice", "protege" => "skel_protege", _ => "skel_minion" }
+        : $"bones:{b.KindId}";
     readonly List<Enemy> _companions = [];
     DragonSaga _saga = new();
     Pickup? _nest;
@@ -128,7 +146,8 @@ public partial class Main
     Enemy BringCompanion(Bond bond, Vector3? at = null)
     {
         var spot = at ?? _player.GlobalPosition + _player.GlobalTransform.Basis.Z * 3 + new Vector3((float)GD.RandRange(-2, 2), 0, 0);
-        var e = Enemy.Create(Bestiary.Get(bond.KindId), spot with { Y = City.FloorAt(spot) + 0.5f }, bond: bond, look: bond.Machine ? $"golem:{GolemName(_player.Hero.Artificer ?? _player.Class.Id)}" : null);
+        var e = Enemy.Create(Bestiary.Get(bond.KindId), spot with { Y = City.FloorAt(spot) + 0.5f }, bond: bond,
+            look: bond.Machine ? $"golem:{GolemName(_player.Hero.Artificer ?? _player.Class.Id)}" : bond.Undead ? Bones(bond) : null);
         e.Leader = _player;
         AddEnemy(e);
         _companions.Add(e);
@@ -323,7 +342,16 @@ public partial class Main
         _bonds.Remove(bond);
         _companions.Remove(e);
         GetTree().CreateTimer(8).Timeout += () => { if (IsInstanceValid(e)) e.QueueFree(); };
-        if (bond.Role == BondRole.Dragon && _saga.Stage is SagaStage.Raising or SagaStage.Knighted)
+        // A Warlock or Witch keeps hold of a fallen apprentice, a Sorcerer of a fallen beast, to raise them as bones later.
+        var raisable = PartyRules.Raises(_player.Class.Id, bond);
+        if (raisable)
+        {
+            _fallen.Add(bond);
+            while (_fallen.Count > PartyRules.FallenKept) _fallen.RemoveAt(0);
+        }
+        var raiseHint = raisable ? $" But the dead answer you: raise {bond.Name} as bones from your company (P)." : "";
+        if (bond.Undead) _hud.Toast($"{bond.Name}'s bones fall apart, and stay that way. Dust doesn't get up twice.", 10);
+        else if (bond.Role == BondRole.Dragon && _saga.Stage is SagaStage.Raising or SagaStage.Knighted)
         {
             var grown = _saga.Stage == SagaStage.Knighted;
             _saga.Lose();
@@ -334,14 +362,14 @@ public partial class Main
         else if (bond.Role == BondRole.Dragon) _hud.Toast($"{bond.Name} is dead. A dragon doesn't get up from that.", 12);
         else if (PartyRules.IsApprentice(bond))
         {
-            _hud.Toast($"{bond.Name} is dead. They followed you here, and they don't get up.", 12);
+            _hud.Toast($"{bond.Name} is dead. They followed you here, and they don't get up.{raiseHint}", 12);
             _hud.Log($"{bond.Name}, your {(bond.Role == BondRole.Squire ? "squire" : "apprentice")}, fell in battle.");
             StableSpareMounts();
         }
         else if (bond.Role == BondRole.Mite) _hud.Log($"{bond.Name} is scrap.");
         else if (bond.Role == BondRole.Pet)
         {
-            _hud.Toast($"{bond.Name} is dead. Only a Ranger or a Shapeshifter keeps a beast through a fight like that.", 12);
+            _hud.Toast($"{bond.Name} is dead. Only a Ranger or a Shapeshifter keeps a beast through a fight like that.{raiseHint}", 12);
             _hud.Log($"{bond.Name} fell in battle, and doesn't get up.");
         }
         else _hud.Toast($"{bond.Name} is dead.", 10);
@@ -351,7 +379,7 @@ public partial class Main
     /// <summary>Apprentices grow old with the days, and in the end, like anyone, they die of it.</summary>
     void AgeApprentices()
     {
-        foreach (var bond in _bonds.Where(PartyRules.IsApprentice).ToList())
+        foreach (var bond in _bonds.Where(b => PartyRules.IsApprentice(b) && !b.Undead).ToList()) // bones don't age
         {
             if (bond.JoinAge <= 0) (bond.JoinAge, bond.JoinDay) = (15, _city.Day); // taken on before they kept count
             var age = bond.JoinAge + Math.Max(0, _city.Day - bond.JoinDay) / (double)Calendar.DaysPerYear;
@@ -1071,13 +1099,14 @@ public partial class Main
     /// <summary>The party (P): who's with you, how they're doing, feeding them, sending them home.</summary>
     public void ShowParty()
     {
-        if (_bonds.Count == 0) { _hud.Talk("Your company", "No one follows you yet. Find a youngling alone in the wilds, or a youth in a town who dreams of adventure.", ("Close", _hud.EndTalk)); return; }
+        var raisable = _fallen.Where(f => PartyRules.Raises(_player.Class.Id, f)).ToList();
+        if (_bonds.Count == 0 && raisable.Count == 0) { _hud.Talk("Your company", "No one follows you yet. Find a youngling alone in the wilds, or a youth in a town who dreams of adventure.", ("Close", _hud.EndTalk)); return; }
         string Line(Bond b)
         {
             var body = BodyOf(b);
             var kind = Bestiary.Get(b.KindId).Name.ToLowerInvariant();
             var state = !b.Following ? (b.Sails is not null && ShipOf(b) is { } ship ? $"in command of {ship.Name}, {ship.Whereabouts(_guilds.PlaySeconds)}" : b.Keeps is { } keeps ? $"keeping shop {ShopCalled(keeps)}" : b.Hitched ? "hitched to your wagon" : _pursuits.House.IsHome ? "at home" : "waiting at the Gallows Perch") : body is null ? "lost" : body.State == EnemyState.Dead ? "down" : $"{body.Stats.Health:0}/{body.Stats.MaxHealth:0} health";
-            return $"{b.Name}: {b.Stage} {(b.Role is BondRole.Pet or BondRole.Dragon ? kind : "")}, level {b.Level} ({b.Xp}/{Bond.XpToNext(b.Level)} xp), {state}{(b.Eats ? $", {b.Fed:0}% fed" : "")}. Knows: {(b.Skills.Any() ? string.Join(", ", b.Skills.Select(s => s.Name)) : "nothing yet")}.";
+            return $"{b.Name}: {(b.Undead ? "skeleton " : "")}{b.Stage} {(b.Role is BondRole.Pet or BondRole.Dragon ? kind : "")}, level {b.Level} ({b.Xp}/{Bond.XpToNext(b.Level)} xp), {state}{(b.Eats ? $", {b.Fed:0}% fed" : "")}. Knows: {(b.Skills.Any() ? string.Join(", ", b.Skills.Select(s => s.Name)) : "nothing yet")}.";
         }
         // Each of the company, and right under them what can be done for them.
         var groups = new List<(string Line, List<(string Label, Action Then)> Options)>();
@@ -1110,7 +1139,37 @@ public partial class Main
             if (bond.Following) options.Add(($"Send {bond.Name} home", () => { bond.Following = false; var body = BodyOf(bond); if (body is not null) { _companions.Remove(body); body.QueueFree(); } StableSpareMounts(); Save(); ShowParty(); }));
             else if (MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
         }
+        // The fallen a Warlock or a Sorcerer can call back, as bones.
+        foreach (var f in raisable)
+        {
+            var dead = f;
+            var what = PartyRules.IsApprentice(dead)
+                ? $"your {(dead.Role == BondRole.Squire ? "squire" : "apprentice")}, learning the {Classes.Get(dead.Trains ?? _player.Class.Id).Name}'s way. Raised, they'd start again at level 1"
+                : $"your {Bestiary.Get(dead.KindId).Name.ToLowerInvariant()}, level {dead.Level}";
+            groups.Add(($"{dead.Name}: fallen, {what}.", new List<(string Label, Action Then)> { ($"Raise {dead.Name} as bones ({_player.Stats.MaxMana * PartyRules.RaiseMana:0} mana)", () => { RaiseFallen(dead); ShowParty(); }) }));
+        }
         _hud.TalkGroups("Your company", $"{_bonds.Count(b => b.Following)} with you, {_bonds.Count(b => !b.Following)} elsewhere. Meat {_player.Meat}, fish {FishInPack}.", groups, ("Close", _hud.EndTalk));
+    }
+
+    /// <summary>
+    /// A Warlock or Witch raises a fallen apprentice, a Sorcerer a fallen beast: the same one, as bones (see
+    /// <see cref="PartyRules.Raise"/>). They follow if there's room, else they wait at home like anyone.
+    /// </summary>
+    public bool RaiseFallen(Bond dead)
+    {
+        if (!_fallen.Contains(dead) || !PartyRules.Raises(_player.Class.Id, dead)) return false;
+        if (!_player.Stats.Spend(AttackKind.Spell, _player.Stats.MaxMana * PartyRules.RaiseMana)) { Sound.Ui("error"); _hud.Toast($"Not enough mana to raise {dead.Name}.", 4); return false; }
+        _fallen.Remove(dead);
+        var risen = PartyRules.Raise(dead);
+        risen.Following = MayFollow(risen);
+        _bonds.Add(risen);
+        if (risen.Following) Effects.Rise(BringCompanion(risen), DamageKind.Poison);
+        _hud.Toast(PartyRules.IsApprentice(risen)
+            ? $"The ground gives {risen.Name} back: bones, a little light in the eyes, and every lesson to learn again. Level 1, still learning the {Classes.Get(risen.Trains ?? _player.Class.Id).Name}'s way.{(risen.Following ? "" : $" No room at your side: {risen.Name} waits at {WaitsAt}.")}"
+            : $"{risen.Name} climbs out of the dirt on bare bones and comes to heel.{(risen.Following ? "" : $" {risen.Name} waits at {WaitsAt}.")}", 10);
+        _hud.Log($"You raised {risen.Name} from the dead.");
+        Save();
+        return true;
     }
 
     /// <summary>A Ranger or a Shapeshifter brings a beast of theirs round on the spot, fighting or not.</summary>

@@ -175,6 +175,8 @@ public sealed class Bond
     public string? Trains { get; set; }
     /// <summary>What the hero has given them to wear and carry (see <see cref="Kit"/>), by slot.</summary>
     public Dictionary<Slot, string> Gear { get; set; } = [];
+    /// <summary>Raised from the dead by a Warlock or a Sorcerer (see <see cref="PartyRules.Raise"/>): bones, that neither eat nor age, and are dust if they fall again.</summary>
+    public bool Undead { get; set; }
 
     /// <summary>A dragon too young to fly is lost for good if it falls; anything else is only knocked out.</summary>
     [JsonIgnore]
@@ -188,7 +190,7 @@ public sealed class Bond
     public const double HungerSeconds = 1500; // a full belly lasts 25 minutes of play
 
     [JsonIgnore]
-    public bool Eats => Role is BondRole.Pet or BondRole.Dragon;
+    public bool Eats => (Role is BondRole.Pet or BondRole.Dragon) && !Undead;
 
     public static int XpToNext(int level) => (int)Math.Round(45 * Math.Pow(level, 1.35));
 
@@ -507,8 +509,45 @@ public static class PartyRules
         (b.Trains, b.Role, b.KindId) = (Classes.Get(classId).Id, role, kind);
     }
 
-    /// <summary>A Paladin, a Wizard and a Martial Artist take on as many apprentices as they like, the way a Ranger keeps as many beasts.</summary>
-    public static bool FreeApprentices(string classId) => classId is "Paladin" or "Wizard" or "MartialArtist";
+    /// <summary>A Paladin, a Wizard, a Martial Artist, a Poet and a Scribe take on as many apprentices as they like, the way a Ranger keeps as many beasts.</summary>
+    public static bool FreeApprentices(string classId) => classId is "Paladin" or "Wizard" or "MartialArtist" or "Poet" or "Scribe";
+
+    /// <summary>
+    /// Who can have as many beasts at their heels as they like: a Ranger and a Shapeshifter (who also keep them through a
+    /// fight, <see cref="KeepsPets"/>), a Musician (the beasts follow the tune, but one struck down is gone) and a
+    /// Sorcerer (who raises the fallen as bones, <see cref="Raises"/>).
+    /// </summary>
+    public static bool FreePets(string classId) => classId is "Ranger" or "Shapeshifter" or "Musician" or "Sorcerer";
+
+    /// <summary>
+    /// Whether this hero can raise one of theirs who fell for good: a Warlock or Witch an apprentice or squire, as a
+    /// skeleton of the class they were learning, and a Sorcerer a beast, as a skeleton beast. What was raised once and
+    /// falls again is dust.
+    /// </summary>
+    public static bool Raises(string classId, Bond fallen) => !fallen.Undead && (classId switch
+    {
+        "Warlock" => IsApprentice(fallen),
+        "Sorcerer" => fallen.Role == BondRole.Pet,
+        _ => false,
+    });
+
+    /// <summary>What raising one of the fallen costs: this share of the hero's mana.</summary>
+    public const double RaiseMana = 0.3;
+
+    /// <summary>The most of the fallen a hero remembers, waiting to be raised: the oldest are let go first.</summary>
+    public const int FallenKept = 12;
+
+    /// <summary>
+    /// One of the fallen, raised: the same name and the same calling, but bones. An apprentice comes back at level one,
+    /// learning the class they were learning when they died; a beast comes back as it was. Nothing they carried comes
+    /// with them, and the dead don't eat.
+    /// </summary>
+    public static Bond Raise(Bond fallen) => new()
+    {
+        KindId = fallen.KindId, Name = fallen.Name, Role = fallen.Role, Trains = fallen.Trains, Race = fallen.Race,
+        Level = IsApprentice(fallen) ? 1 : fallen.Level, Xp = 0, Health = 1, Fed = 100, Undead = true,
+        Build = fallen.Build, JoinAge = fallen.JoinAge, JoinDay = fallen.JoinDay, Renamed = fallen.Renamed,
+    };
     public static bool IsMount(Bond b) => b.Role == BondRole.Dragon ? b.Rideable : b.Steed && b.Rideable;
     public static bool IsPet(Bond b) => !IsApprentice(b) && !IsMount(b) && !b.Machine;
 
