@@ -509,8 +509,15 @@ public static class PartyRules
         (b.Trains, b.Role, b.KindId) = (Classes.Get(classId).Id, role, kind);
     }
 
-    /// <summary>A Paladin, a Wizard, a Martial Artist, a Poet and a Scribe take on as many apprentices as they like, the way a Ranger keeps as many beasts.</summary>
-    public static bool FreeApprentices(string classId) => classId is "Paladin" or "Wizard" or "MartialArtist" or "Poet" or "Scribe";
+    /// <summary>
+    /// A Paladin, a Wizard, a Martial Artist and a Scribe take on as many apprentices as they like, the way a Ranger keeps
+    /// as many beasts. Those who raise the dead (<see cref="Raises"/>) keep to the usual five living, but as many raised
+    /// ones as they like: bones never count (see <see cref="Living"/>).
+    /// </summary>
+    public static bool FreeApprentices(string classId) => classId is "Paladin" or "Wizard" or "MartialArtist" or "Scribe";
+
+    /// <summary>An apprentice or squire who counts towards the five: a living one. The raised don't.</summary>
+    public static bool Living(Bond b) => IsApprentice(b) && !b.Undead;
 
     /// <summary>
     /// Who can have as many beasts at their heels as they like: a Ranger and a Shapeshifter (who also keep them through a
@@ -520,13 +527,13 @@ public static class PartyRules
     public static bool FreePets(string classId) => classId is "Ranger" or "Shapeshifter" or "Musician" or "Sorcerer";
 
     /// <summary>
-    /// Whether this hero can raise one of theirs who fell for good: a Warlock or Witch an apprentice or squire, as a
-    /// skeleton of the class they were learning, and a Sorcerer a beast, as a skeleton beast. What was raised once and
-    /// falls again is dust.
+    /// Whether this hero can raise one of theirs who fell for good: a Warlock or Witch, a Poet (who won't let one stay
+    /// dead) or a Spiritcaller (whom the spirits answer) an apprentice or squire, as a skeleton of the class they were
+    /// learning; and a Sorcerer a beast, as a skeleton beast. What was raised once and falls again is dust.
     /// </summary>
     public static bool Raises(string classId, Bond fallen) => !fallen.Undead && (classId switch
     {
-        "Warlock" => IsApprentice(fallen),
+        "Warlock" or "Poet" or "Spiritcaller" => IsApprentice(fallen),
         "Sorcerer" => fallen.Role == BondRole.Pet,
         _ => false,
     });
@@ -576,7 +583,7 @@ public static class PartyRules
         if (who.Sails is not null) return false; // away at sea, in command of a ship
         if (who.Machine) return true; // a golem comes with the calling, and a saboteur makes as many mites as they like
         var others = bonds.Where(b => b != who && b.Following).ToList();
-        if (IsApprentice(who)) return freeApprentices || others.Count(IsApprentice) < MaxApprentices;
+        if (IsApprentice(who)) return freeApprentices || who.Undead || others.Count(Living) < MaxApprentices; // bones are never short of room
         if (IsMount(who)) return others.Count(IsMount) < Riders(others);
         return freePets || others.Count(IsPet) < MaxPets;
     }

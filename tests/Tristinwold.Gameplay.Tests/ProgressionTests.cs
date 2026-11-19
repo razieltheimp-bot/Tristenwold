@@ -219,7 +219,8 @@ public class CorruptionTests
     [Fact]
     public void A_Poet_and_a_Scribe_take_on_any_number_of_apprentices_and_a_Musician_keeps_any_number_of_beasts_but_loses_the_fallen()
     {
-        Assert.True(PartyRules.FreeApprentices("Poet"));
+        Assert.False(PartyRules.FreeApprentices("Poet")); // a Poet raises the dead instead: five living, and as many bones as they like
+        Assert.False(PartyRules.FreeApprentices("Warlock"));
         Assert.True(PartyRules.FreeApprentices("Scribe"));
         Assert.False(PartyRules.FreeApprentices("Musician"));
         Assert.True(PartyRules.FreePets("Musician"));
@@ -235,6 +236,10 @@ public class CorruptionTests
     {
         var pupil = new Bond { Name = "Edda", KindId = "squire", Role = BondRole.Squire, Trains = "Paladin", Level = 7, Xp = 300, Race = "human", Gear = { [Slot.Weapon] = "iron_sword" } };
         Assert.True(PartyRules.Raises("Warlock", pupil));
+        Assert.True(PartyRules.Raises("Poet", pupil));
+        Assert.True(PartyRules.Raises("Spiritcaller", pupil));
+        Assert.False(PartyRules.FreeApprentices("Spiritcaller"));
+        Assert.False(PartyRules.Raises("Scribe", pupil));
         Assert.False(PartyRules.Raises("Sorcerer", pupil));
         Assert.False(PartyRules.Raises("Wizard", pupil));
         var bones = PartyRules.Raise(pupil);
@@ -242,6 +247,11 @@ public class CorruptionTests
         Assert.True(bones.Undead);
         Assert.Empty(bones.Gear); // what they carried came back to the hero when they fell
         Assert.False(PartyRules.Raises("Warlock", bones)); // dust doesn't get up twice
+        var five = Enumerable.Range(0, PartyRules.MaxApprentices).Select(_ => new Bond { Role = BondRole.Apprentice, Following = true }).ToList();
+        Assert.False(PartyRules.MayFollow(five, new Bond { Role = BondRole.Apprentice }, false)); // a sixth living one waits at home
+        Assert.True(PartyRules.MayFollow(five, bones, false)); // but bones always have room
+        var crowd = five.Concat(Enumerable.Range(0, 8).Select(_ => new Bond { Role = BondRole.Apprentice, Following = true, Undead = true })).ToList();
+        Assert.True(PartyRules.MayFollow(crowd.Skip(1).ToList(), new Bond { Role = BondRole.Apprentice }, false)); // and they don't count towards the living five
         Assert.True(PartyRules.Dies(bones, "Warlock"));
 
         var wolf = new Bond { Name = "Grey", KindId = "wolf", Role = BondRole.Pet, Level = 5 };
@@ -249,6 +259,7 @@ public class CorruptionTests
         Assert.True(PartyRules.Raises("Sorcerer", wolf));
         Assert.False(PartyRules.Raises("Warlock", wolf));
         Assert.False(PartyRules.Raises("Musician", wolf));
+        Assert.False(PartyRules.Raises("Poet", wolf));
         var bonewolf = PartyRules.Raise(wolf);
         Assert.Equal((5, true, false), (bonewolf.Level, bonewolf.Undead, bonewolf.Eats)); // the dead don't eat
         var saved = System.Text.Json.JsonSerializer.Deserialize<Bond>(System.Text.Json.JsonSerializer.Serialize(bonewolf))!;

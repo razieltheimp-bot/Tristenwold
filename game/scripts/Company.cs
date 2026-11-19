@@ -18,7 +18,7 @@ public partial class Main
     /// <summary>Whether there's room for this one with the hero (see <see cref="PartyRules"/>).</summary>
     bool MayFollow(Bond bond) => PartyRules.MayFollow(_bonds, bond, FreePets, FreeApprentices);
 
-    /// <summary>A Paladin, a Wizard, a Martial Artist, a Poet and a Scribe can take on as many apprentices as they like.</summary>
+    /// <summary>A Paladin, a Wizard, a Martial Artist and a Scribe can take on as many apprentices as they like; those who raise the dead, as many raised ones.</summary>
     bool FreeApprentices => PartyRules.FreeApprentices(_player.Class.Id);
 
     /// <summary>Where a companion not with the hero stays: their house, once they've listed it as home, or the Perch.</summary>
@@ -342,7 +342,7 @@ public partial class Main
         _bonds.Remove(bond);
         _companions.Remove(e);
         GetTree().CreateTimer(8).Timeout += () => { if (IsInstanceValid(e)) e.QueueFree(); };
-        // A Warlock or Witch keeps hold of a fallen apprentice, a Sorcerer of a fallen beast, to raise them as bones later.
+        // A Warlock or Witch, a Poet or a Spiritcaller keeps hold of a fallen apprentice, a Sorcerer of a fallen beast, to raise them as bones later.
         var raisable = PartyRules.Raises(_player.Class.Id, bond);
         if (raisable)
         {
@@ -830,7 +830,7 @@ public partial class Main
         var npc = person.Npc;
         var (role, kind, word) = Follower;
         if (_player.Hero.Level < RecruitLevel) { Say(person, $"You? You're nobody yet. Come back when you've made a name (level {RecruitLevel})."); return false; }
-        if (!FreeApprentices && _bonds.Count(PartyRules.IsApprentice) >= PartyRules.MaxApprentices) { Say(person, $"You've {PartyRules.MaxApprentices} already. Who'd teach me?"); return false; }
+        if (!FreeApprentices && _bonds.Count(PartyRules.Living) >= PartyRules.MaxApprentices) { Say(person, $"You've {PartyRules.MaxApprentices} already. Who'd teach me?"); return false; }
         if (_player.Crowns < RecruitFee) { Say(person, $"My family can't spare me for nothing. {RecruitFee} crowns, for their trouble."); return false; }
         _player.Crowns -= RecruitFee;
         var called = _bonds.Any(b => b.Name.Split(' ')[0].Equals(npc.First, StringComparison.OrdinalIgnoreCase)) ? npc.Name : npc.First; // two Tobins: the new one keeps their whole name
@@ -1139,7 +1139,7 @@ public partial class Main
             if (bond.Following) options.Add(($"Send {bond.Name} home", () => { bond.Following = false; var body = BodyOf(bond); if (body is not null) { _companions.Remove(body); body.QueueFree(); } StableSpareMounts(); Save(); ShowParty(); }));
             else if (MayFollow(bond)) options.Add(($"Call {bond.Name}", () => { bond.Following = true; BringCompanion(bond); Save(); ShowParty(); }));
         }
-        // The fallen a Warlock or a Sorcerer can call back, as bones.
+        // The fallen a Warlock, a Poet, a Spiritcaller or a Sorcerer can call back, as bones.
         foreach (var f in raisable)
         {
             var dead = f;
@@ -1152,7 +1152,7 @@ public partial class Main
     }
 
     /// <summary>
-    /// A Warlock or Witch raises a fallen apprentice, a Sorcerer a fallen beast: the same one, as bones (see
+    /// A Warlock or Witch, a Poet or a Spiritcaller raises a fallen apprentice, a Sorcerer a fallen beast: the same one, as bones (see
     /// <see cref="PartyRules.Raise"/>). They follow if there's room, else they wait at home like anyone.
     /// </summary>
     public bool RaiseFallen(Bond dead)
