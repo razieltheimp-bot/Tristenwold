@@ -231,6 +231,7 @@ public partial class Player : Fighter
         if (_hybrid is not null) { Stats.DamageMult *= _hybridMight; Stats.Armor += 30; }
         if (_elemental is not null) { Stats.DamageMult *= _elementalMight; Stats.SpellPower *= _elementalMight; Stats.Armor += _elemental == "earth" ? 60 : 30; } // its blows and its spells, both
         if (_berserk > 0) Stats.DamageMult *= _berserkMight;
+        Stats.Armor *= Combatant.HeroArmor; // a hero's armour counts for more than a beast's hide (see Combatant.HeroArmor)
     }
 
     /// <summary>What the hero carries and wears (the game hands it over on loading).</summary>
@@ -1361,7 +1362,7 @@ public partial class Player : Fighter
         if (Hidden) Unhide("A blow finds you, and the shadows are gone.");
         LastHitBy = from;
         LastHitAt = Time.GetTicksMsec() / 1000.0;
-        if (Class.Id == "MartialArtist" && _rng.Chance(Class.Passive.Power + 0.03 * (Hero.Rank("evasion") - 1)))
+        if (Class.Id is "MartialArtist" or "Shapeshifter" && _rng.Chance(Class.Passive.Power + 0.03 * (Hero.Rank("evasion") - 1))) // Evasion, and a shapeshifter's Animal Instinct
         {
             Figure.Perform("Dodge_Left", 0.4, 1.6f);
             return;

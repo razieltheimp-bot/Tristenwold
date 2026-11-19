@@ -16,6 +16,13 @@ public sealed class Combatant
 {
     public const double ArmorCap = 0.80;          // armor never stops more than 80% of a blow
     public const double ArmorPerPercent = 1 / 0.12; // 8.33 armor rating per percent of harm turned aside
+
+    /// <summary>
+    /// What a hero's armour (their class's, their level's, their people's and what they wear) is worth against the
+    /// same rating on a beast or a boss: plate on a paladin turns aside about half of a blade, not a sixth. Beasts keep
+    /// their old rating, so they're no harder to cut down.
+    /// </summary>
+    public const double HeroArmor = 1.75;
     public const double ResistCap = 85;
 
     public string Name { get; set; }
@@ -154,7 +161,7 @@ public sealed class Combatant
     {
         if (Dead) return;
         Stamina = Math.Min(MaxStamina, Stamina + MaxStamina * 0.10 * seconds);
-        Mana = Math.Min(MaxMana, Mana + MaxMana * (inCombat ? 0.01 : 0.03) * seconds);
+        Mana = Math.Min(MaxMana, Mana + MaxMana * (inCombat ? 0.03 : 0.05) * seconds); // a caster can keep casting a while: 3% a second fighting, 5% at rest
         var regen = Statuses.Contains(AutoStatus.Regen) ? 0.03 : inCombat ? 0 : 0.007;
         Health = Math.Min(MaxHealth, Health + MaxHealth * regen * seconds);
     }

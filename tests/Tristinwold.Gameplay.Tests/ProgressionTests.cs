@@ -265,4 +265,18 @@ public class CorruptionTests
         var saved = System.Text.Json.JsonSerializer.Deserialize<Bond>(System.Text.Json.JsonSerializer.Serialize(bonewolf))!;
         Assert.True(saved.Undead);
     }
+
+    [Fact]
+    public void Every_caster_can_keep_up_their_basic_spell_for_twenty_seconds()
+    {
+        // Mana comes back at 3% a second in a fight (Combatant.Tick). (A Paladin's Smite tires them in about 12: the
+        // strongest class's brake, on purpose.)
+        foreach (var c in Classes.All.Where(c => c.Primary.Pays == AttackKind.Spell))
+        {
+            var (pool, back) = (c.Mana, c.Mana * 0.03);
+            var spend = c.Primary.Cost / Math.Max(c.Primary.Cooldown, 0.3);
+            var lasts = spend <= back ? double.PositiveInfinity : pool / (spend - back);
+            Assert.True(lasts >= 20, $"{c.Name}: {lasts:0} s");
+        }
+    }
 }
