@@ -3058,6 +3058,7 @@ public partial class SelfTest(Main main) : Node
             await Frames(40);
         }
         Check(main.LastHeroMessage == mark, "not drawn on players, a swing leaves him be");
+        Check(main.AttackHintForTest == "B: Attack Sir Joe", $"but the prompt offers B: Attack Sir Joe ({main.AttackHintForTest})");
         main.DrawOnHeroesForTest();
         for (var i = 0; i < 6 && main.LastHeroMessage is not StrikeHero { Target: "Joe" }; i++)
         {
@@ -3126,8 +3127,10 @@ public partial class SelfTest(Main main) : Node
         p.Swing();
         await Frames(40);
         Check(main.LastHeroMessage is null && !main.FightingHeroForTest("Mira"), "not drawn on players, a swing doesn't touch her");
+        Check(main.AttackHintForTest == "B: Attack Mira", $"close to her, the prompt offers B: Attack Mira ({main.AttackHintForTest})");
         main.DrawOnHeroesForTest();
         Check(main.DrawnForTest && main.FightingHeroForTest("Mira"), "B draws on every player about");
+        Check(main.AttackHintForTest is null, "and once drawn, the prompt goes");
         for (var i = 0; i < 6 && main.LastHeroMessage is null; i++)
         {
             p.Face(mira.GlobalPosition);

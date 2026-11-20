@@ -69,6 +69,28 @@ public partial class Main
                 : "You stop fighting other players.", 6);
     }
 
+    /// <summary>How close another player has to be for the "B: Attack" prompt.</summary>
+    const float AttackHintRange = 6;
+
+    /// <summary>
+    /// Another player close by, awake or asleep, that this hero's blows don't reach yet: "B: Attack {name}", shown under
+    /// the E line. Nothing once drawn on them (or already fighting them), in a tavern, or on a phone (no B there).
+    /// </summary>
+    string? AttackHint()
+    {
+        if (_drawn || TouchMode || _player.Downed || _player.Safe) return null;
+        var me = _player.GlobalPosition;
+        Enemy? nearest = null;
+        var best = AttackHintRange;
+        foreach (var e in _visitors.StandIns)
+        {
+            if (e.Hero is not { } who || FightingHero(who)) continue;
+            var d = e.GlobalPosition.DistanceTo(me);
+            if (d < best) (nearest, best) = (e, d);
+        }
+        return nearest is null ? null : $"B: Attack {nearest.Stats.Name}";
+    }
+
     /// <summary>This hero's blow landed on another player's stand-in: off it goes to their game.</summary>
     void StrikeHero(Enemy standIn, double damage, DamageKind kind, AttackKind attack, bool crit)
     {
@@ -168,5 +190,6 @@ public partial class Main
     public void DrawOnHeroesForTest() => DrawOnHeroes();
     public SleepSpot? SleepSpotForTest => SpotNow();
     public bool DrawnForTest => _drawn;
+    public string? AttackHintForTest => AttackHint();
     public bool FightingHeroForTest(string player) => FightingHero(player);
 }

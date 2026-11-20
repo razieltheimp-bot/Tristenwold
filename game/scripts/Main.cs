@@ -854,7 +854,12 @@ public partial class Main : Node3D
         if (_clock - _lastSave > 20) { _lastSave = _clock; Save(); }
 
         var near = Nearest();
-        if (!_player.Downed) _hud.Center(near is null || _hud.Talking ? "" : $"E: {near.Value.Verb}");
+        if (!_player.Downed)
+        {
+            var use = near is null || _hud.Talking ? null : $"E: {near.Value.Verb}";
+            var attack = _hud.Talking ? null : AttackHint();
+            _hud.Center(use is not null && attack is not null ? $"{use}\n{attack}" : use ?? attack ?? "");
+        }
         if (Input.IsActionJustPressed("interact"))
         {
             if (_hud.Talking) _hud.EndTalk();
