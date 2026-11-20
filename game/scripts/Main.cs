@@ -644,6 +644,7 @@ public partial class Main : Node3D
             "cycle_element" => _player.Class.Elemental ? _player.Element.ToString() : _player.Class.Utility.Name,
             "spell" => _player.Class.Signature.Name,
             "attack" => _player.Mount is not null ? "Breath" : _player.Class.Primary.Name,
+            "draw_on" => TouchAttackLabel(),
             _ => null,
         };
         _hud.Touch.Lit = action => action switch

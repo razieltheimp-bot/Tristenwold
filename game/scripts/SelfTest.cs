@@ -3128,9 +3128,11 @@ public partial class SelfTest(Main main) : Node
         await Frames(40);
         Check(main.LastHeroMessage is null && !main.FightingHeroForTest("Mira"), "not drawn on players, a swing doesn't touch her");
         Check(main.AttackHintForTest == "B: Attack Mira", $"close to her, the prompt offers B: Attack Mira ({main.AttackHintForTest})");
+        Check(main.TouchAttackLabelForTest == "Attack Mira", $"and a phone's bubble says Attack Mira ({main.TouchAttackLabelForTest})");
         main.DrawOnHeroesForTest();
         Check(main.DrawnForTest && main.FightingHeroForTest("Mira"), "B draws on every player about");
         Check(main.AttackHintForTest is null, "and once drawn, the prompt goes");
+        Check(main.TouchAttackLabelForTest == "Stop fighting", $"while a phone's bubble offers to stop ({main.TouchAttackLabelForTest})");
         for (var i = 0; i < 6 && main.LastHeroMessage is null; i++)
         {
             p.Face(mira.GlobalPosition);

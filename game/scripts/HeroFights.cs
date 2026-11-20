@@ -72,13 +72,10 @@ public partial class Main
     /// <summary>How close another player has to be for the "B: Attack" prompt.</summary>
     const float AttackHintRange = 6;
 
-    /// <summary>
-    /// Another player close by, awake or asleep, that this hero's blows don't reach yet: "B: Attack {name}", shown under
-    /// the E line. Nothing once drawn on them (or already fighting them), in a tavern, or on a phone (no B there).
-    /// </summary>
-    string? AttackHint()
+    /// <summary>Another player close by, awake or asleep, that this hero's blows don't reach yet (none in a tavern or while down).</summary>
+    Enemy? NearestUnfought()
     {
-        if (_drawn || TouchMode || _player.Downed || _player.Safe) return null;
+        if (_drawn || _player.Downed || _player.Safe) return null;
         var me = _player.GlobalPosition;
         Enemy? nearest = null;
         var best = AttackHintRange;
@@ -88,8 +85,17 @@ public partial class Main
             var d = e.GlobalPosition.DistanceTo(me);
             if (d < best) (nearest, best) = (e, d);
         }
-        return nearest is null ? null : $"B: Attack {nearest.Stats.Name}";
+        return nearest;
     }
+
+    /// <summary>"B: Attack {name}" under the E line, near another player this hero isn't fighting yet (keyboards only).</summary>
+    string? AttackHint() => TouchMode || NearestUnfought() is not { } e ? null : $"B: Attack {e.Stats.Name}";
+
+    /// <summary>
+    /// The phone's bubble for B: "Attack {name}" near another player this hero isn't fighting yet; "Stop fighting" while
+    /// drawn on players, so a phone can put it away too; otherwise no bubble at all.
+    /// </summary>
+    string? TouchAttackLabel() => _drawn ? (_player.Downed || _player.Safe ? null : "Stop fighting") : NearestUnfought() is { } e ? $"Attack {e.Stats.Name}" : null;
 
     /// <summary>This hero's blow landed on another player's stand-in: off it goes to their game.</summary>
     void StrikeHero(Enemy standIn, double damage, DamageKind kind, AttackKind attack, bool crit)
@@ -191,5 +197,6 @@ public partial class Main
     public SleepSpot? SleepSpotForTest => SpotNow();
     public bool DrawnForTest => _drawn;
     public string? AttackHintForTest => AttackHint();
+    public string? TouchAttackLabelForTest => TouchAttackLabel();
     public bool FightingHeroForTest(string player) => FightingHero(player);
 }

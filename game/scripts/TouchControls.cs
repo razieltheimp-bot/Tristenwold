@@ -10,7 +10,8 @@ namespace Tristinwold.Game;
 /// </summary>
 public partial class TouchControls : Control
 {
-    sealed record Pad(string Action, string Label, Func<Vector2, Vector2> Centre, float Radius, bool Toggle = false);
+    /// <summary>A button. A <paramref name="Bubble"/> is a pill that's only there while the game gives it a label.</summary>
+    sealed record Pad(string Action, string Label, Func<Vector2, Vector2> Centre, float Radius, bool Toggle = false, bool Bubble = false);
 
     public Action<Vector2>? Look { get; set; }
 
@@ -43,7 +44,24 @@ public partial class TouchControls : Control
         new("stealth", "Hide", s => new(s.X - 250, s.Y - 360), 30),
         new("summon", "Summon", s => new(s.X - 395, s.Y - 410), 30),
         new("game_menu", "Menu", s => new(s.X - 124, 258), 28), // under the little map
+        new("draw_on", "Attack", s => new(s.X / 2, s.Y - 120), 26, Bubble: true), // "Attack Mira" near another player
     ];
+
+    /// <summary>Whether a button is there just now: a bubble only while the game has something to say on it.</summary>
+    bool Showing(Pad pad) => !pad.Bubble || LabelFor?.Invoke(pad.Action) is not null;
+
+    /// <summary>A bubble's half-width: room for its words, and its rounded ends.</summary>
+    float HalfWidth(Pad pad, string label) => pad.Bubble ? ThemeDB.FallbackFont.GetStringSize(label, HorizontalAlignment.Left, -1, BubbleText).X / 2 + pad.Radius : pad.Radius;
+    const int BubbleText = 18;
+
+    bool Hit(Pad pad, Vector2 at)
+    {
+        if (!Showing(pad)) return false;
+        var c = pad.Centre(Screen);
+        if (!pad.Bubble) return c.DistanceTo(at) <= pad.Radius * 1.15f;
+        var half = HalfWidth(pad, LabelFor?.Invoke(pad.Action) ?? pad.Label);
+        return Math.Abs(at.X - c.X) <= half + 8 && Math.Abs(at.Y - c.Y) <= pad.Radius + 8;
+    }
 
     // Which finger is doing what.
     int _stickFinger = -1, _lookFinger = -1;
@@ -76,7 +94,7 @@ public partial class TouchControls : Control
 
     void Down(int finger, Vector2 at)
     {
-        if (_pads.FirstOrDefault(p => p.Centre(Screen).DistanceTo(at) <= p.Radius * 1.15f) is { } pad)
+        if (_pads.FirstOrDefault(p => Hit(p, at)) is { } pad)
         {
             if (pad.Toggle)
             {
@@ -157,9 +175,21 @@ public partial class TouchControls : Control
 
         foreach (var pad in _pads)
         {
+            if (!Showing(pad)) continue;
             var c = pad.Centre(Screen);
             var on = _held.ContainsValue(pad) || _toggled.Contains(pad.Action);
             var lit = Lit?.Invoke(pad.Action) ?? false;
+            if (pad.Bubble)
+            {
+                var words = LabelFor?.Invoke(pad.Action) ?? pad.Label;
+                var half = HalfWidth(pad, words) - pad.Radius;
+                var fill = on ? new Color(1, 0.55f, 0.45f, 0.7f) : new Color(0.55f, 0.12f, 0.1f, 0.6f);
+                DrawRect(new Rect2(c.X - half, c.Y - pad.Radius, half * 2, pad.Radius * 2), fill);
+                DrawCircle(new Vector2(c.X - half, c.Y), pad.Radius, fill);
+                DrawCircle(new Vector2(c.X + half, c.Y), pad.Radius, fill);
+                DrawString(font, c + new Vector2(-half, BubbleText * 0.35f), words, HorizontalAlignment.Left, -1, BubbleText, ink);
+                continue;
+            }
             DrawCircle(c, pad.Radius, on ? new Color(1, 0.82f, 0.48f, 0.55f) : lit ? new Color(1, 0.82f, 0.48f, 0.3f) : new Color(0, 0, 0, 0.35f));
             DrawArc(c, pad.Radius, 0, Mathf.Tau, 40, lit ? new Color("#ffd27a") : new Color(1, 1, 1, 0.5f), 2);
             var label = LabelFor?.Invoke(pad.Action) ?? pad.Label;
