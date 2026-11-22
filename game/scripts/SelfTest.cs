@@ -3350,6 +3350,41 @@ public partial class SelfTest(Main main) : Node
         main.Talk(Someone());
         Check(hud.Choose("What does") && hud.TalkText.Contains("a tavern"), $"{refuge.Name} has tents and a fire, and wants a tavern first");
         hud.EndTalk();
+
+        // On a server, a building is built there or not at all.
+        {
+            var tavern = Settling.Next(city.GrownOf(refuge.Id))!;
+            foreach (var (id, n) in tavern.Needs) p.Pack.Add(id, n);
+            p.Crowns += tavern.Crowns;
+            int Logs() => p.Pack.Count(tavern.Needs[0].Id);
+            var (logs, crowns) = (Logs(), p.Crowns);
+            var link = new TestLink { Status = ClientStatus.Disconnected };
+            main.UseLinkForTest(link);
+            main.Talk(Someone());
+            Check(hud.Choose("I've brought what") && hud.TalkText.Contains("can't get word") && Logs() == logs && p.Crowns == crowns && city.GrownOf(refuge.Id) == 0,
+                "with the server out of reach, nothing's taken and nothing's built");
+            hud.EndTalk();
+
+            link.Status = ClientStatus.Connected;
+            main.UseLinkForTest(link);
+            main.Talk(Someone());
+            Check(hud.Choose("I've brought what") && Logs() == logs - tavern.Needs[0].N && city.GrownOf(refuge.Id) == Settling.Tavern
+                && link.Sent.OfType<CityTrade>().Any(t => t.Action.Kind == "grew" && t.Action.Town == refuge.Id), "in touch with the server, it's handed over and sent there");
+            await Frames(10);
+            var unbuilt = (CitySnapshot)Wire.Decode(Wire.Encode(new CitySnapshot(city, 0)));
+            unbuilt.City.Growth.Remove(refuge.Id);
+            main.TakeCityForTest(unbuilt);
+            Check(Logs() == logs - tavern.Needs[0].N, "while the server may not have had it yet, nothing's given back");
+            main.OverdueBuildsForTest();
+            main.TakeCityForTest(unbuilt);
+            city = main.Economy;
+            Check(Logs() == logs && p.Crowns == crowns && city.GrownOf(refuge.Id) == 0, "a building the server never took: what it took is handed back");
+            main.UseLinkForTest(null);
+            foreach (var (id, n) in tavern.Needs) p.Pack.Take(id, n);
+            p.Crowns -= tavern.Crowns;
+            await Frames(30);
+        }
+
         for (var stage = 1; stage <= Settling.Walls; stage++)
         {
             var step = Settling.Next(city.GrownOf(refuge.Id))!;
@@ -7081,4 +7116,16 @@ public partial class SelfTest(Main main) : Node
         GD.Print(code == 0 ? "SELFTEST PASSED" : "SELFTEST FAILED");
         GetTree().Quit(code);
     }
+}
+
+/// <summary>A server link for the self-test: as connected as it's told to be, keeping what's sent.</summary>
+sealed class TestLink : IGameLink
+{
+    public ClientStatus Status { get; set; }
+    public string? LastError => null;
+    public readonly List<Message> Sent = [];
+    public void Start() { }
+    public void Send(Message message) => Sent.Add(message);
+    public bool TryReceive(out Message message) { message = null!; return false; }
+    public void Dispose() { }
 }

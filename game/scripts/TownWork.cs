@@ -45,7 +45,12 @@ public partial class Main
         var first = !_sharedCity;
         _sharedCity = true;
         if (first) RestoreShops(); // the server's had a restart, or never had them: our wagon, ship and stalls go back up at once
+        CheckBuilds(); // anything handed over to be built that never reached the server is given back
     }
+
+    /// <summary>For the self-test: a server link of its own making, and the server's city as if it had just come in.</summary>
+    public void UseLinkForTest(IGameLink? link) { _client = link; _sharedCity = link is { Status: ClientStatus.Connected }; }
+    public void TakeCityForTest(CitySnapshot s) => TakeCity(s);
 
     /// <summary>Does something to the city here and now, and on the server too.</summary>
     public void DoCity(CityAction a)
