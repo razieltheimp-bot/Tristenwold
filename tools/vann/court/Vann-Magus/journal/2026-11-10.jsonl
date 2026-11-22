@@ -1,0 +1,829 @@
+{"t":"19:03:56","ctx":"in The autumn woods near Cinderhelm|health high|level 10","move":"Walk up and press E: pick the bilberries (40 m west).","by":"Calm","reward":0}
+{"t":"19:04:04","ctx":"in The pinewoods near Cinderhelm|health high|level 10","move":"Walk up and press E: pick the lady\u0027s mantle (38 m north-west).","by":"Calm","reward":0}
+{"t":"19:04:07","ctx":"in The pinewoods near Cinderhelm|health high|level 10","move":"Walk up and press E: pick the lady\u0027s mantle (6 m west).","by":"Calm","reward":0}
+{"t":"19:04:47","ctx":"in The pinewoods near Cinderhelm|health high|level 10","move":"Attack the Ronacse, the Sin of Pride (level 54) (16 m west): close in and keep hitting.","by":"Combat","reward":-3.44}
+{"t":"19:05:05","ctx":"in Tristinwold|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.4 km east).","by":"Calm","reward":0}
+{"t":"19:05:11","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (22 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:05:16","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (17 m north-east): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"19:05:29","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (28 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:05:31","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (684 m north-west).","by":"Risky","reward":0}
+{"t":"19:05:34","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (21 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:05:35","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m north): close in and keep hitting.","by":"Combat","reward":0.27}
+{"t":"19:05:52","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (28 m south): close in and keep hitting.","by":"Risky","reward":0.05}
+{"t":"19:06:06","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (32 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:06:19","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (32 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:07:26","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (690 m north-west).","by":"Risky","reward":0}
+{"t":"19:11:01","ctx":"in The Tristinwold countryside|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.2 km east).","by":"Calm","reward":0}
+{"t":"19:11:11","ctx":"in The Tristinwold countryside|health high|level 10|fighting","move":"Attack the Ronacse, the Sin of Pride (level 56) (18 m east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"19:11:17","ctx":"in The Tristinwold countryside|health high|level 10|fighting","move":"Sprint away toward Greywater (463 m north-east).","by":"Combat","reward":-3.31}
+{"t":"19:11:26","ctx":"in Tristinwold|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.4 km east).","by":"Calm","reward":0}
+{"t":"19:11:27","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (25 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:11:29","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (17 m north-east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"19:11:45","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (26 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:11:47","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m south): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"19:11:51","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (28 m north): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:11:51","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m north): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"19:11:59","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (684 m north-west).","by":"Calm","reward":0}
+{"t":"19:12:21","ctx":"in The Docks|health high|level 10","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"19:12:53","ctx":"in The Docks|health high|level 10","move":"Walk up to Lorne Kettlemane (courier, 29 m) and press E to talk.","by":"Risky","reward":0}
+{"t":"19:13:42","ctx":"in The Docks|health high|level 10","move":"Head for Greywater, marked on the map (796 m north-east).","by":"Risky","reward":0}
+{"t":"19:14:18","ctx":"in The Tristinwold countryside|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.2 km east).","by":"Calm","reward":0}
+{"t":"19:14:28","ctx":"in The Tristinwold countryside|health high|level 10","move":"Head for Greywater, marked on the map (495 m north-east).","by":"Calm","reward":0}
+{"t":"19:14:34","ctx":"in The Tristinwold countryside|health high|level 10","move":"Sprint away toward Tristinwold (451 m south-west).","by":"Combat","reward":0}
+{"t":"19:14:39","ctx":"in The Tristinwold countryside|health high|level 10|fighting","move":"Sprint away toward Tristinwold (434 m south-west).","by":"Risky","reward":0}
+{"t":"19:14:45","ctx":"in The Tristinwold countryside|health high|level 10|fighting","move":"Sprint away toward Tristinwold (414 m south-west).","by":"Risky","reward":0}
+{"t":"19:14:51","ctx":"in The Tristinwold countryside|health high|level 10|fighting","move":"Sprint away toward Tristinwold (394 m south-west).","by":"Risky","reward":0}
+{"t":"19:14:58","ctx":"in The Tristinwold countryside|health high|level 10|fighting","move":"Sprint away toward Tristinwold (374 m south-west).","by":"Risky","reward":0}
+{"t":"19:15:05","ctx":"in The Tristinwold countryside|health high|level 10|fighting","move":"Sprint away toward Tristinwold (354 m south-west).","by":"Risky","reward":0}
+{"t":"19:16:02","ctx":"in The Tristinwold countryside|health high|level 10|fighting","move":"Sprint away toward Tristinwold (334 m south-west).","by":"Risky","reward":0}
+{"t":"19:16:04","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (20 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:16:07","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (18 m west): close in and keep hitting.","by":"Combat","reward":0.33}
+{"t":"19:16:15","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (32 m south-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:16:16","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (17 m south-west): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"19:17:18","ctx":"in The Harbor|health high|level 10","move":"Head for Hollowheart, marked on the map (675 m north-west).","by":"Calm","reward":0.05}
+{"t":"19:17:47","ctx":"in The Harbor|health high|level 10","move":"Walk up to Lorne Kettlemane (courier, 46 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"19:18:24","ctx":"in The Docks|health high|level 10","move":"Wander west (about 200 m).","by":"Risky","reward":0}
+{"t":"19:18:35","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (38 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:18:59","ctx":"in The Docks|health high|level 10","move":"Head for Coppergate Refuge, marked on the map (1.4 km north).","by":"Risky","reward":0}
+{"t":"19:18:59","ctx":"in The Harbor|health high|level 10","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"19:19:04","ctx":"in The Harbor|health high|level 10|fighting","move":"Sprint away toward Tristinwold (132 m west).","by":"Combat","reward":0}
+{"t":"19:19:08","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:19:13","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:19:18","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:19:22","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (118 m west).","by":"Combat","reward":0}
+{"t":"19:19:27","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:19:31","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:19:36","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:19:40","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:19:45","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:19:49","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:19:54","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:19:58","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:20:03","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:20:07","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:20:12","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:20:16","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:20:21","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:20:26","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:20:31","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:20:36","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:20:41","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (118 m west).","by":"Combat","reward":0}
+{"t":"19:20:46","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:20:50","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:20:55","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:20:59","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:21:04","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:21:08","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:21:13","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:21:17","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:21:22","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:21:26","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (118 m west).","by":"Combat","reward":0}
+{"t":"19:21:31","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:21:35","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:21:40","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:21:45","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (118 m west).","by":"Combat","reward":0}
+{"t":"19:21:49","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:21:54","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:21:58","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:22:03","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:22:07","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:22:12","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:22:17","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:22:22","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:22:26","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:22:31","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:22:36","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:22:41","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:22:46","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:22:51","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:22:55","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:23:00","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:23:05","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:23:09","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (118 m west).","by":"Combat","reward":0}
+{"t":"19:23:14","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:23:19","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:23:23","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:23:28","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:23:32","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:23:37","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:23:41","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:23:46","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:23:50","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:23:54","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:23:59","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:24:03","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:24:08","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:24:12","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:24:16","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:24:21","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (118 m west).","by":"Combat","reward":0}
+{"t":"19:24:26","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (118 m west).","by":"Combat","reward":0}
+{"t":"19:24:30","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:24:35","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:24:39","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:24:44","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:24:48","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:24:53","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:24:57","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0.05}
+{"t":"19:25:03","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:25:07","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:25:12","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:25:17","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:25:22","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:25:27","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:25:31","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0.05}
+{"t":"19:25:36","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:25:41","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:25:46","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:25:51","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:25:56","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:26:01","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:26:05","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (115 m west).","by":"Combat","reward":0}
+{"t":"19:26:10","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:26:15","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:26:19","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:26:24","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (117 m west).","by":"Combat","reward":0}
+{"t":"19:26:28","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (119 m west).","by":"Combat","reward":0}
+{"t":"19:26:32","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:26:37","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:26:41","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (120 m west).","by":"Combat","reward":0}
+{"t":"19:26:50","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (114 m west).","by":"Combat","reward":0}
+{"t":"19:26:58","ctx":"in The Docks|health high|level 10|fighting","move":"Sprint away toward Tristinwold (116 m west).","by":"Combat","reward":0}
+{"t":"19:29:56","ctx":"in the wilds|health high|level 10","move":"Attack the Dock Thug (14 m east): close in and keep hitting.","by":"Combat","reward":0.28}
+{"t":"19:30:02","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (22 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:30:05","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m north-east): close in and keep hitting.","by":"Combat","reward":0.32}
+{"t":"19:30:26","ctx":"in The Docks|health high|level 10","move":"Go to the Greyhollow quarry to buy a pickaxe (261 m south-west; you heard of it from a message on screen).","by":"Risky","reward":0}
+{"t":"19:30:55","ctx":"in The Docks|health high|level 10","move":"Head for Druitt, marked on the map (1.0 km west).","by":"Calm","reward":0}
+{"t":"19:31:21","ctx":"in The Harbor|health high|level 10","move":"Walk up to Colm Crowward (a youth of 8, 57 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"19:31:58","ctx":"in The Docks|health high|level 10","move":"Walk up to Lorne Kettlemane (courier, 38 m) and press E to talk.","by":"Risky","reward":0}
+{"t":"19:32:08","ctx":"in The Docks|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.4 km east).","by":"Calm","reward":0}
+{"t":"19:32:28","ctx":"in The Harbor|health high|level 10","move":"Attack the Ronacse, the Sin of Pride (level 58) (19 m east): close in and keep hitting.","by":"Combat","reward":-3.53}
+{"t":"19:32:37","ctx":"in Tristinwold|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.4 km east).","by":"Calm","reward":0}
+{"t":"19:32:40","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (32 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:32:41","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (17 m south-east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"19:32:47","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (24 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:32:48","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m south): close in and keep hitting.","by":"Combat","reward":0.27}
+{"t":"19:32:50","ctx":"in The Docks|health high|level 10|fighting","move":"Attack the Dock Thug (17 m south): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"19:34:09","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (705 m north).","by":"Calm","reward":0}
+{"t":"19:34:29","ctx":"in The Docks|health high|level 10","move":"Attack the Nimul the Tide-Cursed, the Gravewalker (38 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:34:49","ctx":"in The Docks|health high|level 10","move":"Head for Greywater, marked on the map (788 m north-east).","by":"Risky","reward":0}
+{"t":"19:34:55","ctx":"in The Harbor|health high|level 10","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Risky","reward":0}
+{"t":"19:36:16","ctx":"in The Harbor|health high|level 10","move":"Head for Greywater, marked on the map (723 m north-east).","by":"Calm","reward":0}
+{"t":"19:37:58","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Greydeep, marked on the map (870 m north).","by":"Calm","reward":0}
+{"t":"19:38:14","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Attack the Deer (24 m east); it hasn\u0027t done anything to you.","by":"Calm","reward":0.27}
+{"t":"19:38:18","ctx":"in The autumn woods near Greywater|health high|level 10|fighting","move":"Attack the Deer (20 m south-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0.12}
+{"t":"19:38:19","ctx":"in The autumn woods near Greywater|health high|level 10|fighting","move":"Attack the Deer (18 m south-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0.12}
+{"t":"19:39:36","ctx":"in The autumn woods near Greywater|health high|level 10|fighting","move":"Head for Stagrest, marked on the map (729 m east).","by":"Calm","reward":0}
+{"t":"19:40:45","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Walk up to Roderic Emberwright (clerk to the council of Stagrest, 48 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"19:41:21","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Walk up to Roderic Emberwright (clerk to the council of Stagrest, 46 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"19:41:50","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Miregate Camp, marked on the map (233 m west).","by":"Calm","reward":0}
+{"t":"19:42:24","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (914 m south).","by":"Calm","reward":0}
+{"t":"19:42:35","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Miregate Camp, marked on the map (256 m north-west).","by":"Calm","reward":0}
+{"t":"19:43:13","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (788 m south).","by":"Calm","reward":0}
+{"t":"19:44:02","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Miregate Camp, marked on the map (366 m north-west).","by":"Calm","reward":0}
+{"t":"19:44:39","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (837 m south).","by":"Calm","reward":0}
+{"t":"19:45:38","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Miregate Camp, marked on the map (301 m north).","by":"Calm","reward":0}
+{"t":"19:46:03","ctx":"in Miregate Camp|health high|level 10","move":"Head for Coldhollow Croft, marked on the map (262 m north-east).","by":"Calm","reward":0}
+{"t":"19:57:29","ctx":"in The autumn woods near Cinderhelm|health high|level 10","move":"Walk up and press E: pick the flax (16 m north-west).","by":"Calm","reward":0}
+{"t":"19:57:37","ctx":"in The autumn woods near Cinderhelm|health high|level 10","move":"Walk up and press E: pick the flax (5 m north).","by":"Calm","reward":0}
+{"t":"19:57:59","ctx":"in The autumn woods near Cinderhelm|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.1 km south).","by":"Calm","reward":0}
+{"t":"19:58:24","ctx":"in The autumn woods near Cinderhelm|health mid|level 10|fighting","move":"Attack the Ronacse, the Sin of Pride (level 60) (26 m north): close in and keep hitting.","by":"Risky","reward":-3.36}
+{"t":"19:58:36","ctx":"in Tristinwold|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.4 km east).","by":"Calm","reward":0}
+{"t":"19:58:37","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (19 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:58:39","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m north-east): close in and keep hitting.","by":"Combat","reward":0.32}
+{"t":"19:58:43","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (29 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:58:44","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m south-east): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"19:58:55","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (25 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:58:56","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:58:58","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m south): close in and keep hitting.","by":"Combat","reward":0.33}
+{"t":"19:58:59","ctx":"in The Docks|health high|level 10|fighting","move":"Attack the Dock Thug (17 m south): close in and keep hitting.","by":"Combat","reward":0.29}
+{"t":"19:59:39","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (705 m north).","by":"Calm","reward":0}
+{"t":"19:59:42","ctx":"in The Docks|health high|level 10","move":"Go into the shop (25 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"20:00:11","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (692 m north).","by":"Calm","reward":0.05}
+{"t":"20:00:13","ctx":"in The Docks|health high|level 10","move":"Go into the shop (24 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"20:00:32","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (38 m north-east): close in and keep hitting.","by":"Risky","reward":0.05}
+{"t":"20:00:44","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (698 m north-west).","by":"Risky","reward":0}
+{"t":"20:00:45","ctx":"in The Docks|health high|level 10","move":"Go into the shop (25 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"20:01:19","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (692 m north).","by":"Risky","reward":0}
+{"t":"20:01:21","ctx":"in The Docks|health high|level 10","move":"Go into the shop (21 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"20:01:52","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (691 m north).","by":"Risky","reward":0}
+{"t":"20:01:57","ctx":"in The Docks|health high|level 10","move":"Go into the shop (22 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"20:02:54","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (692 m north).","by":"Calm","reward":0}
+{"t":"20:03:23","ctx":"in The Docks|health high|level 10","move":"Sprint away toward Tristinwold (119 m west).","by":"Calm","reward":0}
+{"t":"20:04:44","ctx":"in The Docks|health high|level 10","move":"Wander north (about 200 m).","by":"Risky","reward":0}
+{"t":"20:11:29","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (20 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:11:30","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m north): close in and keep hitting.","by":"Combat","reward":0.33}
+{"t":"20:11:31","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (15 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:11:33","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (15 m south-east): close in and keep hitting.","by":"Combat","reward":0.32}
+{"t":"20:11:40","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (27 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:11:48","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (18 m south): close in and keep hitting.","by":"Combat","reward":0.49}
+{"t":"20:12:56","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (704 m north).","by":"Calm","reward":0}
+{"t":"20:13:10","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (35 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:14:20","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (698 m north-west).","by":"Risky","reward":0}
+{"t":"20:15:27","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (691 m north).","by":"Calm","reward":0.05}
+{"t":"20:16:38","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (692 m north).","by":"Risky","reward":0}
+{"t":"20:17:45","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (691 m north).","by":"Calm","reward":0}
+{"t":"20:18:52","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (691 m north).","by":"Risky","reward":0.05}
+{"t":"20:19:17","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (693 m north).","by":"Risky","reward":0}
+{"t":"20:20:18","ctx":"in The Docks|health high|level 10","move":"Wander west (about 200 m).","by":"Risky","reward":0}
+{"t":"20:20:44","ctx":"in The Docks|health high|level 10","move":"Walk up to Colm Crowward (a youth of 8, 39 m) and ask them to become your apprentice.","by":"Risky","reward":0}
+{"t":"20:22:00","ctx":"in The Docks|health high|level 10","move":"Wander west (about 200 m).","by":"Calm","reward":0.31}
+{"t":"20:24:44","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (17 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:24:46","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (17 m south-east): close in and keep hitting.","by":"Combat","reward":0.29}
+{"t":"20:24:48","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (18 m east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:24:49","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (18 m east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"20:25:11","ctx":"in The Harbor|health high|level 10","move":"Go to the Greyhollow quarry to buy a pickaxe (262 m south-west; you heard of it from a message on screen).","by":"Calm","reward":0}
+{"t":"20:25:13","ctx":"in The Harbor|health high|level 10","move":"Attack the Hen (14 m south-west); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.14}
+{"t":"20:25:33","ctx":"in The Harbor|health high|level 10","move":"Walk up to Colm Crowward (a youth of 8, 21 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"20:25:37","ctx":"in Tristinwold|health high|level 10","move":"Click: Would you become my apprentice? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"20:25:44","ctx":"in Tristinwold|health high|level 10","move":"Go to the Greyhollow quarry to buy a pickaxe (207 m south-west; you heard of it from a message on screen).","by":"Calm","reward":0}
+{"t":"20:25:49","ctx":"in The Harbor|health high|level 10","move":"Attack the Hesk Ironhand, initiate of the Iron Circle (21 m east); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"20:25:51","ctx":"in The Harbor|health high|level 10","move":"Attack the Hesk Ironhand, initiate of the Iron Circle (17 m south-east): close in and keep hitting.","by":"Combat","reward":0.17}
+{"t":"20:26:33","ctx":"in The Harbor|health high|level 10","move":"Go to the Greyhollow quarry to buy a pickaxe (226 m south-west; you heard of it from a message on screen).","by":"Calm","reward":0.05}
+{"t":"20:26:34","ctx":"in Tristinwold|health high|level 10","move":"Attack the Lantern Boy Cutpurse (14 m west): close in and keep hitting.","by":"Combat","reward":0.37}
+{"t":"20:27:38","ctx":"in Tristinwold|health high|level 10","move":"Go to the Greyhollow quarry to buy a pickaxe (83 m west; you heard of it from a message on screen).","by":"Calm","reward":0.05}
+{"t":"20:28:06","ctx":"in The Greyhollow Quarry|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.6 km east).","by":"Calm","reward":0}
+{"t":"20:28:10","ctx":"in Tristinwold|health high|level 10","move":"Attack the Horse (19 m north-east); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.11}
+{"t":"20:28:24","ctx":"in Tristinwold|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.5 km north-east).","by":"Calm","reward":0}
+{"t":"20:28:30","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (39 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:28:31","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (18 m north-east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"20:28:33","ctx":"in The Harbor|health high|level 10|fighting","move":"Attack the Dock Thug (18 m north-east): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"20:28:40","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (36 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:28:41","ctx":"in The Harbor|health high|level 10","move":"Attack the Dock Thug (18 m north): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"20:29:11","ctx":"in The Harbor|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.4 km north-east).","by":"Calm","reward":0}
+{"t":"20:29:17","ctx":"in The Harbor|health high|level 10","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"20:30:22","ctx":"in The Harbor|health high|level 10","move":"Follow the quest tracker: A purse of debts for Kettleton Mine (1.2 km north-east).","by":"Calm","reward":0}
+{"t":"20:33:46","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Kettleton Mine, marked on the map (110 m east).","by":"Calm","reward":0}
+{"t":"20:34:17","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Quest \u0022A purse of debts for Kettleton Mine\u0022 (Take the purse of debts to Wil Darkbarrow at Kettleton Mine): walk up to Wi","by":"Calm","reward":1.7}
+{"t":"20:34:17","ctx":"in Kettleton Mine|health high|level 10","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"20:34:18","ctx":"in Kettleton Mine|health high|level 10","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"20:34:18","ctx":"in Kettleton Mine|health high|level 10","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"20:34:23","ctx":"in Kettleton Mine|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (771 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:28","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Walk up to Halvard Stonesong (miner, 30 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"20:34:28","ctx":"in Kettleton Mine|health high|level 10","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"20:34:28","ctx":"in Kettleton Mine|health high|level 10","move":"Click: (Pick their pocket)","by":"Calm","reward":0.03}
+{"t":"20:34:32","ctx":"in Kettleton Mine|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (759 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:32","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (733 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:32","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:32","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:33","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:33","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:33","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:33","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:33","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:34","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:34","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:34","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:34","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:35","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:35","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:35","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:35","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:35","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:36","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:36","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:36","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:36","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:36","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:37","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:37","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:37","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:37","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:37","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:38","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:40","ctx":"in The autumn woods near Greywater|health high|level 10","move":"Head for Coldbeard Steading, marked on the map (732 m south-east).","by":"Calm","reward":0}
+{"t":"20:34:52","ctx":"in The autumn woods near Greywater|health high|level 10|fighting","move":"Sprint away toward Kettleton Mine (34 m north).","by":"Risky","reward":-3.84}
+{"t":"20:36:22","ctx":"in Tristinwold|health high|level 10","move":"Head for Hollowheart, marked on the map (670 m north).","by":"Calm","reward":0}
+{"t":"20:38:13","ctx":"in Tristinwold|health high|level 10","move":"Head for Hollowheart, marked on the map (577 m north).","by":"Calm","reward":0}
+{"t":"20:38:14","ctx":"in Tristinwold|health high|level 10","move":"Attack the Giant Rat (13 m south-west): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"20:43:00","ctx":"in The Tristinwold countryside|health high|level 10","move":"Head for Tristinwold, marked on the map (139 m south-east).","by":"Calm","reward":0}
+{"t":"20:43:50","ctx":"in The Tristinwold countryside|health high|level 10","move":"Head for Tristinwold, marked on the map (134 m south-east).","by":"Calm","reward":0.05}
+{"t":"20:44:32","ctx":"in The Exchange|health high|level 10","move":"Head for Hollowheart, marked on the map (632 m north).","by":"Calm","reward":0}
+{"t":"20:44:39","ctx":"in The Tristinwold countryside|health high|level 10","move":"Sprint away toward Tristinwold (133 m south-east).","by":"Combat","reward":0}
+{"t":"20:45:13","ctx":"in The Iron Circle\u0027s yard|health high|level 10|fighting","move":"Sprint away toward Tristinwold (121 m south-east).","by":"Combat","reward":-0.4}
+{"t":"20:45:59","ctx":"in The Exchange|health high|level 10","move":"Head for Hollowheart, marked on the map (632 m north).","by":"Calm","reward":0}
+{"t":"20:46:08","ctx":"in The Iron Circle\u0027s yard|health high|level 10","move":"Attack the Siltak\u0027s Minion (13 m north): close in and keep hitting.","by":"Combat","reward":0.82}
+{"t":"20:46:12","ctx":"in The Iron Circle\u0027s yard|health mid|level 10|fighting","move":"Attack the Siltak\u0027s Minion (3 m north): close in and keep hitting.","by":"Combat","reward":0.82}
+{"t":"20:46:22","ctx":"in The Iron Circle\u0027s yard|health mid|level 10|fighting","move":"Attack the Siltak\u0027s Minion (18 m north): close in and keep hitting.","by":"Combat","reward":0.82}
+{"t":"20:46:26","ctx":"in The Iron Circle\u0027s yard|health mid|level 10","move":"Head for Hollowheart, marked on the map (609 m north).","by":"Risky","reward":0}
+{"t":"20:46:34","ctx":"in The Iron Circle\u0027s yard|health mid|level 10","move":"Attack the Siltak\u0027s Minion (13 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"20:46:36","ctx":"in The Iron Circle\u0027s yard|health low|level 10|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0.82}
+{"t":"20:47:48","ctx":"in The Iron Circle\u0027s yard|health high|level 10","move":"Head for Hollowheart, marked on the map (591 m north).","by":"Calm","reward":0}
+{"t":"20:47:49","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (14 m north): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"20:48:04","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the wild garlic (29 m north-east).","by":"Risky","reward":0}
+{"t":"20:48:08","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the wild garlic (4 m north-east).","by":"Risky","reward":0}
+{"t":"20:48:13","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the wild garlic (3 m south-east).","by":"Calm","reward":0}
+{"t":"20:48:48","ctx":"in The Northwood|health high|level 10","move":"Head for Hollowheart, marked on the map (166 m north).","by":"Calm","reward":0}
+{"t":"20:48:49","ctx":"in Hollowheart|health high|level 10","move":"Press E: pick Emberleaf (right here).","by":"Calm","reward":0}
+{"t":"20:49:38","ctx":"in The Heartwood|health high|level 10","move":"Head for Hollowheart, marked on the map (56 m north).","by":"Calm","reward":0}
+{"t":"20:49:48","ctx":"in The Heartwood|health high|level 10","move":"Go into the council chamber (18 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:49:49","ctx":"in Hollowheart|health high|level 10","move":"Attack the Cat (10 m south); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.24}
+{"t":"20:49:50","ctx":"in Hollowheart|health high|level 10","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"20:49:50","ctx":"in Hollowheart|health high|level 10","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"20:49:51","ctx":"in Hollowheart|health high|level 10","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"20:49:51","ctx":"in Hollowheart|health high|level 10","move":"Click: (Pick their pocket)","by":"Calm","reward":0.03}
+{"t":"20:49:54","ctx":"in Hollowheart|health high|level 10","move":"Attack the Cat (24 m north-west); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.12}
+{"t":"20:50:15","ctx":"in Hollowheart|health high|level 10","move":"Walk up and press E: pick the wild garlic (40 m north).","by":"Calm","reward":0}
+{"t":"20:50:17","ctx":"in Hollowheart|health high|level 10","move":"Attack the Fox Kit (20 m west); it hasn\u0027t done anything to you.","by":"Calm","reward":0.03}
+{"t":"20:50:22","ctx":"in Hollowheart|health high|level 10","move":"Walk up and press E: pick the penny bun (4 m north).","by":"Calm","reward":0}
+{"t":"20:50:28","ctx":"in Hollowheart|health high|level 10","move":"Walk up and press E: pick the wild garlic (5 m south-west).","by":"Calm","reward":0}
+{"t":"20:50:42","ctx":"in Hollowheart|health high|level 10","move":"Walk up and press E: pick the emberleaf (40 m west).","by":"Calm","reward":0}
+{"t":"20:50:47","ctx":"in Hollowheart|health high|level 10","move":"Walk up and press E: pick the emberleaf (5 m north-west).","by":"Calm","reward":0}
+{"t":"20:50:52","ctx":"in Hollowheart|health high|level 10","move":"Walk up and press E: pick the lady\u0027s mantle (7 m south-west).","by":"Calm","reward":0}
+{"t":"20:54:32","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the emberleaf (23 m north).","by":"Calm","reward":0}
+{"t":"20:54:36","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the emberleaf (3 m north-west).","by":"Calm","reward":0}
+{"t":"20:54:40","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the emberleaf (5 m north-west).","by":"Calm","reward":0}
+{"t":"20:54:47","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the penny bun (21 m north).","by":"Risky","reward":0}
+{"t":"20:54:48","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (22 m north-west): close in and keep hitting.","by":"Risky","reward":0.13}
+{"t":"20:54:51","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (20 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:55:59","ctx":"in The Northwood|health high|level 10","move":"Sprint away toward Hollowheart (116 m south-east).","by":"Combat","reward":-3.23}
+{"t":"20:56:42","ctx":"in Tristinwold|health high|level 10","move":"Head for Hollowheart, marked on the map (670 m north).","by":"Calm","reward":0}
+{"t":"20:56:43","ctx":"in Tristinwold|health high|level 10","move":"Attack the Giant Rat (13 m south-west): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"20:57:59","ctx":"in Tristinwold|health high|level 10","move":"Head for Hollowheart, marked on the map (558 m north).","by":"Calm","reward":0}
+{"t":"20:57:59","ctx":"in The Tristinwold countryside|health high|level 10","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"20:58:07","ctx":"in The Tristinwold countryside|health high|level 10|fighting","move":"Sprint away toward Tristinwold (204 m south-east).","by":"Combat","reward":0}
+{"t":"20:59:11","ctx":"in The Tristinwold countryside|health mid|level 10|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"20:59:46","ctx":"in The Crown|health high|level 10","move":"Head for Hollowheart, marked on the map (661 m north).","by":"Calm","reward":0}
+{"t":"20:59:58","ctx":"in The Docks|health high|level 10","move":"Attack the Dock Thug (21 m east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:00:34","ctx":"in The Docks|health high|level 10","move":"Head for Hollowheart, marked on the map (675 m north).","by":"Risky","reward":0}
+{"t":"21:00:35","ctx":"in Tristinwold|health high|level 10","move":"Attack the Giant Rat (13 m south-west): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"21:02:26","ctx":"in Tristinwold|health high|level 10","move":"Head for Hollowheart, marked on the map (558 m north).","by":"Calm","reward":0}
+{"t":"21:02:49","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (13 m north-east): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"21:02:53","ctx":"in The Northwood|health high|level 10|fighting","move":"Attack the Wolf (10 m north): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"21:03:04","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the raspberries (37 m south-west).","by":"Calm","reward":0}
+{"t":"21:04:42","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the lady\u0027s mantle (12 m north-west).","by":"Calm","reward":0}
+{"t":"21:06:05","ctx":"in The Northwood|health high|level 10","move":"Sprint away toward Hollowheart (161 m north).","by":"Combat","reward":-3.12}
+{"t":"21:06:52","ctx":"in Tristinwold|health high|level 10","move":"Head for Hollowheart, marked on the map (670 m north).","by":"Calm","reward":0}
+{"t":"21:06:53","ctx":"in Tristinwold|health high|level 10|fighting","move":"Attack the Giant Rat (9 m south-west): close in and keep hitting.","by":"Combat","reward":0.16}
+{"t":"21:06:54","ctx":"in Tristinwold|health high|level 10|fighting","move":"Attack the Giant Rat (15 m south-west): close in and keep hitting.","by":"Combat","reward":0.08}
+{"t":"21:06:54","ctx":"in Tristinwold|health high|level 10","move":"Attack the Giant Rat (20 m south-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:08:49","ctx":"in Tristinwold|health high|level 10","move":"Head for Hollowheart, marked on the map (558 m north).","by":"Calm","reward":0}
+{"t":"21:09:08","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (13 m north): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"21:09:12","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (18 m north): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:09:14","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (17 m north-east): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"21:09:22","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (39 m north-west): close in and keep hitting.","by":"Risky","reward":0.13}
+{"t":"21:11:24","ctx":"in The Northwood|health high|level 10","move":"Head for Hollowheart, marked on the map (155 m north).","by":"Calm","reward":0}
+{"t":"21:11:31","ctx":"in The Heartwood|health high|level 10","move":"Go into the living hollow (15 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"21:11:57","ctx":"indoors|health high|level 10","move":"Walk up and press E: pick the bloodcap (44 m south-west).","by":"Calm","reward":0}
+{"t":"21:12:00","ctx":"indoors|health high|level 10","move":"Walk to the door (8 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:13:26","ctx":"in Inside the living hollow|health high|level 10","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:15:42","ctx":"in The Northwood|health high|level 10","move":"Head for Hollowheart, marked on the map (209 m north).","by":"Calm","reward":0}
+{"t":"21:19:32","ctx":"in The Heartwood|health high|level 10","move":"Head for Greywater, marked on the map (772 m east).","by":"Calm","reward":0}
+{"t":"21:19:39","ctx":"in The Northwood|health high|level 10|fighting","move":"Attack the Crystal Rat (18 m south-east): close in and keep hitting.","by":"Combat","reward":0.28}
+{"t":"21:19:42","ctx":"in The Northwood|health high|level 10|fighting","move":"Attack the Crystal Rat (6 m south-east): close in and keep hitting.","by":"Combat","reward":0.28}
+{"t":"21:19:44","ctx":"in The Northwood|health high|level 10|fighting","move":"Attack the Crystal Rat (3 m east): close in and keep hitting.","by":"Combat","reward":0.28}
+{"t":"21:19:45","ctx":"in The Northwood|health high|level 10|fighting","move":"Attack the Crystal Rat (1 m east): close in and keep hitting.","by":"Combat","reward":0.56}
+{"t":"21:19:48","ctx":"in The Northwood|health high|level 10","move":"Attack the Crystal Basilisk (19 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:20:06","ctx":"in The Northwood|health high|level 10","move":"Attack the Crystal Basilisk (17 m south-east): close in and keep hitting.","by":"Combat","reward":0.56}
+{"t":"21:20:15","ctx":"in The Northwood|health low|level 10|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":3}
+{"t":"21:20:15","ctx":"in The Northwood|health low|level 10","move":"Press H: drink a healing draught.","by":"Risky","reward":0}
+{"t":"21:20:41","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the flax (42 m west).","by":"Calm","reward":0}
+{"t":"21:20:44","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the flax (6 m west).","by":"Calm","reward":0}
+{"t":"21:21:11","ctx":"in The Northwood|health high|level 10","move":"Head for Greywater, marked on the map (355 m east).","by":"Calm","reward":0}
+{"t":"21:21:12","ctx":"in The Northwood|health high|level 10|fighting","move":"Attack the Tusk the Cruel (17 m south-east): close in and keep hitting.","by":"Risky","reward":0.33}
+{"t":"21:21:19","ctx":"in The Northwood|health high|level 10|fighting","move":"Attack the Corwen the Tide-Cursed (17 m south): close in and keep hitting.","by":"Risky","reward":0.3}
+{"t":"21:21:25","ctx":"in The Northwood|health high|level 10|fighting","move":"Attack the Bandit (33 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:25:41","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the raspberries (41 m south).","by":"Calm","reward":0}
+{"t":"21:25:55","ctx":"in The Northwood|health high|level 10|fighting","move":"Sprint away toward Greywater (249 m east).","by":"Combat","reward":-3.14}
+{"t":"21:26:38","ctx":"in Tristinwold|health high|level 10","move":"Head for Hollowheart, marked on the map (670 m north).","by":"Calm","reward":0}
+{"t":"21:26:39","ctx":"in Tristinwold|health high|level 10","move":"Attack the Giant Rat (15 m south-west): close in and keep hitting.","by":"Risky","reward":0.16}
+{"t":"21:26:40","ctx":"in Tristinwold|health high|level 10","move":"Attack the Giant Rat (20 m south-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:26:43","ctx":"in Tristinwold|health high|level 10","move":"Attack the Giant Rat (23 m south-west): close in and keep hitting.","by":"Risky","reward":0.08}
+{"t":"21:28:37","ctx":"in The Warrens|health high|level 10","move":"Head for Hollowheart, marked on the map (564 m north).","by":"Calm","reward":0.05}
+{"t":"21:28:53","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (13 m north): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"21:29:09","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the wild garlic (32 m north-east).","by":"Risky","reward":0}
+{"t":"21:29:11","ctx":"in The Northwood|health high|level 10","move":"Attack the Wolf (22 m west): close in and keep hitting.","by":"Risky","reward":0.13}
+{"t":"21:29:17","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the wild garlic (6 m east).","by":"Calm","reward":0}
+{"t":"21:29:22","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the wild garlic (3 m south-east).","by":"Calm","reward":0}
+{"t":"21:29:35","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the mountain thistle (45 m east).","by":"Calm","reward":0}
+{"t":"21:29:41","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the flax (41 m east).","by":"Calm","reward":0}
+{"t":"21:31:20","ctx":"in The Northwood|health high|level 10","move":"Head for Hollowheart, marked on the map (186 m north-west).","by":"Calm","reward":0}
+{"t":"21:33:10","ctx":"in The Heartwood|health high|level 10","move":"Head for Greywater, marked on the map (772 m east).","by":"Calm","reward":0}
+{"t":"21:33:19","ctx":"in The Northwood|health high|level 10","move":"Sprint away toward Greywater (350 m east).","by":"Combat","reward":0}
+{"t":"21:34:45","ctx":"in The Northwood|health high|level 10|fighting","move":"Sprint away toward Greywater (302 m east).","by":"Combat","reward":0}
+{"t":"21:36:23","ctx":"in Greywater|health high|level 10","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"21:36:30","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the honeycomb (26 m east).","by":"Calm","reward":0}
+{"t":"21:36:33","ctx":"in The Northwood|health high|level 10","move":"Press E: pick Honeycomb (right here).","by":"Calm","reward":0}
+{"t":"21:36:38","ctx":"in The Northwood|health high|level 10","move":"Walk up and press E: pick the honeycomb (9 m north-east).","by":"Calm","reward":0}
+{"t":"21:37:24","ctx":"in The Northwood|health high|level 10","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"21:37:34","ctx":"in The Northwood|health high|level 10|fighting","move":"Attack the Crystal Rat (23 m south-west): close in and keep hitting.","by":"Risky","reward":-9.26}
+{"t":"21:37:37","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (17 m south-west): close in and keep hitting.","by":"Combat","reward":0.28}
+{"t":"21:37:40","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (23 m south-west): close in and keep hitting.","by":"Risky","reward":0.28}
+{"t":"21:37:44","ctx":"in The Northwood|health high|level 11","move":"Attack the Crystal Basilisk (15 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:38:04","ctx":"in The Northwood|health high|level 11","move":"Attack the Crystal Basilisk (16 m west): close in and keep hitting.","by":"Combat","reward":0.6}
+{"t":"21:38:05","ctx":"in The Northwood|health mid|level 11|fighting","move":"Attack the Crystal Rat (13 m west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"21:38:15","ctx":"in The Northwood|health mid|level 11|fighting","move":"Attack the Crystal Basilisk (15 m west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"21:38:17","ctx":"in The Northwood|health mid|level 11|fighting","move":"Attack the Crystal Rat (10 m west): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"21:38:18","ctx":"in The Northwood|health low|level 11|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"21:38:32","ctx":"in The Northwood|health mid|level 11|fighting","move":"Attack the Crystal Basilisk (15 m west): close in and keep hitting.","by":"Combat","reward":2.61}
+{"t":"21:40:40","ctx":"in The Northwood|health mid|level 11|fighting","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"21:40:40","ctx":"in The Northwood|health high|level 11","move":"Press K and spend a skill point on Wild Surge (rank 2 to 3): Spells sometimes surge and strike twice; mana returns quick","by":"Calm","reward":0}
+{"t":"21:41:24","ctx":"in The Northwood|health high|level 11","move":"Head for Coppergate Refuge, marked on the map (837 m north).","by":"Calm","reward":0}
+{"t":"21:41:37","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Ashvael the Blighted (17 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"21:41:55","ctx":"in The Northwood|health low|level 11|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":-3.1}
+{"t":"21:43:36","ctx":"in Tristinwold|health high|level 11","move":"Head for Coppergate Refuge, marked on the map (1.4 km north).","by":"Calm","reward":0}
+{"t":"21:45:14","ctx":"in Tristinwold|health high|level 11","move":"Attack the Giant Rat (19 m south-west): close in and keep hitting.","by":"Risky","reward":0.08}
+{"t":"21:45:16","ctx":"in Tristinwold|health high|level 11","move":"Attack the Giant Rat (27 m south-west): close in and keep hitting.","by":"Risky","reward":0.16}
+{"t":"21:46:44","ctx":"in The Warrens|health high|level 11","move":"Head for Druitt, marked on the map (905 m west).","by":"Calm","reward":0}
+{"t":"21:46:45","ctx":"in The Tristinwold countryside|health high|level 11|fighting","move":"Attack the Cinder Thrall (19 m north): close in and keep hitting.","by":"Combat","reward":0.16}
+{"t":"21:46:59","ctx":"in The Tristinwold countryside|health high|level 11|fighting","move":"Attack the Cinder Thrall (20 m north): close in and keep hitting.","by":"Combat","reward":0.87}
+{"t":"21:47:10","ctx":"in The Tristinwold countryside|health high|level 11","move":"Walk up and press E: pick the raspberries (45 m south).","by":"Calm","reward":0}
+{"t":"21:48:44","ctx":"in The Tristinwold countryside|health high|level 11|fighting","move":"Head for Druitt, marked on the map (643 m north-west).","by":"Calm","reward":0}
+{"t":"21:51:21","ctx":"in The autumn woods near Druitt|health high|level 11","move":"Head for Galeholt, marked on the map (1.3 km north-west).","by":"Calm","reward":0}
+{"t":"21:52:58","ctx":"in The Strand|health high|level 11","move":"Head for Gravenmoor, marked on the map (1.4 km south-west).","by":"Calm","reward":0}
+{"t":"21:59:03","ctx":"in The autumn woods near Druitt|health high|level 11","move":"Head for Hollowheart, marked on the map (860 m north-east).","by":"Calm","reward":0}
+{"t":"21:59:03","ctx":"in The autumn woods near Druitt|health high|level 11","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"21:59:08","ctx":"in The autumn woods near Druitt|health high|level 11|fighting","move":"Sprint away toward Druitt (119 m west).","by":"Combat","reward":0}
+{"t":"21:59:09","ctx":"in The autumn woods near Druitt|health high|level 11","move":"Sprint away toward Druitt (74 m west).","by":"Risky","reward":0}
+{"t":"22:00:07","ctx":"in The autumn woods near Druitt|health high|level 11","move":"Press T: rest.","by":"Risky","reward":0}
+{"t":"22:01:28","ctx":"in The autumn woods near Druitt|health high|level 11","move":"Head for Hollowheart, marked on the map (799 m north-east).","by":"Calm","reward":0}
+{"t":"22:01:50","ctx":"in The Northwood|health high|level 11","move":"Sprint away toward Hollowheart (322 m north-east).","by":"Combat","reward":-3.05}
+{"t":"22:01:51","ctx":"in Tristinwold|health high|level 11","move":"Head for Hollowheart, marked on the map (670 m north).","by":"Calm","reward":0}
+{"t":"22:01:57","ctx":"in Tristinwold|health high|level 11","move":"Walk up to Orm Whitehand (courier, 14 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:01:57","ctx":"in Tristinwold|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:01:58","ctx":"in Tristinwold|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.03}
+{"t":"22:01:59","ctx":"in Tristinwold|health high|level 11","move":"Walk up to Jorunn Thornbrand (merchant, 5 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:02:00","ctx":"in Tristinwold|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:02:00","ctx":"in Tristinwold|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.08}
+{"t":"22:02:03","ctx":"in Tristinwold|health high|level 11","move":"Walk up to Lorne Kettlemane (courier, 8 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:02:04","ctx":"in The Harbor|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.01}
+{"t":"22:03:27","ctx":"in The Harbor|health high|level 11","move":"Walk up to Colm Crowward (errand runner, 12 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:04:11","ctx":"in The Harbor|health high|level 11","move":"Head for Hollowheart, marked on the map (690 m north).","by":"Calm","reward":0.05}
+{"t":"22:04:13","ctx":"in Tristinwold|health high|level 11","move":"Attack the Giant Rat (14 m south-west): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"22:06:05","ctx":"in Tristinwold|health high|level 11","move":"Head for Hollowheart, marked on the map (558 m north).","by":"Calm","reward":0}
+{"t":"22:06:45","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Wolf (32 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:06:47","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Wolf (19 m south): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"22:06:47","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Wolf (27 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:07:32","ctx":"in The Northwood|health high|level 11|fighting","move":"Head for Hollowheart, marked on the map (111 m north).","by":"Risky","reward":0}
+{"t":"22:07:46","ctx":"in The Heartwood|health high|level 11","move":"Walk up to Ragnar Fairbeard (councillor of Hollowheart, 5 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:07:47","ctx":"in The Heartwood|health high|level 11","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"22:07:48","ctx":"in The Heartwood|health high|level 11","move":"Click: Draw on Ragnar, to the death.","by":"Calm","reward":0}
+{"t":"22:07:49","ctx":"in The Heartwood|health high|level 11","move":"Click: Do it.","by":"Calm","reward":0}
+{"t":"22:08:01","ctx":"in The Heartwood|health high|level 11|fighting","move":"Attack the Ragnar Fairbeard (2 m south-east): close in and keep hitting.","by":"Combat","reward":1.16}
+{"t":"22:08:02","ctx":"in The Heartwood|health mid|level 11","move":"Press T: rest.","by":"Calm","reward":0}
+{"t":"22:08:15","ctx":"in The Heartwood|health mid|level 11","move":"Walk up to Asta Greybarrow (councillor of Hollowheart, 9 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:08:15","ctx":"in Hollowheart|health high|level 11","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"22:08:16","ctx":"in Hollowheart|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.01}
+{"t":"22:08:17","ctx":"in Hollowheart|health high|level 11","move":"Walk up to Arn Redbarrow (farmer, 3 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:08:18","ctx":"in Hollowheart|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.05}
+{"t":"22:08:21","ctx":"in Hollowheart|health high|level 11","move":"Walk up to Ragnar Redhollow (clerk to the council of Hollowheart, 8 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:08:22","ctx":"in The Heartwood|health high|level 11","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"22:08:23","ctx":"in The Heartwood|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.02}
+{"t":"22:08:23","ctx":"in The Heartwood|health high|level 11","move":"Walk up to Juna Quickmane (stable hand, 1 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:08:24","ctx":"in The Heartwood|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:08:25","ctx":"in The Heartwood|health high|level 11","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"22:08:26","ctx":"in The Heartwood|health high|level 11","move":"Click: Would you become my apprentice? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"22:08:27","ctx":"in The Heartwood|health high|level 11","move":"Attack the Cat (8 m south); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.12}
+{"t":"22:08:30","ctx":"in The Heartwood|health high|level 11","move":"Attack the Cat (8 m north-west); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.08}
+{"t":"22:08:33","ctx":"in The Heartwood|health high|level 11","move":"Walk up to Garrick Warwood (trader, 7 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:08:34","ctx":"in The Heartwood|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:08:35","ctx":"in The Heartwood|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.13}
+{"t":"22:11:21","ctx":"in The Heartwood|health high|level 11","move":"Walk up and press E: pick the penny bun (39 m east).","by":"Calm","reward":0}
+{"t":"22:12:38","ctx":"in Hollowheart|health high|level 11","move":"Head for Tristinwold, marked on the map (637 m south).","by":"Calm","reward":0}
+{"t":"22:12:50","ctx":"in Hollowheart|health high|level 11","move":"Walk up and press E: pick the penny bun (20 m east).","by":"Calm","reward":0}
+{"t":"22:12:56","ctx":"in Hollowheart|health high|level 11","move":"Walk up and press E: pick the bloodcap (6 m north-east).","by":"Calm","reward":0}
+{"t":"22:13:02","ctx":"in Hollowheart|health high|level 11","move":"Walk up and press E: pick the bloodcap (5 m south-east).","by":"Calm","reward":0}
+{"t":"22:13:16","ctx":"in Hollowheart|health high|level 11","move":"Walk up and press E: pick the mountain thistle (22 m east).","by":"Calm","reward":0}
+{"t":"22:13:21","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the mountain thistle (3 m east).","by":"Calm","reward":0}
+{"t":"22:13:33","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the emberleaf (41 m south-east).","by":"Risky","reward":0}
+{"t":"22:13:58","ctx":"in The Northwood|health high|level 11","move":"Head for Tristinwold, marked on the map (610 m south).","by":"Risky","reward":0}
+{"t":"22:14:04","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the emberleaf (17 m south-east).","by":"Risky","reward":0}
+{"t":"22:14:06","ctx":"in The Northwood|health high|level 11","move":"Attack the Wolf (14 m south-west): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"22:14:07","ctx":"in The Northwood|health high|level 11","move":"Attack the Wolf (23 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:14:12","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the emberleaf (5 m east).","by":"Risky","reward":0}
+{"t":"22:14:15","ctx":"in The Northwood|health high|level 11","move":"Press E: pick Emberleaf (right here).","by":"Risky","reward":0}
+{"t":"22:14:21","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the raspberries (34 m south).","by":"Risky","reward":0}
+{"t":"22:14:22","ctx":"in The Northwood|health high|level 11","move":"Attack the Wolf (12 m south-west): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"22:14:28","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the raspberries (11 m south).","by":"Calm","reward":0}
+{"t":"22:14:30","ctx":"in The Northwood|health high|level 11","move":"Press E: pick Raspberries (right here).","by":"Calm","reward":0}
+{"t":"22:14:42","ctx":"in The Northwood|health high|level 11","move":"Sprint away toward Hollowheart (134 m north-west).","by":"Combat","reward":0}
+{"t":"22:15:01","ctx":"in The Northwood|health high|level 11|fighting","move":"Sprint away toward Hollowheart (90 m north-west).","by":"Risky","reward":-0.4}
+{"t":"22:15:57","ctx":"in The Heartwood|health high|level 11|fighting","move":"Head for Tristinwold, marked on the map (643 m south).","by":"Calm","reward":0}
+{"t":"22:15:58","ctx":"in The Northwood|health high|level 11","move":"Attack the Wolf (14 m south): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"22:16:03","ctx":"in The Northwood|health high|level 11","move":"Attack the Wolf (24 m south-west): close in and keep hitting.","by":"Risky","reward":0.13}
+{"t":"22:16:06","ctx":"in The Northwood|health high|level 11","move":"Attack the Wolf (24 m south): close in and keep hitting.","by":"Risky","reward":0.13}
+{"t":"22:16:39","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the wild garlic (28 m east).","by":"Calm","reward":0}
+{"t":"22:16:50","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the wild garlic (22 m east).","by":"Calm","reward":0}
+{"t":"22:16:54","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the wild garlic (3 m north-east).","by":"Calm","reward":0}
+{"t":"22:16:59","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the wild garlic (3 m south-east).","by":"Calm","reward":0}
+{"t":"22:17:12","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the mountain thistle (45 m east).","by":"Calm","reward":0}
+{"t":"22:17:25","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the flax (42 m east).","by":"Calm","reward":0}
+{"t":"22:17:29","ctx":"in The Northwood|health high|level 11","move":"Press E: pick Flax (right here).","by":"Calm","reward":0}
+{"t":"22:17:33","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the flax (5 m east).","by":"Calm","reward":0}
+{"t":"22:19:00","ctx":"in The Northwood|health high|level 11","move":"Head for Tristinwold, marked on the map (481 m south).","by":"Calm","reward":0}
+{"t":"22:19:10","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the lady\u0027s mantle (18 m south).","by":"Calm","reward":0}
+{"t":"22:19:13","ctx":"in The Northwood|health high|level 11","move":"Press E: pick Lady\u0027s Mantle (right here).","by":"Calm","reward":0}
+{"t":"22:19:18","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the lady\u0027s mantle (5 m south-east).","by":"Calm","reward":0}
+{"t":"22:21:09","ctx":"in The Northwood|health high|level 11","move":"Head for Tristinwold, marked on the map (328 m south).","by":"Calm","reward":0.05}
+{"t":"22:21:12","ctx":"in The Tristinwold countryside|health high|level 11","move":"Walk up and press E: pick the raspberries (19 m north).","by":"Calm","reward":0}
+{"t":"22:22:20","ctx":"in The Tristinwold countryside|health high|level 11","move":"Head for Tristinwold, marked on the map (174 m south-east).","by":"Calm","reward":0}
+{"t":"22:22:57","ctx":"in Tristinwold|health high|level 11","move":"Head for Hollowheart, marked on the map (626 m north).","by":"Calm","reward":0}
+{"t":"22:22:58","ctx":"in Tristinwold|health high|level 11","move":"Attack the Dog (16 m south); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"22:24:37","ctx":"in Tristinwold|health high|level 11","move":"Head for Hollowheart, marked on the map (626 m north).","by":"Calm","reward":0}
+{"t":"22:24:43","ctx":"in The Tristinwold countryside|health high|level 11","move":"Walk up and press E: pick the lady\u0027s mantle (7 m north-east).","by":"Calm","reward":0}
+{"t":"22:24:48","ctx":"in The Tristinwold countryside|health high|level 11","move":"Walk up and press E: pick the lady\u0027s mantle (6 m east).","by":"Calm","reward":0}
+{"t":"22:24:57","ctx":"in The Tristinwold countryside|health high|level 11","move":"Walk up and press E: pick the raspberries (25 m east).","by":"Calm","reward":0}
+{"t":"22:27:20","ctx":"in The Tristinwold countryside|health high|level 11","move":"Head for Hollowheart, marked on the map (432 m north).","by":"Calm","reward":0}
+{"t":"22:29:49","ctx":"in The Heartwood|health high|level 11","move":"Head for Greywater, marked on the map (772 m east).","by":"Calm","reward":0}
+{"t":"22:29:53","ctx":"in The Northwood|health high|level 11","move":"Head for Greywater, marked on the map (336 m east).","by":"Calm","reward":0}
+{"t":"22:29:55","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (18 m south-east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"22:29:58","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (15 m south-east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"22:30:02","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (12 m south-east): close in and keep hitting.","by":"Combat","reward":0.9}
+{"t":"22:30:05","ctx":"in The Northwood|health high|level 11","move":"Attack the Crystal Basilisk (19 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:30:37","ctx":"in The Northwood|health high|level 11","move":"Attack the Crystal Basilisk (17 m south-east): close in and keep hitting.","by":"Combat","reward":1.48}
+{"t":"22:30:39","ctx":"in The Northwood|health mid|level 11|fighting","move":"Attack the Crystal Rat (12 m south-east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"22:30:40","ctx":"in The Northwood|health low|level 11|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"22:30:50","ctx":"in The Northwood|health mid|level 11|fighting","move":"Attack the Crystal Basilisk (15 m south-east): close in and keep hitting.","by":"Combat","reward":2.61}
+{"t":"22:31:19","ctx":"in The Northwood|health mid|level 11","move":"Walk up and press E: pick the flax (43 m west).","by":"Calm","reward":0}
+{"t":"22:31:25","ctx":"in The Northwood|health mid|level 11","move":"Walk up and press E: pick the flax (6 m west).","by":"Calm","reward":0}
+{"t":"22:31:30","ctx":"in The Northwood|health mid|level 11","move":"Walk up and press E: pick the flax (3 m south).","by":"Calm","reward":0}
+{"t":"22:31:34","ctx":"in The Northwood|health mid|level 11","move":"Walk up and press E: pick the emberleaf (42 m west).","by":"Calm","reward":0}
+{"t":"22:32:14","ctx":"in The Northwood|health high|level 11","move":"Head for Greywater, marked on the map (371 m east).","by":"Calm","reward":0}
+{"t":"22:32:16","ctx":"in The Northwood|health high|level 11","move":"Attack the Bandit (14 m south-east): close in and keep hitting.","by":"Combat","reward":0.27}
+{"t":"22:32:19","ctx":"in The Northwood|health high|level 11","move":"Attack the Bandit (20 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:32:22","ctx":"in The Northwood|health high|level 11","move":"Attack the Bandit (17 m south): close in and keep hitting.","by":"Combat","reward":0.33}
+{"t":"22:32:26","ctx":"in The Northwood|health high|level 11","move":"Attack the Bandit (23 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:32:29","ctx":"in The Northwood|health high|level 11","move":"Attack the Bandit (16 m south): close in and keep hitting.","by":"Combat","reward":0.32}
+{"t":"22:32:39","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the raspberries (29 m south).","by":"Calm","reward":0}
+{"t":"22:33:23","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the raspberries (4 m south-west).","by":"Calm","reward":0}
+{"t":"22:33:38","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the raspberries (30 m south).","by":"Calm","reward":0}
+{"t":"22:33:41","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Bandit (31 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:33:43","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Bandit (17 m south): close in and keep hitting.","by":"Combat","reward":0.62}
+{"t":"22:33:45","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Bandit (20 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:33:47","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Bandit (15 m south): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"22:34:03","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Nimul the Tide-Cursed, the Gravewalker (31 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:34:15","ctx":"in The Northwood|health low|level 11|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"22:34:32","ctx":"in The Northwood|health low|level 11|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":-3.23}
+{"t":"22:36:13","ctx":"in Tristinwold|health high|level 11","move":"Head for Greywater, marked on the map (818 m north-east).","by":"Calm","reward":0.05}
+{"t":"22:37:10","ctx":"in The Docks|health high|level 11","move":"Attack the Dock Thug (23 m east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:37:29","ctx":"in The Docks|health high|level 11","move":"Attack the Dock Thug (34 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:37:49","ctx":"in The Docks|health high|level 11","move":"Attack the Dock Thug (38 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:38:22","ctx":"in The Docks|health high|level 11","move":"Head for Greywater, marked on the map (799 m north-east).","by":"Risky","reward":0}
+{"t":"22:38:40","ctx":"in The Docks|health high|level 11","move":"Attack the Dock Thug (35 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:38:57","ctx":"in The Docks|health high|level 11","move":"Attack the Dock Thug (38 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:39:14","ctx":"in The Docks|health high|level 11","move":"Attack the Dock Thug (38 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:39:21","ctx":"in The Docks|health high|level 11","move":"Head for Greywater, marked on the map (802 m north-east).","by":"Risky","reward":0.05}
+{"t":"22:39:55","ctx":"in The Docks|health high|level 11","move":"Go into the warehouse (13 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"22:40:01","ctx":"in The Docks|health high|level 11","move":"Go into the warehouse (13 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"22:40:01","ctx":"indoors|health high|level 11","move":"Attack the Aldric Fairbrook, initiate of the Velvet Knives (15 m south-east); it hasn\u0027t done anything to you.","by":"Risky","reward":0}
+{"t":"22:40:02","ctx":"indoors|health high|level 11","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:41:19","ctx":"in Inside the warehouse|health high|level 11","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:42:26","ctx":"in Tristinwold|health high|level 11","move":"Head for Greywater, marked on the map (829 m north-east).","by":"Calm","reward":0}
+{"t":"22:43:37","ctx":"in The Docks|health high|level 11","move":"Head for Greywater, marked on the map (794 m north-east).","by":"Risky","reward":0}
+{"t":"22:44:50","ctx":"in The Docks|health high|level 11","move":"Head for Greywater, marked on the map (795 m north-east).","by":"Risky","reward":0}
+{"t":"22:46:26","ctx":"in The Docks|health high|level 11","move":"Head for Greywater, marked on the map (795 m north-east).","by":"Risky","reward":0.05}
+{"t":"22:47:42","ctx":"in The Docks|health high|level 11","move":"Head for Greywater, marked on the map (794 m north-east).","by":"Risky","reward":0}
+{"t":"22:49:08","ctx":"in The Docks|health high|level 11","move":"Head for Greywater, marked on the map (797 m north-east).","by":"Risky","reward":0}
+{"t":"22:50:02","ctx":"in The Docks|health high|level 11","move":"Head for Greywater, marked on the map (794 m north-east).","by":"Risky","reward":0}
+{"t":"22:50:03","ctx":"in The Docks|health high|level 11","move":"Head for Coppergate Refuge, marked on the map (1.4 km north).","by":"Risky","reward":0}
+{"t":"22:50:33","ctx":"in The Docks|health high|level 11|fighting","move":"Attack the a Velvet Knife (14 m south-west): close in and keep hitting.","by":"Combat","reward":1.09}
+{"t":"22:51:59","ctx":"in The Docks|health high|level 11","move":"Head for Coppergate Refuge, marked on the map (1.4 km north).","by":"Risky","reward":0}
+{"t":"22:52:36","ctx":"in Tristinwold|health high|level 11","move":"Head for Coppergate Refuge, marked on the map (1.3 km north).","by":"Calm","reward":0}
+{"t":"22:52:38","ctx":"in The Harbor|health high|level 11","move":"Attack the Cat (22 m south); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.12}
+{"t":"22:52:57","ctx":"in The Harbor|health high|level 11","move":"Head for Coppergate Refuge, marked on the map (1.4 km north).","by":"Calm","reward":0}
+{"t":"22:53:01","ctx":"in The Harbor|health high|level 11","move":"Attack the Eira Warheart, initiate of the Velvet Knives (22 m south-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0.17}
+{"t":"22:54:07","ctx":"in The Harbor|health high|level 11","move":"Head for Coppergate Refuge, marked on the map (1.4 km north).","by":"Calm","reward":0}
+{"t":"22:54:12","ctx":"in The Harbor|health high|level 11","move":"Attack the Dock Thug (35 m east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:54:13","ctx":"in The Docks|health high|level 11","move":"Attack the Dock Thug (17 m east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"22:54:17","ctx":"in The Docks|health high|level 11","move":"Attack the Dock Thug (30 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:54:18","ctx":"in The Docks|health high|level 11","move":"Attack the Dock Thug (14 m north-east): close in and keep hitting.","by":"Combat","reward":0.27}
+{"t":"22:55:52","ctx":"in The Docks|health high|level 11","move":"Head for Coppergate Refuge, marked on the map (1.4 km north).","by":"Risky","reward":0}
+{"t":"22:55:53","ctx":"in The Harbor|health high|level 11","move":"Attack the Aldric Fairbrook, initiate of the Velvet Knives (15 m south-west); it hasn\u0027t done anything to you.","by":"Calm","reward":0.17}
+{"t":"22:57:31","ctx":"in The Harbor|health high|level 11","move":"Head for Greywater, marked on the map (771 m north-east).","by":"Calm","reward":0.05}
+{"t":"22:58:48","ctx":"in Greywater|health high|level 11","move":"Walk up to Corra the Carpenter (carpenter, 21 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:58:49","ctx":"in Greywater|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.02}
+{"t":"22:58:59","ctx":"in Greywater|health high|level 11","move":"Walk up to Roderic Wolfwater (herbalist, 31 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:59:00","ctx":"in Greywater|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.03}
+{"t":"22:59:02","ctx":"in Greywater|health high|level 11","move":"Walk up to Vigdis Quickmane (councillor of Greywater, 10 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:59:02","ctx":"in Greywater|health high|level 11","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"22:59:03","ctx":"in Greywater|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.01}
+{"t":"22:59:06","ctx":"in Greywater|health high|level 11","move":"Walk up to Ilse Hammermane (councillor of Greywater, 9 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:59:06","ctx":"in Greywater|health high|level 11","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"22:59:07","ctx":"in Greywater|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:59:07","ctx":"in Greywater|health high|level 11","move":"Click: Draw on Ilse, to the death.","by":"Calm","reward":0}
+{"t":"22:59:07","ctx":"in Greywater|health high|level 11","move":"Click: Do it.","by":"Calm","reward":0}
+{"t":"22:59:15","ctx":"in Greywater|health high|level 11|fighting","move":"Attack the Ilse Hammermane (2 m north): close in and keep hitting.","by":"Combat","reward":1.12}
+{"t":"22:59:15","ctx":"in Greywater|health mid|level 11","move":"Press T: rest.","by":"Calm","reward":0}
+{"t":"22:59:20","ctx":"in Greywater|health mid|level 11","move":"Walk up to Dagny Shieldhand (councillor of Greywater, 6 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:59:21","ctx":"in Greywater|health mid|level 11","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"22:59:21","ctx":"in Greywater|health mid|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:59:22","ctx":"in Greywater|health mid|level 11","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"22:59:22","ctx":"in Greywater|health mid|level 11","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"22:59:22","ctx":"in Greywater|health mid|level 11","move":"Click: What does Greywater trade in?","by":"Calm","reward":0}
+{"t":"22:59:23","ctx":"in Greywater|health mid|level 11","move":"Click: Who sits on the council here?","by":"Calm","reward":0}
+{"t":"22:59:23","ctx":"in Greywater|health mid|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"22:59:24","ctx":"in Greywater|health mid|level 11","move":"Walk up to Unn Windhollow (innkeeper, 5 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:59:25","ctx":"in Greywater|health mid|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.08}
+{"t":"22:59:26","ctx":"in Greywater|health mid|level 11","move":"Walk up to Kit Warfield (temple novice, 2 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:59:26","ctx":"in Greywater|health mid|level 11","move":"Click: Would you become my apprentice? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"22:59:30","ctx":"in Greywater|health mid|level 11","move":"Walk up to Kari Kettlefield (carpenter, 13 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:59:31","ctx":"in Greywater|health mid|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"22:59:52","ctx":"in Greywater|health mid|level 11","move":"Walk up to Ragnar Hammerbarrow (a youth of 15, 57 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"22:59:53","ctx":"in Greywater|health mid|level 11","move":"Click: Would you become my apprentice? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"22:59:58","ctx":"in Greywater|health mid|level 11","move":"Walk up to Jory Thornhollow (carpenter, 10 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:59:58","ctx":"in Greywater|health mid|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:59:59","ctx":"in Greywater|health mid|level 11","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"22:59:59","ctx":"in Greywater|health mid|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.03}
+{"t":"23:00:05","ctx":"in Greywater|health mid|level 11","move":"Walk up to Ketil Greyhollow (shopkeeper of Greywater, 13 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:00:06","ctx":"in Greywater|health mid|level 11","move":"Click: I\u0027ve things to sell.","by":"Calm","reward":0}
+{"t":"23:00:07","ctx":"in Greywater|health mid|level 11","move":"Click: Sell every trophy and all the pelts, hides, ore, logs, fish and bits (keep herbs, potions, food and gear)","by":"Calm","reward":3.69}
+{"t":"23:00:07","ctx":"in Greywater|health mid|level 11","move":"Close the window (Esc).","by":"Calm","reward":0}
+{"t":"23:00:22","ctx":"in Greywater|health mid|level 11","move":"Walk up to Hesk Crowhand (clerk to the council of Greywater, 19 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:00:30","ctx":"in Greywater|health high|level 11","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"23:00:30","ctx":"in Greywater|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.04}
+{"t":"23:00:39","ctx":"in Greywater|health high|level 11","move":"Walk up to Mathis Shieldshield (farmer, 8 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:00:40","ctx":"in Greywater|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:00:40","ctx":"in Greywater|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.01}
+{"t":"23:00:43","ctx":"in Greywater|health high|level 11","move":"Walk up to Kari Greycloak (town guard of Greywater, 10 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:00:44","ctx":"in Greywater|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:00:44","ctx":"in Greywater|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.07}
+{"t":"23:00:46","ctx":"in Greywater|health high|level 11","move":"Walk up to Yngve Quickbrook (carpenter, 6 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:00:47","ctx":"in Greywater|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:00:47","ctx":"in Greywater|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.01}
+{"t":"23:00:53","ctx":"in Greywater|health high|level 11","move":"Walk up to Liv Whiteshield (smith of Greywater, 17 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:00:53","ctx":"in Greywater|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:00:54","ctx":"in Greywater|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.11}
+{"t":"23:00:57","ctx":"in Greywater|health high|level 11","move":"Go into the smithy (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:00:58","ctx":"indoors|health high|level 11","move":"Attack the Hen (25 m west); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"23:00:59","ctx":"indoors|health high|level 11","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:01:30","ctx":"in Inside the smithy|health high|level 11","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:02:47","ctx":"in Greywater|health high|level 11","move":"Head for Kettleton Mine, marked on the map (794 m east).","by":"Calm","reward":0}
+{"t":"23:02:47","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"23:02:55","ctx":"in The autumn woods near Greywater|health high|level 11|fighting","move":"Sprint away toward Greywater (355 m west).","by":"Combat","reward":0}
+{"t":"23:03:56","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Sprint away toward Greywater (317 m west).","by":"Risky","reward":-0.4}
+{"t":"23:05:10","ctx":"in Greywater|health high|level 11","move":"Head for Kettleton Mine, marked on the map (690 m east).","by":"Calm","reward":0}
+{"t":"23:05:53","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Head for Coldbeard Steading, marked on the map (798 m south-east).","by":"Calm","reward":0}
+{"t":"23:05:56","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Head for Stagrest, marked on the map (925 m north).","by":"Calm","reward":0}
+{"t":"23:05:59","ctx":"in Kettleton Mine|health high|level 11","move":"Walk up to Solveig Stoneborn (assayer, 11 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:05:59","ctx":"in Kettleton Mine|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:05:59","ctx":"in Kettleton Mine|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.01}
+{"t":"23:06:06","ctx":"in Kettleton Mine|health high|level 11","move":"Walk up to Mira Hammerfield (foreman of Kettleton Mine, 10 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:06:06","ctx":"in Kettleton Mine|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.03}
+{"t":"23:06:07","ctx":"in Kettleton Mine|health high|level 11","move":"Walk up to Halvard Stonesong (miner, 1 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:06:07","ctx":"in Kettleton Mine|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.01}
+{"t":"23:06:35","ctx":"in Kettleton Mine|health high|level 11","move":"Walk up to Wil Darkbarrow (assayer, 17 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:06:36","ctx":"in Kettleton Mine|health high|level 11","move":"Attack the Dog (5 m south-west); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.06}
+{"t":"23:06:38","ctx":"in Kettleton Mine|health high|level 11","move":"Go into the mine (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:06:46","ctx":"indoors|health high|level 11","move":"Go into the mine (1 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:06:48","ctx":"indoors|health high|level 11","move":"Walk to the door (2 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:06:55","ctx":"in Inside the mine|health high|level 11","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:07:01","ctx":"in Kettleton Mine|health high|level 11","move":"Head for Stagrest, marked on the map (895 m north).","by":"Calm","reward":0}
+{"t":"23:07:02","ctx":"in Kettleton Mine|health high|level 11","move":"Attack the Dog (9 m south-west); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.06}
+{"t":"23:07:45","ctx":"in Kettleton Mine|health high|level 11","move":"Head for Stagrest, marked on the map (886 m north).","by":"Calm","reward":0}
+{"t":"23:08:50","ctx":"in Kettleton Mine|health high|level 11","move":"Head for Stagrest, marked on the map (886 m north).","by":"Calm","reward":0}
+{"t":"23:08:55","ctx":"in Kettleton Mine|health high|level 11","move":"Head for Stonewake Barrow, marked on the map (598 m east).","by":"Calm","reward":0}
+{"t":"23:08:57","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Head for Miregate Camp, marked on the map (1.0 km north).","by":"Calm","reward":0}
+{"t":"23:09:07","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"23:09:08","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Go to the Greyhollow quarry to buy a pickaxe (1.6 km south-west; you heard of it from a message on screen).","by":"Calm","reward":0}
+{"t":"23:09:44","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"23:10:25","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Wander east (about 200 m).","by":"Calm","reward":0}
+{"t":"23:10:25","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Wander east (about 200 m).","by":"Calm","reward":0}
+{"t":"23:11:06","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"23:13:23","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Go to the Greyhollow quarry to buy a pickaxe (1.6 km south-west; you heard of it from a message on screen).","by":"Calm","reward":0}
+{"t":"23:13:45","ctx":"in The autumn woods near Greywater|health high|level 11|fighting","move":"Sprint away toward Greywater (385 m north-west).","by":"Combat","reward":0}
+{"t":"23:13:50","ctx":"in The autumn woods near Greywater|health high|level 11|fighting","move":"Sprint away toward Greywater (365 m north-west).","by":"Combat","reward":0}
+{"t":"23:13:54","ctx":"in The autumn woods near Greywater|health high|level 11|fighting","move":"Sprint away toward Greywater (345 m north-west).","by":"Combat","reward":0}
+{"t":"23:13:58","ctx":"in The autumn woods near Greywater|health high|level 11|fighting","move":"Sprint away toward Greywater (325 m north-west).","by":"Combat","reward":0}
+{"t":"23:14:03","ctx":"in The autumn woods near Greywater|health high|level 11|fighting","move":"Sprint away toward Greywater (305 m north-west).","by":"Combat","reward":0}
+{"t":"23:14:07","ctx":"in The autumn woods near Greywater|health high|level 11|fighting","move":"Sprint away toward Greywater (285 m north-west).","by":"Combat","reward":0}
+{"t":"23:14:12","ctx":"in The autumn woods near Greywater|health high|level 11|fighting","move":"Sprint away toward Greywater (265 m north-west).","by":"Risky","reward":0}
+{"t":"23:14:48","ctx":"in The autumn woods near Greywater|health high|level 11|fighting","move":"Sprint away toward Greywater (245 m north-west).","by":"Risky","reward":0}
+{"t":"23:15:27","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Walk up to Asta Oakbrook (a youth of 11, 43 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"23:15:44","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Go to the Greyhollow quarry to buy a pickaxe (1.1 km south-west; you heard of it from a message on screen).","by":"Calm","reward":0}
+{"t":"23:15:45","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Press E: pick the fruit (right here).","by":"Calm","reward":0}
+{"t":"23:16:42","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Go to the Greyhollow quarry to buy a pickaxe (955 m south-west; you heard of it from a message on screen).","by":"Calm","reward":0}
+{"t":"23:16:51","ctx":"in The Tristinwold countryside|health high|level 11","move":"Walk up and press E: pick the honeycomb (29 m south-east).","by":"Calm","reward":0}
+{"t":"23:16:53","ctx":"in The Tristinwold countryside|health high|level 11","move":"Walk up and press E: pick the honeycomb (3 m south-east).","by":"Calm","reward":0}
+{"t":"23:16:56","ctx":"in The Tristinwold countryside|health high|level 11","move":"Walk up and press E: pick the honeycomb (4 m south).","by":"Calm","reward":0}
+{"t":"23:17:06","ctx":"in The Tristinwold countryside|health high|level 11","move":"Walk up and press E: pick the lady\u0027s mantle (45 m east).","by":"Calm","reward":0}
+{"t":"23:17:07","ctx":"in The Tristinwold countryside|health high|level 11","move":"Attack the Wolf (16 m south-west): close in and keep hitting.","by":"Risky","reward":0.1}
+{"t":"23:17:08","ctx":"in The Tristinwold countryside|health high|level 11","move":"Attack the Wolf (19 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"23:18:39","ctx":"in The Tristinwold countryside|health high|level 11","move":"Head for Greywater, marked on the map (232 m north).","by":"Risky","reward":0}
+{"t":"23:18:48","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Head for Hollowheart, marked on the map (756 m west).","by":"Calm","reward":0}
+{"t":"23:19:31","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Walk up to Liv Whiteshield (smith of Greywater, 48 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:19:55","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Head for Hollowheart, marked on the map (745 m west).","by":"Calm","reward":0}
+{"t":"23:20:35","ctx":"in The autumn woods near Greywater|health high|level 11","move":"Head for Hollowheart, marked on the map (745 m west).","by":"Calm","reward":0}
+{"t":"23:20:37","ctx":"in The Northwood|health high|level 11","move":"Attack the Bandit (14 m west): close in and keep hitting.","by":"Combat","reward":0.67}
+{"t":"23:20:37","ctx":"in The Northwood|health high|level 11","move":"Attack the Bandit (26 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"23:20:44","ctx":"in The Northwood|health high|level 11","move":"Head for Hollowheart, marked on the map (557 m west).","by":"Risky","reward":0}
+{"t":"23:20:50","ctx":"in The Northwood|health high|level 11","move":"Attack the Bandit (13 m west): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"23:21:20","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the raspberries (21 m south).","by":"Calm","reward":0}
+{"t":"23:21:31","ctx":"in The Northwood|health high|level 11","move":"Head for Hollowheart, marked on the map (542 m west).","by":"Calm","reward":0}
+{"t":"23:21:36","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (19 m north): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"23:21:37","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (9 m north): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"23:21:39","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (10 m north): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"23:21:41","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (5 m north): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"23:21:43","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Rat (4 m north): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"23:21:49","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the honeycomb (19 m south).","by":"Risky","reward":0}
+{"t":"23:21:56","ctx":"in The Northwood|health high|level 11|fighting","move":"Head for Hollowheart, marked on the map (502 m west).","by":"Calm","reward":0}
+{"t":"23:22:22","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Crystal Basilisk (32 m north-east): close in and keep hitting.","by":"Risky","reward":-4.77}
+{"t":"23:23:01","ctx":"in Tristinwold|health high|level 11","move":"Head for Hollowheart, marked on the map (670 m north).","by":"Calm","reward":0}
+{"t":"23:23:02","ctx":"in The Warrens|health high|level 11","move":"Attack the Giant Rat (14 m south): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"23:24:33","ctx":"in The Warrens|health high|level 11","move":"Head for Hollowheart, marked on the map (558 m north).","by":"Calm","reward":0}
+{"t":"23:25:28","ctx":"in The Tristinwold countryside|health high|level 11","move":"Head for Hollowheart, marked on the map (445 m north).","by":"Calm","reward":0.05}
+{"t":"23:25:29","ctx":"in The Northwood|health high|level 11","move":"Attack the Wolf (14 m north): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"23:25:30","ctx":"in The Northwood|health high|level 11","move":"Attack the Wolf (17 m north-east): close in and keep hitting.","by":"Risky","reward":0.13}
+{"t":"23:25:45","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the wild garlic (32 m north-east).","by":"Risky","reward":0}
+{"t":"23:25:49","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the wild garlic (3 m north-east).","by":"Calm","reward":0}
+{"t":"23:25:53","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the wild garlic (3 m south-east).","by":"Calm","reward":0}
+{"t":"23:26:05","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the mountain thistle (45 m east).","by":"Calm","reward":0}
+{"t":"23:26:05","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the flax (42 m east).","by":"Calm","reward":0}
+{"t":"23:26:36","ctx":"in The Northwood|health high|level 11","move":"Head for Hollowheart, marked on the map (175 m north-west).","by":"Calm","reward":0}
+{"t":"23:28:21","ctx":"in The Northwood|health high|level 11","move":"Head for Hollowheart, marked on the map (163 m north-west).","by":"Calm","reward":0}
+{"t":"23:29:02","ctx":"in The Heartwood|health high|level 11","move":"Go into the council chamber (18 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:29:12","ctx":"in The Heartwood|health high|level 11","move":"Go into the council chamber (18 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:29:20","ctx":"in Hollowheart|health high|level 11","move":"Walk up and press E: pick the penny bun (37 m south-east).","by":"Calm","reward":0}
+{"t":"23:29:49","ctx":"in Hollowheart|health high|level 11","move":"Click: Would you become my apprentice? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"23:29:54","ctx":"in Hollowheart|health high|level 11","move":"Walk up and press E: pick the bloodcap (5 m north-east).","by":"Calm","reward":0}
+{"t":"23:29:59","ctx":"in Hollowheart|health high|level 11","move":"Walk up and press E: pick the bloodcap (5 m south-east).","by":"Calm","reward":0}
+{"t":"23:30:11","ctx":"in Hollowheart|health high|level 11","move":"Walk up and press E: pick the mountain thistle (22 m east).","by":"Calm","reward":0}
+{"t":"23:30:15","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the mountain thistle (3 m east).","by":"Risky","reward":0}
+{"t":"23:30:55","ctx":"in The Northwood|health high|level 11","move":"Walk up and press E: pick the emberleaf (41 m south-east).","by":"Risky","reward":0}
+{"t":"23:31:01","ctx":"in The Northwood|health high|level 11","move":"Attack the Wild Boar (33 m north): close in and keep hitting.","by":"Risky","reward":0.12}
+{"t":"23:31:04","ctx":"in The Northwood|health high|level 11","move":"Attack the Wild Boar (18 m north): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"23:31:06","ctx":"in The Northwood|health high|level 11","move":"Attack the Wild Boar (28 m north): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"23:31:08","ctx":"in The Northwood|health high|level 11","move":"Attack the Wild Boar (16 m north): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"23:31:11","ctx":"in The Northwood|health high|level 11|fighting","move":"Attack the Wild Boar (14 m north): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"23:33:19","ctx":"in The Northwood|health high|level 11","move":"Head for Hawkwake Mine, marked on the map (760 m north).","by":"Calm","reward":0}
+{"t":"23:34:32","ctx":"in The Northwood|health high|level 11","move":"Head for Hawkwake Mine, marked on the map (404 m north).","by":"Calm","reward":0}
+{"t":"23:34:34","ctx":"in Hawkwake Mine|health high|level 11","move":"Walk up to Roderic Silverhand (assayer, 11 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:34:35","ctx":"in Hawkwake Mine|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:34:35","ctx":"in Hawkwake Mine|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.02}
+{"t":"23:34:37","ctx":"in Hawkwake Mine|health high|level 11","move":"Walk up to Finn Blackward (foreman of Hawkwake Mine, 7 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:34:38","ctx":"in Hawkwake Mine|health high|level 11","move":"Click: I\u0027ve things to sell.","by":"Calm","reward":0}
+{"t":"23:34:38","ctx":"in Hawkwake Mine|health high|level 11","move":"Click: Sell every trophy and all the pelts, hides, ore, logs, fish and bits (keep herbs, potions, food and gear)","by":"Calm","reward":1.17}
+{"t":"23:34:38","ctx":"in Hawkwake Mine|health high|level 11","move":"Close the window (Esc).","by":"Calm","reward":0}
+{"t":"23:34:40","ctx":"in Hawkwake Mine|health high|level 11","move":"Walk up to Tove Quickward (miner, 5 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:34:40","ctx":"in Hawkwake Mine|health high|level 11","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:34:41","ctx":"in Hawkwake Mine|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"23:34:46","ctx":"in Hawkwake Mine|health high|level 11","move":"Walk up to Orm Snowhelm (assayer, 13 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:34:46","ctx":"in Hawkwake Mine|health high|level 11","move":"Click: (Pick their pocket)","by":"Calm","reward":0.02}
+{"t":"23:34:48","ctx":"in Hawkwake Mine|health high|level 11","move":"Attack the Dog (8 m south); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.06}
+{"t":"23:34:51","ctx":"in Hawkwake Mine|health high|level 11","move":"Go into the mine (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:35:25","ctx":"indoors|health high|level 11","move":"Go into the mine (1 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:35:26","ctx":"indoors|health high|level 11","move":"Attack the Draugr (19 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"23:35:29","ctx":"indoors|health high|level 11","move":"Attack the Draugr (17 m north-east): close in and keep hitting.","by":"Combat","reward":0.43}
+{"t":"23:35:32","ctx":"indoors|health high|level 11|fighting","move":"Attack the Draugr (13 m north-east): close in and keep hitting.","by":"Combat","reward":0.86}
+{"t":"23:35:32","ctx":"indoors|health high|level 11|fighting","move":"Attack the Draugr (11 m north-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"23:35:35","ctx":"indoors|health high|level 11|fighting","move":"Attack the Draugr (15 m north): close in and keep hitting.","by":"Combat","reward":-9.49}
+{"t":"23:35:41","ctx":"indoors|health high|level 12|fighting","move":"Walk to the door (17 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:35:42","ctx":"in Inside the mine|health high|level 12","move":"Press K and spend a skill point on Wild Surge (rank 3 to 4): Spells sometimes surge and strike twice; mana returns quick","by":"Calm","reward":0}
+{"t":"23:36:55","ctx":"in Hawkwake Mine|health high|level 12","move":"Walk up and press E: pick the bilberries (40 m south).","by":"Calm","reward":0}
+{"t":"23:37:07","ctx":"in Hawkwake Mine|health high|level 12","move":"Walk up and press E: pick the bilberries (38 m south).","by":"Calm","reward":0}
+{"t":"23:37:10","ctx":"in Hawkwake Mine|health high|level 12","move":"Go into the mine (6 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:37:10","ctx":"in Hawkwake Mine|health high|level 12","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"23:37:11","ctx":"in Hawkwake Mine|health high|level 12","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"23:37:11","ctx":"in Hawkwake Mine|health high|level 12","move":"Click: I\u0027ll do it.","by":"Calm","reward":0}
+{"t":"23:37:12","ctx":"in Hawkwake Mine|health high|level 12","move":"Click: About the job...","by":"Calm","reward":0}
+{"t":"23:37:12","ctx":"in Hawkwake Mine|health high|level 12","move":"Click: What does Hawkwake Mine trade in?","by":"Calm","reward":0}
+{"t":"23:37:12","ctx":"in Hawkwake Mine|health high|level 12","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"23:37:13","ctx":"in Hawkwake Mine|health high|level 12","move":"Click: Any outlaws I should know about?","by":"Calm","reward":0}
+{"t":"23:37:13","ctx":"in Hawkwake Mine|health high|level 12","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"23:37:53","ctx":"in Hawkwake Mine|health high|level 12","move":"Walk up and press E: pick the bilberries (38 m south).","by":"Calm","reward":0}
+{"t":"23:38:26","ctx":"in Hawkwake Mine|health high|level 12","move":"Go into the mine (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:38:41","ctx":"in Hawkwake Mine|health high|level 12","move":"Walk up and press E: pick the bilberries (35 m south).","by":"Calm","reward":0}
+{"t":"23:38:45","ctx":"in Hawkwake Mine|health high|level 12","move":"Go into the mine (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:39:48","ctx":"indoors|health high|level 12","move":"Walk up and press E: pick the bilberries (38 m south).","by":"Calm","reward":0}
+{"t":"23:39:53","ctx":"indoors|health high|level 12","move":"Walk to the door (20 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:40:29","ctx":"indoors|health high|level 12","move":"Walk to the door (10 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"23:40:54","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:41:02","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:41:26","ctx":"indoors|health high|level 12","move":"Walk to the door (4 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:41:54","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:42:23","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:42:59","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:43:22","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:44:05","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:44:30","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:44:57","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:45:42","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:46:07","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:46:22","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:47:02","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:47:28","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:47:41","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:48:11","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:48:36","ctx":"indoors|health high|level 12","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:48:47","ctx":"indoors|health high|level 12","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:49:34","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:50:01","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:50:13","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:50:43","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:51:09","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:51:22","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:51:56","ctx":"indoors|health high|level 12","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:52:23","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:52:29","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:53:09","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:53:35","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:53:43","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:54:40","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"23:55:06","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:55:32","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:56:18","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:56:45","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:57:08","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:57:46","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:58:12","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:58:28","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:59:17","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:59:43","ctx":"indoors|health high|level 12","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}

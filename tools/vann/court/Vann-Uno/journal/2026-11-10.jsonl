@@ -1,0 +1,58 @@
+{"t":"19:09:05","ctx":"in The Harbor|health high|level 7","move":"Head for Greywater, marked on the map (805 m north-east).","by":"Risky","reward":0}
+{"t":"19:09:07","ctx":"in The Harbor|health high|level 7","move":"Go into the warehouse (4 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"19:15:12","ctx":"in The Harbor|health high|level 7","move":"Head for Greywater, marked on the map (805 m north-east).","by":"Risky","reward":0}
+{"t":"19:15:14","ctx":"in The Harbor|health high|level 7","move":"Go into the warehouse (1 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"19:23:34","ctx":"indoors|health high|level 7","move":"Head for Greywater, marked on the map (805 m north-east).","by":"Risky","reward":0}
+{"t":"19:23:40","ctx":"indoors|health high|level 7","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"19:23:51","ctx":"in Inside the warehouse|health high|level 7","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"19:24:50","ctx":"in Tristinwold|health high|level 7","move":"Walk up to Hob Stormbarrow (a youth of 9, 22 m) and ask them to become your apprentice.","by":"Calm","reward":0.05}
+{"t":"19:24:52","ctx":"in The Harbor|health high|level 7","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"19:25:46","ctx":"in The Harbor|health high|level 7","move":"Head for Greywater, marked on the map (828 m north-east).","by":"Calm","reward":0}
+{"t":"19:26:08","ctx":"in The Harbor|health high|level 7","move":"Go into the shop (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"19:26:22","ctx":"in The Harbor|health high|level 7","move":"Head for Greywater, marked on the map (823 m north-east).","by":"Calm","reward":0}
+{"t":"19:26:31","ctx":"in The Harbor|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"19:26:43","ctx":"in The Harbor|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"19:27:02","ctx":"in The Harbor|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":0.04}
+{"t":"19:27:39","ctx":"in The Harbor|health high|level 7","move":"Head for Greywater, marked on the map (816 m north-east).","by":"Calm","reward":0}
+{"t":"19:27:44","ctx":"in The Harbor|health high|level 7","move":"Go into the shop (10 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"19:28:04","ctx":"in The Harbor|health high|level 7","move":"Attack the Leif Redsworn, initiate of the Magi (18 m north-west); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"19:33:11","ctx":"in The Harbor|health high|level 7","move":"Head for Greywater, marked on the map (822 m north-east).","by":"Calm","reward":0}
+{"t":"19:33:21","ctx":"in The Harbor|health high|level 7","move":"Go into the shop (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"19:33:46","ctx":"in The Harbor|health high|level 7","move":"Walk up to Ragnar Whitebeard (a youth of 13, 14 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"19:33:52","ctx":"in The Harbor|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"19:33:59","ctx":"in The Harbor|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":0.04}
+{"t":"19:34:43","ctx":"in Tristinwold|health high|level 7","move":"Head for Greywater, marked on the map (833 m north-east).","by":"Calm","reward":0}
+{"t":"19:34:44","ctx":"in The Docks|health high|level 7","move":"Attack the Dock Thug (20 m east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"19:35:30","ctx":"in The Docks|health high|level 7","move":"Attack the Dock Thug (14 m east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"19:36:17","ctx":"in The Docks|health high|level 7","move":"Attack the Dock Thug (21 m north-east): close in and keep hitting.","by":"Risky","reward":0.05}
+{"t":"19:36:25","ctx":"in The Harbor|health high|level 7","move":"Attack the Ronacse, the Sin of Pride (level 58) (18 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"19:37:02","ctx":"in The Docks|health high|level 7|fighting","move":"Sprint away toward Tristinwold (135 m west).","by":"Combat","reward":0}
+{"t":"19:37:34","ctx":"in The Docks|health high|level 7|fighting","move":"Sprint away toward Tristinwold (118 m west).","by":"Risky","reward":0}
+{"t":"19:37:43","ctx":"in The Docks|health high|level 7|fighting","move":"Sprint away toward Tristinwold (113 m west).","by":"Risky","reward":0}
+{"t":"19:37:52","ctx":"in The Docks|health high|level 7|fighting","move":"Go into the warehouse (21 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"19:37:57","ctx":"in The Docks|health high|level 7|fighting","move":"Sprint away toward Tristinwold (113 m west).","by":"Combat","reward":0}
+{"t":"19:38:03","ctx":"in The Docks|health high|level 7|fighting","move":"Sprint away toward Tristinwold (113 m west).","by":"Combat","reward":0}
+{"t":"19:38:08","ctx":"in The Docks|health high|level 7|fighting","move":"Sprint away toward Tristinwold (113 m west).","by":"Combat","reward":0}
+{"t":"19:38:54","ctx":"in The Docks|health high|level 7|fighting","move":"Sprint away toward Tristinwold (113 m west).","by":"Combat","reward":0}
+{"t":"19:39:17","ctx":"in The Docks|health mid|level 7|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"19:39:22","ctx":"in The Docks|health mid|level 7|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"19:39:43","ctx":"in The Docks|health mid|level 7|fighting","move":"Sprint away toward Tristinwold (113 m west).","by":"Combat","reward":0}
+{"t":"19:40:27","ctx":"in The Docks|health low|level 7|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":-4.3}
+{"t":"19:41:35","ctx":"in Tristinwold|health high|level 7","move":"Head for Greywater, marked on the map (818 m north-east).","by":"Risky","reward":0}
+{"t":"19:45:29","ctx":"in Tristinwold|health high|level 7","move":"Head for Druitt, marked on the map (1.0 km west).","by":"Risky","reward":0.05}
+{"t":"19:45:36","ctx":"in The Crown|health high|level 7","move":"Go into the tower (17 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"19:46:47","ctx":"in The Crown|health high|level 7","move":"Walk up to Alva Snowwood (a youth of 12, 43 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"19:46:51","ctx":"in The Crown|health high|level 7","move":"Attack the Inga Whitebarrow, initiate of the Velvet Knives (11 m west); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"19:47:10","ctx":"in The Crown|health high|level 7","move":"Attack the Inga Whitebarrow, initiate of the Velvet Knives (4 m north-west); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"19:47:13","ctx":"in The Crown|health high|level 7","move":"Head for Greywater, marked on the map (902 m north-east).","by":"Calm","reward":0}
+{"t":"19:47:27","ctx":"in The Crown|health high|level 7","move":"Attack the Inga Whitebarrow, initiate of the Velvet Knives (13 m west); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"20:05:06","ctx":"in The Crown|health high|level 7","move":"Head for Greywater, marked on the map (901 m north-east).","by":"Calm","reward":0}
+{"t":"20:05:36","ctx":"in The Crown|health high|level 7","move":"Go into the tower (10 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:17:37","ctx":"in The Crown|health high|level 7","move":"Head for Greywater, marked on the map (901 m north-east).","by":"Calm","reward":0.1}
+{"t":"20:21:22","ctx":"in The Docks|health high|level 7","move":"Walk up to Oda Greyhelm (beggar, 46 m) and press E to talk.","by":"Risky","reward":0}
+{"t":"20:21:23","ctx":"in Tristinwold|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":0.04}
+{"t":"20:21:41","ctx":"in Tristinwold|health high|level 7","move":"Head for Greywater, marked on the map (835 m north-east).","by":"Calm","reward":0}
+{"t":"20:22:22","ctx":"in The Docks|health high|level 7","move":"Attack the Dock Thug (13 m east): close in and keep hitting.","by":"Combat","reward":0.25}
+{"t":"20:23:08","ctx":"in The Docks|health high|level 7","move":"Attack the Dock Thug (21 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:29:13","ctx":"in the wilds|health high|level 7","move":"Attack the Dock Thug (6 m north-west): close in and keep hitting.","by":"Combat","reward":0.28}
+{"t":"20:39:50","ctx":"in The Docks|health high|level 7","move":"Attack the Dock Thug (20 m north): close in and keep hitting.","by":"Risky","reward":0}

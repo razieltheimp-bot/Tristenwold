@@ -1,0 +1,37 @@
+{"t":"07:34:03","ctx":"in The Heartwood|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 664 m south).","by":"Calm","reward":0}
+{"t":"07:34:09","ctx":"in The Heartwood|health high|level 5-9","move":"Attack the Fawn (24 m north-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0.03}
+{"t":"07:36:04","ctx":"in Hollowheart|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 639 m south).","by":"Calm","reward":0}
+{"t":"07:36:22","ctx":"in The Northwood|health mid|level 5-9","move":"Press Q: Inner Focus (Breathe: heal over a few seconds and move with haste.)","by":"Calm","reward":0}
+{"t":"07:36:37","ctx":"in The Northwood|health mid|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 319 m south).","by":"Calm","reward":0}
+{"t":"07:36:46","ctx":"in The Northwood|health mid|level 5-9","move":"Press Q: Inner Focus (Breathe: heal over a few seconds and move with haste.)","by":"Risky","reward":0}
+{"t":"07:37:54","ctx":"in The Northwood|health mid|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 269 m south).","by":"Calm","reward":-3.56}
+{"t":"07:38:14","ctx":"in The Archive Garden|health high|level 5-9","move":"Sprint away toward Tristinwold (147 m south-west).","by":"Combat","reward":0}
+{"t":"07:38:56","ctx":"in The Crown|health high|level 5-9","move":"Follow the quest tracker: A family burial ring from Stonewake Barrow (2.1 km east).","by":"Calm","reward":0}
+{"t":"07:38:59","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (22 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"07:39:04","ctx":"in The Docks|health high|level 5-9|fighting","move":"Attack the Dock Thug (13 m north-east): close in and keep hitting.","by":"Combat","reward":0.52}
+{"t":"07:39:08","ctx":"in The Docks|health mid|level 5-9","move":"Attack the Dock Thug (20 m north): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"07:39:16","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (14 m north-east): close in and keep hitting.","by":"Combat","reward":0.28}
+{"t":"07:40:52","ctx":"in The Harbor|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Hollowheart (680 m north-west).","by":"Calm","reward":0}
+{"t":"07:43:08","ctx":"in The Northwood|health high|level 5-9","move":"Head for Tristinwold, marked on the map (535 m south).","by":"Calm","reward":0}
+{"t":"07:44:10","ctx":"in Tristinwold|health high|level 5-9","move":"Attack the Cat (18 m east); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.12}
+{"t":"07:46:05","ctx":"in Tristinwold|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Hollowheart (644 m north).","by":"Calm","reward":0.05}
+{"t":"07:46:15","ctx":"in The Northwood|health high|level 5-9|fighting","move":"Sprint away toward Hollowheart (177 m north).","by":"Combat","reward":0}
+{"t":"07:46:29","ctx":"in The Northwood|health high|level 5-9|fighting","move":"Attack the Wolf (33 m south): close in and keep hitting.","by":"Risky","reward":0.13}
+{"t":"07:46:30","ctx":"in The Northwood|health mid|level 5-9|fighting","move":"Press Q: Inner Focus (Breathe: heal over a few seconds and move with haste.)","by":"Combat","reward":0}
+{"t":"07:46:31","ctx":"in The Northwood|health mid|level 5-9|fighting","move":"Attack the Wolf (1 m south-east): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"07:46:32","ctx":"in The Northwood|health mid|level 5-9|fighting","move":"Attack the Wolf (2 m south-east): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"07:47:56","ctx":"in The Northwood|health mid|level 5-9","move":"Quest \u0022A bundle of herbs for Hollowheart\u0022 (Take the bundle of herbs to Bjorn Greyshield at Hollowheart): walk up to Bjor","by":"Calm","reward":1.29}
+{"t":"07:47:57","ctx":"in Hollowheart|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":0.05}
+{"t":"07:48:06","ctx":"in Hollowheart|health high|level 5-9","move":"Attack the Horse (18 m north-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"07:48:12","ctx":"in Hollowheart|health high|level 5-9|fighting","move":"Attack the Fox Kit (13 m north-west); it hasn\u0027t done anything to you.","by":"Calm","reward":0.03}
+{"t":"07:49:57","ctx":"in Hollowheart|health high|level 5-9|fighting","move":"Head for Greywater, marked on the map (798 m east).","by":"Calm","reward":0}
+{"t":"07:50:04","ctx":"in The Northwood|health mid|level 5-9","move":"Press Q: Inner Focus (Breathe: heal over a few seconds and move with haste.)","by":"Risky","reward":0}
+{"t":"07:50:14","ctx":"in The Northwood|health mid|level 5-9|fighting","move":"Sprint away toward Hollowheart (263 m west).","by":"Combat","reward":0}
+{"t":"07:50:15","ctx":"in The Northwood|health mid|level 5-9|fighting","move":"Attack the Wild Boar (1 m east): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"07:50:34","ctx":"in The Northwood|health mid|level 5-9","move":"Press Q: Inner Focus (Breathe: heal over a few seconds and move with haste.)","by":"Risky","reward":0}
+{"t":"07:50:42","ctx":"in The Northwood|health mid|level 5-9|fighting","move":"Sprint away toward Hollowheart (258 m west).","by":"Combat","reward":0}
+{"t":"07:50:45","ctx":"in The Northwood|health mid|level 5-9|fighting","move":"Attack the Wild Boar (7 m east): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"07:50:58","ctx":"in The Northwood|health mid|level 5-9","move":"Press Q: Inner Focus (Breathe: heal over a few seconds and move with haste.)","by":"Risky","reward":0}
+{"t":"07:51:06","ctx":"in The Northwood|health high|level 5-9","move":"Head for Greywater, marked on the map (539 m east).","by":"Risky","reward":0}
+{"t":"07:51:15","ctx":"in The Northwood|health high|level 5-9|fighting","move":"Sprint away toward Hollowheart (269 m west).","by":"Combat","reward":0}
+{"t":"07:51:18","ctx":"in The Northwood|health high|level 5-9|fighting","move":"Attack the Wild Boar (11 m east): close in and keep hitting.","by":"Combat","reward":0.21}

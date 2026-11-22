@@ -1,0 +1,15 @@
+{
+  "_comment": "Vann's own brain: a small model on this laptop (through Ollama, as MoJo and Jarvis use it) that sits between Gemini and the simple brain. Gemini plans; this picks the moment-to-moment moves by Gemini's orders; the simple brain covers everything else (fights, danger, travel already under way, conversations).",
+  "enabled": true,
+  "_model_comment": "Any Ollama chat model. qwen2.5:1.5b (about 1 GB) is light enough to run beside the game on this laptop and still follows instructions; llama3.2:1b is lighter still, qwen2.5:3b smarter but heavier. The launcher pulls it the first time.",
+  "model": "qwen2.5:1.5b",
+  "ollama_base_url": "http://localhost:11434",
+  "_every_comment": "At most one choice from this brain every so many seconds; the simple brain decides in between.",
+  "every_seconds": 20,
+  "_escalate_comment": "The simple brain keeps him moving while this one thinks. A question it hasn't answered in this many seconds goes up to Gemini instead (if the character has Gemini time left).",
+  "escalate_after_seconds": 300,
+  "num_ctx": 8192,
+  "temperature": 0.4,
+  "_knowledge_comment": "How much of knowledge/*.md rides in its prompt. Small models do better with less.",
+  "knowledge_max_chars": 3800
+}

@@ -1,0 +1,39 @@
+{
+  "Aim": "Reach level 5, gather 800 crowns, and found our first colony far from Tristinwold.",
+  "Temper": "villain",
+  "FightAbove": 0.6,
+  "FleeBelow": 0.35,
+  "Focus": [
+    "quests",
+    "fights",
+    "gathering",
+    "places",
+    "people"
+  ],
+  "HeadFor": [
+    "Greywater",
+    "Hollowheart"
+  ],
+  "Avoid": [],
+  "Keen": [
+    "apprentice",
+    "colony",
+    "crowns",
+    "work",
+    "stolen"
+  ],
+  "Todo": [
+    {
+      "Step": "Head for Hollowheart",
+      "Name": "Head for Hollowheart, marked on the map",
+      "Done": false
+    }
+  ],
+  "Train": [
+    "Arcane Missiles",
+    "Chain Lightning",
+    "Dragonfire",
+    "Wild Surge"
+  ],
+  "Written": "2026-11-09 19:20"
+}

@@ -1,0 +1,88 @@
+﻿# Vann's court: Vann and the player characters he raises, all played by Gemini like Ashgrip.
+# This folder is local only (git ignores local-claude), so nothing here reaches GitHub. Keep it to yourself: it has
+# the court's password and its own Gemini key in it.
+
+# Blank: the same server and world password as local-claude\settings.txt (Ashgrip's).
+server = https://tw.velocitydrip.com
+# (on the server this one is kept in keys.dat: Set Keys.bat)
+server_password =
+
+# The court's accounts: Vanncourt for Vann, Vanncourt-Uno for Vann-Uno, and so on, each made the first time it plays.
+# (The old Vann, Vannuno, Vanndos and Vanntres accounts stopped taking this password; their names are still theirs.)
+account_prefix = Vanncourt
+# Vann's own character's name (plain "Vann" belongs to the old account).
+lord_name = Vann-Magus
+# One password for every court account.
+# (on the server this one is kept in keys.dat: Set Keys.bat)
+password =
+
+# The court's own Gemini key, so it has its own free allowance and doesn't use Ashgrip's.
+# (Blank: the VANN_GEMINI_API_KEY you set with setx, failing that the same GEMINI_API_KEY as Ashgrip.)
+# (on the server this one is kept in keys.dat: Set Keys.bat)
+gemini_key =
+# Free calls a day on that key, shared out between everyone in the court who's playing (Vann gets a double share).
+gemini_daily = 900
+
+# The top brain (the planner at the head of the chain: top brain, then the local brain, then the simple brain).
+# Blank: Gemini, with the key above. Or plug in any service that speaks the OpenAI chat API, for example
+#   OpenRouter:  top_url = https://openrouter.ai/api/v1      top_model = (a model name there)
+#   Groq:        top_url = https://api.groq.com/openai/v1   top_model = (a model name there)
+#   LM Studio or a bigger Ollama model on this PC: top_url = http://localhost:11434/v1  (no key needed)
+top_url =
+top_model =
+# (on the server this one is kept in keys.dat: Set Keys.bat)
+top_key =
+
+# Vann's own class. His lieutenants are always Vannuno the Paladin, Vanndos the Martial Artist and Vanntres the Wizard.
+lord_class = Sorcerer
+
+# Vann's permission to raise PCs: yes or no.
+raise = yes
+# The most PCs in the court, Vann included. Past the three lieutenants, the rest are agents (any class he picks).
+most_pcs = 8
+# At least this many minutes between agents (the three lieutenants come a few minutes apart by themselves).
+raise_gap = 20
+
+# The hours a day of Gemini (Vann's own thinking) the court shares: Vann splits them between his characters as he sees
+# fit (an even share until he does), his own included. A character past its share plays on by the simple brain and the
+# last orders Gemini gave it. Play itself has no limit: the court plays for as long as you leave it running.
+court_hours = 4
+# The minutes of Gemini each character keeps back at the end of its share: if a player starts a fight with it, Gemini
+# fights it on those minutes.
+reserve_minutes = 2
+# The hour (24-hour clock) the court's day turns over and the hours come back: a late night counts against the day it
+# began, so playing past midnight doesn't spend the next day's hours.
+day_starts = 6
+# Minutes before whoever's playing logs out and straight back in: the game leaks graphics memory over a long session
+# (Vann-Tres ran out after a few hours), and a fresh login clears it. 0: never.
+relog_minutes = 60
+
+# One of the court plays at a time: Vann first, then whoever he switches to. He can switch whenever he likes, and when a
+# character's Gemini share is spent it hands over to the next one with Gemini left today.
+# together = yes: everyone in the court plays at once instead, Vann on screen and the rest in the background (no
+# windows), each on its own share of the Gemini hours, with no switching. Heavier on the PC; no: one at a time.
+together = no
+# With together = yes: how many of the court play in the background beside Vann at once, and how often (minutes) the
+# one that's been in longest logs out to let the next one waiting take a turn.
+background_max = 2
+cycle_minutes = 30
+
+# Gemini checks in this often (minutes) to look things over and redo each one's plan.
+gemini_checkin = 5
+
+# How many hours each character plays in one go at most before the court stops (blank: until you close its window).
+hours =
+
+# yes: show the game window of whoever's playing (window for Vann, window_others for the rest); no: play with no window.
+window = no
+window_others = no
+
+# Graphics for the windows that show: Low, Medium, High, Ultra or Cinematic.
+graphics = Medium
+
+# How every Vann PC looks (the portrait in this folder): an older human, wild swept-up white hair, a pale ruffled
+# shirt with long sleeves, olive trousers, no hat. Each class still carries its own weapon.
+look = race=human;sex=Male;age=Seasoned;face=Fair;eyes=Grey;hair=White;style=Spikes;beard=Stubble;headwear=none;hat=none;top=White;bottom=Olive;sleeves=Long;wear=Plain;build=Slim;height=Tall;skin=Fair
+
+# Where Ollama is on the server (install.ps1 fills it in).
+ollama_path =

@@ -1,0 +1,39 @@
+{
+  "Aim": "Grow strong, recruit apprentices, and prepare to establish our colony.",
+  "Temper": "villain",
+  "FightAbove": 0.6,
+  "FleeBelow": 0.35,
+  "Focus": [
+    "quests",
+    "fights",
+    "people",
+    "gathering",
+    "places"
+  ],
+  "HeadFor": [
+    "Hollowheart",
+    "Greywater",
+    "Druitt"
+  ],
+  "Avoid": [],
+  "Keen": [
+    "apprentice",
+    "colony",
+    "council",
+    "raid"
+  ],
+  "Todo": [
+    {
+      "Step": "Head for Hollowheart",
+      "Name": "Hollowheart",
+      "Done": true
+    }
+  ],
+  "Train": [
+    "Elemental Bolt",
+    "Elemental Blast",
+    "Arcane Mastery",
+    "Meteor"
+  ],
+  "Written": "2026-11-09 17:47"
+}

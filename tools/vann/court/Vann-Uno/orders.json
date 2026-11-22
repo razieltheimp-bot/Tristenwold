@@ -1,0 +1,92 @@
+{
+  "Aim": "Secure a western colony site, gather crowns and apprentices, and build a chapel.",
+  "Temper": "villain",
+  "FightAbove": 0.6,
+  "FleeBelow": 0.2,
+  "Focus": [
+    "people",
+    "quests",
+    "places",
+    "gathering",
+    "fights"
+  ],
+  "HeadFor": [
+    "Greyhollow quarry",
+    "Stonewake Barrow",
+    "Bitterwell Fort",
+    "Wethermere",
+    "The Shrine of the Last Ember",
+    "Barrowhollow Camp"
+  ],
+  "Avoid": [
+    "Siltak Fire-Eater",
+    "Vornos the Stitched",
+    "Quillul the Swift",
+    "Brakk Gutter-Fang",
+    "Pell the Stitched",
+    "Gorrimul the Mountain",
+    "Silta the Witch-Eyed",
+    "Tuskik Fire-Eater"
+  ],
+  "Keen": [
+    "apprentice",
+    "crowns",
+    "colony",
+    "council",
+    "raid",
+    "quest",
+    "gathering",
+    "hall"
+  ],
+  "Todo": [
+    {
+      "Step": "head for",
+      "Name": "Greyhollow quarry",
+      "Done": false
+    },
+    {
+      "Step": "talk to",
+      "Name": "Draugr",
+      "Done": false
+    },
+    {
+      "Step": "gather",
+      "Name": "ore",
+      "Done": false
+    },
+    {
+      "Step": "head for",
+      "Name": "Stonewake Barrow",
+      "Done": true
+    },
+    {
+      "Step": "complete",
+      "Name": "The stolen tithe-chest from Bitterwell Fort",
+      "Done": false
+    },
+    {
+      "Step": "recruit",
+      "Name": "apprentice",
+      "Done": false
+    },
+    {
+      "Step": "head for",
+      "Name": "Wethermere",
+      "Done": false
+    },
+    {
+      "Step": "build",
+      "Name": "chapel",
+      "Done": false
+    }
+  ],
+  "Train": [
+    "Shield Wall",
+    "Holy Light",
+    "Smite",
+    "Divine Judgement",
+    "Aura of Devotion",
+    "Hammer of Dawn"
+  ],
+  "Written": "2026-11-14 19:04"
+}

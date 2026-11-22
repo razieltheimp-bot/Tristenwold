@@ -1,0 +1,20 @@
+{
+  "Name": "Vann-Dos",
+  "Class": "Martial Artist",
+  "Role": "lieutenant",
+  "Level": 8,
+  "Crowns": 86,
+  "X": 159.59474182128906,
+  "Z": -642.9242553710938,
+  "Where": "The Northwood",
+  "Apprentices": 1,
+  "ApprenticesWithHim": 1,
+  "ApprenticesAway": [],
+  "Colonies": [],
+  "Rules": [],
+  "Doing": "walking to Greywater",
+  "Aim": "Reach Hollowheart safely to recover health.",
+  "UsedMinutes": 8,
+  "AllottedMinutes": 10,
+  "Seen": "2026-11-14 07:51:35"
+}

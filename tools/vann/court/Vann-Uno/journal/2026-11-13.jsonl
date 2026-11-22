@@ -1,0 +1,376 @@
+{"t":"05:29:16","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Rally to Vann (197 m south).","by":"Calm","reward":0}
+{"t":"05:29:24","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Go into the mine (6 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"05:29:34","ctx":"indoors|health high|level 5-9","move":"Go into the mine (1 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"05:29:42","ctx":"indoors|health high|level 5-9","move":"Attack the Draugr (14 m north-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"05:29:46","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (16 m north): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"05:29:47","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (2 m south-west): close in and keep hitting.","by":"Combat","reward":0.39}
+{"t":"05:29:49","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (6 m north): close in and keep hitting.","by":"Risky","reward":0.44}
+{"t":"05:29:52","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (10 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"05:29:54","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (2 m south-west): close in and keep hitting.","by":"Combat","reward":-4.35}
+{"t":"05:30:20","ctx":"indoors|health high|level 10-14|fighting","move":"Walk to the door (29 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"05:30:21","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Press K and spend a skill point on Shield Wall (rank 1 to 2): Raise the shield: Protect and Shell for a while.","by":"Calm","reward":0}
+{"t":"05:31:18","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 197 m south).","by":"Calm","reward":0}
+{"t":"05:32:02","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Go into the mine (6 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"05:32:04","ctx":"indoors|health high|level 10-14","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"05:32:24","ctx":"in Inside the mine|health high|level 10-14","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"05:32:32","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Go into the shop (9 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"05:34:09","ctx":"indoors|health high|level 10-14","move":"Walk up to Finn Blackward (foreman of Hawkwake Mine, 6 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"05:34:09","ctx":"indoors|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"05:34:34","ctx":"indoors|health high|level 10-14","move":"Click: I\u0027ve things to sell.","by":"Calm","reward":0}
+{"t":"05:35:00","ctx":"indoors|health high|level 10-14","move":"Click: Sell every trophy and all the pelts, hides, ore, logs, fish and bits (keep herbs, potions, food and gear)","by":"Calm","reward":4.65}
+{"t":"05:35:26","ctx":"indoors|health high|level 10-14","move":"Click: Iron Dagger (5): 14 crowns each","by":"Calm","reward":0.19}
+{"t":"05:35:52","ctx":"indoors|health high|level 10-14","move":"Click: Iron Dagger (4): 14 crowns each","by":"Calm","reward":0.14}
+{"t":"05:36:18","ctx":"indoors|health high|level 10-14","move":"Click: Iron Dagger (3): 14 crowns each","by":"Calm","reward":0.19}
+{"t":"05:36:51","ctx":"indoors|health high|level 10-14","move":"Click: Iron Dagger (2): 14 crowns each","by":"Calm","reward":0.14}
+{"t":"05:37:25","ctx":"indoors|health high|level 10-14","move":"Click: Iron Dagger (1): 14 crowns each","by":"Calm","reward":0.14}
+{"t":"05:37:26","ctx":"indoors|health high|level 10-14","move":"Click: Lady\u0027s Mantle (1): 2 crowns each","by":"Calm","reward":0.02}
+{"t":"05:37:26","ctx":"indoors|health high|level 10-14","move":"Click: That\u0027s all.","by":"Calm","reward":0}
+{"t":"05:37:26","ctx":"indoors|health high|level 10-14","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"05:37:27","ctx":"indoors|health high|level 10-14","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"05:37:27","ctx":"indoors|health high|level 10-14","move":"Click: I\u0027ll do it.","by":"Calm","reward":0}
+{"t":"05:37:27","ctx":"indoors|health high|level 10-14","move":"Click: About the job...","by":"Calm","reward":0}
+{"t":"05:37:27","ctx":"indoors|health high|level 10-14","move":"Click: What does Hawkwake Mine trade in?","by":"Calm","reward":0}
+{"t":"05:37:28","ctx":"indoors|health high|level 10-14","move":"Click: Let me see what you have.","by":"Calm","reward":0}
+{"t":"05:37:28","ctx":"indoors|health high|level 10-14","move":"Click: Pickaxe, 16 crowns: For ore veins. Walk up to one and press E.","by":"Calm","reward":-0.16}
+{"t":"05:37:28","ctx":"indoors|health high|level 10-14","move":"Click: That\u0027s all.","by":"Calm","reward":0}
+{"t":"05:37:53","ctx":"indoors|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.06}
+{"t":"05:37:57","ctx":"indoors|health high|level 10-14","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"05:37:57","ctx":"in Inside the shop|health high|level 10-14","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"05:37:58","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Walk up to Finn Blackward (foreman of Hawkwake Mine, 2 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"05:37:59","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Walk up to Finn Blackward (foreman of Hawkwake Mine, 2 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"05:39:21","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Walk up to Finn Blackward (foreman of Hawkwake Mine, 4 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"05:39:22","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"05:39:22","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"05:39:23","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: Any trouble below?","by":"Calm","reward":0}
+{"t":"05:39:23","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: Any outlaws I should know about?","by":"Calm","reward":0}
+{"t":"05:39:23","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: Teach me about mining.","by":"Calm","reward":0}
+{"t":"05:39:59","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"05:40:06","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 189 m south).","by":"Calm","reward":0}
+{"t":"05:40:13","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Go into the shop (18 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"05:40:14","ctx":"indoors|health high|level 10-14","move":"Attack the Dog (5 m north-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"05:40:17","ctx":"indoors|health high|level 10-14","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"05:40:46","ctx":"in Inside the shop|health high|level 10-14","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"05:40:55","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Go into the shop (18 m): walk to its door and press E.","by":"Calm","reward":-1.2}
+{"t":"05:41:34","ctx":"indoors|health high|level 10-14","move":"Go into the shop (1 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"05:42:21","ctx":"indoors|health high|level 10-14","move":"Walk up to Finn Blackward (foreman of Hawkwake Mine, 4 m) and press E to talk.","by":"Calm","reward":0.1}
+{"t":"05:42:21","ctx":"indoors|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"05:42:47","ctx":"indoors|health high|level 10-14","move":"Close the window (Esc).","by":"Calm","reward":0}
+{"t":"05:42:51","ctx":"indoors|health high|level 10-14","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"05:42:52","ctx":"in Inside the shop|health high|level 10-14","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"05:42:54","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Walk up to Finn Blackward (foreman of Hawkwake Mine, 3 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"05:42:58","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Attack the Dog (6 m north-east); it hasn\u0027t done anything to you.","by":"Risky","reward":-0.06}
+{"t":"05:44:23","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Walk up to Finn Blackward (foreman of Hawkwake Mine, 5 m) and press E to talk.","by":"Risky","reward":-0.4}
+{"t":"05:44:25","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: Who are you?","by":"Risky","reward":0}
+{"t":"05:44:53","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: I\u0027ve things to sell.","by":"Risky","reward":0}
+{"t":"05:45:31","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: Sell every trophy and all the pelts, hides, ore, logs, fish and bits (keep herbs, potions, food and gear)","by":"Risky","reward":0.01}
+{"t":"05:46:02","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Close the window (Esc).","by":"Risky","reward":0}
+{"t":"05:46:18","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 189 m south).","by":"Risky","reward":0}
+{"t":"05:46:25","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Go into the mine (12 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"05:46:27","ctx":"indoors|health high|level 10-14","move":"Go into the mine (1 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"05:46:29","ctx":"indoors|health high|level 10-14","move":"Attack the a Velvet Knife (14 m south): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"05:47:01","ctx":"indoors|health high|level 10-14|fighting","move":"Attack the a Velvet Knife (9 m south): close in and keep hitting.","by":"Risky","reward":-0.4}
+{"t":"05:47:05","ctx":"indoors|health high|level 10-14","move":"Walk to the door (2 m) and press E to step outside.","by":"Risky","reward":0}
+{"t":"05:47:08","ctx":"in Inside the mine|health high|level 10-14","move":"Walk to the door (1 m) and press E to step outside.","by":"Risky","reward":0}
+{"t":"05:47:09","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Go into the mine (1 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"05:47:51","ctx":"indoors|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 196 m south).","by":"Risky","reward":0}
+{"t":"05:48:31","ctx":"indoors|health high|level 10-14","move":"Walk to the door (23 m) and press E to step outside.","by":"Risky","reward":0}
+{"t":"05:49:09","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Walk up to Tove Quickward (miner, 5 m) and press E to talk.","by":"Risky","reward":0}
+{"t":"05:49:10","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: Who are you?","by":"Risky","reward":0}
+{"t":"05:49:10","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: What do you care about?","by":"Risky","reward":0}
+{"t":"05:49:11","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Risky","reward":0.04}
+{"t":"05:50:31","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Walk up to Roderic Silverhand (assayer, 9 m) and press E to talk.","by":"Risky","reward":0}
+{"t":"05:51:19","ctx":"in Hawkwake Mine|health high|level 10-14","move":"Go into the shop (8 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"05:51:20","ctx":"indoors|health high|level 10-14","move":"Walk to the door (1 m) and press E to step outside.","by":"Risky","reward":0}
+{"t":"05:51:55","ctx":"in Inside the shop|health high|level 10-14","move":"Walk to the door (1 m) and press E to step outside.","by":"Risky","reward":0}
+{"t":"05:52:18","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14|fighting","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.2 km east).","by":"Risky","reward":0}
+{"t":"05:52:56","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Go into the shop (20 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"05:53:18","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Attack the Ruun the Collector (5 m south-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"05:53:18","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Walk up to Roderic Silverhand (assayer, 36 m) and press E to talk.","by":"Risky","reward":0}
+{"t":"05:55:38","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.2 km east).","by":"Risky","reward":0}
+{"t":"05:57:57","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.2 km west).","by":"Calm","reward":0}
+{"t":"05:57:58","ctx":"in The Northwood|health high|level 10-14","move":"Click: Fight.","by":"Calm","reward":0}
+{"t":"05:58:27","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Turlin (deviant, stray, level 1) (6 m west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"06:01:18","ctx":"in The Northwood|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.1 km west).","by":"Calm","reward":0}
+{"t":"06:04:08","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Press R: limit break.","by":"Combat","reward":0.74}
+{"t":"06:04:23","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Deathcrest Ape (14 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"06:04:29","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Press R: limit break.","by":"Combat","reward":0}
+{"t":"06:04:37","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Skarraul the Mountain (deviant, stray, level 1) (6 m south-west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"06:04:42","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Press R: limit break.","by":"Combat","reward":0}
+{"t":"06:04:49","ctx":"in The Northwood|health mid|level 10-14|fighting","move":"Attack the Skarraul the Mountain (deviant, stray, level 1) (7 m north-west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"06:04:55","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Press R: limit break.","by":"Combat","reward":0}
+{"t":"06:04:58","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Skarraul the Mountain (deviant, stray, level 1) (10 m south-west): close in and keep hitting.","by":"Combat","reward":1.1}
+{"t":"06:05:02","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Deathcrest Ape (17 m north-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"06:05:14","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Deathcrest Ape (14 m west): close in and keep hitting.","by":"Combat","reward":0.37}
+{"t":"06:07:24","ctx":"in The Northwood|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (1.6 km west).","by":"Calm","reward":0}
+{"t":"06:07:32","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Ulka of the Deep Docks (13 m north-east): close in and keep hitting.","by":"Combat","reward":0.35}
+{"t":"06:10:43","ctx":"in The Northwood|health high|level 10-14","move":"Head for Hollowheart, marked on the map (578 m south).","by":"Calm","reward":0}
+{"t":"06:12:50","ctx":"in Hollowheart|health high|level 10-14","move":"Head for Hollowheart, marked on the map (56 m south).","by":"Calm","reward":0}
+{"t":"06:12:59","ctx":"in Hollowheart|health high|level 10-14","move":"Attack the Cat (18 m north-east); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.12}
+{"t":"06:13:15","ctx":"in Hollowheart|health high|level 10-14","move":"Walk up to Garrick Windmane (a youth of 41, 35 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"06:15:10","ctx":"in The Heartwood|health high|level 10-14","move":"Go into the living hollow (16 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:15:43","ctx":"in The Heartwood|health high|level 10-14","move":"Walk up to Ylva Kettlehollow (a youth of 15, 16 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"06:15:47","ctx":"in Hollowheart|health high|level 10-14","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"06:15:48","ctx":"in Hollowheart|health high|level 10-14","move":"Walk up to Yrsa Stormbeard (a youth of 65, 8 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"06:19:27","ctx":"in Hollowheart|health high|level 10-14","move":"Go to the Greyhollow quarry to mine ore (738 m south; you heard of it from a message on screen).","by":"Calm","reward":0}
+{"t":"16:33:50","ctx":"in Tristinwold|health high|level 10-14","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.1 km east).","by":"Calm","reward":0}
+{"t":"16:34:22","ctx":"in Tristinwold|health high|level 10-14","move":"Attack the Giant Rat (14 m south-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:34:45","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.1 km east).","by":"Calm","reward":0}
+{"t":"16:35:29","ctx":"in The Drowned Chapel|health high|level 10-14","move":"Go into the house (21 m): walk to its door and press E.","by":"Calm","reward":0.05}
+{"t":"16:35:39","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Sprint away toward Tristinwold (152 m south).","by":"Combat","reward":0.05}
+{"t":"16:35:41","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Sprint away toward Tristinwold (141 m south).","by":"Risky","reward":0}
+{"t":"16:35:47","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Sprint away toward Tristinwold (132 m south).","by":"Combat","reward":0}
+{"t":"16:36:00","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Sprint away toward Tristinwold (107 m south).","by":"Risky","reward":0}
+{"t":"16:36:05","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.0 km east).","by":"Calm","reward":0}
+{"t":"16:36:25","ctx":"in The Harbor|health high|level 10-14|fighting","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.2 km north-west).","by":"Calm","reward":0}
+{"t":"16:36:34","ctx":"in The Archive Garden|health high|level 10-14","move":"Attack the Siltak\u0027s Minion (13 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:36:41","ctx":"in The Archive Garden|health high|level 10-14|fighting","move":"Sprint away toward Tristinwold (129 m south).","by":"Combat","reward":0}
+{"t":"16:36:47","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Sprint away toward Tristinwold (107 m south-west).","by":"Combat","reward":0}
+{"t":"16:36:55","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Sprint away toward Tristinwold (102 m south-west).","by":"Combat","reward":-9.9}
+{"t":"16:37:35","ctx":"in Tristinwold|health high|level 10-14","move":"Walk up to Hob Stormbarrow (a youth of 10, 21 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"16:38:27","ctx":"in Tristinwold|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.2 km north-west).","by":"Calm","reward":0}
+{"t":"16:38:54","ctx":"in The Exchange|health high|level 10-14","move":"Walk up to Alva Snowwood (a youth of 13, 40 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"16:40:27","ctx":"in The Exchange|health high|level 10-14","move":"Walk up to Hob Stormbarrow (a youth of 10, 21 m) and ask them to become your apprentice.","by":"Calm","reward":0.05}
+{"t":"16:41:25","ctx":"in The Exchange|health high|level 10-14","move":"Go into the house (13 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"16:42:47","ctx":"indoors|health high|level 10-14","move":"Walk up to Aldric Shieldcloak (a youth of 14, 38 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"16:43:27","ctx":"indoors|health high|level 10-14","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"16:44:04","ctx":"in The Exchange|health high|level 10-14","move":"Attack the Cat (22 m north-west); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"16:44:38","ctx":"in The Exchange|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.1 km north-west).","by":"Calm","reward":0}
+{"t":"16:45:53","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Go into the house (15 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"16:45:57","ctx":"in Tristinwold|health high|level 10-14","move":"Go into the house (15 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"16:46:32","ctx":"in Tristinwold|health high|level 10-14","move":"Go into the smithy (19 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"16:47:18","ctx":"indoors|health high|level 10-14","move":"Go into the smithy (1 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"16:47:51","ctx":"indoors|health high|level 10-14","move":"Walk to the door (8 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"16:48:35","ctx":"in The Iron Circle\u0027s yard|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.0 km north-west).","by":"Calm","reward":0}
+{"t":"16:50:04","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Go into the smithy (15 m): walk to its door and press E.","by":"Calm","reward":0.05}
+{"t":"16:51:13","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.0 km north-west).","by":"Calm","reward":0}
+{"t":"16:51:25","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Goblin Tinker (19 m north-east): close in and keep hitting.","by":"Combat","reward":0.31}
+{"t":"16:51:27","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Goblin Tinker (2 m north): close in and keep hitting.","by":"Combat","reward":0.33}
+{"t":"16:51:27","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Goblin Tinker (2 m north-east): close in and keep hitting.","by":"Combat","reward":0.32}
+{"t":"16:51:32","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Snikos the Mountain (deviant, stray, level 2) (2 m north-east): close in and keep hitting.","by":"Combat","reward":0.95}
+{"t":"16:52:04","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Forge Golem (17 m north): close in and keep hitting.","by":"Combat","reward":-0.4}
+{"t":"16:52:09","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"16:52:14","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (3 m north-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:52:19","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"16:52:24","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (3 m north-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:52:28","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"16:52:37","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (3 m north-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:52:42","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"16:52:46","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (3 m north-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:52:50","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"16:52:55","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (3 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:52:59","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"16:53:04","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"16:53:09","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Forge Golem (3 m east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:53:14","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"16:53:22","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Forge Golem (3 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:53:26","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"16:53:31","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (4 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:53:35","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"16:53:39","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (3 m north-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:53:44","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"16:53:48","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (3 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:53:53","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"16:53:58","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (3 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:54:02","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"16:54:07","ctx":"in The Tristinwold countryside|health mid|level 10-14|fighting","move":"Attack the Forge Golem (3 m north-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"16:54:11","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Sprint away toward Druitt (383 m west).","by":"Combat","reward":0}
+{"t":"16:54:15","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Risky","reward":0}
+{"t":"16:54:20","ctx":"in The Tristinwold countryside|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Risky","reward":0}
+{"t":"16:54:26","ctx":"in The autumn woods near Druitt|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Risky","reward":0}
+{"t":"16:55:48","ctx":"in The autumn woods near Druitt|health mid|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (1.4 km north-west).","by":"Calm","reward":0}
+{"t":"16:58:16","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Quest \u0022Clear out Bitterwell Fort\u0022 (Return to Sigrid Wolffield at Galeholt): walk up to Sigrid Wolffield (beggar, 119 m) ","by":"Calm","reward":0}
+{"t":"16:59:56","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Walk up to Sigrid Wolffield (beggar, 34 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:00:46","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Walk up to Sigrid Wolffield (beggar, 34 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:00:48","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Walk up to Sigrid Wolffield (beggar, 34 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:01:36","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Walk up to Sigrid Wolffield (beggar, 34 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:02:28","ctx":"in The snowfields near Galeholt|health high|level 10-14","move":"Walk up to Hilde Ironshield (pilgrim, 12 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:04:12","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (4.0 km east).","by":"Calm","reward":0}
+{"t":"17:05:12","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Walk up to Freydis Crowheart (pilgrim, 49 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:05:13","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"17:05:39","ctx":"in The pinewoods near Galeholt|health high|level 10-14|fighting","move":"Attack the Turlin (deviant, stray, level 1) [your note: get out as soon as the fight turns against you until level 18] (","by":"Combat","reward":0}
+{"t":"17:06:43","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (357 m south).","by":"Calm","reward":-3}
+{"t":"17:08:20","ctx":"in Tristinwold|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.2 km north-west).","by":"Calm","reward":0}
+{"t":"17:09:35","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Attack the Wolf (12 m west): close in and keep hitting.","by":"Combat","reward":0.1}
+{"t":"17:09:38","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Wolf (10 m west): close in and keep hitting.","by":"Combat","reward":0.1}
+{"t":"17:11:21","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (1.5 km north-west).","by":"Calm","reward":0}
+{"t":"17:13:26","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (3.5 km east).","by":"Calm","reward":0}
+{"t":"17:13:35","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Attack the Kipine (11 m north-east): close in and keep hitting.","by":"Combat","reward":0.67}
+{"t":"17:14:37","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (442 m north-west).","by":"Calm","reward":0}
+{"t":"17:16:09","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (3.8 km east).","by":"Calm","reward":0}
+{"t":"17:16:56","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Walk up to Sigrid Wolffield (beggar, 40 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:18:24","ctx":"in The pinewoods near Galeholt|health high|level 10-14","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (3.6 km east).","by":"Calm","reward":0}
+{"t":"17:25:49","ctx":"in The Northwood|health high|level 10-14","move":"Head for Coppergate Refuge, marked on the map (608 m north-east).","by":"Calm","reward":0}
+{"t":"17:25:56","ctx":"in Coppergate Refuge|health high|level 10-14","move":"Walk up to Ingolf Crowshield (a youth of 13, 12 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"17:25:57","ctx":"in Coppergate Refuge|health high|level 10-14","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"17:26:44","ctx":"in Coppergate Refuge|health high|level 10-14","move":"Head for Cinderhelm, marked on the map (356 m north).","by":"Calm","reward":0}
+{"t":"17:28:21","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.2 km south-east).","by":"Calm","reward":0}
+{"t":"17:29:29","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Walk up to Aldric Shieldbrook (merchant, 40 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:29:37","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14","move":"Sprint away toward Cinderhelm (243 m north-west).","by":"Combat","reward":0}
+{"t":"17:29:47","ctx":"in The pinewoods near Cinderhelm|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Risky","reward":0}
+{"t":"17:31:26","ctx":"in The pinewoods near Cinderhelm|health high|level 10-14|fighting","move":"Head for Cinderhelm, marked on the map (129 m north-west).","by":"Calm","reward":0}
+{"t":"17:31:37","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Brynja Redshield (a youth of 16, 33 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"17:31:39","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"17:31:52","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Greta Greyhand (a youth of 38, 43 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"17:31:53","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"17:32:07","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Morten Redfield (a youth of 12, 47 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"17:32:08","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"17:32:10","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Liv Silversong (town guard of Cinderhelm, 7 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:32:10","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"17:32:11","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.06}
+{"t":"17:32:14","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Maren Fairbeard (scribe, 13 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:32:15","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"17:32:15","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.02}
+{"t":"17:33:09","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Ilith (Ashborn labourer, 26 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:33:09","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"17:33:10","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"17:33:14","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Yngve Wolfsworn (shopkeeper of Cinderhelm, 12 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:33:14","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: I\u0027ve things to sell.","by":"Calm","reward":0}
+{"t":"17:33:15","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Sell every trophy and all the pelts, hides, ore, logs, fish and bits (keep herbs, potions, food and gear)","by":"Calm","reward":1.02}
+{"t":"17:33:15","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: That\u0027s all.","by":"Calm","reward":0}
+{"t":"17:33:16","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.11}
+{"t":"17:33:24","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Kari Darkhollow (clerk to the council of Cinderhelm, 24 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:33:25","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"17:33:25","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"17:33:25","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"17:33:26","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.02}
+{"t":"17:33:33","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Aldric Shieldbrook (merchant, 23 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:33:33","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"17:33:33","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"17:33:34","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"17:33:34","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.24}
+{"t":"17:33:41","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Kesten Coldheart (dockhand, 27 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:33:42","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"17:33:42","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.04}
+{"t":"17:33:46","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Davor Ravencloak (smith of Cinderhelm, 12 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:33:46","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"17:33:46","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"17:33:47","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"17:33:47","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: What does Cinderhelm trade in?","by":"Calm","reward":0}
+{"t":"17:33:48","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.1}
+{"t":"17:33:56","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Garrick Frostwater (beggar, 29 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:33:56","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.05}
+{"t":"17:34:03","ctx":"in Cinderhelm|health high|level 10-14","move":"Walk up to Kelda Coldfield (merchant, 22 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"17:34:03","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"17:34:04","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"17:34:04","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"17:34:05","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: I\u0027ll do it.","by":"Calm","reward":0}
+{"t":"17:34:05","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: About the job...","by":"Calm","reward":0}
+{"t":"17:34:06","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: What does Cinderhelm trade in?","by":"Calm","reward":0}
+{"t":"17:34:06","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"17:34:07","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: Any outlaws I should know about?","by":"Calm","reward":0}
+{"t":"17:34:07","ctx":"in Cinderhelm|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.13}
+{"t":"17:36:49","ctx":"in Cinderhelm|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.7 km south).","by":"Calm","reward":0}
+{"t":"17:39:39","ctx":"in The Northwood|health high|level 10-14","move":"Sprint away toward Coppergate Refuge (265 m north).","by":"Risky","reward":0}
+{"t":"17:39:54","ctx":"in Coppergate Refuge|health high|level 10-14","move":"Walk up to Tor Blackbrand (a youth of 12, 10 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"17:39:54","ctx":"in Coppergate Refuge|health high|level 10-14","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"17:42:16","ctx":"in Coppergate Refuge|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.4 km south).","by":"Calm","reward":0}
+{"t":"17:42:20","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Korrun Barkbreaker (18 m north); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"17:43:58","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Korrun Barkbreaker (2 m north-west): close in and keep hitting.","by":"Combat","reward":20.06}
+{"t":"17:43:59","ctx":"in The Northwood|health high|level 10-14","move":"Press I and wear the Korrun\u0027s Heartwood Maul.","by":"Calm","reward":0}
+{"t":"17:44:00","ctx":"in The Northwood|health high|level 10-14","move":"Press K and spend a skill point on Shield Wall (rank 2 to 3): Raise the shield: Protect and Shell for a while.","by":"Calm","reward":0}
+{"t":"17:46:29","ctx":"in The Northwood|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.1 km south).","by":"Calm","reward":-2}
+{"t":"17:46:46","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Wild Boar (13 m south): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"17:46:47","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Wild Boar (15 m south-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"17:46:53","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Wild Boar (13 m south-west): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"17:46:57","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Wild Boar (12 m south-west): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"17:47:32","ctx":"in The Northwood|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 765 m south).","by":"Calm","reward":0}
+{"t":"17:47:35","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Wild Boar (13 m south): close in and keep hitting.","by":"Combat","reward":0.42}
+{"t":"17:47:37","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Wild Boar (15 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"17:47:42","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Wild Boar (13 m south): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"17:49:29","ctx":"in The Northwood|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 675 m south).","by":"Calm","reward":0}
+{"t":"17:50:45","ctx":"in The Northwood|health high|level 10-14","move":"Wander west (about 200 m).","by":"Calm","reward":0.05}
+{"t":"17:51:25","ctx":"in The Northwood|health high|level 10-14","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"17:51:46","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Bandit (13 m north-west): close in and keep hitting.","by":"Combat","reward":0.34}
+{"t":"17:51:50","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Bandit (14 m north-west): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"17:52:01","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Wolf (40 m north): close in and keep hitting.","by":"Risky","reward":0.24}
+{"t":"17:52:02","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Wolf (1 m north-east): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"17:52:05","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Wolf (1 m north): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"17:52:09","ctx":"in The Northwood|health high|level 10-14","move":"Wander west (about 200 m).","by":"Risky","reward":0}
+{"t":"17:52:12","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Bandit (14 m south): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"17:52:31","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"17:52:33","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Wolf (13 m west): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"17:52:35","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Wolf (17 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"17:52:39","ctx":"in The Northwood|health high|level 10-14","move":"Attack the Wolf (13 m west): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"17:52:40","ctx":"in The Northwood|health high|level 10-14|fighting","move":"Attack the Wolf (8 m west): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"17:53:30","ctx":"in The Northwood|health high|level 10-14","move":"Wander west (about 200 m).","by":"Risky","reward":0}
+{"t":"17:53:38","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Goblin Tinker (20 m south-west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"17:53:40","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Goblin Tinker (2 m south): close in and keep hitting.","by":"Combat","reward":0.33}
+{"t":"17:53:42","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Goblin Tinker (2 m south-west): close in and keep hitting.","by":"Combat","reward":0.66}
+{"t":"17:53:45","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Goblin Tinker (3 m south-west): close in and keep hitting.","by":"Combat","reward":0.36}
+{"t":"17:53:47","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Wander west (about 200 m).","by":"Risky","reward":0}
+{"t":"17:53:55","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Sprint away toward Druitt (390 m west).","by":"Combat","reward":0}
+{"t":"17:54:34","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Sprint away toward Druitt (349 m west).","by":"Risky","reward":0}
+{"t":"17:54:43","ctx":"in The autumn woods near Druitt|health high|level 10-14","move":"Sprint away toward Druitt (93 m west).","by":"Combat","reward":0}
+{"t":"17:54:48","ctx":"in The autumn woods near Druitt|health mid|level 10-14|fighting","move":"Sprint away toward Druitt (70 m south-west).","by":"Combat","reward":0}
+{"t":"17:54:54","ctx":"in The autumn woods near Druitt|health mid|level 10-14|fighting","move":"Attack the Vaelul\u0027s Minion (33 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"17:54:57","ctx":"in The autumn woods near Druitt|health mid|level 10-14|fighting","move":"Attack the Vaelul\u0027s Minion (13 m south-east): close in and keep hitting.","by":"Combat","reward":1.12}
+{"t":"17:55:03","ctx":"in The autumn woods near Druitt|health high|level 10-14|fighting","move":"Sprint away toward Druitt (70 m south-west).","by":"Combat","reward":0}
+{"t":"17:55:25","ctx":"in The autumn woods near Druitt|health mid|level 10-14|fighting","move":"Sprint away toward Druitt (70 m south-west).","by":"Combat","reward":0}
+{"t":"17:55:31","ctx":"in The autumn woods near Druitt|health mid|level 10-14","move":"Sprint away toward Druitt (70 m south-west).","by":"Combat","reward":0}
+{"t":"17:55:33","ctx":"in The autumn woods near Druitt|health mid|level 10-14|fighting","move":"Sprint away toward Druitt (70 m south-west).","by":"Combat","reward":0}
+{"t":"17:55:43","ctx":"in The autumn woods near Druitt|health mid|level 10-14|fighting","move":"Sprint away toward Druitt (70 m south-west).","by":"Combat","reward":0}
+{"t":"17:55:48","ctx":"in The autumn woods near Druitt|health mid|level 10-14","move":"Sprint away toward Druitt (70 m south-west).","by":"Combat","reward":0}
+{"t":"17:55:52","ctx":"in The autumn woods near Druitt|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"17:57:24","ctx":"in The autumn woods near Druitt|health high|level 10-14|fighting","move":"Sprint away toward Druitt (70 m south-west).","by":"Combat","reward":0}
+{"t":"17:58:56","ctx":"in The autumn woods near Druitt|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (1.2 km north-west).","by":"Calm","reward":0}
+{"t":"17:59:31","ctx":"in The pinewoods near Druitt|health high|level 10-14","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"17:59:48","ctx":"in The pinewoods near Druitt|health high|level 10-14|fighting","move":"Attack the Turlin (deviant, stray, level 1) [your note: get out as soon as the fight turns against you until level 18] (","by":"Combat","reward":0}
+{"t":"18:00:16","ctx":"in The pinewoods near Druitt|health high|level 10-14","move":"Attack the Deer (20 m south-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"18:00:18","ctx":"in The pinewoods near Druitt|health high|level 10-14","move":"Attack the Ronacse (9 m north-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"18:00:27","ctx":"in The pinewoods near Druitt|health high|level 10-14","move":"Sprint away toward Druitt (511 m south-east).","by":"Combat","reward":0}
+{"t":"18:00:39","ctx":"in The pinewoods near Druitt|health low|level 10-14|fighting","move":"Sprint away toward Druitt (480 m south-east).","by":"Combat","reward":-14.21}
+{"t":"18:00:40","ctx":"in Tristinwold|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.2 km north-west).","by":"Calm","reward":0}
+{"t":"18:00:47","ctx":"in Tristinwold|health high|level 10-14","move":"Attack the a Velvet Knife (14 m north-west): close in and keep hitting.","by":"Combat","reward":0.95}
+{"t":"18:02:05","ctx":"in Tristinwold|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.2 km north-west).","by":"Calm","reward":0}
+{"t":"18:02:19","ctx":"in Tristinwold|health high|level 10-14","move":"Walk up to Alva Snowwood (a youth of 13, 33 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"18:02:20","ctx":"in Tristinwold|health high|level 10-14","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"23:45:10","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Rally to Vann (1.9 km north-west).","by":"Calm","reward":0}
+{"t":"23:45:13","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Attack the Wolf (12 m west): close in and keep hitting.","by":"Combat","reward":0.1}
+{"t":"23:45:15","ctx":"in The Tristinwold countryside|health high|level 10-14|fighting","move":"Attack the Wolf (8 m north): close in and keep hitting.","by":"Combat","reward":0.1}
+{"t":"23:46:22","ctx":"in The Tristinwold countryside|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.6 km north-west).","by":"Calm","reward":0}
+{"t":"23:46:30","ctx":"in The autumn woods near Druitt|health high|level 10-14","move":"Sprint away toward Druitt (230 m south).","by":"Combat","reward":0}
+{"t":"23:46:42","ctx":"in The autumn woods near Druitt|health high|level 10-14|fighting","move":"Sprint away toward Druitt (201 m south).","by":"Combat","reward":0}
+{"t":"23:46:43","ctx":"in The Strand|health high|level 10-14|fighting","move":"Sprint away toward Druitt (92 m south).","by":"Combat","reward":0}
+{"t":"23:46:49","ctx":"in The Strand|health high|level 10-14|fighting","move":"Sprint away toward Druitt (82 m south).","by":"Combat","reward":0}
+{"t":"23:46:55","ctx":"in The Strand|health low|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"23:47:10","ctx":"in The Strand|health high|level 10-14|fighting","move":"Sprint away toward Druitt (70 m south-east).","by":"Risky","reward":-0.4}
+{"t":"23:47:12","ctx":"in The Strand|health high|level 10-14|fighting","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"23:47:18","ctx":"in The Strand|health high|level 10-14","move":"Sprint away toward Druitt (72 m south-east).","by":"Calm","reward":0}
+{"t":"23:47:31","ctx":"in The Strand|health high|level 10-14","move":"Sprint away toward Druitt (70 m south-east).","by":"Combat","reward":0}
+{"t":"23:47:39","ctx":"in The Strand|health mid|level 10-14|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"23:47:54","ctx":"in The Strand|health low|level 10-14|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":-8.76}
+{"t":"23:49:32","ctx":"in Tristinwold|health high|level 10-14","move":"Wander west (about 200 m).","by":"Calm","reward":0.05}
+{"t":"23:49:53","ctx":"in The Crown|health high|level 10-14","move":"Walk up to Alva Snowwood (a youth of 13, 54 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"23:51:17","ctx":"in The Crown|health high|level 10-14","move":"Wander west (about 200 m).","by":"Calm","reward":0}
+{"t":"23:52:41","ctx":"in The Crown|health high|level 10-14","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 2.1 km north-west).","by":"Calm","reward":0.05}
+{"t":"23:54:13","ctx":"in The Crown|health high|level 10-14","move":"Follow the quest tracker: Clear out Bitterwell Fort (2.1 km north-west).","by":"Calm","reward":0.05}
+{"t":"23:55:01","ctx":"in The Crown|health high|level 10-14","move":"Walk up to Jorunn Longhammer (clerk to the council of Tristinwold, 8 m) and press E to talk.","by":"Calm","reward":0.05}
+{"t":"23:55:07","ctx":"in The Crown|health high|level 10-14","move":"Go into the council chamber (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:55:29","ctx":"in The Crown|health high|level 10-14","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.1 km east).","by":"Calm","reward":0}
+{"t":"23:55:36","ctx":"in The Exchange|health high|level 10-14","move":"Attack the Cat (18 m east); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.12}
+{"t":"23:55:38","ctx":"in Tristinwold|health high|level 10-14","move":"Walk up to Vigdis Longwright (fishwife, 5 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:55:38","ctx":"in Tristinwold|health high|level 10-14","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:55:39","ctx":"in Tristinwold|health high|level 10-14","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"23:55:39","ctx":"in Tristinwold|health high|level 10-14","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"23:55:40","ctx":"in Tristinwold|health high|level 10-14","move":"Click: I\u0027ll do it.","by":"Calm","reward":0}
+{"t":"23:55:40","ctx":"in Tristinwold|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.01}
+{"t":"23:55:46","ctx":"in Tristinwold|health high|level 10-14","move":"Walk up to Hob Stormbarrow (a youth of 10, 10 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"23:55:47","ctx":"in Tristinwold|health high|level 10-14","move":"Attack the Dog (5 m west); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.18}
+{"t":"23:55:48","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Walk up to Orm Whitehand (courier, 4 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:55:49","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:55:49","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"23:55:49","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"23:55:50","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"23:55:50","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Click: Any outlaws I should know about?","by":"Calm","reward":0}
+{"t":"23:55:51","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"23:56:31","ctx":"in Tristinwold|health high|level 10-14|fighting","move":"Walk up to Hob Stormbarrow (errand runner, 6 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:57:50","ctx":"in Tristinwold|health high|level 10-14","move":"Go into the council chamber (7 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:58:27","ctx":"in The Crown|health high|level 10-14","move":"Go into the council chamber (6 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:58:57","ctx":"in The Crown|health high|level 10-14","move":"Go into the smithy (4 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:59:11","ctx":"in Tristinwold|health high|level 10-14","move":"Walk up to Lorne Kettlemane (courier, 13 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:59:17","ctx":"in Tristinwold|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.02}
+{"t":"23:59:18","ctx":"in The Harbor|health high|level 10-14","move":"Click: (Pick their pocket)","by":"Calm","reward":0.04}
+{"t":"23:59:25","ctx":"in The Harbor|health high|level 10-14","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.0 km east).","by":"Calm","reward":0}
+{"t":"23:59:28","ctx":"in The Docks|health high|level 10-14","move":"Attack the Dock Thug (24 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"23:59:32","ctx":"in The Docks|health high|level 10-14","move":"Attack the Dock Thug (14 m north-east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"23:59:58","ctx":"in The Docks|health high|level 10-14","move":"Attack the Dock Thug (20 m north): close in and keep hitting.","by":"Risky","reward":0}

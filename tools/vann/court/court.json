@@ -1,0 +1,44 @@
+{
+  "Decree": "Gather crowns and apprentices; rally lieutenants at the western edge when the first stones are laid for our colony.",
+  "Frontier": "west",
+  "Seat": "",
+  "SeatX": 0,
+  "SeatZ": 0,
+  "Members": [
+    {
+      "Name": "Vann-Magus",
+      "Class": "Sorcerer",
+      "Role": "lord",
+      "Purpose": "Vann himself",
+      "Raised": "2026-11-09"
+    },
+    {
+      "Name": "Vann-Uno",
+      "Class": "Paladin",
+      "Role": "lieutenant",
+      "Purpose": "a lieutenant: builds the apprentice army, founds a hall by the seat, and runs the colony and the taken towns with Vann",
+      "Raised": "2026-11-09"
+    },
+    {
+      "Name": "Vann-Dos",
+      "Class": "MartialArtist",
+      "Role": "lieutenant",
+      "Purpose": "a lieutenant: builds the apprentice army, founds a hall by the seat, and runs the colony and the taken towns with Vann",
+      "Raised": "2026-11-09"
+    },
+    {
+      "Name": "Vann-Tres",
+      "Class": "Wizard",
+      "Role": "lieutenant",
+      "Purpose": "a lieutenant: builds the apprentice army, founds a hall by the seat, and runs the colony and the taken towns with Vann",
+      "Raised": "2026-11-09"
+    }
+  ],
+  "Time": {
+    "Vann-Magus": 10,
+    "Vann-Uno": 10,
+    "Vann-Dos": 10,
+    "Vann-Tres": 10
+  },
+  "Updated": "2026-11-14 14:33:22"
+}

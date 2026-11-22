@@ -1,0 +1,17 @@
+2026-11-10 12:15:51  Fetching qwen2.5:1.5b (about 2 GB, the first time only)...
+2026-11-10 12:17:01    ollama: pulling 183715c43589:   0% Gûò                  GûÅ 983 KB/986 MB                  [K[?25h[?2026l[?2026h[?25l[A[1Gpulling manifest [K
+2026-11-10 12:17:01    ollama: pulling 183715c43589:   0% Gûò                  GûÅ 983 KB/986 MB                  [K[?25h[?2026l
+2026-11-10 12:17:01    ollama: Error: max retries exceeded: write C:\Users\Admin\.ollama\models\blobs\sha256-183715c435899236895da3869489cc30ac241476b4971a20285b1a462818a5b4-partial: There is not enough space on the disk.
+2026-11-10 12:17:02  Couldn't get qwen2.5:1.5b into Ollama: playing without the local brain this login.
+2026-11-10 12:26:45  Fetching qwen2.5:1.5b (about 2 GB, the first time only)...
+2026-11-10 12:27:32    ollama: verifying sha256 digest [K
+2026-11-10 12:27:32    ollama: writing manifest [K
+2026-11-10 12:27:32    ollama: success [K[?25h[?2026l
+2026-11-10 16:46:00  Ollama is running but not answering: restarting it.
+2026-11-10 16:49:26  Ollama is running but not answering: restarting it.
+2026-11-10 19:06:32  Ollama is running but not answering: restarting it.
+2026-11-10 19:31:37  Ollama is running but not answering: restarting it.
+2026-11-10 20:12:43  Ollama is running but not answering: restarting it.
+2026-11-10 20:26:41  Ollama is running but not answering: restarting it.
+2026-11-11 11:26:21  Ollama is running but not answering: restarting it.
+2026-11-11 19:26:50  Starting Ollama.

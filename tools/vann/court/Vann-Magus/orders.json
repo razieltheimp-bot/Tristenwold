@@ -1,0 +1,88 @@
+{
+  "Aim": "Establish a western colony and recruit apprentices to expand our empire",
+  "Temper": "villain",
+  "FightAbove": 0.85,
+  "FleeBelow": 0.25,
+  "Focus": [
+    "people",
+    "quests",
+    "places",
+    "gathering",
+    "fights"
+  ],
+  "HeadFor": [
+    "Greyhollow quarry",
+    "Hollowheart",
+    "Coppergate Refuge",
+    "Greywater",
+    "Tristinwold",
+    "Barrowhollow Camp"
+  ],
+  "Avoid": [
+    "Vornos the Stitched",
+    "Siltak Fire-Eater",
+    "Dorva Stormborn",
+    "Turlin",
+    "Druitt",
+    "Greywater"
+  ],
+  "Keen": [
+    "crowns",
+    "apprentice",
+    "colony",
+    "raid",
+    "council",
+    "gather"
+  ],
+  "Todo": [
+    {
+      "Step": "Talk",
+      "Name": "Teodor Emberwright",
+      "Done": true
+    },
+    {
+      "Step": "Recruit",
+      "Name": "Juna Quickmane",
+      "Done": false
+    },
+    {
+      "Step": "Follow",
+      "Name": "An heirloom sword from Bitterwell Fort",
+      "Done": false
+    },
+    {
+      "Step": "Head",
+      "Name": "Greyhollow quarry",
+      "Done": false
+    },
+    {
+      "Step": "Gather",
+      "Name": "crowns",
+      "Done": false
+    },
+    {
+      "Step": "Raid",
+      "Name": "Sunken Forge",
+      "Done": false
+    },
+    {
+      "Step": "Talk",
+      "Name": "Lorne Kettlemane",
+      "Done": false
+    },
+    {
+      "Step": "Recruit",
+      "Name": "apprentices",
+      "Done": false
+    }
+  ],
+  "Train": [
+    "Dragonfire",
+    "Chain Lightning",
+    "Arcane Missiles",
+    "Wild Surge",
+    "Blink",
+    "Arc Lash"
+  ],
+  "Written": "2026-11-14 14:33"
+}

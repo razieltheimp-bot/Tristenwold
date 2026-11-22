@@ -1,0 +1,9 @@
+city:tristinwold
+city:greywater
+city:galeholt
+s:0:-5
+city:hollowheart
+city:druitt
+s:-7:-5
+s:-6:-6
+s:-1:-5

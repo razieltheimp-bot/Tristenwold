@@ -1,0 +1,36 @@
+{"t":"06:49:06","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 192 m south).","by":"Calm","reward":0}
+{"t":"06:49:07","ctx":"in The pinewoods near Cinderhelm|health high|level 5-9","move":"Click: Fight.","by":"Calm","reward":0}
+{"t":"06:49:26","ctx":"in The pinewoods near Cinderhelm|health high|level 5-9|fighting","move":"Sprint away toward Hawkwake Mine (57 m north).","by":"Combat","reward":0}
+{"t":"06:51:11","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Follow the quest tracker: A sealed parcel for Wrenstead Mine (703 m north).","by":"Calm","reward":0}
+{"t":"06:52:13","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Follow the quest tracker: A jar of honey for Wrenstead Mine (703 m north).","by":"Calm","reward":0}
+{"t":"06:52:19","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Go into the mine (6 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:52:34","ctx":"indoors|health high|level 5-9","move":"Go into the mine (1 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:52:35","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (14 m north-east): close in and keep hitting.","by":"Combat","reward":0.39}
+{"t":"06:52:36","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (14 m north): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"06:52:41","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (14 m north): close in and keep hitting.","by":"Combat","reward":0.82}
+{"t":"06:52:41","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (14 m north): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"06:52:47","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the Draugr (14 m north): close in and keep hitting.","by":"Combat","reward":3.19}
+{"t":"06:53:40","ctx":"indoors|health high|level 5-9|fighting","move":"Walk to the door (17 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"06:53:41","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Press K and spend a skill point on Meteor (rank 1 to 2): A falling star on the foe you face and all around it.","by":"Calm","reward":0}
+{"t":"06:55:29","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Follow the quest tracker: A jar of honey for Wrenstead Mine (709 m north).","by":"Calm","reward":0}
+{"t":"06:56:43","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Head for Wrenstead Mine, marked on the map (699 m north).","by":"Calm","reward":0}
+{"t":"06:57:25","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Go into the mine (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:57:26","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"06:58:33","ctx":"in Inside the mine|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"06:58:48","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Go into the shop (8 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:59:00","ctx":"indoors|health high|level 5-9","move":"Attack the Dog (6 m north-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"06:59:37","ctx":"indoors|health high|level 5-9","move":"Walk up to Finn Blackward (foreman of Hawkwake Mine, 6 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:59:38","ctx":"indoors|health high|level 5-9","move":"Click: I\u0027ve things to sell.","by":"Calm","reward":0}
+{"t":"06:59:38","ctx":"indoors|health high|level 5-9","move":"Click: Sell every trophy and all the pelts, hides, ore, logs, fish and bits (keep herbs, potions, food and gear)","by":"Calm","reward":0.26}
+{"t":"06:59:39","ctx":"indoors|health high|level 5-9","move":"Click: That\u0027s all.","by":"Calm","reward":0}
+{"t":"06:59:39","ctx":"indoors|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:59:40","ctx":"indoors|health high|level 5-9","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:59:40","ctx":"indoors|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":0.05}
+{"t":"06:59:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"06:59:48","ctx":"in Inside the shop|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"07:00:31","ctx":"in Hawkwake Mine|health high|level 5-9","move":"Walk up and press E: pick the bilberries (37 m south).","by":"Calm","reward":0}
+{"t":"07:00:59","ctx":"in The pinewoods near Cinderhelm|health high|level 5-9|fighting","move":"Head for Wrenstead Mine, marked on the map (744 m north).","by":"Calm","reward":0}
+{"t":"07:01:42","ctx":"in The pinewoods near Cinderhelm|health high|level 5-9|fighting","move":"Sprint away toward Hawkwake Mine (24 m south-east).","by":"Combat","reward":0}
+{"t":"07:02:59","ctx":"in The pinewoods near Cinderhelm|health high|level 5-9","move":"Head for Wrenstead Mine, marked on the map (646 m north).","by":"Risky","reward":-0.05}
+{"t":"07:03:32","ctx":"in The pinewoods near Cinderhelm|health high|level 5-9|fighting","move":"Attack the Kipine (14 m north-east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"07:04:03","ctx":"in The pinewoods near Cinderhelm|health high|level 5-9","move":"Head for Wrenstead Mine, marked on the map (270 m north).","by":"Risky","reward":-3.86}

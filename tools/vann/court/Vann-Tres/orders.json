@@ -1,0 +1,69 @@
+{
+  "Aim": "Buy a pickaxe, deliver the sealed parcel to Wrenstead Mine, gather resources, and start building the western colony spire.",
+  "Temper": "villain",
+  "FightAbove": 0.6,
+  "FleeBelow": 0.35,
+  "Focus": [
+    "quests",
+    "people",
+    "places",
+    "gathering",
+    "fights"
+  ],
+  "HeadFor": [
+    "Greyhollow quarry",
+    "Wrenstead Mine",
+    "Coppergate Refuge",
+    "Hawkwake Mine",
+    "Druitt",
+    "Cinderhelm"
+  ],
+  "Avoid": [
+    "Quillul the Swift",
+    "Turlin",
+    "Oskarik Fire-Eater",
+    "Ulkaak the Brutal",
+    "Tuskos the Unbowed",
+    "Haskos Stormborn",
+    "Snika the Grinning",
+    "Zeth the Patient"
+  ],
+  "Keen": [
+    "pickaxe",
+    "apprentice",
+    "colony",
+    "spire",
+    "ship",
+    "council"
+  ],
+  "Todo": [
+    {
+      "Step": "Buy pickaxe",
+      "Name": "Greyhollow quarry",
+      "Done": false
+    },
+    {
+      "Step": "Deliver parcel",
+      "Name": "Wrenstead Mine",
+      "Done": false
+    },
+    {
+      "Step": "Gather resources",
+      "Name": "Greyhollow quarry",
+      "Done": false
+    },
+    {
+      "Step": "Start spire construction",
+      "Name": "Western colony site",
+      "Done": false
+    }
+  ],
+  "Train": [
+    "Meteor",
+    "Elemental Bolt",
+    "Elemental Blast",
+    "Arcane Mastery",
+    "Frost Lance"
+  ],
+  "Written": "2026-11-14 11:59"
+}

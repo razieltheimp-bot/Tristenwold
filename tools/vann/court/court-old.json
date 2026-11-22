@@ -1,0 +1,38 @@
+{
+  "Decree": "Gather at the frontier; prepare to carve out our domain far from the city walls.",
+  "Frontier": "northwest",
+  "Seat": "",
+  "SeatX": 0,
+  "SeatZ": 0,
+  "Members": [
+    {
+      "Name": "Vann",
+      "Class": "Sorcerer",
+      "Role": "lord",
+      "Purpose": "Vann himself",
+      "Raised": "2026-11-09"
+    },
+    {
+      "Name": "Vannuno",
+      "Class": "Paladin",
+      "Role": "lieutenant",
+      "Purpose": "a lieutenant: builds the apprentice army, founds a hall by the seat, and runs the colony and the taken towns with Vann",
+      "Raised": "2026-11-09"
+    },
+    {
+      "Name": "Vanndos",
+      "Class": "MartialArtist",
+      "Role": "lieutenant",
+      "Purpose": "a lieutenant: builds the apprentice army, founds a hall by the seat, and runs the colony and the taken towns with Vann",
+      "Raised": "2026-11-09"
+    },
+    {
+      "Name": "Vanntres",
+      "Class": "Wizard",
+      "Role": "lieutenant",
+      "Purpose": "a lieutenant: builds the apprentice army, founds a hall by the seat, and runs the colony and the taken towns with Vann",
+      "Raised": "2026-11-09"
+    }
+  ],
+  "Updated": "2026-11-09 19:20:55"
+}

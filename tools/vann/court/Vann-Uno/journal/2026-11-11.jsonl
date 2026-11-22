@@ -1,0 +1,1221 @@
+{"t":"06:33:53","ctx":"in The Harbor|health high|level 7","move":"Attack the Dock Thug (21 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"06:34:06","ctx":"in The Harbor|health high|level 7|fighting","move":"Attack the Dock Thug (14 m west): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"06:34:06","ctx":"in The Harbor|health high|level 7","move":"Attack the Dock Thug (3 m west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"06:34:08","ctx":"in The Harbor|health high|level 7","move":"Attack the Dock Thug (17 m south-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"06:34:25","ctx":"in The Harbor|health high|level 7","move":"Attack the Dock Thug (14 m south-west): close in and keep hitting.","by":"Combat","reward":0.32}
+{"t":"06:34:26","ctx":"in The Docks|health high|level 7","move":"Attack the Dock Thug (3 m south-west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"06:34:47","ctx":"in The Docks|health high|level 7","move":"Head for Greywater, marked on the map (773 m north-east).","by":"Risky","reward":0}
+{"t":"06:34:50","ctx":"in The Harbor|health high|level 7|fighting","move":"Sprint away toward Tristinwold (184 m west).","by":"Combat","reward":0}
+{"t":"06:34:56","ctx":"in The Harbor|health low|level 7|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":-3.7}
+{"t":"06:35:00","ctx":"in Tristinwold|health high|level 7","move":"Head for Greywater, marked on the map (818 m north-east).","by":"Calm","reward":0}
+{"t":"06:35:04","ctx":"in Tristinwold|health high|level 7","move":"Walk up to Orm Whitehand (courier, 14 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:35:04","ctx":"in Tristinwold|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:35:05","ctx":"in Tristinwold|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:35:05","ctx":"in Tristinwold|health high|level 7","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"06:35:05","ctx":"in Tristinwold|health high|level 7","move":"Click: I\u0027ll do it.","by":"Calm","reward":0}
+{"t":"06:35:31","ctx":"in Tristinwold|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":0.01}
+{"t":"06:36:47","ctx":"in Tristinwold|health high|level 7","move":"Rally to Vann (681 m north-west).","by":"Calm","reward":0.15}
+{"t":"06:37:04","ctx":"in The Exchange|health high|level 7","move":"Walk up to Alva Snowwood (a youth of 13, 30 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"06:37:09","ctx":"in The Exchange|health high|level 7","move":"Attack the Kari Greysworn, initiate of the Magi (8 m south); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"06:38:24","ctx":"in The Exchange|health high|level 7","move":"Rally to Vann (578 m north-west).","by":"Calm","reward":0.05}
+{"t":"06:40:23","ctx":"in The Tristinwold countryside|health high|level 7|fighting","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.3 km east).","by":"Calm","reward":0}
+{"t":"06:41:52","ctx":"in The Tristinwold countryside|health high|level 7","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (1.6 km east).","by":"Calm","reward":0}
+{"t":"06:42:08","ctx":"in The autumn woods near Greywater|health high|level 7","move":"Rally to Vann (1.2 km west).","by":"Calm","reward":0}
+{"t":"06:42:13","ctx":"in The autumn woods near Greywater|health high|level 7|fighting","move":"Attack the Spriggan (13 m north-west): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"06:42:15","ctx":"in The autumn woods near Greywater|health high|level 7","move":"Attack the Spriggan Sapling (10 m east): close in and keep hitting.","by":"Risky","reward":0.08}
+{"t":"06:42:20","ctx":"in The autumn woods near Greywater|health high|level 7","move":"Rally to Vann (1.2 km west).","by":"Calm","reward":0}
+{"t":"06:42:22","ctx":"in The Tristinwold countryside|health high|level 7","move":"Attack the Wolf (13 m north-west): close in and keep hitting.","by":"Combat","reward":0.1}
+{"t":"06:42:22","ctx":"in The Tristinwold countryside|health high|level 7","move":"Attack the Wolf (14 m north): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"06:42:23","ctx":"in The Tristinwold countryside|health high|level 7","move":"Attack the Wolf (12 m north): close in and keep hitting.","by":"Combat","reward":0.1}
+{"t":"06:42:24","ctx":"in The Tristinwold countryside|health high|level 7|fighting","move":"Attack the Wolf (6 m north): close in and keep hitting.","by":"Combat","reward":0.1}
+{"t":"06:42:53","ctx":"in The Tristinwold countryside|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"06:43:03","ctx":"in The Tristinwold countryside|health high|level 7|fighting","move":"Attack the Hollow Soldier (26 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"06:43:19","ctx":"in The Northwood|health high|level 7|fighting","move":"Sprint away toward Greywater (370 m north-east).","by":"Combat","reward":0}
+{"t":"06:43:37","ctx":"in The Northwood|health high|level 7|fighting","move":"Attack the Wild Boar (17 m south-west): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"06:43:38","ctx":"in The Northwood|health high|level 7|fighting","move":"Head for Greywater, marked on the map (296 m north-east).","by":"Combat","reward":0}
+{"t":"06:43:40","ctx":"in The Northwood|health high|level 7|fighting","move":"Attack the Wild Boar (1 m south-west): close in and keep hitting.","by":"Combat","reward":0.62}
+{"t":"06:45:10","ctx":"in The Northwood|health high|level 7","move":"Head for Greywater, marked on the map (293 m north-east).","by":"Calm","reward":0}
+{"t":"06:45:42","ctx":"in The autumn woods near Greywater|health high|level 7","move":"Walk up to Juna Stormsong (a youth of 15, 57 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"06:45:51","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 36 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:45:55","ctx":"in Greywater|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":0.05}
+{"t":"06:45:57","ctx":"in Greywater|health high|level 7","move":"Walk up to Wenna Emberhelm (town guard of Greywater, 8 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:45:57","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:45:58","ctx":"in Greywater|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.28}
+{"t":"06:46:01","ctx":"in Greywater|health high|level 7","move":"Walk up to Mathis Shieldshield (farmer, 11 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:46:01","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:46:01","ctx":"in Greywater|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:46:02","ctx":"in Greywater|health high|level 7","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"06:46:02","ctx":"in Greywater|health high|level 7","move":"Click: What does Greywater trade in?","by":"Calm","reward":0}
+{"t":"06:46:02","ctx":"in Greywater|health high|level 7","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"06:46:03","ctx":"in Greywater|health high|level 7","move":"Click: Any outlaws I should know about?","by":"Calm","reward":0}
+{"t":"06:46:03","ctx":"in Greywater|health high|level 7","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"06:46:15","ctx":"in Greywater|health high|level 7","move":"Walk up to Hesk Crowhand (clerk to the council of Greywater, 7 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:46:16","ctx":"in Greywater|health high|level 7","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"06:46:16","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:46:17","ctx":"in Greywater|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:46:17","ctx":"in Greywater|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":0.02}
+{"t":"06:46:18","ctx":"in Greywater|health high|level 7","move":"Walk up to Juna Stormsong (page, 4 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:46:19","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:46:19","ctx":"in Greywater|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:46:20","ctx":"in Greywater|health high|level 7","move":"Click: What does Greywater trade in?","by":"Calm","reward":0}
+{"t":"06:46:20","ctx":"in Greywater|health high|level 7","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"06:46:21","ctx":"in Greywater|health high|level 7","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"06:46:31","ctx":"in Greywater|health high|level 7","move":"Walk up to Vigdis Quickmane (councillor of Greywater, 18 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:46:36","ctx":"in Greywater|health high|level 7","move":"Attack the Cat (13 m south); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.12}
+{"t":"06:46:37","ctx":"in Greywater|health high|level 7","move":"Walk up to Roderic Wolfwater (herbalist, 4 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:46:38","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:46:38","ctx":"in Greywater|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"06:46:41","ctx":"in Greywater|health high|level 7","move":"Walk up to Ulla Ironbarrow (apprentice smith, 8 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:46:41","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:46:41","ctx":"in Greywater|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:46:41","ctx":"in Greywater|health high|level 7","move":"Click: What does Greywater trade in?","by":"Calm","reward":0}
+{"t":"06:46:42","ctx":"in Greywater|health high|level 7","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"06:46:42","ctx":"in Greywater|health high|level 7","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0}
+{"t":"06:46:42","ctx":"in Greywater|health high|level 7","move":"Click: Can I use your forge?","by":"Calm","reward":0}
+{"t":"06:46:43","ctx":"in Greywater|health high|level 7","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"06:46:46","ctx":"in Greywater|health high|level 7","move":"Walk up to Dagny Shieldhand (councillor of Greywater, 15 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:46:46","ctx":"in Greywater|health high|level 7","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"06:46:47","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:46:47","ctx":"in Greywater|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:46:48","ctx":"in Greywater|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"06:46:52","ctx":"in Greywater|health high|level 7","move":"Walk up to Unn Windhollow (innkeeper, 18 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:46:52","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:46:52","ctx":"in Greywater|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:46:53","ctx":"in Greywater|health high|level 7","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"06:46:53","ctx":"in Greywater|health high|level 7","move":"Click: What does Greywater trade in?","by":"Calm","reward":0}
+{"t":"06:46:53","ctx":"in Greywater|health high|level 7","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"06:46:53","ctx":"in Greywater|health high|level 7","move":"Click: Any outlaws I should know about?","by":"Calm","reward":0}
+{"t":"06:46:54","ctx":"in Greywater|health high|level 7","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"06:46:58","ctx":"in Greywater|health high|level 7","move":"Walk up to Runa Whitebeard (carpenter, 16 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:46:58","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:46:58","ctx":"in Greywater|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":0.02}
+{"t":"06:47:02","ctx":"in Greywater|health high|level 7","move":"Walk up to Nils Ironhollow (page, 11 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:47:02","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:47:02","ctx":"in Greywater|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:47:03","ctx":"in Greywater|health high|level 7","move":"Click: What does Greywater trade in?","by":"Calm","reward":0}
+{"t":"06:47:03","ctx":"in Greywater|health high|level 7","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"06:47:04","ctx":"in Greywater|health high|level 7","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0}
+{"t":"06:47:04","ctx":"in Greywater|health high|level 7","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"06:47:06","ctx":"in Greywater|health high|level 7","move":"Walk up to Gudrun Whitemane (carpenter, 9 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:47:07","ctx":"in Greywater|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":0.05}
+{"t":"06:47:30","ctx":"in Greywater|health high|level 7","move":"Walk up to Kari Greycloak (town guard of Greywater, 26 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:47:31","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:47:31","ctx":"in Greywater|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:47:31","ctx":"in Greywater|health high|level 7","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"06:47:32","ctx":"in Greywater|health high|level 7","move":"Click: I\u0027ll do it.","by":"Calm","reward":0}
+{"t":"06:47:32","ctx":"in Greywater|health high|level 7","move":"Click: About the job...","by":"Calm","reward":0}
+{"t":"06:47:32","ctx":"in Greywater|health high|level 7","move":"Click: What does Greywater trade in?","by":"Calm","reward":0}
+{"t":"06:47:33","ctx":"in Greywater|health high|level 7","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.13}
+{"t":"06:47:39","ctx":"in Greywater|health high|level 7","move":"Go into the keep (11 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:47:45","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:47:49","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:47:54","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:48:00","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:48:04","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:48:32","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:48:38","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:48:43","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:48:48","ctx":"in Greywater|health high|level 7","move":"Attack the Cat (19 m south-west); it hasn\u0027t done anything to you.","by":"Calm","reward":0.03}
+{"t":"06:48:54","ctx":"in Greywater|health high|level 7","move":"Go into the keep (20 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:48:59","ctx":"in Greywater|health high|level 7","move":"Go into the keep (3 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:49:04","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:49:09","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:49:13","ctx":"in Greywater|health high|level 7","move":"Attack the Dog (20 m east); it hasn\u0027t done anything to you.","by":"Calm","reward":0.09}
+{"t":"06:49:20","ctx":"in Greywater|health high|level 7","move":"Go into the keep (19 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:49:25","ctx":"in Greywater|health high|level 7","move":"Go into the keep (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:49:30","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:49:35","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:49:40","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:49:42","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:50:12","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:51:08","ctx":"in Greywater|health high|level 7","move":"Go into the keep (3 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:51:10","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:51:36","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:52:21","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:52:47","ctx":"in Greywater|health high|level 7","move":"Go into the keep (2 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"06:54:12","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.2 km west).","by":"Calm","reward":0}
+{"t":"06:55:15","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"06:55:43","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 34 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:56:35","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"06:57:02","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 35 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:58:12","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"06:58:49","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"06:59:17","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 34 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:59:44","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"06:59:52","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 36 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"06:59:52","ctx":"in Greywater|health high|level 7","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"06:59:53","ctx":"in Greywater|health high|level 7","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"06:59:53","ctx":"in Greywater|health high|level 7","move":"Click: About the job...","by":"Calm","reward":0}
+{"t":"06:59:53","ctx":"in Greywater|health high|level 7","move":"Click: What does Greywater trade in?","by":"Calm","reward":0}
+{"t":"06:59:54","ctx":"in Greywater|health high|level 7","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"06:59:54","ctx":"in Greywater|health high|level 7","move":"Click: Any outlaws I should know about?","by":"Calm","reward":0}
+{"t":"06:59:54","ctx":"in Greywater|health high|level 7","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"07:00:37","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.2 km west).","by":"Calm","reward":0}
+{"t":"07:01:06","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 35 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"07:01:50","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"07:02:14","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 35 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"07:02:50","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"07:03:18","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 37 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"07:03:55","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"07:04:23","ctx":"in Greywater|health high|level 7","move":"Walk up to Liv Whiteshield (smith of Greywater, 42 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"07:04:58","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"07:05:06","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 35 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"07:05:06","ctx":"in Greywater|health high|level 7","move":"Close the window (Esc).","by":"Calm","reward":0}
+{"t":"07:06:22","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.2 km west).","by":"Calm","reward":0}
+{"t":"07:06:50","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 34 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"07:07:27","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"07:07:53","ctx":"in Greywater|health high|level 7","move":"Walk up to Yngve Quickbrook (carpenter, 35 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"07:09:15","ctx":"in Greywater|health high|level 7","move":"Rally to Vann (1.1 km west).","by":"Calm","reward":0}
+{"t":"07:09:26","ctx":"in Greywater|health high|level 7","move":"Follow the quest tracker: A carved box for Druitt (1.5 km west).","by":"Calm","reward":0}
+{"t":"07:09:51","ctx":"in Greywater|health high|level 7","move":"Walk up to Liv Whiteshield (smith of Greywater, 38 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"07:11:14","ctx":"in Greywater|health high|level 7","move":"Follow the quest tracker: A carved box for Druitt (1.5 km west).","by":"Calm","reward":0}
+{"t":"07:12:06","ctx":"in Greywater|health high|level 7","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (944 m north-west).","by":"Calm","reward":0}
+{"t":"07:12:11","ctx":"in The Northwood|health high|level 7","move":"Attack the Bandit (24 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"07:12:11","ctx":"in The Northwood|health high|level 7|fighting","move":"Attack the Bandit (13 m north-east): close in and keep hitting.","by":"Combat","reward":0.26}
+{"t":"07:12:12","ctx":"in The Northwood|health high|level 7","move":"Attack the Bandit (18 m east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"07:12:15","ctx":"in The Northwood|health high|level 7","move":"Attack the Bandit (12 m east): close in and keep hitting.","by":"Combat","reward":0.31}
+{"t":"07:12:16","ctx":"in The Northwood|health high|level 7","move":"Attack the Bandit (18 m south): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"07:12:19","ctx":"in The Northwood|health high|level 7","move":"Attack the Bandit (13 m south): close in and keep hitting.","by":"Combat","reward":0.31}
+{"t":"07:12:22","ctx":"in The Northwood|health high|level 7","move":"Press E: pick the fruit (right here).","by":"Calm","reward":0}
+{"t":"07:12:37","ctx":"in The Northwood|health high|level 7","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (879 m north-west).","by":"Calm","reward":0}
+{"t":"07:12:40","ctx":"in The Northwood|health high|level 7","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"07:13:02","ctx":"in The Northwood|health high|level 7|fighting","move":"Attack the Turlin (deviant, stray, level 1) (7 m north-west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"07:13:38","ctx":"in The Northwood|health high|level 7","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (893 m north-west).","by":"Calm","reward":0}
+{"t":"07:13:44","ctx":"in The Northwood|health high|level 7|fighting","move":"Attack the Corrupted Wild Boar (10 m south-east): close in and keep hitting.","by":"Combat","reward":0.21}
+{"t":"18:27:06","ctx":"in Greywater|health high|level 5-9","move":"Rally to Vann (347 m east).","by":"Calm","reward":0}
+{"t":"18:27:13","ctx":"in Greywater|health high|level 5-9","move":"Attack the Hen (15 m south-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0.03}
+{"t":"18:27:18","ctx":"in Greywater|health high|level 5-9","move":"Rally to Vann (303 m east).","by":"Calm","reward":0}
+{"t":"18:27:19","ctx":"in Greywater|health high|level 5-9","move":"Attack the Dog (14 m north); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"18:27:42","ctx":"in Greywater|health high|level 5-9","move":"Rally to Vann (267 m east).","by":"Calm","reward":0}
+{"t":"18:27:42","ctx":"in The autumn woods near Greywater|health high|level 5-9","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"18:27:54","ctx":"in The autumn woods near Greywater|health high|level 5-9|fighting","move":"Attack the Turlin (deviant, stray, level 1) (5 m east): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"18:28:11","ctx":"in The autumn woods near Greywater|health high|level 5-9","move":"Rally to Vann (168 m east).","by":"Calm","reward":0}
+{"t":"18:29:26","ctx":"in The autumn woods near Greywater|health high|level 5-9","move":"Head for Greydeep, marked on the map (744 m north).","by":"Calm","reward":0}
+{"t":"18:29:57","ctx":"in The autumn woods near Greywater|health high|level 5-9","move":"Sprint away toward Greydeep (251 m north).","by":"Combat","reward":-3}
+{"t":"18:30:04","ctx":"in Tristinwold|health high|level 5-9","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.0 km east).","by":"Calm","reward":0}
+{"t":"18:30:05","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (22 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"18:30:18","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (13 m north-east): close in and keep hitting.","by":"Combat","reward":0.34}
+{"t":"18:30:38","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (21 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"18:31:54","ctx":"in The Docks|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.1 km west).","by":"Risky","reward":0.05}
+{"t":"18:32:46","ctx":"in The Docks|health high|level 5-9","move":"Go into the warehouse (21 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"18:33:44","ctx":"in The Docks|health high|level 5-9","move":"Go into the warehouse (21 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"18:35:01","ctx":"in The Docks|health high|level 5-9","move":"Go into the warehouse (21 m): walk to its door and press E.","by":"Risky","reward":0.16}
+{"t":"18:35:30","ctx":"in The Harbor|health high|level 5-9|fighting","move":"Follow the quest tracker: A carved box for Druitt (1.1 km west).","by":"Risky","reward":0}
+{"t":"18:35:35","ctx":"in The Harbor|health high|level 5-9","move":"Attack the Eira Kettlebrand, initiate of the Velvet Knives (14 m south); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"18:35:36","ctx":"in The Docks|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.0 km west).","by":"Risky","reward":0}
+{"t":"18:35:58","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (39 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"18:37:14","ctx":"in The Docks|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.1 km west).","by":"Risky","reward":0}
+{"t":"20:11:51","ctx":"in Tristinwold|health high|level 5-9","move":"Rally to Vann (1.9 km north-west).","by":"Calm","reward":0}
+{"t":"20:13:00","ctx":"in Tristinwold|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.9 km north-west).","by":"Calm","reward":0.05}
+{"t":"20:14:08","ctx":"in Hearthside|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.8 km north-west).","by":"Risky","reward":0.05}
+{"t":"20:14:26","ctx":"in The Tristinwold countryside|health high|level 5-9","move":"Sprint away toward Hollowheart (412 m north-east).","by":"Combat","reward":-3.56}
+{"t":"20:15:43","ctx":"in Tristinwold|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.9 km north-west).","by":"Calm","reward":0.05}
+{"t":"20:16:57","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the house (4 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:17:04","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the house (4 m): walk to its door and press E.","by":"Calm","reward":0.05}
+{"t":"20:17:08","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the church (8 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:18:10","ctx":"indoors|health high|level 5-9","move":"Go into the church (1 m): walk to its door and press E.","by":"Calm","reward":0.1}
+{"t":"20:18:20","ctx":"indoors|health high|level 5-9","move":"Walk to the door (19 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:19:14","ctx":"in Inside the church|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"20:20:33","ctx":"in Tristinwold|health high|level 5-9","move":"Attack the Cat (21 m south-west); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.12}
+{"t":"20:21:09","ctx":"in Tristinwold|health high|level 5-9","move":"Attack the Cat (10 m west); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.12}
+{"t":"20:21:20","ctx":"in Tristinwold|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.9 km north-west).","by":"Calm","reward":0}
+{"t":"20:21:32","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the house (10 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:22:14","ctx":"indoors|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.9 km north-west).","by":"Calm","reward":0}
+{"t":"20:22:17","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:22:50","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"20:23:23","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the cottage (9 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"20:23:24","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:23:34","ctx":"in Inside the cottage|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:24:03","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the cottage (7 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:24:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:24:17","ctx":"in Inside the cottage|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:25:25","ctx":"in Tristinwold|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.9 km north-west).","by":"Calm","reward":0.1}
+{"t":"20:27:18","ctx":"in The Tristinwold countryside|health high|level 5-9|fighting","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.3 km east).","by":"Calm","reward":0}
+{"t":"20:29:16","ctx":"in The Tristinwold countryside|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 2.0 km west).","by":"Calm","reward":0}
+{"t":"20:29:23","ctx":"in The Northwood|health high|level 5-9|fighting","move":"Attack the Wolf (20 m west): close in and keep hitting.","by":"Combat","reward":0.2}
+{"t":"20:29:24","ctx":"in The Northwood|health high|level 5-9|fighting","move":"Attack the Wolf (1 m west): close in and keep hitting.","by":"Combat","reward":0.2}
+{"t":"20:29:25","ctx":"in The Northwood|health high|level 5-9|fighting","move":"Attack the Wolf (1 m west): close in and keep hitting.","by":"Combat","reward":0.2}
+{"t":"20:29:27","ctx":"in The Northwood|health high|level 5-9","move":"Attack the Rock Bear (20 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:29:52","ctx":"in The Northwood|health high|level 5-9","move":"Attack the Rock Bear (13 m west): close in and keep hitting.","by":"Combat","reward":1.78}
+{"t":"20:31:30","ctx":"in The Northwood|health mid|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (692 m west).","by":"Risky","reward":0}
+{"t":"20:31:39","ctx":"in The Tristinwold countryside|health high|level 5-9|fighting","move":"Attack the Goblin Tinker (22 m south-west): close in and keep hitting.","by":"Risky","reward":0.27}
+{"t":"20:31:43","ctx":"in The Tristinwold countryside|health high|level 5-9|fighting","move":"Attack the Goblin Tinker (2 m south-west): close in and keep hitting.","by":"Combat","reward":0.31}
+{"t":"20:31:44","ctx":"in The Tristinwold countryside|health high|level 5-9|fighting","move":"Attack the Goblin Tinker (2 m south-west): close in and keep hitting.","by":"Combat","reward":0.28}
+{"t":"20:31:47","ctx":"in The Tristinwold countryside|health high|level 5-9|fighting","move":"Attack the Goblin Tinker (2 m south-west): close in and keep hitting.","by":"Combat","reward":0.27}
+{"t":"20:31:49","ctx":"in The Tristinwold countryside|health high|level 5-9","move":"Attack the Forge Golem (21 m west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"20:32:09","ctx":"in The Tristinwold countryside|health high|level 5-9","move":"Attack the Forge Golem (18 m west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"20:32:18","ctx":"in The Tristinwold countryside|health low|level 5-9|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"20:32:27","ctx":"in The Tristinwold countryside|health mid|level 5-9|fighting","move":"Attack the Forge Golem (3 m south-west): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"20:32:35","ctx":"in The Tristinwold countryside|health low|level 5-9|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"20:32:42","ctx":"in The Tristinwold countryside|health low|level 5-9|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"20:32:49","ctx":"in The Tristinwold countryside|health mid|level 5-9|fighting","move":"Attack the Forge Golem (2 m south): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"20:32:56","ctx":"in The Tristinwold countryside|health low|level 5-9|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":0}
+{"t":"20:33:04","ctx":"in The Tristinwold countryside|health mid|level 5-9|fighting","move":"Press H: drink a healing draught.","by":"Combat","reward":0}
+{"t":"20:33:16","ctx":"in The Tristinwold countryside|health mid|level 5-9|fighting","move":"Right mouse: Holy Light (Heal yourself and your companions, and sear foes close by with sunlight.)","by":"Combat","reward":-3.18}
+{"t":"20:33:25","ctx":"in Tristinwold|health high|level 5-9","move":"Attack the Hen (21 m south-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"20:33:27","ctx":"in The Harbor|health high|level 5-9|fighting","move":"Attack the a Velvet Knife (2 m north-west): close in and keep hitting.","by":"Combat","reward":0.13}
+{"t":"20:34:15","ctx":"in The Harbor|health high|level 5-9|fighting","move":"Follow the quest tracker: A carved box for Druitt (1.0 km west).","by":"Calm","reward":0}
+{"t":"20:34:44","ctx":"in The Exchange|health high|level 5-9","move":"Go into the tavern (8 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:34:47","ctx":"in Tristinwold|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":0.1}
+{"t":"20:35:11","ctx":"in Tristinwold|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.0 km west).","by":"Calm","reward":0}
+{"t":"20:36:13","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the tower (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:36:47","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the house (6 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:36:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:37:06","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:37:19","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the shop (8 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:38:39","ctx":"indoors|health high|level 5-9","move":"Go into the shop (1 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"20:38:54","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:39:33","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:40:18","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:41:01","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"20:41:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:42:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:43:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"20:43:51","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:44:45","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:44:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:00","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:06","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:12","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:18","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:24","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:52","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:45:58","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:24","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:52","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:46:57","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"20:47:07","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:12","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:17","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"20:47:27","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:32","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:38","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:43","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:53","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:47:58","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:46","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:52","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:48:57","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:13","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:36","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:42","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:53","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:49:58","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:04","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:10","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:29","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:34","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:46","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:53","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:50:59","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:05","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:10","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:27","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:33","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:39","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:45","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:51","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:51:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:13","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:32","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:38","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:44","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:50","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:52:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:01","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:07","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:13","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:31","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:37","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:43","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:49","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:53:57","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:54:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:54:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:54:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:54:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:54:28","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:54:34","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:54:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:54:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:54:53","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:55:00","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:55:06","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:55:13","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:55:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:55:27","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:55:34","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:55:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:55:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:55:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:01","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:28","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:34","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:46","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:53","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:56:59","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:57:05","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:57:12","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:57:18","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:57:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:57:32","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:57:38","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:57:44","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:57:50","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:57:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:58:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:58:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:58:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:58:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:58:28","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:58:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:58:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:58:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:58:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:59:01","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:59:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:59:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:59:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:59:28","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:59:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:59:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:59:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"20:59:54","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:00:00","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:00:07","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:00:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:00:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:00:28","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:00:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:00:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:00:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:00:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:01:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:01:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:01:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:01:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:01:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:01:36","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:01:43","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:01:50","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:01:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:02:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:02:10","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:02:17","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:02:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:02:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:02:37","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:02:43","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:02:50","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:02:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:03:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:03:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:03:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:03:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:03:28","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:03:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:03:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:03:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:04:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:04:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:04:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:04:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:04:29","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:04:36","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:04:43","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:04:49","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:04:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:05:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:05:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:05:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:05:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:05:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:05:37","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:05:44","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:05:51","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:05:57","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:06:04","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:06:11","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:06:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:06:26","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:06:33","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:06:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:06:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:06:54","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:07:01","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:07:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:07:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:07:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:07:28","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:07:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:07:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:07:49","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:07:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:08:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:08:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:08:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:08:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:08:29","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:08:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:08:42","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:08:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:08:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:09:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:09:10","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:09:17","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:09:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:09:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:09:37","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:09:45","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:09:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:10:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:10:11","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:10:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:10:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:10:32","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:10:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:10:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:10:54","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:11:01","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:11:07","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:11:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:12:33","ctx":"in Tristinwold|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.9 km north-west).","by":"Calm","reward":0}
+{"t":"21:12:34","ctx":"in Tristinwold|health high|level 5-9","move":"Attack the Giant Rat (22 m north-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:12:37","ctx":"in Tristinwold|health high|level 5-9","move":"Attack the Giant Rat (14 m north): close in and keep hitting.","by":"Combat","reward":0.24}
+{"t":"21:12:38","ctx":"in The Warrens|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.8 km north-west).","by":"Calm","reward":0}
+{"t":"21:13:11","ctx":"in The Warrens|health high|level 5-9","move":"Go into the shop (8 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"21:14:05","ctx":"indoors|health high|level 5-9","move":"Go into the shop (1 m): walk to its door and press E.","by":"Calm","reward":0.05}
+{"t":"21:14:10","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:14:39","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:15:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:15:33","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:16:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:16:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:16:43","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:17:06","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:17:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:18:10","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:18:37","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:19:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:19:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:19:27","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:19:33","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:19:38","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:19:44","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:19:49","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:19:54","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:19:59","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:01","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:04","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:20","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:39","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:44","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:50","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:20:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:00","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:05","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:10","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:20","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:45","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:50","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:21:59","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:05","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:10","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:20","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:45","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:51","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:22:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:01","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:06","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:11","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:27","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:32","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:37","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:43","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:23:54","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:00","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:05","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:11","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:26","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:31","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:37","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:42","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:52","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:24:58","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:24","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:29","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:34","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:45","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:51","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:25:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:07","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:12","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:18","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:29","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:46","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:52","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:26:57","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:13","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:18","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:29","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:34","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:46","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:51","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:27:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:13","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:18","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:24","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:46","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:52","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:28:57","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:08","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:26","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:31","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:36","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:45","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:50","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:29:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:01","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:06","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:11","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:31","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:36","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:46","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:50","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:30:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:00","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:05","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:10","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:20","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:45","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:50","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:31:56","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:00","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:05","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:11","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:21","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:26","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:31","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:36","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:52","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:32:58","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:04","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:14","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:20","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:30","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:35","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:41","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:47","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:52","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:33:58","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:20","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:25","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:32","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:38","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:44","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:49","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:34:55","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:00","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:06","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:12","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:17","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:28","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:34","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:40","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:46","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:51","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:35:57","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:09","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:15","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:20","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:26","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:33","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:38","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:43","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:49","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:54","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:36:59","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:05","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:11","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:17","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:22","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:28","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:34","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:39","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:45","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:46","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:37:52","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Combat","reward":0}
+{"t":"21:37:56","ctx":"indoors|health high|level 5-9|fighting","move":"Attack the a Velvet Knife (2 m east): close in and keep hitting.","by":"Combat","reward":0.94}
+{"t":"21:38:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:38:03","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:38:26","ctx":"in Inside the shop|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"21:39:34","ctx":"in Tristinwold|health high|level 5-9","move":"Walk up to Hob Stormbarrow (a youth of 10, 17 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"21:39:47","ctx":"in Tristinwold|health high|level 5-9","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.0 km east).","by":"Calm","reward":0}
+{"t":"21:39:48","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (20 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:40:02","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (13 m north-east): close in and keep hitting.","by":"Combat","reward":0.29}
+{"t":"21:40:25","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (20 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"21:42:19","ctx":"in The Docks|health high|level 5-9|fighting","move":"Follow the quest tracker: A carved box for Druitt (1.1 km west).","by":"Risky","reward":0}
+{"t":"21:43:23","ctx":"in The Docks|health high|level 5-9","move":"Go into the warehouse (21 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"21:44:01","ctx":"in The Docks|health high|level 5-9","move":"Go into the warehouse (21 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"21:45:04","ctx":"in The Docks|health high|level 5-9","move":"Go into the warehouse (21 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"21:45:13","ctx":"in The Docks|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.0 km west).","by":"Risky","reward":0}
+{"t":"21:45:56","ctx":"in The Docks|health high|level 5-9","move":"Go into the shop (24 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"21:46:37","ctx":"in The Docks|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.0 km west).","by":"Risky","reward":0}
+{"t":"21:47:38","ctx":"in The Docks|health high|level 5-9","move":"Go into the shop (24 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"21:48:20","ctx":"in The Docks|health high|level 5-9","move":"Go into the shop (22 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"21:49:20","ctx":"in The Docks|health high|level 5-9","move":"Go into the shop (23 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"22:34:01","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (16 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:34:26","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (14 m north-east): close in and keep hitting.","by":"Combat","reward":0.3}
+{"t":"22:34:35","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (24 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:35:18","ctx":"in The Docks|health high|level 5-9","move":"Go into the warehouse (21 m): walk to its door and press E.","by":"Risky","reward":0.05}
+{"t":"22:35:48","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (34 m north-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"22:36:02","ctx":"in The Harbor|health high|level 5-9","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (1.9 km east).","by":"Risky","reward":0}
+{"t":"22:36:24","ctx":"in The Harbor|health high|level 5-9","move":"Walk up to Hob Stormbarrow (a youth of 10, 44 m) and ask them to become your apprentice.","by":"Calm","reward":0}
+{"t":"22:36:35","ctx":"in The Harbor|health high|level 5-9","move":"Sprint away toward Tristinwold (158 m west).","by":"Combat","reward":-3.56}
+{"t":"22:36:46","ctx":"in Tristinwold|health high|level 5-9","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.0 km east).","by":"Calm","reward":0}
+{"t":"22:37:25","ctx":"in The Docks|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.0 km west).","by":"Risky","reward":0}
+{"t":"22:37:28","ctx":"in Tristinwold|health high|level 5-9","move":"Attack the Giant Rat (13 m north-west): close in and keep hitting.","by":"Combat","reward":0.16}
+{"t":"22:37:31","ctx":"in The Warrens|health high|level 5-9|fighting","move":"Attack the Giant Rat (10 m north): close in and keep hitting.","by":"Combat","reward":0.08}
+{"t":"22:38:48","ctx":"in The Warrens|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (896 m west).","by":"Calm","reward":0}
+{"t":"22:38:53","ctx":"in The Tristinwold countryside|health high|level 5-9|fighting","move":"Attack the Cinder Thrall (21 m north): close in and keep hitting.","by":"Risky","reward":0.16}
+{"t":"22:38:55","ctx":"in The Tristinwold countryside|health high|level 5-9|fighting","move":"Attack the Cinder Thrall (7 m west): close in and keep hitting.","by":"Combat","reward":0.16}
+{"t":"22:38:57","ctx":"in The Tristinwold countryside|health high|level 5-9|fighting","move":"Attack the Cinder Thrall (7 m north): close in and keep hitting.","by":"Combat","reward":0.16}
+{"t":"22:38:59","ctx":"in The Tristinwold countryside|health high|level 5-9|fighting","move":"Attack the Cinder Thrall (5 m west): close in and keep hitting.","by":"Combat","reward":0.16}
+{"t":"22:39:16","ctx":"in The Tristinwold countryside|health high|level 5-9","move":"Attack the Cinder Warden (8 m north): close in and keep hitting.","by":"Combat","reward":-0.15}
+{"t":"22:39:17","ctx":"in The Tristinwold countryside|health high|level 5-9","move":"Press K and spend a skill point on Holy Light (rank 3 to 4): Heal yourself and your companions, and sear foes close by w","by":"Calm","reward":0}
+{"t":"22:40:17","ctx":"in The Tristinwold countryside|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (626 m west).","by":"Calm","reward":0}
+{"t":"22:41:32","ctx":"in The Tristinwold countryside|health high|level 5-9","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"22:43:15","ctx":"in The Strand|health high|level 5-9","move":"Make for Vann\u0027s staging camp, where he last stood (he\u0027s away now; 1.3 km north-west).","by":"Calm","reward":0}
+{"t":"22:45:04","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Sigrid Wolffield (beggar, 25 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:45:04","ctx":"in Galeholt|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"22:45:12","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Teague Thorncloak (fishwife, 29 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:45:12","ctx":"in Galeholt|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"22:45:17","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Einar Ironhammer (goatherd, 24 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:45:17","ctx":"in Galeholt|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:45:18","ctx":"in Galeholt|health high|level 5-9","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"22:45:18","ctx":"in Galeholt|health high|level 5-9","move":"Click: What does Galeholt trade in?","by":"Calm","reward":0}
+{"t":"22:45:18","ctx":"in Galeholt|health high|level 5-9","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"22:45:39","ctx":"in Galeholt|health high|level 5-9","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}
+{"t":"22:46:19","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.3 km south-east).","by":"Calm","reward":0}
+{"t":"22:46:43","ctx":"in Galeholt|health high|level 5-9","move":"Go into the smithy (10 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"22:46:44","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:47:08","ctx":"in Inside the smithy|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:47:08","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:09","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:09","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:09","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:10","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:10","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:10","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:10","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:11","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:11","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:11","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:11","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:12","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:12","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:12","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:12","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:13","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:13","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:13","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:13","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:14","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:14","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:14","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:14","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:15","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:15","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:15","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:15","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:16","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:16","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:16","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:16","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:17","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:17","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:17","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:17","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:18","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:18","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:18","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:18","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:19","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:19","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:19","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:20","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:20","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:20","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:20","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:21","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:21","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:21","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:21","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:22","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:22","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:22","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:22","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:23","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:23","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:23","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:24","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:24","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:24","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:24","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:25","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:25","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:25","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:25","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:26","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:26","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:26","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:26","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:27","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:27","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:27","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:27","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:28","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:28","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:28","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:28","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:29","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:29","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:29","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:29","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:30","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:30","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:30","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:30","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:31","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:31","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:31","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:31","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:32","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:32","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:32","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:32","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:33","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:33","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:33","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:33","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:34","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:34","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:34","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:34","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:35","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:35","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:35","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:35","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:36","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:36","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:36","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:36","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:37","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:37","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:37","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:37","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:38","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:38","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:38","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:38","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:39","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:39","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:39","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:39","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:40","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:40","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:40","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:41","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:41","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:41","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:41","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:41","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:42","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:42","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:42","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:43","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:43","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:43","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:43","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:44","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:44","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:44","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:44","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:45","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:45","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:45","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:45","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:46","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:46","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:46","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:46","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:47","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:47","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:47","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:47","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:48","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:48","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:48","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:48","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:49","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:49","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:49","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:49","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:50","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:50","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:50","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:51","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:51","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:51","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:51","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:52","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:52","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:52","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:52","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:52","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:53","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:53","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:53","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:53","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:53","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:54","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:54","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:54","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:54","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:55","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:55","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:55","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:55","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:55","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:56","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:56","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:56","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:56","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:57","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:57","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:57","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:57","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:58","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:58","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:58","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:58","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:59","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:59","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:59","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:47:59","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:00","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:00","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:00","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:00","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:01","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:01","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:02","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:04","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:30","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 32 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:38","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Aldric Oaksworn (guard, 44 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:48:38","ctx":"in Galeholt|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:48:39","ctx":"in Galeholt|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":0.07}
+{"t":"22:48:56","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.2 km south-east).","by":"Calm","reward":0}
+{"t":"22:49:05","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Sigrid Wolffield (beggar, 43 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:49:05","ctx":"in Galeholt|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"22:49:06","ctx":"in Galeholt|health high|level 5-9","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"22:49:06","ctx":"in Galeholt|health high|level 5-9","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"22:49:06","ctx":"in Galeholt|health high|level 5-9","move":"Click: I\u0027ll do it.","by":"Calm","reward":0}
+{"t":"22:49:07","ctx":"in Galeholt|health high|level 5-9","move":"Click: About the job...","by":"Calm","reward":0}
+{"t":"22:49:07","ctx":"in Galeholt|health high|level 5-9","move":"Click: What does Galeholt trade in?","by":"Calm","reward":0}
+{"t":"22:49:07","ctx":"in Galeholt|health high|level 5-9","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"22:49:07","ctx":"in Galeholt|health high|level 5-9","move":"Click: Any outlaws I should know about?","by":"Calm","reward":0}
+{"t":"22:49:17","ctx":"in Galeholt|health high|level 5-9","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"22:49:55","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.2 km south-east).","by":"Calm","reward":0}
+{"t":"22:50:23","ctx":"in Galeholt|health high|level 5-9","move":"Go into the house (19 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"22:50:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:50:46","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:50:52","ctx":"in Galeholt|health high|level 5-9","move":"Go into the house (19 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"22:51:59","ctx":"indoors|health high|level 5-9","move":"Go into the house (1 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"22:52:02","ctx":"indoors|health high|level 5-9","move":"Walk to the door (7 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:52:41","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:53:14","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.2 km south-east).","by":"Calm","reward":0}
+{"t":"22:53:22","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Sigrid Wolffield (beggar, 40 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:53:35","ctx":"in Galeholt|health high|level 5-9","move":"Close the window (Esc).","by":"Calm","reward":0}
+{"t":"22:54:16","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.2 km south-east).","by":"Calm","reward":0}
+{"t":"22:54:27","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Sigrid Wolffield (beggar, 45 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:54:38","ctx":"in Galeholt|health high|level 5-9","move":"Close the window (Esc).","by":"Calm","reward":0}
+{"t":"22:55:05","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.2 km south-east).","by":"Calm","reward":0}
+{"t":"22:55:28","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Yrsa Stonewater (town guard of Galeholt, 36 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:55:29","ctx":"in Galeholt|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":0.08}
+{"t":"22:55:34","ctx":"in Galeholt|health high|level 5-9","move":"Attack the Horse (16 m north-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"22:56:39","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Follow the quest tracker: A carved box for Druitt (1.3 km south-east).","by":"Calm","reward":0}
+{"t":"22:57:26","ctx":"in Galeholt|health high|level 5-9","move":"Go into the house (19 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"22:57:26","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:58:23","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"22:58:59","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.2 km south-east).","by":"Calm","reward":0}
+{"t":"22:59:07","ctx":"in Galeholt|health high|level 5-9","move":"Walk up to Sigrid Wolffield (beggar, 38 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"22:59:25","ctx":"in Galeholt|health high|level 5-9","move":"Close the window (Esc).","by":"Calm","reward":0}
+{"t":"22:59:46","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.2 km south-east).","by":"Calm","reward":0}
+{"t":"22:59:52","ctx":"in Galeholt|health high|level 5-9","move":"Go into the house (21 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:01:11","ctx":"indoors|health high|level 5-9","move":"Go into the house (1 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:01:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:01:49","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:02:58","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.2 km south-east).","by":"Calm","reward":0}
+{"t":"23:04:26","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (2.0 km east).","by":"Calm","reward":0}
+{"t":"23:04:59","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Go into the house (19 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:06:16","ctx":"indoors|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (2.0 km east).","by":"Risky","reward":0}
+{"t":"23:06:19","ctx":"indoors|health high|level 5-9","move":"Walk to the door (5 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:06:28","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:06:35","ctx":"in Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (71 m north-west).","by":"Combat","reward":0}
+{"t":"23:07:44","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Sprint away toward Galeholt (44 m north-west).","by":"Risky","reward":0}
+{"t":"23:07:57","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (2.1 km east).","by":"Calm","reward":0}
+{"t":"23:08:26","ctx":"in Galeholt|health high|level 5-9","move":"Go into the house (15 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:08:27","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:08:54","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:09:02","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (2.0 km east).","by":"Combat","reward":0}
+{"t":"23:09:03","ctx":"in The pinewoods near Galeholt|health high|level 5-9|fighting","move":"Go into the house (12 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"23:10:28","ctx":"in The pinewoods near Galeholt|health high|level 5-9|fighting","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (2.0 km east).","by":"Risky","reward":0}
+{"t":"23:10:28","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Click: Fight.","by":"Calm","reward":0}
+{"t":"23:10:46","ctx":"in The pinewoods near Galeholt|health high|level 5-9|fighting","move":"Attack the Turlin (deviant, stray, level 1) (14 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"23:12:18","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (2.0 km east).","by":"Risky","reward":0}
+{"t":"23:12:22","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Attack the Bandit (38 m south-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"23:12:28","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Attack the Bandit (14 m south-west): close in and keep hitting.","by":"Combat","reward":0.4}
+{"t":"23:12:29","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Attack the Skarra the Collector (18 m south-west): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"23:13:50","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (2.0 km east).","by":"Risky","reward":0}
+{"t":"23:15:58","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Head for The Shrine of the Last Ember, marked on the map (430 m north-west).","by":"Calm","reward":0}
+{"t":"23:16:04","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (136 m south).","by":"Combat","reward":0}
+{"t":"23:16:11","ctx":"in The pinewoods near Galeholt|health high|level 5-9|fighting","move":"Sprint away toward Galeholt (102 m south).","by":"Risky","reward":-0.4}
+{"t":"23:16:16","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Attack the Hen (22 m south); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.02}
+{"t":"23:17:37","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Head for The Shrine of the Last Ember, marked on the map (368 m north).","by":"Calm","reward":0}
+{"t":"23:17:41","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Attack the Ronacse, the Sin of Pride (level 98) (32 m south-east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"23:17:47","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (119 m south).","by":"Combat","reward":0}
+{"t":"23:17:52","ctx":"in The pinewoods near Galeholt|health mid|level 5-9|fighting","move":"Press H: drink a healing draught.","by":"Risky","reward":0}
+{"t":"23:18:00","ctx":"in The pinewoods near Galeholt|health high|level 5-9|fighting","move":"Head for The Shrine of the Last Ember, marked on the map (336 m north).","by":"Calm","reward":0}
+{"t":"23:19:16","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (103 m south).","by":"Combat","reward":0}
+{"t":"23:20:19","ctx":"in Galeholt|health high|level 5-9","move":"Go into the cottage (18 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:20:20","ctx":"in Galeholt|health high|level 5-9","move":"Attack the Dog (3 m south-east); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.17}
+{"t":"23:20:22","ctx":"in Galeholt|health high|level 5-9","move":"Go into the cottage (13 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:20:52","ctx":"in Galeholt|health high|level 5-9","move":"Go into the keep (3 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:20:53","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:21:22","ctx":"in Inside the keep|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:21:27","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Sprint away toward Galeholt (73 m west).","by":"Combat","reward":0}
+{"t":"23:21:32","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Sprint away toward Galeholt (41 m west).","by":"Risky","reward":0}
+{"t":"23:21:36","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Go into the shop (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:22:16","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Head for The Shrine of the Last Ember, marked on the map (414 m north).","by":"Calm","reward":0}
+{"t":"23:22:44","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (105 m south).","by":"Combat","reward":0}
+{"t":"23:23:11","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Go into the keep (11 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:23:16","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:23:41","ctx":"in Inside the keep|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:23:46","ctx":"in Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (72 m north-west).","by":"Combat","reward":0}
+{"t":"23:23:50","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Sprint away toward Galeholt (40 m north-west).","by":"Risky","reward":0}
+{"t":"23:23:51","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Attack the Cat (19 m north); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"23:23:55","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Go into the house (23 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:24:01","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Attack the Cat (22 m north-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0.03}
+{"t":"23:24:14","ctx":"in Galeholt|health high|level 5-9","move":"Go into the house (23 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:25:40","ctx":"indoors|health high|level 5-9","move":"Go into the house (1 m): walk to its door and press E.","by":"Calm","reward":0.05}
+{"t":"23:25:44","ctx":"indoors|health high|level 5-9","move":"Walk to the door (6 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:26:04","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:26:11","ctx":"in Galeholt|health high|level 5-9","move":"Attack the Hen (21 m east); it hasn\u0027t done anything to you.","by":"Calm","reward":-0.02}
+{"t":"23:26:26","ctx":"in Galeholt|health high|level 5-9","move":"Head for The Shrine of the Last Ember, marked on the map (425 m north).","by":"Calm","reward":0}
+{"t":"23:26:55","ctx":"in Galeholt|health high|level 5-9","move":"Attack the Hen (24 m west); it hasn\u0027t done anything to you.","by":"Calm","reward":0.03}
+{"t":"23:27:20","ctx":"in Galeholt|health high|level 5-9","move":"Head for The Shrine of the Last Ember, marked on the map (389 m north).","by":"Calm","reward":0}
+{"t":"23:27:38","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (106 m south).","by":"Combat","reward":0}
+{"t":"23:28:11","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Head for The Shrine of the Last Ember, marked on the map (397 m north).","by":"Calm","reward":0}
+{"t":"23:28:40","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (106 m south).","by":"Combat","reward":0}
+{"t":"23:29:00","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Walk up to Liv Ironfield (apprentice smith, 40 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:29:01","ctx":"in Galeholt|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:29:01","ctx":"in Galeholt|health high|level 5-9","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"23:29:01","ctx":"in Galeholt|health high|level 5-9","move":"Click: What does Galeholt trade in?","by":"Calm","reward":0}
+{"t":"23:29:02","ctx":"in Galeholt|health high|level 5-9","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"23:29:02","ctx":"in Galeholt|health high|level 5-9","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0}
+{"t":"23:29:02","ctx":"in Galeholt|health high|level 5-9","move":"Click: Can I use your forge?","by":"Calm","reward":0}
+{"t":"23:29:03","ctx":"in Galeholt|health high|level 5-9","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"23:29:24","ctx":"in Galeholt|health high|level 5-9","move":"Head for The Shrine of the Last Ember, marked on the map (399 m north).","by":"Calm","reward":0}
+{"t":"23:29:45","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (104 m south).","by":"Combat","reward":0}
+{"t":"23:30:36","ctx":"in Galeholt|health high|level 5-9","move":"Go into the cottage (19 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:30:48","ctx":"in Galeholt|health high|level 5-9","move":"Go into the cottage (12 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:31:01","ctx":"in Galeholt|health high|level 5-9","move":"Go into the council chamber (10 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:31:02","ctx":"in Galeholt|health high|level 5-9","move":"Click: I\u0027d like to speak to the council about joining it.","by":"Calm","reward":0}
+{"t":"23:31:02","ctx":"in Galeholt|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:31:02","ctx":"in Galeholt|health high|level 5-9","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"23:31:02","ctx":"in Galeholt|health high|level 5-9","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"23:31:03","ctx":"in Galeholt|health high|level 5-9","move":"Click: I\u0027ll do it.","by":"Calm","reward":0}
+{"t":"23:31:03","ctx":"in Galeholt|health high|level 5-9","move":"Click: About the job...","by":"Calm","reward":0}
+{"t":"23:31:04","ctx":"in Galeholt|health high|level 5-9","move":"Click: What does Galeholt trade in?","by":"Calm","reward":0}
+{"t":"23:31:04","ctx":"in Galeholt|health high|level 5-9","move":"Click: Who sits on the council here?","by":"Calm","reward":0}
+{"t":"23:31:05","ctx":"in Galeholt|health high|level 5-9","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"23:31:05","ctx":"in Galeholt|health high|level 5-9","move":"Click: Any outlaws I should know about?","by":"Calm","reward":0}
+{"t":"23:31:11","ctx":"in Galeholt|health high|level 5-9","move":"Click: Farewell.","by":"Calm","reward":0}
+{"t":"23:31:34","ctx":"in Galeholt|health high|level 5-9","move":"Head for The Shrine of the Last Ember, marked on the map (395 m north).","by":"Calm","reward":0}
+{"t":"23:32:17","ctx":"in The pinewoods near Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (108 m south).","by":"Combat","reward":0}
+{"t":"23:32:47","ctx":"in Galeholt|health high|level 5-9","move":"Go into the shop (5 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:32:48","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:33:28","ctx":"in Inside the shop|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:33:33","ctx":"in Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (73 m north-west).","by":"Combat","reward":0}
+{"t":"23:33:44","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Sprint away toward Galeholt (46 m north-west).","by":"Risky","reward":0}
+{"t":"23:34:16","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Go into the council chamber (8 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:34:17","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:34:48","ctx":"in Inside the council chamber|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:34:54","ctx":"in Galeholt|health high|level 5-9","move":"Sprint away toward Galeholt (72 m north-west).","by":"Combat","reward":0}
+{"t":"23:34:56","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Sprint away toward Galeholt (39 m north-west).","by":"Risky","reward":0}
+{"t":"23:34:59","ctx":"in Galeholt|health high|level 5-9|fighting","move":"Go into the house (16 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"23:36:28","ctx":"in Galeholt|health high|level 5-9","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (3.9 km east).","by":"Calm","reward":-3}
+{"t":"23:36:53","ctx":"in Tristinwold|health high|level 5-9","move":"Follow the quest tracker: An urn of grave-dust from Stonewake Barrow (2.0 km east).","by":"Calm","reward":0}
+{"t":"23:37:23","ctx":"in The Docks|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.0 km west).","by":"Risky","reward":0}
+{"t":"23:37:38","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the tavern (8 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:37:38","ctx":"in Tristinwold|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:37:39","ctx":"in Tristinwold|health high|level 5-9","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"23:37:39","ctx":"in Tristinwold|health high|level 5-9","move":"Click: Any work for me?","by":"Calm","reward":0}
+{"t":"23:37:39","ctx":"in Tristinwold|health high|level 5-9","move":"Click: I\u0027ll do it.","by":"Calm","reward":0}
+{"t":"23:37:40","ctx":"in Tristinwold|health high|level 5-9","move":"Click: About the job...","by":"Calm","reward":0}
+{"t":"23:37:48","ctx":"in Tristinwold|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":0.14}
+{"t":"23:37:50","ctx":"in Tristinwold|health high|level 5-9","move":"Attack the Kelda Ashbeard, initiate of the Velvet Knives (10 m south-east); it hasn\u0027t done anything to you.","by":"Calm","reward":0.12}
+{"t":"23:38:17","ctx":"in The Harbor|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (1.0 km west).","by":"Calm","reward":0}
+{"t":"23:38:58","ctx":"in The Crown|health high|level 5-9","move":"Go into the house (5 m): walk to its door and press E.","by":"Calm","reward":0.1}
+{"t":"23:39:22","ctx":"in The Crown|health high|level 5-9","move":"Go into the keep (14 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:39:23","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:40:18","ctx":"in Inside the keep|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:40:26","ctx":"in The Crown|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (938 m west).","by":"Calm","reward":0.05}
+{"t":"23:40:51","ctx":"in The Exchange|health high|level 5-9","move":"Go into the tower (17 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:40:51","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:41:47","ctx":"in Inside the tower|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"23:43:03","ctx":"in The Crown|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (945 m west).","by":"Calm","reward":0.05}
+{"t":"23:43:15","ctx":"in The Crown|health high|level 5-9","move":"Attack the Roderic Ashwood, initiate of the Magi (8 m north); it hasn\u0027t done anything to you.","by":"Calm","reward":0}
+{"t":"23:44:40","ctx":"in The Crown|health high|level 5-9","move":"Follow the quest tracker: A carved box for Druitt (914 m west).","by":"Calm","reward":0}
+{"t":"23:45:12","ctx":"in The Crown|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (1.4 km north).","by":"Calm","reward":0}
+{"t":"23:45:21","ctx":"in The Docks|health high|level 5-9","move":"Attack the Dock Thug (24 m east): close in and keep hitting.","by":"Risky","reward":0}
+{"t":"23:46:22","ctx":"in The Docks|health high|level 5-9","move":"Go into the house (15 m): walk to its door and press E.","by":"Risky","reward":0.05}
+{"t":"23:46:38","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the house (15 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:46:45","ctx":"in Tristinwold|health high|level 5-9","move":"Walk up to Vigdis Longwright (fishwife, 19 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:47:02","ctx":"in Tristinwold|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":0.03}
+{"t":"23:48:25","ctx":"in Tristinwold|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (1.4 km north).","by":"Calm","reward":0.05}
+{"t":"23:49:04","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the cottage (19 m): walk to its door and press E.","by":"Calm","reward":0}
+{"t":"23:49:04","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:49:54","ctx":"in Inside the cottage|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0.05}
+{"t":"23:50:26","ctx":"in Tristinwold|health high|level 5-9","move":"Go into the house (15 m): walk to its door and press E.","by":"Risky","reward":0}
+{"t":"23:50:26","ctx":"indoors|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:51:27","ctx":"in Inside the house|health high|level 5-9","move":"Walk to the door (1 m) and press E to step outside.","by":"Calm","reward":0}
+{"t":"23:52:17","ctx":"in Tristinwold|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (1.4 km north).","by":"Calm","reward":0}
+{"t":"23:53:13","ctx":"in The Tristinwold countryside|health high|level 5-9","move":"Go into the house (9 m): walk to its door and press E.","by":"Calm","reward":0.05}
+{"t":"23:55:18","ctx":"in Tristinwold|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (1.3 km north).","by":"Calm","reward":0}
+{"t":"23:55:18","ctx":"in The Northwood|health high|level 5-9","move":"Click: \u0022There\u0027s no need for this.\u0022","by":"Calm","reward":0}
+{"t":"23:55:43","ctx":"in The Northwood|health high|level 5-9|fighting","move":"Attack the Turlin (deviant, stray, level 1) (8 m north): close in and keep hitting.","by":"Combat","reward":0}
+{"t":"23:58:24","ctx":"in The Northwood|health high|level 5-9","move":"Follow the quest tracker: A bundle of herbs for Coppergate Refuge (844 m north).","by":"Calm","reward":0}
+{"t":"23:58:57","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Walk up to Caul (healer, 13 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:58:58","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:58:58","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"23:58:58","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":-0.12}
+{"t":"23:59:02","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Walk up to Drass of the Seventh Gate (Ashborn refugee, 13 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:59:02","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:59:03","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: (Pick their pocket)","by":"Calm","reward":0.04}
+{"t":"23:59:05","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Walk up to Ingolf Crowshield (fletcher\u0027s apprentice, 6 m) and press E to talk.","by":"Calm","reward":0}
+{"t":"23:59:06","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: Who are you?","by":"Calm","reward":0}
+{"t":"23:59:07","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: What do you care about?","by":"Calm","reward":0}
+{"t":"23:59:10","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: What does Coppergate Refuge need?","by":"Calm","reward":0}
+{"t":"23:59:16","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: What does Coppergate Refuge trade in?","by":"Calm","reward":0}
+{"t":"23:59:17","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: Heard any news?","by":"Calm","reward":0}
+{"t":"23:59:43","ctx":"in Coppergate Refuge|health high|level 5-9","move":"Click: Would you become my squire? (25 crowns to your family)","by":"Calm","reward":0.15}

@@ -1,0 +1,89 @@
+{
+  "Aim": "Secure the burial ring from Stonewake Barrow, clear the barrow, recruit more apprentices, and start a western colony.",
+  "Temper": "villain",
+  "FightAbove": 0.6,
+  "FleeBelow": 0.35,
+  "Focus": [
+    "quests",
+    "people",
+    "places",
+    "fights",
+    "gathering"
+  ],
+  "HeadFor": [
+    "Stonewake Barrow",
+    "Hollowheart",
+    "Greywater",
+    "Tristinwold",
+    "Druitt",
+    "Hawkwake Mine"
+  ],
+  "Avoid": [
+    "Turlin",
+    "Dorva Stormborn",
+    "Holt Stormborn",
+    "Rhokak Iron-Hide",
+    "Zetha the Mountain",
+    "Haskik the Mad"
+  ],
+  "Keen": [
+    "apprentice",
+    "crown",
+    "colony",
+    "raid",
+    "ring",
+    "stone",
+    "caravan",
+    "quest"
+  ],
+  "Todo": [
+    {
+      "Step": "follow",
+      "Name": "A family burial ring from Stonewake Barrow",
+      "Done": false
+    },
+    {
+      "Step": "clear",
+      "Name": "Stonewake Barrow",
+      "Done": false
+    },
+    {
+      "Step": "head",
+      "Name": "Hollowheart",
+      "Done": true
+    },
+    {
+      "Step": "head",
+      "Name": "Greywater",
+      "Done": false
+    },
+    {
+      "Step": "head",
+      "Name": "Tristinwold",
+      "Done": false
+    },
+    {
+      "Step": "head",
+      "Name": "Druitt",
+      "Done": false
+    },
+    {
+      "Step": "head",
+      "Name": "Hawkwake Mine",
+      "Done": false
+    },
+    {
+      "Step": "recruit",
+      "Name": "apprentices",
+      "Done": false
+    }
+  ],
+  "Train": [
+    "Flurry",
+    "Flying Kick",
+    "Inner Focus",
+    "The Guardian Spirit",
+    "Evasion"
+  ],
+  "Written": "2026-11-14 07:44"
+}

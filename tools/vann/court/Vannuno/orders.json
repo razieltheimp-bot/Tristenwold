@@ -1,0 +1,37 @@
+{
+  "Aim": "Grow strong, recruit apprentices, and prepare to join Vann at his colony.",
+  "Temper": "villain",
+  "FightAbove": 0.6,
+  "FleeBelow": 0.35,
+  "Focus": [
+    "quests",
+    "fights",
+    "people",
+    "gathering",
+    "places"
+  ],
+  "HeadFor": [
+    "Tristinwold"
+  ],
+  "Avoid": [],
+  "Keen": [
+    "apprentice",
+    "colony",
+    "raid"
+  ],
+  "Todo": [
+    {
+      "Step": "Head for Tristinwold",
+      "Name": "Head for Tristinwold, marked on the map",
+      "Done": false
+    }
+  ],
+  "Train": [
+    "Smite",
+    "Holy Light",
+    "Shield Wall",
+    "Divine Judgement",
+    "Aura of Devotion"
+  ],
+  "Written": "2026-11-09 19:23"
+}

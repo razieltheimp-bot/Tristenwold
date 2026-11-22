@@ -1,0 +1,612 @@
+{"t":"2026-11-11 18:07:32","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 13, 116 crowns, 0 apprentices."}
+{"t":"2026-11-11 18:23:39","who":"Vann-Magus","kind":"level","text":"Vann-Magus reached level 14."}
+{"t":"2026-11-11 18:26:00","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Uno (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-11 18:27:07","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 7, 0 crowns, 1 apprentices."}
+{"t":"2026-11-11 18:27:42","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-11 18:29:32","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (830, -1154), carrying 0 crowns."}
+{"t":"2026-11-11 19:27:48","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 116 crowns, 0 apprentices."}
+{"t":"2026-11-11 19:30:36","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-11 19:51:45","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 141 crowns, 0 apprentices."}
+{"t":"2026-11-11 19:52:03","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-279, -1577), carrying 71 crowns."}
+{"t":"2026-11-11 20:09:34","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Uno (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-11 20:11:00","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 7, 23 crowns, 1 apprentices."}
+{"t":"2026-11-11 20:14:17","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-313, -281), carrying 17 crowns."}
+{"t":"2026-11-11 20:14:30","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (0 left)."}
+{"t":"2026-11-11 20:33:09","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-517, -315), carrying 18 crowns."}
+{"t":"2026-11-11 21:12:10","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 7, 35 crowns, 0 apprentices."}
+{"t":"2026-11-11 21:49:21","who":"Vann-Uno","kind":"switch","text":"Handing over to Vann-Magus (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-11 21:52:18","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 50 crowns, 0 apprentices."}
+{"t":"2026-11-11 22:05:14","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-11 22:30:01","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-11 22:32:54","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Uno (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-11 22:34:08","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 7, 99 crowns, 0 apprentices."}
+{"t":"2026-11-11 22:36:30","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (143, -10), carrying 57 crowns."}
+{"t":"2026-11-11 22:40:04","who":"Vann-Uno","kind":"level","text":"Vann-Uno reached level 8."}
+{"t":"2026-11-11 22:45:23","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (1 now)."}
+{"t":"2026-11-11 23:06:28","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-11 23:08:48","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-11 23:10:28","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-11 23:16:07","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (0 left)."}
+{"t":"2026-11-11 23:21:18","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-11 23:23:41","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-11 23:33:28","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-11 23:34:48","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-11 23:35:53","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 8, 0 crowns, 0 apprentices."}
+{"t":"2026-11-11 23:36:23","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-1788, -1009), carrying 0 crowns."}
+{"t":"2026-11-11 23:55:18","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-11 23:59:39","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (1 now)."}
+{"t":"2026-11-12 00:06:28","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (3 now)."}
+{"t":"2026-11-12 00:38:10","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 8, 0 crowns, 0 apprentices."}
+{"t":"2026-11-12 00:41:23","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-969, -861), carrying 0 crowns."}
+{"t":"2026-11-12 01:02:45","who":"Vann-Uno","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 01:11:16","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 01:20:21","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (2 now)."}
+{"t":"2026-11-12 01:28:42","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (1 left)."}
+{"t":"2026-11-12 01:38:30","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (3 now)."}
+{"t":"2026-11-12 01:39:45","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 8, 68 crowns, 1 apprentices."}
+{"t":"2026-11-12 01:39:55","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater, the Gloomfiend","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater, the Gloomfiend."}
+{"t":"2026-11-12 01:42:18","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater, the Gloomfiend","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater, the Gloomfiend."}
+{"t":"2026-11-12 01:45:23","who":"Vann-Uno","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 02:01:24","who":"Vann-Uno","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 02:15:29","who":"Vann-Uno","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 02:16:07","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (2 now)."}
+{"t":"2026-11-12 02:16:46","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (3 now)."}
+{"t":"2026-11-12 02:22:30","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (4 now)."}
+{"t":"2026-11-12 02:23:13","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (7 now)."}
+{"t":"2026-11-12 02:27:46","who":"Vann-Uno","kind":"level","text":"Vann-Uno reached level 9."}
+{"t":"2026-11-12 02:28:37","who":"Vann-Uno","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 02:36:28","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (8 now)."}
+{"t":"2026-11-12 02:40:18","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 02:41:14","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 9, 531 crowns, 8 apprentices."}
+{"t":"2026-11-12 02:43:09","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (7 left)."}
+{"t":"2026-11-12 03:04:04","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 03:04:08","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 03:04:11","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 03:04:12","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 03:08:09","who":"Vann-Uno","kind":"deviant:Nimak Iron-Hide","text":"Vann-Uno is in a fight with the deviant Nimak Iron-Hide."}
+{"t":"2026-11-12 03:13:47","who":"Vann-Uno","kind":"deviant:Juroos the Tide-Cursed","text":"Vann-Uno is in a fight with the deviant Juroos the Tide-Cursed."}
+{"t":"2026-11-12 03:15:56","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (8 now)."}
+{"t":"2026-11-12 03:27:06","who":"Vann-Uno","kind":"switch","text":"Handing over to Vann-Dos (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-12 03:28:49","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 7, 137 crowns, 1 apprentices."}
+{"t":"2026-11-12 03:28:59","who":"Vann-Dos","kind":"deviant:Turlin","text":"Vann-Dos is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 03:30:13","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos lost 1 apprentice (0 left)."}
+{"t":"2026-11-12 03:32:45","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-703, -586), carrying 69 crowns."}
+{"t":"2026-11-12 03:34:50","who":"Vann-Dos","kind":"deviant:Dorva Stormborn","text":"Vann-Dos is in a fight with the deviant Dorva Stormborn."}
+{"t":"2026-11-12 03:35:16","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (199, -100), carrying 44 crowns."}
+{"t":"2026-11-12 04:28:44","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 7, 73 crowns, 0 apprentices."}
+{"t":"2026-11-12 04:52:25","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos took on an apprentice (2 now)."}
+{"t":"2026-11-12 04:55:23","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (343, -599), carrying 120 crowns."}
+{"t":"2026-11-12 04:55:54","who":"Vann-Dos","kind":"level","text":"Vann-Dos reached level 8."}
+{"t":"2026-11-12 04:55:54","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos lost 1 apprentice (1 left)."}
+{"t":"2026-11-12 04:57:14","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (113, -33), fighting Ronacse, the Sin of Pride (level 102), carrying 90 crowns."}
+{"t":"2026-11-12 05:01:07","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos took on an apprentice (2 now)."}
+{"t":"2026-11-12 05:01:31","who":"Vann-Dos","kind":"deviant:Turlin","text":"Vann-Dos is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 05:02:35","who":"Vann-Dos","kind":"deviant:Turlin","text":"Vann-Dos is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 05:30:04","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 7, 65 crowns, 0 apprentices."}
+{"t":"2026-11-12 05:31:33","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos took on an apprentice (1 now)."}
+{"t":"2026-11-12 05:37:27","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-144, -17), carrying 23 crowns."}
+{"t":"2026-11-12 05:39:47","who":"Vann-Dos","kind":"deviant:Turlin","text":"Vann-Dos is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 05:53:45","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-242, -827), carrying 28 crowns."}
+{"t":"2026-11-12 05:54:33","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (133, -27), carrying 43 crowns."}
+{"t":"2026-11-12 06:01:30","who":"Vann-Dos","kind":"review","text":"Daily review written (2026-11-12)."}
+{"t":"2026-11-12 06:03:12","who":"Vann-Dos","kind":"deviant:Rhokak Iron-Hide, the Gravewalker","text":"Vann-Dos is in a fight with the deviant Rhokak Iron-Hide, the Gravewalker."}
+{"t":"2026-11-12 06:03:32","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-140, -456), carrying 2 crowns."}
+{"t":"2026-11-12 06:33:19","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 7, 20 crowns, 1 apprentices."}
+{"t":"2026-11-12 06:34:24","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-413, -513), carrying 10 crowns."}
+{"t":"2026-11-12 06:36:27","who":"Vann-Dos","kind":"deviant:Turlin","text":"Vann-Dos is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 06:36:53","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos lost 1 apprentice (0 left)."}
+{"t":"2026-11-12 06:39:28","who":"Vann-Dos","kind":"deviant:Nimos the Mad","text":"Vann-Dos is in a fight with the deviant Nimos the Mad."}
+{"t":"2026-11-12 06:39:44","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-297, -85), carrying 5 crowns."}
+{"t":"2026-11-12 06:49:23","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-539, -732), carrying 10 crowns."}
+{"t":"2026-11-12 06:55:03","who":"Vann-Dos","kind":"switch","text":"Handing over to Vann-Magus (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-12 06:56:39","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 96 crowns, 1 apprentices."}
+{"t":"2026-11-12 06:59:17","who":"Vann-Magus","kind":"review","text":"Joeseph skipped the 2026-11-12 tuning."}
+{"t":"2026-11-12 07:01:06","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-1224, -852), carrying 48 crowns."}
+{"t":"2026-11-12 07:01:19","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (0 left)."}
+{"t":"2026-11-12 07:10:25","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Uno (Vann-Magus\u0027s Gemini hours are spent; Vann-Uno still has some today)."}
+{"t":"2026-11-12 07:11:29","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 9, 631 crowns, 8 apprentices."}
+{"t":"2026-11-12 07:12:16","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (7 left)."}
+{"t":"2026-11-12 07:21:58","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (8 now)."}
+{"t":"2026-11-12 07:24:41","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-12 07:27:33","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (7 left)."}
+{"t":"2026-11-12 07:32:40","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (6 left)."}
+{"t":"2026-11-12 07:33:10","who":"Vann-Uno","kind":"deviant:Mokos the Grinning","text":"Vann-Uno is in a fight with the deviant Mokos the Grinning."}
+{"t":"2026-11-12 07:40:04","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (5 left)."}
+{"t":"2026-11-12 08:07:04","who":"Vann-Uno","kind":"switch","text":"Handing over to Vann-Dos (Vann-Uno\u0027s Gemini hours are spent; Vann-Dos still has some today)."}
+{"t":"2026-11-12 08:09:08","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 7, 20 crowns, 0 apprentices."}
+{"t":"2026-11-12 08:10:54","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-216, -534), carrying 10 crowns."}
+{"t":"2026-11-12 08:18:11","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Dos (Vann-Magus\u0027s Gemini hours are spent; Vann-Dos still has some today)."}
+{"t":"2026-11-12 08:19:26","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 7, 10 crowns, 0 apprentices."}
+{"t":"2026-11-12 08:22:14","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-289, -733), carrying 10 crowns."}
+{"t":"2026-11-12 08:24:00","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-38, -267), carrying 8 crowns."}
+{"t":"2026-11-12 08:30:37","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-130, -491), carrying 4 crowns."}
+{"t":"2026-11-12 08:35:04","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-123, -606), carrying 2 crowns."}
+{"t":"2026-11-12 08:45:32","who":"Vann-Dos","kind":"level","text":"Vann-Dos reached level 8."}
+{"t":"2026-11-12 08:47:39","who":"Vann-Dos","kind":"deviant:Turlin","text":"Vann-Dos is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 08:48:09","who":"Vann-Dos","kind":"deviant:Turlin","text":"Vann-Dos is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 08:53:22","who":"Vann-Dos","kind":"deviant:Ixa the Witch-Eyed, the Ashen Scourge","text":"Vann-Dos is in a fight with the deviant Ixa the Witch-Eyed, the Ashen Scourge."}
+{"t":"2026-11-12 08:53:24","who":"Vann-Dos","kind":"deviant:Ixa the Witch-Eyed, the Ashen Scourge","text":"Vann-Dos is in a fight with the deviant Ixa the Witch-Eyed, the Ashen Scourge."}
+{"t":"2026-11-12 09:00:25","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Dos (Vann-Magus\u0027s Gemini hours are spent; Vann-Dos still has some today)."}
+{"t":"2026-11-12 09:01:33","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 8, 19 crowns, 0 apprentices."}
+{"t":"2026-11-12 09:03:16","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-152, -562), carrying 10 crowns."}
+{"t":"2026-11-12 09:06:51","who":"Vann-Dos","kind":"deviant:Ixa the Witch-Eyed, the Ashen Scourge","text":"Vann-Dos is in a fight with the deviant Ixa the Witch-Eyed, the Ashen Scourge."}
+{"t":"2026-11-12 09:24:47","who":"Vann-Dos","kind":"problem-gemini","text":"Gemini keeps failing (busy or down): the local brain and the simple brain are covering for it."}
+{"t":"2026-11-12 09:32:30","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-128, -471), carrying 44 crowns."}
+{"t":"2026-11-12 09:50:01","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-845, -270), carrying 47 crowns."}
+{"t":"2026-11-12 09:55:05","who":"Vann-Dos","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 09:55:44","who":"Vann-Dos","kind":"problem-gemini","text":"Gemini keeps failing (busy or down): the local brain and the simple brain are covering for it."}
+{"t":"2026-11-12 09:56:11","who":"Vann-Dos","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 9)","text":"Vann-Dos is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 9)."}
+{"t":"2026-11-12 09:57:00","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos took on an apprentice (1 now)."}
+{"t":"2026-11-12 09:57:50","who":"Vann-Dos","kind":"problem-gemini","text":"Gemini keeps failing (busy or down): the local brain and the simple brain are covering for it."}
+{"t":"2026-11-12 09:58:39","who":"Vann-Dos","kind":"problem-gemini","text":"Gemini keeps failing (busy or down): the local brain and the simple brain are covering for it."}
+{"t":"2026-11-12 09:59:59","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos took on an apprentice (3 now)."}
+{"t":"2026-11-12 10:00:03","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-754, -301), carrying 38 crowns."}
+{"t":"2026-11-12 10:02:03","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 8, 38 crowns, 3 apprentices."}
+{"t":"2026-11-12 10:05:52","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-171, -515), carrying 49 crowns."}
+{"t":"2026-11-12 10:09:13","who":"Vann-Dos","kind":"deviant:Turlin","text":"Vann-Dos is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 10:11:33","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (-100, -643), carrying 27 crowns."}
+{"t":"2026-11-12 10:33:39","who":"Vann-Dos","kind":"problem-gemini","text":"Gemini keeps failing (busy or down): the local brain and the simple brain are covering for it."}
+{"t":"2026-11-12 10:35:01","who":"Vann-Dos","kind":"problem-gemini","text":"Gemini keeps failing (busy or down): the local brain and the simple brain are covering for it."}
+{"t":"2026-11-12 10:37:57","who":"Vann-Dos","kind":"problem-gemini","text":"Gemini keeps failing (busy or down): the local brain and the simple brain are covering for it."}
+{"t":"2026-11-12 10:42:26","who":"Vann-Dos","kind":"switch","text":"Handing over to Vann-Tres (Vann-Dos\u0027s Gemini hours are spent; Vann-Tres still has some today)."}
+{"t":"2026-11-12 10:45:31","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 5, 149 crowns, 4 apprentices."}
+{"t":"2026-11-12 10:45:59","who":"Vann-Tres","kind":"death","text":"Vann-Tres died at (-59, -231), carrying 75 crowns."}
+{"t":"2026-11-12 10:47:34","who":"Vann-Tres","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 10:49:31","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres took on an apprentice (5 now)."}
+{"t":"2026-11-12 11:30:08","who":"Vann-Tres","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 11:46:05","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 5, 274 crowns, 5 apprentices."}
+{"t":"2026-11-12 11:54:44","who":"Vann-Tres","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 12:46:06","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 5, 345 crowns, 5 apprentices."}
+{"t":"2026-11-12 13:05:38","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Tres (Vann-Magus\u0027s Gemini hours are spent; Vann-Tres still has some today)."}
+{"t":"2026-11-12 13:06:24","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 5, 390 crowns, 5 apprentices."}
+{"t":"2026-11-12 13:09:19","who":"Vann-Tres","kind":"death","text":"Vann-Tres died at (-90, -1530), fighting Ronacse, the Sin of Pride (level 118), carrying 195 crowns."}
+{"t":"2026-11-12 13:09:29","who":"Vann-Tres","kind":"counter:Ronacse, the Sin of Pride (level 118)","text":"Vann-Tres has a counter for Ronacse, the Sin of Pride (level 118): keep away from it until level 10. Why: vastly out\u2011leveled, can\u0027t survive any fight. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 13:13:36","who":"Vann-Tres","kind":"deviant:Turlin","text":"Vann-Tres is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 13:17:41","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres took on an apprentice (6 now)."}
+{"t":"2026-11-12 13:18:24","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres took on an apprentice (7 now)."}
+{"t":"2026-11-12 13:35:46","who":"Vann-Tres","kind":"counter:Tuskul the Brutal","text":"Vann-Tres has a counter for Tuskul the Brutal: get out as soon as the fight turns against you until level 8. Why: survive by retreating before massive damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 14:07:18","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in The Tristinwold countryside (-95, -68): missing render or solid grey texture covering the entire viewport. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-12_14-07-18.jpg)"}
+{"t":"2026-11-12 14:07:29","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 5, 216 crowns, 7 apprentices."}
+{"t":"2026-11-12 14:08:53","who":"Vann-Tres","kind":"counter:Rock Bear","text":"Vann-Tres has a counter for Rock Bear: get out as soon as the fight turns against you until level 10. Why: Rock Bear deals massive burst damage, so retreat before the fight swings against you. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 14:13:13","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres took on an apprentice (8 now)."}
+{"t":"2026-11-12 14:15:33","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres took on an apprentice (9 now)."}
+{"t":"2026-11-12 14:32:34","who":"Vann-Tres","kind":"deviant:Turlin","text":"Vann-Tres is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 15:07:55","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in The Heartwood (-146, -618): missing or black textures, the entire game view failed to render. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-12_15-07-55.jpg)"}
+{"t":"2026-11-12 15:08:17","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 5, 216 crowns, 7 apprentices."}
+{"t":"2026-11-12 15:22:29","who":"Vann-Tres","kind":"level","text":"Vann-Tres reached level 6."}
+{"t":"2026-11-12 15:23:55","who":"Vann-Tres","kind":"deviant:Turlin","text":"Vann-Tres is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 15:38:47","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres took on an apprentice (8 now)."}
+{"t":"2026-11-12 16:08:46","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 6, 605 crowns, 8 apprentices."}
+{"t":"2026-11-12 16:20:18","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in The Docks (82, -12): Massive overlapping text elements and HUD graphics are glitching across the upper and middle screen. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-12_16-20-18.jpg)"}
+{"t":"2026-11-12 16:25:47","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in Inside the house (4, -3), indoors: broken text on screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-12_16-25-47.jpg)"}
+{"t":"2026-11-12 16:30:52","who":"Vann-Tres","kind":"deviant:Turlin","text":"Vann-Tres is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 16:31:23","who":"Vann-Tres","kind":"level","text":"Vann-Tres reached level 7."}
+{"t":"2026-11-12 16:40:49","who":"Vann-Tres","kind":"switch","text":"Handing over to Vann-Magus (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-12 16:42:39","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 82 crowns, 0 apprentices."}
+{"t":"2026-11-12 16:43:36","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-369, -767), fighting Siltak\u0027s Minion, Siltak Fire-Eater, carrying 51 crowns."}
+{"t":"2026-11-12 16:43:44","who":"Vann-Magus","kind":"counter:Siltak Fire-Eater","text":"Vann-Magus has a counter for Siltak Fire-Eater: keep away from it until level 19. Why: minion makes fight lethal, better to flee. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 17:00:42","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 17:10:48","who":"Vann-Magus","kind":"counter:Forge Golem","text":"Vann-Magus has a counter for Forge Golem: get out as soon as the fight turns against you until level 19. Why: Golem overwhelms solo, retreat before health drops. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 17:38:55","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-534, -298), carrying 27 crowns."}
+{"t":"2026-11-12 17:43:36","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Tristinwold (42, -46): missing or black textures (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-12_17-43-36.jpg)"}
+{"t":"2026-11-12 17:43:51","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 88 crowns, 0 apprentices."}
+{"t":"2026-11-12 17:55:07","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 17:55:51","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-172, -50), fighting Ronacse, the Sin of Pride (level 126), carrying 44 crowns."}
+{"t":"2026-11-12 17:56:10","who":"Vann-Magus","kind":"counter:Ronacse, the Sin of Pride (level 126)","text":"Vann-Magus has a counter for Ronacse, the Sin of Pride (level 126): keep away from it until level 19. Why: too fast, solo can\u0027t survive. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 17:56:13","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Tristinwold (78, -6): text overlapping and cluttering the left side of the screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-12_17-56-13.jpg)"}
+{"t":"2026-11-12 18:09:50","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-535, -297), fighting Forge Golem, carrying 12 crowns."}
+{"t":"2026-11-12 18:09:59","who":"Vann-Magus","kind":"counter:Forge Golem","text":"Vann-Magus has a counter for Forge Golem: only fight it with company along until level 16. Why: need allies to survive its massive damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 18:16:41","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Tristinwold (60, 3): characters or the camera inside walls or rock (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-12_18-16-41.jpg)"}
+{"t":"2026-11-12 18:44:08","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Docks (113, -8): missing or black textures (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-12_18-44-08.jpg)"}
+{"t":"2026-11-12 18:44:23","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 95 crowns, 0 apprentices."}
+{"t":"2026-11-12 18:49:11","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 18:53:33","who":"Vann-Magus","kind":"counter:Turlin","text":"Vann-Magus has a counter for Turlin: get out as soon as the fight turns against you until level 15. Why: retreat before damage spikes. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 19:03:01","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 134 crowns, 0 apprentices."}
+{"t":"2026-11-12 19:13:16","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Docks (113, -7): the character model is clipping vertically halfway into the solid floor of the wooden dock structure. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-12_19-13-16.jpg)"}
+{"t":"2026-11-12 19:18:15","who":"Vann-Magus","kind":"deviant:Siltak Fire-Eater","text":"Vann-Magus is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-12 19:18:42","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (113, -3), fighting Siltak\u0027s Minion, carrying 95 crowns."}
+{"t":"2026-11-12 19:18:46","who":"Vann-Magus","kind":"counter:Siltak\u0027s Minion","text":"Vann-Magus has a counter for Siltak\u0027s Minion: get out as soon as the fight turns against you until level 16. Why: you die fast, so retreat before the minion overwhelms you. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 19:29:55","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 100 crowns, 0 apprentices."}
+{"t":"2026-11-12 19:44:09","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 117 crowns, 0 apprentices."}
+{"t":"2026-11-12 20:46:00","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 152 crowns, 0 apprentices."}
+{"t":"2026-11-12 20:47:43","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-23, -16): camera is partially inside or clipping through a rock wall, creating a split-screen visual artifact on the right. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-12_20-47-43.jpg)"}
+{"t":"2026-11-12 20:50:55","who":"Vann-Magus","kind":"problem","text":"The local brain (Ollama) refused a question (500); the simple brain plays for five minutes."}
+{"t":"2026-11-12 20:56:17","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-12 20:58:55","who":"Vann-Magus","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 15)","text":"Vann-Magus is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 15)."}
+{"t":"2026-11-12 20:59:19","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-892, -261), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 15), carrying 33 crowns."}
+{"t":"2026-11-12 20:59:25","who":"Vann-Magus","kind":"counter:Vaelul the Unbowed, Lord of Druitt (level 15)","text":"Vann-Magus has a counter for Vaelul the Unbowed, Lord of Druitt (level 15): only fight it with company along until level 15. Why: need allies to survive minion support. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 21:18:58","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 21:47:53","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 14, 33 crowns, 1 apprentices."}
+{"t":"2026-11-12 21:50:40","who":"Vann-Magus","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 15)","text":"Vann-Magus is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 15)."}
+{"t":"2026-11-12 21:50:42","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-824, -238), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 15), carrying 17 crowns."}
+{"t":"2026-11-12 21:50:50","who":"Vann-Magus","kind":"counter:Vaelul the Unbowed, Lord of Druitt (level 15)","text":"Vann-Magus has a counter for Vaelul the Unbowed, Lord of Druitt (level 15): get out as soon as the fight turns against you until level 19. Why: minion adds burst damage, retreat before overwhelm. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 21:54:36","who":"Vann-Magus","kind":"deviant:Siltak Fire-Eater","text":"Vann-Magus is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-12 21:54:40","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-673, -188), fighting Siltak Fire-Eater, Siltak\u0027s Minion, carrying 14 crowns."}
+{"t":"2026-11-12 22:05:36","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (2 now)."}
+{"t":"2026-11-12 22:06:24","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (4 now)."}
+{"t":"2026-11-12 22:11:50","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-910, -261), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 15), carrying 140 crowns."}
+{"t":"2026-11-12 22:12:44","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (3 left)."}
+{"t":"2026-11-12 22:15:38","who":"Vann-Magus","kind":"counter:Turlin","text":"Vann-Magus drops the counter on Turlin (bail-early): level 15 now, so he\u0027ll try them again."}
+{"t":"2026-11-12 22:15:43","who":"Vann-Magus","kind":"level","text":"Vann-Magus reached level 15."}
+{"t":"2026-11-12 22:16:56","who":"Vann-Magus","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 16)","text":"Vann-Magus is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 16)."}
+{"t":"2026-11-12 22:17:19","who":"Vann-Magus","kind":"counter:Vaelul the Unbowed, Lord of Druitt (level 16)","text":"Vann-Magus has a counter for Vaelul the Unbowed, Lord of Druitt (level 16): only fight it at full health until level 17. Why: only engage when at full health to survive the burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 22:17:47","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-835, -288), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 16), carrying 76 crowns."}
+{"t":"2026-11-12 22:48:47","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 15, 145 crowns, 3 apprentices."}
+{"t":"2026-11-12 22:50:34","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-11, -26): text overlapping significantly on the upper left side of the screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-12_22-50-34.jpg)"}
+{"t":"2026-11-12 23:15:39","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Harbor (82, -11): text overlap on the left side of the screen where quest logs and status info clutter the UI (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-12_23-15-39.jpg)"}
+{"t":"2026-11-12 23:23:04","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 2 apprentices (1 left)."}
+{"t":"2026-11-12 23:33:51","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-12 23:34:12","who":"Vann-Magus","kind":"counter:Turlin","text":"Vann-Magus has a counter for Turlin: get out as soon as the fight turns against you until level 18. Why: low health, retreat before it overwhelms you. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 23:34:25","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (0 left)."}
+{"t":"2026-11-12 23:40:26","who":"Vann-Magus","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 20)","text":"Vann-Magus is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 20)."}
+{"t":"2026-11-12 23:41:01","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-892, -264), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 20), carrying 104 crowns."}
+{"t":"2026-11-12 23:50:32","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 15, 118 crowns, 0 apprentices."}
+{"t":"2026-11-12 23:51:06","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-12 23:53:19","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-899, -272), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 21), carrying 37 crowns."}
+{"t":"2026-11-12 23:53:25","who":"Vann-Magus","kind":"counter:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Magus has a counter for Vaelul the Unbowed, Lord of Druitt (level 21): only fight it with company along until level 20. Why: minion boosts damage, so you need allies to survive. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-12 23:59:32","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-1064, -652), fighting Ronacse, the Sin of Pride (level 132), Siltak Fire-Eater, carrying 27 crowns."}
+{"t":"2026-11-12 23:59:55","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (0 left)."}
+{"t":"2026-11-13 00:26:40","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 00:27:21","who":"Vann-Magus","kind":"deviant:Silt Stormborn","text":"Vann-Magus is in a fight with the deviant Silt Stormborn."}
+{"t":"2026-11-13 00:40:18","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-13 00:41:07","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (2 now)."}
+{"t":"2026-11-13 00:51:43","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 15, 108 crowns, 2 apprentices."}
+{"t":"2026-11-13 00:53:33","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Galeholt (-1913, -1068): Massive overlapping UI text and dialogue overlapping other interface elements, making text nearly unreadable. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_00-53-33.jpg)"}
+{"t":"2026-11-13 00:54:10","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (5 now)."}
+{"t":"2026-11-13 01:22:56","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (4, -3), carrying 226 crowns."}
+{"t":"2026-11-13 01:51:46","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 3 apprentices (2 left)."}
+{"t":"2026-11-13 01:54:06","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 15, 277 crowns, 2 apprentices."}
+{"t":"2026-11-13 01:55:16","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-825, -256), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 21), carrying 139 crowns."}
+{"t":"2026-11-13 01:55:21","who":"Vann-Magus","kind":"counter:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Magus has a counter for Vaelul the Unbowed, Lord of Druitt (level 21): get out as soon as the fight turns against you until level 20. Why: minion \u002B boss overwhelm solo, retreat before death. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 01:58:34","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 01:58:48","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 01:59:51","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 2 apprentices (0 left)."}
+{"t":"2026-11-13 02:02:26","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Tristinwold (61, 3): UI text heavily overlapping other game text and floating over the view. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_02-02-26.jpg)"}
+{"t":"2026-11-13 02:19:32","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-828, -256), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 21), carrying 74 crowns."}
+{"t":"2026-11-13 02:54:37","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 15, 124 crowns, 0 apprentices."}
+{"t":"2026-11-13 02:56:47","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-13 03:10:25","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 03:56:24","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 15, 195 crowns, 1 apprentices."}
+{"t":"2026-11-13 03:59:00","who":"Vann-Magus","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Magus is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 03:59:11","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-829, -256), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 21), carrying 80 crowns."}
+{"t":"2026-11-13 03:59:22","who":"Vann-Magus","kind":"counter:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Magus has a counter for Vaelul the Unbowed, Lord of Druitt (level 21): only fight it with company along until level 20. Why: minion \u002B boss overwhelms solo, need allies to survive. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 04:02:07","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 04:02:52","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (0 left)."}
+{"t":"2026-11-13 04:24:05","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-13 04:27:17","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Hollowheart (-78, -637): camera clipping inside or beneath terrain/environment meshes, creating a black obstructing visual glitch. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_04-27-17.jpg)"}
+{"t":"2026-11-13 04:35:48","who":"Vann-Magus","kind":"counter:Forge Golem","text":"Vann-Magus drops the counter on Forge Golem (not-alone): level 16 now, so he\u0027ll try them again."}
+{"t":"2026-11-13 04:35:48","who":"Vann-Magus","kind":"counter:Siltak\u0027s Minion","text":"Vann-Magus drops the counter on Siltak\u0027s Minion (bail-early): level 16 now, so he\u0027ll try them again."}
+{"t":"2026-11-13 04:36:24","who":"Vann-Magus","kind":"level","text":"Vann-Magus reached level 16."}
+{"t":"2026-11-13 04:36:24","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (0 left)."}
+{"t":"2026-11-13 04:58:09","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 166 crowns, 0 apprentices."}
+{"t":"2026-11-13 04:59:07","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-831, -601), fighting Ronacse, the Sin of Pride (level 136), Siltak Fire-Eater, carrying 83 crowns."}
+{"t":"2026-11-13 04:59:13","who":"Vann-Magus","kind":"counter:Siltak Fire-Eater","text":"Vann-Magus has a counter for Siltak Fire-Eater: only fight it with company along until level 21. Why: need allies to survive its burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 05:03:00","who":"Vann-Magus","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Magus is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 05:05:36","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 05:26:10","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Uno (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-13 05:28:02","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 9, 706 crowns, 5 apprentices."}
+{"t":"2026-11-13 05:30:38","who":"Vann-Uno","kind":"level","text":"Vann-Uno reached level 10."}
+{"t":"2026-11-13 05:41:44","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 3 apprentices (2 left)."}
+{"t":"2026-11-13 05:43:20","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (1 left)."}
+{"t":"2026-11-13 05:47:51","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (0 left)."}
+{"t":"2026-11-13 05:56:05","who":"Vann-Uno","kind":"visual-bug","text":"Vann-Uno spotted something odd in The Northwood (310, -1203): camera inside walls or rock. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Uno\\sightings\\2026-11-13_05-56-05.jpg)"}
+{"t":"2026-11-13 05:57:58","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 06:01:54","who":"Vann-Uno","kind":"review","text":"Daily review written (2026-11-13)."}
+{"t":"2026-11-13 06:17:33","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (1 now)."}
+{"t":"2026-11-13 06:23:49","who":"Vann-Uno","kind":"switch","text":"Handing over to Vann-Dos (Vann-Uno\u0027s Gemini hours are spent; Vann-Dos still has some today)."}
+{"t":"2026-11-13 06:25:56","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 8, 38 crowns, 3 apprentices."}
+{"t":"2026-11-13 06:27:55","who":"Vann-Dos","kind":"counter:Rock Bear","text":"Vann-Dos has a counter for Rock Bear: keep away from it until level 11. Why: Rock Bear outclasses Vann-Dos, fleeing prevents lethal damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 06:28:08","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos lost 1 apprentice (2 left)."}
+{"t":"2026-11-13 06:29:17","who":"Vann-Dos","kind":"visual-bug","text":"Vann-Dos spotted something odd in Hollowheart (-147, -630): camera clipping inside the terrain geometry, causing a large gray plane to block the top portion of the screen. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Dos\\sightings\\2026-11-13_06-29-17.jpg)"}
+{"t":"2026-11-13 06:32:07","who":"Vann-Dos","kind":"deviant:Turlin","text":"Vann-Dos is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 06:46:25","who":"Vann-Dos","kind":"switch","text":"Handing over to Vann-Tres (Vann-Dos\u0027s Gemini hours are spent; Vann-Tres still has some today)."}
+{"t":"2026-11-13 06:48:13","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 6, 605 crowns, 8 apprentices."}
+{"t":"2026-11-13 06:49:07","who":"Vann-Tres","kind":"deviant:Turlin","text":"Vann-Tres is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 06:53:36","who":"Vann-Tres","kind":"level","text":"Vann-Tres reached level 7."}
+{"t":"2026-11-13 07:00:39","who":"Vann-Tres","kind":"deviant:Quillul the Swift","text":"Vann-Tres is in a fight with the deviant Quillul the Swift."}
+{"t":"2026-11-13 07:02:53","who":"Vann-Tres","kind":"deviant:Brineos the Unbowed","text":"Vann-Tres is in a fight with the deviant Brineos the Unbowed."}
+{"t":"2026-11-13 07:04:05","who":"Vann-Tres","kind":"switch","text":"Handing over to Vann-Magus (Vann-Tres\u0027s Gemini hours are spent; Vann-Magus still has some today)."}
+{"t":"2026-11-13 07:05:15","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 63 crowns, 0 apprentices."}
+{"t":"2026-11-13 07:08:52","who":"Vann-Magus","kind":"counter:Selmeth of the Drowned Root","text":"Vann-Magus has a counter for Selmeth of the Drowned Root: only fight it with company along until level 21. Why: need apprentices or a party to survive its burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 07:08:57","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Northwood (-277, -1188): characters or the camera inside walls or rock (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_07-08-57.jpg)"}
+{"t":"2026-11-13 07:10:37","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-181, -1315), fighting Ronacse, the Sin of Pride (level 140), Siltak Fire-Eater, carrying 32 crowns."}
+{"t":"2026-11-13 07:14:12","who":"Vann-Magus","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Magus is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 07:14:18","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Druitt (-833, -263): overlapping ui text near the center banner (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_07-14-18.jpg)"}
+{"t":"2026-11-13 07:14:35","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-891, -261), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 21), carrying 20 crowns."}
+{"t":"2026-11-13 07:18:30","who":"Vann-Magus","kind":"deviant:Zethik Bone-Biter","text":"Vann-Magus is in a fight with the deviant Zethik Bone-Biter."}
+{"t":"2026-11-13 07:20:31","who":"Vann-Magus","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Magus is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 07:20:56","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-829, -255), fighting Vaelul\u0027s Minion, Vaelul the Unbowed, Lord of Druitt (level 21), carrying 13 crowns."}
+{"t":"2026-11-13 07:21:12","who":"Vann-Magus","kind":"counter:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Magus has a counter for Vaelul the Unbowed, Lord of Druitt (level 21): get out as soon as the fight turns against you until level 21. Why: solo burst too fast, retreat before overwhelm. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 07:28:14","who":"Vann-Magus","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Magus is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 07:28:35","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-837, -232), fighting Vaelul the Unbowed, Lord of Druitt (level 21), Vaelul\u0027s Minion, carrying 7 crowns."}
+{"t":"2026-11-13 07:33:25","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-295, -73), fighting Siltak\u0027s Minion, Siltak Fire-Eater, carrying 9 crowns."}
+{"t":"2026-11-13 07:33:31","who":"Vann-Magus","kind":"counter:Siltak Fire-Eater","text":"Vann-Magus has a counter for Siltak Fire-Eater: get out as soon as the fight turns against you until level 20. Why: minion and fire burst kill you fast, so retreat before damage spikes. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 07:54:14","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 19 crowns, 0 apprentices."}
+{"t":"2026-11-13 08:14:22","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-127, -8), fighting Siltak\u0027s Minion, Siltak Fire-Eater, carrying 2 crowns."}
+{"t":"2026-11-13 08:14:28","who":"Vann-Magus","kind":"counter:Siltak Fire-Eater","text":"Vann-Magus has a counter for Siltak Fire-Eater: keep away from it until level 17. Why: its burst damage wipes you instantly, so never engage alone. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 08:33:46","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-13 08:46:45","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 08:55:49","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 566 crowns, 1 apprentices."}
+{"t":"2026-11-13 08:57:46","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-22, -15): characters or the camera inside walls or rock. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_08-57-46.jpg)"}
+{"t":"2026-11-13 09:56:50","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 657 crowns, 1 apprentices."}
+{"t":"2026-11-13 10:07:48","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-22, -15): camera clipping inside a wall or door texture. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_10-07-48.jpg)"}
+{"t":"2026-11-13 10:57:58","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 722 crowns, 1 apprentices."}
+{"t":"2026-11-13 11:04:39","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-20, -20): camera inside wall (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_11-04-39.jpg)"}
+{"t":"2026-11-13 11:45:37","who":"Vann-Magus","kind":"counter:Rock Bear","text":"Vann-Magus drops the counter on Rock Bear (avoid): level 16 now, so he\u0027ll try them again."}
+{"t":"2026-11-13 11:45:38","who":"Vann-Magus","kind":"counter:Ronacse, the Sin of Pride (level 118)","text":"Vann-Magus drops the counter on Ronacse, the Sin of Pride (level 118) (avoid): level 16 now, so he\u0027ll try them again."}
+{"t":"2026-11-13 11:45:38","who":"Vann-Magus","kind":"counter:Tuskul the Brutal","text":"Vann-Magus drops the counter on Tuskul the Brutal (bail-early): level 16 now, so he\u0027ll try them again."}
+{"t":"2026-11-13 11:46:16","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 873 crowns, 1 apprentices."}
+{"t":"2026-11-13 12:48:52","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 873 crowns, 1 apprentices."}
+{"t":"2026-11-13 13:09:36","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 888 crowns, 1 apprentices."}
+{"t":"2026-11-13 14:11:09","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 984 crowns, 1 apprentices."}
+{"t":"2026-11-13 14:12:59","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-23, -15): camera clipping into the rock wall on the right and UI elements overlapping incorrectly. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_14-12-59.jpg)"}
+{"t":"2026-11-13 14:27:43","who":"Vann-Magus","kind":"deviant:Dorva Stormborn","text":"Vann-Magus is in a fight with the deviant Dorva Stormborn."}
+{"t":"2026-11-13 14:45:39","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Docks (113, -4): character model clipping partially below the solid dock geometry. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_14-45-39.jpg)"}
+{"t":"2026-11-13 14:50:15","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (113, -5), fighting Dorva Stormborn, carrying 1056 crowns."}
+{"t":"2026-11-13 14:50:16","who":"Vann-Magus","kind":"counter:Dorva Stormborn","text":"Vann-Magus has a counter for Dorva Stormborn: only fight it with company along until level 21. Why: need allies to survive Dorva\u2019s burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 15:11:19","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 1066 crowns, 1 apprentices."}
+{"t":"2026-11-13 15:12:39","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 15:12:44","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 15:13:44","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 15:18:07","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Harbor (139, -12): massive, overlapping block of UI text covering the center of the screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_15-18-07.jpg)"}
+{"t":"2026-11-13 15:42:29","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 1137 crowns, 1 apprentices."}
+{"t":"2026-11-13 15:46:15","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-97, -449), fighting Ronacse, the Sin of Pride (level 144), Siltak Fire-Eater, carrying 595 crowns."}
+{"t":"2026-11-13 15:46:24","who":"Vann-Magus","kind":"counter:Siltak Fire-Eater","text":"Vann-Magus has a counter for Siltak Fire-Eater: only fight it with company along until level 21. Why: needs allies to survive its burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 16:13:29","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 621 crowns, 1 apprentices."}
+{"t":"2026-11-13 16:21:32","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (2 now)."}
+{"t":"2026-11-13 16:26:35","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (3 now)."}
+{"t":"2026-11-13 16:28:00","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 16:29:13","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (2 left)."}
+{"t":"2026-11-13 16:32:18","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Uno (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-13 16:33:34","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 10, 1370 crowns, 1 apprentices."}
+{"t":"2026-11-13 16:35:41","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-13 16:36:50","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (42, -94), fighting Siltak\u0027s Minion, Siltak Fire-Eater, carrying 690 crowns."}
+{"t":"2026-11-13 16:36:55","who":"Vann-Uno","kind":"counter:Siltak Fire-Eater","text":"Vann-Uno has a counter for Siltak Fire-Eater: get out as soon as the fight turns against you until level 13. Why: solo paladin dies fast, retreat before overwhelm. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 16:52:07","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (0 left)."}
+{"t":"2026-11-13 16:54:10","who":"Vann-Uno","kind":"counter:Forge Golem","text":"Vann-Uno has a counter for Forge Golem: keep away from it until level 15. Why: too strong solo, flee before engagement. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 17:00:46","who":"Vann-Uno","kind":"stuck","text":"Vann-Uno got stuck at (-1825, -1033) (trying to get somewhere for three minutes, never 30 m from one spot) and was set down in a town."}
+{"t":"2026-11-13 17:05:13","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 17:06:21","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-1903, -1181), carrying 711 crowns."}
+{"t":"2026-11-13 17:26:35","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (1 now)."}
+{"t":"2026-11-13 17:31:48","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (2 now)."}
+{"t":"2026-11-13 17:32:32","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (4 now)."}
+{"t":"2026-11-13 17:35:17","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 10, 730 crowns, 4 apprentices."}
+{"t":"2026-11-13 17:40:08","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (5 now)."}
+{"t":"2026-11-13 17:44:47","who":"Vann-Uno","kind":"level","text":"Vann-Uno reached level 11."}
+{"t":"2026-11-13 17:44:47","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 5 apprentices (0 left)."}
+{"t":"2026-11-13 17:54:34","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 17:55:25","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 17:55:43","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 17:59:31","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 18:00:18","who":"Vann-Uno","kind":"deviant:Quillul the Swift","text":"Vann-Uno is in a fight with the deviant Quillul the Swift."}
+{"t":"2026-11-13 18:00:18","who":"Vann-Uno","kind":"deviant:Vornos the Tide-Cursed","text":"Vann-Uno is in a fight with the deviant Vornos the Tide-Cursed."}
+{"t":"2026-11-13 18:00:29","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-1200, -623), fighting Ronacse, Quillul the Swift, Vornos the Tide-Cursed, carrying 1121 crowns."}
+{"t":"2026-11-13 18:00:38","who":"Vann-Uno","kind":"counter:Quillul the Swift","text":"Vann-Uno has a counter for Quillul the Swift: only fight it with company along until level 13. Why: need allies to survive its burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 18:02:58","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (1 now)."}
+{"t":"2026-11-13 18:03:13","who":"Vann-Uno","kind":"switch","text":"Handing over to Vann-Magus (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-13 18:04:44","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 623 crowns, 2 apprentices."}
+{"t":"2026-11-13 18:06:33","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (1, 10): Text overlap and clipping issues with the apprentice names and health bars floating on the wall. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_18-06-33.jpg)"}
+{"t":"2026-11-13 18:10:52","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-25, -3): broken text strings with repeating vertical bars overlapping the screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_18-10-52.jpg)"}
+{"t":"2026-11-13 18:16:34","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-27, -4): The camera or character is clipped inside the stone wall, causing severe texture clipping and overlapping text occlusion. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_18-16-34.jpg)"}
+{"t":"2026-11-13 18:28:47","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-25, -4): camera inside wall (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_18-28-47.jpg)"}
+{"t":"2026-11-13 18:36:09","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-27, -4): broken text on screen, specifically overlapping corrupted character strings over the NPC label and wall. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_18-36-09.jpg)"}
+{"t":"2026-11-13 19:07:36","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 643 crowns, 2 apprentices."}
+{"t":"2026-11-13 19:09:42","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-23, -13): camera inside wall/pillar geometry. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_19-09-42.jpg)"}
+{"t":"2026-11-13 20:08:25","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 747 crowns, 2 apprentices."}
+{"t":"2026-11-13 20:10:32","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-11, -26): text overlap and clipping on the left side of the screen where quest logs and status displays overlap. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_20-10-32.jpg)"}
+{"t":"2026-11-13 20:22:13","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (3 now)."}
+{"t":"2026-11-13 20:23:03","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (4 now)."}
+{"t":"2026-11-13 20:27:34","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-535, -299), fighting Goblin King, Yorraul the Witch-Eyed, Crystal Basilisk, Corwenul the Swift, carrying 368 crowns."}
+{"t":"2026-11-13 20:27:39","who":"Vann-Magus","kind":"counter:Yorraul the Witch-Eyed","text":"Vann-Magus has a counter for Yorraul the Witch-Eyed: get out as soon as the fight turns against you until level 19. Why: retreat before damage spikes. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 20:40:29","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (3 left)."}
+{"t":"2026-11-13 21:09:25","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 16, 277 crowns, 3 apprentices."}
+{"t":"2026-11-13 21:11:23","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (2, -28): massive oversized name and title text overlapping and obscuring the middle of the screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_21-11-23.jpg)"}
+{"t":"2026-11-13 21:20:33","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (-23, -14): broken vertical line UI elements or text overlapping across the screen and characters. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_21-20-33.jpg)"}
+{"t":"2026-11-13 21:24:35","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in The Crown (11, 0): UI text overlap makes the names and levels of the apprentices nearly illegible. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-13_21-24-35.jpg)"}
+{"t":"2026-11-13 21:26:55","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (4 now)."}
+{"t":"2026-11-13 21:28:51","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 21:29:34","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 2 apprentices (2 left)."}
+{"t":"2026-11-13 21:32:52","who":"Vann-Magus","kind":"level","text":"Vann-Magus reached level 17."}
+{"t":"2026-11-13 21:33:02","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-148, -24), fighting Ronacse, the Sin of Pride (level 150), Vornak the Mountain, carrying 147 crowns."}
+{"t":"2026-11-13 21:33:10","who":"Vann-Magus","kind":"counter:Vornak the Mountain","text":"Vann-Magus has a counter for Vornak the Mountain: get out as soon as the fight turns against you until level 20. Why: huge health burst kills you fast, so retreat before the fight turns. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 21:33:49","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (1 left)."}
+{"t":"2026-11-13 21:51:08","who":"Vann-Magus","kind":"deviant:Juroos the Mountain","text":"Vann-Magus is in a fight with the deviant Juroos the Mountain."}
+{"t":"2026-11-13 21:54:50","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (2 now)."}
+{"t":"2026-11-13 21:55:32","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (3 now)."}
+{"t":"2026-11-13 22:11:58","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 132 crowns, 3 apprentices."}
+{"t":"2026-11-13 22:35:11","who":"Vann-Magus","kind":"deviant:Siltak Fire-Eater","text":"Vann-Magus is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-13 22:36:26","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (2 left)."}
+{"t":"2026-11-13 22:36:36","who":"Vann-Magus","kind":"deviant:Yorraul the Witch-Eyed","text":"Vann-Magus is in a fight with the deviant Yorraul the Witch-Eyed."}
+{"t":"2026-11-13 22:38:43","who":"Vann-Magus","kind":"deviant:Yorraul the Witch-Eyed","text":"Vann-Magus is in a fight with the deviant Yorraul the Witch-Eyed."}
+{"t":"2026-11-13 22:40:00","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 22:40:51","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (1 left)."}
+{"t":"2026-11-13 23:12:42","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 725 crowns, 1 apprentices."}
+{"t":"2026-11-13 23:14:51","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (0 left)."}
+{"t":"2026-11-13 23:15:28","who":"Vann-Magus","kind":"deviant:Siltak Fire-Eater","text":"Vann-Magus is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-13 23:16:49","who":"Vann-Magus","kind":"deviant:Siltak Fire-Eater","text":"Vann-Magus is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-13 23:17:03","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-1967, -1320), fighting Siltak Fire-Eater, carrying 384 crowns."}
+{"t":"2026-11-13 23:17:15","who":"Vann-Magus","kind":"counter:Siltak Fire-Eater","text":"Vann-Magus has a counter for Siltak Fire-Eater: keep away from it until level 22 (kept: stricter than the new \u0022only fight it at full health\u0022). Why: its burst damage kills fast: keep away (the court has died to it many times). (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-13 23:28:18","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-13 23:31:16","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-13 23:31:58","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (2 now)."}
+{"t":"2026-11-13 23:38:31","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (5 now)."}
+{"t":"2026-11-13 23:42:27","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Uno (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-13 23:44:24","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 11, 1153 crowns, 1 apprentices."}
+{"t":"2026-11-13 23:46:42","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 23:46:43","who":"Vann-Uno","kind":"visual-bug","text":"Vann-Uno spotted something odd in The Strand (-930, -381): camera inside tree model / clipping geometry. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Uno\\sightings\\2026-11-13_23-46-43.jpg)"}
+{"t":"2026-11-13 23:47:18","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-13 23:47:45","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (0 left)."}
+{"t":"2026-11-13 23:47:45","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-936, -322), fighting Vaelul the Unbowed, Lord of Druitt (level 21), Vaelul\u0027s Minion, carrying 577 crowns."}
+{"t":"2026-11-13 23:47:53","who":"Vann-Uno","kind":"counter:Vaelul the Unbowed, Lord of Druitt","text":"Vann-Uno has a counter for Vaelul the Unbowed, Lord of Druitt: only fight it with company along until level 21. Why: needs allies to survive the minion support. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 00:09:59","who":"Vann-Uno","kind":"visual-bug","text":"Vann-Uno spotted something odd in The autumn woods near Greywater (707, -598): camera clipping inside or directly against a wall texture. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Uno\\sightings\\2026-11-14_00-09-59.jpg)"}
+{"t":"2026-11-14 00:24:49","who":"Vann-Uno","kind":"deviant:Pell the Swift, the Ravager","text":"Vann-Uno is in a fight with the deviant Pell the Swift, the Ravager."}
+{"t":"2026-11-14 00:25:46","who":"Vann-Uno","kind":"deviant:Quillul the Swift, the Blightlord","text":"Vann-Uno is in a fight with the deviant Quillul the Swift, the Blightlord."}
+{"t":"2026-11-14 00:26:22","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-14 00:27:23","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-14 00:27:36","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-14 00:28:00","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-14 00:28:42","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-14 00:29:02","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-14 00:29:55","who":"Vann-Uno","kind":"deviant:Vaelul the Unbowed, Lord of Druitt (level 21)","text":"Vann-Uno is in a fight with the deviant Vaelul the Unbowed, Lord of Druitt (level 21)."}
+{"t":"2026-11-14 00:31:54","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (3 now)."}
+{"t":"2026-11-14 00:32:42","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (4 now)."}
+{"t":"2026-11-14 00:38:13","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (5 now)."}
+{"t":"2026-11-14 00:39:41","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (6 now)."}
+{"t":"2026-11-14 00:41:41","who":"Vann-Uno","kind":"switch","text":"Handing over to Vann-Magus (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-14 00:43:05","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 1624 crowns, 5 apprentices."}
+{"t":"2026-11-14 00:50:54","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-1803, -973), fighting Ronacse, the Sin of Pride (level 154), Vornos the Stitched, carrying 812 crowns."}
+{"t":"2026-11-14 00:51:01","who":"Vann-Magus","kind":"counter:Vornos the Stitched","text":"Vann-Magus has a counter for Vornos the Stitched: get out as soon as the fight turns against you until level 20. Why: you\u2019re outmatched, pull back before the fight turns deadly. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 00:51:03","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 2 apprentices (3 left)."}
+{"t":"2026-11-14 01:03:16","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Dos (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-14 01:04:11","who":"Vann-Dos","kind":"switch","text":"Handing over to Vann-Uno (Vann-Dos\u0027s Gemini hours are spent; Vann-Uno still has some today)."}
+{"t":"2026-11-14 01:05:52","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 11, 2003 crowns, 6 apprentices."}
+{"t":"2026-11-14 01:07:18","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 4 apprentices (2 left)."}
+{"t":"2026-11-14 01:07:53","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 2 apprentices (0 left)."}
+{"t":"2026-11-14 01:36:10","who":"Vann-Uno","kind":"stuck","text":"Vann-Uno got stuck at (-1824, -1035) (trying to get somewhere for three minutes, never 30 m from one spot) and was set down in a town."}
+{"t":"2026-11-14 01:37:10","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-1936, -1177), carrying 2087 crowns."}
+{"t":"2026-11-14 01:41:42","who":"Vann-Uno","kind":"deviant:Brakk Gutter-Fang, the Ravager","text":"Vann-Uno is in a fight with the deviant Brakk Gutter-Fang, the Ravager."}
+{"t":"2026-11-14 01:41:59","who":"Vann-Uno","kind":"deviant:Brakk Gutter-Fang, the Ravager","text":"Vann-Uno is in a fight with the deviant Brakk Gutter-Fang, the Ravager."}
+{"t":"2026-11-14 01:46:30","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (4 now)."}
+{"t":"2026-11-14 01:52:30","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 01:52:40","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 02:03:00","who":"Vann-Uno","kind":"level","text":"Vann-Uno reached level 12."}
+{"t":"2026-11-14 02:07:36","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 12, 2725 crowns, 4 apprentices."}
+{"t":"2026-11-14 02:10:44","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 2 apprentices (2 left)."}
+{"t":"2026-11-14 02:14:13","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater, the Gloomfiend","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater, the Gloomfiend."}
+{"t":"2026-11-14 02:14:41","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (1 left)."}
+{"t":"2026-11-14 02:15:20","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (0 left)."}
+{"t":"2026-11-14 02:20:04","who":"Vann-Uno","kind":"deviant:Brakk Gutter-Fang, the Ravager","text":"Vann-Uno is in a fight with the deviant Brakk Gutter-Fang, the Ravager."}
+{"t":"2026-11-14 02:41:04","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (2 now)."}
+{"t":"2026-11-14 02:45:00","who":"Vann-Uno","kind":"switch","text":"Handing over to Vann-Magus (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-14 02:47:05","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 831 crowns, 3 apprentices."}
+{"t":"2026-11-14 03:48:07","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 931 crowns, 3 apprentices."}
+{"t":"2026-11-14 04:48:45","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 1077 crowns, 3 apprentices."}
+{"t":"2026-11-14 05:00:00","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-56, -411), fighting Ronacse, the Sin of Pride (level 156), Vornos the Stitched, carrying 546 crowns."}
+{"t":"2026-11-14 05:00:09","who":"Vann-Magus","kind":"counter:Vornos the Stitched","text":"Vann-Magus has a counter for Vornos the Stitched: only fight it with company along until level 20. Why: need allies to survive its burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 05:00:38","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 2 apprentices (1 left)."}
+{"t":"2026-11-14 05:02:06","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (2 now)."}
+{"t":"2026-11-14 05:49:55","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 547 crowns, 2 apprentices."}
+{"t":"2026-11-14 06:02:51","who":"Vann-Magus","kind":"review","text":"Daily review written (2026-11-14)."}
+{"t":"2026-11-14 06:07:44","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-104, -566), fighting Ronacse, the Sin of Pride (level 158), Vornos the Stitched, carrying 280 crowns."}
+{"t":"2026-11-14 06:07:56","who":"Vann-Magus","kind":"counter:Vornos the Stitched","text":"Vann-Magus has a counter for Vornos the Stitched: only fight it with company along until level 20 (kept: stricter than the new \u0022get out as soon as the fight turns against you\u0022). Why: need allies to survive its burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 06:08:35","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 2 apprentices (0 left)."}
+{"t":"2026-11-14 06:17:51","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-14 06:22:57","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Hollowheart (-119, -639): The massive \u0022Council of Hollowheart\u0022 text overlay cuts awkwardly across the screen and building roof. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-14_06-22-57.jpg)"}
+{"t":"2026-11-14 06:28:04","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 06:29:30","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 1 apprentice (0 left)."}
+{"t":"2026-11-14 06:35:48","who":"Vann-Magus","kind":"deviant:Ulkaos Skull-Cracker, the Harrower","text":"Vann-Magus is in a fight with the deviant Ulkaos Skull-Cracker, the Harrower."}
+{"t":"2026-11-14 06:39:19","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (1 now)."}
+{"t":"2026-11-14 06:40:06","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (3 now)."}
+{"t":"2026-11-14 06:40:56","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (4 now)."}
+{"t":"2026-11-14 06:42:53","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (5 now)."}
+{"t":"2026-11-14 06:52:06","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 257 crowns, 5 apprentices."}
+{"t":"2026-11-14 06:57:34","who":"Vann-Magus","kind":"death","text":"Vann-Magus died at (-1, -3), carrying 267 crowns."}
+{"t":"2026-11-14 06:57:36","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Inside the house (-1, -3), indoors: massive text scaling and overlapping UI elements completely obscuring the screen. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-14_06-57-36.jpg)"}
+{"t":"2026-11-14 06:57:40","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Uno (Vann-Magus\u0027s Gemini hours are spent; Vann-Uno still has some today)."}
+{"t":"2026-11-14 06:59:15","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 12, 1375 crowns, 2 apprentices."}
+{"t":"2026-11-14 06:59:15","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-107, -259), fighting Ronacse, the Sin of Pride (level 160), Siltak Fire-Eater, carrying 1375 crowns."}
+{"t":"2026-11-14 06:59:23","who":"Vann-Uno","kind":"counter:Siltak Fire-Eater","text":"Vann-Uno has a counter for Siltak Fire-Eater: keep away from it until level 22 (kept: stricter than the new \u0022get out as soon as the fight turns against you\u0022). Why: its burst damage kills fast: keep away (the court has died to it many times). (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 07:08:51","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 07:19:07","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (3 now)."}
+{"t":"2026-11-14 07:31:56","who":"Vann-Uno","kind":"switch","text":"Handing over to Vann-Dos (Vann-Uno\u0027s Gemini hours are spent; Vann-Dos still has some today)."}
+{"t":"2026-11-14 07:33:46","who":"Vann-Dos","kind":"login","text":"Vann-Dos is in the world: level 8, 38 crowns, 2 apprentices."}
+{"t":"2026-11-14 07:37:46","who":"Vann-Dos","kind":"deviant:Dorva Stormborn","text":"Vann-Dos is in a fight with the deviant Dorva Stormborn."}
+{"t":"2026-11-14 07:37:47","who":"Vann-Dos","kind":"death","text":"Vann-Dos died at (63, -132), fighting Dorva Stormborn, carrying 22 crowns."}
+{"t":"2026-11-14 07:37:54","who":"Vann-Dos","kind":"counter:Dorva Stormborn","text":"Vann-Dos has a counter for Dorva Stormborn: only fight it with company along until level 21 (kept: stricter than the new \u0022get out as soon as the fight turns against you\u0022). Why: need allies to survive Dorva\u2019s burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 07:37:54","who":"Vann-Dos","kind":"apprentices","text":"Vann-Dos lost 1 apprentice (1 left)."}
+{"t":"2026-11-14 07:51:36","who":"Vann-Dos","kind":"switch","text":"Handing over to Vann-Tres (Vann-Dos\u0027s Gemini hours are spent; Vann-Tres still has some today)."}
+{"t":"2026-11-14 07:53:23","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 7, 387 crowns, 8 apprentices."}
+{"t":"2026-11-14 08:06:55","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres took on an apprentice (10 now)."}
+{"t":"2026-11-14 08:25:19","who":"Vann-Tres","kind":"deviant:Haskos Stormborn, the Harrower","text":"Vann-Tres is in a fight with the deviant Haskos Stormborn, the Harrower."}
+{"t":"2026-11-14 08:25:47","who":"Vann-Tres","kind":"death","text":"Vann-Tres died at (-42, -1991), fighting Haskos Stormborn, the Harrower, carrying 95 crowns."}
+{"t":"2026-11-14 08:26:00","who":"Vann-Tres","kind":"counter:Haskos Stormborn, the Harrower","text":"Vann-Tres has a counter for Haskos Stormborn, the Harrower: get out as soon as the fight turns against you until level 12. Why: it overwhelms you instantly. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 08:26:32","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres lost 1 apprentice (9 left)."}
+{"t":"2026-11-14 08:44:13","who":"Vann-Tres","kind":"deviant:Turlin","text":"Vann-Tres is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 08:55:06","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 7, 84 crowns, 9 apprentices."}
+{"t":"2026-11-14 08:57:49","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres lost 1 apprentice (8 left)."}
+{"t":"2026-11-14 09:04:02","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in The Harbor (93, -10): text overlapping and clipping on the left side of the screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-14_09-04-02.jpg)"}
+{"t":"2026-11-14 09:10:21","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in The Harbor (80, -15): massive glitched text overlaps and occludes the middle of the screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-14_09-10-21.jpg)"}
+{"t":"2026-11-14 09:17:10","who":"Vann-Tres","kind":"deviant:Quillul the Swift","text":"Vann-Tres is in a fight with the deviant Quillul the Swift."}
+{"t":"2026-11-14 09:18:00","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres lost 4 apprentices (4 left)."}
+{"t":"2026-11-14 09:26:42","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in Wrenstead Mine (-92, -2100): text overlapping heavily in the top left corner of the screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-14_09-26-41.jpg)"}
+{"t":"2026-11-14 09:33:20","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in Wrenstead Mine (-105, -2104), indoors: overlapping text labels reading \u0022The Wrenstead Mine\u0022 at the top center. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-14_09-33-20.jpg)"}
+{"t":"2026-11-14 09:56:16","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 7, 435 crowns, 4 apprentices."}
+{"t":"2026-11-14 09:57:04","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres lost 2 apprentices (2 left)."}
+{"t":"2026-11-14 10:02:29","who":"Vann-Tres","kind":"deviant:Brineos the Unbowed","text":"Vann-Tres is in a fight with the deviant Brineos the Unbowed."}
+{"t":"2026-11-14 10:02:32","who":"Vann-Tres","kind":"counter:Tuskul the Brutal","text":"Vann-Tres drops the counter on Tuskul the Brutal (bail-early): level 8 now, so he\u0027ll try them again."}
+{"t":"2026-11-14 10:02:42","who":"Vann-Tres","kind":"level","text":"Vann-Tres reached level 8."}
+{"t":"2026-11-14 10:05:07","who":"Vann-Tres","kind":"deviant:Turlin","text":"Vann-Tres is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 10:05:39","who":"Vann-Tres","kind":"apprentices","text":"Vann-Tres lost 2 apprentices (0 left)."}
+{"t":"2026-11-14 10:23:26","who":"Vann-Tres","kind":"stuck","text":"Vann-Tres got stuck at (-83, -1411) (wedged for three minutes, going nowhere) and was set down in a town."}
+{"t":"2026-11-14 10:27:07","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in Wrenstead Mine (-92, -2100): overlapping text labels cluttering the screen and obscuring the view (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-14_10-27-07.jpg)"}
+{"t":"2026-11-14 10:44:48","who":"Vann-Tres","kind":"stuck","text":"Vann-Tres got stuck at (-880, -329) (trying to get somewhere for three minutes, never 30 m from one spot) and was set down in a town."}
+{"t":"2026-11-14 10:58:47","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 8, 425 crowns, 0 apprentices."}
+{"t":"2026-11-14 11:28:37","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in Hollowheart (-154, -634): Characters or the camera inside walls or rock. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-14_11-28-37.jpg)"}
+{"t":"2026-11-14 11:59:40","who":"Vann-Tres","kind":"login","text":"Vann-Tres is in the world: level 8, 373 crowns, 0 apprentices."}
+{"t":"2026-11-14 12:34:49","who":"Vann-Tres","kind":"visual-bug","text":"Vann-Tres spotted something odd in Hollowheart (-150, -651): character clipping into the wall. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Tres\\sightings\\2026-11-14_12-34-49.jpg)"}
+{"t":"2026-11-14 12:36:24","who":"Vann-Tres","kind":"switch","text":"Handing over to Vann-Magus (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-14 12:38:07","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 267 crowns, 5 apprentices."}
+{"t":"2026-11-14 12:42:54","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 4 apprentices (1 left)."}
+{"t":"2026-11-14 12:56:56","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus took on an apprentice (2 now)."}
+{"t":"2026-11-14 13:03:37","who":"Vann-Magus","kind":"deviant:Turlin","text":"Vann-Magus is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 13:04:31","who":"Vann-Magus","kind":"apprentices","text":"Vann-Magus lost 2 apprentices (0 left)."}
+{"t":"2026-11-14 13:30:43","who":"Vann-Magus","kind":"stuck","text":"Vann-Magus got stuck at (-23, -14) (wedged for three minutes, going nowhere) and was set down in a town."}
+{"t":"2026-11-14 13:39:36","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 284 crowns, 0 apprentices."}
+{"t":"2026-11-14 13:42:55","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Hollowheart (-153, -639): camera inside geometry or hull clipping. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-14_13-42-55.jpg)"}
+{"t":"2026-11-14 13:51:15","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 229 crowns, 0 apprentices."}
+{"t":"2026-11-14 13:56:17","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 229 crowns, 0 apprentices."}
+{"t":"2026-11-14 13:59:22","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Hollowheart (-150, -652): camera is clipping inside or right against a large dark geometry model. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-14_13-59-22.jpg)"}
+{"t":"2026-11-14 14:06:32","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 165 crowns, 0 apprentices."}
+{"t":"2026-11-14 14:33:23","who":"Vann-Magus","kind":"login","text":"Vann-Magus is in the world: level 17, 130 crowns, 0 apprentices."}
+{"t":"2026-11-14 14:44:40","who":"Vann-Magus","kind":"visual-bug","text":"Vann-Magus spotted something odd in Hollowheart (-151, -649): camera is partially inside the rock wall. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Magus\\sightings\\2026-11-14_14-44-40.jpg)"}
+{"t":"2026-11-14 14:56:22","who":"Vann-Magus","kind":"switch","text":"Handing over to Vann-Uno (Vann\u0027s choice (local brain))."}
+{"t":"2026-11-14 14:57:50","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 12, 1432 crowns, 3 apprentices."}
+{"t":"2026-11-14 15:06:40","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (2 left)."}
+{"t":"2026-11-14 15:10:48","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (5 now)."}
+{"t":"2026-11-14 15:11:29","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (6 now)."}
+{"t":"2026-11-14 15:17:11","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (7 now)."}
+{"t":"2026-11-14 15:17:49","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (9 now)."}
+{"t":"2026-11-14 15:28:50","who":"Vann-Uno","kind":"visual-bug","text":"Vann-Uno spotted something odd in The pinewoods near Druitt (-1198, -911): camera and character clipping inside the low-poly tree model. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Uno\\sightings\\2026-11-14_15-28-50.jpg)"}
+{"t":"2026-11-14 15:32:08","who":"Vann-Uno","kind":"counter:Quillul the Swift","text":"Vann-Uno drops the counter on Quillul the Swift (not-alone): level 13 now, so he\u0027ll try them again."}
+{"t":"2026-11-14 15:32:38","who":"Vann-Uno","kind":"level","text":"Vann-Uno reached level 13."}
+{"t":"2026-11-14 15:38:29","who":"Vann-Uno","kind":"visual-bug","text":"Vann-Uno spotted something odd in Hollowheart (-140, -659): broken text on screen, specifically the massive overlapping name and level bars for Egil blocking the right side. (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Uno\\sightings\\2026-11-14_15-38-29.jpg)"}
+{"t":"2026-11-14 16:00:57","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 13, 1530 crowns, 9 apprentices."}
+{"t":"2026-11-14 16:03:23","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 2 apprentices (7 left)."}
+{"t":"2026-11-14 16:04:14","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-133, -232), fighting Ronacse, the Sin of Pride (level 166), carrying 765 crowns."}
+{"t":"2026-11-14 16:04:24","who":"Vann-Uno","kind":"counter:Ronacse, the Sin of Pride","text":"Vann-Uno has a counter for Ronacse, the Sin of Pride: keep away from it until level 19 (kept: stricter than the new \u0022get out as soon as the fight turns against you\u0022). Why: too fast, solo can\u0027t survive. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 16:04:28","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 7 apprentices (0 left)."}
+{"t":"2026-11-14 16:12:16","who":"Vann-Uno","kind":"visual-bug","text":"Vann-Uno spotted something odd in The autumn woods near Greywater (587, -644): text overlapping UI elements on the left side of the screen (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Uno\\sightings\\2026-11-14_16-12-16.jpg)"}
+{"t":"2026-11-14 16:15:35","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (1 now)."}
+{"t":"2026-11-14 16:18:38","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (329, -766), fighting Ashvael the Blighted, Corwenos Fire-Eater, Corwenos\u0027s Minion, carrying 376 crowns."}
+{"t":"2026-11-14 16:18:47","who":"Vann-Uno","kind":"counter:Corwenos Fire-Eater","text":"Vann-Uno has a counter for Corwenos Fire-Eater: only fight it with company along until level 15. Why: need multiple allies to survive its burst damage. (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 16:24:18","who":"Vann-Uno","kind":"visual-bug","text":"Vann-Uno spotted something odd in The pinewoods near Galeholt (-1256, -844): massive black texture corruption cutting through the entire view (picture: C:\\Users\\Admin\\Desktop\\Tristenwold\\source\\local-claude\\vann\\Vann-Uno\\sightings\\2026-11-14_16-24-18.jpg)"}
+{"t":"2026-11-14 16:31:22","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 16:34:13","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-1805, -1096), carrying 381 crowns."}
+{"t":"2026-11-14 17:02:18","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 13, 442 crowns, 1 apprentices."}
+{"t":"2026-11-14 17:03:17","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-1978, -1462), fighting Siltak Fire-Eater, Ronacse, the Sin of Pride (level 168), carrying 221 crowns."}
+{"t":"2026-11-14 17:03:24","who":"Vann-Uno","kind":"counter:Siltak Fire-Eater","text":"Vann-Uno has a counter for Siltak Fire-Eater: keep away from it until level 22 (kept: stricter than the new \u0022only fight it at full health\u0022). Why: its burst damage kills fast: keep away (the court has died to it many times). (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 17:07:14","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (3 now)."}
+{"t":"2026-11-14 17:08:22","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno took on an apprentice (4 now)."}
+{"t":"2026-11-14 17:24:39","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 17:24:57","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 17:30:12","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-1817, -1110), carrying 174 crowns."}
+{"t":"2026-11-14 17:45:25","who":"Vann-Uno","kind":"deviant:Siltak Fire-Eater","text":"Vann-Uno is in a fight with the deviant Siltak Fire-Eater."}
+{"t":"2026-11-14 17:45:33","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (3 left)."}
+{"t":"2026-11-14 17:46:26","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 2 apprentices (1 left)."}
+{"t":"2026-11-14 17:47:18","who":"Vann-Uno","kind":"apprentices","text":"Vann-Uno lost 1 apprentice (0 left)."}
+{"t":"2026-11-14 18:03:40","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 13, 327 crowns, 0 apprentices."}
+{"t":"2026-11-14 18:06:52","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-1873, -1359), fighting Siltak\u0027s Minion, Siltak Fire-Eater, carrying 164 crowns."}
+{"t":"2026-11-14 18:06:54","who":"Vann-Uno","kind":"problem-backup-Cerebras","text":"The backup brain Cerebras refused its key (402); it\u0027s left out for a day."}
+{"t":"2026-11-14 18:07:00","who":"Vann-Uno","kind":"counter:Siltak Fire-Eater","text":"Vann-Uno has a counter for Siltak Fire-Eater: keep away from it until level 22 (kept: stricter than the new \u0022only fight it with company along\u0022). Why: its burst damage kills fast: keep away (the court has died to it many times). (Set by the backup brain (Cerebras).)"}
+{"t":"2026-11-14 18:08:20","who":"Vann-Uno","kind":"level","text":"Vann-Uno reached level 14."}
+{"t":"2026-11-14 18:46:30","who":"Vann-Uno","kind":"deviant:Holtik Skull-Cracker, the Dreadmaw","text":"Vann-Uno is in a fight with the deviant Holtik Skull-Cracker, the Dreadmaw."}
+{"t":"2026-11-14 18:47:45","who":"Vann-Uno","kind":"counter:Forge Golem","text":"Vann-Uno drops the counter on Forge Golem (avoid): level 15 now, so he\u0027ll try them again."}
+{"t":"2026-11-14 18:47:45","who":"Vann-Uno","kind":"counter:Corwenos Fire-Eater","text":"Vann-Uno drops the counter on Corwenos Fire-Eater (not-alone): level 15 now, so he\u0027ll try them again."}
+{"t":"2026-11-14 18:48:32","who":"Vann-Uno","kind":"level","text":"Vann-Uno reached level 15."}
+{"t":"2026-11-14 18:53:55","who":"Vann-Uno","kind":"deviant:Turlin","text":"Vann-Uno is in a fight with the deviant Turlin."}
+{"t":"2026-11-14 18:59:10","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (332, -761), fighting Ashvael the Blighted, carrying 616 crowns."}
+{"t":"2026-11-14 18:59:22","who":"Vann-Uno","kind":"counter:Ashvael the Blighted","text":"Vann-Uno has a counter for Ashvael the Blighted: only fight it with company along until level 18. Why: you need apprentices to handle that massive health pool. (Set by the backup brain (Gemini-2).)"}
+{"t":"2026-11-14 19:04:28","who":"Vann-Uno","kind":"problem-backup-Cerebras","text":"The backup brain Cerebras refused its key (402); it\u0027s left out for a day."}
+{"t":"2026-11-14 19:04:29","who":"Vann-Uno","kind":"login","text":"Vann-Uno is in the world: level 15, 621 crowns, 0 apprentices."}
+{"t":"2026-11-14 19:05:38","who":"Vann-Uno","kind":"death","text":"Vann-Uno died at (-140, -578), fighting Ronacse, the Sin of Pride (level 172), Siltak Fire-Eater, carrying 311 crowns."}
+{"t":"2026-11-14 19:05:53","who":"Vann-Uno","kind":"counter:Siltak Fire-Eater","text":"Vann-Uno has a counter for Siltak Fire-Eater: keep away from it until level 22. Why: vastly outmatched by boss level and minions. (Set by the backup brain (Gemini-2).)"}

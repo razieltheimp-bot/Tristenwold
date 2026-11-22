@@ -1,0 +1,23 @@
+{
+  "Name": "Vann-Magus",
+  "Class": "Sorcerer",
+  "Role": "lord",
+  "Level": 17,
+  "Crowns": 40,
+  "X": -151.43753051757812,
+  "Z": -647.2770385742188,
+  "Where": "Hollowheart",
+  "Apprentices": 0,
+  "ApprenticesWithHim": 0,
+  "ApprenticesAway": [],
+  "Colonies": [],
+  "Rules": [
+    "s:-1:-5",
+    "s:-1:-7"
+  ],
+  "Doing": "going to talk to Teodor Emberwright",
+  "Aim": "Establish a western colony and recruit apprentices to expand our empire",
+  "UsedMinutes": 27,
+  "AllottedMinutes": 10,
+  "Seen": "2026-11-14 14:56:22"
+}

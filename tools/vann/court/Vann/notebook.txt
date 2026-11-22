@@ -1,0 +1,4 @@
+the woodlot|-92|-118|a message on screen
+the Greyhollow quarry|-112|100|Ketil Greyhollow, shopkeeper of Greywater (35, adult human)
+smiths
+warned

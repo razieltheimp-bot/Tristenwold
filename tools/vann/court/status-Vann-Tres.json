@@ -1,0 +1,20 @@
+{
+  "Name": "Vann-Tres",
+  "Class": "Wizard",
+  "Role": "lieutenant",
+  "Level": 8,
+  "Crowns": 328,
+  "X": -149.36758422851562,
+  "Z": -651.9407348632812,
+  "Where": "Hollowheart",
+  "Apprentices": 0,
+  "ApprenticesWithHim": 0,
+  "ApprenticesAway": [],
+  "Colonies": [],
+  "Rules": [],
+  "Doing": "going into the living hollow",
+  "Aim": "Buy a pickaxe, deliver the sealed parcel to Wrenstead Mine, gather resources, and start building the western colony spire.",
+  "UsedMinutes": 8,
+  "AllottedMinutes": 10,
+  "Seen": "2026-11-14 12:36:24"
+}
