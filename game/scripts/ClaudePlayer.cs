@@ -115,7 +115,7 @@ public partial class Main
         /// <summary>Where it was headed when the game warned it off, and the level it was then: not again until it's grown.</summary>
         readonly Dictionary<string, int> _tooWild = [];
         bool _wildTested, _gatherTested, _smithTested, _climbTested, _wasClimbing;
-        bool _gearTested, _swimTested, _indoorTested;
+        bool _gearTested, _swimTested, _indoorTested, _tillTested;
         string _hands = "";
         int _handChanges;
         double _lastHealth;
@@ -279,6 +279,34 @@ public partial class Main
                 if (P.Climbing != _wasClimbing) { _wasClimbing = P.Climbing; GD.PrintErr($"[claude] TEST: {(P.Climbing ? "grabs a wall" : "lets go")} at {P.GlobalPosition.X:0},{P.GlobalPosition.Y:0},{P.GlobalPosition.Z:0}"); }
                 if (P.Stats.Health < _lastHealth - 1 && !P.InFight) GD.PrintErr($"[claude] TEST: hurt out of a fight ({_lastHealth:0} to {P.Stats.Health:0}) at height {P.GlobalPosition.Y:0}");
                 _lastHealth = P.Stats.Health;
+            }
+            // For a test: what he does at a keeper's counter, saving for a piece of gear and not, with the windows faked.
+            if (!_tillTested && _clock > 8 && main._args.ContainsKey("claude-till-test"))
+            {
+                _tillTested = true;
+                var (menu, crowns, gear) = (_menu, P.Crowns, _gearWant);
+                string? Click(int have, params string[] lines)
+                {
+                    P.Crowns = have;
+                    _menu = [.. lines.Select(l => new Choice("click", l, () => { }, l))];
+                    return Deal()?.Key;
+                }
+                static string[] Leaves(int have) => [.. new[] { 100, 500, 1000, 5000 }.Where(n => n < have).Select(n => $"Leave {n} crowns in the till.")
+                    .Concat(new[] { 500, 100 }.Where(k => have > 2 * k).Select(k => $"Leave {have - k} crowns in the till, and keep {k}.")).Append($"Leave all {have} crowns in the till.")];
+                var keep = 900 + Reserve;
+                _gearWant = (900, "the Test Mail (900 crowns)", _clock);
+                var results = new (string What, string? Got, string? Wanted)[]
+                {
+                    ("short of the gear, the takings out", Click(50, "How's trade?", "I'll take the takings. (2000 crowns)", KeepSafeLine), "I'll take the takings. (2000 crowns)"),
+                    ("enough on him now, the rest back in", Click(2050, "How's trade?", KeepSafeLine), KeepSafeLine),
+                    ($"keeping {keep} for the gear", Click(2050, Leaves(2050)), "Leave 1000 crowns in the till."),
+                    ("just enough for the gear: no banking, no takings", Click(keep + 30, "How's trade?", "I'll take the takings. (40 crowns)", KeepSafeLine), null),
+                };
+                _gearWant = null;
+                results = [.. results, ("saving for nothing, all but 100 in", Click(2050, Leaves(2050)), "Leave 1950 crowns in the till, and keep 100.")];
+                (_menu, P.Crowns, _gearWant) = (menu, crowns, gear);
+                foreach (var r in results)
+                    GD.PrintErr($"[claude] TEST till: {(r.Got == r.Wanted ? "PASS" : "FAIL")} {r.What} (got {r.Got ?? "nothing"}{(r.Got == r.Wanted ? "" : $", wanted {r.Wanted ?? "nothing"}")})");
             }
             // For a test: a greatsword, a shield and a one-handed sword in the pack; every change of hands, logged.
             if (main._args.ContainsKey("claude-gear-test"))
@@ -562,7 +590,7 @@ public partial class Main
             var p = P.GlobalPosition;
             var s = new StringBuilder();
             var st = P.Stats;
-            s.AppendLine($"Your character: {st.Name}, level {P.Hero.Level} {P.Class.Name}. Health {st.Health:0}/{st.MaxHealth:0}, stamina {st.Stamina:0}/{st.MaxStamina:0}, mana {st.Mana:0}/{st.MaxMana:0}. {P.Crowns} crowns.");
+            s.AppendLine($"Your character: {st.Name}, level {P.Hero.Level} {P.Class.Name}. Health {st.Health:0}/{st.MaxHealth:0}, stamina {st.Stamina:0}/{st.MaxStamina:0}, mana {st.Mana:0}/{st.MaxMana:0}. {P.Crowns} crowns{(TillTotal is > 0 and var tills ? $" on you, {tills} more in your shops' tills" : "")}{(Want() is { } saving ? $"; saving for {saving.What} ({saving.Crowns} wanted on you)" : "")}.");
             var potions = P.Pack.Count("healing_draught");
             var weapon = P.Pack.WornIn(Slot.Weapon) is { } w ? w.Name : "your class's own";
             s.AppendLine($"Carrying: {potions} healing draught{(potions == 1 ? "" : "s")}; weapon: {weapon}. {(P.Hidden ? "You are hidden in the shadows." : "")}");
@@ -636,8 +664,12 @@ public partial class Main
                 }
             // Carrying a fortune: to the nearest shop of his an apprentice keeps (home, wagon, ship, a colony's stall), to
             // leave most of it in the till. Whatever he carries, he can lose (Vann-Magus died with 2,712 crowns on him).
-            if (P.Crowns >= BankAbove && !P.InFight && Bank(p) is { } bank)
+            if (ShouldBank && !P.InFight && Bank(p) is { } bank)
                 m.Add(bank);
+            // Saving for something (a colony, a hall, a piece of gear) and short of it, with the rest in his tills: go and
+            // take the takings. Otherwise the tills would only ever fill.
+            else if (!P.InFight && ShortOf() is { } want && Withdraw(p, want) is { } withdraw)
+                m.Add(withdraw);
             foreach (var e in Foes(40).Where(e => Reachable($"foe {e.GetInstanceId()}")).Take(3).ToList())
             {
                 var foe = e;
@@ -971,7 +1003,7 @@ public partial class Main
             if (health < 0.5 && foes.Count == 0 && Pick(m => m.Kind == "drink") is >= 0 and var sip) return Of(sip);
             if (health < 0.5 && foes.Count == 0) return Of(Pick(m => m.Kind == "keep")); // hurt and nothing about: stand still and let it come back
             // A fortune on him and nothing about: to his shop with it first, before he loses it.
-            if (foes.Count == 0 && late is null && Pick(m => m.Kind == "bank" && Reachable(m)) is >= 0 and var bank) return Of(bank);
+            if (foes.Count == 0 && late is null && Pick(m => m.Kind is "bank" or "withdraw" && Reachable(m)) is >= 0 and var bank) return Of(bank);
             if (Settling && foes.Count == 0)
             {
                 // Just arrived somewhere new: talk to whoever's about before setting off again (anyone not spoken to in
@@ -1645,7 +1677,7 @@ public partial class Main
             Tried(picked);
             if (picked.Kind == "flee" && _inTracked) _fightFled = true;
             var (label, act) = (picked.Label, picked.Act);
-            if (picked.Kind == "keep" || _doing is not null && (picked.Kind == "head" || picked.Kind == "quest" || picked.Kind == "wander" || picked.Kind == "attack" || picked.Kind == "smith" || picked.Kind == "gather" || picked.Kind == "trip" || picked.Kind == "bank" || picked.Kind.StartsWith("court-", StringComparison.Ordinal) && picked.Kind != "court-found") && picked.Key == _lastKey) return; // already on the way there, or at it
+            if (picked.Kind == "keep" || _doing is not null && (picked.Kind == "head" || picked.Kind == "quest" || picked.Kind == "wander" || picked.Kind == "attack" || picked.Kind == "smith" || picked.Kind == "gather" || picked.Kind == "trip" || picked.Kind == "bank" || picked.Kind == "withdraw" || picked.Kind.StartsWith("court-", StringComparison.Ordinal) && picked.Kind != "court-found") && picked.Key == _lastKey) return; // already on the way there, or at it
             _since = _clock;
             _lastKey = picked.Kind is "head" or "quest" or "wander" or "flee" or "talk" or "attack" or "assault" or "pvp" or "smith" or "gather" or "trip" || picked.Kind.StartsWith("court-", StringComparison.Ordinal) ? picked.Key : "";
             _choices.Add(label);
@@ -2213,20 +2245,63 @@ public partial class Main
         /// the keeper and talk, once the keeper's in sight; till then, toward where they stand. Not the same shop again for
         /// five minutes after a talk there (the server out of reach, say).
         /// </summary>
-        Choice? Bank(Vector3 p)
+        Choice? Bank(Vector3 p) => ToKeeper(p, "bank", _ => true, (bond, called, far, way) =>
+            $"Take your crowns ({P.Crowns}) to {bond.Name}, keeping your shop {called} ({far} {way}), and leave most of them in the till: crowns you carry can be lost when you die, the till's crowns can't.");
+
+        /// <summary>The way to the nearest of his shops whose till holds crowns, to take them out for what he's saving for.</summary>
+        Choice? Withdraw(Vector3 p, (int Crowns, string What) want) => ToKeeper(p, "withdraw", b => main.TillOf(b.Keeps!) > 0, (bond, called, far, way) =>
+            $"Go to {bond.Name}, keeping your shop {called} ({far} {way}), and take the takings ({main.TillOf(bond.Keeps!)} crowns in the till): you want {want.Crowns} on you for {want.What}, and have {P.Crowns}.");
+
+        Choice? ToKeeper(Vector3 p, string kind, Func<Bond, bool> which, Func<Bond, string, string, string, string> label)
         {
-            var best = main.Bonds.Where(b => b.Keeps is { Length: > 0 } && _clock - _bankTried.GetValueOrDefault(b.Id, -1e9) > 300)
+            var best = main.Bonds.Where(b => b.Keeps is { Length: > 0 } && _clock - _bankTried.GetValueOrDefault(b.Id, -1e9) > 300 && which(b))
                 .Select(b => (Bond: b, At: main.KeeperSpot(b.Keeps!)))
                 .Where(x => x.At is { } at && at.DistanceTo(p) < 1500)
                 .OrderBy(x => x.At!.Value.DistanceTo(p)).FirstOrDefault();
             if (best.Bond is not { } bond || best.At is not { } spot) return null;
             var far = spot.DistanceTo(p);
             var called = main.ShopCalled(bond.Keeps!);
-            var label = $"Take your crowns ({P.Crowns}) to {bond.Name}, keeping your shop {called} ({M(far)} {Way(p, spot)}), and leave most of them in the till: crowns you carry can be lost when you die, the till's crowns can't.";
+            var text = label(bond, called, M(far), Way(p, spot));
             if (main._keepers.GetValueOrDefault(bond.Id) is { } keeper && IsInstanceValid(keeper))
-                return new("bank", label, () => { _bankTried[bond.Id] = _clock; TalkTo(keeper); }, $"bank {bond.Id}", keeper.GlobalPosition.DistanceTo(p), keeper.GlobalPosition);
-            return new("bank", label, () => Walk(spot, $"taking the crowns to {bond.Name} {called}"), $"bank {bond.Id}", far, spot);
+                return new(kind, text, () => { _bankTried[bond.Id] = _clock; TalkTo(keeper); }, $"{kind} {bond.Id}", keeper.GlobalPosition.DistanceTo(p), keeper.GlobalPosition);
+            return new(kind, text, () => Walk(spot, kind == "bank" ? $"taking the crowns to {bond.Name} {called}" : $"going to {bond.Name} {called} for the takings"), $"{kind} {bond.Id}", far, spot);
         }
+
+        /// <summary>The crowns in the tills of his shops an apprentice keeps.</summary>
+        int TillTotal => main.Bonds.Where(b => b.Keeps is { Length: > 0 }).Select(b => b.Keeps!).Distinct().Sum(main.TillOf);
+
+        /// <summary>A piece of gear seen on a shelf, better than what he wears, that he couldn't pay for there and then.</summary>
+        (int Price, string What, double At)? _gearWant;
+
+        /// <summary>
+        /// What he's saving for, if anything, and the crowns he wants on him for it (his reserve included): the next
+        /// colony (Vann, from level 5, while there's frontier he can hold), a lieutenant's own hall, an apprentice while
+        /// there's room for one, or a piece of gear seen in the last half hour. Banking leaves him that much; short of it,
+        /// with enough in his tills, he goes for the takings.
+        /// </summary>
+        (int Crowns, string What)? Want()
+        {
+            (int Crowns, string What)? want = null;
+            void Consider(int crowns, string what) { if (want is null || crowns + Reserve > want.Value.Crowns) want = (crowns + Reserve, what); }
+            if (_rank == CourtRank.Lord && P.Hero.Level >= 5 && FrontierSite() is not null)
+                Consider(Halls.PlanOf(HallKind.Colony).FoundCost, Game._city.ColoniesOf(Me).Any() ? "your next colony" : "your first colony");
+            if (_rank == CourtRank.Lieutenant && P.Hero.Level >= 5 && Halls.For(P.Class.Id) is { } plan && Game._city.HallOf(Me, plan.Kind) is null)
+                Consider(plan.FoundCost, $"your own {plan.Word}");
+            if (_rank is CourtRank.Lord or CourtRank.Lieutenant && P.Hero.Level >= 3
+                && (PartyRules.FreeApprentices(P.Class.Id) || Game.Bonds.Count(PartyRules.IsApprentice) < PartyRules.MaxApprentices))
+                Consider(25, "another apprentice");
+            if (_gearWant is { } g && _clock - g.At < 1800) Consider(g.Price, g.What);
+            return want;
+        }
+
+        /// <summary>What banking leaves on him: his reserve, or what he's saving for if that's more.</summary>
+        int KeepBack => Math.Max(Reserve, Want()?.Crowns ?? 0);
+
+        /// <summary>Time to bank: a fortune on him, and a good deal more than he's keeping back for anything.</summary>
+        bool ShouldBank => P.Crowns >= BankAbove && P.Crowns - KeepBack >= 500;
+
+        /// <summary>Short of what he's saving for, with the rest of it in his tills.</summary>
+        (int Crowns, string What)? ShortOf() => Want() is { } w && P.Crowns < w.Crowns && P.Crowns + TillTotal >= w.Crowns ? w : null;
 
         static int? Price(string option)
         {
@@ -2247,10 +2322,18 @@ public partial class Main
             var options = _menu.Where(m => m.Kind == "click").ToList();
             // At a shop of his an apprentice keeps, with a fortune on him: most of it into the till, keeping back his
             // reserve (the most he can leave and still keep that).
-            if (P.Crowns >= BankAbove && options.FirstOrDefault(m => m.Key == KeepSafeLine) is { } safe) { GD.PrintErr($"[claude] Leaving crowns in the till ({P.Crowns} on him)."); return safe; }
+            // Short of what he's saving for: the takings out first (all of them; what's over goes back in below).
+            if (Want() is { } want && P.Crowns < want.Crowns && options.FirstOrDefault(m => m.Key.StartsWith("I'll take the takings", StringComparison.Ordinal)) is { } takings)
+            {
+                GD.PrintErr($"[claude] Taking the takings for {want.What}: {takings.Key}");
+                Event("withdrew", $"{Me} took the takings from one of his shops ({Price(takings.Key) ?? 0} crowns) for {want.What}, having {P.Crowns} on him.", false);
+                return takings;
+            }
+            if (ShouldBank && options.FirstOrDefault(m => m.Key == KeepSafeLine) is { } safe) { GD.PrintErr($"[claude] Leaving crowns in the till ({P.Crowns} on him, keeping {KeepBack})."); return safe; }
+            var keep = KeepBack;
             var leave = options.Select(m => (Option: m, N: System.Text.RegularExpressions.Regex.Match(m.Key, @"^Leave (?:all )?(\d+) crowns in the till")))
                 .Where(x => x.N.Success).Select(x => (x.Option, N: int.Parse(x.N.Groups[1].Value, CultureInfo.InvariantCulture)))
-                .Where(x => P.Crowns - x.N >= Reserve).OrderByDescending(x => x.N).FirstOrDefault();
+                .Where(x => P.Crowns - x.N >= keep).OrderByDescending(x => x.N).FirstOrDefault();
             if (leave.Option is { } left) { GD.PrintErr($"[claude] Into the till: {left.Key}"); Event("banked", $"{Me} left {leave.N} crowns in the till of one of his shops, keeping {P.Crowns - leave.N}.", false); return left; }
             var make = BestMake(options);
             if (make != null && _made < 12)
@@ -2287,7 +2370,15 @@ public partial class Main
                 if (!m.Success) continue;
                 var name = m.Groups[1].Value;
                 var price = int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
-                if (!Affords(price)) continue;
+                if (!Affords(price))
+                {
+                    // An upgrade he can't pay for on the spot, though his tills could: remembered, so he goes for the
+                    // takings and comes back with them (the dearest such piece, for half an hour).
+                    if (Items.All.FirstOrDefault(i => i.Name == name) is { Wearable: true } upgrade && Better(upgrade) && P.Pack.Count(upgrade.Id) == 0 && !PackHasAsGood(upgrade)
+                        && P.Crowns + TillTotal - price >= Reserve && (_gearWant is not { } had || _clock - had.At > 1800 || price >= had.Price))
+                        _gearWant = (price, $"the {name} ({price} crowns) in {Or(Game._area, "a shop out in the wilds")}", _clock);
+                    continue;
+                }
                 // Meat for the animals (pets, mounts): a sensible stock, not the shop's whole shelf.
                 if (name == "Meat" && beasts > 0 && P.Meat < 10 + 5 * beasts) { GD.PrintErr($"[claude] Buying meat for the animals ({P.Meat} on hand)."); return o; }
                 var item = Items.All.FirstOrDefault(i => i.Name == name);
@@ -2305,6 +2396,7 @@ public partial class Main
             if (bestGear is { } g && _clock - _gearAt > 120)
             {
                 _gearAt = _clock;
+                if (_gearWant is { } saved && saved.Price <= g.Price) _gearWant = null; // what he was saving for, or better
                 GD.PrintErr($"[claude] Buying {g.Item.Name} for {g.Price}: the best upgrade on offer.");
                 return g.Option;
             }
@@ -2584,6 +2676,9 @@ public partial class Main
             public string Role { get; set; } = "";
             public int Level { get; set; }
             public int Crowns { get; set; }
+            /// <summary>Crowns in the tills of his shops an apprentice keeps, on top of those he carries.</summary>
+            public int Till { get; set; }
+            public string Purse() => Till > 0 ? $"{Crowns} crowns (and {Till} in his tills)" : $"{Crowns} crowns";
             public double X { get; set; }
             public double Z { get; set; }
             public string Where { get; set; } = "";
@@ -3967,7 +4062,7 @@ public partial class Main
                     var st = _statuses.GetValueOrDefault(name);
                     var left = Math.Max(0, AllotOf(name) - UsedOf(name) / 60);
                     var about = st is null ? member.Purpose
-                        : $"level {st.Level}, {st.Crowns} crowns, {(st.Where.Length > 0 ? st.Where : "out in the world")}, last {(st.Doing.Length > 0 ? st.Doing : "idle")}";
+                        : $"level {st.Level}, {st.Purse()}, {(st.Where.Length > 0 ? st.Where : "out in the world")}, last {(st.Doing.Length > 0 ? st.Doing : "idle")}";
                     menu.Add(new("court-switch", $"Switch: log {Me} out and play {name} ({member.Role}, {member.Class}; {about}; {left:0} min of Gemini left today).",
                         () => RequestSwitch(name, "Vann's choice (local brain)"), name));
                 }
@@ -4244,7 +4339,7 @@ public partial class Main
             {
                 ApprenticesWithHim = prentices.Count(b => b.Following),
                 ApprenticesAway = [.. prentices.Where(b => !b.Following).Select(b => $"{b.Name}: {Post(b)}")],
-                Name = Me, Class = P.Class.Name, Role = Role.ToString().ToLowerInvariant(), Level = P.Hero.Level, Crowns = P.Crowns,
+                Name = Me, Class = P.Class.Name, Role = Role.ToString().ToLowerInvariant(), Level = P.Hero.Level, Crowns = P.Crowns, Till = TillTotal,
                 X = p.X, Z = p.Z, Where = Game._area, Apprentices = Game.Bonds.Count(PartyRules.IsApprentice),
                 Colonies = colonies, Rules = rules, Doing = _doingWhat, Aim = _aim,
                 UsedMinutes = (int)(_courtUsed / 60), AllottedMinutes = (int)Allotted,
@@ -4695,7 +4790,9 @@ public partial class Main
               grows on it). Any shop of yours an apprentice keeps (the counter at your home, your wagon, your ship, a colony's
               market stall) holds crowns in its till: talk to the keeper, "Keep some crowns in the till for me.", and leave
               all but what you need on the road. "I'll take the takings" brings it back when you want to spend it. Carrying
-              1,000 crowns or more, take them to the nearest of your shops before heading out again.
+              1,000 crowns or more, take them to the nearest of your shops before heading out again, but keep on you what
+              you're saving for (the next colony, your hall, a piece of gear you saw). Short of that, with the rest in your
+              tills, go and take the takings: crowns in a till are yours to spend, not a hoard.
             - Colonies: from level 5, 800 crowns founds a colony where you stand, on open dry land at least as far from any
               town as Tristinwold is from its neighbours (a little over a kilometre). It starts with a tavern; bring its reeve
               timber, stone, iron and crowns and it grows a market, a council chamber, a barracks (then guards can be hired),
@@ -4768,7 +4865,7 @@ public partial class Main
             {
                 var st = _statuses.GetValueOrDefault(m.Name);
                 s.AppendLine($"- {m.Name} ({m.Role}, {m.Class}{(m.Purpose.Length > 0 && m.Role == "agent" ? $": {m.Purpose}" : "")}): "
-                    + (st is null ? "not yet in the world." : (m.Name == Me ? "playing now; " : "logged out; ") + $"{UsedOf(m.Name) / 60:0} of {AllotOf(m.Name):0} Gemini minutes used today; " + $"level {st.Level}, {st.Crowns} crowns, {st.Apprentices} apprentices, in {Or(st.Where, "the wilds")} ({st.X:0}, {st.Z:0}), {st.Doing}"
+                    + (st is null ? "not yet in the world." : (m.Name == Me ? "playing now; " : "logged out; ") + $"{UsedOf(m.Name) / 60:0} of {AllotOf(m.Name):0} Gemini minutes used today; " + $"level {st.Level}, {st.Purse()}, {st.Apprentices} apprentices, in {Or(st.Where, "the wilds")} ({st.X:0}, {st.Z:0}), {st.Doing}"
                         + (st.Colonies.Count > 0 ? $"; colonies: {string.Join(", ", st.Colonies)}" : "") + (st.Rules.Count > 0 ? $"; rules {string.Join(", ", st.Rules)}" : "")));
             }
             var held = Game._city.Councils.Where(c => c.Value.Ruler is { } r && InCourt(r)).Select(c => $"{(c.Value.Name is { Length: > 0 } n ? n : c.Key)} (ruled by {c.Value.Ruler})").ToList();
@@ -5373,13 +5470,13 @@ public partial class Main
         {
             var h = P.Stats.Health / Math.Max(1, P.Stats.MaxHealth);
             var left = Math.Max(0, Allotted - _courtUsed / 60);
-            return $"{Me}: level {P.Hero.Level}, {P.Crowns} crowns, health {h:P0}, {Game.Bonds.Count(PartyRules.IsApprentice)} apprentices. In {Or(Game._area, "the wilds")}, {_doingWhat}. Aim: {_aim}{(_rank is null ? "" : $" Gemini today: {left:0} min left.")}";
+            return $"{Me}: level {P.Hero.Level}, {P.Crowns} crowns{(TillTotal is > 0 and var t ? $" (and {t} in his tills)" : "")}, health {h:P0}, {Game.Bonds.Count(PartyRules.IsApprentice)} apprentices. In {Or(Game._area, "the wilds")}, {_doingWhat}. Aim: {_aim}{(_rank is null ? "" : $" Gemini today: {left:0} min left.")}";
         }
 
         string CourtText()
         {
             var lines = _court.Members.Select(m => _statuses.GetValueOrDefault(m.Name) is { } st
-                ? $"{m.Name} ({m.Role}): level {st.Level}, {st.Crowns} crowns, {st.Apprentices} apprentices, {Or(st.Where, "out in the world")}{(m.Name == Me ? " (playing now)" : $", last seen {st.Seen}")}"
+                ? $"{m.Name} ({m.Role}): level {st.Level}, {st.Purse()}, {st.Apprentices} apprentices, {Or(st.Where, "out in the world")}{(m.Name == Me ? " (playing now)" : $", last seen {st.Seen}")}"
                 : $"{m.Name} ({m.Role}): not played yet");
             return "Vann's court:\n" + string.Join("\n", lines);
         }
@@ -5470,7 +5567,7 @@ public partial class Main
             var sb = new StringBuilder($"THE COURT'S LAST 24 HOURS (review for {CourtToday}). Tuning now: {TuningText()}.\n\nCHARACTERS:\n");
             foreach (var m in _court.Members)
                 sb.AppendLine(_statuses.GetValueOrDefault(m.Name) is { } st
-                    ? $"- {m.Name} ({m.Role}, {m.Class}): level {st.Level}, {st.Crowns} crowns, {st.Apprentices} apprentices; last in {Or(st.Where, "the wilds")}, {st.Doing}; aim: {st.Aim}"
+                    ? $"- {m.Name} ({m.Role}, {m.Class}): level {st.Level}, {st.Purse()}, {st.Apprentices} apprentices; last in {Or(st.Where, "the wilds")}, {st.Doing}; aim: {st.Aim}"
                     : $"- {m.Name} ({m.Role}): no status yet");
             var ev = ReadEvents(DateTime.Now.AddHours(-24));
             sb.AppendLine($"\nEVENTS: {(ev.Count == 0 ? "none recorded" : string.Join(", ", ev.GroupBy(e => e.Kind.Split(':')[0]).Select(g => $"{g.Count()} {g.Key}")))}");
@@ -5647,7 +5744,8 @@ public partial class Main
         string LessonsFile => System.IO.Path.Combine(Mind, "lessons.json");
 
         /// <summary>What "better" means: higher is better.</summary>
-        double LabScore() => P.Hero.Level * 1000 + P.Hero.Xp + P.Crowns + 40 * Game.Bonds.Count(PartyRules.IsApprentice) - 300 * _deaths;
+        // The tills' crowns count the same as those carried: putting them in or taking them out is neither gain nor loss.
+        double LabScore() => P.Hero.Level * 1000 + P.Hero.Xp + P.Crowns + TillTotal + 40 * Game.Bonds.Count(PartyRules.IsApprentice) - 300 * _deaths;
 
         /// <summary>A short label for the kind of moment it's in, so a habit learned here is used again in moments like it.</summary>
         string MomentOf()

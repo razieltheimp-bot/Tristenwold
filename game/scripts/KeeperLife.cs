@@ -209,6 +209,18 @@ public partial class Main
         }
     }
 
+    /// <summary>
+    /// The crowns in a keeper's till, read without syncing anything: the world's copy when it has one (customers'
+    /// takings land there), else the hero's own.
+    /// </summary>
+    int TillOf(string place) => place switch
+    {
+        Keeping.Home => _city.StoreOf(_player.Company)?.House.Till ?? _pursuits.House.Till,
+        Keeping.Wagon => _city.StoreOf(WagonShopKey)?.House.Till ?? _trade.WagonShop?.Till ?? 0,
+        var c when Keeping.IsColony(c) => _city.StoreOf(ColonyShopKey(c))?.House.Till ?? _pursuits.ColonyShops.GetValueOrDefault(c)?.Till ?? 0,
+        _ => _city.StoreOf(ShipShopKey)?.House.Till ?? _sea.ShipShop?.Till ?? 0,
+    };
+
     void PushShop(string place)
     {
         switch (place)
