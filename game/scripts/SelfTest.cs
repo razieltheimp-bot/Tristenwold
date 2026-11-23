@@ -4401,6 +4401,24 @@ public partial class SelfTest(Main main) : Node
             main.Talk(keeper);
             Check(main.HudNode.Choose("I'll take the takings") && p.Crowns == purse + 4 * Homestead.SellsFor("iron_ingot"), "and the takings are yours");
             main.HudNode.EndTalk();
+            // Crowns left in the till for safe keeping, and taken back out.
+            p.Crowns = 2712;
+            main.Talk(keeper);
+            var offered = main.HudNode.Choose(Main.KeepSafeLine);
+            Check(offered && main.HudNode.Options.Any(o => o.StartsWith("Leave 2212 crowns in the till, and keep 500", StringComparison.Ordinal)),
+                $"a fortune on you, the keeper will mind it in the till ({string.Join(" | ", main.HudNode.Options)})");
+            Check(main.HudNode.Choose("Leave 2212 crowns") && p.Crowns == 500 && city.StoreOf(main.ShipShopKeyForTest)?.House.Till == 2212,
+                $"2,212 crowns go in the till, 500 stay on you ({p.Crowns} on you, {city.StoreOf(main.ShipShopKeyForTest)?.House.Till} in the till)");
+            main.HudNode.EndTalk();
+            main.Talk(keeper);
+            Check(main.HudNode.Choose("I'll take the takings. (2212") && p.Crowns == 2712, "and come back out with the takings");
+            main.HudNode.EndTalk();
+            var cut = new TestLink { Status = ClientStatus.Disconnected };
+            main.UseLinkForTest(cut);
+            main.Talk(keeper);
+            Check(main.HudNode.Choose(Main.KeepSafeLine) && p.Crowns == 2712 && main.HudNode.TalkText.Contains("can't get word"), "with the server out of reach, nothing goes in the till");
+            main.HudNode.EndTalk();
+            main.UseLinkForTest(null);
         }
         city.Stores.Remove(main.ShipShopKeyForTest); // the world's lost her shop (a server restarted, or she tied up offline)
         main.RestoreShopsForTest();

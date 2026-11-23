@@ -311,12 +311,47 @@ public partial class Main
                 Save();
                 Say(person, $"{took} crowns. Count it if you like.");
             });
+        if (_player.Crowns > 0) yield return (KeepSafeLine, () => KeeperSafekeeping(person, place));
         yield return ("Come back with me.", () =>
         {
             _hud.EndTalk();
             StopKeeping(bond);
             _hud.Toast($"{bond.Name} shuts up shop and comes back to you.", 5);
         });
+    }
+
+    /// <summary>The line for leaving crowns with a keeper (the bot looks for it by this).</summary>
+    public const string KeepSafeLine = "Keep some crowns in the till for me.";
+
+    /// <summary>
+    /// Crowns left in a keeper's till for safe keeping: what a hero carries, a hero can lose (half to whatever strikes them
+    /// down), but the till stays put. It's the same till the takings go into, so the keeper buys in out of it too, if asked
+    /// to. On a server it's left there only while the server can hear of it, or it would come back the server's old copy.
+    /// </summary>
+    void KeeperSafekeeping(Person person, string place)
+    {
+        if (_client is not null && !(_sharedCity && _client.Status == ClientStatus.Connected))
+        {
+            Say(person, $"Not just now. We can't get word to the rest of the world (the server: {_client.Status}), and a till nobody else knows about isn't safe. Once you're back in touch.");
+            return;
+        }
+        var have = _player.Crowns;
+        var amounts = new[] { 100, 500, 1000, 5000 }.Where(n => n < have).Select(n => (n, $"Leave {n} crowns in the till.")).ToList();
+        foreach (var keep in new[] { 500, 100 })
+            if (have > 2 * keep) amounts.Add((have - keep, $"Leave {have - keep} crowns in the till, and keep {keep}."));
+        amounts.Add((have, $"Leave all {have} crowns in the till."));
+        var options = amounts.Select(a => (a.Item2, (Action)(() =>
+        {
+            var n = Math.Min(a.n, _player.Crowns);
+            if (n <= 0) return;
+            _player.Crowns -= n;
+            ShopOf(place).Till += n;
+            PushShop(place);
+            Sound.Ui("coin");
+            Save();
+            Say(person, $"{n} crowns in the till: {ShopOf(place).Till} in it now. Nobody touches it but you{(ShopOf(place).Buying.Count > 0 ? ", and me, buying in what you asked for" : "")}. Ask for the takings when you want it back.");
+        }))).ToList();
+        _hud.Talk(person.Npc.Name, $"You've {have} crowns on you. Whatever you carry, you can lose; the till stays here.", [.. options]);
     }
 
     void KeeperShelves(Person person, string place)

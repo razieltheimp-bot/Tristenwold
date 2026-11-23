@@ -546,7 +546,7 @@ public partial class Main
         static string M(float metres) => metres < 1000 ? $"{metres:0} m" : $"{metres / 1000:0.0} km";
 
         /// <summary>
-        /// When to run, as a share of health: Gemini's own setting, but never below 45%, and 50% when outnumbered, carrying
+        /// When to run, as a share of health: Gemini's own setting, but never below 45%, and 65% when outnumbered, carrying
         /// 200 crowns or more, or with apprentices along (a lost fight costs crowns, and can cost apprentices; Vann-Magus
         /// went from five apprentices to none in an afternoon of running from Ronacse).
         /// </summary>
@@ -634,6 +634,10 @@ public partial class Main
                     var hungry = bond;
                     m.Add(new("party", $"Press P and feed {bond.Name} (hungry; you have {P.Meat} meat).", () => { main.Feed(hungry); _doingWhat = $"fed {hungry.Name}"; }));
                 }
+            // Carrying a fortune: to the nearest shop of his an apprentice keeps (home, wagon, ship, a colony's stall), to
+            // leave most of it in the till. Whatever he carries, he can lose (Vann-Magus died with 2,712 crowns on him).
+            if (P.Crowns >= BankAbove && !P.InFight && Bank(p) is { } bank)
+                m.Add(bank);
             foreach (var e in Foes(40).Where(e => Reachable($"foe {e.GetInstanceId()}")).Take(3).ToList())
             {
                 var foe = e;
@@ -885,7 +889,9 @@ public partial class Main
                 // A shop's own lines ("Bread, 2 crowns: ...", "Bread (30): 2 crowns each") are Deal()'s to weigh, never clicked
                 // just for being new: that bought thirty loaves, and sold the bread and the healing draught back.
                 static bool ShopLine(string k) => System.Text.RegularExpressions.Regex.IsMatch(k, @"^[^:]+?(, \d+ crowns|\(\d+\): \d+ crowns each)");
-                var fresh = _menu.Where(m => m.Kind == "click" && !clicked.Contains(m.Key) && !ShopLine(m.Key) && !shy.Any(w => m.Key.Contains(w, StringComparison.OrdinalIgnoreCase))
+                // The till at his own shops is Deal()'s too: what goes in, and never the takings back out just for being there.
+                static bool TillLine(string k) => k == KeepSafeLine || k.StartsWith("I'll take the takings", StringComparison.Ordinal) || k.StartsWith("Leave ", StringComparison.Ordinal) && k.Contains(" in the till", StringComparison.Ordinal);
+                var fresh = _menu.Where(m => m.Kind == "click" && !clicked.Contains(m.Key) && !ShopLine(m.Key) && !TillLine(m.Key) && !shy.Any(w => m.Key.Contains(w, StringComparison.OrdinalIgnoreCase))
                     && !m.Key.StartsWith("(", StringComparison.Ordinal) && !m.Key.StartsWith("[", StringComparison.Ordinal) && !m.Key.StartsWith("Make ", StringComparison.Ordinal)).ToList();
                 var wicked = _menu.Where(m => m.Kind == "click" && !clicked.Contains(m.Key) && new[] { "pocket", "rob", "steal" }.Any(w => m.Key.Contains(w, StringComparison.OrdinalIgnoreCase))).ToList();
                 var choice = wicked.Count > 0 && _dice.NextDouble() < _mischief * 2 ? wicked[_dice.Next(wicked.Count)]
@@ -964,6 +970,8 @@ public partial class Main
             if (health < 0.7 && Pick(m => m.Kind == "heal") is >= 0 and var mended) return Of(mended);
             if (health < 0.5 && foes.Count == 0 && Pick(m => m.Kind == "drink") is >= 0 and var sip) return Of(sip);
             if (health < 0.5 && foes.Count == 0) return Of(Pick(m => m.Kind == "keep")); // hurt and nothing about: stand still and let it come back
+            // A fortune on him and nothing about: to his shop with it first, before he loses it.
+            if (foes.Count == 0 && late is null && Pick(m => m.Kind == "bank" && Reachable(m)) is >= 0 and var bank) return Of(bank);
             if (Settling && foes.Count == 0)
             {
                 // Just arrived somewhere new: talk to whoever's about before setting off again (anyone not spoken to in
@@ -1637,7 +1645,7 @@ public partial class Main
             Tried(picked);
             if (picked.Kind == "flee" && _inTracked) _fightFled = true;
             var (label, act) = (picked.Label, picked.Act);
-            if (picked.Kind == "keep" || _doing is not null && (picked.Kind == "head" || picked.Kind == "quest" || picked.Kind == "wander" || picked.Kind == "attack" || picked.Kind == "smith" || picked.Kind == "gather" || picked.Kind == "trip" || picked.Kind.StartsWith("court-", StringComparison.Ordinal) && picked.Kind != "court-found") && picked.Key == _lastKey) return; // already on the way there, or at it
+            if (picked.Kind == "keep" || _doing is not null && (picked.Kind == "head" || picked.Kind == "quest" || picked.Kind == "wander" || picked.Kind == "attack" || picked.Kind == "smith" || picked.Kind == "gather" || picked.Kind == "trip" || picked.Kind == "bank" || picked.Kind.StartsWith("court-", StringComparison.Ordinal) && picked.Kind != "court-found") && picked.Key == _lastKey) return; // already on the way there, or at it
             _since = _clock;
             _lastKey = picked.Kind is "head" or "quest" or "wander" or "flee" or "talk" or "attack" or "assault" or "pvp" or "smith" or "gather" or "trip" || picked.Kind.StartsWith("court-", StringComparison.Ordinal) ? picked.Key : "";
             _choices.Add(label);
@@ -2196,6 +2204,30 @@ public partial class Main
         /// <summary>What it keeps back for a rainy day: a little more each level.</summary>
         int Reserve => 20 + 5 * P.Hero.Level;
 
+        /// <summary>Carrying this many crowns or more, it takes them to one of its shops to leave in the till.</summary>
+        const int BankAbove = 1000;
+        readonly Dictionary<string, double> _bankTried = [];
+
+        /// <summary>
+        /// The way to the nearest of his shops an apprentice keeps (within a long walk), to leave crowns in its till: up to
+        /// the keeper and talk, once the keeper's in sight; till then, toward where they stand. Not the same shop again for
+        /// five minutes after a talk there (the server out of reach, say).
+        /// </summary>
+        Choice? Bank(Vector3 p)
+        {
+            var best = main.Bonds.Where(b => b.Keeps is { Length: > 0 } && _clock - _bankTried.GetValueOrDefault(b.Id, -1e9) > 300)
+                .Select(b => (Bond: b, At: main.KeeperSpot(b.Keeps!)))
+                .Where(x => x.At is { } at && at.DistanceTo(p) < 1500)
+                .OrderBy(x => x.At!.Value.DistanceTo(p)).FirstOrDefault();
+            if (best.Bond is not { } bond || best.At is not { } spot) return null;
+            var far = spot.DistanceTo(p);
+            var called = main.ShopCalled(bond.Keeps!);
+            var label = $"Take your crowns ({P.Crowns}) to {bond.Name}, keeping your shop {called} ({M(far)} {Way(p, spot)}), and leave most of them in the till: crowns you carry can be lost when you die, the till's crowns can't.";
+            if (main._keepers.GetValueOrDefault(bond.Id) is { } keeper && IsInstanceValid(keeper))
+                return new("bank", label, () => { _bankTried[bond.Id] = _clock; TalkTo(keeper); }, $"bank {bond.Id}", keeper.GlobalPosition.DistanceTo(p), keeper.GlobalPosition);
+            return new("bank", label, () => Walk(spot, $"taking the crowns to {bond.Name} {called}"), $"bank {bond.Id}", far, spot);
+        }
+
         static int? Price(string option)
         {
             var m = System.Text.RegularExpressions.Regex.Match(option, @"(\d+) crowns");
@@ -2213,6 +2245,13 @@ public partial class Main
         Choice? Deal()
         {
             var options = _menu.Where(m => m.Kind == "click").ToList();
+            // At a shop of his an apprentice keeps, with a fortune on him: most of it into the till, keeping back his
+            // reserve (the most he can leave and still keep that).
+            if (P.Crowns >= BankAbove && options.FirstOrDefault(m => m.Key == KeepSafeLine) is { } safe) { GD.PrintErr($"[claude] Leaving crowns in the till ({P.Crowns} on him)."); return safe; }
+            var leave = options.Select(m => (Option: m, N: System.Text.RegularExpressions.Regex.Match(m.Key, @"^Leave (?:all )?(\d+) crowns in the till")))
+                .Where(x => x.N.Success).Select(x => (x.Option, N: int.Parse(x.N.Groups[1].Value, CultureInfo.InvariantCulture)))
+                .Where(x => P.Crowns - x.N >= Reserve).OrderByDescending(x => x.N).FirstOrDefault();
+            if (leave.Option is { } left) { GD.PrintErr($"[claude] Into the till: {left.Key}"); Event("banked", $"{Me} left {leave.N} crowns in the till of one of his shops, keeping {P.Crowns - leave.N}.", false); return left; }
             var make = BestMake(options);
             if (make != null && _made < 12)
             {
@@ -4652,6 +4691,11 @@ public partial class Main
             - Apprentices: from level 3, any youth (11 to 16) in a town will follow you for 25 crowns to their family ("Would
               you become my apprentice?"). A Paladin, a Wizard or a Martial Artist may have as many as they like; others five.
               They fight beside you, grow up, learn moves, and can keep shop or command a ship. They are mortal and they age.
+            - Keeping your crowns safe: crowns you carry can be lost (whatever strikes you down takes half, and a deviant
+              grows on it). Any shop of yours an apprentice keeps (the counter at your home, your wagon, your ship, a colony's
+              market stall) holds crowns in its till: talk to the keeper, "Keep some crowns in the till for me.", and leave
+              all but what you need on the road. "I'll take the takings" brings it back when you want to spend it. Carrying
+              1,000 crowns or more, take them to the nearest of your shops before heading out again.
             - Colonies: from level 5, 800 crowns founds a colony where you stand, on open dry land at least as far from any
               town as Tristinwold is from its neighbours (a little over a kilometre). It starts with a tavern; bring its reeve
               timber, stone, iron and crowns and it grows a market, a council chamber, a barracks (then guards can be hired),
@@ -4956,7 +5000,7 @@ public partial class Main
         sealed class Tuning
         {
             public double FleeFloor { get; set; } = 0.45;
-            public double FleeFloorRisky { get; set; } = 0.5;
+            public double FleeFloorRisky { get; set; } = 0.65; // 0.5 until the 2026-11-23 review: Vann-Magus kept dying with thousands of crowns and his apprentices along
             public double BrainEverySeconds { get; set; } // 0: the local brain's own every_seconds
             public double OverdueMinutes { get; set; } = 20;
             public double BadSpotMinutes { get; set; } = 30;
