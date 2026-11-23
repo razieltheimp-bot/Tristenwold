@@ -63,6 +63,7 @@ public partial class Main
     void TendUndying(double delta)
     {
         TendMeteors(delta);
+        TendAssaultMeteors(delta);
         if ((_undyingTick -= delta) > 0) return;
         _undyingTick = 1;
         TendTank();
@@ -70,6 +71,7 @@ public partial class Main
         TendKorrinTowns();
         TendSyndicate();
         TendPride();
+        TendAssault();
         TendWarlordSeat();
     }
 
@@ -251,8 +253,9 @@ public partial class Main
         var vigil = PrideVigil();
         var far = new Vector2(p.X - vigil.X, p.Z - vigil.Z).Length();
         var standing = _pride is not null && IsInstanceValid(_pride);
-        if (standing && (_city.PrideDown || _prideBody is not null || far > 340)) { Dismiss(_pride!); _pride = null; standing = false; }
-        if (!standing && !_city.PrideDown && _prideBody is null && far < 260)
+        var away = _city.PrideAssault is not null; // off humbling a town
+        if (standing && (_city.PrideDown || _prideBody is not null || away || far > 340)) { Dismiss(_pride!); _pride = null; standing = false; }
+        if (!standing && !_city.PrideDown && _prideBody is null && !away && far < 260)
         {
             _terrain.EnsureAround(vigil, 1);
             _pride = MeetAt(new Npc("undying:ronacse", "Ronacse", Sex.Male, 40, "a paladin of the Sun, keeping vigil", "wilds", "the breach",
@@ -260,7 +263,8 @@ public partial class Main
                 ["the Sun", "himself"], "proud", "\"Ah. Someone come to admire the view? Or me? Both are permitted.\"", vigil.X, vigil.Z), "ronacse");
             Gild(_pride.Figure, new Color("#d8b040"));
         }
-        if (_prideBody is null && !_city.PrideDown && _player.Hero.Level >= 5 && _guilds.PlaySeconds >= _prideHuntAt && !_player.Downed && !_player.InFight && !_hud.Talking
+        // He only hunts a hero near his own strength (see Assaults.PrideHunts); when there's none, he goes for a town instead.
+        if (_prideBody is null && !_city.PrideDown && !away && Assaults.PrideHunts(_player.Hero.Level, _city.PrideLevel) && _guilds.PlaySeconds >= _prideHuntAt && !_player.Downed && !_player.InFight && !_hud.Talking
             && City.Below is null && City.Afloat is null && _atSea is null && !InTownForTurlin(p) && GD.Randf() < 1f / 60)
         {
             _prideHuntAt = _guilds.PlaySeconds + 30 * 60;
@@ -277,7 +281,7 @@ public partial class Main
         yield return ("I challenge you.", () => { _hud.EndTalk(); var at = person.GlobalPosition; Dismiss(person); _pride = null; RaisePride(at, false); _hud.Toast("\"Splendid! Nobody's asked in years.\" He lifts the axe one-handed, as if it weighs nothing.", 7); });
     }
 
-    void RaisePride(Vector3 at, bool unbound)
+    void RaisePride(Vector3 at, bool unbound, bool provoke = true)
     {
         var kind = unbound ? "ronacse_pride" : "ronacse";
         var level = _city.PrideLevel;
@@ -289,7 +293,7 @@ public partial class Main
         e.RefreshPlate();
         if (unbound) { Aura(e, new Color("#fff0d0"), 4f); SunBehind(e); }
         else Gild(e, new Color("#d8b040"));
-        e.Provoke(_player);
+        if (provoke) e.Provoke(_player);
         (_prideBody, _prideUnbound, _meteorIn) = (e, unbound, 4);
     }
 
@@ -375,6 +379,7 @@ public partial class Main
 
     void OnUndyingSlain(Enemy victim, Enemy? killer, bool byCompany)
     {
+        if (victim == _assailant && _assailantOf is { IsPride: false }) { AssailantSlain(victim); return; }
         if (victim == _korrin)
         {
             var at = victim.GlobalPosition;
@@ -404,7 +409,9 @@ public partial class Main
             var at = victim.GlobalPosition;
             if (!_prideUnbound)
             {
+                var besieging = victim == _assailant;
                 RaisePride(at, true);
+                if (besieging) AssailantRose(_prideBody!);
                 Effects.Burst(this, at + Vector3.Up, DamageKind.Fire, 6);
                 _hud.Toast("The gold plate falls off him in pieces, and what's under it isn't a man. White fire runs up his arms, a sun kindles at his back, and he grins down at you with too many teeth. \"I am Pride. Did you think it would be that easy?\"", 11);
                 return;
@@ -412,6 +419,12 @@ public partial class Main
             _prideBody = null;
             foreach (var m in _meteors.Where(IsInstanceValid)) m.QueueFree();
             _meteors.Clear();
+            if (AssailantSlain(victim))
+            {
+                _hud.Toast("Pride falls in the street he meant to humble, and burns down to a figure of ash in gold plate, still pointing at the sky. The town's doors open one by one. A seal on the Rift mends with a sound like a bell. He'll be back.", 11);
+                Save();
+                return;
+            }
             DoCity(CityAction.PrideFell(_player.Company));
             var level = _player.Hero.Level;
             _player.Crowns += 800 + 40 * level;
@@ -426,6 +439,7 @@ public partial class Main
     void OnUndyingWin()
     {
         var p = _player.GlobalPosition;
+        if (_assailant is { } held && IsInstanceValid(held) && held.GlobalPosition.DistanceTo(p) < 60) AssailantWon();
         if (_korrin is { } k && IsInstanceValid(k) && k.State != EnemyState.Dead && k.GlobalPosition.DistanceTo(p) < 60)
         {
             DoCity(CityAction.KorrinWon());

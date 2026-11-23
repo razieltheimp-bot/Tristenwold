@@ -202,8 +202,15 @@ public sealed partial class ServerCore
         ];
     }
 
+    /// <summary>The highest level a game can claim for its hero.</summary>
+    const int MostLevel = 1000;
+
+    /// <summary>The strongest hero playing now, by what their games have said (0 if none has).</summary>
+    int StrongestOnline() => State.Groups.Values.Where(g => _online.Contains(g.Player)).Select(g => g.Level).DefaultIfEmpty(0).Max();
+
     IReadOnlyList<Outgoing> OnPresence(Group group, Presence p)
     {
+        if (p.Level is > 0 and <= MostLevel) group.Level = p.Level.Value;
         var area = State.Place(Clip(p.Area, 80));
         if (p.Party.Count > 0) group.Party = [.. p.Party.Take(3)];
         if (area == group.Area) return [new(null, RosterMessage())];
@@ -270,7 +277,9 @@ public sealed partial class ServerCore
 
     IReadOnlyList<Outgoing> OnEncounter(string player, EncounterStarted e)
     {
-        var spawns = World.PlanEncounter(State.Place(Clip(e.Area, 80)), e.Enemies.Take(32).ToList(), [player]);
+        var level = e.Level is > 0 and <= MostLevel ? e.Level : null;
+        if (level is { } l && State.Groups.TryGetValue(player, out var group)) group.Level = l;
+        var spawns = World.PlanEncounter(State.Place(Clip(e.Area, 80)), e.Enemies.Take(32).ToList(), [player], level);
         if (spawns.Count == 0) return [];
         Dirty = true; // the plan used the world's dice
         return [new(player, new DeviantAppears(spawns))];

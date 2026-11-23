@@ -57,7 +57,7 @@ public abstract record Message;
 public sealed record Hello(string Player, string Password, int ProtocolVersion, IReadOnlyList<string> Party, string? Account = null, string? Token = null) : Message;
 
 /// <summary>Sent whenever the group moves to another area or changes its line-up.</summary>
-public sealed record Presence(string Area, IReadOnlyList<string> Party) : Message;
+public sealed record Presence(string Area, IReadOnlyList<string> Party, int? Level = null) : Message;
 
 public sealed record ReportBattle(BattleReport Report) : Message;
 
@@ -77,7 +77,7 @@ public sealed record LeaveDrop(string Area, string Text) : Message;
 public sealed record Say(string Text) : Message;
 
 /// <summary>A fight just started in this company's game. The server says which enemies are deviants.</summary>
-public sealed record EncounterStarted(string Area, IReadOnlyList<FormationSlot> Enemies) : Message;
+public sealed record EncounterStarted(string Area, IReadOnlyList<FormationSlot> Enemies, int? Level = null) : Message;
 
 /// <summary>Something this company did to Tristinwold's economy (sold, bought, delivered, gave): the server does it to the shared city.</summary>
 public sealed record CityTrade(Gameplay.CityAction Action) : Message;

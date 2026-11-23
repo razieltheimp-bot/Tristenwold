@@ -27,7 +27,7 @@ public partial class Main
     /// <summary>Companions at home get on with the work there; the chronicle says what's come of it.</summary>
     void HomeWork(double seconds)
     {
-        if (!_sharedCity) { _city.TendStores(seconds); _city.TendHalls(seconds); _city.TendKorrin(); _city.TendRaid(); _city.TendWarlords(LocalContenders()); } // on a server its own clock runs them, whoever's online
+        if (!_sharedCity) { _city.TendStores(seconds); _city.TendHalls(seconds); _city.TendKorrin(); _city.TendRaid(); _city.TendAssaults(_player.Hero.Level, []); _city.TendWarlords(LocalContenders()); } // on a server its own clock runs them, whoever's online
         SyncStore();
         TendBay();
         PullWagonShop();

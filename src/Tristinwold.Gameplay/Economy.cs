@@ -57,7 +57,7 @@ public sealed class Contract
 /// it's sent on and done to the one city everybody shares (see <see cref="CityEconomy.Apply"/>).
 /// </summary>
 public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0, string? Contract = null, IReadOnlyList<string>? Items = null, Good? Good = null, int N = 0,
-    string? Town = null, TownMarket? Market = null, PlayerStore? Store = null, Hall? Hall = null, double X = 0, double Z = 0, Hire? Hire = null, DemonRaid? Raid = null, Rumour? Word = null)
+    string? Town = null, TownMarket? Market = null, PlayerStore? Store = null, Hall? Hall = null, double X = 0, double Z = 0, Hire? Hire = null, DemonRaid? Raid = null, Rumour? Word = null, Assault? Assault = null)
 {
     public static CityAction Sold(string item, int crowns) => new("sold", item, crowns);
     public static CityAction Bought(string item, int crowns) => new("bought", item, crowns);
@@ -134,6 +134,11 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction KorrinWon() => new("korrin_won");
     public static CityAction PrideWon(string who) => new("pride_won", who);
     public static CityAction PrideFell(string by) => new("pride_fell", by);
+    /// <summary>A hero's blows on whatever holds a town (a share of its health), and it brought down (see <see cref="Assault"/>).</summary>
+    public static CityAction AssaultHurt(string town, double share) => new("assault_hurt", Town: town, X: share);
+    public static CityAction AssaultBroken(string town, string by) => new("assault_broken", by, Town: town);
+    /// <summary>A deviant set on a hero far below it goes for the town they're in, or near, instead.</summary>
+    public static CityAction AssaultBegun(Assault assault, string against) => new("assault_begin", against, Town: assault.Town, Assault: assault);
     // The demons of the Dark Depths (see DemonRaids): a raid begun, ended (cleared, or not), and their lord struck down or winning.
     public static CityAction RaidBegan(DemonRaid raid) => new("raid_begin", Raid: raid);
     public static CityAction RaidEnded(string id, string by, bool cleared) => new("raid_end", by, Contract: id, N: cleared ? 1 : 0);
@@ -355,7 +360,7 @@ public sealed partial class CityEconomy
     public double Prosperity(string town)
     {
         var fabric = Fabric.GetValueOrDefault(town);
-        var harm = (fabric?.Burnt ?? 0) * 0.06 + Slump / 2 + (Siege?.Town == town ? 0.4 : 0);
+        var harm = (fabric?.Burnt ?? 0) * 0.06 + Slump / 2 + (Siege?.Town == town ? 0.4 : 0) + (AssaultOn(town) is not null ? 0.4 : 0);
         if (town == Capital)
             return Math.Clamp(Goods.Average(g => Math.Clamp(Stock.GetValueOrDefault(g.Good) / g.Target, 0, 2) - 1) * 0.6 + Math.Clamp((Treasury - 400) / 1000.0, -0.4, 0.4) - harm, -1, 1);
         if (!Roads.Towns.TryGetValue(town, out var m)) return Math.Clamp(-harm, -1, 1);
@@ -737,6 +742,9 @@ public sealed partial class CityEconomy
             case "korrin_won" when KorrinHolds: KorrinWins++; return true;
             case "pride_won": return PrideWon(a.Item);
             case "pride_fell": return PrideFell(a.Item);
+            case "assault_hurt": return AssaultHurt(a.Town, a.X);
+            case "assault_broken": return AssaultBroken(a.Town, a.Item);
+            case "assault_begin": return AssaultBegun(a.Assault, a.Item);
             case "raid_begin": return RaidBegan(a.Raid);
             case "raid_end": return RaidEnded(a.Contract, a.Item, a.N == 1);
             case "duragon_fell": return DuragonFell(a.Item);

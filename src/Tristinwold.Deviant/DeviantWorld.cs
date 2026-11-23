@@ -23,6 +23,8 @@ public sealed class DeviantRules
     public int MaxDeviantsPerBattle { get; init; } = 2;
 
     public int MaxLevel { get; init; } = 20;
+    /// <summary>How far above a hero a deviant can be and still come for them: past that it leaves them be, and goes for the towns.</summary>
+    public int OutclassBy { get; init; } = 15;
     public int MaxDisplayNameLength { get; init; } = 40;
 
     public double GrudgeChancePerDay { get; init; } = 0.2;
@@ -83,11 +85,12 @@ public sealed class DeviantWorld
     /// Decides which enemies in this fight become deviants. A deviant only takes the place of
     /// an enemy of its own kind, so it looks and fights the way players remember it.
     /// </summary>
-    public IReadOnlyList<DeviantSpawn> PlanEncounter(string areaId, IReadOnlyList<FormationSlot> formation, IReadOnlyList<string> players)
+    public IReadOnlyList<DeviantSpawn> PlanEncounter(string areaId, IReadOnlyList<FormationSlot> formation, IReadOnlyList<string> players, int? heroLevel = null)
     {
         var spawns = new List<DeviantSpawn>();
         var freeSlots = formation.ToList();
-        var fitting = Living.Where(n => freeSlots.Any(s => s.Kind == n.Kind)).ToList();
+        // One far stronger than the hero doesn't bother with them (see OutclassBy). An older game doesn't say its level: no limit then.
+        var fitting = Living.Where(n => freeSlots.Any(s => s.Kind == n.Kind) && (heroLevel is not { } hl || !Outclasses(n, hl))).ToList();
         var strays = fitting.Where(n => n.Rank == Rank.Stray).OrderBy(_ => _rng.Next(int.MaxValue)).Take(Rules.StraysPerBattle);
         var candidates = fitting.Where(n => n.Rank != Rank.Stray).Concat(strays)
             .Select(n => (Deviant: n, Weight: AppearanceWeight(n, areaId, players)))
@@ -106,6 +109,12 @@ public sealed class DeviantWorld
         }
         return spawns;
     }
+
+    /// <summary>How strong a deviant is, as a hero's level: its own, and three more for each rank it's climbed.</summary>
+    public static int Might(Deviant n) => n.Level + 3 * (int)n.Rank;
+
+    /// <summary>Too strong to bother with a hero of this level.</summary>
+    public bool Outclasses(Deviant n, int heroLevel) => Might(n) > heroLevel + Rules.OutclassBy;
 
     double AppearanceWeight(Deviant n, string areaId, IReadOnlyList<string> players)
     {

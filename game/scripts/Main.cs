@@ -466,7 +466,7 @@ public partial class Main : Node3D
             Belongings);
 
         _tracker = new EncounterTracker(
-            (area, enemies) => _client?.Send(new EncounterStarted(area, enemies)),
+            (area, enemies) => _client?.Send(new EncounterStarted(area, enemies, _player.Hero.Level)),
             report =>
             {
                 _client?.Send(new ReportBattle(report));
@@ -681,8 +681,19 @@ public partial class Main : Node3D
     /// <summary>A deviant that's been set on the hero makes its move once it's ready, and never into a town or at someone just back from the dead.</summary>
     void TendHunted()
     {
-        if (_hunted is not { } h || _guilds.PlaySeconds < h.At || _player.Downed || _player.Seat is not null || City.Afloat is not null || City.Below is not null
-            || _roamers.InTown(_player.GlobalPosition) || _hud.Talking) return;
+        if (_hunted is not { } h || _guilds.PlaySeconds < h.At || _player.Downed) return;
+        // Far beneath it: it doesn't stoop to the hero. It takes the town they're in, or near, and waits for them there.
+        if (DeviantsNow is { } roster && roster.Find(h.Hunt.DeviantId) is { Alive: true } n && roster.Outclasses(n, _player.Hero.Level))
+        {
+            if (HuntedTown() is not { } town) { _hunted = (h.Hunt, _guilds.PlaySeconds + 60); return; } // nowhere to take: it waits till they're near one
+            _hunted = null;
+            if (_city.Assaults.Any(a => a.By == n.Id.ToString())) return;
+            DoCity(CityAction.AssaultBegun(new Assault { Town = town.Id, By = n.Id.ToString(), Name = n.FullName, Kind = h.Hunt.BaseForm, Level = n.Level, Rank = (int)n.Rank }, _player.Company));
+            _hud.Toast($"{n.FullName} came hunting you, took one look, and laughed. Then it went for {town.Name} instead: its band is in the streets, and the market's shut. Gather whoever you can.", 11);
+            _hud.Log($"{n.FullName} has fallen on {town.Name}.");
+            return;
+        }
+        if (_player.Seat is not null || City.Afloat is not null || City.Below is not null || _roamers.InTown(_player.GlobalPosition) || _hud.Talking) return;
         _hunted = null;
         var hunt = h.Hunt;
         if (DeviantOut(hunt.DeviantId)) return; // it's here already
@@ -694,6 +705,16 @@ public partial class Main : Node3D
         _feuds.Soldiers(hunter, hunt.Modifiers.Rank);
         _tracker.Engaged(hunter.Id, hunter.Kind.Id, hunter.Kind.Name, hunter.Stats.MaxHealth, ToNumerics(hunter.GlobalPosition), _area, ToNumerics(_player.GlobalPosition), _clock, hunt.DeviantId);
         _hud.Toast($"{hunter.Stats.Name} has been waiting for you to leave the road.");
+    }
+
+    /// <summary>The town a hero's in, or the nearest within a long walk: Tristinwold, or any place that trades. Not one already held.</summary>
+    (string Id, string Name)? HuntedTown()
+    {
+        var p = _player.GlobalPosition;
+        const float Near = 800;
+        var towns = _world.SettlementsNear(p.X, p.Z, Near).Where(s => !s.Hostile && TownMarkets.Trades(s)).Select(s => (s.Id, s.Name, D: s.DistanceTo(p.X, p.Z) - s.Radius)).ToList();
+        towns.Add((Undying.Capital, "Tristinwold", new Vector2(p.X, p.Z).Length() - City.OuterRadius));
+        return towns.Where(t => t.D < Near && _city.AssaultOn(t.Id) is null).OrderBy(t => t.D).Select(t => ((string, string)?)(t.Id, t.Name)).FirstOrDefault();
     }
 
     /// <summary>Whether a deviant already has a body in the world: there's only ever one of it.</summary>
@@ -801,7 +822,7 @@ public partial class Main : Node3D
         if (_client?.Status == ClientStatus.Connected && _area != _sentArea)
         {
             _sentArea = _area;
-            _client.Send(new Presence(_area, [_player.Company]));
+            _client.Send(new Presence(_area, [_player.Company], _player.Hero.Level));
         }
         // Where we are, for the friends on the server: a few times a second while it changes, and now and then regardless.
         if (_client?.Status == ClientStatus.Connected && _clock - _lastMoved > 0.2)

@@ -92,6 +92,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--council-only")) { await CouncilAboutTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); await FleetTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--rumours-only")) { await RumourTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--assaults-only")) { await AssaultTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pupils-only")) { await PupilTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--refuge-only")) { await GrowthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--spread-only")) { await SpreadTest(); Finish(0); return; }
@@ -4373,6 +4374,108 @@ public partial class SelfTest(Main main) : Node
     }
 
     /// <summary>An apprentice set to keep shop aboard the hero's ship: goods put out sell a little at a time, the till's the hero's, the shop shuts while she sails and opens where she ties up.</summary>
+    /// <summary>The strong go for the strong: Ronacse and a deviant past every hero, each holding a town, worn down by everyone's blows.</summary>
+    async Task AssaultTest()
+    {
+        var (p, city, hud) = (main.PlayerNode, main.Economy, main.HudNode);
+        const string capital = "city:tristinwold";
+        var wasLevel = p.Hero.Level;
+        p.Hero.Level = Math.Max(wasLevel, 30);
+        p.Fit();
+        city.Assaults.Clear();
+        (city.PrideWins, city.PrideDeaths, city.PrideBack, city.SealsBroken) = (50, 0, 0, 0);
+        Check(!Assaults.PrideHunts(10, city.PrideLevel) && Assaults.PrideHunts(city.PrideLevel - 10, city.PrideLevel), $"at level {city.PrideLevel} Ronacse won't hunt a hero of ten, only one near his own strength");
+
+        // Nobody's worth his time: he holds the city instead, and the vigil by the breach is empty.
+        city.TendAssaults(10, []);
+        var siege = city.PrideAssault;
+        Check(siege is not null && city.TradeShut(siege.Town), $"with no hero worth his time, he lays siege to a town and its market shuts ({siege?.Town})");
+        if (siege is null) return;
+        await Teleport(main.PrideVigilForTest + new Vector3(6, 0, 6));
+        await Frames(20);
+        main.TendUndyingForTest();
+        Check(main.PrideForTest is null, "and he isn't at his vigil while he's at it");
+
+        siege.Hurt = 0.4;
+        var spot = main.AssaultSpotForTest(siege)!.Value;
+        await Teleport(spot.At + new Vector3(0, 0, 24));
+        await Frames(30);
+        main.TendAssaultForTest();
+        await Frames(5);
+        var r = main.AssailantForTest;
+        Check(r is not null && r == main.PrideBodyForTest && r.Stats.Name.Contains("Pride") && Math.Abs(r.Stats.Health / r.Stats.MaxHealth - 0.6) < 0.02,
+            $"in the town's street he stands, with the wounds others left on him ({r?.Stats.Name}, {r?.Stats.Health / r?.Stats.MaxHealth:P0})");
+        if (r is null) return;
+        r.Stats.Lose(r.Stats.MaxHealth * 0.1);
+        main.TellAssaultWoundsForTest();
+        Check(Math.Abs(siege.Hurt - 0.5) < 0.01, $"what you take off him is added to everyone's ({siege.Hurt:0.00})");
+
+        // Walk off, and he's gone from your game, with what you did to him kept.
+        await Teleport(spot.At + new Vector3(0, 0, spot.Reach + 400));
+        await Frames(10);
+        main.TendAssaultForTest();
+        Check(main.AssailantForTest is null && Math.Abs(siege.Hurt - 0.5) < 0.01, "leave the town, and he's gone from your game, his wounds kept");
+        await Teleport(spot.At + new Vector3(0, 0, 24));
+        await Frames(20);
+        main.TendAssaultForTest();
+        await Frames(5);
+        r = main.AssailantForTest;
+        Check(r is not null && Math.Abs(r.Stats.Health / r.Stats.MaxHealth - 0.5) < 0.02, "come back, and he's as hurt as everyone's left him");
+        if (r is null) return;
+        var purse = p.Crowns;
+        for (var i = 0; i < 8 && r.State != EnemyState.Dead; i++) { r.TakeHit(1e9, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(10);
+        var r2 = main.AssailantForTest;
+        Check(r2 is not null && r2 != r && main.PrideUnboundForTest && Math.Abs(siege.Hurt - 1) < 0.01, $"the gold falls away: Pride Unbound stands where he fell ({siege.Hurt:0.00})");
+        if (r2 is null) return;
+        for (var i = 0; i < 8 && r2.State != EnemyState.Dead; i++) { r2.TakeHit(1e9, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(10);
+        Check(city.Assaults.Count == 0 && city.PrideDeaths == 1 && city.PrideDown && !city.TradeShut(siege.Town) && p.Crowns > purse,
+            $"brought down, the siege is broken, the market opens, and it pays (+{p.Crowns - purse})");
+
+        // A deviant past every hero, with its band.
+        await Teleport(Main.KorrinSeatForTest + new Vector3(0, 0, 36));
+        await Frames(30);
+        var world = new DeviantWorld(9);
+        world.RecordBattle(new BattleReport("The Docks", BattleResult.Defeat, [new EnemyReport(0, "bandit_chief", "Bandit Chief", 300, Killed: false, Escaped: false)], ["Somebody"], KillerSlot: 0));
+        var n = world.Living.Last();
+        n.Level = 20;
+        main.HandleForTest(new DeviantSnapshot(world.ToJson()));
+        city.Assaults.Add(new Assault { Town = capital, By = n.Id.ToString(), Name = n.FullName, Kind = n.BaseForm ?? n.Kind, Level = 20, Rank = 1, Since = city.Day, Ends = city.Day + Assaults.Days, Hurt = 0.25 });
+        main.TendAssaultForTest();
+        await Frames(5);
+        var d = main.AssailantForTest;
+        Check(d is not null && d.DeviantId == n.Id && main.AssailantBandForTest == 4 && Math.Abs(d.Stats.Health / d.Stats.MaxHealth - 0.75) < 0.02,
+            $"a deviant past every hero holds the town with its band ({d?.Stats.Name}, {main.AssailantBandForTest} with it)");
+        if (d is null) return;
+        purse = p.Crowns;
+        for (var i = 0; i < 8 && d.State != EnemyState.Dead; i++) { d.TakeHit(1e9, DamageKind.Sun, AttackKind.Spell, false, p); await Frames(3); }
+        await Frames(10);
+        Check(city.Assaults.Count == 0 && main.AssailantBandForTest == 0 && p.Crowns > purse, $"brought down, its band runs and the town's free (+{p.Crowns - purse})");
+
+        // One set on a hero far beneath it takes the town they're in instead; one that's a match for them still hunts them.
+        world.RecordBattle(new BattleReport("The Docks", BattleResult.Defeat, [new EnemyReport(0, "bandit_chief", "Bandit Chief", 300, Killed: false, Escaped: false)], ["Somebody"], KillerSlot: 0));
+        var hunter = world.Living.Last(h => h.Id != n.Id);
+        hunter.Level = 20;
+        main.HandleForTest(new DeviantSnapshot(world.ToJson()));
+        p.Hero.Level = 30;
+        main.HandleForTest(new DeviantHunts(hunter.Id, hunter.Kind, hunter.Species, hunter.BaseForm ?? hunter.Kind, world.ModifiersFor(hunter), null));
+        main.HurryHunterForTest();
+        await Frames(10);
+        Check(city.Assaults.Count == 0 && main.HunterWaiting, "a hunter that's a match for the hero still hunts them, waiting for them to leave town");
+        p.Hero.Level = 2;
+        main.HurryHunterForTest();
+        await Frames(10);
+        var taken = city.Assaults.FirstOrDefault(a => a.By == hunter.Id.ToString());
+        Check(taken is { Town: capital } && !main.HunterWaiting && city.TradeShut(capital), $"one far above them takes the town they're in instead ({taken?.Town})");
+        city.Assaults.Clear();
+
+        (city.PrideWins, city.PrideDeaths, city.PrideBack, city.SealsBroken) = (0, 0, 0, 0);
+        p.Hero.Level = wasLevel;
+        p.Fit();
+        hud.EndTalk();
+    }
+
     /// <summary>What people say of a hero's deeds, the prices on heads for the wicked ones (and none for the dogs), and the bounty board.</summary>
     async Task RumourTest()
     {

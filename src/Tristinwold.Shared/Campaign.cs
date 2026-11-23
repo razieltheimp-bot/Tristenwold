@@ -50,6 +50,8 @@ public sealed class Group
     public int ContractsDone { get; set; }
     /// <summary>The Saved Man has shown them who he is.</summary>
     public bool VannRevealed { get; set; }
+    /// <summary>The hero's level, as their game last said (0: not said, an older game). The strong only come for the strong.</summary>
+    public int Level { get; set; }
     public DateTime LastSeen { get; set; }
 
     public GroupView ToView(bool online) => new(Player, Area, Party, online);

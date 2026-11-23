@@ -65,8 +65,8 @@ public sealed partial class CityEconomy
     public bool KorrinHolds => KorrinFree && Day >= KorrinBack;
     public int KorrinLevel => Drifters.Level(KorrinWins, KorrinDeaths);
 
-    /// <summary>Nobody's buying or selling here: Korrin holds it.</summary>
-    public bool TradeShut(string? town) => KorrinHolds && town is not null && (town == Undying.Capital || KorrinTowns.Contains(town));
+    /// <summary>Nobody's buying or selling here: Korrin holds it, or something too strong for any hero is in its streets (see <see cref="Assault"/>).</summary>
+    public bool TradeShut(string? town) => town is not null && (KorrinHolds && (town == Undying.Capital || KorrinTowns.Contains(town)) || AssaultOn(town) is not null);
 
     bool KorrinFreed(string? by)
     {
