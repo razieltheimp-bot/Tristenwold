@@ -82,11 +82,12 @@ public partial class Main
             _player.Crowns -= fine;
             _standing.Evil(2, $"were caught going through the {name} of a {Indoors.Called(room.Kind)}{place}");
             if (town is not null) Repute.Deed(-3, town);
-            if (town == ReputationBook.Capital) _standing.Wanted(StashBounty);
+            _standing.Wanted(StashBounty); // anywhere: the Watch hears of a thief from any town
+            SyncOutlaw();
             _player.Pack.Practise(Job.Thieving, StashPractice / 3);
             if (_keeperInside is { } keeper) { Repute.Robbed(keeper.Npc.Id, keeper.Npc.Name); keeper.TalkTo(_player.GlobalPosition); }
             Sound.Ui("error");
-            _hud.Toast($"\"Thief!\" You're seen with your hands in the {name}. You put it all back, pay {fine} crowns for your trouble{(town == ReputationBook.Capital ? $", and the Watch puts {StashBounty} crowns on your head" : "")}, and they'll remember your face{place}.", 7);
+            _hud.Toast($"\"Thief!\" You're seen with your hands in the {name}. You put it all back, pay {fine} crowns for your trouble, and the Watch puts {StashBounty} crowns on your head, and they'll remember your face{place}.", 7);
         }
         else
         {

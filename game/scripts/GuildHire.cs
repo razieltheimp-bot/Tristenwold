@@ -72,7 +72,7 @@ public partial class Main
                     options.Add(($"Clear {(t.Clan ? t.By : "the bandits")} off the road to {t.TownName} ({t.Bounty * 2} crowns)", () => TakeJob(person, t.Bounty * 2, () => DoCity(CityAction.Cleared(t.Id, g.Name)), $"It's done. The road to {t.TownName} is open.")));
                 break;
             case Calling.Rogue:
-                Towns(options, person, 150, "Rob the stores at", town => { DoCity(CityAction.Plundered(town.Id)); _player.Crowns += 200; }, town => $"We were in and out of {town.Name} by dawn. Your cut's in your purse: 200 crowns.");
+                Towns(options, person, 150, "Rob the stores at", town => { DoCity(CityAction.Plundered(town.Id)); _player.Crowns += 200; HiredRobbery(town.Name); }, town => $"We were in and out of {town.Name} by dawn. Your cut's in your purse: 200 crowns.");
                 foreach (var (town, id, name) in Sitting().Take(6))
                     options.Add(($"A quiet killing: {name}, of the council of {town} (600 crowns)", () => TakeJob(person, 600, () => Kill(town, id, name), $"You'll hear about it.")));
                 break;

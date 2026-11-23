@@ -32,7 +32,10 @@ public sealed record BattleReport(
     IReadOnlyList<string> Players,
     int PartyLevel = 1,
     int? KillerSlot = null,
-    Hoard? Dropped = null);
+    Hoard? Dropped = null,
+    double? X = null,
+    double? Z = null,
+    string? Who = null);
 
 /// <summary>A deviant brought down that was carrying a hoard: who brought it down (if known), its name, and what it had.</summary>
 public sealed record Recovery(string? By, Guid DeviantId, string Name, Hoard Hoard);

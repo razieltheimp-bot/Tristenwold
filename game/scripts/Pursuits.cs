@@ -486,12 +486,14 @@ public partial class Main
             _player.Crowns -= fine;
             _city.Renown = Math.Max(0, _city.Renown - 3);
             _standing.Evil(2, $"were caught with a hand in {npc.Name}'s purse");
+            _standing.Wanted(Standing.PickpocketBounty);
+            SyncOutlaw();
             Repute.Robbed(npc.Id, npc.Name);
             _pursuits.WaryUntil[npc.Id] = _guilds.PlaySeconds + Thieving.WarySeconds;
             _player.Pack.Practise(Job.Thieving, Thieving.Xp(mark) / 4);
             Sound.Ui("error");
             person.TalkTo(_player.GlobalPosition);
-            _hud.Toast($"\"Thief! THIEF!\" {npc.Name} grabs your wrist. The Watch fines you {fine} crowns, and the Exchange hears of it.", 6);
+            _hud.Toast($"\"Thief! THIEF!\" {npc.Name} grabs your wrist. The Watch fines you {fine} crowns and puts {Standing.PickpocketBounty} on your head, and the Exchange hears of it.", 6);
             Did("caught");
         }
         Save();
@@ -677,6 +679,8 @@ public partial class Main
         Hands()?.Perform("2H_Melee_Attack_Chop", 0.7, 1.1f);
         Sound.Ui("anvil", -2);
         _hud.Toast($"{s.Name}: done. {s.Text}{(up is { } l ? $" Building rises to {l}!" : "")}", 5);
+        if (stage && _pursuits.House.Built == 1) Spread("house", "has staked out a plot and started building a house", false, at: HousePlotAt);
+        if (stage && _pursuits.House.Finished) Spread("house", "has finished building a house, and lives in it", false, at: HousePlotAt);
         if (stage && _pursuits.House.Finished) { Did("house"); _hud.Toast("Your house is finished. Furnish it as you like: a bed, a chest, a garden, a hearth, a trophy wall.", 8); }
         Save();
         HouseMenu();

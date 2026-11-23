@@ -381,6 +381,12 @@ public sealed class Standing
     public const int KeepDeeds = 12;
     /// <summary>What goes on the head of whoever kills a watchman, or rides with a clan on a place.</summary>
     public const int WatchmanBounty = 100, RaidBounty = 40;
+    /// <summary>
+    /// What goes on the head of a hero who cuts down another who never raised a hand to them (or one asleep where their
+    /// player left them), who's caught with a hand in a purse, or who pays thieves to rob a town's stores. Killing the
+    /// folk's dogs, cats and stock puts no price on anyone: it only costs their good will.
+    /// </summary>
+    public const int MurderBounty = 150, SleeperBounty = 100, PickpocketBounty = 20, HiredRobberyBounty = 60;
     /// <summary>What a smuggler takes to make a bounty go away, on top of the bounty.</summary>
     public const double SmugglersCut = 0.2;
 

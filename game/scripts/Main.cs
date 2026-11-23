@@ -846,6 +846,7 @@ public partial class Main : Node3D
         TendDrifters(delta);
         TendUndying(delta);
         TendDeeps(delta);
+        TendBoards();
         _player.GuildTitle = $"{_guilds.Rank(_player.Class.Calling)} of {Guilds.Of(_player.Class.Calling).Name}";
 
         if (_player.Stats.LimitReady && !_limitWasReady)
@@ -951,7 +952,7 @@ public partial class Main : Node3D
         if (item is not null) return ($"take {item.Item}", () => PickUp(item));
         if (_herbPatch.Within(pos) is { } plant) return ($"pick {Items.Get(plant.HerbId)?.Name ?? plant.HerbId}", () => Pick(plant));
         if (YounglingNear(pos) is { } young) return ($"tame the {young.Stats.Name}{(young.IsDragon ? " (a dragon: it will weigh you)" : _player.Meat > 0 ? " (offer meat)" : "")}", () => Tame(young));
-        return TavernAction(pos) ?? DeepAction(pos) ?? SyndicateAction(pos) ?? SmithyAction(pos) ?? VaultAction(pos) ?? StashAction(pos) ?? IndoorAction(pos) ?? TankAction(pos) ?? ChapelAction(pos) ?? SkyAction(pos) ?? VesselAction(pos) ?? MooredAction(pos) ?? FleetAction(pos) ?? SiteAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? IsleAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
+        return TavernAction(pos) ?? BoardAction(pos) ?? DeepAction(pos) ?? SyndicateAction(pos) ?? SmithyAction(pos) ?? VaultAction(pos) ?? StashAction(pos) ?? IndoorAction(pos) ?? TankAction(pos) ?? ChapelAction(pos) ?? SkyAction(pos) ?? VesselAction(pos) ?? MooredAction(pos) ?? FleetAction(pos) ?? SiteAction(pos) ?? MineAction(pos) ?? ForestAction(pos) ?? IsleAction(pos) ?? SeaAction(pos) ?? TownAction(pos) ?? CaravanAction(pos) ?? ClanAction(pos) ?? ArtificerAction(pos) ?? PursuitAction(pos);
     }
 
     /// <summary>Starts a conversation: news for any quest first, then whatever you want to ask.</summary>
@@ -1008,6 +1009,8 @@ public partial class Main : Node3D
     /// <summary>People know what's near them. Asking puts a place on your map with a "?".</summary>
     string Rumour(Npc npc)
     {
+        // First what's happened near here, heroes' doings and the deviants' (see RumourLife).
+        if (HeardHereabouts(npc) is { } word) return word;
         // Townsfolk talk about the market too: what's dear, and what's happened.
         if (npc.HomeId == "city:tristinwold" && _city.News.Count > 0 && _lootRng.Chance(0.4)) return $"Have you heard? {_city.News[^1]}";
         // And about you.

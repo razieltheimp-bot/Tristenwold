@@ -91,6 +91,7 @@ public partial class SelfTest(Main main) : Node
             if (OS.GetCmdlineUserArgs().Contains("--colony-only")) { await ColonyGuardTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--council-only")) { await CouncilAboutTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--keepers-only")) { await KeeperTest(); await FleetTest(); Finish(0); return; }
+            if (OS.GetCmdlineUserArgs().Contains("--rumours-only")) { await RumourTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--pupils-only")) { await PupilTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--refuge-only")) { await GrowthTest(); Finish(0); return; }
             if (OS.GetCmdlineUserArgs().Contains("--spread-only")) { await SpreadTest(); Finish(0); return; }
@@ -4372,6 +4373,70 @@ public partial class SelfTest(Main main) : Node
     }
 
     /// <summary>An apprentice set to keep shop aboard the hero's ship: goods put out sell a little at a time, the till's the hero's, the shop shuts while she sails and opens where she ties up.</summary>
+    /// <summary>What people say of a hero's deeds, the prices on heads for the wicked ones (and none for the dogs), and the bounty board.</summary>
+    async Task RumourTest()
+    {
+        var (p, city, standing, hud) = (main.PlayerNode, main.Economy, main.Standing, main.HudNode);
+        IEnumerable<Enemy> Owned(string place) => GetTree().GetNodesInGroup("enemies").OfType<Enemy>().Where(e => IsInstanceValid(e) && e.Owner == place && e.State != EnemyState.Dead);
+        standing.Bounty = 0;
+        var look = main.LookForTest;
+        Check(look.Contains("with the look of") && !look.Contains(p.Company), $"a hero is described to strangers, never named ({look})");
+
+        // The town's dogs and cats: their ill will, and talk, but no price on anyone's head.
+        await Teleport(City.PlayerStart);
+        await Frames(30);
+        var beasts = Owned("Tristinwold").Where(e => e.Kind.Id is "dog" or "cat").Take(2).ToList();
+        p.Crowns = 200;
+        foreach (var b in beasts) { b.TakeHit(1e6, DamageKind.Physical, AttackKind.Weapon, false, p); await Frames(5); }
+        var talk = city.Rumours.LastOrDefault(r => r.Key.StartsWith("beasts|Tristinwold|", StringComparison.Ordinal));
+        Check(beasts.Count == 2 && standing.Bounty == 0, $"killing the town's dogs and cats puts no price on you ({standing.Bounty})");
+        Check(talk is { Count: 2, Bad: true } && talk.Telling.Contains("2 of folks' animals round Tristinwold") && talk.Telling.StartsWith(look, StringComparison.Ordinal),
+            $"but it's talked of, counted up ({talk?.Telling})");
+        var local = main.Locals.OrderBy(x => x.GlobalPosition.DistanceTo(p.GlobalPosition)).FirstOrDefault();
+        var heard = local is null ? null : main.HeardHereaboutsForTest(local.Npc);
+        Check(heard is not null && heard.Contains("folks' animals") && heard.Contains("look of them about you"), $"and the folk nearby tell of it, eyeing you ({heard})");
+        Check(local is null || main.HeardHereaboutsForTest(local.Npc) is not { } again || !again.Contains("folks' animals"), "once told, they move on to the next story");
+
+        // Pickpocketing, caught: a price on the head, anywhere.
+        await Teleport(Main.FactorAt + new Vector3(0, 0, 2));
+        await Frames(10);
+        var book = main.Pursuits;
+        var mark = main.Locals.FirstOrDefault(x => x.Npc.Id == Shops.Jeweller.Id);
+        var caught = book.Counters.GetValueOrDefault("caught");
+        for (var i = 0; i < 60 && mark is not null && book.Counters.GetValueOrDefault("caught") == caught; i++)
+        {
+            book.WaryUntil.Remove(mark.Npc.Id);
+            p.Crowns = 200;
+            main.PickPocketForTest(mark);
+        }
+        Check(book.Counters.GetValueOrDefault("caught") > caught && standing.Bounty == Standing.PickpocketBounty, $"caught with a hand in a purse: {standing.Bounty} crowns on your head ({hud.LastLine})");
+        Check(city.Rumours.Any(r => r.Did.StartsWith("was caught with a hand in", StringComparison.Ordinal)), "and the talk is of a thief, described");
+
+        // Paying thieves to rob a town, and cutting a traveller down.
+        var was = standing.Bounty;
+        main.HiredRobberyForTest("Larkmere");
+        Check(standing.Bounty == was + Standing.HiredRobberyBounty && city.Rumours.Any(r => r.Did == "paid thieves to rob the stores at Larkmere"), $"paying thieves to rob Larkmere: {standing.Bounty} on your head");
+        was = standing.Bounty;
+        main.MurderedForTest("Mira", mine: false, asleep: false, outlaw: false);
+        Check(standing.Bounty == was, "cutting down someone who set on you is self-defence: no price for it");
+        main.MurderedForTest("Ana", mine: true, asleep: false, outlaw: true);
+        Check(standing.Bounty == was, "nor for bringing down an outlaw");
+        main.MurderedForTest("Joe", mine: true, asleep: false, outlaw: false);
+        Check(standing.Bounty == was + Standing.MurderBounty, $"setting on a traveller who did you no harm, and killing them: murder, {Standing.MurderBounty} more ({standing.Bounty})");
+        main.MurderedForTest("Sleepy", mine: true, asleep: true, outlaw: false);
+        Check(standing.Bounty == was + Standing.MurderBounty + Standing.SleeperBounty, $"and one asleep where their player left them: {Standing.SleeperBounty} more ({standing.Bounty})");
+        Check(city.Rumours.Any(r => r.Did.StartsWith("set on a traveller", StringComparison.Ordinal) && r.Bad), "the murder's talked of");
+
+        // The bounty board by the Watch House.
+        var board = main.BoardText();
+        Check(board.Contains($"{p.Company}: {standing.Bounty} crowns. (That's you.)") && board.Contains(char.ToUpperInvariant(look[0]) + look[1..]),
+            $"the bounty board has you, and how you look ({board.Replace('\n', '|')})");
+        await Teleport(Main.TownBoardForTest + new Vector3(0, 0, 1.5f));
+        await Frames(150);
+        Check(main.BoardActionForTest(p.GlobalPosition) is { Verb: "read the bounty board" }, $"and it stands by the Watch House, to be read (you at {p.GlobalPosition}, the board at {Main.TownBoardForTest}, put up: {main.TownBoardUpForTest})");
+        standing.Bounty = 0;
+    }
+
     async Task KeeperTest()
     {
         var (p, sea, city) = (main.PlayerNode, main.Sea, main.Economy);

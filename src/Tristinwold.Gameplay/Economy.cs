@@ -57,7 +57,7 @@ public sealed class Contract
 /// it's sent on and done to the one city everybody shares (see <see cref="CityEconomy.Apply"/>).
 /// </summary>
 public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0, string? Contract = null, IReadOnlyList<string>? Items = null, Good? Good = null, int N = 0,
-    string? Town = null, TownMarket? Market = null, PlayerStore? Store = null, Hall? Hall = null, double X = 0, double Z = 0, Hire? Hire = null, DemonRaid? Raid = null)
+    string? Town = null, TownMarket? Market = null, PlayerStore? Store = null, Hall? Hall = null, double X = 0, double Z = 0, Hire? Hire = null, DemonRaid? Raid = null, Rumour? Word = null)
 {
     public static CityAction Sold(string item, int crowns) => new("sold", item, crowns);
     public static CityAction Bought(string item, int crowns) => new("bought", item, crowns);
@@ -121,6 +121,8 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction Carpentered(string town, CarpentryWork work, string by) => new("carpentry", by, N: (int)work, Town: town);
     /// <summary>A hero's bounty as it stands: on the list of known outlaws, or (at 0) off it.</summary>
     public static CityAction Outlaw(string who, int bounty) => new("outlaw", who, N: bounty);
+    /// <summary>Something a hero did, for the folk nearby to talk of (see <see cref="Rumour"/>).</summary>
+    public static CityAction Spread(Rumour word) => new("word", Word: word);
     // The drifters (see Drifters): one taken on for a job, a job done, and one killed.
     public static CityAction Hired(Hire hire) => new("hire", Hire: hire);
     public static CityAction HireDone(string id) => new("hire_done", Contract: id);
@@ -725,6 +727,7 @@ public sealed partial class CityEconomy
             case "plant" when a.Contract is not null: return Plant(a.Contract, a.X, a.Z);
             case { } order when order.StartsWith("order_", StringComparison.Ordinal): return OrderAct(a);
             case "outlaw" when a.Item is { } outlaw: return Outlawed(outlaw, a.N);
+            case "word" when a.Word is { } word: return Heard(word);
             case "hire": return Hired(a.Hire);
             case "hire_done" when a.Contract is not null: return Hires.RemoveAll(h => h.Id == a.Contract) > 0;
             case "drifter_fell" when a.Item is not null: return DrifterFell(a.Item, a.Contract);

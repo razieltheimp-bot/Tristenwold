@@ -101,7 +101,7 @@ public class VannTests
         server.Handle("Joe", new ReportBattle(new BattleReport("The Docks", BattleResult.Defeat,
             [new EnemyReport(0, "Draugr", "Draugr Wight", 900, false, false)], ["Joe"])));
 
-        Assert.Empty(server.Tick()); // first tick only schedules
+        Assert.All(server.Tick(), o => Assert.IsType<CitySnapshot>(o.Message)); // first tick only schedules (the city goes out: the fight is talked of)
         var schemes = new List<Outgoing>();
         for (var minute = 0; minute < 240; minute++)
         {

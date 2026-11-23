@@ -633,6 +633,8 @@ public partial class Main
         _player.Crowns -= fine;
         if (owner == "Tristinwold") _city.Renown = Math.Max(0, _city.Renown - 2);
         _standing.Evil(1, $"killed somebody's {victim.Kind.Name.ToLowerInvariant()}");
+        // No bounty for it, only the folk's ill will: and the talk, counted up, round the place it keeps happening.
+        Spread($"beasts|{owner}", $"killed somebody's {victim.Kind.Name.ToLowerInvariant()} round {owner}", true, $"has killed {{n}} of folks' animals round {owner}", victim.GlobalPosition);
         Sound.Ui("error");
         _hud.Toast($"That was somebody's {victim.Kind.Name.ToLowerInvariant()}. The folk of {owner} make you pay for it: {fine} crowns.", 5);
     }

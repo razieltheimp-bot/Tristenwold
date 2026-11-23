@@ -78,6 +78,7 @@ public partial class Main
         var number = plan.Kind == HallKind.Colony ? _city.NextColony(_player.Company) : 0; // as many colonies as a hero can find room for
         var hall = new Hall { Owner = _player.Company, Hero = _player.Company, Kind = plan.Kind, Name = plan.Kind == HallKind.Colony ? Halls.ColonyName(_player.Company, number) : $"{_player.Company}'s {plan.Word}", X = at.X, Z = at.Z, Number = number };
         DoCity(CityAction.HallFound(hall));
+        Spread($"hall|{hall.Key}", plan.Kind == HallKind.Colony ? $"has founded a colony out here and called it {hall.Name}" : $"has set up a {plan.Word.ToLowerInvariant()} here", false, at: at);
         Sound.Ui("quest");
         WellDone(2);
         _hud.Toast(plan.Kind == HallKind.Colony ? $"You've founded {hall.Name}, and you sit on its council. Your first settler's already cutting timber. Talk to your reeve to bring more out." : $"You've founded {hall.Name}. Your first {plan.Member} is already sweeping the yard. Talk to your {plan.Steward} there to take on more.", 10);
@@ -382,6 +383,7 @@ public partial class Main
             if (!PaidAt(person, h, h.Plan.ServicePrice)) return;
             DoCity(CityAction.Plundered(town.Id));
             _player.Crowns += cut;
+            HiredRobbery(town.Name);
             if (_lootRng.NextDouble() < 0.15) { Repute.Deed(-3, town.Id); _hud.Toast($"Word got round {town.Name} who paid for it.", 6); }
             Save();
             Say(person, $"In and out of {town.Name} before the lamps were lit. Your cut: {cut} crowns.");

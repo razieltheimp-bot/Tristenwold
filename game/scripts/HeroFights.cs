@@ -2,6 +2,7 @@ using Godot;
 using Tristinwold.Deviant;
 using Tristinwold.Gameplay;
 using Tristinwold.Shared;
+using Tristinwold.World;
 
 namespace Tristinwold.Game;
 
@@ -101,6 +102,8 @@ public partial class Main
     void StrikeHero(Enemy standIn, double damage, DamageKind kind, AttackKind attack, bool crit)
     {
         if (standIn.Hero is not { } who || !IsInstanceValid(standIn)) return;
+        // The first blow of a fight: this hero started it (and on someone asleep, if they were).
+        if (_heroFeuds.GetValueOrDefault(who) <= _clock) _firstBlow[who] = (true, _visitors.SleeperAt(who) is not null);
         _heroFeuds[who] = _clock + FeudSeconds;
         _visitors.Flinch(who);
         Tell(new StrikeHero(who, damage, kind, attack, crit));
@@ -111,6 +114,7 @@ public partial class Main
     {
         if (_visitors.StandIn(h.From) is not { } from) return; // nowhere near: it can't have reached
         var fresh = _heroFeuds.GetValueOrDefault(h.From) <= _clock;
+        if (fresh) _firstBlow[h.From] = (false, false); // they started it: whatever this hero does now is self-defence
         _heroFeuds[h.From] = _clock + FeudSeconds;
         if (_player.Downed) return;
         if (_player.Safe)
@@ -154,6 +158,26 @@ public partial class Main
         _heroFeuds.Remove(s.From);
         var items = s.Items.Select(i => (i.Id, i.N)).ToList();
         _hud.Toast($"You've beaten {_visitors.NameOf(s.From) ?? s.From}. Yours for it: {Gameplay.Spoils.Tell(items, s.Crowns, s.GearCrowns, s.Bounty)}.", 10);
+        Murdered(s.From, s.Bounty > 0);
+    }
+
+    /// <summary>Who struck the first blow in each fight between heroes, and whether the one struck was asleep.</summary>
+    readonly Dictionary<string, (bool Mine, bool Asleep)> _firstBlow = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// A hero this one cut down: if this one started it, it was murder, and there's a price on their head for it (less
+    /// for one asleep, as there's less to it). Self-defence is no crime, and nor is collecting a bounty on an outlaw.
+    /// </summary>
+    void Murdered(string victim, bool outlaw)
+    {
+        var started = _firstBlow.Remove(victim, out var f) && f.Mine;
+        if (!started || outlaw) return;
+        var bounty = f.Asleep ? Standing.SleeperBounty : Standing.MurderBounty;
+        _standing.Evil(f.Asleep ? 5 : 6, f.Asleep ? "cut down a traveller where they lay asleep" : "set on a traveller who'd done them no harm, and cut them down");
+        _standing.Wanted(bounty);
+        SyncOutlaw();
+        _hud.Toast($"They never raised a hand to you. That's murder, and it's seen: {bounty} crowns on your head ({_standing.Bounty} in all). The bounty board will have your name.", 9);
+        Save();
     }
 
     // ---- asleep ----

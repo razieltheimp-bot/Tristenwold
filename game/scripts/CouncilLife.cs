@@ -56,6 +56,7 @@ public partial class Main
         if (heard < CityEconomy.SpeakAt) { Say(person, $"With respect, nobody in {name} knows enough about you to hear you out."); return; }
         if (Repute.Own(town) < CityEconomy.SeatAt) { Say(person, $"They've heard good of you. But the council wants to see it done here, in {name}, not told about from the road. Do more good here, and ask again."); return; }
         DoCity(CityAction.CouncilSeat(town, _player.Company));
+        Spread($"council|{town}", $"has taken a seat on the council of {name}", false);
         Repute.Deed(2, town);
         Sound.Ui("quest");
         Save();

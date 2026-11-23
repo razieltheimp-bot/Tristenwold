@@ -42,6 +42,7 @@ public partial class Main
     /// <summary>Whatever goes in the hero's deeds, good or bad, goes round the town they did it in.</summary>
     void OnDeed(int size, string deed)
     {
+        RumourOf(size, deed);
         Repute.Deed(size, TownHere(_player.GlobalPosition));
         ShowRepute();
     }

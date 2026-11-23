@@ -42,6 +42,9 @@ public sealed class EncounterTracker(
     double _announceAt;
     string _area = "";
 
+    /// <summary>How the hero looks to a stranger (see <see cref="Rumour.Describe"/>), for the stories told of the fight.</summary>
+    public string? Look { get; set; }
+
     public bool InFight => _active;
 
     public long? ActorForSlot(int slot) => _bySlot.TryGetValue(slot, out var t) ? t.Id : null;
@@ -155,7 +158,8 @@ public sealed class EncounterTracker(
             KilledBy: t.Killed ? t.KilledBy : null,
             BaseForm: t.Kind)).ToList(), [company], PartyLevel: 5,
             KillerSlot: result == BattleResult.Defeat && _killer is { } k && _byId.TryGetValue(k, out var killer) ? killer.Slot : null,
-            Dropped: result == BattleResult.Defeat ? _dropped : null));
+            Dropped: result == BattleResult.Defeat ? _dropped : null,
+            X: _playerStart.X, Z: _playerStart.Z, Who: Look));
 
         _byId.Clear();
         _bySlot.Clear();

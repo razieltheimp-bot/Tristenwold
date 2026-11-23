@@ -245,7 +245,10 @@ public sealed partial class ServerCore
     IReadOnlyList<Outgoing> OnBattle(string player, BattleReport report)
     {
         // Each table only speaks for itself, and what a hero dropped is kept within reason.
-        var events = World.RecordBattle(report with { Players = [player], AreaId = State.Place(Clip(report.AreaId, 80)), Dropped = Sane(report.Dropped) });
+        var sane = report with { Players = [player], AreaId = State.Place(Clip(report.AreaId, 80)), Dropped = Sane(report.Dropped), Who = report.Who is null ? null : Clip(report.Who, 140) };
+        var events = World.RecordBattle(sane);
+        // What the deviants did is talked of where it happened.
+        foreach (var r in DeviantRumours(events, sane)) _cityChanged |= City.Heard(r);
         var outgoing = WorldChanged(events).ToList();
         foreach (var r in World.TakeRecovered()) // what the deviants they brought down were carrying, to whoever's report it was
             outgoing.Add(new(player, new HoardRecovered(r.Name, r.Hoard.Crowns, r.Hoard.Items)));
