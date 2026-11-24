@@ -1,4 +1,4 @@
-﻿#if CLAUDE_PLAYER
+#if CLAUDE_PLAYER
 // Vann's court: AI players on the shared world. Compiled only when TRISTINWOLD_CLAUDE=1 (see game/Directory.Build.props),
 // so the players' downloads never carry it. On the server it runs headless as a service (tools/vann).
 using System.Globalization;
@@ -115,7 +115,9 @@ public partial class Main
         /// <summary>Where it was headed when the game warned it off, and the level it was then: not again until it's grown.</summary>
         readonly Dictionary<string, int> _tooWild = [];
         bool _wildTested, _gatherTested, _smithTested, _climbTested, _wasClimbing;
-        bool _gearTested, _swimTested, _indoorTested, _tillTested;
+        bool _gearTested, _swimTested, _indoorTested, _tillTested, _kitTested;
+        Bond? _kitPupil;
+        string _kitWorn = "";
         string _hands = "";
         int _handChanges;
         double _lastHealth;
@@ -321,6 +323,44 @@ public partial class Main
                 }
                 var hands = $"{P.Pack.WornIn(Slot.Weapon)?.Name ?? "nothing"} + {P.Pack.WornIn(Slot.Offhand)?.Name ?? "nothing"}";
                 if (_gearTested && hands != _hands) { _hands = hands; _handChanges++; GD.PrintErr($"[claude] TEST: hands now {hands} (change {_handChanges})"); }
+            }
+            // For a test: an apprentice at his side wearing nothing, spares in his pack; the shop and the forge weighed
+            // for them with the windows faked; and every piece they're given after, logged.
+            if (main._args.ContainsKey("claude-kit-test"))
+            {
+                if (!_kitTested && _clock > 8)
+                {
+                    _kitTested = true;
+                    foreach (var id in new[] { "dragonbone_staff", "steel_helm", "steel_plate" }) { P.Pack.Add(id); P.Pack.Equip(id); }
+                    main.Redress();
+                    _kitPupil = new Bond { Role = BondRole.Apprentice, KindId = "apprentice", Name = "Test Pupil" };
+                    main.JoinForTest(_kitPupil);
+                    P.Pack.Add("apprentice_staff");
+                    P.Pack.Add("leather_cap");
+                    var (menu, crowns, gearAt) = (_menu, P.Crowns, _gearAt);
+                    P.Crowns = 600;
+                    _menu = [.. new[] { "Steel Plate, 220 crowns: plate.", "Leather Cap, 18 crowns: a cap.", "Leather Armour, 50 crowns: leather." }.Select(l => new Choice("click", l, () => { }, l))];
+                    var bought = Deal()?.Key;
+                    List<Choice> Forge(params string[] lines) => [.. lines.Select(l => new Choice("click", l, () => { }, l))];
+                    var spareMade = BestMake(Forge("Make Apprentice's Staff from 2 oak logs", "Make Iron Ingot from 2 iron ore"))?.Key;
+                    P.Pack.Take("apprentice_staff");
+                    var staffMade = BestMake(Forge("Make Apprentice's Staff from 2 oak logs", "Make Iron Ingot from 2 iron ore"))?.Key;
+                    P.Pack.Add("apprentice_staff");
+                    (_menu, P.Crowns, _gearAt) = (menu, crowns, gearAt);
+                    foreach (var (what, got, wanted) in new (string, string?, string?)[]
+                    {
+                        ("a shop: leather armour for the pupil (the cap's spare already, the plate too dear)", bought, "Leather Armour, 50 crowns: leather."),
+                        ("a forge, a staff spare already: no staff", spareMade, "Make Iron Ingot from 2 iron ore"),
+                        ("a forge, no staff spare: a staff for the pupil", staffMade, "Make Apprentice's Staff from 2 oak logs"),
+                    })
+                        GD.PrintErr($"[claude] TEST kit: {(got == wanted ? "PASS" : "FAIL")} {what} (got {got ?? "nothing"}{(got == wanted ? "" : $", wanted {wanted ?? "nothing"}")})");
+                    GD.PrintErr("[claude] TEST kit: Test Pupil joins, wearing nothing; a staff and a cap in the pack.");
+                }
+                if (_kitPupil is { } pupil)
+                {
+                    var worn = string.Join(", ", pupil.Gear.OrderBy(g => g.Key).Select(g => $"{g.Key} {Items.Get(g.Value)?.Name}"));
+                    if (worn != _kitWorn) { _kitWorn = worn; GD.PrintErr($"[claude] TEST kit: Test Pupil now wears {(worn.Length > 0 ? worn : "nothing")}; hero still wears {string.Join(", ", P.Pack.Worn.Values)}."); }
+                }
             }
             // For a test: on the lake shore west of Coldhollow Croft's island, the croft the place to go.
             if (main._args.ContainsKey("claude-swim-test"))
@@ -705,6 +745,14 @@ public partial class Main
             foreach (var (id, _) in P.Pack.Items.ToList())
                 if (Items.Get(id) is { Wearable: true } item && Better(item))
                     m.Add(new("equip", $"Press I and wear the {item.Name}.", () => { P.Pack.Equip(item.Id); main.Redress(); _doingWhat = $"put on the {item.Name}"; }, item.Id));
+            // His apprentices: a spare piece in the pack that would do something for one of them, given them (P, then
+            // their gear). Vann-Tres took a dozen apprentices into fights with deviants wearing nothing of his, and lost them.
+            if (!P.InFight && KitFor() is { } kit)
+            {
+                var (bond, item) = kit;
+                m.Add(new("kit", $"Press P, pick {bond.Name} (your apprentice), and give them the {item.Name} from your pack ({item.Slot}{(item.Damage > 0 ? $", +{item.Damage:P0} damage" : "")}{(item.Armor > 0 ? $", {item.Armor:0} armour" : "")}): geared apprentices hit harder and last longer.",
+                    () => GiveKit(bond, item), $"kit {bond.Id} {item.Id}"));
+            }
             foreach (var person in main._places.People.Where(x => !x.Captive && x.GlobalPosition.DistanceTo(p) < 50).OrderBy(x => x.GlobalPosition.DistanceTo(p)).Take(6).ToList())
             {
                 var who = person;
@@ -872,6 +920,48 @@ public partial class Main
 
         double _gearAt = -1e9;
 
+        // ---- his apprentices' gear ------------------------------------------------------------------------------------
+
+        /// <summary>The apprentices at his side (not those keeping his shops), and not one lying dead: those it's worth kitting out.</summary>
+        List<Bond> Apprentices() => [.. main.Bonds.Where(b => PartyRules.IsApprentice(b) && b.Following && b.Keeps is not { Length: > 0 }
+            && main.BodyOf(b) is not { State: EnemyState.Dead })];
+
+        /// <summary>The spare in his pack that would do the most for one of them (never a piece he'd rather wear himself).</summary>
+        (Bond Bond, Item Item)? KitFor()
+        {
+            (Bond, Item, double Gain)? best = null;
+            foreach (var b in Apprentices())
+                if (Kit.Upgrade(b, P.Pack, Better) is { } up && (best is null || up.Gain > best.Value.Gain))
+                    best = (b, up.Item, up.Gain);
+            return best is { } x ? (x.Item1, x.Item2) : null;
+        }
+
+        void GiveKit(Bond bond, Item item)
+        {
+            if (!Kit.Give(bond, P.Pack, item.Id)) return;
+            main.Regear(bond);
+            _doingWhat = $"gave {bond.Name} the {item.Name}";
+            GD.PrintErr($"[claude] Gave his apprentice {bond.Name} the {item.Name}.");
+            Event("kitted", $"{Me} gave his apprentice {bond.Name} the {item.Name} ({item.Slot}).", false);
+        }
+
+        /// <summary>The most he'll spend on one piece for an apprentice: cheap kit, a little more each level.</summary>
+        int KitBudget => 40 + 10 * P.Hero.Level;
+
+        /// <summary>How much good a piece would do whichever of them it suits best, if they lack one as good and none's spare in the pack.</summary>
+        double ForApprentices(Item item, List<Bond> company) =>
+            company.Count == 0 || Better(item) || !Kit.Wanted(company, P.Pack, item) ? 0 : company.Max(b => Kit.Gain(b, item));
+
+        /// <summary>Something at a forge for them: a recipe he knows, the makings in his pack and a log over to burn, for a piece one of them wants (a staff from two oak logs, a leather cap).</summary>
+        bool KitForgeWork()
+        {
+            var company = Apprentices();
+            if (company.Count == 0) return false;
+            var logs = Fuel.Sum(P.Pack.Count);
+            return Recipes.All.Any(r => r.Job == Job.Smithing && r.Item.Wearable && P.Pack.Level(Job.Smithing) >= r.Level && P.Pack.Has(r.Needs)
+                && logs > r.Needs.Where(n => Fuel.Contains(n.Id)).Sum(n => n.N) && ForApprentices(r.Item, company) > 0);
+        }
+
         /// <summary>A piece for the same slot already in the pack (bought, not yet put on) that's as good or better.</summary>
         bool PackHasAsGood(Item item) => P.Pack.Contents.Any(x => x.Item.Id != item.Id && x.Item.Wearable && x.Item.Slot == item.Slot
             && !P.Pack.Worn.Values.Contains(x.Item.Id) && Worth(x.Item) >= Worth(item));
@@ -982,6 +1072,7 @@ public partial class Main
             // Heading for a town: see it through (up to five minutes), rather than turning for whichever other one is nearer now.
             if (_doing is not null && _clock - _since < 300 && _menu.Any(m => m.Kind == "head" && m.Key == _lastKey) && Pick(m => m.Kind == "keep") is >= 0 and var onward) return Of(onward);
             if (Pick(m => m.Kind == "equip") is >= 0 and var gear) return Of(gear);
+            if (foes.Count == 0 && Pick(m => m.Kind == "kit") is >= 0 and var kitOut) return Of(kitOut);
             var train = Pick(m => m.Kind == "train");
             if (train >= 0 && foes.Count == 0) return Of(train);
             var craft = Pick(m => m.Kind == "craft");
@@ -2151,7 +2242,7 @@ public partial class Main
         static readonly string[] Smeltable = ["iron_ore", "coal", "silver_ore", "gold_ore", "iron_bar", "steel_bar", "silver_bar", "gold_bar", "scrap_iron", "hide"];
         static readonly string[] Fuel = ["pine_log", "oak_log", "yew_log"];
 
-        bool HasForgeWork => Smeltable.Sum(P.Pack.Count) >= 3 && Fuel.Sum(P.Pack.Count) >= 1;
+        bool HasForgeWork => Smeltable.Sum(P.Pack.Count) >= 3 && Fuel.Sum(P.Pack.Count) >= 1 || KitForgeWork();
 
         /// <summary>To the smithy, in, and up to the anvil: the forge's window opens, and the deal-maker works it.</summary>
         void SmithyTrip(Vector3 door)
@@ -2224,6 +2315,11 @@ public partial class Main
             if (makes.Count == 0) return null;
             var gear = makes.FirstOrDefault(m => Makes(m.Key) is { Wearable: true } item && Better(item));
             if (gear != null) return gear;
+            // Then for his apprentices: whatever one of them lacks and would be most the better for (a staff, a cap).
+            var company = Apprentices();
+            var forThem = makes.Select(m => (Option: m, Good: Makes(m.Key) is { Wearable: true } item ? ForApprentices(item, company) : 0))
+                .Where(x => x.Good > 0).OrderByDescending(x => x.Good).Select(x => x.Option).FirstOrDefault();
+            if (forThem != null) return forThem;
             string[] stuff = ["ingot", "bar", "leather", "cloth", "cut ", "plank", "potion", "draught", "salve"];
             static string Made(string o) => o[5..Math.Max(5, o.IndexOf(" from ", StringComparison.Ordinal))];
             var materials = makes.FirstOrDefault(m => stuff.Any(w => Made(m.Key).Contains(w, StringComparison.OrdinalIgnoreCase)));
@@ -2364,6 +2460,8 @@ public partial class Main
             var potions = P.Pack.Count("healing_draught") + P.Pack.Count("greater_healing");
             var beasts = Game.Bonds.Count(b => b.Eats && !PartyRules.IsApprentice(b)); // pets and mounts eat meat; apprentices feed themselves
             (Choice Option, Item Item, int Price)? bestGear = null;
+            (Choice Option, Item Item, int Price, double Good)? kitBuy = null;
+            var company = Apprentices();
             foreach (var o in options)
             {
                 var m = System.Text.RegularExpressions.Regex.Match(o.Key, @"^(.+?), (\d+) crowns");
@@ -2391,6 +2489,9 @@ public partial class Main
                 if (name == "Bread" && P.Pack.Count(item.Id) < 10) { GD.PrintErr($"[claude] Buying bread to heal with ({P.Pack.Count(item.Id)} in the pack)."); return o; }
                 if (item.Wearable && Better(item) && P.Pack.Count(item.Id) == 0 && !PackHasAsGood(item)
                     && (bestGear is null || Worth(item) > Worth(bestGear.Value.Item))) bestGear = (o, item, price);
+                // For an apprentice: cheap, out of what he isn't keeping back for anything, and only what one of them lacks.
+                if (item.Wearable && price <= KitBudget && P.Crowns - price >= KeepBack && ForApprentices(item, company) is > 0 and var good
+                    && (kitBuy is null || good > kitBuy.Value.Good || good == kitBuy.Value.Good && price < kitBuy.Value.Price)) kitBuy = (o, item, price, good);
             }
             // Gear: only the best upgrade on the shelf, and one piece a visit (the next one's weighed once it's on).
             if (bestGear is { } g && _clock - _gearAt > 120)
@@ -2399,6 +2500,14 @@ public partial class Main
                 if (_gearWant is { } saved && saved.Price <= g.Price) _gearWant = null; // what he was saving for, or better
                 GD.PrintErr($"[claude] Buying {g.Item.Name} for {g.Price}: the best upgrade on offer.");
                 return g.Option;
+            }
+            // Nothing for himself: one piece a visit for the apprentices, handed out once he's out of the shop.
+            if (bestGear is null && kitBuy is { } k && _clock - _gearAt > 120)
+            {
+                _gearAt = _clock;
+                GD.PrintErr($"[claude] Buying {k.Item.Name} for {k.Price}, for one of his apprentices.");
+                Event("kit-bought", $"{Me} bought a {k.Item.Name} ({k.Price} crowns) for one of his apprentices.", false);
+                return k.Option;
             }
             // The way in: the selling counter with loot to sell; the bench when there's a kit to brew with.
             var loot = P.Pack.Contents.Any(x => x.Item.Kind == ItemKind.Material || x.Item.Kind == ItemKind.Trophy);

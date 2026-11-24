@@ -50,6 +50,43 @@ public class SettlingTests
     }
 
     [Fact]
+    public void The_best_spare_in_the_pack_goes_to_an_apprentice_and_nothing_goes_back_and_forth()
+    {
+        var pack = new Pack();
+        foreach (var id in new[] { "apprentice_staff", "oak_wand", "leather_cap", "wooden_shield" }) pack.Add(id);
+        var apprentice = new Bond { Role = BondRole.Apprentice, KindId = "squire" };
+        var wolf = new Bond { Role = BondRole.Pet, KindId = "wolf" };
+
+        // In their shirt: the staff first (the most damage), then the rest, until there's nothing in the pack for them.
+        var given = new List<string>();
+        while (Kit.Upgrade(apprentice, pack) is { } up)
+        {
+            Assert.True(up.Gain > 0);
+            Assert.True(Kit.Give(apprentice, pack, up.Item.Id));
+            given.Add(up.Item.Id);
+            Assert.True(given.Count < 10, string.Join(", ", given)); // never a loop
+        }
+        Assert.Equal("apprentice_staff", given[0]);
+        Assert.Contains("leather_cap", given);
+        Assert.Equal("apprentice_staff", apprentice.Gear[Slot.Weapon]);
+        // A one-handed wand and a shield aren't worth the staff, so the staff stays.
+        Assert.True(Kit.Gain(apprentice, Items.Get("oak_wand")!) <= 0);
+
+        // Nothing the hero would sooner wear himself.
+        var fresh = new Bond { Role = BondRole.Apprentice, KindId = "squire" };
+        Assert.Null(Kit.Upgrade(fresh, pack, keep: i => i.Slot == Slot.Weapon || i.Slot == Slot.Offhand || i.Slot == Slot.Head || i.Slot == Slot.Body));
+
+        // Worth making or buying another only while more of them lack it than there are spares.
+        var company = new[] { fresh, apprentice, wolf };
+        var staff = Items.Get("apprentice_staff")!;
+        var empty = new Pack();
+        Assert.True(Kit.Wanted(company, empty, staff)); // fresh has no weapon
+        empty.Add("apprentice_staff");
+        Assert.False(Kit.Wanted(company, empty, staff)); // one spare, one wanting
+        Assert.False(Kit.Wanted([wolf], new Pack(), staff)); // a beast carries no weapon
+    }
+
+    [Fact]
     public void A_colony_hires_guards_only_once_it_has_a_barracks_and_they_are_paid_from_the_till()
     {
         var city = CityEconomy.Start(5);

@@ -141,6 +141,50 @@ public static class Kit
     /// <summary>What they're wearing adds up to: a share more damage, armour, and a share more health.</summary>
     public static (double Damage, double Armor, double Health) Adds(Bond b) =>
         (b.Gear.Values.Sum(id => Items.Get(id)?.Damage ?? 0), b.Gear.Values.Sum(id => Items.Get(id)?.Armor ?? 0), b.Gear.Values.Sum(id => Items.Get(id)?.Health ?? 0));
+
+    /// <summary>What a piece is worth to whoever wears it: its damage, armour and health, weighed together.</summary>
+    public static double Worth(Item? i) => i is null ? 0 : i.Damage * 100 + i.Armor + i.Health * 100;
+
+    static bool BothHands(Item? i) => i?.Grip is Grip.TwoHand or Grip.Ranged;
+    static Item? On(Bond b, Slot slot) => b.Gear.TryGetValue(slot, out var id) ? Items.Get(id) : null;
+
+    /// <summary>
+    /// How much better off they'd be wearing this piece, as <see cref="Give"/> would put it on (a two-hander takes the
+    /// off-hand's place, and an off-hand the two-hander's): above nothing, it's no use to them.
+    /// </summary>
+    public static double Gain(Bond b, Item item)
+    {
+        if (!Fits(b, item)) return 0;
+        if (item.Slot is not (Slot.Weapon or Slot.Offhand)) return Worth(item) - Worth(On(b, item.Slot));
+        var (weapon, offhand) = (On(b, Slot.Weapon), On(b, Slot.Offhand));
+        var before = Worth(weapon) + Worth(offhand);
+        var after = item.Slot == Slot.Weapon
+            ? Worth(item) + (BothHands(item) ? 0 : Worth(offhand))
+            : Worth(item) + (BothHands(weapon) ? 0 : Worth(weapon));
+        return after - before;
+    }
+
+    /// <summary>
+    /// The piece in the hero's pack that would do the most for this one of their company, if any would do anything:
+    /// a spare they're carrying anyway, kitting out the people who fight beside them. Each one given only ever adds to
+    /// what they wear, so nothing goes back and forth.
+    /// </summary>
+    public static (Item Item, double Gain)? Upgrade(Bond b, Pack from, Func<Item, bool>? keep = null) =>
+        from.Contents.Where(c => c.Item.Wearable && keep?.Invoke(c.Item) != true).Select(c => (c.Item, Gain: Gain(b, c.Item))).Where(x => x.Gain > 0)
+            .OrderByDescending(x => x.Gain).ThenBy(x => x.Item.Value).Cast<(Item, double)?>().FirstOrDefault();
+
+    /// <summary>
+    /// Whether one more of this piece (bought or made) would go to good use: more of the company would be better for it
+    /// than there are pieces as good for that slot already spare in the pack.
+    /// </summary>
+    public static bool Wanted(IEnumerable<Bond> company, Pack pack, Item item)
+    {
+        if (!item.Wearable) return false;
+        var wanting = company.Count(b => Gain(b, item) > 0);
+        if (wanting == 0) return false;
+        var spare = pack.Contents.Where(c => c.Item.Wearable && c.Item.Slot == item.Slot && Worth(c.Item) >= Worth(item)).Sum(c => c.N);
+        return wanting > spare;
+    }
 }
 
 /// <summary>
