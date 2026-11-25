@@ -602,9 +602,11 @@ public partial class Hud : CanvasLayer
     /// <summary>The quest scroll's height and one line's (for the self-test).</summary>
     public (float Scroll, float Line) QuestViewSize => (_questScroll.Size.Y, OneLine);
 
-    public void ShowJournal(QuestLog log)
+    /// <summary>The journal: the main story's next step first (it's on the tracker too), then the quests taken.</summary>
+    public void ShowJournal(QuestLog log, string? story = null)
     {
         Clear(_journal);
+        if (story is not null) _journal.AddChild(new Label { Text = story, AutowrapMode = TextServer.AutowrapMode.Word, Modulate = new Color(1f, 0.85f, 0.4f) });
         foreach (var e in log.Entries.OrderBy(e => e.Stage == QuestStage.Done))
             _journal.AddChild(new Label
             {
@@ -612,14 +614,22 @@ public partial class Hud : CanvasLayer
                 AutowrapMode = TextServer.AutowrapMode.Word,
                 Modulate = e.Stage == QuestStage.Done ? new Color(1, 1, 1, 0.45f) : Colors.White,
             });
-        if (log.Entries.Count == 0) _journal.AddChild(new Label { Text = "No quests yet. Look for people marked with \"!\" and ask them for work." });
+        if (log.Entries.Count == 0) _journal.AddChild(new Label { Text = story is null ? "No quests yet. Look for people marked with \"!\" and ask them for work." : "No other quests yet. Look for people marked with \"!\" and ask them for work." });
     }
 
     public void OpenJournal()
     {
         if (!_window.Visible) ToggleWindow();
-        _tabs.CurrentTab = _tabs.GetTabIdxFromControl(_journal.GetParent<Control>());
+        _tabs.CurrentTab = JournalTab;
     }
+
+    int JournalTab => _tabs.GetTabIdxFromControl(_journal.GetParent<Control>());
+
+    /// <summary>The window's open on the journal (J then closes it).</summary>
+    public bool JournalShowing => _window.Visible && _tabs.CurrentTab == JournalTab;
+
+    /// <summary>The journal's lines as they show (for the self-test).</summary>
+    public IEnumerable<string> JournalLines => _journal.GetChildren().OfType<Label>().Where(l => !l.IsQueuedForDeletion()).Select(l => l.Text);
 
     void UpdateMouse()
     {

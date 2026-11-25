@@ -1526,8 +1526,30 @@ public partial class SelfTest(Main main) : Node
         await Until(() => p.IsOnFloor(), 3);
         Input.ActionRelease("move_forward");
         Check(!p.Climbing && p.GlobalPosition.Y > ground + 5.5f, $"and over the top onto it ({p.GlobalPosition.Y - ground:0.0} m up, climbing {p.Climbing})");
-        p.Pack.Take(Climbing.Gear);
         wall.QueueFree();
+        await Teleport(foot);
+        await Frames(10);
+
+        // A wall with a ledge jutting out over the climber, as a house's eave does: pushing up and getting nowhere, they
+        // let go and drop, instead of hanging under it for good.
+        var eaved = new StaticBody3D();
+        eaved.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(12, 6, 3) } });
+        eaved.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(12, 0.4f, 1.6f) }, Position = new Vector3(0, 0, 2.3f) }); // its underside 2.8 m up
+        eaved.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(12, 6, 3) } });
+        main.AddChild(eaved);
+        eaved.GlobalPosition = foot with { Y = ground + 3 } + forward * 4.5f;
+        eaved.LookAt(eaved.GlobalPosition + forward, Vector3.Up);
+        await Frames(5);
+        Input.ActionPress("move_forward");
+        await Until(() => p.Climbing, 3);
+        Check(p.Climbing, "they take hold of a wall with a ledge over it");
+        await Until(() => !p.Climbing, 4);
+        Input.ActionRelease("move_forward");
+        Check(!p.Climbing && p.GlobalPosition.Y < ground + 3, $"under the ledge they can't go higher, and let go ({p.GlobalPosition.Y - ground:0.0} m up, climbing {p.Climbing})");
+        await Until(() => p.IsOnFloor(), 3);
+        Check(p.IsOnFloor() && !p.Climbing, $"and drop back down ({p.GlobalPosition.Y - ground:0.0} m up)");
+        p.Pack.Take(Climbing.Gear);
+        eaved.QueueFree();
         await Teleport(foot);
     }
 
@@ -1845,6 +1867,13 @@ public partial class SelfTest(Main main) : Node
         var story = main.Story;
         Person Who(string id) => main.Locals.First(x => x.Npc.Id == id);
         Check(story.Chapter == Chapter.Waking && hud.Heard("ring of black iron"), $"you wake at the Gallows Perch with an iron ring on your finger, remembering nothing ({story.Chapter})");
+        // The journal shows the story's next step (the tracker does), not "No quests yet"; J opens it and J shuts it.
+        if (hud.JournalShowing) hud.ToggleWindow();
+        await Press("journal");
+        Check(hud.JournalShowing && hud.JournalLines.FirstOrDefault()?.Contains("Speak to Mother Corva") == true && !hud.JournalLines.Any(l => l.StartsWith("No quests yet")),
+            $"J opens the journal, with the story's next step at the top ({string.Join(" | ", hud.JournalLines)})");
+        await Press("journal");
+        Check(!hud.JournalShowing, "and J again shuts it");
         await Teleport(new Vector3(City.GallowsPerch.X - 2.5f, 0, City.GallowsPerch.Z + 13));
         main.Talk(Who(ImmortalSaga.Corva));
         Check(hud.Choose("What am I?") && hud.TalkText.Contains("Immortal") && story.Chapter == Chapter.Archive,

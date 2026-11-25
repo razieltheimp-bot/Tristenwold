@@ -1547,6 +1547,8 @@ public partial class Player : Fighter
     Vector3 _wallNormal = Vector3.Back;
     double _offWall;
     bool _toldClimb;
+    double _stalled;  // how long they've pushed up and got nowhere (under a roof's eave, say)
+    double _regripAt; // not taking hold again till then, once off a wall
 
     /// <summary>On a wall or a cliff face, climbing.</summary>
     public bool Climbing => _climbing;
@@ -1558,7 +1560,7 @@ public partial class Player : Fighter
     /// <summary>Walking into a wall or a cliff, for a hero who can: they take hold of it.</summary>
     void Grip(Vector3 dir)
     {
-        if (dir == Vector3.Zero || Swimming || Mount is not null || !IsOnWall()) return;
+        if (dir == Vector3.Zero || Swimming || Mount is not null || Now < _regripAt || !IsOnWall()) return;
         var n = GetWallNormal();
         if (Mathf.Abs(n.Y) > 0.6f || dir.Dot(-n with { Y = 0 }) < 0.6f) return;
         if (!WallAhead(-n, 1.3f)) return; // only a kerb or a crate, below the chest: they step or jump up it
@@ -1566,6 +1568,7 @@ public partial class Player : Fighter
         _climbing = true;
         _wallNormal = (n with { Y = 0 }).Normalized();
         _offWall = 0;
+        _stalled = 0;
         if (!_toldClimb) { _toldClimb = true; Said?.Invoke($"You climb, by {by}: forward to go up, sideways along, jump to push off."); }
     }
 
@@ -1577,6 +1580,7 @@ public partial class Player : Fighter
         if (Input.IsActionJustPressed("jump"))
         {
             _climbing = false;
+            _regripAt = Now + 0.6; // kicked off, they don't snatch at the same wall on the way down
             Velocity = _wallNormal * 6 + Vector3.Up * 5; // kicked off the wall
             MoveAndSlide();
             return;
@@ -1586,8 +1590,21 @@ public partial class Player : Fighter
         if (moving && Class.Id != "Thief") Stats.Spend(AttackKind.Weapon, Gameplay.Climbing.StaminaPerSecond * delta);
         var spent = Stats.Stamina < 1 && Class.Id != "Thief";
         Velocity = Vector3.Up * (spent ? -2.5f : up * Gameplay.Climbing.Speed) + right * side * Gameplay.Climbing.Speed * 0.8f + face * 2.5f;
+        var was = GlobalPosition.Y;
         MoveAndSlide();
         _fallen = 0;
+        // Pushing up and getting nowhere (a roof's eave or a jetty overhead): they can't go higher here, so they let go
+        // and drop, rather than hang under it for good.
+        _stalled = up > 0 && !spent && GlobalPosition.Y - was < up * Gameplay.Climbing.Speed * delta * 0.25 ? _stalled + delta : 0;
+        if (_stalled > 0.4)
+        {
+            _climbing = false;
+            _stalled = 0;
+            _regripAt = Now + 0.8;
+            Velocity = _wallNormal * 3;
+            Said?.Invoke("Something overhangs: there's no climbing higher here, and you let go.");
+            return;
+        }
         if (IsOnWall() && GetWallNormal() is var n && Mathf.Abs(n.Y) < 0.7f)
         {
             _wallNormal = (n with { Y = 0 }).Normalized();

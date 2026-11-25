@@ -892,7 +892,11 @@ public partial class Main : Node3D
         if (Input.IsActionJustPressed("game_menu")) Back();
         if (Input.IsActionJustPressed("menu")) _hud.ToggleWindow();
         if (Input.IsActionJustPressed("map")) _hud.ToggleMap();
-        if (Input.IsActionJustPressed("journal")) { _hud.ShowJournal(_journal); _hud.OpenJournal(); }
+        if (Input.IsActionJustPressed("journal"))
+        {
+            if (_hud.JournalShowing) _hud.ToggleWindow(); // J again closes it
+            else { _hud.ShowJournal(_journal, StoryLine(pos)); _hud.OpenJournal(); }
+        }
         if (Input.IsActionJustPressed("party") && !_hud.Talking) ShowParty();
         if (Input.IsActionJustPressed("skills") && !_hud.Talking) ShowSkills();
         if (Input.IsActionJustPressed("pack") && !_hud.Talking) ShowPack();
@@ -1064,7 +1068,7 @@ public partial class Main : Node3D
         if (quest.Kind is QuestKind.Slay or QuestKind.Fetch) _places.Restock(quest.TargetId);
         _hud.Toast($"New quest: {quest.Title}.");
         Sound.Ui("quest", -3);
-        _hud.ShowJournal(_journal);
+        _hud.ShowJournal(_journal, StoryLine(_player.GlobalPosition));
         Save();
     }
 
@@ -1078,7 +1082,7 @@ public partial class Main : Node3D
         if (u.Stage == QuestStage.Done) Repute.Helped(u.Quest.GiverId, u.Quest.GiverName);
         if (u.Stage == QuestStage.Done && ClassQuests.IsClassQuest(u.Quest.Id, out var discipline, out var step)) ClassTrialDone(discipline, step);
         if (u.Stage == QuestStage.Done) { _hud.Toast($"Quest complete: {u.Quest.Title}."); Sound.Ui("quest"); }
-        _hud.ShowJournal(_journal);
+        _hud.ShowJournal(_journal, StoryLine(_player.GlobalPosition));
         Save();
     }
 

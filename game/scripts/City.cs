@@ -245,7 +245,9 @@ public static class City
         Landmark(root, "tavern", "red", GildedFlagon, 8, Facing(GildedFlagon), "The Gilded Flagon");
         Landmark(root, "tavern", "blue", ScholarsRest, 8, Facing(ScholarsRest), "The Scholar's Rest");
         // Streets (after the landmarks, so they keep clear of them) of houses in each ring, crowded at the bottom, grander at the top.
-        Houses(root, rng, 68, 93, 0, 52, ["house", "house", "house", "cottage"]);
+        // Out to 90 and no further: a house's back (up to ~4.3 m behind its middle, and the eave past that) then stops
+        // short of the town wall's inner face by a lane you can walk, not a sliver you get wedged in.
+        Houses(root, rng, 68, 90, 0, 52, ["house", "house", "house", "cottage"]);
         Houses(root, rng, 38, 54, InnerHeight, 18, ["house", "house", "tower"]);
 
         for (var i = 0; i < 6; i++) // the Warrens: a crush of ruins and hovels
