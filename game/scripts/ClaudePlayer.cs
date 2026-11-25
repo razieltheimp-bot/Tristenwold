@@ -115,7 +115,8 @@ public partial class Main
         /// <summary>Where it was headed when the game warned it off, and the level it was then: not again until it's grown.</summary>
         readonly Dictionary<string, int> _tooWild = [];
         bool _wildTested, _gatherTested, _smithTested, _climbTested, _wasClimbing;
-        bool _gearTested, _swimTested, _indoorTested, _tillTested, _kitTested;
+        bool _gearTested, _swimTested, _indoorTested, _tillTested, _kitTested, _seatTested;
+        double? _seatHallAt, _seatHallOut;
         Bond? _kitPupil;
         string _kitWorn = "";
         string _hands = "";
@@ -361,6 +362,64 @@ public partial class Main
                     var worn = string.Join(", ", pupil.Gear.OrderBy(g => g.Key).Select(g => $"{g.Key} {Items.Get(g.Value)?.Name}"));
                     if (worn != _kitWorn) { _kitWorn = worn; GD.PrintErr($"[claude] TEST kit: Test Pupil now wears {(worn.Length > 0 ? worn : "nothing")}; hero still wears {string.Join(", ", P.Pack.Worn.Values)}."); }
                 }
+            }
+            // For a test (with --vann): a town whose council has all fallen but Vann-Tres; it should be the court's seat, and
+            // stay it after Vann founds a colony; and a town the court loses is let go once there's another seat to have.
+            if (main._args.ContainsKey("claude-seat-test") && !_seatTested && _clock > 8 && _rank is not null)
+            {
+                _seatTested = true;
+                var (court, aim) = (_court, _aim);
+                _court = new CourtFile { Members = court.Members };
+                _aim = LordFirstAim;
+                var town = main._world.SettlementsNear(0, 0, 6000).Where(t => t.Kind == SettlementKind.Town && !t.Hostile).OrderBy(t => t.X * t.X + t.Z * t.Z).First();
+                var council = main._city.CouncilOf(town.Id);
+                var kept = (council.Members.ToDictionary(), council.Fallen.ToHashSet(), council.Heroes.ToList(), council.Warlord);
+                council.Members.Clear(); council.Fallen.Clear(); council.Heroes.Clear(); council.Warlord = null;
+                council.Members["test-a"] = "Test Councillor";
+                council.Fallen.Add("test-a");
+                council.Heroes.Add("Vann-Tres");
+                void Check(bool ok, string what) => GD.PrintErr($"[claude] TEST seat: {(ok ? "PASS" : "FAIL")} {what} (seat {_court.Seat} [{_court.SeatTown}], reach {SeatReach:0}, aim: {_aim})");
+                TendSeat(write: false);
+                Check(_court.SeatTown == town.Id && _court.Seat.Length > 0 && SeatReach > 0, $"{town.Name}, ruled by Vann-Tres, is the seat");
+                Check(_rank != CourtRank.Lord || _aim == LordHeldAim, "Vann's aim moves on from his first colony");
+                Check(CourtBrief().Contains("counts as much as a colony"), "the brief says it counts");
+                council.Heroes.Add("Someone Else"); // a second hero at the table: nobody rules it now
+                TendSeat(write: false);
+                Check(_court.SeatTown == town.Id, "with nothing else held, the old seat stands");
+                (council.Members, council.Fallen, council.Heroes, council.Warlord) = kept;
+                (_court, _aim) = (court, aim);
+                if (_rank == CourtRank.Lieutenant) // and a lieutenant in its streets, with the crowns for a hall: out past the edge for one
+                {
+                    council.Members.Clear(); council.Fallen.Clear(); council.Heroes.Clear(); council.Warlord = null;
+                    council.Members["test-a"] = "Test Councillor"; council.Fallen.Add("test-a"); council.Heroes.Add("Vann-Tres");
+                    (_court.Seat, _court.SeatTown) = ("", "");
+                    TendSeat(write: false);
+                    (P.Hero.Level, P.Crowns) = (Math.Max(P.Hero.Level, 6), 2000);
+                    P.GlobalPosition = new Vector3((float)_court.SeatX, City.FloorAt(new Vector3((float)_court.SeatX, 0, (float)_court.SeatZ)) + 1.5f, (float)_court.SeatZ);
+                    _seatHallAt = _clock + 6;
+                }
+            }
+            if (_seatHallAt is { } hallAt && _clock > hallAt)
+            {
+                var m = new List<Choice>();
+                CourtChoices(m);
+                var keys = string.Join(", ", m.Select(c => c.Kind));
+                var site = m.FirstOrDefault(c => c.Kind == "court-hall-site");
+                GD.PrintErr($"[claude] TEST seat: {(site is not null ? "PASS" : "FAIL")} a lieutenant in {_court.Seat}'s streets walks out for ground for a hall (choices: {keys}; here: {Game.NoRoomForHall(P.GlobalPosition) ?? "room"})");
+                if (site?.To is { } to && _seatHallAt < 1e8)
+                {
+                    P.GlobalPosition = new Vector3(to.X, City.FloorAt(to) + 1.5f, to.Z);
+                    _seatHallAt = 1e9 + _clock; // once more, out there, in a few seconds
+                    _seatHallOut = _clock + 6;
+                }
+                else _seatHallAt = null;
+            }
+            if (_seatHallOut is { } outAt && _clock > outAt)
+            {
+                _seatHallOut = null;
+                var m = new List<Choice>();
+                CourtChoices(m);
+                GD.PrintErr($"[claude] TEST seat: {(m.Any(c => c.Kind == "court-found") ? "PASS" : "FAIL")} out past the edge, the hall can go up (choices: {string.Join(", ", m.Select(c => c.Kind))}; here: {Game.NoRoomForHall(P.GlobalPosition) ?? "room"})");
             }
             // For a test: on the lake shore west of Coldhollow Croft's island, the croft the place to go.
             if (main._args.ContainsKey("claude-swim-test"))
@@ -2380,7 +2439,7 @@ public partial class Main
             (int Crowns, string What)? want = null;
             void Consider(int crowns, string what) { if (want is null || crowns + Reserve > want.Value.Crowns) want = (crowns + Reserve, what); }
             if (_rank == CourtRank.Lord && P.Hero.Level >= 5 && FrontierSite() is not null)
-                Consider(Halls.PlanOf(HallKind.Colony).FoundCost, Game._city.ColoniesOf(Me).Any() ? "your next colony" : "your first colony");
+                Consider(Halls.PlanOf(HallKind.Colony).FoundCost, Game._city.ColoniesOf(Me).Any() || _court.Seat.Length > 0 ? "your next colony" : "your first colony");
             if (_rank == CourtRank.Lieutenant && P.Hero.Level >= 5 && Halls.For(P.Class.Id) is { } plan && Game._city.HallOf(Me, plan.Kind) is null)
                 Consider(plan.FoundCost, $"your own {plan.Word}");
             if (_rank is CourtRank.Lord or CourtRank.Lieutenant && P.Hero.Level >= 3
@@ -2770,6 +2829,8 @@ public partial class Main
             public string Decree { get; set; } = "";
             public string Frontier { get; set; } = "";
             public string Seat { get; set; } = "";
+            /// <summary>The seat's town, when it's a town the court rules rather than a colony of Vann's own.</summary>
+            public string SeatTown { get; set; } = "";
             public double SeatX { get; set; }
             public double SeatZ { get; set; }
             public List<Member> Members { get; set; } = [];
@@ -3962,7 +4023,7 @@ public partial class Main
                 _orders.Focus = ["quests", "fights", "people", "gathering", "places"];
                 _aim = _rank switch
                 {
-                    CourtRank.Lord => "Grow strong enough (level 5, 800 crowns) to march out, found a colony far from Tristinwold, and never come back.",
+                    CourtRank.Lord => _court.Seat.Length > 0 ? LordHeldAim : LordFirstAim,
                     CourtRank.Lieutenant => "Grow strong, take on apprentices, and join Vann at his colony.",
                     _ => "Find the other players, win their trust, and keep them apart.",
                 };
@@ -4479,7 +4540,11 @@ public partial class Main
             if ((_courtTick += delta) >= 30)
             {
                 _courtTick = 0;
-                if (_rank != CourtRank.Lord) ReadCourt();
+                if (_rank != CourtRank.Lord)
+                {
+                    ReadCourt();
+                    if (_court.Seat.Length == 0 || _court.SeatTown.Length > 0) TendSeat(write: false);
+                }
                 else
                 {
                     var keep = _court; // his own copy is the true one; only the others' statuses are read in
@@ -4595,15 +4660,60 @@ public partial class Main
             return line;
         }
 
-        /// <summary>His first colony is the seat of the court: the lieutenants gather there.</summary>
-        void TendSeat()
+        /// <summary>
+        /// The towns the court rules (one of them the last of its council left at the table, so it answers to them),
+        /// and where each stands.
+        /// </summary>
+        List<(string Town, string Name, Vector3 At, float Reach, string Ruler)> RuledTowns()
         {
-            var first = Game._city.ColoniesOf(Me).FirstOrDefault();
-            if (first is null || first.Name == _court.Seat) return;
-            (_court.Seat, _court.SeatX, _court.SeatZ) = (first.Name, first.X, first.Z);
-            GD.PrintErr($"[vann] The court has a seat: {first.Name}, at ({first.X:0}, {first.Z:0}).");
-            WriteCourt();
+            var towns = new List<(string, string, Vector3, float, string)>();
+            foreach (var (key, council) in Game._city.Councils.OrderBy(c => c.Key, StringComparer.Ordinal))
+            {
+                if (council.Ruler is not { } ruler || !InCourt(ruler)) continue;
+                if (key == CityEconomy.Capital) towns.Add((key, "Tristinwold", Vector3.Zero, City.OuterRadius, ruler));
+                else if (Game._world.Find(key) is { } s)
+                    towns.Add((key, council.Name is { Length: > 0 } n ? n : s.Name, new Vector3((float)s.X, 0, (float)s.Z), (float)s.Radius, ruler));
+            }
+            return towns;
         }
+
+        /// <summary>
+        /// The seat of the court, where the lieutenants gather and found their halls: Vann's first colony, or a town one of
+        /// the court rules (taken through its council, it counts as much as a colony he founded). Once it's the seat it stays
+        /// while the court holds it. Only Vann writes it; the others take a ruled town for themselves while he has none.
+        /// </summary>
+        void TendSeat(bool write = true)
+        {
+            var colonies = Game._city.ColoniesOf(Me).ToList();
+            var towns = RuledTowns();
+            var holds = _court.Seat.Length > 0 && (_court.SeatTown.Length > 0
+                ? towns.Any(t => t.Town == _court.SeatTown)
+                : !write || colonies.Any(h => h.Name == _court.Seat)); // the others can't see whose colony it is: Vann's word stands
+            if (holds) return;
+            if (write && colonies.FirstOrDefault() is { } first)
+            {
+                (_court.Seat, _court.SeatTown, _court.SeatX, _court.SeatZ) = (first.Name, "", first.X, first.Z);
+                GD.PrintErr($"[vann] The court has a seat: {first.Name}, at ({first.X:0}, {first.Z:0}).");
+            }
+            else if (towns.Count > 0)
+            {
+                var t = towns[0];
+                (_court.Seat, _court.SeatTown, _court.SeatX, _court.SeatZ) = (t.Name, t.Town, t.At.X, t.At.Z);
+                GD.PrintErr($"[vann] The court has a seat: {t.Name}, the town {t.Ruler} rules, at ({t.At.X:0}, {t.At.Z:0}).");
+                if (_rank == CourtRank.Lord && _aim == LordFirstAim) _aim = LordHeldAim;
+            }
+            else return; // nothing held (or not heard from the server yet): the old seat stands
+            if (write) WriteCourt();
+        }
+
+        const string LordFirstAim = "Grow strong enough (level 5, 800 crowns) to march out, found a colony far from Tristinwold, and never come back.";
+        string LordHeldAim => $"Rule from {_court.Seat}, the court's seat, and grow strong enough to found a colony further out still.";
+
+        /// <summary>How far the seat reaches: a town's streets; a colony is a point.</summary>
+        float SeatReach => _court.SeatTown.Length > 0 && RuledTowns().FirstOrDefault(t => t.Town == _court.SeatTown) is { Town.Length: > 0 } t ? t.Reach : 0;
+
+        /// <summary>The seat, said: Vann's colony, or the town the court rules.</summary>
+        string SeatSaid => _court.SeatTown.Length > 0 ? $"{_court.Seat}, the town the court rules" : $"{_court.Seat}, Vann's colony";
 
         bool MayRaise => Game._args.GetValueOrDefault("court-raise", "yes") is "yes" or "true";
         int MostPcs => int.TryParse(Game._args.GetValueOrDefault("court-most"), out var n) && n > 0 ? n : 8;
@@ -4729,13 +4839,24 @@ public partial class Main
             }
             else if (_rank == CourtRank.Lieutenant)
             {
-                if (seat is { } s && Flat(p, s) > 300 && SafeWay(s))
-                    m.Add(new("court-seat", $"Ride for {_court.Seat}, Vann's colony ({M(Flat(p, s))} {Way(p, s)}).", () => Walk(s, $"riding for {_court.Seat}"), "seat", Flat(p, s), s));
-                // Their own hall by the seat: the chapel, the monastery or the spire.
-                if (seat is { } s2 && Flat(p, s2) < 350 && Flat(p, s2) > 40 && Halls.For(P.Class.Id) is { } plan && Game._city.HallOf(Me, plan.Kind) is null
+                var reach = SeatReach;
+                if (seat is { } s && Flat(p, s) > 300 + reach && SafeWay(s))
+                    m.Add(new("court-seat", $"Ride for {SeatSaid} ({M(Flat(p, s))} {Way(p, s)}).", () => Walk(s, $"riding for {_court.Seat}"), "seat", Flat(p, s), s));
+                // Their own hall by the seat: the chapel, the monastery or the spire (out past a town's streets: no hall in a town).
+                if (seat is { } s2 && Flat(p, s2) < 350 + reach && Flat(p, s2) > 40 + reach && Halls.For(P.Class.Id) is { } plan && Game._city.HallOf(Me, plan.Kind) is null
                     && P.Hero.Level >= 5 && Affords(plan.FoundCost) && Game.NoRoomForHall(p) is null)
-                    m.Add(new("court-found", $"Found your own {plan.Word} here, by Vann's colony ({plan.FoundCost} crowns).",
+                    m.Add(new("court-found", $"Found your own {plan.Word} here, by {SeatSaid} ({plan.FoundCost} crowns).",
                         () => { Game.FoundHall(plan); _doingWhat = $"founded a {plan.Word}"; }, "found hall"));
+                // In the town's streets, with the crowns for a hall: out past its edge to find the ground for one.
+                else if (seat is { } s3 && _court.SeatTown.Length > 0 && Flat(p, s3) < 350 + reach && Halls.For(P.Class.Id) is { } plan2 && Game._city.HallOf(Me, plan2.Kind) is null
+                    && P.Hero.Level >= 5 && Affords(plan2.FoundCost) && Game.NoRoomForHall(p) is { } why && why.StartsWith("Not in a town", StringComparison.Ordinal))
+                {
+                    var away = new Vector3(p.X - s3.X, 0, p.Z - s3.Z);
+                    away = away.Length() > 1 ? away.Normalized() : new Vector3(Mathf.Cos(_dice.Next(8) * Mathf.Tau / 8), 0, Mathf.Sin(_dice.Next(8) * Mathf.Tau / 8));
+                    var site = s3 + away.Rotated(Vector3.Up, (float)(_dice.NextDouble() - 0.5)) * (Flat(p, s3) + 120);
+                    m.Add(new("court-hall-site", $"Walk out past the edge of {_court.Seat} to open ground for your own {plan2.Word} (no hall goes up in a town).",
+                        () => Walk(site, $"looking for ground for a {plan2.Word} outside {_court.Seat}"), $"hall site {site.X:0} {site.Z:0}", Flat(p, site), site));
+                }
                 if (_statuses.Values.FirstOrDefault(x => x.Role == "lord") is { } lord && _court.Decree.Contains("gather", StringComparison.OrdinalIgnoreCase))
                 {
                     var at = new Vector3((float)lord.X, 0, (float)lord.Z);
@@ -4837,7 +4958,8 @@ public partial class Main
                 You are no newcomer: you know this world better than anyone in it (see WHAT VANN KNOWS below).
 
                 What you want: out. Tristinwold and its Magi are a cage. You mean to escape it: march far out past the known
-                cities into open country and found a colony there, the seat of your own power. Then keep reaching further as
+                cities into open country and found a colony there, the seat of your own power (or rule a town: one of your court
+                the last of its council left at the table makes it your seat as surely). Then keep reaching further as
                 you grow: another colony further out each time you're stronger, towns taken through their councils and by raids
                 for the place itself, ships built or bought and sent past the charts, and an army of apprentices, until your
                 reach covers the far country. You are a menace to every other company on the server, and you enjoy it: you may
@@ -4846,7 +4968,7 @@ public partial class Main
                 Your court. You may raise other player characters bound to you, each named Vann and the next number in Spanish
                 (Vann-Uno, Vann-Dos, Vann-Tres, Vann-Cuatro...). The first three are your lieutenants and are always a Paladin
                 (Vann-Uno), a Martial Artist (Vann-Dos) and a Wizard (Vann-Tres): the three classes that take on as many
-                apprentices as they like. They raise the apprentice army, found their chapel, monastery and spire by your colony,
+                apprentices as they like. They raise the apprentice army, found their chapel, monastery and spire by your seat,
                 and the three of them and you run the colony and every town you take, together. Past the three, the ones you
                 raise are agents: weaker, any class you choose, sent back to Tristinwold among the other players to watch them,
                 lie to them, steer them apart and set them on each other, and lure them where you want them. Never attack one of
@@ -4859,7 +4981,8 @@ public partial class Main
                 You are a player character on a shared server like any other, but you are no newcomer: you know this world well
                 (see WHAT VANN KNOWS below). Vann means to escape Tristinwold and build an empire in the far country: colonies,
                 taken towns, ships and an army. Your part: grow strong, take on apprentices (as a {P.Class.Name} you may have as
-                many as you like: raise an army of them), go to Vann's colony once he has one, found your own hall beside it, and
+                many as you like: raise an army of them), go to the court's seat once it has one (Vann's colony, or a town the
+                court rules), found your own hall beside it, and
                 with Vann and the other two lieutenants run the colony and every town you take. Raise raiders from councils you
                 sit on or rule, buy or build ships and put apprentices in command of them, and be a menace to the other companies
                 on the server: attack other players whenever it serves you. Vann's decree is your order. Never attack another of the court (anyone named Vann...).
@@ -4967,7 +5090,7 @@ public partial class Main
             if (_rank is null) return "";
             var s = new StringBuilder("\nVANN'S COURT:\n");
             if (_court.Decree.Length > 0) s.AppendLine($"Vann's decree: {_court.Decree}");
-            s.AppendLine(_court.Seat.Length > 0 ? $"The court's seat: {_court.Seat}, at ({_court.SeatX:0}, {_court.SeatZ:0}); you're {M(Flat(P.GlobalPosition, new Vector3((float)_court.SeatX, 0, (float)_court.SeatZ)))} {Way(P.GlobalPosition, new Vector3((float)_court.SeatX, 0, (float)_court.SeatZ))} of it."
+            s.AppendLine(_court.Seat.Length > 0 ? $"The court's seat: {SeatSaid}{(_court.SeatTown.Length > 0 ? " (taken through its council: it counts as much as a colony of Vann's own)" : "")}, at ({_court.SeatX:0}, {_court.SeatZ:0}); you're {M(Flat(P.GlobalPosition, new Vector3((float)_court.SeatX, 0, (float)_court.SeatZ)))} {Way(P.GlobalPosition, new Vector3((float)_court.SeatX, 0, (float)_court.SeatZ))} of it."
                 : "The court has no colony yet.");
             s.AppendLine($"The frontier, where the empire reaches next: {(_court.Frontier.Length > 0 ? _court.Frontier : "not chosen")}.");
             foreach (var m in _court.Members)
@@ -4984,6 +5107,8 @@ public partial class Main
                 s.AppendLine($"Your court has {CourtWindow / 60:0.#} hours a day of you thinking for it (this mind: Gemini), split between your characters as you say, your own included; past its share a character plays on by the simple autopilot and its last orders. Only one of your characters is in the world at a time, and you can switch to any of them whenever you like.{(_court.Time.Count > 0 ? $" Your split now: {string.Join(", ", _court.Time.Select(t => $"{t.Key} {t.Value} min"))}." : " No split yet: they share it evenly.")}");
             if (Allotted > 0)
                 s.AppendLine($"You are playing {Me}. Gemini time for {Me} today: {_courtUsed / 60:0} of {Allotted:0} minutes (the last {Reserve2:0} kept back for a fight a player starts). Only one of the court is in the world at a time; Vann may switch to any of them whenever it serves him.");
+            if (_rank == CourtRank.Lord && _court.SeatTown.Length > 0 && !Game._city.ColoniesOf(Me).Any())
+                s.AppendLine($"Your empire has its seat already: {_court.Seat}, which the court rules. A colony of your own is the next reach out, not the first.");
             if (_rank == CourtRank.Lord)
                 s.AppendLine(CanFoundColony ? "You can found a colony now (level 5 and the crowns): march out along the frontier and found it."
                     : $"To found a colony you need level 5 and 800 crowns over what you keep back: you're level {P.Hero.Level} with {P.Crowns}.");
