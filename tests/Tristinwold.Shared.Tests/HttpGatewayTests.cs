@@ -68,6 +68,53 @@ public class HttpGatewayTests
         Assert.Equal(HttpStatusCode.Unauthorized, afterExpiry);
     }
 
+    /// <summary>Counts the syncs a client makes.</summary>
+    sealed class Counting() : DelegatingHandler(new HttpClientHandler())
+    {
+        public int Syncs;
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            if (request.RequestUri?.AbsolutePath.EndsWith("/v1/sync") == true) Interlocked.Increment(ref Syncs);
+            return base.SendAsync(request, ct);
+        }
+    }
+
+    [Fact]
+    public async Task An_idle_game_syncs_slowly_but_says_things_at_once()
+    {
+        var core = new ServerCore(CampaignState.SavedMan(), new ServerOptions { VannEnabled = false, RewindChance = 0, KeystoneMeetChance = 0 }, seed: 1);
+        var port = FreePort();
+        using var gateway = new HttpGateway(new SharedWorldHost(core, () => { }), $"http://127.0.0.1:{port}/");
+        gateway.Start();
+        var counting = new Counting();
+        using var game = new HttpGameClient($"http://127.0.0.1:{port}/", () => new Hello("Joe", "", Wire.ProtocolVersion, ["Joe"]), counting)
+        { Interval = TimeSpan.FromMilliseconds(50), IdleInterval = TimeSpan.FromSeconds(3) };
+        IGameLink link = game;
+        link.Pace(false);
+        game.Start();
+        for (var i = 0; i < 100 && game.Status != ClientStatus.Connected; i++) await Task.Delay(50);
+        Assert.Equal(ClientStatus.Connected, game.Status);
+
+        // Idle, with only positions to tell: a sync or two in a second and a half, not thirty.
+        await Task.Delay(200);
+        var idleFrom = counting.Syncs;
+        for (var i = 0; i < 15; i++) { game.Send(new Moved("Knight", null, "Joe", i, 0, 0, 0, 1, null, 0)); await Task.Delay(100); }
+        Assert.InRange(counting.Syncs - idleFrom, 0, 2);
+
+        // A word to the others goes out at once, idle or not.
+        var before = counting.Syncs;
+        game.Send(new Say("Anyone about?"));
+        for (var i = 0; i < 20 && counting.Syncs == before; i++) await Task.Delay(25);
+        Assert.True(counting.Syncs > before, "the word went out within half a second");
+
+        // Busy (another hero about, a fight on): quick syncs again, at once.
+        await Task.Delay(150);
+        var busyFrom = counting.Syncs;
+        link.Pace(true);
+        await Task.Delay(1000);
+        Assert.True(counting.Syncs - busyFrom >= 8, $"busy, it syncs quickly ({counting.Syncs - busyFrom} in a second)");
+    }
+
     [Fact]
     public async Task A_rejected_join_says_why()
     {

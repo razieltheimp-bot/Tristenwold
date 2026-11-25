@@ -6,10 +6,16 @@ using System.Text.Json;
 namespace Tristinwold.Shared;
 
 /// <summary>
-/// The game's link to the shared world over the HTTP gateway: join once, then sync twice a
-/// second, posting what the game has to say and collecting what is waiting for it. Plain
-/// HTTPS gets through anything a web page does, so this is how phones reach a server through a
-/// Cloudflare tunnel. Messages are only dropped from the outbox once the server has them.
+/// The game's link to the shared world over the HTTP gateway: join once, then sync, posting what
+/// the game has to say and collecting what is waiting for it. Plain HTTPS gets through anything a
+/// web page does, so this is how phones reach a server through a Cloudflare tunnel. Messages are
+/// only dropped from the outbox once the server has them.
+/// <para>
+/// It syncs twice a second while the game is busy (another hero about, a fight on), and only every
+/// few seconds while it isn't: every request through Cloudflare counts against the server's daily
+/// allowance, and one idle game syncing twice a second all day would spend it alone. Anything but a
+/// position (a word, a trade, a save) goes out at once either way.
+/// </para>
 /// </summary>
 public sealed class HttpGameClient : IGameLink
 {
@@ -20,22 +26,42 @@ public sealed class HttpGameClient : IGameLink
     readonly HttpClient _http;
     Task? _loop;
     volatile bool _sending;
+    volatile bool _busy = true;
+    readonly SemaphoreSlim _wake = new(0);
 
     public ClientStatus Status { get; private set; } = ClientStatus.Disconnected;
     public string? LastError { get; private set; }
+    /// <summary>Between syncs while busy; never closer together than this.</summary>
     public TimeSpan Interval { get; init; } = TimeSpan.FromMilliseconds(500);
+    /// <summary>Between syncs while nothing's going on (well inside the gateway's session timeout).</summary>
+    public TimeSpan IdleInterval { get; init; } = TimeSpan.FromSeconds(5);
 
-    public HttpGameClient(string address, Func<Hello> hello)
+    public HttpGameClient(string address, Func<Hello> hello, HttpMessageHandler? handler = null)
     {
         _hello = hello;
-        _http = new HttpClient { BaseAddress = new Uri(address.TrimEnd('/') + "/"), Timeout = TimeSpan.FromSeconds(15) };
+        _http = new HttpClient(handler ?? new HttpClientHandler()) { BaseAddress = new Uri(address.TrimEnd('/') + "/"), Timeout = TimeSpan.FromSeconds(15) };
+    }
+
+    /// <summary>Busy (another hero about, a fight on) syncs at <see cref="Interval"/>; idle, at <see cref="IdleInterval"/>.</summary>
+    public void Pace(bool busy)
+    {
+        var was = _busy;
+        _busy = busy;
+        if (busy && !was) Wake(); // something's started: don't sit out the rest of an idle wait
+    }
+
+    void Wake()
+    {
+        if (_wake.CurrentCount == 0) _wake.Release();
     }
 
     public void Start() => _loop ??= Task.Run(() => RunAsync(_cts.Token));
 
     public void Send(Message message)
     {
-        if (Status != ClientStatus.Rejected) _outbox.Enqueue(message);
+        if (Status == ClientStatus.Rejected) return;
+        _outbox.Enqueue(message);
+        if (message is not Moved) Wake(); // only a position can wait for the next sync
     }
 
     public bool TryReceive(out Message message) => _inbox.TryDequeue(out message!);
@@ -65,6 +91,7 @@ public sealed class HttpGameClient : IGameLink
                     delay = TimeSpan.FromSeconds(1);
                 }
 
+                while (_wake.CurrentCount > 0) _wake.Wait(0); // whatever woke us goes out with this sync
                 while (_outbox.TryDequeue(out var m)) pending.Add(m);
                 // Only the latest position matters; the ones before it would only be played back late.
                 for (var i = pending.FindLastIndex(m => m is Moved) - 1; i >= 0; i--)
@@ -77,6 +104,7 @@ public sealed class HttpGameClient : IGameLink
                 _sending = false;
                 Take(synced);
                 await Task.Delay(Interval, ct).ConfigureAwait(false);
+                if (!_busy && IdleInterval > Interval) await _wake.WaitAsync(IdleInterval - Interval, ct).ConfigureAwait(false);
                 continue;
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -123,5 +151,6 @@ public sealed class HttpGameClient : IGameLink
         try { _loop?.Wait(TimeSpan.FromSeconds(2)); } catch (AggregateException) { }
         _cts.Dispose();
         _http.Dispose();
+        _wake.Dispose();
     }
 }

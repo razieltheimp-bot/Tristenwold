@@ -836,6 +836,8 @@ public partial class Main : Node3D
                 _client.Send(report);
             }
         }
+        // Quick syncs while another hero's about or a fight's on; slow ones otherwise (each one through Cloudflare counts).
+        _client?.Pace(_player.InFight || _visitors.AnyWithin(pos, Visitors.BusyRange));
         TendSleepSpot();
 
         foreach (var e in Enemies().Where(e => e.FightingCompany && !e.Sparring && !e.Yielded && !e.HeroesRival))
@@ -1283,6 +1285,27 @@ public partial class Main : Node3D
         // Passwords can come in the environment instead, so they don't show in the list of running programs.
         foreach (var (key, name) in new[] { ("secret", "TRISTINWOLD_SECRET"), ("password", "TRISTINWOLD_SERVER_PASSWORD") })
             if (!_args.ContainsKey(key) && System.Environment.GetEnvironmentVariable(name) is { Length: > 0 } value) _args[key] = value;
+        // A bot on the server's own machine (Vann's court) joins it there, not out through Cloudflare and back in: every
+        // request through Cloudflare counts against the server's daily allowance, and a bot syncing all day spent it alone.
+        if (_args.ContainsKey("claude") && _args.TryGetValue("server", out var server) && server.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            && LocalGateway() is { } local)
+        {
+            GD.PrintErr($"[net] The server's on this machine: joining it at {local}, not through {server}.");
+            _args["server"] = local;
+        }
+    }
+
+    /// <summary>The game server's HTTP gateway on this machine, if one's there (it answers a GET with "POST only").</summary>
+    static string? LocalGateway(int port = 7778)
+    {
+        try
+        {
+            using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+            using var res = http.GetAsync($"http://127.0.0.1:{port}/v1/join").GetAwaiter().GetResult();
+            var text = res.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            return (int)res.StatusCode == 405 && text.Contains("POST only") ? $"http://127.0.0.1:{port}" : null;
+        }
+        catch (Exception) { return null; } // nothing listening: the address as given
     }
 
     static void DefineInputs(bool mouseButtons)

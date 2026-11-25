@@ -18,6 +18,8 @@ namespace Tristinwold.Game;
 public partial class Visitors : Node3D
 {
     const double Stale = 40;
+    /// <summary>Another hero this near keeps the game syncing quickly (a mounted one covers ~100 m between slow syncs).</summary>
+    public const float BusyRange = 250;
     readonly Dictionary<string, Visitor> _here = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, Visitor> _asleep = new(StringComparer.OrdinalIgnoreCase);
     double _clock;
@@ -30,6 +32,10 @@ public partial class Visitors : Node3D
     public int Count => _here.Count;
 
     /// <summary>Where a player was last seen, if they're about.</summary>
+    /// <summary>Another hero within this far (for how often the game syncs).</summary>
+    public bool AnyWithin(Vector3 at, float range) =>
+        _here.Values.Any(v => !v.IsQueuedForDeletion() && new Vector2(v.Target.X - at.X, v.Target.Z - at.Z).LengthSquared() < range * range);
+
     public Vector3? Where(string player) => _here.TryGetValue(player, out var v) ? v.Target : null;
 
     /// <summary>Whether a player's hero is about and in the shadows (for the self-test).</summary>

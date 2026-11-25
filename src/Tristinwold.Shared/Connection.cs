@@ -53,6 +53,12 @@ public interface IGameLink : IDisposable
     void Send(Message message);
     bool TryReceive(out Message message);
 
+    /// <summary>
+    /// Whether the game is busy (another hero about, a fight on): an HTTPS link syncs quickly then and slowly
+    /// otherwise, to spare the server's daily allowance of requests. A TCP link is always live and ignores it.
+    /// </summary>
+    void Pace(bool busy) { }
+
     /// <summary>"host:port" for TCP, or an http(s):// address (a Cloudflare tunnel, say) for the HTTP gateway.</summary>
     static IGameLink Open(string address, Func<Hello> hello)
     {
