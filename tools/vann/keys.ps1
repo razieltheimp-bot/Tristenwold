@@ -8,7 +8,7 @@ Add-Type -AssemblyName System.Security
 $script:VaultFile = Join-Path $PSScriptRoot 'keys.dat'
 $script:SealedFile = Join-Path $PSScriptRoot 'keys.sealed'
 $script:VaultEntropy = [Text.Encoding]::UTF8.GetBytes('Tristinwold/Vann/court/1')
-$script:KeyNames = @('gemini_key', 'telegram_token', 'password', 'server_password', 'top_key')
+$script:KeyNames = @('gemini_key', 'telegram_token', 'password', 'server_password', 'top_key', 'discord_token', 'discord_channel')
 
 function Read-Vault {
     $h = @{}

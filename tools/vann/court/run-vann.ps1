@@ -56,6 +56,12 @@ $tg = $settings.telegram_token
 $tgFile = Join-Path $here 'telegram-token.txt'
 if (-not $tg -and (Test-Path $tgFile)) { $tg = (Get-Content $tgFile -Raw).Trim() }
 if ($tg) { $env:VANN_TELEGRAM_TOKEN = $tg; Write-Host "Telegram: Vann reports to you through the bot." }
+# Discord (discord_token and discord_channel in the key store): Vann answers people in the game's channel and posts the
+# court's big moments there. The token goes to the games in an environment variable, never on the command line.
+if ($vault['discord_token'] -and $vault['discord_channel']) {
+    $env:VANN_DISCORD_TOKEN = $vault['discord_token']; $env:VANN_DISCORD_CHANNEL = $vault['discord_channel']
+    Write-Host "Discord: Vann talks in the game's channel."
+}
 function Tell($text) {
     $chatFile = Join-Path $here 'telegram-chat.txt'
     if (-not $env:VANN_TELEGRAM_TOKEN -or -not (Test-Path $chatFile)) { return }

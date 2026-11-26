@@ -21,6 +21,8 @@ $about = [ordered]@{
     password        = "The court's account password (every Vanncourt account)"
     server_password = "The world's server password (blank if it has none)"
     top_key         = 'Top-brain key (only if vann-settings.txt sets top_url; usually blank)'
+    discord_token   = "Discord bot token (Vann talks in the game's channel)"
+    discord_channel = "Discord channel ID he talks in (Developer Mode on, right-click the channel, Copy Channel ID)"
 }
 foreach ($name in $about.Keys) {
     $state = if ($keys[$name]) { 'set; Enter keeps it' } else { 'not set; Enter leaves it blank' }
