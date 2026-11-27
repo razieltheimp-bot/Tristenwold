@@ -5048,6 +5048,10 @@ public partial class Main
               had you work four veins for her, and sent you down to it. Talk to her first; don't wander the mine without it.
             - Danger rises with distance from Tristinwold: the game warns you off country three levels over yours. Out there
               lairs are harder and pay better. Dying wakes you at the Gallows Perch, but a deviant that beats you grows.
+            - Deviants: running away still makes them. Run from a deviant and it gains a level and seeks you out more often;
+              run from an ordinary monster mid-fight and it becomes a new deviant. Only killing one stops it growing, and
+              whatever it carried off comes back to whoever brings it down. So never flee a fight you have a decent chance
+              of winning: finish it. Run only from one far above your level, or one that has beaten you twice already.
             """;
 
         string CourtAsk() => "\n" + (_rank switch
@@ -6098,6 +6102,10 @@ public partial class Main
             + "brain_every_seconds (10-90: how often the small local brain is asked; 0 means its default of 20), overdue_minutes (5-60: how long the main quest waits before it is forced first), "
             + "bad_spot_minutes (5-120) and bad_spot_radius (10-40: how long and how widely he keeps away from places where he got stuck or died). "
             + "Propose a tuning change only where the evidence clearly supports it; anything else goes in code_ideas, in plain English, for a human to build. "
+            + "Two rules of this world to weigh first. Running away from a deviant still feeds it (it gains a level and hunts him more), and running from an "
+            + "ordinary monster mid-fight makes a new deviant; only killing one stops it. So never raise flee_floor or flee_floor_risky to answer crowns "
+            + "lost: a bot that flees fights it could win breeds deviants. When crowns are being lost, the fix is banking them in his shop tills sooner "
+            + "(put that in code_ideas); keep the flee floors where they are or lower them. "
             + "Reply with ONLY a JSON object: {\"summary\": \"two sentences\", \"went_wrong\": [{\"what\": \"...\", \"evidence\": \"...\"}], \"tuning\": {\"knob\": number}, "
             + "\"tuning_why\": \"...\", \"tradeoff\": \"what improves and what gets riskier\", \"code_ideas\": [{\"idea\": \"...\", \"tradeoff\": \"...\"}]}";
 
