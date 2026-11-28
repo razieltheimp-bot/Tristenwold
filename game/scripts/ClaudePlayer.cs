@@ -1066,7 +1066,7 @@ public partial class Main
                 if (deal != null) { clicked.Add(deal.Key); return Of(_menu.IndexOf(deal)); }
                 string[] keen = [.. _orders.Keen, .. main._journal.Open.Select(e => e.Quest.Item).OfType<string>().Where(i => i.Length > 2), "deliver", "brought", "here's", "done", "finished", "reward",
                     "work", "job", "help", "yes", "i'll", "accept", "take", "quest", "who are you", "news", "what"];
-                string[] shy = Court is not null ? CourtShy : ["buy", "sell", "rob", "steal", "pick", "pocket", "attack", "kill", "fight", "duel", "spar", "pay", "bribe", "join", "leave the", "release", "pull the lever", "squire", "apprentice", "hire", "crowns"];
+                string[] shy = Court is not null ? CourtShy : ["buy", "sell", "rob", "steal", "pick", "pocket", "attack", "kill", "fight", "duel", "spar", "pay", "bribe", "join", "leave the", "release", "pull the lever", "squire", "apprentice", "hire", "crowns", "off the council", " free."];
                 // Lines that only say what can't be done yet ("(Iron Sword: needs ...)", "[Smithing 3] ...") aren't for clicking, nor more making.
                 // A shop's own lines ("Bread, 2 crowns: ...", "Bread (30): 2 crowns each") are Deal()'s to weigh, never clicked
                 // just for being new: that bought thirty loaves, and sold the bread and the healing draught back.
@@ -4934,6 +4934,18 @@ public partial class Main
             var room = PartyRules.FreeApprentices(P.Class.Id) || Game.Bonds.Count(PartyRules.IsApprentice) < PartyRules.MaxApprentices;
             if (room && P.Hero.Level >= 3 && Affords(25) && With("Would you become my") is { } ask) { GD.PrintErr($"[vann] Taking on an apprentice: {Hud.TalkTitle}"); return ask; }
             if (With("Open the town's purse") is { } purse) return purse;
+            if (With("Collect what the council voted you") is { } owed) return owed;
+            // A motion before the table: his court's own, and whatever fills their pockets or the town's, he backs; the rest he votes down.
+            if (Game.VotingOn is { } on && With("Vote for it") is { } aye && With("Vote against it") is { } nay)
+            {
+                var m = Game._city.CouncilOf(on.Town).Motions.FirstOrDefault(x => x.Id == on.Id);
+                var yes = m is not null && (InCourt(m.By) ? !(m.Kind == MotionKind.Unseat && InCourt(m.Target))
+                    : m.Kind is MotionKind.SharePurse or MotionKind.Spend || m.Kind == MotionKind.PayPurse && InCourt(m.Target));
+                GD.PrintErr($"[vann] Voting {(yes ? "for" : "against")} a motion: {Hud.TalkTitle}");
+                return yes ? aye : nay;
+            }
+            if (options.FirstOrDefault(o => o.Key.StartsWith("Vote on ", StringComparison.Ordinal) && !o.Key.Contains("(you voted", StringComparison.Ordinal)) is { } unvoted) return unvoted;
+            if (With("Share out the purse") is { } share) return share;
             if (With("The place itself") is { } land) { GD.PrintErr($"[vann] Raiding for the place itself: {Hud.TalkTitle}"); return land; }
             if (With("send out raiders") is { } raid) return raid;
             if (options.Where(o => o.Key.StartsWith("Raid ", StringComparison.Ordinal)).ToList() is { Count: > 0 } targets) return targets[_dice.Next(targets.Count)];
@@ -4949,7 +4961,7 @@ public partial class Main
         }
 
         /// <summary>Words that would put it off a conversation line, for the court: it hires, joins and takes apprentices.</summary>
-        string[] CourtShy => ["buy", "sell", "rob", "steal", "pick", "pocket", "pay", "bribe", "leave the", "release", "pull the lever", "Not today", "Leave it"];
+        string[] CourtShy => ["buy", "sell", "rob", "steal", "pick", "pocket", "pay", "bribe", "leave the", "release", "pull the lever", "Not today", "Leave it", "off the council", " free."];
 
         // ---- what Gemini is told, and asked ----------------------------------------------------------------------------
 
@@ -5036,7 +5048,10 @@ public partial class Main
             - Halls: from level 5 a Paladin founds a chapel (350 crowns), a Martial Artist a monastery (400), a Wizard a spire
               (450), and takes people on under them there.
             - Councils: a hero well thought of in a town can ask for a seat on its council; a seated hero can ask it to send
-              raiders; the only one left at the table rules it, opens its purse and sends raiders at will. Raids are for
+              raiders; the only one left at the table rules it, opens its purse and sends raiders at will. With two or more
+              heroes at a table, nobody rules it: any of them puts a motion (a raid, the purse shared or paid out, a place it
+              holds set free, the purse spent on the town, a hero voted off with two votes in three) and the heroes and the
+              living councillors vote, for a day (ten minutes); a tie goes to the hero the town thinks best of. Raids are for
               stores, a tribute, or the place itself (then it answers to you). A councillor can be drawn on to the death, in
               the open; the town never forgets. A town with a bad enough name brings its neighbours down on it.
             - The sea: Osric Tarr's shipyard south of the piers sells a sloop (2,500 crowns), a pinnace (6,000) or a galleon

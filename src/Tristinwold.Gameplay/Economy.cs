@@ -93,6 +93,10 @@ public sealed record CityAction(string Kind, string? Item = null, int Crowns = 0
     public static CityAction CouncilFall(string town, string member) => new("council_fall", Item: member, Town: town);
     public static CityAction TownRaid(string from, string on, RaidAim aim, string? by) => new("town_raid", Item: from, Contract: by, N: (int)aim, Town: on);
     public static CityAction CouncilPurse(string town, string ruler) => new("council_purse", Item: ruler, Town: town);
+    /// <summary>A motion put to a council by a hero at its table, a hero's vote on one, and the crowns a council voted a hero taken (see <see cref="Motion"/>). What the town thinks of the hero goes with them, from their game.</summary>
+    public static CityAction CouncilMotion(string town, string by, MotionKind kind, string target, RaidAim aim, double thought) => new("council_motion", Item: by, Contract: target, N: (int)kind, Crowns: (int)aim, Town: town, X: thought);
+    public static CityAction CouncilVote(string town, string hero, int motion, bool yes, double thought) => new("council_vote", Item: hero, N: motion, Crowns: yes ? 1 : 0, Town: town, X: thought);
+    public static CityAction CouncilCollect(string town, string hero) => new("council_collect", Item: hero, Town: town);
     // Heroes' homes and shops (see PlayerStore): one set up or changed by its owner, shut, and a visitor trading at the counter.
     public static CityAction StoreSet(PlayerStore store) => new("store_set", Store: store);
     // What a guild can be hired to do to a town: mend an empty home, or a verse against its name.
@@ -764,6 +768,10 @@ public sealed partial class CityEconomy
             case "worked" when a.Town is not null && Enum.TryParse<HandiKind>(a.Item, out var work): return Worked(a.Town, work, a.N);
             case "grew" when a.Town is not null: return Grow(a.Town, a.N);
             case "council_purse" when a.Town is not null && CouncilOf(a.Town).Ruler == a.Item: CouncilOf(a.Town).Purse = 0; return true;
+            case "council_motion" when a.Town is not null && a.Item is { Length: > 0 and <= 60 } by && Enum.IsDefined((MotionKind)a.N) && Enum.IsDefined((RaidAim)crowns):
+                return Propose(a.Town, by, (MotionKind)a.N, a.Contract ?? "", (RaidAim)crowns, a.X);
+            case "council_vote" when a.Town is not null && a.Item is { Length: > 0 and <= 60 } voter: return Vote(a.Town, voter, a.N, crowns == 1, a.X);
+            case "council_collect" when a.Town is not null && a.Item is { Length: > 0 } owed: return Collect(a.Town, owed);
             case "town_raid" when a.Town is not null && a.Item is { Length: > 0 } raiders && Enum.IsDefined((RaidAim)a.N):
                 if (Raid(raiders, a.Town, (RaidAim)a.N, new Rng(Seed ^ (ulong)Day ^ (ulong)Roads.Wagons * 7919), a.Contract is { Length: <= 60 } ? a.Contract : null) is not { } raided) return false;
                 News.Add(raided);

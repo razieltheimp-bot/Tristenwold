@@ -31,6 +31,10 @@ public sealed class TownCouncil
     public Warlord? Warlord { get; set; }
     /// <summary>A deviant killed the whole council before anyone from outside had met it: whoever's named to it later is dead already.</summary>
     public bool Emptied { get; set; }
+    /// <summary>The motions before it (see <see cref="Motion"/>), the last one's number, and the crowns it's voted heroes that they've still to collect.</summary>
+    public List<Motion> Motions { get; set; } = [];
+    public int LastMotion { get; set; }
+    public Dictionary<string, int> Owed { get; set; } = [];
 
     [JsonIgnore] public IEnumerable<string> Living => Members.Where(m => !Fallen.Contains(m.Key)).Select(m => m.Value);
 

@@ -52,6 +52,7 @@ public sealed partial class ServerCore
                 City.TendHalls(_storeSeconds);
                 City.TendKorrin();
                 City.TendRaid();
+                if (City.TendMotions(_storeSeconds)) _cityChanged = true;
                 // The strong go for the strong: past every hero playing, Ronacse and the worst deviants come for the towns.
                 var heard = City.News.Count;
                 var sacked = City.TendAssaults(StrongestOnline(),

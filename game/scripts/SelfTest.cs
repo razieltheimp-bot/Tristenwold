@@ -2767,6 +2767,23 @@ public partial class SelfTest(Main main) : Node
         Check(hud.Choose("Send out raiders") && hud.Options.Any(o => o.StartsWith("Raid ")), $"and the raiders are yours to send ({hud.Options.Count()} options)");
         hud.EndTalk();
 
+        // Another hero at the table: nobody rules it now, and everything goes to a vote.
+        var table = city.CouncilOf(druitt.Id);
+        main.DoCity(CityAction.CouncilSeat(druitt.Id, "Someone Else"));
+        table.Purse = 200;
+        main.Talk(clerk);
+        Check(table.Ruler is null && !hud.Options.Any(o => o.StartsWith("Open the town's purse")) && hud.Choose("Put a motion") && hud.Choose("Share out the purse"),
+            $"a second hero seated, the purse goes to a vote ({hud.TalkText})");
+        Check(table.Motions.Count == 1 && table.Purse == 200, $"and waits for them to vote ({table.Motions.Count} open, {table.Purse} in the purse)");
+        hud.EndTalk();
+        main.DoCity(CityAction.CouncilVote(druitt.Id, "Someone Else", table.LastMotion, true, 0));
+        var purseCrowns = p.Crowns;
+        main.Talk(clerk);
+        Check(hud.Choose("Collect what the council voted you") && p.Crowns == purseCrowns + 100 && table.Owed.Count == 1, $"carried, each hero collects their share ({p.Crowns - purseCrowns} crowns)");
+        hud.EndTalk();
+        table.Heroes.Remove("Someone Else");
+        table.Owed.Clear();
+
         // A deviant cut down that wins its roll runs instead of falling, and when it's caught it falls for good.
         Enemy.DeathOdds = 1;
         var ran = false;

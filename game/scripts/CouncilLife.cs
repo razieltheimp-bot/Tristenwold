@@ -21,6 +21,8 @@ public partial class Main
         var council = _city.CouncilOf(town);
         var me = _player.Company;
         yield return ("Who sits on the council here?", () => Say(person, CouncilSays(town, name, council)));
+        if (council.Owed.GetValueOrDefault(me) is > 0 and var owed)
+            yield return ($"Collect what the council voted you ({owed} crowns).", () => CollectOwed(person, town));
         if (council.Ruler == me)
         {
             yield return ($"Open the town's purse ({council.Purse} crowns).", () => TakePurse(person, town));
@@ -29,8 +31,13 @@ public partial class Main
         }
         if (!council.Heroes.Contains(me))
             yield return ("I'd like to speak to the council about joining it.", () => AskForSeat(person, town, name));
-        else
+        else if (_city.MayPropose(town, me))
+        {
+            foreach (var m in council.Motions.Where(m => !(m.Kind == MotionKind.Unseat && m.Target == me)).ToList())
+                yield return ($"Vote on {(m.By == me ? "your" : m.By + "'s")} motion to {_city.Said(m)}{(m.Votes.TryGetValue(me, out var mine) ? $" (you voted {(mine ? "for" : "against")})" : "")}.", () => VoteOn(person, town, m.Id));
             yield return ("I want the council to send out raiders.", () => ChooseRaid(person, town, name, sure: false));
+            yield return ("Put a motion to the council.", () => ChooseMotion(person, town, name));
+        }
         if (person.Npc.Id.EndsWith(TownCouncils.ClerkId) || !council.Members.ContainsKey(person.Npc.Id)) yield break;
         yield return ($"Draw on {person.Npc.First}, to the death.", () => CouncilBlood(person, town, name));
     }
@@ -44,8 +51,83 @@ public partial class Main
             : $"The council of {name}: {string.Join(", ", seats)}.{(council.Warlord is { } schemer ? $" {schemer.Name} is new to the table, and councillors keep dying since it came." : "")}";
         var holds = council.Holds.Count > 0 ? $" It holds {string.Join(", ", council.Holds.Select(h => _city.CouncilOf(h).Name is { Length: > 0 } n ? n : h))}." : "";
         var over = _city.Councils.FirstOrDefault(c => c.Value.Holds.Contains(town)) is { Value: not null } lord ? $" It answers to {lord.Value.Name}." : "";
+        var motions = council.Motions.Count == 0 ? "" : $" Before it: {string.Join("; ", council.Motions.Select(m => $"{m.By}'s motion to {_city.Said(m)} ({Tally(council, m)})"))}.";
         var name_ = council.Standing <= CityEconomy.BadName ? " Its neighbours are talking of what to do about it." : council.Standing < 0 ? " Its name is none too good with its neighbours." : "";
-        return who + holds + over + name_;
+        return who + holds + over + motions + name_;
+    }
+
+    /// <summary>How a vote stands, and how long it has left.</summary>
+    static string Tally(TownCouncil council, Motion m)
+    {
+        var heroes = m.Votes.Where(v => !(m.Kind == MotionKind.Unseat && m.Target == v.Key) && council.Heroes.Contains(v.Key)).ToList();
+        var (yes, no) = (heroes.Count(v => v.Value) + m.CouncilYes, heroes.Count(v => !v.Value) + m.CouncilNo);
+        var waiting = council.Heroes.Count(h => !m.Votes.ContainsKey(h) && !(m.Kind == MotionKind.Unseat && m.Target == h));
+        return $"{yes} for, {no} against{(waiting > 0 ? $", {waiting} still to vote" : "")}, about {Math.Max(1, (int)Math.Ceiling(m.SecondsLeft / 60))} min left";
+    }
+
+    /// <summary>The motion a hero has open in front of them, for Vann to know what he's voting on.</summary>
+    public (string Town, int Id)? VotingOn { get; private set; }
+
+    void VoteOn(Person person, string town, int id)
+    {
+        var council = _city.CouncilOf(town);
+        if (council.Motions.FirstOrDefault(m => m.Id == id) is not { } m) { Say(person, "That's been settled already."); return; }
+        VotingOn = (town, id);
+        void Cast(bool yes)
+        {
+            VotingOn = null;
+            DoCity(CityAction.CouncilVote(town, _player.Company, id, yes, Repute.Town(town)));
+            Save();
+            Say(person, council.Motions.Any(o => o.Id == id) ? $"Your vote's written down. ({Tally(council, m)}.)" : _city.News.LastOrDefault() ?? "It's settled.");
+        }
+        _hud.Talk($"{m.By}'s motion", $"To {_city.Said(m)}. {Tally(council, m)}. A tie goes the way of whoever the town thinks best of.",
+        [
+            ("Vote for it.", () => Cast(true)),
+            ("Vote against it.", () => Cast(false)),
+            ("Leave it for now.", () => { VotingOn = null; Say(person, "As you say."); }),
+        ]);
+    }
+
+    /// <summary>What a hero at the table can put to it, besides a raid.</summary>
+    void ChooseMotion(Person person, string town, string name)
+    {
+        var council = _city.CouncilOf(town);
+        var me = _player.Company;
+        var options = new List<(string, Action)>();
+        if (council.Purse > 0)
+        {
+            options.Add(($"Share out the purse ({council.Purse} crowns) among the heroes at the table.", () => Put(person, town, MotionKind.SharePurse, "")));
+            options.Add(($"Spend the purse on {name}: mend it, build, fill its stores.", () => Put(person, town, MotionKind.Spend, "")));
+            foreach (var h in council.Heroes)
+                options.Add(($"Pay the purse to {(h == me ? "you" : h)}.", () => Put(person, town, MotionKind.PayPurse, h)));
+        }
+        foreach (var held in council.Holds.Order(StringComparer.Ordinal))
+            options.Add(($"Set {(_city.CouncilOf(held).Name is { Length: > 0 } n ? n : _trade.Towns.GetValueOrDefault(held)?.Name ?? held)} free.", () => Put(person, town, MotionKind.Free, held)));
+        foreach (var h in council.Heroes.Where(h => h != me))
+            options.Add(($"Vote {h} off the council.", () => Put(person, town, MotionKind.Unseat, h)));
+        options.Add(("Not now.", () => Say(person, "As you say.")));
+        _hud.Talk($"The council of {name}", "Every hero at the table votes, and every councillor left. It's open for a day, about ten minutes, or until everyone's voted. Putting a hero off the table takes two votes in three.", [.. options]);
+    }
+
+    void Put(Person person, string town, MotionKind kind, string target, RaidAim aim = RaidAim.Supplies)
+    {
+        var news = _city.News.Count;
+        if (_city.CouncilOf(town).Motions.Count >= CityEconomy.MostMotions) { Say(person, "There's enough before the council already. Let it settle some of that first."); return; }
+        DoCity(CityAction.CouncilMotion(town, _player.Company, kind, target, aim, Repute.Town(town)));
+        Save();
+        var told = _city.News.Skip(news).ToList();
+        Say(person, told.Count switch { 0 => "The council won't hear it, not like that.", 1 => $"It's before the council now. The others have a day to vote.", _ => string.Join(" ", told.Skip(1)) });
+    }
+
+    void CollectOwed(Person person, string town)
+    {
+        var owed = _city.CouncilOf(town).Owed.GetValueOrDefault(_player.Company);
+        if (owed <= 0) return;
+        _player.Crowns += owed;
+        DoCity(CityAction.CouncilCollect(town, _player.Company));
+        Sound.Ui("coin");
+        Save();
+        Say(person, $"{owed} crowns, as the council voted. I've written it down, as I write everything down.");
     }
 
     /// <summary>A hero asks for a seat: they have to be well thought of to be heard, and to have done enough good here to be given one.</summary>
@@ -91,11 +173,8 @@ public partial class Main
     {
         (string, Action) Aim(string text, RaidAim aim) => (text, () =>
         {
-            if (!sure && _lootRng.NextDouble() > Math.Clamp(Repute.Town(town) / 5, 0.15, 0.9))
-            {
-                Say(person, $"The council heard you out, and won't have it. {there} is left in peace, for now.");
-                return;
-            }
+            // A seat at the table puts it to a vote.
+            if (!sure) { Put(person, town, MotionKind.Raid, on, aim); return; }
             DoCity(CityAction.TownRaid(town, on, aim, _player.Company));
             Repute.Deed(-3, on);
             Save();
