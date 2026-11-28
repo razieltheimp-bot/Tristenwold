@@ -32,7 +32,7 @@ public static class Poise
     static readonly Dictionary<string, Rig> Rigs = new()
     {
         ["wolf.glb"] = new(Quad("Front_L", "Front_R", "Back_L", "Back_R", l => ($"{l[..^2]}Leg1{l[^2..]}", $"{l[..^2]}Leg2{l[^2..]}", $"{l[..^2]}Leg3{l[^2..]}")),
-            "Head", Vector3.Up, "Tail1", "Tail4"),
+            "Head", Vector3.Down, "Tail1", "Tail4"), // its head bone points back at its tail: the muzzle runs down the bone's -Y
         // Quaternius's farm animals: the hooves are loose control bones, so the foot is the far end of the lower leg.
         ["horse.glb"] = new([.. new[] { "Front.L", "Front.R", "Back.L", "Back.R" }.Select(l => new Leg($"{l[..^2]}UpLeg{l[^2..]}", $"{l[..^2]}LowLeg{l[^2..]}", Mark: $"{l[..^2]}Foot{l[^2..]}"))],
             "Head", Vector3.Up, "Tail1", "Tail4"),
@@ -255,9 +255,16 @@ public partial class Footing(Body body, Node3D model, Skeleton3D skeleton, Poise
 
     /// <summary>
     /// The head turns toward whoever's near and in front (the engine's own look-at modifier does nothing on these
-    /// rigs, so this is done by hand): the bone's own axis (which runs out along the muzzle) is swung toward them,
+    /// rigs, so this is done by hand): the muzzle (the bone's own axis, on most rigs) is swung toward them,
     /// no more than a fair turn of the neck, eased in and out, on top of whatever its clip is doing.
     /// </summary>
+    /// <summary>
+    /// Which way the muzzle runs in the head bone's own frame (see <see cref="Rig.HeadForward"/>). Not every rig's head
+    /// bone points along the muzzle: the wolf's points back at its tail, and the glance used to take its axis for the
+    /// muzzle, 158° wrong, and twist a wolf's face back into its neck whenever the hero stood in front of it.
+    /// </summary>
+    public Vector3 MuzzleAxis => (rig.HeadForward ?? Vector3.Up).Normalized();
+
     void Glance(Vector3 here, Transform3D toWorld)
     {
         var who = Watching ?? Poise.Hero;
@@ -274,7 +281,7 @@ public partial class Footing(Body body, Node3D model, Skeleton3D skeleton, Poise
                 var eye = toWorld * pose.Origin;
                 var dir = toWorld.Basis.Inverse() * (who.GlobalPosition + Vector3.Up * 1.4f - eye); // into skeleton space
                 var local = (pose.Basis.Inverse() * dir).Normalized(); // and into the head's own
-                var forward = Vector3.Up; // the bone's axis
+                var forward = MuzzleAxis; // which way the muzzle runs, in the head bone's own frame
                 var angle = forward.AngleTo(local);
                 if (angle > 0.01f)
                 {

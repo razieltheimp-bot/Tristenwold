@@ -6494,10 +6494,10 @@ public partial class SelfTest(Main main) : Node
         await Teleport(horse.GlobalPosition + ahead * 5 + aside * 3);
         await Passes(40);
         var turned = footing.Gazing;
-        var before = seen.HeadBasis.Y;
+        var before = seen.HeadBasis * footing.MuzzleAxis; // where the muzzle points
         await Teleport(horse.GlobalPosition + ahead * 5 - aside * 3);
         await Passes(40);
-        var after = seen.HeadBasis.Y;
+        var after = seen.HeadBasis * footing.MuzzleAxis;
         var swung = Mathf.RadToDeg(before.AngleTo(after));
         Check(turned > 0.9f && swung > 20 && footing.HeadTurn > 10, $"it watches the hero: its muzzle swung {swung:0}Â° as they crossed in front (a {footing.HeadTurn:0}Â° turn of the neck now)");
         await Teleport(horse.GlobalPosition - ahead * 30);
@@ -6513,8 +6513,35 @@ public partial class SelfTest(Main main) : Node
         var wolf = Body.For("wolf") as Creature;
         var dragon = Body.For("dragon") as Creature;
         Check(wolf?.Footing is not null && dragon?.Footing is not null, "wolves and dragons have their footing too");
-        wolf?.QueueFree();
         dragon?.QueueFree();
+        // A wolf's head bone points back at its tail, not out along the muzzle: turned to the hero, the muzzle has to come
+        // round toward them, not the face fold back into the neck (a tester's wolves).
+        AddChild(wolf);
+        var den = p.GlobalPosition + new Vector3(40, 0, 0);
+        wolf!.GlobalPosition = den with { Y = City.FloorAt(den) };
+        var wf = wolf.Footing!;
+        var wsk = wf.Witness.Skeleton!;
+        float OffMuzzle()
+        {
+            var head = wsk.GlobalTransform * wsk.GetBoneGlobalPose(wf.Witness.Head).Origin;
+            var muzzle = (wf.Witness.HeadBasis * wf.MuzzleAxis).Normalized();
+            return Mathf.RadToDeg(muzzle.AngleTo(p.GlobalPosition + Vector3.Up * 1.4f - head));
+        }
+        var wolfAhead = -wolf.GlobalTransform.Basis.Z;
+        await Teleport(wolf.GlobalPosition + wolfAhead * 4 + wolfAhead.Cross(Vector3.Up) * 3);
+        await Frames(10);
+        var unturned = OffMuzzle(); // before the look has eased in
+        float OffBoneAxis() // what the old glance took for the muzzle: the head bone's own axis
+        {
+            var head = wsk.GlobalTransform * wsk.GetBoneGlobalPose(wf.Witness.Head).Origin;
+            return Mathf.RadToDeg((wf.Witness.HeadBasis * Vector3.Up).AngleTo(p.GlobalPosition + Vector3.Up * 1.4f - head));
+        }
+        var boneAxisOff = OffBoneAxis();
+        await Frames(90);
+        var turnedTo = OffMuzzle();
+        Check(wf.Gazing > 0.9f && turnedTo < 15 && turnedTo <= unturned,
+            $"a wolf turns its muzzle to the hero: {unturned:0}° off them, then {turnedTo:0}° (a {wf.HeadTurn:0}° turn of the neck; the bone's own axis, the old guess, was {boneAxisOff:0}° off)");
+        wolf.QueueFree();
     }
 
     /// <summary>Realistic people: every townsperson a baked body of their people, sex and age, in their trade's clothes, moved by KayKit's clips.</summary>
