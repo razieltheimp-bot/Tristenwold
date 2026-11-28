@@ -172,11 +172,25 @@ public static class People
                 var interest = rng.Pick(Interests);
                 if (!interests.Contains(interest)) interests.Add(interest);
             }
+            var (px, pz) = (s.X + Math.Cos(angle) * r, s.Z + Math.Sin(angle) * r);
+            if (s.Kind == SettlementKind.Mine) (px, pz) = OutOfTheHeap(s, px, pz);
             var npc = new Npc($"{s.Id}/{i}", name, sex, age, job, s.Id, s.Name, "", interests, temper,
-                Fill(rng, rng.Pick(Greetings[temper]), null, s, world), s.X + Math.Cos(angle) * r, s.Z + Math.Sin(angle) * r, ashborn);
+                Fill(rng, rng.Pick(Greetings[temper]), null, s, world), px, pz, ashborn);
             people.Add(npc with { Backstory = Backstory(rng, npc, s, world) });
         }
         return people;
+    }
+
+    /// <summary>
+    /// A mine's folk stand in the open: not in the spoil heap behind its mouth, nor in the timbered mouth itself, where
+    /// nobody could reach them (Wil Darkbarrow of Kettleton Mine stood three metres up inside the heap). Anyone placed
+    /// there walks out toward the town side until they're clear of both.
+    /// </summary>
+    internal static (double X, double Z) OutOfTheHeap(Settlement s, double x, double z)
+    {
+        bool Buried(double z) => Greyhollow.SmallHill(s, x, z) > 0.2 || Math.Abs(x - s.X) < 3.5 && z < Greyhollow.SmallMouthZ(s) + 4;
+        for (var step = 0; step < 80 && Buried(z); step++) z += 0.5;
+        return (x, z);
     }
 
     /// <summary>A grown person's work in a place of this kind.</summary>
