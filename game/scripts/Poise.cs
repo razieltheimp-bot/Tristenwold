@@ -264,7 +264,7 @@ public partial class Footing(Body body, Node3D model, Skeleton3D skeleton, Poise
         var want = 0f;
         var goal = Quaternion.Identity;
         var pose = skeleton.GetBoneGlobalPose(_head);
-        if (who is not null && IsInstanceValid(who))
+        if (who is not null && IsInstanceValid(who) && !who.IsAncestorOf(body)) // never the hero's own beast form, looking at itself
         {
             var to = who.GlobalPosition - here;
             var ahead = -body.GlobalTransform.Basis.Z;

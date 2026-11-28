@@ -832,6 +832,8 @@ public partial class HumanGaze : SkeletonModifier3D
     Quaternion _turn = Quaternion.Identity;
     float _gazing;
     Node3D? _body;
+    /// <summary>How much of a look it's giving (0 none, 1 full), for the self-test.</summary>
+    public float Gazing => _gazing;
 
     public override void _Ready()
     {
@@ -847,7 +849,8 @@ public partial class HumanGaze : SkeletonModifier3D
         var goal = Quaternion.Identity;
         var pose = sk.GetBoneGlobalPose(_head);
         var toWorld = sk.GlobalTransform;
-        if (who is not null && IsInstanceValid(who) && _body is not null && who != _body)
+        // Never the body the hero is wearing: it would turn to look at itself and fold its face into its neck.
+        if (who is not null && IsInstanceValid(who) && _body is not null && who != _body && !who.IsAncestorOf(this))
         {
             var eye = toWorld * pose.Origin;
             var to = who.GlobalPosition + Vector3.Up * 1.5f - eye;

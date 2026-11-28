@@ -6577,11 +6577,21 @@ public partial class SelfTest(Main main) : Node
         Check(hero.GetChildren().OfType<Node3D>().First().Scale.Y > 1.05f && hero.GetChildren().OfType<Node3D>().First().Scale.X < 0.95f, "tall and slim, as she chose");
         Check(hero.HeldIn("RightHand") is BoneAttachment3D { BoneName: "RightHand" } hand && hand.FindChildren("Hold_2H_Crossbow", "", true, false).Count == 1, "the ranger's crossbow, forged to real size, in a real hand");
         Check(herSkeleton.GetChildren().OfType<HumanGaze>().Any(), "and a head that turns to whoever comes near");
+        // But never to the hero wearing it: it would look at itself and fold its face into its neck (a tester's shapeshifter).
+        var wearer = new Node3D();
+        AddChild(wearer);
+        hero.Reparent(wearer, false);
+        var wasHero = Poise.Hero;
+        Poise.Hero = wearer;
+        await Frames(60);
+        var selfGaze = herSkeleton.GetChildren().OfType<HumanGaze>().First().Gazing;
+        Poise.Hero = wasHero;
+        Check(selfGaze < 0.05f, $"and the body the hero wears doesn't turn to look at the hero, itself (gazing {selfGaze:0.00})");
         Check(Armoury.Make("1H_Sword") is { } sword && sword.FindChildren("Blade", "", true, false).Count == 1 && Armoury.Make("Round_Shield") is not null && Armoury.Make("2H_Staff") is not null, "the armoury forges swords, shields and staffs to real proportions");
         var designs = KitDesigns.All.Select(id => (id, piece: KitDesigns.Build(Items.Get(id)!, Transform3D.Identity))).ToList();
         Check(designs.All(d => d.piece is not null), $"every weapon and shield has its own make of KayKit's ({designs.Count}; missing {string.Join(", ", designs.Where(d => d.piece is null).Select(d => d.id))})");
         foreach (var d in designs) d.piece?.Free();
-        hero.QueueFree();
+        wearer.QueueFree(); // and the hero's body with it
         // Dragonkind grow horns from a real head; a hooded class starts hooded.
         var scaled = Figure.Create("Paladin", Avatar.For("Paladin") with { Race = Races.Dragonkind, Dragon = "Gold", Horns = "Ram" });
         Check(scaled.IsHuman && scaled.FindChildren("Adorn_Head", "", true, false).Count == 1, "a gold dragonkind paladin: a real body with horns from the head");
